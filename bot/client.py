@@ -1,5 +1,5 @@
 """
-Discord client and slash commands: /start, /profile, /balance.
+Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train.
 """
 import asyncio
 import io
@@ -14,8 +14,9 @@ import economy
 from balance_card import render_balance
 from profile_card import render_profile
 
-from . import db
+from . import db, trainer
 from . import player as rules
+from .views import ExploreView, InventoryView, TrainView
 
 log = logging.getLogger("mortal-ascent")
 
@@ -36,6 +37,7 @@ class MortalAscent(discord.Client):
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
+        self.busy = set()          # (user_id, "explore" | "train") while a session is running
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
 
@@ -123,8 +125,10 @@ def register_commands(bot):
         await interaction.response.defer()
         techniques = db.get_techniques(bot.conn, target.id)
         rank = db.server_rank(bot.conn, target.id, rules.REALM_ORDER)
+        weapon = db.equipped_weapon(bot.conn, target.id)
         image = await render_with_avatar(
-            target, render_profile, lambda av: rules.profile_data(p, techniques, rank, avatar_path=av))
+            target, render_profile,
+            lambda av: rules.profile_data(p, techniques, rank, avatar_path=av, weapon=weapon))
         await interaction.followup.send(file=png(image, "profile.png"))
 
     @tree.command(name="balance", description="Show your Lotus Coins, Moon Pearls and blessing")
@@ -136,3 +140,76 @@ def register_commands(bot):
         await interaction.response.defer()
         image = await asyncio.to_thread(render_balance, rules.balance_data(p))
         await interaction.followup.send(file=png(image, "balance.png"))
+
+    @tree.command(name="inventory", description="Open your bag: manuals, weapons, pills, materials and chests")
+    @app_commands.describe(category="Which tab to open first")
+    @app_commands.choices(category=[app_commands.Choice(name=n, value=v) for n, v in (
+        ("Manuals", "manuals"), ("Weapons", "weapons"), ("Pills", "pills"),
+        ("Materials", "materials"), ("Chests", "chests"))])
+    async def inventory(interaction: discord.Interaction, category: app_commands.Choice[str] | None = None):
+        if not db.get_player(bot.conn, interaction.user.id):
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        await interaction.response.defer()
+        if category is None:
+            counts = db.category_counts(bot.conn, interaction.user.id)
+            first = next((k for k in ("chests", "manuals", "weapons", "pills", "materials") if counts.get(k)), "manuals")
+        else:
+            first = category.value
+        view = InventoryView(bot, interaction.user.id, first)
+        file = await view.render()
+        view.message = await interaction.followup.send(file=file, view=view, wait=True)
+
+    @tree.command(name="explore", description="Venture into the wild: pick paths, fight beasts, find chests")
+    async def explore(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        if (uid, "explore") in bot.busy:
+            await interaction.response.send_message("You are already on an expedition. Finish it first!", ephemeral=True)
+            return
+        hurt = rules.injured_for(p)
+        if hurt:
+            await interaction.response.send_message(
+                f"🩹 You are still injured. Rest for **{rules.fmt_duration(hurt)}** before exploring again.", ephemeral=True)
+            return
+        wait = db.cooldown_left(bot.conn, uid, "explore")
+        if wait:
+            await interaction.response.send_message(
+                f"🦶 Your legs still ache from the last expedition. Explore again in **{rules.fmt_duration(wait)}**.",
+                ephemeral=True)
+            return
+        bot.busy.add((uid, "explore"))
+        try:
+            view = ExploreView(bot, uid)
+            await interaction.response.send_message(embed=view.embed(), view=view)
+            view.message = await interaction.original_response()
+        except Exception:
+            bot.busy.discard((uid, "explore"))
+            raise
+
+    @tree.command(name="train", description="Train with the master to gather Internal Qi")
+    async def train(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        if (uid, "train") in bot.busy:
+            await interaction.response.send_message("You are already training. Finish that session first!", ephemeral=True)
+            return
+        wait = db.cooldown_left(bot.conn, uid, "train")
+        if wait:
+            await interaction.response.send_message(
+                f"😮‍💨 Your muscles need rest. Train again in **{rules.fmt_duration(wait)}**.", ephemeral=True)
+            return
+        bot.busy.add((uid, "train"))
+        try:
+            view = TrainView(bot, uid, trainer.roll_session(p))
+            view.interaction = interaction
+            await interaction.response.send_message(embed=view.intro(), view=view)
+        except Exception:
+            bot.busy.discard((uid, "train"))
+            raise

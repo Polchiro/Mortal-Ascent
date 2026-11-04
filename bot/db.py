@@ -2,9 +2,11 @@
 SQLite player storage.
 
 One row per Discord account in `players`, plus learned techniques in
-`techniques`. All functions take an open sqlite3.Connection so tests can
-use an in-memory database.
+`techniques`, bag contents in `items` and command cooldowns in `cooldowns`.
+All functions take an open sqlite3.Connection so tests can use an in-memory
+database.
 """
+import json
 import sqlite3
 import time
 
@@ -36,7 +38,44 @@ CREATE TABLE IF NOT EXISTS techniques (
     equipped    INTEGER NOT NULL DEFAULT 1
 );
 CREATE INDEX IF NOT EXISTS techniques_user ON techniques(user_id);
+
+CREATE TABLE IF NOT EXISTS items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES players(user_id) ON DELETE CASCADE,
+    category    TEXT    NOT NULL,   -- manuals, weapons, pills, materials, chests
+    key         TEXT    NOT NULL,   -- technique key, pill grade, material name, chest tier, weapon type
+    name        TEXT    NOT NULL,
+    grade       TEXT,               -- technique/pill grade or weapon/chest tier
+    qty         INTEGER NOT NULL DEFAULT 1,
+    data        TEXT,               -- JSON extras (weapon buffs)
+    equipped    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS items_user ON items(user_id);
+
+CREATE TABLE IF NOT EXISTS cooldowns (
+    user_id     INTEGER NOT NULL,
+    name        TEXT    NOT NULL,
+    until       REAL    NOT NULL,
+    PRIMARY KEY (user_id, name)
+);
 """
+
+# Columns added to `players` after the first release. Existing databases get
+# them through ALTER TABLE in connect(), so nobody has to delete their .db file.
+PLAYER_COLUMNS = {
+    "injured_until":        "REAL",
+    "pill_grade":           "TEXT",
+    "pill_mult":            "REAL",
+    "pill_expires":         "REAL",
+    "toxicity":             "INTEGER NOT NULL DEFAULT 0",
+    "toxicity_at":          "REAL",
+    "blessed_land":         "TEXT",
+    "blessed_land_expires": "REAL",
+    "last_challenge":       "TEXT",
+    "bag_capacity":         "INTEGER NOT NULL DEFAULT 60",
+}
+
+BAG_STACKABLE = {"manuals", "pills", "materials", "chests"}   # weapons are unique (rolled buffs)
 
 
 def connect(path):
@@ -44,6 +83,11 @@ def connect(path):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(players)")}
+    with conn:
+        for col, decl in PLAYER_COLUMNS.items():
+            if col not in have:
+                conn.execute(f"ALTER TABLE players ADD COLUMN {col} {decl}")
     return conn
 
 
@@ -80,3 +124,116 @@ def server_rank(conn, user_id, realm_order):
     mine = key(me)
     ahead = sum(1 for r in conn.execute("SELECT realm, layer, qi FROM players") if key(r) > mine)
     return ahead + 1
+
+
+def update_player(conn, user_id, **fields):
+    if not fields:
+        return
+    cols = ", ".join(f"{k} = ?" for k in fields)
+    with conn:
+        conn.execute(f"UPDATE players SET {cols} WHERE user_id = ?", (*fields.values(), user_id))
+
+
+def add_coins(conn, user_id, amount):
+    with conn:
+        conn.execute("UPDATE players SET lotus_coins = MAX(0, lotus_coins + ?) WHERE user_id = ?",
+                     (int(amount), user_id))
+
+
+# ── Techniques ────────────────────────────────────────────────────────
+
+def learn_technique(conn, user_id, name, type_, grade):
+    """Learn a technique and equip it in its type's slot (the old one stays learned)."""
+    with conn:
+        conn.execute("UPDATE techniques SET equipped = 0 WHERE user_id = ? AND type = ?", (user_id, type_))
+        conn.execute("INSERT INTO techniques (user_id, name, type, grade, equipped) VALUES (?, ?, ?, ?, 1)",
+                     (user_id, name, type_, grade))
+
+
+def add_mastery(conn, technique_id, exp):
+    with conn:
+        conn.execute("UPDATE techniques SET mastery_exp = mastery_exp + ? WHERE id = ?", (int(exp), technique_id))
+
+
+# ── Bag ───────────────────────────────────────────────────────────────
+
+def _item(row):
+    d = dict(row)
+    d["data"] = json.loads(d["data"]) if d["data"] else {}
+    return d
+
+
+def get_items(conn, user_id, category=None):
+    sql, args = "SELECT * FROM items WHERE user_id = ?", [user_id]
+    if category:
+        sql += " AND category = ?"
+        args.append(category)
+    return [_item(r) for r in conn.execute(sql + " ORDER BY equipped DESC, id", args)]
+
+
+def get_item(conn, user_id, item_id):
+    row = conn.execute("SELECT * FROM items WHERE id = ? AND user_id = ?", (item_id, user_id)).fetchone()
+    return _item(row) if row else None
+
+
+def slots_used(conn, user_id):
+    return conn.execute("SELECT COUNT(*) FROM items WHERE user_id = ?", (user_id,)).fetchone()[0]
+
+
+def category_counts(conn, user_id):
+    return {r[0]: r[1] for r in conn.execute(
+        "SELECT category, COUNT(*) FROM items WHERE user_id = ? GROUP BY category", (user_id,))}
+
+
+def add_item(conn, user_id, category, key, name, grade=None, qty=1, data=None):
+    """Put an item in the bag. Stackable items merge into an existing stack.
+    Returns False (and stores nothing) when a new slot is needed but the bag is full."""
+    if category in BAG_STACKABLE:
+        row = conn.execute("SELECT id FROM items WHERE user_id = ? AND category = ? AND key = ?",
+                           (user_id, category, key)).fetchone()
+        if row:
+            with conn:
+                conn.execute("UPDATE items SET qty = qty + ? WHERE id = ?", (qty, row[0]))
+            return True
+    cap = conn.execute("SELECT bag_capacity FROM players WHERE user_id = ?", (user_id,)).fetchone()[0]
+    if slots_used(conn, user_id) >= cap:
+        return False
+    with conn:
+        conn.execute(
+            "INSERT INTO items (user_id, category, key, name, grade, qty, data) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (user_id, category, key, name, grade, qty, json.dumps(data) if data else None))
+    return True
+
+
+def remove_item(conn, item_id, qty=1):
+    with conn:
+        conn.execute("UPDATE items SET qty = qty - ? WHERE id = ?", (qty, item_id))
+        conn.execute("DELETE FROM items WHERE id = ? AND qty <= 0", (item_id,))
+
+
+def equipped_weapon(conn, user_id):
+    row = conn.execute("SELECT * FROM items WHERE user_id = ? AND category = 'weapons' AND equipped = 1",
+                       (user_id,)).fetchone()
+    return _item(row) if row else None
+
+
+def equip_weapon(conn, user_id, item_id):
+    with conn:
+        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = 'weapons'", (user_id,))
+        conn.execute("UPDATE items SET equipped = 1 WHERE id = ? AND user_id = ?", (item_id, user_id))
+
+
+# ── Cooldowns ─────────────────────────────────────────────────────────
+
+def cooldown_left(conn, user_id, name, now=None):
+    """Seconds until the cooldown ends (0 when ready)."""
+    now = time.time() if now is None else now
+    row = conn.execute("SELECT until FROM cooldowns WHERE user_id = ? AND name = ?", (user_id, name)).fetchone()
+    return max(0.0, row[0] - now) if row else 0.0
+
+
+def set_cooldown(conn, user_id, name, seconds, now=None):
+    now = time.time() if now is None else now
+    with conn:
+        conn.execute("INSERT OR REPLACE INTO cooldowns (user_id, name, until) VALUES (?, ?, ?)",
+                     (user_id, name, now + seconds))
