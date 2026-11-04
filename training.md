@@ -10,7 +10,7 @@ Every player has one **Internal Qi Rate** (Qi per hour), shown on their profile:
 > Internal Qi Rate: 1,280 Qi/hour (×1.85)
 
 ```
-Final Qi Rate = Base Rate × (1 + Talent + Technique + Patron) × Pill multiplier
+Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multiplier
 ```
 
 - All % bonuses add together, then the pill multiplier applies on top
@@ -48,7 +48,7 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Patron) × Pill multiplie
 
 **Technique:** best equipped technique's training bonus, +5% to +60% (see technique.md)
 
-**Patron (premium):** +15%
+**Heavenly Blessing:** +10% to +150% (see economy.md)
 
 ## Ways to gain Internal Qi
 
