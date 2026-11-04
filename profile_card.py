@@ -82,6 +82,12 @@ def short(n):
     return f"{n:,.0f}"
 
 
+def ordinal(n):
+    """1 -> 1st, 2 -> 2nd, 11 -> 11th"""
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def p(*xy):
     return tuple(v * S for v in xy)
 
@@ -365,7 +371,7 @@ def render_profile(data):
     text(d, (x0, 56), data["realm"].upper(), f_realm, INK)
     realm_w = d.textlength(data["realm"].upper(), font=f_realm) / S
     brush_stroke(d, x0, x0 + realm_w + 10, 128, 9, VERMILION + (230,))
-    spaced(d, (x0, 144), f"{data['phase'].upper()}  ·  {data['layer']}TH LAYER", f_label, VERMILION, 1.6)
+    spaced(d, (x0, 144), f"{data['phase'].upper()}  ·  {ordinal(data['layer']).upper()} LAYER", f_label, VERMILION, 1.6)
 
     # layer path: 10 pips joined by a line
     px0 = x0 + 400

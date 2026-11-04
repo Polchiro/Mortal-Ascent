@@ -1,5 +1,16 @@
-__pycache__/
-*.pyc
+# secrets
+.env
+
+# local data
+*.db
+*.db-journal
+
 # preview images written by the card renderers and scripts/render_cards.py
 *_preview.png
 previews/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
