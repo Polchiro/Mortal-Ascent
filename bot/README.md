@@ -21,6 +21,19 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
 | `/techniques` | All learned techniques with effects, power and mastery bars; equip or unequip (flex slot from Martial Warrior) |
 | `/equipment` | Your weapon, base → final stats, and menus to swap or remove your weapon |
+| `/shop` | Moon Pearl shop: Heavenly Fate Reroll (never lower), Qi pills, +20 bag slots, name change |
+| `/blessing` | The eight Heavenly Blessing tiers; buy one with Moon Pearls (same tier adds 30 days) |
+| `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
+| `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
+| `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
+
+Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call with Join / Leave /
+Start buttons. It stays open 30 / 60 minutes; the finder starts the fight and every winner rolls
+their own chest. Beating a Beast King counts toward the Martial King and Martial Saint requirements.
+
+Rare finds are announced in the channel: Divine weapons, Heaven manuals, the Heaven-Defying Pill
+(0.05% in Jade Chests, raises talent one rank), Saint and Divine talents, and Beast King kills.
 
 ## Gameplay defaults
 
@@ -33,7 +46,15 @@ The design docs leave some things open. Until they are decided, the bot uses the
   a third of the hits. Each use gives +20 mastery EXP.
 - **Coins:** chests hold 10–25 (Wooden), 30–60 (Bronze), 80–150 (Silver), 200–400 (Jade) Lotus
   Coins at Mortal; Normal beasts give 3–8, beaten bandits 10–20. All amounts double each realm.
-- **Elite Lairs and Beast King Dens** are found but cannot be fought yet (team hunts come later).
+- **Team hunts** fight on their own like solo fights. The beast telegraphs a charged attack every 3rd
+  turn (1.5× a normal hit, ignores the 30% cap); fighters with a defense technique guard it 75% of the
+  time. Up to 8 fighters. Winners get 20–40 (Elite) or 60–120 (King) Lotus Coins × realm scale;
+  losing injures everyone for 1 hour. A full team usually wins; a short-handed one rarely does.
+- **/recharge** shows the packages only. Real-money purchases must go through Discord's app
+  monetization (economy.md), which needs setting up in the Discord Developer Portal first.
+- **Physician** costs 1 Lotus Coin per minute of injury left (× realm scale).
+- **Not built because the docs leave them undesigned:** player trading / market, armor and artifacts,
+  Divine pity, profile card themes, Contribution Points and Spirit Stones, regions and weather.
 - **Defeat** keeps chests as well as manuals and weapons; half the coins and herbs found are lost.
 - **Merchant** sells one Qi pill (Mortal grade at tier 1, Yellow at tier 2, Mystic above) for
   40 / 120 / 400 coins and one herb for 10 (× realm scale).

@@ -1,6 +1,7 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
-/meditate, /seclusion, /breakthrough, /practice, /spar, /techniques, /equipment.
+/meditate, /seclusion, /breakthrough, /practice, /spar, /techniques, /equipment,
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary.
 """
 import asyncio
 import io
@@ -12,15 +13,17 @@ import time
 import discord
 from discord import app_commands
 
+import beasts as beast_rules
 import economy
+import talent as talent_rules
 import training
 from balance_card import render_balance
 from profile_card import render_profile
 
-from . import db, trainer
+from . import combat, db, hunt, loot, trainer
 from . import player as rules
-from .views import (ConfirmView, EquipmentView, ExploreView, InventoryView, SparView, TechniquesView,
-                    TrainView)
+from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
+                    TechniquesView, TrainView, blessing_embed, shop_embed)
 
 log = logging.getLogger("mortal-ascent")
 
@@ -116,6 +119,9 @@ def register_commands(bot):
         embed.add_field(name=coin["name"], value=f"{coin['emoji']} {rules.STARTING_LOTUS_COINS}")
         embed.set_footer(text="Use /profile to know yourself.")
         await interaction.response.send_message(embed=embed)
+        news = loot.talent_announcement(user.display_name, talent)
+        if news:
+            await interaction.followup.send(news)
 
     @tree.command(name="profile", description="Show your cultivation profile card")
     @app_commands.describe(member="Whose profile to view (defaults to you)")
@@ -470,3 +476,117 @@ def register_commands(bot):
         view = EquipmentView(bot, interaction.user.id)
         await interaction.response.send_message(embed=view.embed(), view=view)
         view.message = await interaction.original_response()
+
+    @tree.command(name="shop", description="The Moon Pearl shop: rerolls, pills, bag space, name change")
+    async def shop(interaction: discord.Interaction):
+        p = db.get_player(bot.conn, interaction.user.id)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        view = ShopView(bot, interaction.user.id)
+        await interaction.response.send_message(embed=shop_embed(p), view=view)
+        view.message = await interaction.original_response()
+
+    @tree.command(name="blessing", description="View and buy Heavenly Blessings with Moon Pearls")
+    async def blessing(interaction: discord.Interaction):
+        p = db.get_player(bot.conn, interaction.user.id)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        view = BlessingView(bot, interaction.user.id)
+        await interaction.response.send_message(embed=blessing_embed(p), view=view)
+        view.message = await interaction.original_response()
+
+    @tree.command(name="recharge", description="Moon Pearl Pavilion: see the Moon Pearl packages")
+    async def recharge(interaction: discord.Interaction):
+        e = embed("🌙 Moon Pearl Pavilion", "\n".join(
+            [f"**{name}** · ${price} · 🌙 {pearls:,}" for name, price, pearls in economy.RECHARGE_PACKAGES]
+            + ["", f"✨ Your first purchase gives ×{economy.FIRST_PURCHASE_MULTIPLIER} pearls.", "",
+               "*Purchases are not open yet. They must go through Discord's own app monetization, which the "
+               "bot owner switches on in the Discord Developer Portal.*"]))
+        await interaction.response.send_message(embed=e, ephemeral=True)
+
+    @tree.command(name="reroll", description="Fate Reroll: spend Lotus Coins to reroll your talent (it can go lower!)")
+    async def reroll(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        cost = rules.fate_reroll_cost(p)
+        if p["lotus_coins"] < cost:
+            await interaction.response.send_message(
+                f"A Fate Reroll costs 🪷 **{cost:,}** Lotus Coins; you have 🪷 {p['lotus_coins']:,}. "
+                "(Each reroll costs ×1.5 more. The Moon Pearl shop sells one that never goes lower.)", ephemeral=True)
+            return
+
+        async def go():
+            async with bot.db_lock:
+                fresh = db.get_player(bot.conn, uid)
+                price = rules.fate_reroll_cost(fresh)
+                if fresh["lotus_coins"] < price:
+                    return embed("🎲 Fate Reroll", "You can no longer afford it.")
+                new = rules.reroll_talent(fresh["talent"], talent_rules.FATE_REROLL["can_go_lower"])
+                db.update_player(bot.conn, uid, talent=new, lotus_coins=fresh["lotus_coins"] - price,
+                                 fate_rerolls=fresh["fate_rerolls"] + 1)
+            news = loot.talent_announcement(fresh["name"], new) if new != fresh["talent"] else None
+            if news:
+                await interaction.channel.send(news)
+            return embed("🎲 Fate Reroll", f"The Aptitude Stone glows... **{fresh['talent']} → {new}**\n🪷 −{price:,}")
+
+        view = ConfirmView(uid, f"Reroll for {cost:,} coins", go, emoji="🎲")
+        await interaction.response.send_message(embed=embed("🎲 Fate Reroll", (
+            f"Your talent: **{p['talent']}**. A reroll costs 🪷 **{cost:,}** and uses the normal odds, "
+            "so it **can go lower**.")), view=view, ephemeral=True)
+
+    @tree.command(name="physician", description="Pay a physician in Lotus Coins to heal your injury now")
+    async def physician(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        left = rules.injured_for(p)
+        if not left:
+            await interaction.response.send_message("🩺 *\"You look perfectly healthy to me.\"*", ephemeral=True)
+            return
+        cost = rules.physician_cost(p)
+
+        async def heal():
+            async with bot.db_lock:
+                fresh = db.get_player(bot.conn, uid)
+                price = rules.physician_cost(fresh)
+                if fresh["lotus_coins"] < price:
+                    return embed("🩺 Physician", f"You need 🪷 {price:,} but have 🪷 {fresh['lotus_coins']:,}.")
+                db.update_player(bot.conn, uid, injured_until=None, lotus_coins=fresh["lotus_coins"] - price)
+            return embed("🩺 Physician", f"Needles, herbs and a bitter tea. You are healed! 🪷 −{price:,}")
+
+        view = ConfirmView(uid, f"Heal for {cost:,} coins", heal, style=discord.ButtonStyle.success, emoji="🩺")
+        await interaction.response.send_message(embed=embed("🩺 Physician", (
+            f"You are injured for another **{rules.fmt_duration(left)}**. Healing now costs 🪷 **{cost:,}**.")),
+            view=view, ephemeral=True)
+
+    @tree.command(name="bestiary", description="The beasts of a realm, with their strength against you")
+    @app_commands.describe(realm="Which realm's beasts (defaults to yours)")
+    @app_commands.choices(realm=[app_commands.Choice(name=r, value=r) for r in rules.REALM_ORDER])
+    async def bestiary(interaction: discord.Interaction, realm: app_commands.Choice[str] | None = None):
+        p = db.get_player(bot.conn, interaction.user.id)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        r = realm.value if realm else p["realm"]
+        ref = dict(p, realm=r, layer=p["layer"] if r == p["realm"] else 1)
+        icons = {"normal": "🐾 Normal", "elite": "⚔️ Elite", "beast_king": "👑 Beast King"}
+        e = embed(f"📖 Bestiary · {r}", "Stats at " + (f"your layer ({rules.ordinal(ref['layer'])})" if r == p["realm"]
+                                                     else "1st Layer") + ". Elites and Kings are for teams; "
+                  "find their lairs in /explore.")
+        for b in beast_rules.BEASTS[r]:
+            st = (combat.beast_stats(ref, b) if b[1] == "normal"
+                  else hunt.team_beast({"beast": b}, [ref]))
+            dodge = " · 15% dodge" if st["dodge"] else ""
+            e.add_field(name=f"{b[0]}", value=(f"{icons[b[1]]} · {b[2].title()}\n❤️ {st['max_hp']:,} · "
+                                                f"⚔️ {st['attack']:,.0f} · 🛡️ {st['defense']:,.0f}{dodge}"))
+        kills = rules.king_kills(p)
+        if kills:
+            e.set_footer(text="Beast Kings slain in: " + ", ".join(kills))
+        await interaction.response.send_message(embed=e)

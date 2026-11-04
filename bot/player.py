@@ -54,6 +54,32 @@ def roll_talent(rng=random):
     return rng.choices(names, weights=[talent.TALENT_ROLL_ODDS[n] for n in names])[0]
 
 
+PHYSICIAN_COINS_PER_MINUTE = 1      # DEFAULT price (× realm scale) until economy.md sets one
+
+
+def physician_cost(player, now=None):
+    minutes = -(-injured_for(player, now) // 60)
+    return int(max(1, minutes) * PHYSICIAN_COINS_PER_MINUTE * realm_scale(player["realm"]))
+
+
+def fate_reroll_cost(player):
+    spec = talent.FATE_REROLL
+    return round(spec["base_cost"] * spec["cost_multiplier"] ** (player.get("fate_rerolls") or 0))
+
+
+def reroll_talent(current, can_go_lower=True, rng=random):
+    new = roll_talent(rng)
+    if not can_go_lower and talent.TALENTS.index(new) < talent.TALENTS.index(current):
+        return current
+    return new
+
+
+def talent_up(current):
+    i = min(talent.TALENTS.index(current) + talent.HEAVEN_DEFYING_PILL["rank_increase"],
+            talent.TALENTS.index(talent.HEAVEN_DEFYING_PILL["max_talent"]))
+    return talent.TALENTS[i]
+
+
 def starting_techniques():
     return [{"name": STARTING_TECHNIQUE_NAMES[t["type"]], "type": t["type"], "grade": t["grade"]}
             for t in technique.STARTING_TECHNIQUES]
@@ -124,9 +150,16 @@ def realm_requirement_missing(player, techniques, target_realm):
     if not any((grade == "any" or t["grade"] == grade) and stage_of(t) >= need_idx for t in techniques):
         what = "a technique" if grade == "any" else f"a {grade} technique"
         return f"{what} at **{stage}**"
-    if req.get("beast_king_kill"):
-        return "a Beast King kill (team hunts are not in the game yet)"
+    need_king = req.get("beast_king_kill")
+    if need_king:
+        realm = player["realm"] if need_king == "own_realm" else need_king
+        if realm not in king_kills(player):
+            return f"a victory over the **{realm}** Beast King (find its den in /explore and hunt it with a team)"
     return None
+
+
+def king_kills(player):
+    return [r for r in (player.get("king_kills") or "").split(",") if r]
 
 
 def next_gate(player):

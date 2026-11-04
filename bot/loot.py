@@ -10,6 +10,7 @@ import time
 import economy
 import equipments
 import explore
+import talent
 import technique
 import training
 
@@ -80,6 +81,26 @@ def pill(grade):
     return {"category": "pills", "key": grade, "name": f"{grade} Qi Pill", "grade": grade}
 
 
+HEAVEN_DEFYING = {"category": "pills", "key": "heaven_defying", "name": "Heaven-Defying Pill", "grade": "Heaven"}
+
+
+def announcement(player_name, item):
+    """Server-wide announcement text for a rare find, or None (equipment.md / explore.md)."""
+    if item["category"] == "weapons" and item["grade"] in equipments.ANNOUNCE_TIERS:
+        return f"📢 **{player_name}** has found a Divine weapon: **{item['name']}**! The heavens take notice."
+    if item["category"] == "manuals" and item["grade"] in explore.ANNOUNCE_MANUAL_GRADES:
+        return f"📢 **{player_name}** has found a Heaven-grade manual: **{item['name']}**!"
+    if item.get("key") == "heaven_defying":
+        return f"📢 **{player_name}** has found a **Heaven-Defying Pill**!"
+    return None
+
+
+def talent_announcement(player_name, talent_name):
+    if talent_name in talent.ANNOUNCE_TALENTS:
+        return f"📢 The Aptitude Stone blazes! **{player_name}** has **{talent_name} Talent**!"
+    return None
+
+
 def open_chest(player, tier, rng=random):
     """Roll a chest's contents. Returns (coins, [items])."""
     coins = roll_coins(player, CHEST_COINS[tier], rng)
@@ -88,6 +109,8 @@ def open_chest(player, tier, rng=random):
         items.append(roll_manual(pick(explore.CHEST_MANUAL_GRADE_ODDS[tier], rng), rng))
     if rng.random() < equipments.CHEST_WEAPON_CHANCE[tier]:
         items.append(roll_weapon(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
+    if tier == "jade" and rng.random() < talent.HEAVEN_DEFYING_PILL["jade_chest_chance"]:
+        items.append(dict(HEAVEN_DEFYING))
     return coins, items
 
 
@@ -118,8 +141,8 @@ def store(conn, user_id, items):
 
 # ── Using items from the bag ──────────────────────────────────────────
 
-def use_item(conn, user_id, item_id, rng=random, now=None):
-    """Use one item. Returns a message for the player."""
+def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
+    """Use one item. Returns a message for the player. Rare finds are appended to `announce`."""
     now = time.time() if now is None else now
     p = db.get_player(conn, user_id)
     item = db.get_item(conn, user_id, item_id)
@@ -132,6 +155,8 @@ def use_item(conn, user_id, item_id, rng=random, now=None):
         db.remove_item(conn, item_id)
         db.add_coins(conn, user_id, coins)
         stored, lost = store(conn, user_id, found)
+        if announce is not None:
+            announce += [a for a in (announcement(p["name"], i) for i in stored) if a]
         lines = [f"{CHEST_EMOJI[item['key']]} You open the **{item['name']}**...", f"🪷 **{coins:,}** Lotus Coins"]
         lines += [f"✨ **{describe(i)}**" for i in stored]
         lines += [f"⚠️ Your bag is full, so you left **{describe(i)}** behind." for i in lost]
@@ -164,6 +189,16 @@ def use_item(conn, user_id, item_id, rng=random, now=None):
         db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"], rules.technique_slots(p["realm"]))
         return (f"📜 You comprehend **{t['name']}** ({t['grade']} {t['type']}) and equip it "
                 f"in your {t['type']} slot.")
+
+    if cat == "pills" and item["key"] == "heaven_defying":
+        new = rules.talent_up(p["talent"])
+        if new == p["talent"]:
+            return f"Your talent is already **{p['talent']}**. The pill would be wasted."
+        db.remove_item(conn, item_id)
+        db.update_player(conn, user_id, talent=new)
+        if announce is not None and talent_announcement(p["name"], new):
+            announce.append(talent_announcement(p["name"], new))
+        return f"🔥 The pill burns through your meridians... Your talent rises from **{p['talent']}** to **{new}**!"
 
     if cat == "pills":
         current = rules.active_pill(p, now)

@@ -84,6 +84,8 @@ PLAYER_COLUMNS = {
     "qi_collected_at":      "REAL",      # last /meditate (passive Qi gathers from here)
     "seclusion_start":      "REAL",
     "seclusion_end":        "REAL",
+    "fate_rerolls":         "INTEGER NOT NULL DEFAULT 0",    # Lotus Coin rerolls used (cost ×1.5 each)
+    "king_kills":           "TEXT NOT NULL DEFAULT ''",       # realms whose Beast King you helped slay
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial

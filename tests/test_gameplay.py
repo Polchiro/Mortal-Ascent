@@ -477,7 +477,8 @@ def test_all_commands_register():
             c.to_dict(bot.tree)
         return names
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
-                                 "seclusion", "breakthrough", "practice", "spar", "techniques", "equipment"}
+                                 "seclusion", "breakthrough", "practice", "spar", "techniques", "equipment",
+                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary"}
 
 
 # ── tier 2 challenges ─────────────────────────────────────────────────
@@ -512,3 +513,100 @@ def test_tier_two_pool_includes_new_challenges():
     rng = random.Random(1)
     seen = {trainer.roll_session({"realm": "Martial Expert"}, rng)["challenge"] for _ in range(200)}
     assert {"ambush", "find_the_weakness"} <= seen
+
+
+# ── economy, hunts, chests ────────────────────────────────────────────
+
+def test_shop_purchases(conn):
+    from bot.views import buy_shop_item
+    new_player(conn, talent="Gifted")
+    msg, _ = buy_shop_item(conn, 1, "mortal_qi_pill_x3")
+    assert "need" in msg
+    db.update_player(conn, 1, moon_pearls=2000)
+    buy_shop_item(conn, 1, "mortal_qi_pill_x3")
+    assert db.get_items(conn, 1, "pills")[0]["qty"] == 3
+    buy_shop_item(conn, 1, "inventory_expansion_20")
+    buy_shop_item(conn, 1, "name_change", "Iron Lotus")
+    buy_shop_item(conn, 1, "heavenly_fate_reroll", rng=random.Random(0))
+    p = db.get_player(conn, 1)
+    assert p["bag_capacity"] == 80 and p["name"] == "Iron Lotus"
+    assert rules.talent.TALENTS.index(p["talent"]) >= 1          # never lower than Gifted
+    assert p["moon_pearls"] == 2000 - 60 - 300 - 200 - 600
+
+
+def test_blessing_same_tier_extends_other_replaces(conn):
+    from bot.views import buy_blessing
+    new_player(conn)
+    db.update_player(conn, 1, moon_pearls=5000)
+    buy_blessing(conn, 1, "Gentle Breeze", now=0)
+    buy_blessing(conn, 1, "Gentle Breeze", now=0)
+    assert db.get_player(conn, 1)["blessing_expires"] == 60 * 86400
+    buy_blessing(conn, 1, "Spring Rain", now=86400)
+    p = db.get_player(conn, 1)
+    assert p["blessing_tier"] == "Spring Rain" and p["blessing_expires"] == 31 * 86400
+    assert p["moon_pearls"] == 5000 - 300 - 300 - 700
+
+
+def test_fate_reroll_cost_grows():
+    assert rules.fate_reroll_cost({"fate_rerolls": 0}) == 10000
+    assert rules.fate_reroll_cost({"fate_rerolls": 2}) == 22500
+
+
+def test_heaven_defying_pill_raises_talent(conn):
+    new_player(conn, talent="Heavenly")
+    db.add_item(conn, 1, **loot.HEAVEN_DEFYING)
+    news = []
+    loot.use_item(conn, 1, db.get_items(conn, 1, "pills")[0]["id"], announce=news)
+    assert db.get_player(conn, 1)["talent"] == "Saint" and news     # Saint is announced
+    assert db.get_items(conn, 1, "pills") == []
+
+
+def test_rare_drop_announcements():
+    assert loot.announcement("A", loot.roll_weapon("divine", random.Random(0)))
+    assert loot.announcement("A", loot.manual("heaven_rending_palm"))
+    assert loot.announcement("A", loot.roll_weapon("spirit", random.Random(0))) is None
+    assert loot.talent_announcement("A", "Saint") and not loot.talent_announcement("A", "Genius")
+
+
+def test_physician_cost(conn):
+    p = new_player(conn)
+    p["injured_until"] = 3600
+    assert rules.physician_cost(p, now=0) == 60
+
+
+def test_team_hunt_elite_and_king(conn):
+    from bot import hunt
+    for uid in (1, 2, 3):
+        new_player(conn, uid)
+    p = db.get_player(conn, 1)
+    lair = hunt.roll_lair(p, "elite", random.Random(0))
+    beast = hunt.team_beast(lair, [db.get_player(conn, u) for u in (1, 2, 3, 4) if db.get_player(conn, u)])
+    assert beast["max_hp"] >= rules.base_stats("Mortal", 1)[0] * 5 * 0.85 - 1
+    won, lines, _ = hunt.resolve(conn, lair, [1, 2, 3], random.Random(3))
+    assert len(lines) >= 4
+    if won:
+        assert db.get_player(conn, 2)["beasts_slain"] == 1
+    else:
+        assert rules.injured_for(db.get_player(conn, 2)) > 0
+    king = dict(hunt.roll_lair(p, "beast_king", random.Random(0)))
+    for _ in range(30):
+        won, _, news = hunt.resolve(conn, king, [1], random.Random(1))
+        assert not won                       # one Mortal can't kill a ×12 HP Beast King
+        db.update_player(conn, 1, injured_until=None)
+
+
+def test_king_kill_unlocks_realm_requirement():
+    p = {"realm": "Martial Grandmaster", "king_kills": ""}
+    techs = [{"grade": "Mystic", "mastery_exp": 0, "stage": 2}]
+    assert "Beast King" in rules.realm_requirement_missing(p, techs, "Martial King")
+    p["king_kills"] = "Martial Grandmaster"
+    assert rules.realm_requirement_missing(p, techs, "Martial King") is None
+
+
+def test_explore_lair_creates_hunt(conn):
+    new_player(conn)
+    e = Expedition(conn, 1, random.Random(0))
+    e.next_step()
+    e.paths["left"] = ("beast_king_den", "clue")
+    e.choose("left")
+    assert e.lair and e.lair["tier"] == "beast_king"

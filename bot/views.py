@@ -13,15 +13,17 @@ import time
 
 import discord
 
+import economy
 import equipments
 import explore
+import talent as talent_rules
 import training
 from inventory_card import (CHEST_CHARS, MATERIAL_CHAR, PER_PAGE, manual_item, render_inventory,
                             weapon_item)
 from profile_card import GRADES, JADE
 import technique
 
-from . import db, loot, mastery, trainer
+from . import db, hunt, loot, mastery, trainer
 from . import player as rules
 from .expedition import PATH_EMOJI, Expedition
 
@@ -94,8 +96,9 @@ def tile_for(item, learned_names):
                            equipped=bool(item["equipped"]))
     if cat == "pills":
         char, color = GRADES[item["grade"]]
-        return {"char": char, "color": color, "name": item["name"], "qty": qty,
-                "sub": f"×{training.QI_PILLS[item['grade']]} Qi · {training.QI_PILL_DURATION_HOURS}h"}
+        sub = ("Talent +1 rank" if item["key"] == "heaven_defying"
+               else f"×{training.QI_PILLS[item['grade']]} Qi · {training.QI_PILL_DURATION_HOURS}h")
+        return {"char": char, "color": color, "name": item["name"], "qty": qty, "sub": sub}
     if cat == "chests":
         char, color = CHEST_CHARS[item["key"]]
         return {"char": char, "color": color, "name": item["name"], "qty": qty, "sub": "Open for loot"}
@@ -166,11 +169,14 @@ class InventoryView(OwnedView):
     async def on_use(self, interaction):
         item_id = int(interaction.data["values"][0])
         await interaction.response.defer()
+        news = []
         async with self.bot.db_lock:
-            msg = loot.use_item(self.bot.conn, self.owner_id, item_id)
+            msg = loot.use_item(self.bot.conn, self.owner_id, item_id, announce=news)
         file = await self.render()
         await interaction.edit_original_response(attachments=[file], view=self)
         await interaction.followup.send(msg, ephemeral=True)
+        for line in news:
+            await interaction.followup.send(line)
 
     async def on_timeout(self):
         self.disable_all()
@@ -252,10 +258,20 @@ class ExploreView(OwnedView):
 
     merchant_step = None
 
+    lair_posted = False
+    news_sent = False
+
     async def update(self, interaction):
         self.build()
         await interaction.response.edit_message(embed=self.embed(), view=self)
         self.notice = None
+        if self.exp.lair and not self.lair_posted:
+            self.lair_posted = True
+            await post_hunt(self.bot, interaction, self.exp.lair, self.exp.player)
+        if self.exp.over and not self.news_sent:
+            self.news_sent = True
+            for line in self.exp.announce:
+                await interaction.followup.send(line)
         if self.exp.over:
             self.stop()
             self.bot.busy.discard((self.owner_id, "explore"))
@@ -916,3 +932,258 @@ class EquipmentView(OwnedView):
                 await self.message.edit(view=None)
             except discord.HTTPException:
                 pass
+
+
+# ── Team hunts ────────────────────────────────────────────────────────
+
+async def post_hunt(bot, interaction, lair, finder):
+    view = HuntView(bot, lair, finder)
+    content = "📢 **Server-wide alert!** A Beast King has been sighted!" if lair["tier"] == "beast_king" else None
+    view.message = await interaction.followup.send(content=content, embed=view.embed(), view=view, wait=True)
+
+
+class HuntView(discord.ui.View):
+    def __init__(self, bot, lair, finder):
+        super().__init__(timeout=max(30, lair["closes"] - time.time()))
+        self.bot, self.lair = bot, lair
+        self.leader = finder["user_id"]
+        self.members = {finder["user_id"]: finder["name"]}
+        self.result = None
+        self.message = None
+        self.join_btn = OwnedView.button(self, "Join hunt", self.on_join, emoji="⚔️", style=discord.ButtonStyle.success)
+        OwnedView.button(self, "Leave", self.on_leave, emoji="🚶")
+        OwnedView.button(self, "Start the hunt", self.on_start, emoji="🔥", style=discord.ButtonStyle.danger)
+
+    def embed(self):
+        name, tier, role = self.lair["beast"]
+        size = beasts_team_size(tier)
+        label = "👑 Beast King Den" if tier == "beast_king" else "⚔️ Elite Lair"
+        e = discord.Embed(title=f"{label}: {name}", color=COLOR)
+        if self.result:
+            e.description = self.result
+            return e
+        e.description = (f"A **{name}** ({role.title()}, {self.lair['realm']}) waits. Meant for a team of **{size}**; "
+                         f"each extra fighter adds +20% to its HP. Its stats follow the team's strongest member.\n"
+                         f"Watch for its **charged attacks**.\n\nThe lair closes <t:{int(self.lair['closes'])}:R>. "
+                         f"The finder starts the hunt.")
+        e.add_field(name=f"Team ({len(self.members)}/{hunt.MAX_TEAM})", value="\n".join(self.members.values()))
+        return e
+
+    async def on_error(self, interaction, error, item):
+        log.exception("Hunt view failed", exc_info=error)
+        await safe_reply(interaction, ERROR_MSG)
+
+    async def on_join(self, interaction):
+        uid = interaction.user.id
+        if uid in self.members:
+            await interaction.response.send_message("You are already in this hunt.", ephemeral=True)
+            return
+        if len(self.members) >= hunt.MAX_TEAM:
+            await interaction.response.send_message("The hunting party is full.", ephemeral=True)
+            return
+        p = db.get_player(self.bot.conn, uid)
+        why = hunt.can_join(p)
+        if why:
+            await interaction.response.send_message(why, ephemeral=True)
+            return
+        self.members[uid] = p["name"]
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_leave(self, interaction):
+        uid = interaction.user.id
+        if uid == self.leader or uid not in self.members:
+            await interaction.response.send_message(
+                "The finder can't leave; just let the lair close." if uid == self.leader else "You are not in this hunt.",
+                ephemeral=True)
+            return
+        del self.members[uid]
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_start(self, interaction):
+        if interaction.user.id != self.leader:
+            await interaction.response.send_message("Only the one who found the lair can start the hunt.", ephemeral=True)
+            return
+        await interaction.response.defer()
+        async with self.bot.db_lock:
+            fit = [u for u in self.members if not hunt.can_join(db.get_player(self.bot.conn, u))]
+            won, lines, news = hunt.resolve(self.bot.conn, self.lair, fit or [self.leader])
+        head = "🏆 **Victory!**" if won else "☠️ **The hunt failed.** Everyone limps home injured."
+        self.result = "\n".join([head] + lines)
+        self.clear_items()
+        self.stop()
+        await interaction.edit_original_response(content=None, embed=self.embed(), view=None)
+        for line in news:
+            await interaction.followup.send(line)
+
+    async def on_timeout(self):
+        if self.result or not self.message:
+            return
+        self.result = f"The {self.lair['beast'][0]} has moved on. The lair is empty."
+        self.clear_items()
+        try:
+            await self.message.edit(content=None, embed=self.embed(), view=None)
+        except discord.HTTPException:
+            pass
+
+
+def beasts_team_size(tier):
+    import beasts
+    return beasts.BEAST_TIERS[tier]["team_size"]
+
+
+# ── Moon Pearl shop and Heavenly Blessings ────────────────────────────
+
+SHOP_ITEMS = {
+    # key in economy.PEARL_SHOP: (label, description)
+    "heavenly_fate_reroll":   ("🌟 Heavenly Fate Reroll", "Reroll your talent; it never goes lower"),
+    "mortal_qi_pill_x3":      ("💊 Mortal Qi Pill ×3", "×1.2 Qi Rate for 4h each"),
+    "yellow_qi_pill_x3":      ("💊 Yellow Qi Pill ×3", "×1.4 Qi Rate for 4h each"),
+    "mystic_qi_pill_x1":      ("💊 Mystic Qi Pill ×1", "×1.7 Qi Rate for 4h"),
+    "inventory_expansion_20": ("🎒 Inventory expansion", "+20 bag slots"),
+    "name_change":            ("✏️ Name change", "Change the name on your cards"),
+}
+SHOP_PILLS = {"mortal_qi_pill_x3": ("Mortal", 3), "yellow_qi_pill_x3": ("Yellow", 3), "mystic_qi_pill_x1": ("Mystic", 1)}
+
+
+def buy_shop_item(conn, user_id, key, new_name=None, rng=random):
+    """Spend Moon Pearls on a shop item. Returns (message, announcement or None)."""
+    p = db.get_player(conn, user_id)
+    price = economy.PEARL_SHOP[key]
+    if p["moon_pearls"] < price:
+        return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}.", None
+    news = None
+    if key in SHOP_PILLS:
+        grade, qty = SHOP_PILLS[key]
+        if not db.add_item(conn, user_id, **dict(loot.pill(grade), qty=qty)):
+            return "Your bag is full.", None
+        msg = f"💊 {qty}× **{grade} Qi Pill** added to your bag."
+    elif key == "inventory_expansion_20":
+        db.update_player(conn, user_id, bag_capacity=p["bag_capacity"] + 20)
+        msg = f"🎒 Your bag now holds **{p['bag_capacity'] + 20}** slots."
+    elif key == "name_change":
+        new_name = (new_name or "").strip()[:32]
+        if not new_name:
+            return "Please give a name.", None
+        db.update_player(conn, user_id, name=new_name)
+        msg = f"✏️ You are now known as **{new_name}**."
+    else:   # heavenly_fate_reroll
+        new = rules.reroll_talent(p["talent"], talent_rules.HEAVENLY_FATE_REROLL["can_go_lower"], rng)
+        db.update_player(conn, user_id, talent=new)
+        msg = (f"🌟 The Aptitude Stone glows... **{new} Talent!**" if new != p["talent"]
+               else f"🌟 The stone flickers and settles. You remain **{new}** (it never goes lower).")
+        if new != p["talent"]:
+            news = loot.talent_announcement(p["name"], new)
+    db.update_player(conn, user_id, moon_pearls=p["moon_pearls"] - price)
+    return msg + f"\n🌙 −{price:,} Moon Pearls", news
+
+
+class NameModal(discord.ui.Modal, title="Change your name"):
+    name = discord.ui.TextInput(label="New name", max_length=32, min_length=1)
+
+    def __init__(self, bot):
+        super().__init__()
+        self.bot = bot
+
+    async def on_submit(self, interaction):
+        async with self.bot.db_lock:
+            msg, _ = buy_shop_item(self.bot.conn, interaction.user.id, "name_change", str(self.name))
+        await interaction.response.send_message(msg, ephemeral=True)
+
+
+def shop_embed(p):
+    e = discord.Embed(title="🌙 Moon Pearl Shop", color=COLOR,
+                      description=f"Speed and style, never power. You have **🌙 {p['moon_pearls']:,}** Moon Pearls.")
+    for key, (label, desc) in SHOP_ITEMS.items():
+        e.add_field(name=f"{label} · 🌙 {economy.PEARL_SHOP[key]:,}", value=desc, inline=False)
+    lo, hi = economy.PEARL_SHOP["profile_theme"]
+    e.add_field(name=f"🖼️ Profile card themes · 🌙 {lo}–{hi}", value="*Coming in a later update.*", inline=False)
+    e.set_footer(text="Get Moon Pearls with /recharge or by trading (coming later).")
+    return e
+
+
+class ShopView(OwnedView):
+    def __init__(self, bot, owner_id):
+        super().__init__(owner_id, timeout=180)
+        self.bot = bot
+        sel = discord.ui.Select(placeholder="Buy something...", options=[
+            discord.SelectOption(label=f"{label} · {economy.PEARL_SHOP[k]:,} pearls"[:100], value=k)
+            for k, (label, _) in SHOP_ITEMS.items()])
+        sel.callback = self.on_pick
+        self.add_item(sel)
+
+    async def on_pick(self, interaction):
+        key = interaction.data["values"][0]
+        if key == "name_change":
+            await interaction.response.send_modal(NameModal(self.bot))
+            return
+        label = SHOP_ITEMS[key][0]
+
+        async def buy():
+            async with self.bot.db_lock:
+                msg, news = buy_shop_item(self.bot.conn, self.owner_id, key)
+            if news:
+                await interaction.channel.send(news)
+            return discord.Embed(title=label, description=msg, color=COLOR)
+
+        confirm = ConfirmView(self.owner_id, f"Buy for {economy.PEARL_SHOP[key]:,} pearls", buy,
+                              style=discord.ButtonStyle.success, emoji="🌙")
+        await interaction.response.send_message(f"Buy **{label}**?", view=confirm, ephemeral=True)
+
+
+BLESSING_EMOJI = {"Gentle Breeze": "🍃", "Spring Rain": "🌧️", "Bright Moon": "🌕", "Blazing Sun": "☀️",
+                  "Rolling Thunder": "⚡", "Starfall": "🌠", "Heavenly Dragon": "🐉", "Eternal Dao": "☯️"}
+
+
+def buy_blessing(conn, user_id, tier, now=None):
+    """Same tier adds 30 days; a different tier replaces the current one with a fresh 30 days."""
+    now = time.time() if now is None else now
+    p = db.get_player(conn, user_id)
+    price = economy.BLESSING_TIERS[tier]["price"]
+    if p["moon_pearls"] < price:
+        return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}."
+    days = economy.BLESSING_DURATION_DAYS * 86400
+    current = rules.active_blessing(p, now)
+    if current and current[0] == tier:
+        expires = p["blessing_expires"] + days
+        msg = f"{BLESSING_EMOJI[tier]} Your **{tier}** blessing is extended by {economy.BLESSING_DURATION_DAYS} days."
+    else:
+        expires = now + days
+        msg = f"{BLESSING_EMOJI[tier]} Heaven smiles on you: **{tier}** for {economy.BLESSING_DURATION_DAYS} days!"
+        if current:
+            msg += f" (It replaces {current[0]}.)"
+    db.update_player(conn, user_id, moon_pearls=p["moon_pearls"] - price, blessing_tier=tier, blessing_expires=expires)
+    return msg + f"\n🌙 −{price:,} Moon Pearls"
+
+
+def blessing_embed(p):
+    b = rules.active_blessing(p)
+    e = discord.Embed(title="☯️ Heavenly Blessings", color=COLOR, description=(
+        f"You have **🌙 {p['moon_pearls']:,}** Moon Pearls. "
+        + (f"Active: **{b[0]}**, {b[1]} day(s) left." if b else "No active blessing.")
+        + "\nBuying the same tier adds 30 days; a different tier replaces yours with a fresh 30 days (no refund)."))
+    for tier, t in economy.BLESSING_TIERS.items():
+        e.add_field(name=f"{BLESSING_EMOJI[tier]} {tier} · 🌙 {t['price']:,}", value=rules.blessing_perks(tier), inline=False)
+    return e
+
+
+class BlessingView(OwnedView):
+    def __init__(self, bot, owner_id):
+        super().__init__(owner_id, timeout=180)
+        self.bot = bot
+        sel = discord.ui.Select(placeholder="Choose a blessing...", options=[
+            discord.SelectOption(label=f"{tier} · {t['price']:,} pearls", value=tier, emoji=BLESSING_EMOJI[tier])
+            for tier, t in economy.BLESSING_TIERS.items()])
+        sel.callback = self.on_pick
+        self.add_item(sel)
+
+    async def on_pick(self, interaction):
+        tier = interaction.data["values"][0]
+
+        async def buy():
+            async with self.bot.db_lock:
+                msg = buy_blessing(self.bot.conn, self.owner_id, tier)
+            return discord.Embed(title="☯️ Heavenly Blessing", description=msg, color=COLOR)
+
+        confirm = ConfirmView(self.owner_id, f"Buy {tier}", buy, style=discord.ButtonStyle.success, emoji="☯️")
+        await interaction.response.send_message(
+            f"Buy **{tier}** for 🌙 {economy.BLESSING_TIERS[tier]['price']:,}?", view=confirm, ephemeral=True)

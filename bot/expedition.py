@@ -13,7 +13,7 @@ import explore
 import technique
 import training
 
-from . import combat, db, loot, mastery
+from . import combat, db, hunt, loot, mastery
 from . import player as rules
 
 CLUES = {
@@ -80,6 +80,8 @@ class Expedition:
         self.defeated = False
         self.summary = []
         self.notes = []           # mastery trial reminders, shown at the end
+        self.lair = None          # set when an Elite Lair or Beast King Den is found
+        self.announce = []        # server-wide announcements for rare finds
 
     # ── steps ────────────────────────────────────────────────────────
 
@@ -277,15 +279,15 @@ class Expedition:
                 self.story.append(f"**{t['name']}** can learn nothing more until it passes its trial.")
 
     def _elite_lair(self):
-        elites = [b for b in beasts.BEASTS[self.player["realm"]] if b[1] == "elite"]
-        name = self.rng.choice(elites)[0]
-        self.story.append(f"⚔️ You find the lair of a **{name}** (Elite). It is far too strong to face alone. "
-                          "*Team hunts are coming soon*, so you slip away quietly.")
+        self.lair = hunt.roll_lair(self.player, "elite", self.rng)
+        self.story.append(f"⚔️ You find the lair of a **{self.lair['beast'][0]}** (Elite)! It is far too strong to face "
+                          f"alone. You mark the spot and call for a team: the lair stays open "
+                          f"{hunt.open_minutes('elite')} minutes.")
 
     def _beast_king_den(self):
-        king = next(b for b in beasts.BEASTS[self.player["realm"]] if b[1] == "beast_king")[0]
-        self.story.append(f"👑 The den of **{king}**, a Beast King! Its aura alone makes your knees shake. "
-                          "*Team hunts are coming soon*, so you retreat.")
+        self.lair = hunt.roll_lair(self.player, "beast_king", self.rng)
+        self.story.append(f"👑 The den of **{self.lair['beast'][0]}**, a Beast King! Its aura alone makes your knees "
+                          f"shake. You send up a signal flare: the den stays open {hunt.open_minutes('beast_king')} minutes.")
 
     def _blessed_land(self):
         kind = loot.pick(explore.BLESSED_LAND_TYPE, self.rng)
@@ -335,6 +337,7 @@ class Expedition:
             lines.append(f"☠️ **You were defeated.** Half of the coins and herbs you found are lost, and you are "
                          f"injured for {explore.DEFEAT_INJURY_HOURS} hour(s).")
         stored, lost = loot.store(self.conn, self.user_id, items)
+        self.announce += [a for a in (loot.announcement(self.player["name"], i) for i in stored) if a]
         db.add_coins(self.conn, self.user_id, coins)
         fields = {"beasts_slain": self.player["beasts_slain"] + self.beasts_slain}
         if self.defeated:
