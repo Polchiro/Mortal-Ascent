@@ -67,3 +67,32 @@ def test_cards_render(conn):
     assert img.size == (1200, 720)
     p["blessing_tier"], p["blessing_expires"] = "Starfall", time.time() + 86400
     assert render_balance(rules.balance_data(p)).size == (1200, 500)
+
+
+def test_cards_render_without_any_system_fonts(conn, monkeypatch):
+    """Windows has no DejaVu: rendering must fall back instead of raising (the /profile hang)."""
+    import profile_card
+    from balance_card import render_balance
+
+    monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
+    monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])
+    p = new_player(conn)
+    assert profile_card.render_profile(rules.profile_data(p, db.get_techniques(conn, 1), 1)).size == (1200, 720)
+    assert render_balance(rules.balance_data(p)).size == (1200, 500)
+
+
+def test_command_error_always_answers():
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+
+    from bot.client import MortalAscent
+
+    bot = MortalAscent(":memory:")
+    for deferred in (True, False):
+        inter = MagicMock()
+        inter.response.is_done.return_value = deferred
+        inter.response.send_message = AsyncMock()
+        inter.followup.send = AsyncMock()
+        asyncio.run(bot.on_app_command_error(inter, RuntimeError("boom")))
+        sent = inter.followup.send if deferred else inter.response.send_message
+        sent.assert_awaited_once()

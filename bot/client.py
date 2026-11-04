@@ -36,7 +36,20 @@ class MortalAscent(discord.Client):
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
+        self.tree.on_error = self.on_app_command_error
         register_commands(self)
+
+    async def on_app_command_error(self, interaction, error):
+        """Log any command failure and always answer, so Discord never hangs on "thinking..."."""
+        log.exception("/%s failed", interaction.command.name if interaction.command else "?", exc_info=error)
+        msg = "⚠️ Something went wrong on our side. The error was logged; please try again in a moment."
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+        except discord.HTTPException:
+            log.exception("Could not send the error message")
 
     async def setup_hook(self):
         if self.guild_id:
@@ -59,7 +72,8 @@ async def render_with_avatar(member, render, make_data):
         try:
             avatar_path = os.path.join(tmp, "avatar.png")
             await member.display_avatar.with_format("png").with_size(256).save(avatar_path)
-        except (discord.HTTPException, discord.NotFound):
+        except Exception:
+            log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
             avatar_path = None
         data = make_data(avatar_path)
         return await asyncio.to_thread(render, data)

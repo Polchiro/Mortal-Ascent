@@ -14,8 +14,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FONT_DIR = os.path.join(HERE, "fonts")
 CJK_CANDIDATES = [
     os.path.join(FONT_DIR, "NotoSerifSC-Bold.otf"),
-    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",   # Linux
+    "msyhbd.ttc", "msyh.ttc", "simhei.ttf", "simsun.ttc",     # Windows
+    "/System/Library/Fonts/PingFang.ttc",                     # macOS
 ]
+# System fonts to try when a font in fonts/ is missing. Pillow looks up bare
+# file names in the OS font folders (e.g. C:\Windows\Fonts on Windows).
+FALLBACK_FONTS = ["DejaVuSans.ttf", "arial.ttf", "segoeui.ttf",
+                  "/System/Library/Fonts/Supplemental/Arial.ttf"]
 
 S = 2                      # render at 2x, downscale for smooth edges
 W, H = 1200, 720
@@ -57,21 +63,36 @@ MASTERY_STAGES = ["Glimpsing the Gate", "Entering the Hall", "Pure Flame",
 
 # ── helpers ───────────────────────────────────────────────────────────
 
+def fallback_font(size):
+    """First system font that loads, else Pillow's built-in font. Never raises."""
+    for name in FALLBACK_FONTS:
+        try:
+            return ImageFont.truetype(name, size * S)
+        except OSError:
+            continue
+    return ImageFont.load_default(size * S)
+
+
 def font(name, size, weight=None):
     try:
         f = ImageFont.truetype(os.path.join(FONT_DIR, name), size * S)
-        if weight:
+    except OSError:
+        return fallback_font(size)
+    if weight:
+        try:
             f.set_variation_by_name(weight)
-        return f
-    except Exception:
-        return ImageFont.truetype("DejaVuSans.ttf", size * S)
+        except Exception:
+            pass   # not a variable font: keep its default weight
+    return f
 
 
 def cjk(size):
     for path in CJK_CANDIDATES:
-        if os.path.exists(path):
+        try:
             return ImageFont.truetype(path, size * S)
-    return ImageFont.truetype("DejaVuSans.ttf", size * S)
+        except OSError:
+            continue
+    return fallback_font(size)
 
 
 def short(n):
