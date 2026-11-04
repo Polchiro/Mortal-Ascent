@@ -1,0 +1,15 @@
+# secrets
+.env
+
+# local data
+*.db
+*.db-journal
+
+# generated previews
+*_preview.png
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
