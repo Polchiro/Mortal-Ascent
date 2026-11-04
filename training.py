@@ -28,7 +28,7 @@ TALENT_QI_BONUS = {
     "Divine": 1.00,
 }
 
-PATRON_QI_BONUS = 0.15
+# Heavenly Blessing Qi bonus comes from economy.BLESSING_TIERS[tier]["qi_rate"]
 # Technique bonus comes from technique.TRAINING_EXP_BONUS
 
 # ── /train ────────────────────────────────────────────────────────────
