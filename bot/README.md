@@ -20,7 +20,7 @@ and the card renderers (`profile_card.py`, `balance_card.py`) from the repo root
 
    ```bash
    python -m venv .venv && source .venv/bin/activate
-   pip install -r bot/requirements.txt
+   pip install -r requirements.txt
    cp .env.example .env      # then paste your token into .env
    python -m bot
    ```
@@ -34,7 +34,7 @@ git-ignored `.env`). Never commit it.
 ## Fonts
 
 The cards look best with `Cinzel.ttf`, `Inter.ttf` and `NotoSerifSC-Bold.otf`
-(all free on Google Fonts) in a `fonts/` folder at the repo root. Without them the
+(all free on Google Fonts) in the `fonts/` folder at the repo root (see `fonts/README.md`). Without them the
 renderers fall back to DejaVu Sans and the Chinese characters show as boxes.
 
 ## Tests

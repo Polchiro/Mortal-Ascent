@@ -16,8 +16,8 @@ import training
 
 REALM_ORDER = ["Mortal"] + realms.REALMS
 
-STARTING_LOTUS_COINS = 50                       # tutorial.md: /start
-STARTING_TECHNIQUE_NAMES = {                    # tutorial.md: /start
+STARTING_LOTUS_COINS = 50                       # docs/tutorial.md: /start
+STARTING_TECHNIQUE_NAMES = {                    # docs/tutorial.md: /start
     "attack": "Iron Fist",
     "defense": "Horse Stance Guard",
 }
