@@ -122,23 +122,23 @@ def seal_square(img, char, xy, size, color, rotate=0):
     d.text(p(size / 2, size / 2 + size * 0.03), char, font=cjk(int(size * 0.6)), fill=PAPER, anchor="mm")
     if rotate:
         s = s.rotate(rotate, resample=Image.BICUBIC, expand=True)
-    img.alpha_composite(s, p(*xy))
+    img.alpha_composite(s, tuple(int(v) for v in p(*xy)))
 
 
 # ── background ────────────────────────────────────────────────────────
 
-def background():
+def background(h=H):
     rnd = random.Random(7)
-    img = Image.new("RGBA", p(W, H), PAPER + (255,))
+    img = Image.new("RGBA", p(W, h), PAPER + (255,))
 
     # paper grain
-    noise = Image.effect_noise(p(W, H), 18).convert("L")
+    noise = Image.effect_noise(p(W, h), 18).convert("L")
     grain = Image.merge("RGBA", [noise, noise, noise, Image.new("L", noise.size, 22)])
     img = Image.alpha_composite(img, grain)
 
     # vignette (darker, warmer edges)
-    vig = Image.new("L", p(W, H), 0)
-    ImageDraw.Draw(vig).ellipse(p(-160, -140, W + 160, H + 140), fill=255)
+    vig = Image.new("L", p(W, h), 0)
+    ImageDraw.Draw(vig).ellipse(p(-160, -140, W + 160, h + 140), fill=255)
     vig = vig.filter(ImageFilter.GaussianBlur(90 * S))
     edge = Image.new("RGBA", img.size, (120, 92, 52, 70))
     edge.putalpha(ImageChops.invert(vig).point(lambda v: v * 70 // 255))
@@ -150,17 +150,17 @@ def background():
     img = Image.alpha_composite(img, sun.filter(ImageFilter.GaussianBlur(2 * S)))
 
     # layered ink-wash mountains, fading downward into mist
-    for base_y, peaks, alpha, blur in ((560, 7, 70, 5), (600, 9, 95, 4), (650, 6, 125, 3)):
+    for base_y, peaks, alpha, blur in ((h - 160, 7, 70, 5), (h - 120, 9, 95, 4), (h - 70, 6, 125, 3)):
         layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
         m = ImageDraw.Draw(layer)
-        pts = [p(0, H)]
+        pts = [p(0, h)]
         x = -40
         while x < W + 80:
             pts.append(p(x, base_y - rnd.randint(30, 110)))
             x += rnd.randint(70, 160)
             pts.append(p(x, base_y - rnd.randint(0, 30)))
             x += rnd.randint(40, 90)
-        pts.append(p(W, H))
+        pts.append(p(W, h))
         m.polygon(pts, fill=INK + (alpha,))
         # mist: fade the lower part of each range
         fade = Image.linear_gradient("L").resize(img.size)
@@ -172,9 +172,9 @@ def background():
 
     d = ImageDraw.Draw(img)
     # frame with corner ornaments
-    d.rectangle(p(18, 18, W - 18, H - 18), outline=INK + (255,), width=3 * S)
-    d.rectangle(p(27, 27, W - 27, H - 27), outline=INK_SOFT + (140,), width=1 * S)
-    for cx, cy, sx, sy in ((18, 18, 1, 1), (W - 18, 18, -1, 1), (18, H - 18, 1, -1), (W - 18, H - 18, -1, -1)):
+    d.rectangle(p(18, 18, W - 18, h - 18), outline=INK + (255,), width=3 * S)
+    d.rectangle(p(27, 27, W - 27, h - 27), outline=INK_SOFT + (140,), width=1 * S)
+    for cx, cy, sx, sy in ((18, 18, 1, 1), (W - 18, 18, -1, 1), (18, h - 18, 1, -1), (W - 18, h - 18, -1, -1)):
         d.line(p(cx + sx * 14, cy + sy * 40, cx + sx * 14, cy + sy * 14, cx + sx * 40, cy + sy * 14),
                fill=VERMILION + (255,), width=2 * S)
     return img
