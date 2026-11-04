@@ -1,39 +1,27 @@
-Layers    Phase
-1st–3rd    Early Phase
-4th–6th    Middle Phase
-7th–9th    Late Phase
-10th          Peak phase
-
-Complete Structure
-MARTIAL ARTS REALMS
-
-Mortal
-Body Tempering
-Body Refinement
-Bone Forging
-Meridian Opening
-Blood Awakening
-Martial Adept
+Realms — Martial Path
+Realms
+Martial Apprentice
+Martial Warrior
+Martial Expert
 Martial Master
-Martial Transcendence
-Mortal Ascendant
+Grand Martial Master
+Martial Grandmaster
+Martial King
+Martial Emperor
+Martial Ancestor
+Martial Saint
+Layers and phases
 
-Each realm contains:
+Each realm has 10 layers:
 
-Early Phase
-├── 1st Layer
-├── 2nd Layer
-└── 3rd Layer
+Layers	Phase
+1st–3rd	Early Phase
+4th–6th	Middle Phase
+7th–9th	Late Phase
+10th	Peak Phase
 
-Middle Phase
-├── 4th Layer
-├── 5th Layer
-└── 6th Layer
+Display format: Martial King — Late Phase, 8th Layer
 
-Late Phase
-├── 7th Layer
-├── 8th Layer
-└── 9th Layer
+Later
 
-Peak Phase
-├──  10th layer 
+Cultivation realms will be added after Martial Saint.
