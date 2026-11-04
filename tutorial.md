@@ -92,3 +92,34 @@ Big numbers are shortened: 18,240 → 18.24K, 83,370,000,000,000 → 83.37T.
 | Techniques | All learned techniques, mastery EXP, equipped slots |
 | Inventory | Manuals, weapons, pills, materials |
 | Stats | Beasts slain, duels won, Beast Kings defeated, breakthroughs |
+
+## /inventory
+
+Shows an **image card** of the player's bag in the same ink-wash style
+(rendered by inventory_card.py). Also opened by the Inventory button on /profile.
+
+### Card layout
+- 行囊 ("traveller's bag") in calligraphy down the left edge, with a red 藏 seal
+- Title: **"<NAME>'S BAG"** with a red brush stroke
+- **Category tabs** with item counts: Manuals · Weapons · Pills · Materials · Chests
+  (the open tab is underlined in red)
+- **Item grid:** 4 × 3 tiles per page. Each tile shows:
+  - A seal with the grade or tier character, in its colour
+    (凡 黄 玄 地 天 for manuals and pills, 凡 精 灵 宝 神 for weapons,
+    木 铜 银 玉 for chests, 草 for materials)
+  - Item name
+  - One line of detail (e.g. "Attack · Pierce 25%", "+13% ATK · +9% HP", "×1.7 Qi · 4h")
+  - Quantity badge (×2) when holding more than one
+  - Status: LEARNED (manuals) or EQUIPPED (weapons, with a coloured border)
+- Footer: page number, item count, and bag space used (turns red when nearly full)
+
+### Buttons and menus (under the card)
+
+| Control | Does |
+|---|---|
+| Category menu | Switch tab (Manuals, Weapons, Pills, Materials, Chests) |
+| ◀ Prev / Next ▶ | Change page |
+| Item menu | Pick an item on this page to use it: learn a manual, equip a weapon, take a pill, open a chest |
+
+- Bag size starts at 60 slots; more can be bought in the Moon Pearl shop
+- A duplicate of a learned manual can be turned into insight (mastery EXP)
