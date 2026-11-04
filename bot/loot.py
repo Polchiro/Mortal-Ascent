@@ -156,10 +156,12 @@ def use_item(conn, user_id, item_id, rng=random, now=None):
         learned = [x for x in db.get_techniques(conn, user_id, equipped_only=False) if x["name"] == t["name"]]
         db.remove_item(conn, item_id)
         if learned:
-            exp = round(INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]])
-            db.add_mastery(conn, learned[0]["id"], exp)
-            return f"📜 You already know **{t['name']}**. Rereading it gives you insight: **+{exp} mastery EXP**."
-        db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"])
+            from . import mastery
+            exp, note = mastery.gain(conn, p, learned[0], INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]],
+                                     bonus=False)
+            msg = f"📜 You already know **{t['name']}**. Rereading it gives you insight: **+{exp} mastery EXP**."
+            return msg + (f"\n{note}" if note else "")
+        db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"], rules.technique_slots(p["realm"]))
         return (f"📜 You comprehend **{t['name']}** ({t['grade']} {t['type']}) and equip it "
                 f"in your {t['type']} slot.")
 

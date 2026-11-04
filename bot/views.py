@@ -13,6 +13,7 @@ import time
 
 import discord
 
+import equipments
 import explore
 import training
 from inventory_card import (CHEST_CHARS, MATERIAL_CHAR, PER_PAGE, manual_item, render_inventory,
@@ -20,7 +21,7 @@ from inventory_card import (CHEST_CHARS, MATERIAL_CHAR, PER_PAGE, manual_item, r
 from profile_card import GRADES, JADE
 import technique
 
-from . import db, loot, trainer
+from . import db, loot, mastery, trainer
 from . import player as rules
 from .expedition import PATH_EMOJI, Expedition
 
@@ -332,9 +333,15 @@ class TrainView(OwnedView):
         self.task = None
         self.button("Begin", self.on_begin, emoji="🥋", style=discord.ButtonStyle.success)
 
+    @property
+    def title(self):
+        s = self.session
+        what = f"Practice: {s['technique_name']}" if s["mode"] == "practice" else "Training"
+        return f"{what} · {trainer.CHALLENGE_NAMES[s['challenge']]}"
+
     def intro(self):
         s = self.session
-        e = discord.Embed(title=f"Training · {trainer.CHALLENGE_NAMES[s['challenge']]}", color=COLOR)
+        e = discord.Embed(title=self.title, color=COLOR)
         lines = []
         if s["event"] == "wandering_hermit":
             lines.append("🧙 **A Wandering Hermit appears!** *\"Let me see what you are made of.\"* "
@@ -345,6 +352,17 @@ class TrainView(OwnedView):
             if trainer.challenges.READ_THE_MASTER["deceptive_chance"][s["tier"]] or "drunken_master" in s["conditions"]:
                 lines.append("Some tells lie! Watch for the hidden sign: *clenched rear fist* = Strike, "
                              "*tucked elbows* = Guard, *lifted heel* = Break.")
+        elif s["challenge"] == "ambush":
+            a = trainer.challenges.AMBUSH
+            lines.append(f"Two disciples attack at once, one marked 💪 stronger (hits for {a['strong_opponent_damage']}). "
+                         f"Pick **one** counter: it stops every attacker whose move it beats, the rest hit you. "
+                         f"You have **{a['player_hp']} HP**. Survive "
+                         f"**{trainer.Ambush(s['tier']).target}** rounds.")
+        elif s["challenge"] == "find_the_weakness":
+            w = trainer.Weakness(s["tier"])
+            lines.append(f"The master hides a sequence of **{w.length} moves**: his weakness. Press moves to build a guess. "
+                         f"After each guess: ✅ = right move, right place · 🔶 = right move, wrong place. "
+                         f"You have **{w.tries} tries**; fewer tries, higher score.")
         else:
             w = trainer.challenges.ENDLESS_WAVES
             lines.append(f"Disciples attack in waves, each faster. Stamina **{w['start_stamina']}**: each counter costs "
@@ -352,7 +370,7 @@ class TrainView(OwnedView):
                          f"✨ **Technique** works on anything for {w['technique_strike_cost']} stamina and gives ×2 points. "
                          f"Survive **{w['target_waves'][s['tier']]}** waves.")
         if s["conditions"]:
-            lines.append("\n**Conditions** (+15% Qi each):")
+            lines.append(f"\n**Conditions** (+15% {'mastery EXP' if s['mode'] == 'practice' else 'Qi'} each):")
             lines += [f"{trainer.CONDITION_NAMES[c]}: {trainer.CONDITION_TEXT[c]}" for c in s["conditions"]]
         e.description = "\n".join(lines)
         e.set_footer(text="Press Begin when you are ready. Buttons shuffle every round.")
@@ -364,7 +382,7 @@ class TrainView(OwnedView):
         self.task = asyncio.create_task(self.run())
 
     def step_embed(self, body, title=None, footer=None):
-        e = discord.Embed(title=title or f"Training · {trainer.CHALLENGE_NAMES[self.session['challenge']]}",
+        e = discord.Embed(title=title or self.title,
                           description=body.strip(), color=COLOR)
         if footer:
             e.set_footer(text=footer)
@@ -444,12 +462,56 @@ class TrainView(OwnedView):
             last = w.answer(stance, key, elapsed, secs)
         return w.score, f"{last}\n\nYou scored **{w.points:g}** of {w.target} points."
 
+    async def ambush(self, tier, conditions):
+        a = trainer.Ambush(tier, self.rng)
+        secs = trainer.timer(trainer.challenges.READ_THE_MASTER["seconds_per_step"][tier], conditions)
+        night = "night_training" in conditions
+        last = ""
+        while not a.done:
+            head = f"{last}\n\n**Round {a.round}** · ⏱️ {secs:g}s · ❤️ {a.hp} HP · Survived {a.survived}/{a.target}\n"
+            sides = []
+            for i, mv in enumerate(a.moves):
+                tag = " 💪" if i == a.strong else ""
+                sides.append(f"{'Left' if i == 0 else 'Right'} disciple{tag}: **{trainer.STANCE_EMOJI[mv]} "
+                             f"{trainer.STANCE_LABEL[mv]}**")
+            embed = self.step_embed(head + "\n".join(sides))
+            hidden = self.step_embed(head + "🌙 *Two shapes move in the dark...*") if night else None
+            key, elapsed = await self.ask(embed, hidden, self.counter_choices(), secs)
+            last = a.answer(key, elapsed, secs)
+        return a.score, f"{last}\n\nYou survived **{a.survived}** of {a.target} rounds."
+
+    async def weakness(self, tier):
+        w = trainer.Weakness(tier, self.rng)
+        while not w.done:
+            guess = []
+            while len(guess) < w.length:
+                hist = "\n".join(f"{' '.join(trainer.STANCE_EMOJI[m] for m in g)}  →  {'✅' * ex}{'🔶' * near}"
+                                  f"{'▫️' * (w.length - ex - near)}" for g, (ex, near) in w.history)
+                cur = " ".join(trainer.STANCE_EMOJI[m] for m in guess) + " ▫️" * (w.length - len(guess))
+                body = (f"**Try {len(w.history) + 1}/{w.tries}** · build a guess of {w.length} moves\n"
+                        + (hist + "\n\n" if hist else "") + f"Your guess: {cur}")
+                key, _ = await self.ask(self.step_embed(body), None, self.counter_choices(), 60)
+                if key is None:
+                    w.history.append((guess, (0, 0)))
+                    break
+                guess.append(key)
+            else:
+                w.guess(guess)
+        secret = " ".join(trainer.STANCE_EMOJI[m] for m in w.secret)
+        if w.solved:
+            return w.score, f"🎯 You found his weakness in **{len(w.history)}** tries: {secret}"
+        return w.score, f"The master's weakness was {secret}. Better luck next time."
+
     async def run(self):
         uid = self.owner_id
         try:
             s = self.session
             if s["challenge"] == "read_the_master":
                 score, last, _ = await self.read_master(s["tier"], s["conditions"])
+            elif s["challenge"] == "ambush":
+                score, last = await self.ambush(s["tier"], s["conditions"])
+            elif s["challenge"] == "find_the_weakness":
+                score, last = await self.weakness(s["tier"])
             else:
                 score, last = await self.endless_waves(s["tier"], s["conditions"])
 
@@ -473,18 +535,32 @@ class TrainView(OwnedView):
                 else:
                     notes.append(f"{last2}\n⚔️ The rival laughs and walks off. No bonus this time.")
 
-            async with self.bot.db_lock:
-                qi, events, p = trainer.finish(self.bot.conn, uid, s, score, mult, self.rng)
-            need = rules.qi_needed(p["realm"], p["layer"])
-            lines = [last, ""] + notes + [
-                f"**Score:** {score:.0%}" + ("  *(below 50%: only 10% Qi)*" if score < 0.5 else ""),
-                f"**Internal Qi:** +{qi:,.1f}",
-                f"**{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / {need:,}",
-            ] + events
-            mins = trainer.cooldown_seconds(p) / 60
+            score_line = f"**Score:** {score:.0%}" + ("  *(below 50%: only 10% reward)*" if score < 0.5 else "")
+            if s["mode"] == "practice":
+                async with self.bot.db_lock:
+                    exp, daily, note, tech = trainer.finish_practice(self.bot.conn, uid, s, score, mult)
+                    p = db.get_player(self.bot.conn, uid)
+                cap = rules.mastery_cap(tech)
+                bar = f"{tech['mastery_exp']:,} / {cap:,}" if cap else f"{tech['mastery_exp']:,} (final stage)"
+                lines = [last, ""] + notes + [score_line, f"**{tech['name']}:** +{exp:,} mastery EXP · {bar}"]
+                if daily < 1:
+                    lines.append(f"*Tired from practising today: EXP ×{daily:g}.*")
+                if note:
+                    lines.append(note)
+                done_title, verb = "🥋 Practice complete", "practise"
+            else:
+                async with self.bot.db_lock:
+                    qi, events, p = trainer.finish(self.bot.conn, uid, s, score, mult, self.rng)
+                need = rules.qi_needed(p["realm"], p["layer"])
+                lines = [last, ""] + notes + [
+                    score_line, f"**Internal Qi:** +{qi:,.1f}",
+                    f"**{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / {need:,}",
+                ] + events
+                done_title, verb = "🥋 Training complete", "train"
+            mins = trainer.cooldown_seconds(p, mode=s["mode"]) / 60
             self.clear_items()
-            await self.edit(self.step_embed("\n".join(lines).strip(), title="🥋 Training complete",
-                                            footer=f"You can train again in {mins:g} minutes."), view=False)
+            await self.edit(self.step_embed("\n".join(lines).strip(), title=done_title,
+                                            footer=f"You can {verb} again in {mins:g} minutes."), view=False)
         except Exception:
             log.exception("/train session failed")
             try:
@@ -510,3 +586,333 @@ class TrainView(OwnedView):
 
 def training_reveal():
     return trainer.challenges.CONDITIONS["night_training"]["reveal_at_timer_fraction"]
+
+
+# ── /spar ─────────────────────────────────────────────────────────────
+
+class SparView(OwnedView):
+    TURN_SECONDS = 60
+
+    def __init__(self, bot, owner_id, focus=None, trial=False, rng=None):
+        super().__init__(owner_id, timeout=self.TURN_SECONDS)
+        from .sparring import Spar
+        self.bot, self.rng = bot, rng or random.Random()
+        conn = bot.conn
+        self.player = db.get_player(conn, owner_id)
+        self.techniques = db.get_techniques(conn, owner_id)
+        self.focus, self.trial = focus, trial
+        strength = 1.0
+        if trial:
+            strength = technique.TRIAL_MASTER_STRENGTH[rules.stage_of(focus) + 1]
+        self.spar = Spar(self.player, self.techniques, db.equipped_weapon(conn, owner_id), strength, self.rng)
+        self.last = ""
+        self.result = None
+        self.build()
+
+    @property
+    def title(self):
+        if self.trial:
+            nxt = technique.MASTERY_STAGES[rules.stage_of(self.focus) + 1]["name"]
+            return f"🏯 Mastery Trial: {self.focus['name']} → {nxt}"
+        return "🥋 Sparring with the Master"
+
+    def embed(self):
+        sp = self.spar
+        e = discord.Embed(title=self.title, color=COLOR)
+        if self.result:
+            e.description = self.result
+        else:
+            lines = []
+            if sp.turn == 1:
+                lines.append("**Counters:** 🛡️ Guard beats ⚔️ Strike · 💥 Break beats 🛡️ Guard · ⚔️ Strike beats 💥 Break\n"
+                             "Mastery EXP comes only from techniques used **at the right moment**: your attack technique "
+                             "right after you Guard his Strike, your defense technique against his Strike.\n")
+                if self.trial:
+                    lines.append(f"*This master fights at ×{sp.strength:g} strength. Win to break through.*\n")
+            if self.last:
+                lines.append(self.last + "\n")
+            lines.append(f"**Exchange {sp.turn}/{MAX_TURNS_SPAR()}**")
+            lines.append(sp.hint())
+            e.description = "\n".join(lines)
+        e.add_field(name="You", value=hp_bar(round(sp.hp), sp.max_hp, 10), inline=False)
+        e.add_field(name="Master", value=hp_bar(round(sp.m_hp), sp.m_max, 10), inline=False)
+        return e
+
+    def build(self):
+        self.clear_items()
+        if self.result:
+            return
+        choices = self.spar.choices()
+        self.rng.shuffle(choices)
+        emoji = {"strike": "⚔️", "guard": "🛡️", "break": "💥", "attack_tech": "✨", "defense_tech": "🔰"}
+        for key, label in choices:
+            async def cb(interaction, key=key):
+                await self.play(interaction, key)
+            style = discord.ButtonStyle.success if key.endswith("_tech") else discord.ButtonStyle.primary
+            b = self.button(label[:80], cb, emoji=emoji[key], style=style, row=0 if not key.endswith("_tech") else 1)
+            b.spar_key = key
+
+    async def play(self, interaction, key):
+        self.last = self.spar.play(key)
+        if self.spar.over:
+            async with self.bot.db_lock:
+                self.result = self.finish()
+        self.build()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+        if self.result:
+            self.stop()
+            self.bot.busy.discard((self.owner_id, "spar"))
+
+    def finish(self, forfeit=False):
+        conn, uid, sp = self.bot.conn, self.owner_id, self.spar
+        won = sp.won and not forfeit
+        if forfeit:
+            sp.timed = {}
+        daily = rules.daily_rate(technique.SPAR_DAILY_RATES, db.daily_count(conn, uid, "spar"))
+        lines = [self.last, ""] if self.last else []
+        lines.append("🏆 **You win the spar!**" if won else ("🏳️ You walked away from the spar." if forfeit
+                                                            else "😤 **The master wins this time.**"))
+        by_id = {t["id"]: t for t in self.techniques}
+        for tid, exp in sp.mastery_awards(daily).items():
+            if forfeit:
+                break
+            gained, note = mastery.gain(conn, self.player, by_id[tid], exp)
+            if gained:
+                lines.append(f"📈 **{by_id[tid]['name']}** +{gained} mastery EXP")
+            if note and not self.trial:
+                lines.append(note)
+        if not sp.timed and not forfeit:
+            lines.append("*No technique was used at the right moment, so no mastery EXP this time.*")
+        if daily < 1:
+            lines.append(f"*You have sparred a lot today: EXP ×{daily:g}.*")
+        if self.trial:
+            if won:
+                stage = mastery.pass_trial(conn, self.focus)
+                lines.append(f"🌸 **Breakthrough!** {self.focus['name']} reaches **{stage}**!")
+            else:
+                db.set_cooldown(conn, uid, f"trial:{self.focus['id']}", technique.TRIAL_FAIL_COOLDOWN_HOURS * 3600)
+                lines.append(f"The trial failed. No EXP is lost; you may retry in {technique.TRIAL_FAIL_COOLDOWN_HOURS} hours.")
+        db.bump_daily(conn, uid, "spar")
+        db.set_cooldown(conn, uid, "spar", technique.SPAR_COOLDOWN_MINUTES * 60)
+        lines.append(f"\n*You can spar again in {technique.SPAR_COOLDOWN_MINUTES // 60} hours.*")
+        return "\n".join(lines).strip()
+
+    async def on_timeout(self):
+        try:
+            if not self.result:
+                self.last = "⏳ You stood still too long."
+                async with self.bot.db_lock:
+                    self.result = self.finish(forfeit=True)
+                self.build()
+                if self.message:
+                    await self.message.edit(embed=self.embed(), view=self)
+        except Exception:
+            log.exception("Spar timeout handling failed")
+        finally:
+            self.bot.busy.discard((self.owner_id, "spar"))
+
+
+def MAX_TURNS_SPAR():
+    from .sparring import MAX_TURNS
+    return MAX_TURNS
+
+
+# ── /breakthrough and /seclusion confirmations ────────────────────────
+
+class ConfirmView(OwnedView):
+    """One action button plus Cancel. `action(interaction)` returns the text to show."""
+
+    def __init__(self, owner_id, label, action, style=discord.ButtonStyle.danger, emoji=None):
+        super().__init__(owner_id, timeout=120)
+        self.action = action
+        self.button(label, self.on_go, emoji=emoji, style=style)
+        self.button("Cancel", self.on_cancel)
+
+    async def on_go(self, interaction):
+        embed = await self.action()
+        self.clear_items()
+        self.stop()
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    async def on_cancel(self, interaction):
+        self.stop()
+        await interaction.response.edit_message(view=None)
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except discord.HTTPException:
+                pass
+
+
+# ── /techniques ───────────────────────────────────────────────────────
+
+def effect_text(tech):
+    eff = rules.TECH_BY_NAME.get(tech["name"], {}).get("effect")
+    if not eff:
+        return "No special effect"
+    kind, val = eff
+    if kind == "combo":
+        return f"Combo {val[0]} hits × {val[1]:.0%}"
+    if kind == "stagger":
+        return "Stagger: opponent can't Guard next turn" if val >= 1 else f"Stagger: next block −{val:.0%}"
+    if kind == "heavy":
+        return f"Heavy ×{val}"
+    if kind == "unbreakable":
+        return "Unbreakable"
+    return f"{kind.title()} {val:.0%}"
+
+
+def mastery_bar(tech, width=10):
+    cap = rules.mastery_cap(tech)
+    stage = technique.MASTERY_STAGES[rules.stage_of(tech)]["name"]
+    if cap is None:
+        return f"{stage} · {tech['mastery_exp']:,} EXP (final stage)"
+    filled = min(width, round(width * tech["mastery_exp"] / cap))
+    tail = "  🔔 trial ready (/spar)" if rules.bar_full(tech) else ""
+    return f"{stage} · {'▰' * filled}{'▱' * (width - filled)} {tech['mastery_exp']:,}/{cap:,}{tail}"
+
+
+class TechniquesView(OwnedView):
+    def __init__(self, bot, owner_id):
+        super().__init__(owner_id, timeout=300)
+        self.bot = bot
+        self.notice = None
+        self.build()
+
+    def embed(self):
+        conn, uid = self.bot.conn, self.owner_id
+        p = db.get_player(conn, uid)
+        techs = db.get_techniques(conn, uid, equipped_only=False)
+        slots = rules.technique_slots(p["realm"])
+        equipped = [t for t in techs if t["equipped"]]
+        e = discord.Embed(title=f"📜 {p['name']}'s Techniques", color=COLOR)
+        e.description = (f"**Slots:** {len(equipped)}/{slots} (1 attack + 1 defense"
+                         + (" + 1 flex" if slots == 3 else ", flex slot opens at Martial Warrior") + ")\n"
+                         f"**Qi Rate bonus:** +{rules.technique_qi_bonus(equipped):.1%} (best equipped technique)")
+        if self.notice:
+            e.description += f"\n\n*{self.notice}*"
+        for t in sorted(techs, key=lambda t: (not t["equipped"], t["type"], t["id"]))[:20]:
+            table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
+            power, passive = table[t["grade"]]
+            m = rules.mastery_mult(t)
+            power_txt = (f"×{power * m:.2f} damage" if t["type"] == "attack"
+                         else f"blocks {min(technique.MAX_DAMAGE_BLOCKED, power * m):.0%}")
+            e.add_field(
+                name=f"{'✅ ' if t['equipped'] else ''}{t['name']} · {t['grade']} {t['type']}",
+                value=(f"{effect_text(t)} · {power_txt} · +{passive * m:.0%} passive "
+                       f"{'Attack' if t['type'] == 'attack' else 'Defense'}\n{mastery_bar(t)}"),
+                inline=False)
+        e.set_footer(text="Learn more from manuals in /inventory. Train mastery with /practice and /spar.")
+        return e
+
+    def build(self):
+        self.clear_items()
+        conn, uid = self.bot.conn, self.owner_id
+        techs = db.get_techniques(conn, uid, equipped_only=False)
+        spare = [t for t in techs if not t["equipped"]][:25]
+        if spare:
+            sel = discord.ui.Select(placeholder="Equip a technique...", row=0, options=[
+                discord.SelectOption(label=t["name"], value=str(t["id"]), description=f"{t['grade']} {t['type']}")
+                for t in spare])
+            sel.callback = self.on_equip
+            self.add_item(sel)
+        equipped = [t for t in techs if t["equipped"]]
+        removable = [t for t in equipped if sum(x["type"] == t["type"] for x in equipped) > 1]
+        if removable:
+            sel = discord.ui.Select(placeholder="Unequip from the flex slot...", row=1, options=[
+                discord.SelectOption(label=t["name"], value=str(t["id"])) for t in removable])
+            sel.callback = self.on_unequip
+            self.add_item(sel)
+
+    async def on_equip(self, interaction):
+        tid = int(interaction.data["values"][0])
+        async with self.bot.db_lock:
+            p = db.get_player(self.bot.conn, self.owner_id)
+            tech = db.get_technique(self.bot.conn, self.owner_id, tid)
+            replaced = db.equip_technique(self.bot.conn, self.owner_id, tid, rules.technique_slots(p["realm"]))
+        self.notice = f"Equipped {tech['name']}" + (f" in place of {replaced}." if replaced else ".")
+        self.build()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_unequip(self, interaction):
+        tid = int(interaction.data["values"][0])
+        async with self.bot.db_lock:
+            ok = db.unequip_technique(self.bot.conn, self.owner_id, tid)
+        self.notice = "Unequipped." if ok else "You must keep one technique of each type equipped."
+        self.build()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except discord.HTTPException:
+                pass
+
+
+# ── /equipment ────────────────────────────────────────────────────────
+
+class EquipmentView(OwnedView):
+    def __init__(self, bot, owner_id):
+        super().__init__(owner_id, timeout=300)
+        self.bot = bot
+        self.notice = None
+        self.build()
+
+    def embed(self):
+        conn, uid = self.bot.conn, self.owner_id
+        p = db.get_player(conn, uid)
+        techs = db.get_techniques(conn, uid)
+        weapon = db.equipped_weapon(conn, uid)
+        bhp, batk, bdef = rules.base_stats(p["realm"], p["layer"])
+        hp, atk, dfn = rules.final_stats(p, techs, weapon)
+        e = discord.Embed(title=f"⚔️ {p['name']}'s Equipment", color=COLOR)
+        if weapon:
+            e.add_field(name="Weapon", value=f"{equipments.TIER_DISPLAY[weapon['grade']]} **{weapon['name']}**\n"
+                                             f"{rules.buff_text(rules.weapon_buffs(weapon))}", inline=False)
+        else:
+            e.add_field(name="Weapon", value="🤜 Bare hands. Weapons drop from chests found in /explore.", inline=False)
+        e.add_field(name="Stats (base → final)",
+                    value=f"❤️ HP {bhp:,} → **{hp:,}**\n⚔️ Attack {batk:,} → **{atk:,}**\n🛡️ Defense {bdef:,} → **{dfn:,}**",
+                    inline=False)
+        e.add_field(name="Armor & artifacts", value="*Coming in a later update.*", inline=False)
+        if self.notice:
+            e.description = f"*{self.notice}*"
+        e.set_footer(text="Final stats include your weapon and equipped techniques' passive buffs.")
+        return e
+
+    def build(self):
+        self.clear_items()
+        weapons = db.get_items(self.bot.conn, self.owner_id, "weapons")
+        spare = [w for w in weapons if not w["equipped"]][:25]
+        if spare:
+            sel = discord.ui.Select(placeholder="Equip a weapon...", row=0, options=[
+                discord.SelectOption(label=w["name"][:100], value=str(w["id"]),
+                                     description=f"{w['grade'].title()} · {rules.buff_text(rules.weapon_buffs(w))}"[:100])
+                for w in spare])
+            sel.callback = self.on_equip
+            self.add_item(sel)
+        if any(w["equipped"] for w in weapons):
+            self.button("Unequip weapon", self.on_unequip, emoji="🤜", row=1)
+
+    async def on_equip(self, interaction):
+        async with self.bot.db_lock:
+            self.notice = loot.use_item(self.bot.conn, self.owner_id, int(interaction.data["values"][0]))
+        self.build()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_unequip(self, interaction):
+        async with self.bot.db_lock:
+            db.unequip_weapon(self.bot.conn, self.owner_id)
+        self.notice = "You put your weapon away."
+        self.build()
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_timeout(self):
+        if self.message:
+            try:
+                await self.message.edit(view=None)
+            except discord.HTTPException:
+                pass

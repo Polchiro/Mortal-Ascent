@@ -8,6 +8,7 @@ import pytest
 
 import explore
 import equipments
+import technique
 from bot import combat, db, loot, trainer
 from bot import player as rules
 from bot.expedition import CLUES, Expedition, encounter_odds
@@ -140,21 +141,41 @@ def test_qi_rate_includes_best_technique():
     assert rules.qi_rate(p, techniques=techs)[1] == pytest.approx(1 + 0.20 + 0.10)
 
 
-def test_layers_and_mortal_breakthrough_always_succeeds(conn):
+def test_layers_fill_then_mortal_breakthrough_always_succeeds(conn):
     p = new_player(conn)
     p, events = rules.add_qi(p, 10 + 10 + 10 + 3, rng=random.Random(0))
-    assert (p["realm"], p["layer"]) == ("Martial Apprentice", 1)
-    assert p["qi"] == pytest.approx(3)
-    assert any("Realm breakthrough" in e for e in events)
+    assert (p["realm"], p["layer"], p["qi"]) == ("Mortal", 3, 10)     # stops at a full bar
+    assert "/breakthrough" in events[-1]
+    ok, msg = rules.attempt_breakthrough(p, rng=random.Random(0))
+    assert ok and (p["realm"], p["layer"], p["qi"]) == ("Martial Apprentice", 1, 0)
+
+
+def test_breakthrough_needs_full_bar():
+    p = {"realm": "Martial Apprentice", "layer": 3, "qi": 5, "breakthroughs": 0, "failed_breakthroughs": 0}
+    ok, msg = rules.attempt_breakthrough(p)
+    assert ok is None and "not full" in msg
+    p["layer"] = 2
+    assert rules.attempt_breakthrough(p)[0] is None
+
+
+class AlwaysFail:
+    def random(self):
+        return 0.99
 
 
 def test_phase_bottleneck_can_fail():
-    class AlwaysFail:
-        def random(self):
-            return 0.99
     p = {"realm": "Martial Apprentice", "layer": 3, "qi": 0, "breakthroughs": 0, "failed_breakthroughs": 0}
-    p, events = rules.add_qi(p, 20, rng=AlwaysFail())
-    assert p["layer"] == 3 and p["failed_breakthroughs"] == 1 and p["qi"] == pytest.approx(16)
+    p, _ = rules.add_qi(p, 30)
+    assert p["qi"] == 20
+    ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail())
+    assert ok is False and p["layer"] == 3 and p["failed_breakthroughs"] == 1 and p["qi"] == pytest.approx(16)
+    assert not p.get("injured_until")
+
+
+def test_failed_realm_breakthrough_injures():
+    p = {"realm": "Martial Apprentice", "layer": 10, "qi": 40, "breakthroughs": 0, "failed_breakthroughs": 0}
+    ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail(), now=0)
+    assert ok is False and p["injured_until"] == 6 * 3600
 
 
 def test_martial_master_needs_mastery():
@@ -329,3 +350,165 @@ def test_views_build_without_discord_connection(conn):
         tv = TrainView(bot, 1, trainer.roll_session(db.get_player(conn, 1), random.Random(0)))
         assert tv.intro().description
     asyncio.run(go())
+
+
+# ── /meditate and /seclusion ──────────────────────────────────────────
+
+def test_passive_qi_caps_at_12_hours(conn):
+    p = new_player(conn, talent="Ordinary")
+    techs = db.get_techniques(conn, 1)
+    p["qi_collected_at"] = 0
+    qi, hours = rules.passive_qi(p, techs, now=3 * 3600)
+    assert hours == 3 and qi == pytest.approx(2.5 * 1.05 * 3)
+    assert rules.passive_qi(p, techs, now=100 * 3600)[1] == 12
+
+
+def test_seclusion_doubles_only_when_completed(conn):
+    p = new_player(conn, talent="Ordinary")
+    techs = db.get_techniques(conn, 1)
+    p["seclusion_start"], p["seclusion_end"] = 0, 8 * 3600
+    qi, hours, done = rules.seclusion_qi(p, techs, now=10 * 3600)
+    assert done and hours == 8 and qi == pytest.approx(2.5 * 1.05 * 2 * 8)
+    qi, hours, done = rules.seclusion_qi(p, techs, now=4 * 3600)
+    assert not done and qi == pytest.approx(2.5 * 1.05 * 4)
+    assert rules.passive_qi(p, techs, now=4 * 3600) == (0.0, 0.0)
+
+
+# ── mastery, /practice, /spar ─────────────────────────────────────────
+
+def test_mastery_caps_until_trial(conn):
+    from bot import mastery
+    p = new_player(conn)
+    t = db.get_techniques(conn, 1)[0]
+    gained, note = mastery.gain(conn, p, t, 10_000)
+    assert gained == 500 and "trial" in note
+    assert mastery.gain(conn, p, t, 50)[0] == 0
+    assert mastery.pass_trial(conn, t) == "Entering the Hall"
+    t = db.get_techniques(conn, 1)[0]
+    assert t["stage"] == 1 and rules.mastery_mult(t) == 1.10 and rules.mastery_cap(t) == 2000
+
+
+def test_daily_rates():
+    rates = technique.PRACTICE_DAILY_RATES
+    assert [rules.daily_rate(rates, n) for n in (0, 4, 5, 9, 10, 30)] == [1, 1, 0.5, 0.5, 0.1, 0.1]
+    assert rules.daily_rate(technique.SPAR_DAILY_RATES, 3) == 0.5
+
+
+def test_practice_session(conn):
+    new_player(conn)
+    p = db.get_player(conn, 1)
+    t = db.get_techniques(conn, 1)[0]
+    s = trainer.roll_session(p, random.Random(0), tech=t)
+    assert s["mode"] == "practice" and s["tier"] == 1
+    s["conditions"], s["challenge"] = [], "read_the_master"
+    exp, daily, note, tech = trainer.finish_practice(conn, 1, s, 1.0)
+    assert exp == 40 and daily == 1 and tech["mastery_exp"] == 40
+    assert db.cooldown_left(conn, 1, "practice") > 1700
+    for _ in range(5):
+        trainer.finish_practice(conn, 1, s, 1.0)
+    assert trainer.finish_practice(conn, 1, s, 1.0)[1] == 0.5
+
+
+def test_spar_reading_the_master_wins_and_awards_timed_uses(conn):
+    from bot.sparring import Spar
+    p = new_player(conn)
+    techs = db.get_techniques(conn, 1)
+    sp = Spar(p, techs, rng=random.Random(1))
+    while not sp.over:
+        if sp.blocked_strike:
+            sp.play("attack_tech")
+        elif sp.master == "strike":
+            sp.play("defense_tech")
+        else:
+            sp.play({"guard": "break", "break": "strike"}[sp.master])
+    assert sp.won
+    awards = sp.mastery_awards()
+    assert awards and all(v >= technique.SPAR_WIN_EXP + technique.SPAR_EXP_PER_TIMED_USE for v in awards.values())
+
+
+def test_spar_without_techniques_timing_gives_nothing(conn):
+    from bot.sparring import Spar
+    p = new_player(conn)
+    sp = Spar(p, db.get_techniques(conn, 1), rng=random.Random(2))
+    while not sp.over:
+        sp.play("strike")
+    assert sp.mastery_awards() == {}
+
+
+def test_flex_slot_from_martial_warrior(conn):
+    new_player(conn)
+    a = db.learn_technique(conn, 1, "Twin Palm Strike", "attack", "Mortal", slots=2)
+    assert [t["name"] for t in db.get_techniques(conn, 1)] == ["Horse Stance Guard", "Twin Palm Strike"]
+    iron = next(t for t in db.get_techniques(conn, 1, equipped_only=False) if t["name"] == "Iron Fist")
+    assert db.equip_technique(conn, 1, iron["id"], slots=3) is None       # flex slot takes it
+    assert len(db.get_techniques(conn, 1)) == 3
+    assert db.unequip_technique(conn, 1, a)
+    guard = next(t for t in db.get_techniques(conn, 1) if t["type"] == "defense")
+    assert not db.unequip_technique(conn, 1, guard["id"])                 # must keep one defense
+
+
+def test_new_views_build(conn):
+    from bot.views import EquipmentView, SparView, TechniquesView
+
+    class FakeBot:
+        def __init__(self, c):
+            self.conn, self.db_lock, self.busy = c, asyncio.Lock(), set()
+
+    new_player(conn)
+    db.add_item(conn, 1, **loot.roll_weapon("ordinary", random.Random(0)))
+
+    async def go():
+        bot = FakeBot(conn)
+        assert TechniquesView(bot, 1).embed().fields
+        ev = EquipmentView(bot, 1)
+        assert ev.children and "Bare hands" in ev.embed().fields[0].value
+        sv = SparView(bot, 1, rng=random.Random(0))
+        assert len(sv.children) == 5 and sv.embed().title
+    asyncio.run(go())
+
+
+def test_all_commands_register():
+    from bot.client import MortalAscent
+
+    async def go():
+        bot = MortalAscent(":memory:")
+        names = {c.name for c in bot.tree.get_commands()}
+        for c in bot.tree.get_commands():
+            c.to_dict(bot.tree)
+        return names
+    assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
+                                 "seclusion", "breakthrough", "practice", "spar", "techniques", "equipment"}
+
+
+# ── tier 2 challenges ─────────────────────────────────────────────────
+
+def test_ambush_one_counter_can_stop_both():
+    a = trainer.Ambush(2, random.Random(0))
+    a.moves, a.strong = ["strike", "strike"], 0
+    assert "both" in a.answer("guard", 0.5, 2.5) and a.hp == 3 and a.survived == 1
+    a.moves, a.strong = ["strike", "break"], 0
+    a.answer("strike", 0.5, 2.5)            # stops the Break, the strong Strike hits for 2
+    assert a.hp == 1
+    a.moves, a.strong = ["guard", "guard"], 1
+    a.answer(None, 9, 2.5)
+    assert a.hp == 0 and a.done and a.score == pytest.approx(2 / 5)
+
+
+def test_weakness_feedback_and_score():
+    assert trainer.weakness_feedback(["strike", "guard", "break"], ["guard", "guard", "strike"]) == (1, 1)
+    w = trainer.Weakness(2, random.Random(0))
+    w.secret = ["strike", "strike", "guard"]
+    w.guess(["guard", "guard", "guard"])
+    w.guess(["strike", "strike", "guard"])
+    assert w.solved and w.score == 1.0
+    w = trainer.Weakness(2, random.Random(0))
+    w.secret = ["break"] * 3
+    for _ in range(w.tries):
+        w.guess(["guard"] * 3)
+    assert w.done and w.score == 0
+
+
+def test_tier_two_pool_includes_new_challenges():
+    rng = random.Random(1)
+    seen = {trainer.roll_session({"realm": "Martial Expert"}, rng)["challenge"] for _ in range(200)}
+    assert {"ambush", "find_the_weakness"} <= seen

@@ -13,7 +13,14 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/balance` | Sends the purse card: Lotus Coins, Moon Pearls, active Heavenly Blessing |
 | `/inventory [category]` | Sends the bag card. Menus under it switch tab and page, and use an item: open a chest, equip a weapon, learn a manual, take a Qi pill |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 45 min cooldown |
-| `/train` | A timed training challenge with the master (Read the Master or Endless Waves). The score becomes Internal Qi; layers and breakthroughs happen automatically. 60 min cooldown |
+| `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
+| `/meditate` | Collects the Qi you gathered passively at your Qi Rate (stores up to 12 hours) |
+| `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
+| `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
+| `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
+| `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
+| `/techniques` | All learned techniques with effects, power and mastery bars; equip or unequip (flex slot from Martial Warrior) |
+| `/equipment` | Your weapon, base → final stats, and menus to swap or remove your weapon |
 
 ## Gameplay defaults
 
@@ -34,13 +41,24 @@ The design docs leave some things open. Until they are decided, the bot uses the
   They have no use until alchemy exists.
 - **Learning a manual** is instant and equips it in that type's slot (the old technique stays learned).
   A duplicate of a learned manual gives 100 mastery EXP (× grade EXP multiplier).
-- **Breakthroughs** happen as soon as the Qi bar fills; there is no `/breakthrough` command yet.
+- **Breakthroughs**: Qi stops at a full bar at a bottleneck until you use `/breakthrough`.
   Mortal → Martial Apprentice always succeeds. A failed phase bottleneck costs 20% of current Qi
   but no injury.
-- **/train** has Read the Master and Endless Waves (everything tier 1 uses). Higher realms get the
-  same two at their tier's numbers until Ambush, Find the Weakness, Rhythm of the Blade and Sword
-  Formation are built. Endless Waves starts at 3.0s per wave and gets 8% faster each wave.
-  Timed buttons allow 1 extra second for Discord lag.
+- **Challenges** built: Read the Master, Endless Waves, Ambush and Find the Weakness (tiers 1–2).
+  Tiers 3–5 use these four until Rhythm of the Blade and Sword Formation are built.
+  Endless Waves starts at 3.0s per wave and gets 8% faster each wave. Timed buttons allow 1 extra
+  second for Discord lag.
+- **Ambush** (SHOAIB's rule): 3 HP, and your one counter stops every attacker whose move it beats.
+  Ambush uses Read the Master's time per step.
+- **Find the Weakness** score: solved in 1–2 tries = 100%, falling to 50% on the last try; unsolved = 0.
+  60 seconds per move press.
+- **Mastery stages** only rise by passing a trial (/spar with the technique). EXP stops at a full bar.
+- **/spar**: the master repeats a 3–4 move rhythm (15% surprises) and shows a tell half the time.
+  Winning an exchange lands a hit; ties hurt both a little. +30 EXP per well-timed use, +100 to each
+  well-timed technique on a win. 15 exchanges; if time runs out, whoever is in better shape wins.
+  60 seconds per move, then you forfeit. Not while injured or secluded.
+- **Seclusion and passive Qi** use the Qi Rate at the moment you collect. Passive Qi does not gather
+  during seclusion; entering seclusion banks your passive Qi first.
 - **Qi Rate** now includes the best equipped technique, an active Qi pill and a Blessed Land.
 
 ## Run it

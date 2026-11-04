@@ -9,12 +9,11 @@ import time
 
 import beasts
 import challenges
-import economy
 import explore
 import technique
 import training
 
-from . import combat, db, loot
+from . import combat, db, loot, mastery
 from . import player as rules
 
 CLUES = {
@@ -80,6 +79,7 @@ class Expedition:
         self.over = False
         self.defeated = False
         self.summary = []
+        self.notes = []           # mastery trial reminders, shown at the end
 
     # ── steps ────────────────────────────────────────────────────────
 
@@ -127,17 +127,12 @@ class Expedition:
                 self._give_mastery(t, uses * technique.COMBAT_EXP_PER_USE, quiet=True)
 
     def _give_mastery(self, tech, exp, quiet=False):
-        b = rules.active_blessing(self.player)
-        mult = 1 + (economy.BLESSING_TIERS[b[0]]["mastery_exp"] if b else 0)
-        land = rules.active_blessed_land(self.player)
-        if land:
-            mult *= training.BLESSED_LANDS[land[0]]["mastery_multiplier"]
-        exp = round(exp * mult)
-        db.add_mastery(self.conn, tech["id"], exp)
-        tech["mastery_exp"] += exp
-        if not quiet:
-            self.story.append(f"📈 **{tech['name']}** gains **{exp} mastery EXP**.")
-        return exp
+        gained, note = mastery.gain(self.conn, self.player, tech, exp)
+        if not quiet and gained:
+            self.story.append(f"📈 **{tech['name']}** gains **{gained} mastery EXP**.")
+        if note and note not in self.notes:
+            self.notes.append(note)
+        return gained
 
     def _wild_beast(self):
         normals = [b for b in beasts.BEASTS[self.player["realm"]] if b[1] == "normal"]
@@ -278,7 +273,8 @@ class Expedition:
         self.story.append("🪨 An ancient stone tablet. Its carvings speak of the martial path...")
         if self.techniques:
             t = self.rng.choice(self.techniques)
-            self._give_mastery(t, technique.PRACTICE_BASE_EXP * explore.STONE_TABLET_PRACTICE_SESSIONS)
+            if not self._give_mastery(t, technique.PRACTICE_BASE_EXP * explore.STONE_TABLET_PRACTICE_SESSIONS):
+                self.story.append(f"**{t['name']}** can learn nothing more until it passes its trial.")
 
     def _elite_lair(self):
         elites = [b for b in beasts.BEASTS[self.player["realm"]] if b[1] == "elite"]
@@ -354,4 +350,5 @@ class Expedition:
             lines.append(f"🐾 Beasts slain: {self.beasts_slain}")
         if len(lines) == (1 if self.defeated else 0):
             lines.append("You return empty-handed.")
+        lines += self.notes
         self.summary = lines

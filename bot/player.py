@@ -34,6 +34,11 @@ def fmt_duration(seconds):
     return f"{max(1, m)}m" if seconds >= 60 else f"{seconds}s"
 
 
+def technique_slots(realm):
+    """2 slots (1 attack + 1 defense); Martial Warrior adds a flex slot (technique.md)."""
+    return 3 if realm_index(realm) >= realm_index("Martial Warrior") else 2
+
+
 def realm_index(realm):
     return REALM_ORDER.index(realm)
 
@@ -116,8 +121,7 @@ def realm_requirement_missing(player, techniques, target_realm):
         return None
     grade, stage = req["technique_mastery"]
     need_idx = [s["name"] for s in technique.MASTERY_STAGES].index(stage)
-    if not any((grade == "any" or t["grade"] == grade)
-               and mastery_index(t["mastery_exp"], t["grade"]) >= need_idx for t in techniques):
+    if not any((grade == "any" or t["grade"] == grade) and stage_of(t) >= need_idx for t in techniques):
         what = "a technique" if grade == "any" else f"a {grade} technique"
         return f"{what} at **{stage}**"
     if req.get("beast_king_kill"):
@@ -125,59 +129,114 @@ def realm_requirement_missing(player, techniques, target_realm):
     return None
 
 
+def next_gate(player):
+    """What filling the current bar leads to: ("layer", None), ("phase", phase), ("realm", realm) or ("peak", None)."""
+    realm, layer = player["realm"], player["layer"]
+    if layer >= max_layer(realm):
+        if realm == REALM_ORDER[-1]:
+            return "peak", None
+        return "realm", REALM_ORDER[realm_index(realm) + 1]
+    if phase_for(layer) != phase_for(layer + 1):
+        return "phase", phase_for(layer + 1)
+    return "layer", None
+
+
+def breakthrough_chance(player):
+    kind, _ = next_gate(player)
+    if kind == "realm":
+        return 1.0 if player["realm"] == "Mortal" else training.REALM_BREAKTHROUGH_SUCCESS
+    if kind == "phase":
+        return training.PHASE_BOTTLENECK_SUCCESS
+    return None
+
+
 def add_qi(player, amount, techniques=(), rng=random, now=None):
-    """Add Qi and run breakthroughs (training.md). Mutates and returns `player`, plus a list of
-    event strings. Layer→layer is automatic; phase bottlenecks roll 90%, realm breakthroughs 70%.
-    Mortal → Martial Apprentice always succeeds (tutorial lesson 8)."""
-    now = time.time() if now is None else now
+    """Add Qi. Layer → layer within a phase is automatic (training.md); at a phase bottleneck or
+    realm gate the Qi stops at a full bar and the player uses /breakthrough.
+    Mutates and returns `player`, plus a list of event strings."""
     events = []
     player["qi"] += amount
     while player["qi"] >= qi_needed(player["realm"], player["layer"]):
         need = qi_needed(player["realm"], player["layer"])
-        realm, layer = player["realm"], player["layer"]
-        top = layer >= max_layer(realm)
-        if top and realm == REALM_ORDER[-1]:
-            player["qi"] = need
-            events.append("You stand at the peak of the martial world. The Heavenly Tribulation awaits...")
-            break
-        if top:
-            target = REALM_ORDER[realm_index(realm) + 1]
-            missing = realm_requirement_missing(player, techniques, target)
-            if missing:
-                player["qi"] = need
-                events.append(f"🔒 Your Qi is full, but reaching **{target}** also needs {missing}.")
-                break
-            chance = 1.0 if realm == "Mortal" else training.REALM_BREAKTHROUGH_SUCCESS
-            if rng.random() < chance:
-                player["qi"] -= need
-                player["realm"], player["layer"] = target, 1
-                player["breakthroughs"] += 1
-                events.append(f"🌟 **Realm breakthrough!** You are now **{target}**, 1st Layer!")
-                continue
-            lost = player["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
-            player["qi"] -= lost
-            player["failed_breakthroughs"] += 1
-            player["injured_until"] = now + training.INJURY_HOURS * 3600
-            events.append(f"💥 Your breakthrough to **{target}** failed! You lost {lost:,.0f} Qi and are "
-                          f"injured for {training.INJURY_HOURS} hours (no exploring).")
-            break
-        if phase_for(layer) != phase_for(layer + 1):
-            if rng.random() >= training.PHASE_BOTTLENECK_SUCCESS:
-                lost = player["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
-                player["qi"] -= lost
-                player["failed_breakthroughs"] += 1
-                events.append(f"💢 You hit the bottleneck into the **{phase_for(layer + 1)}** and failed. "
-                              f"You lost {lost:,.0f} Qi.")
-                break
-            player["breakthroughs"] += 1
+        kind, target = next_gate(player)
+        if kind == "layer":
             player["qi"] -= need
             player["layer"] += 1
-            events.append(f"⛰️ Bottleneck broken! **{phase_for(player['layer'])}**, {ordinal(player['layer'])} Layer.")
+            events.append(f"⬆️ You reached the **{ordinal(player['layer'])} Layer**!")
             continue
-        player["qi"] -= need
-        player["layer"] += 1
-        events.append(f"⬆️ You reached the **{ordinal(player['layer'])} Layer**!")
+        player["qi"] = need
+        if kind == "peak":
+            events.append("You stand at the peak of the martial world. The Heavenly Tribulation awaits...")
+        elif kind == "phase":
+            events.append(f"⛰️ Your Qi is full and presses against the **{target}** bottleneck. Use **/breakthrough**!")
+        else:
+            missing = realm_requirement_missing(player, techniques, target)
+            if missing:
+                events.append(f"🔒 Your Qi is full, but reaching **{target}** also needs {missing}.")
+            else:
+                events.append(f"🌟 Your Qi is full! Use **/breakthrough** to reach **{target}**.")
+        break
     return player, events
+
+
+def attempt_breakthrough(player, techniques=(), rng=random, now=None):
+    """Try the phase or realm breakthrough. Mutates player. Returns (success or None if not possible, message)."""
+    now = time.time() if now is None else now
+    need = qi_needed(player["realm"], player["layer"])
+    kind, target = next_gate(player)
+    if kind in ("layer", "peak"):
+        return None, "There is no bottleneck ahead of you. Layers within a phase open on their own as Qi fills."
+    if player["qi"] < need:
+        return None, f"Your Qi bar is not full yet: **{player['qi']:,.1f} / {need:,}**."
+    if kind == "realm":
+        missing = realm_requirement_missing(player, techniques, target)
+        if missing:
+            return None, f"🔒 To reach **{target}** you also need {missing}."
+    chance = breakthrough_chance(player)
+    if rng.random() < chance:
+        player["qi"] -= need
+        player["breakthroughs"] += 1
+        if kind == "realm":
+            player["realm"], player["layer"] = target, 1
+            return True, f"🌟 **Realm breakthrough!** Heaven and earth tremble. You are now **{target}**, 1st Layer!"
+        player["layer"] += 1
+        return True, f"⛰️ **Bottleneck broken!** You enter the **{target}**, {ordinal(player['layer'])} Layer."
+    lost = player["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
+    player["qi"] -= lost
+    player["failed_breakthroughs"] += 1
+    if kind == "realm":
+        player["injured_until"] = now + training.INJURY_HOURS * 3600
+        return False, (f"💥 **Breakthrough failed!** Your meridians recoil. You lose {lost:,.1f} Qi and are injured "
+                       f"for {training.INJURY_HOURS} hours (no exploring or sparring).")
+    return False, f"💢 **The bottleneck holds.** You lose {lost:,.1f} Qi. Gather it again and retry."
+
+
+# ── Passive Qi and seclusion ──────────────────────────────────────────
+
+def in_seclusion(player):
+    return player.get("seclusion_start") is not None
+
+
+def passive_qi(player, techniques=(), now=None):
+    """(Qi stored by passive gathering, hours counted). Stops at 12 hours; nothing gathers in seclusion."""
+    now = time.time() if now is None else now
+    if in_seclusion(player):
+        return 0.0, 0.0
+    since = player.get("qi_collected_at")
+    if since is None:
+        since = player["created_at"]
+    hours = min(training.PASSIVE_MAX_STORED_HOURS, max(0.0, now - since) / 3600)
+    return qi_rate(player, now, techniques)[0] * hours, hours
+
+
+def seclusion_qi(player, techniques=(), now=None):
+    """(Qi earned, hours, completed). Leaving early cancels the ×2 for the time spent."""
+    now = time.time() if now is None else now
+    start, end = player["seclusion_start"], player["seclusion_end"]
+    done = now >= end
+    hours = (min(now, end) - start) / 3600
+    mult = training.SECLUSION_QI_MULTIPLIER if done else 1.0
+    return qi_rate(player, now, techniques)[0] * mult * hours, hours, done
 
 
 def ordinal(n):
@@ -198,8 +257,48 @@ def mastery_stage(exp, grade="Mortal"):
     return technique.MASTERY_STAGES[mastery_index(exp, grade)]["name"]
 
 
+def stage_of(tech):
+    """Current mastery stage index. Stored techniques carry it (raised by passing a trial);
+    plain dicts without it fall back to what their EXP would reach."""
+    if tech.get("stage") is not None:
+        return tech["stage"]
+    return mastery_index(tech.get("mastery_exp", 0), tech["grade"])
+
+
 def mastery_mult(tech):
-    return technique.MASTERY_STAGES[mastery_index(tech["mastery_exp"], tech["grade"])]["multiplier"]
+    return technique.MASTERY_STAGES[stage_of(tech)]["multiplier"]
+
+
+def mastery_cap(tech):
+    """EXP needed to fill the bar for the next stage, or None at the last stage."""
+    nxt = stage_of(tech) + 1
+    if nxt >= len(technique.MASTERY_STAGES):
+        return None
+    return round(technique.MASTERY_STAGES[nxt]["exp_to_reach"] * technique.GRADE_EXP_MULTIPLIER[tech["grade"]])
+
+
+def bar_full(tech):
+    cap = mastery_cap(tech)
+    return cap is not None and tech["mastery_exp"] >= cap
+
+
+def mastery_bonus(player, now=None):
+    """Multiplier on mastery EXP from a Heavenly Blessing and a Blessed Land."""
+    b = active_blessing(player, now)
+    mult = 1 + (economy.BLESSING_TIERS[b[0]]["mastery_exp"] if b else 0)
+    land = active_blessed_land(player, now)
+    if land:
+        mult *= training.BLESSED_LANDS[land[0]]["mastery_multiplier"]
+    return mult
+
+
+def daily_rate(rates, done_today):
+    """rates like technique.PRACTICE_DAILY_RATES: [(sessions, rate), ..., (None, rate)]."""
+    for n, rate in rates:
+        if n is None or done_today < n:
+            return rate
+        done_today -= n
+    return rates[-1][1]
 
 
 # ── Final stats (stats.md: all % buffs of a stat add up, then apply once) ──
@@ -291,6 +390,9 @@ def status_text(player, now=None):
     land = active_blessed_land(player, now)
     if land:
         parts.append(f"{land[0].replace('_', ' ').title()} ({fmt_duration(land[1])})")
+    if in_seclusion(player):
+        left = (player["seclusion_end"] or 0) - (time.time() if now is None else now)
+        parts.append(f"Seclusion ({fmt_duration(left)} left)" if left > 0 else "Seclusion complete")
     inj = injured_for(player, now)
     if inj:
         parts.append(f"Injured ({fmt_duration(inj)})")
@@ -316,7 +418,7 @@ def profile_data(player, techniques, rank, avatar_path=None, now=None, weapon=No
         "defense": defense,
         "coins": player["lotus_coins"],
         "techniques": [{"name": t["name"], "grade": t["grade"], "type": t["type"],
-                        "mastery": mastery_stage(t["mastery_exp"], t["grade"])} for t in techniques[:3]],
+                        "mastery": technique.MASTERY_STAGES[stage_of(t)]["name"]} for t in techniques[:3]],
         "weapon": weapon_card(weapon),
         "beasts": player["beasts_slain"],
         "breakthroughs": player["breakthroughs"],

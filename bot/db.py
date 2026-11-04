@@ -52,6 +52,14 @@ CREATE TABLE IF NOT EXISTS items (
 );
 CREATE INDEX IF NOT EXISTS items_user ON items(user_id);
 
+CREATE TABLE IF NOT EXISTS daily_counts (
+    user_id     INTEGER NOT NULL,
+    name        TEXT    NOT NULL,
+    day         TEXT    NOT NULL,   -- UTC date, YYYY-MM-DD
+    count       INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, name, day)
+);
+
 CREATE TABLE IF NOT EXISTS cooldowns (
     user_id     INTEGER NOT NULL,
     name        TEXT    NOT NULL,
@@ -73,6 +81,12 @@ PLAYER_COLUMNS = {
     "blessed_land_expires": "REAL",
     "last_challenge":       "TEXT",
     "bag_capacity":         "INTEGER NOT NULL DEFAULT 60",
+    "qi_collected_at":      "REAL",      # last /meditate (passive Qi gathers from here)
+    "seclusion_start":      "REAL",
+    "seclusion_end":        "REAL",
+}
+TECHNIQUE_COLUMNS = {
+    "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
 }
 
 BAG_STACKABLE = {"manuals", "pills", "materials", "chests"}   # weapons are unique (rolled buffs)
@@ -83,11 +97,12 @@ def connect(path):
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
-    have = {r["name"] for r in conn.execute("PRAGMA table_info(players)")}
     with conn:
-        for col, decl in PLAYER_COLUMNS.items():
-            if col not in have:
-                conn.execute(f"ALTER TABLE players ADD COLUMN {col} {decl}")
+        for table, cols in (("players", PLAYER_COLUMNS), ("techniques", TECHNIQUE_COLUMNS)):
+            have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+            for col, decl in cols.items():
+                if col not in have:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
     return conn
 
 
@@ -142,17 +157,64 @@ def add_coins(conn, user_id, amount):
 
 # ── Techniques ────────────────────────────────────────────────────────
 
-def learn_technique(conn, user_id, name, type_, grade):
-    """Learn a technique and equip it in its type's slot (the old one stays learned)."""
+def learn_technique(conn, user_id, name, type_, grade, slots=2):
+    """Learn a technique and equip it (see equip_technique). Returns its id."""
     with conn:
-        conn.execute("UPDATE techniques SET equipped = 0 WHERE user_id = ? AND type = ?", (user_id, type_))
-        conn.execute("INSERT INTO techniques (user_id, name, type, grade, equipped) VALUES (?, ?, ?, ?, 1)",
-                     (user_id, name, type_, grade))
+        cur = conn.execute("INSERT INTO techniques (user_id, name, type, grade, equipped) VALUES (?, ?, ?, ?, 0)",
+                           (user_id, name, type_, grade))
+    equip_technique(conn, user_id, cur.lastrowid, slots)
+    return cur.lastrowid
+
+
+def equip_technique(conn, user_id, technique_id, slots=2):
+    """Equip a learned technique. Slots: 1 attack + 1 defense, plus a flex slot when slots == 3
+    (technique.md). Fills a free slot if there is one, otherwise replaces the oldest equipped
+    technique of the same type. Returns the replaced technique's name or None."""
+    tech = get_technique(conn, user_id, technique_id)
+    equipped = get_techniques(conn, user_id)
+    if not tech or tech["equipped"]:
+        return None
+    same = [t for t in equipped if t["type"] == tech["type"]]
+    other = [t for t in equipped if t["type"] != tech["type"]]
+    replaced = None
+    if len(same) >= slots - 1 or len(equipped) >= slots:
+        replaced = same[0] if same else (other[0] if len(other) > 1 else None)
+    with conn:
+        if replaced:
+            conn.execute("UPDATE techniques SET equipped = 0 WHERE id = ?", (replaced["id"],))
+        conn.execute("UPDATE techniques SET equipped = 1 WHERE id = ?", (technique_id,))
+    return replaced["name"] if replaced else None
+
+
+def unequip_technique(conn, user_id, technique_id):
+    """Unequip, as long as one technique of that type stays equipped. Returns True on success."""
+    tech = get_technique(conn, user_id, technique_id)
+    if not tech or not tech["equipped"]:
+        return False
+    same = [t for t in get_techniques(conn, user_id) if t["type"] == tech["type"]]
+    if len(same) < 2:
+        return False
+    with conn:
+        conn.execute("UPDATE techniques SET equipped = 0 WHERE id = ?", (technique_id,))
+    return True
 
 
 def add_mastery(conn, technique_id, exp):
     with conn:
         conn.execute("UPDATE techniques SET mastery_exp = mastery_exp + ? WHERE id = ?", (int(exp), technique_id))
+
+
+def set_mastery(conn, technique_id, exp=None, stage=None):
+    with conn:
+        if exp is not None:
+            conn.execute("UPDATE techniques SET mastery_exp = ? WHERE id = ?", (int(exp), technique_id))
+        if stage is not None:
+            conn.execute("UPDATE techniques SET stage = ? WHERE id = ?", (stage, technique_id))
+
+
+def get_technique(conn, user_id, technique_id):
+    row = conn.execute("SELECT * FROM techniques WHERE id = ? AND user_id = ?", (technique_id, user_id)).fetchone()
+    return dict(row) if row else None
 
 
 # ── Bag ───────────────────────────────────────────────────────────────
@@ -217,6 +279,11 @@ def equipped_weapon(conn, user_id):
     return _item(row) if row else None
 
 
+def unequip_weapon(conn, user_id):
+    with conn:
+        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = 'weapons'", (user_id,))
+
+
 def equip_weapon(conn, user_id, item_id):
     with conn:
         conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = 'weapons'", (user_id,))
@@ -237,3 +304,24 @@ def set_cooldown(conn, user_id, name, seconds, now=None):
     with conn:
         conn.execute("INSERT OR REPLACE INTO cooldowns (user_id, name, until) VALUES (?, ?, ?)",
                      (user_id, name, now + seconds))
+
+
+# ── Daily counters (diminishing returns) ──────────────────────────────
+
+def _day(now):
+    return time.strftime("%Y-%m-%d", time.gmtime(now))
+
+
+def daily_count(conn, user_id, name, now=None):
+    now = time.time() if now is None else now
+    row = conn.execute("SELECT count FROM daily_counts WHERE user_id = ? AND name = ? AND day = ?",
+                       (user_id, name, _day(now))).fetchone()
+    return row[0] if row else 0
+
+
+def bump_daily(conn, user_id, name, now=None):
+    now = time.time() if now is None else now
+    with conn:
+        conn.execute("INSERT INTO daily_counts (user_id, name, day, count) VALUES (?, ?, ?, 1) "
+                     "ON CONFLICT(user_id, name, day) DO UPDATE SET count = count + 1",
+                     (user_id, name, _day(now)))
