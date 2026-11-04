@@ -1,4 +1,3 @@
-Techniques
 # Techniques
 
 Two types only:
@@ -25,7 +24,7 @@ Two types only:
 | 4 | Divine Transformation | ×1.35 |
 | 5 | Return to Simplicity | ×1.50 |
 
-Mastery EXP comes from /train and from using the technique in fights.
+Mastery EXP comes from /practice, /spar and using the technique in fights.
 
 Mastery EXP needed to reach each stage (Mortal grade):
 
@@ -82,6 +81,104 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 - Passive % buffs add into the buff totals in stats.md
 - The 30% one-hit cap in stats.md still applies to every technique
 
+## Technique slots
+
+| Realm | Slots |
+|---|---|
+| Mortal | 2: 1 attack + 1 defense |
+| Martial Warrior | 3: adds 1 flex slot (attack or defense) |
+
+- Flex slot lets players build aggressive (2 attack + 1 defense) or tank (1 attack + 2 defense)
+- Techniques can only be swapped **outside** of fights
+
+## Schools
+
+All techniques are unarmed. Weapons only give stat buffs (see equipment.md later).
+
+| School | Style |
+|---|---|
+| Fist | Direct power |
+| Palm | Flowing, controlling |
+| Finger | Precise, piercing |
+| Leg | Fast kicks, sweeps |
+| Body | Defense and endurance |
+
+## Technique effects
+
+Each technique has one special effect. Grade and mastery multipliers still apply
+to damage and block; the 30% cap applies to **total damage in one turn**.
+
+### Attack effects
+| Effect | What it does |
+|---|---|
+| Combo | Hits several times at reduced damage per hit |
+| Pierce | Ignores part of the defender's Defense |
+| Stagger | If it lands, the defender's next block is weaker |
+| Heavy | Extra damage, but can't be used two turns in a row |
+
+### Defense effects
+| Effect | What it does |
+|---|---|
+| Counter | Reflects part of the blocked damage back |
+| Recover | Heals a % of max HP when it blocks |
+| Unbreakable | Break moves deal only half damage against it |
+| Evade | Chance to take no damage at all |
+
+## Technique list
+
+Names grow grander with grade: Mortal = plain actions, Yellow = animals,
+Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
+
+### Mortal grade
+| Technique | Type | School | Effect |
+|---|---|---|---|
+| Iron Fist | Attack | Fist | — |
+| Twin Palm Strike | Attack | Palm | Combo: 2 hits × 60% |
+| Crescent Sweep | Attack | Leg | Stagger: next block −15% |
+| Horse Stance Guard | Defense | Body | — |
+| Parrying Arm | Defense | Body | Counter 10% |
+| Calm Breath Stance | Defense | Body | Recover 3% |
+
+### Yellow grade
+| Technique | Type | School | Effect |
+|---|---|---|---|
+| Fierce Tiger Claw | Attack | Fist | Stagger: next block −25% |
+| Swift Swallow Kick | Attack | Leg | Pierce 15% |
+| Raging Bull Fist | Attack | Fist | Heavy ×1.2 |
+| Iron Cloth Body | Defense | Body | Unbreakable |
+| Flowing Stream Palm | Defense | Palm | Recover 5% |
+| Crane Wing Deflection | Defense | Palm | Counter 15% |
+
+### Mystic grade
+| Technique | Type | School | Effect |
+|---|---|---|---|
+| Rolling Thunder Palm | Attack | Palm | Stagger: next block −50% |
+| Viper Fang Finger | Attack | Finger | Pierce 25% |
+| Autumn Wind Kick | Attack | Leg | Combo: 3 hits × 40% |
+| Moon Mirror Palm | Defense | Palm | Counter 25% |
+| Drifting Mist Steps | Defense | Body | Evade 25% |
+| Rooted Mountain Stance | Defense | Body | Unbreakable |
+
+### Earth grade
+| Technique | Type | School | Effect |
+|---|---|---|---|
+| Mountain-Shattering Fist | Attack | Fist | Heavy ×1.3 |
+| Thousand Shadow Palm | Attack | Palm | Combo: 3 hits × 45% |
+| River-Splitting Finger | Attack | Finger | Pierce 30% |
+| Golden Bell Cover | Defense | Body | Unbreakable |
+| Ancient Turtle Shell Art | Defense | Body | Recover 8% |
+| Thousand Hands Deflection | Defense | Palm | Counter 30% |
+
+### Heaven grade
+| Technique | Type | School | Effect |
+|---|---|---|---|
+| Heaven-Rending Palm | Attack | Palm | Pierce 40% |
+| Nine Dragons Ascending Fist | Attack | Fist | Stagger: opponent can't Guard next turn |
+| Meteor-Falling Kick | Attack | Leg | Heavy ×1.5 |
+| Void Mirror Stance | Defense | Palm | Counter 40% |
+| Immortal Lotus Body | Defense | Body | Recover 12% |
+| Cloud-Walking Shadow | Defense | Body | Evade 40% |
+
 ## Training mastery
 
 Mastery is trained separately from realm training (/train).
@@ -131,7 +228,7 @@ Three ways, all requiring the player's attention (no AFK).
 
 ## How players get techniques
 
-1. **Start:** one Mortal-grade attack and one Mortal-grade defense technique
+1. **Start:** Iron Fist (attack) and Horse Stance Guard (defense)
 2. **Beasts:** drops when defeating beasts in the wild (stronger beasts, higher grades)
 3. **Quests:** rewards from quests
 4. **Later:** sects, shops (not yet)
