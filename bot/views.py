@@ -24,6 +24,7 @@ from profile_card import GRADES, JADE
 import technique
 
 from . import db, hunt, loot, mastery, trainer
+from . import render as card_render
 from . import player as rules
 from .expedition import PATH_EMOJI, Expedition
 
@@ -146,7 +147,7 @@ class InventoryView(OwnedView):
 
         self.button("Prev", self.on_prev, emoji="◀️", row=2, disabled=self.page <= 1)
         self.button("Next", self.on_next, emoji="▶️", row=2, disabled=self.page >= self.pages)
-        image = await asyncio.to_thread(render_inventory, data)
+        image = await card_render.render(render_inventory, data)
         return png(image, "inventory.png")
 
     async def refresh(self, interaction):

@@ -14,7 +14,7 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/inventory [category]` | Sends the bag card. Menus under it switch tab and page, and use an item: open a chest, equip a weapon, learn a manual, take a Qi pill |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 45 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
-| `/meditate` | Collects the Qi you gathered passively at your Qi Rate (stores up to 12 hours) |
+| `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
 | `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
 | `/qi` | Sends the dantian card: Qi bar (plus Qi waiting to be collected), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
@@ -27,6 +27,8 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
 | `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
+| `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call with Join / Leave /

@@ -179,10 +179,10 @@ def _row(seal, label, detail, value, active, warn=False):
 
 SAMPLE = {
     "name": "Shoaib", "realm": "Martial King", "phase": "Late Phase", "layer": 8, "talent": "Genius",
-    "qi": 38210.4, "qi_needed": 53760, "pending": 4120.0, "pending_label": "waiting · /meditate to collect",
+    "qi": 38210.4, "qi_needed": 53760, "pending": 4120.0, "pending_label": "gathered, not yet banked",
     "rate": 913.92, "mult": 2.86, "secluded": False, "eta": "12h 30m",
     "gate": "9th Layer", "gate_note": "opens on its own",
-    "status": "Gathering · 3.9h of 12h stored", "status_tone": "jade", "train_qi": 3655.7,
+    "status": "Gathering on its own", "status_tone": "jade", "train_qi": 3655.7,
     "sources": [
         _row("根", "Realm base", "Martial King", "320 Qi/h", True),
         _row("才", "Talent", "Genius", "+20%", True),

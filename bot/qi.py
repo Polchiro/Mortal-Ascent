@@ -153,10 +153,8 @@ def qi_data(player, techniques, now=None):
     elif injured:
         status, tone = f"Injured · {fmt_long(injured)} to heal", "red"
     else:
-        cap = training.PASSIVE_MAX_STORED_HOURS
-        status = (f"Gathering · storage full ({cap}h) · /meditate" if hours >= cap
-                  else f"Gathering · {hours:.1f}h of {cap}h stored")
-        tone = "red" if hours >= cap else "jade"
+        # passive Qi is banked before every command, so it rises on its own
+        status, tone = "Gathering on its own", "jade"
 
     # time until the bar is full, at the current rate
     eff_rate = rate * (training.SECLUSION_QI_MULTIPLIER if secluded else 1)
@@ -178,7 +176,7 @@ def qi_data(player, techniques, now=None):
         "qi": qi,
         "qi_needed": need,
         "pending": pending,
-        "pending_label": ("from seclusion (×2 when complete)" if secluded else "waiting · /meditate to collect"),
+        "pending_label": ("from seclusion (×2 when complete)" if secluded else "gathered, not yet banked"),
         "rate": rate,
         "mult": mult,
         "secluded": secluded,

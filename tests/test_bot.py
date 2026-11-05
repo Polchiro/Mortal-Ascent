@@ -76,9 +76,11 @@ def test_cards_render_without_any_system_fonts(conn, monkeypatch):
 
     monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
     monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])
+    profile_card.clear_font_cache()
     p = new_player(conn)
     assert profile_card.render_profile(rules.profile_data(p, db.get_techniques(conn, 1), 1)).size == (1200, 720)
     assert render_balance(rules.balance_data(p)).size == (1200, 500)
+    profile_card.clear_font_cache()
 
 
 def test_command_error_always_answers():
@@ -96,3 +98,92 @@ def test_command_error_always_answers():
         asyncio.run(bot.on_app_command_error(inter, RuntimeError("boom")))
         sent = inter.followup.send if deferred else inter.response.send_message
         sent.assert_awaited_once()
+
+
+def test_fonts_are_looked_up_once(conn, monkeypatch):
+    """A missing font made Pillow search the whole system font folder on every call (slow /profile on Windows)."""
+    import PIL.ImageFont
+    import profile_card
+    from balance_card import render_balance
+
+    p = new_player(conn)
+    data = rules.profile_data(p, db.get_techniques(conn, 1), 1)
+    profile_card.render_profile(data)
+    render_balance(rules.balance_data(p))
+    calls = []
+    real = PIL.ImageFont.truetype
+    monkeypatch.setattr(PIL.ImageFont, "truetype", lambda *a, **k: calls.append(a) or real(*a, **k))
+    profile_card.render_profile(data)
+    render_balance(rules.balance_data(p))
+    assert calls == []
+
+
+def test_profile_renders_from_avatar_bytes(conn):
+    import io
+    from PIL import Image
+    from profile_card import render_profile
+
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), (200, 30, 30)).save(buf, format="PNG")
+    p = new_player(conn)
+    data = rules.profile_data(p, db.get_techniques(conn, 1), 1)
+    data["avatar_bytes"] = buf.getvalue()
+    assert render_profile(data).size == (1200, 720)
+
+
+def test_profile_command_twice_with_slow_avatar():
+    """Run /profile twice in a row with an avatar download that never finishes: both must reply."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+
+    from bot import client
+    from bot.client import MortalAscent
+
+    async def go():
+        bot = MortalAscent(":memory:")
+        client.AVATAR_TIMEOUT_SECONDS = 0.2
+        start = bot.tree.get_command("start").callback
+        profile = bot.tree.get_command("profile").callback
+        balance = bot.tree.get_command("balance").callback
+
+        def inter():
+            i = MagicMock()
+            i.user.id, i.user.display_name = 1, "Tester"
+            i.response.send_message, i.response.defer, i.followup.send = AsyncMock(), AsyncMock(), AsyncMock()
+
+            async def never():
+                await asyncio.sleep(3600)
+            i.user.display_avatar.with_format.return_value.with_size.return_value.read = never
+            return i
+
+        await start(inter())
+        for cmd in (profile, profile, balance, balance):
+            i = inter()
+            await asyncio.wait_for(cmd(i), 30)
+            i.response.defer.assert_awaited_once()
+            assert i.followup.send.call_args.kwargs["file"].filename.endswith(".png")
+    asyncio.run(go())
+
+
+def test_admin_reset_and_give(conn, monkeypatch):
+    from bot import admin
+    new_player(conn)
+    now = time.time()
+    db.set_cooldown(conn, 1, "explore", 3600, now)
+    db.set_cooldown(conn, 1, "train", 3600, now)
+    db.bump_daily(conn, 1, "practice", now)
+    db.update_player(conn, 1, injured_until=now + 600, seclusion_start=now - 3600, seclusion_end=now + 3600)
+    done = admin.reset_player(conn, 1, now)
+    assert len(done) == 4
+    assert db.cooldown_left(conn, 1, "explore", now) == 0 and db.cooldown_left(conn, 1, "train", now) == 0
+    assert db.daily_count(conn, 1, "practice", now) == 0
+    p = db.get_player(conn, 1)
+    assert not rules.injured_for(p, now) and rules.seclusion_qi(p, (), now)[2]
+    assert admin.reset_player(conn, 1, now + 1) == []
+
+    admin.give(conn, 1, lotus_coins=100, moon_pearls=5, qi=rules.qi_needed("Mortal", 1) + 1)
+    p = db.get_player(conn, 1)
+    assert p["lotus_coins"] == 150 and p["moon_pearls"] == 5 and p["layer"] == 2
+
+    monkeypatch.setenv("ADMIN_IDS", "123, 456,junk")
+    assert admin.admin_ids_from_env() == {123, 456}

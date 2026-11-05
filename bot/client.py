@@ -1,13 +1,11 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /qi, /practice, /spar, /techniques, /equipment,
-/shop, /blessing, /recharge, /reroll, /physician, /bestiary.
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary. Admin testing commands are in admin.py.
 """
 import asyncio
 import io
 import logging
-import os
-import tempfile
 import time
 
 import discord
@@ -21,7 +19,8 @@ from balance_card import render_balance
 from profile_card import render_profile
 from qi_card import render_qi
 
-from . import combat, db, hunt, loot, qi, trainer
+from . import admin, combat, db, hunt, loot, qi, trainer
+from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
                     TechniquesView, TrainView, blessing_embed, shop_embed)
@@ -42,12 +41,23 @@ class MortalAscent(discord.Client):
     def __init__(self, db_path, guild_id=None):
         super().__init__(intents=discord.Intents.default())
         self.tree = app_commands.CommandTree(self)
+        self.tree.interaction_check = self.before_command
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
         self.busy = set()          # (user_id, "explore" | "train") while a session is running
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
+        admin.register(self)
+
+    async def before_command(self, interaction):
+        """Runs before every slash command: bank the passive Qi gathered since last time."""
+        try:
+            async with self.db_lock:
+                sync_passive_qi(self.conn, interaction.user.id)
+        except Exception:
+            log.exception("Passive Qi sync failed")
+        return True
 
     async def on_app_command_error(self, interaction, error):
         """Log any command failure and always answer, so Discord never hangs on "thinking..."."""
@@ -75,18 +85,36 @@ class MortalAscent(discord.Client):
         log.info("Logged in as %s (%s)", self.user, self.user.id)
 
 
+AVATAR_TIMEOUT_SECONDS = 5
+
+
+def sync_passive_qi(conn, user_id, now=None):
+    """Add the passive Qi gathered since the last collection (training.md: it gathers at your
+    Qi Rate and stores up to 12 hours). Called before every command, so Qi rises on its own.
+    Returns (qi_added, events)."""
+    now = time.time() if now is None else now
+    p = db.get_player(conn, user_id)
+    if not p or rules.in_seclusion(p):
+        return 0.0, []
+    techs = db.get_techniques(conn, user_id)
+    qi, _ = rules.passive_qi(p, techs, now)
+    p, events = rules.add_qi(p, qi, techs, now=now)
+    db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], qi_collected_at=now)
+    return qi, events
+
+
 async def render_with_avatar(member, render, make_data):
-    """Download the member's avatar to a temp file, build card data, render off the event loop."""
-    with tempfile.TemporaryDirectory() as tmp:
-        avatar_path = None
-        try:
-            avatar_path = os.path.join(tmp, "avatar.png")
-            await member.display_avatar.with_format("png").with_size(256).save(avatar_path)
-        except Exception:
-            log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
-            avatar_path = None
-        data = make_data(avatar_path)
-        return await asyncio.to_thread(render, data)
+    """Fetch the member's avatar into memory (no temp files), build card data, render off the event loop.
+    A slow or failed avatar download falls back to the initial instead of holding up the card."""
+    avatar = None
+    try:
+        avatar = await asyncio.wait_for(member.display_avatar.with_format("png").with_size(256).read(),
+                                        AVATAR_TIMEOUT_SECONDS)
+    except Exception:
+        log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
+    data = make_data(None)
+    data["avatar_bytes"] = avatar
+    return await card_render.render(render, data)
 
 
 def register_commands(bot):
@@ -134,6 +162,10 @@ def register_commands(bot):
             await interaction.response.send_message(msg, ephemeral=True)
             return
         await interaction.response.defer()
+        if target != interaction.user:
+            async with bot.db_lock:
+                sync_passive_qi(bot.conn, target.id)
+        p = db.get_player(bot.conn, target.id)
         techniques = db.get_techniques(bot.conn, target.id)
         rank = db.server_rank(bot.conn, target.id, rules.REALM_ORDER)
         weapon = db.equipped_weapon(bot.conn, target.id)
@@ -149,7 +181,7 @@ def register_commands(bot):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
         await interaction.response.defer()
-        image = await asyncio.to_thread(render_balance, rules.balance_data(p))
+        image = await card_render.render(render_balance, rules.balance_data(p))
         await interaction.followup.send(file=png(image, "balance.png"))
 
     @tree.command(name="inventory", description="Open your bag: manuals, weapons, pills, materials and chests")
@@ -245,27 +277,26 @@ def register_commands(bot):
                          breakthroughs=p["breakthroughs"], failed_breakthroughs=p["failed_breakthroughs"],
                          injured_until=p.get("injured_until"), **extra)
 
-    @tree.command(name="meditate", description="Collect the Internal Qi you gathered passively (stores up to 12 hours)")
+    @tree.command(name="meditate", description="See your passive Qi: how fast it gathers and when your next layer comes")
     async def meditate(interaction: discord.Interaction):
         uid = interaction.user.id
-        async with bot.db_lock:
-            p = db.get_player(bot.conn, uid)
-            if not p:
-                await interaction.response.send_message(NOT_STARTED, ephemeral=True)
-                return
-            if rules.in_seclusion(p):
-                await interaction.response.send_message(
-                    "🧘 You are in seclusion; your Qi gathers there instead. Check it with **/seclusion**.", ephemeral=True)
-                return
-            techs = db.get_techniques(bot.conn, uid)
-            now = time.time()
-            qi, hours = rules.passive_qi(p, techs, now)
-            p, events = rules.add_qi(p, qi, techs, now=now)
-            save_progress(uid, p, qi_collected_at=now)
-        full = hours >= training.PASSIVE_MAX_STORED_HOURS
-        text = [f"*You sit cross-legged and draw in the Qi gathered over {hours:.1f} hours...*",
-                f"**Internal Qi:** +{qi:,.1f}" + ("  *(storage was full: 12h max)*" if full else ""),
-                qi_line(p)] + events
+        p = db.get_player(bot.conn, uid)     # passive Qi was already banked by before_command
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        if rules.in_seclusion(p):
+            await interaction.response.send_message(
+                "🧘 You are in seclusion; your Qi gathers there at ×2. Check it with **/seclusion**.", ephemeral=True)
+            return
+        rate, mult = rules.qi_rate(p, techniques=db.get_techniques(bot.conn, uid))
+        need = rules.qi_needed(p["realm"], p["layer"])
+        left = max(0.0, need - p["qi"])
+        eta = (f"Your bar fills in about **{rules.fmt_duration(left / rate * 3600)}**." if left and rate
+               else "Your bar is full!" + (" Use **/breakthrough**." if rules.next_gate(p)[0] in ("phase", "realm") else ""))
+        text = ["*You sit cross-legged and feel Qi flowing in...*",
+                f"Your Qi gathers **on its own** at **{rate:,.2f} Qi/hour** (×{mult:.2f}). It is added every time you "
+                f"use a command, and up to {training.PASSIVE_MAX_STORED_HOURS} hours of it is kept while you are away.",
+                qi_line(p), eta]
         await interaction.response.send_message(embed=embed("🧘 Meditation", "\n".join(text)))
 
     async def end_seclusion(uid):
@@ -336,7 +367,7 @@ def register_commands(bot):
             return
         await interaction.response.defer()
         data = qi.qi_data(p, db.get_techniques(bot.conn, uid))
-        image = await asyncio.to_thread(render_qi, data)
+        image = await card_render.render(render_qi, data)
         await interaction.followup.send(file=png(image, "qi.png"))
 
     @tree.command(name="breakthrough", description="Attempt to break through a phase bottleneck or into the next realm")
