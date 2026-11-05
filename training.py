@@ -58,22 +58,24 @@ BLESSED_LAND_COOLDOWN_MULTIPLIER = 0.5
 
 # ── Pills ─────────────────────────────────────────────────────────────
 
+# Pill names, recipes and crafting live in alchemy.py (docs/alchemy.md)
 QI_PILLS = {
     # grade: Qi Rate multiplier
-    "Mortal": 1.2,
-    "Yellow": 1.4,
-    "Mystic": 1.7,
-    "Earth":  2.0,
-    "Heaven": 2.5,
+    "Mortal": 1.3,
+    "Yellow": 1.5,
+    "Mystic": 1.8,
+    "Earth":  2.2,
+    "Heaven": 2.8,
 }
-QI_PILL_DURATION_HOURS = 4
+QI_PILL_DURATION_HOURS = 2
 
 BREAKTHROUGH_PILLS = {
-    # grade: added success chance
-    "Yellow": 0.10,
-    "Mystic": 0.20,
-    "Earth":  0.30,
-    "Heaven": 0.40,
+    # grade: added success chance (hard to craft — see alchemy.py)
+    "Mortal": 0.05,
+    "Yellow": 0.07,
+    "Mystic": 0.10,
+    "Earth":  0.12,
+    "Heaven": 0.15,
 }
 
 # (minimum toxicity, pill effect multiplier) — checked top to bottom
@@ -82,22 +84,22 @@ PILL_TOXICITY_PENALTY = [
     (4, 0.50),
     (0, 1.00),
 ]
-TOXICITY_DECAY_HOURS = 24
+TOXICITY_DECAY_HOURS = 8
 
 # ── Qi needed per layer (Early phase) ─────────────────────────────────
 
 QI_PER_LAYER = {
-    "Mortal": 10,
-    "Martial Apprentice": 20,
-    "Martial Warrior": 80,
-    "Martial Expert": 320,
-    "Martial Master": 1120,
-    "Grand Martial Master": 3520,
-    "Martial Grandmaster": 11520,
-    "Martial King": 35840,
-    "Martial Emperor": 110080,
-    "Martial Ancestor": 327680,
-    "Martial Saint": 972800,
+    "Mortal": 8,
+    "Martial Apprentice": 16,
+    "Martial Warrior": 64,
+    "Martial Expert": 260,
+    "Martial Master": 900,
+    "Grand Martial Master": 2850,
+    "Martial Grandmaster": 9300,
+    "Martial King": 29000,
+    "Martial Emperor": 89000,
+    "Martial Ancestor": 265000,
+    "Martial Saint": 790000,
 }
 
 PHASE_QI_MULTIPLIER = {

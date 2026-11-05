@@ -5,6 +5,7 @@ an index of every beast, technique manual, weapon, chest, pill and herb in the g
 Everything in the index is read from the game data modules (beasts.py, technique.py,
 equipments.py, explore.py, training.py, bot/loot.py), so it stays in step when they change.
 """
+import alchemy
 import discord
 
 import beasts as beast_rules
@@ -301,7 +302,7 @@ def item_pages():
             src.append("/shop")
         if grade in MERCHANT_PILL_PRICE:
             src.append(f"merchants (🪷 {MERCHANT_PILL_PRICE[grade]})")
-        fields.append((f"{GRADE_SEAL[grade]} {grade} Qi Pill", (
+        fields.append((f"{GRADE_SEAL[grade]} {alchemy.QI_PILLS[grade]['name']}", (
             f"×{mult:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h\n"
             f"From: {', '.join(src) or 'not yet in the world'}")))
     fields.append(("天 Heaven-Defying Pill", (

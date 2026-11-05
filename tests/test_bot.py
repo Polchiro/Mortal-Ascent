@@ -39,7 +39,7 @@ def test_phase_and_qi_needed():
     assert rules.phase_for(1) == "Early Phase"
     assert rules.phase_for(8) == "Late Phase"
     assert rules.phase_for(10) == "Peak Phase"
-    assert rules.qi_needed("Martial King", 8) == round(35840 * 1.5)
+    assert rules.qi_needed("Martial King", 8) == round(29000 * 1.5)
 
 
 def test_qi_rate_with_blessing(conn):

@@ -120,7 +120,7 @@ def test_pill_raises_qi_rate_and_does_not_stack(conn):
     now = time.time()
     loot.use_item(conn, 1, pid, now=now)
     p = db.get_player(conn, 1)
-    assert rules.qi_rate(p, now)[1] == pytest.approx(1.2)
+    assert rules.qi_rate(p, now)[1] == pytest.approx(1.3)
     assert "still working" in loot.use_item(conn, 1, pid, now=now)
     assert db.get_items(conn, 1, "pills")[0]["qty"] == 1
 
@@ -130,7 +130,7 @@ def test_toxicity_weakens_pills():
     assert rules.pill_effect_mult(4) == 0.5
     assert rules.pill_effect_mult(7) == 0.25
     p = {"toxicity": 5, "toxicity_at": 0}
-    assert rules.current_toxicity(p, now=2 * 86400 + 1) == 3
+    assert rules.current_toxicity(p, now=2 * 8 * 3600 + 1) == 3   # 1 toxicity fades every 8 hours
 
 
 # ── Qi and breakthroughs ──────────────────────────────────────────────
@@ -143,8 +143,8 @@ def test_qi_rate_includes_best_technique():
 
 def test_layers_fill_then_mortal_breakthrough_always_succeeds(conn):
     p = new_player(conn)
-    p, events = rules.add_qi(p, 10 + 10 + 10 + 3, rng=random.Random(0))
-    assert (p["realm"], p["layer"], p["qi"]) == ("Mortal", 3, 10)     # stops at a full bar
+    p, events = rules.add_qi(p, 8 + 8 + 8 + 3, rng=random.Random(0))
+    assert (p["realm"], p["layer"], p["qi"]) == ("Mortal", 3, 8)     # stops at a full bar
     assert "/breakthrough" in events[-1]
     ok, msg = rules.attempt_breakthrough(p, rng=random.Random(0))
     assert ok and (p["realm"], p["layer"], p["qi"]) == ("Martial Apprentice", 1, 0)
@@ -166,9 +166,9 @@ class AlwaysFail:
 def test_phase_bottleneck_can_fail():
     p = {"realm": "Martial Apprentice", "layer": 3, "qi": 0, "breakthroughs": 0, "failed_breakthroughs": 0}
     p, _ = rules.add_qi(p, 30)
-    assert p["qi"] == 20
+    assert p["qi"] == 16
     ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail())
-    assert ok is False and p["layer"] == 3 and p["failed_breakthroughs"] == 1 and p["qi"] == pytest.approx(16)
+    assert ok is False and p["layer"] == 3 and p["failed_breakthroughs"] == 1 and p["qi"] == pytest.approx(12.8)
     assert not p.get("injured_until")
 
 

@@ -43,7 +43,7 @@ Players venture into the wild, choose paths, and decide how far to push their lu
 |---|---|---|
 | 🐾 Wild Beast | 35% | Fight a Normal beast of your realm (see beast.md) |
 | 📦 Treasure Chest | 15% | Wooden 60% · Bronze 30% · Silver 10% |
-| 🌿 Herb Patch | 12% | Materials for future pills |
+| 🌿 Herb Patch | 12% | Herbs for pills (with alchemy: 1–3 herbs of your tier, see alchemy.md) |
 | 🏕️ Peaceful Clearing | 10% | Rest: heal 25% max HP |
 | ⚠️ Hazard | 7% | Poison mist or landslide: quick dodge challenge, fail = lose 15% HP |
 | 🗡️ Bandits | 6% | Human enemies; lose the fight = lose 10% of your Lotus Coins |
