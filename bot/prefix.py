@@ -19,6 +19,8 @@ because only slash commands can send private replies.
 import logging
 import re
 
+from . import db, instance
+
 import discord
 from discord import app_commands
 from discord.enums import AppCommandOptionType as Opt
@@ -274,7 +276,8 @@ def help_embed(table):
         f"Every slash command also works with **`{PREFIX}`** in front, like `{PREFIX} internal qi` or "
         f"`{PREFIX} index`. `<option>` is needed, `[option]` is optional. You can also name an option, "
         f"like `{PREFIX} spar technique:Iron Fist`.\n\n" + "\n".join(lines)))
-    e.set_footer(text=f"Shortcuts: " + ", ".join(f"{PREFIX} {k} = {PREFIX} {v}" for k, v in ALIASES.items()))
+    e.set_footer(text=f"Shortcuts: " + ", ".join(f"{PREFIX} {k} = {PREFIX} {v}" for k, v in ALIASES.items())
+                 + f" · {PREFIX} ping shows which computer the bot runs on")
     return e
 
 
@@ -286,7 +289,20 @@ async def handle_message(bot, message):
     if not text:
         return False
     table = command_table(bot.tree)
-    if text.split()[0].lower() == "help":
+    first = text.split()[0].lower()
+    if first not in ("help", "ping") and find_command(table, text)[0] is None:
+        return False            # "m hello" in a chat: not for us, stay quiet
+    # If two copies of the bot share this database, only the first to claim the message answers it.
+    if not db.claim_message(bot.conn, message.id):
+        log.warning("Another copy of the bot already answered message %s. Only one copy should run! "
+                    "Use \"%s ping\" in Discord to see where each copy runs.", message.id, PREFIX)
+        return True
+    if first == "ping":
+        await message.channel.send(f"🏓 Pong from {instance.describe()}\n*Two answers mean two copies of "
+                                   "the bot are running; the computer name shows where each one is.*",
+                                   reference=message, mention_author=False)
+        return True
+    if first == "help":
         await message.channel.send(embed=help_embed(table), reference=message, mention_author=False)
         return True
     cmd, name, rest = find_command(table, text)
