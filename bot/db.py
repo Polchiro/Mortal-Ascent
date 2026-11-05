@@ -308,6 +308,11 @@ def set_cooldown(conn, user_id, name, seconds, now=None):
                      (user_id, name, now + seconds))
 
 
+def clear_cooldown(conn, user_id, name):
+    with conn:
+        conn.execute("DELETE FROM cooldowns WHERE user_id = ? AND name = ?", (user_id, name))
+
+
 # ── Daily counters (diminishing returns) ──────────────────────────────
 
 def _day(now):

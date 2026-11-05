@@ -14,6 +14,8 @@ from discord import app_commands
 
 import beasts as beast_rules
 import economy
+import explore as explore_rules
+import technique as technique_rules
 import talent as talent_rules
 import training
 from balance_card import render_balance
@@ -52,7 +54,7 @@ class MortalAscent(discord.Client):
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
-        self.busy = set()          # (user_id, "explore" | "train") while a session is running
+        self.busy = set()          # (user_id, "explore" | "train" | "spar") while a session is running
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
         admin.register(self)
@@ -132,6 +134,27 @@ async def render_with_avatar(member, render, make_data):
     data = make_data(None)
     data["avatar_bytes"] = avatar
     return await card_render.render(render, data)
+
+
+def claim_session(bot, uid, kind, cooldown=None, seconds=0):
+    """Mark a session as running and start its cooldown in one step. This has no await in it, so it
+    can't be interrupted: if the same command arrives twice (a double send during lag, or a slash
+    command and an "m" command at once), the second one sees the session and is turned away.
+    The cooldown starts now, not when the session ends, and it is saved in the database, so it
+    also holds if the bot restarts mid-session. Returns False if the session was already running."""
+    if (uid, kind) in bot.busy:
+        return False
+    bot.busy.add((uid, kind))
+    if cooldown:
+        db.set_cooldown(bot.conn, uid, cooldown, seconds)
+    return True
+
+
+def release_session(bot, uid, kind, cooldown=None):
+    """Undo claim_session when the session could not start (the message failed to send)."""
+    bot.busy.discard((uid, kind))
+    if cooldown:
+        db.clear_cooldown(bot.conn, uid, cooldown)
 
 
 def register_commands(bot):
@@ -245,13 +268,18 @@ def register_commands(bot):
                 f"🦶 Your legs still ache from the last expedition. Explore again in **{rules.fmt_duration(wait)}**.",
                 ephemeral=True)
             return
-        bot.busy.add((uid, "explore"))
+        if not claim_session(bot, uid, "explore", "explore", explore_rules.EXPLORE_COOLDOWN_MINUTES * 60):
+            await interaction.response.send_message("You are already on an expedition. Finish it first!", ephemeral=True)
+            return
+        sent = False
         try:
             view = ExploreView(bot, uid)
             await interaction.response.send_message(embed=view.embed(), view=view)
+            sent = True
             view.message = await interaction.original_response()
         except Exception:
-            bot.busy.discard((uid, "explore"))
+            if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)
+                release_session(bot, uid, "explore", "explore")
             raise
 
     @tree.command(name="train", description="Train with the master to gather Internal Qi")
@@ -273,13 +301,19 @@ def register_commands(bot):
 
     async def start_challenge(interaction, p, tech):
         uid = interaction.user.id
-        bot.busy.add((uid, "train"))
+        mode = "practice" if tech else "train"
+        if not claim_session(bot, uid, "train", mode, trainer.cooldown_seconds(p, mode=mode)):
+            await interaction.response.send_message("You are already training. Finish that session first!", ephemeral=True)
+            return
+        sent = False
         try:
             view = TrainView(bot, uid, trainer.roll_session(p, tech=tech))
             view.interaction = interaction
             await interaction.response.send_message(embed=view.intro(), view=view)
+            sent = True
         except Exception:
-            bot.busy.discard((uid, "train"))
+            if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)
+                release_session(bot, uid, "train", mode)
             raise
 
     def embed(title, text):
@@ -357,16 +391,25 @@ def register_commands(bot):
                 f"Choose how long: **/seclusion hours:{training.SECLUSION_MIN_HOURS}** up to "
                 f"{training.SECLUSION_MAX_HOURS}. Your Qi Rate is doubled, but you cannot explore or spar.", ephemeral=True)
             return
-        if (uid, "explore") in bot.busy:
-            await interaction.response.send_message("Finish your expedition first.", ephemeral=True)
+        if (uid, "explore") in bot.busy or (uid, "spar") in bot.busy:
+            await interaction.response.send_message("Finish your expedition or spar first.", ephemeral=True)
             return
         async with bot.db_lock:
             p = db.get_player(bot.conn, uid)
-            techs = db.get_techniques(bot.conn, uid)
-            qi, _ = rules.passive_qi(p, techs, now)          # bank passive Qi before the doors close
-            p, events = rules.add_qi(p, qi, techs, now=now)
-            end = now + hours * 3600
-            save_progress(uid, p, qi_collected_at=now, seclusion_start=now, seclusion_end=end)
+            # Checked again now that we hold the lock: another command may have run while we waited.
+            if rules.in_seclusion(p) or (uid, "explore") in bot.busy or (uid, "spar") in bot.busy:
+                taken = True
+            else:
+                taken = False
+                techs = db.get_techniques(bot.conn, uid)
+                qi, _ = rules.passive_qi(p, techs, now)          # bank passive Qi before the doors close
+                p, events = rules.add_qi(p, qi, techs, now=now)
+                end = now + hours * 3600
+                save_progress(uid, p, qi_collected_at=now, seclusion_start=now, seclusion_end=end)
+        if taken:
+            await interaction.response.send_message(
+                "You are already in seclusion, or busy with an expedition or spar.", ephemeral=True)
+            return
         rate = rules.qi_rate(p, now, techs)[0] * training.SECLUSION_QI_MULTIPLIER
         lines = [f"*You seal the doors and sink into meditation for {hours} hours...*",
                  f"Qi Rate ×{training.SECLUSION_QI_MULTIPLIER:g}: **{rate:,.1f} Qi/hour**. You emerge <t:{int(end)}:R>.",
@@ -514,13 +557,18 @@ def register_commands(bot):
             await interaction.response.send_message(
                 f"The master is resting. Spar again in **{rules.fmt_duration(wait)}**.", ephemeral=True)
             return
-        bot.busy.add((uid, "spar"))
+        if not claim_session(bot, uid, "spar", "spar", technique_rules.SPAR_COOLDOWN_MINUTES * 60):
+            await interaction.response.send_message("You are already sparring!", ephemeral=True)
+            return
+        sent = False
         try:
             view = SparView(bot, uid, focus, trial)
             await interaction.response.send_message(embed=view.embed(), view=view)
+            sent = True
             view.message = await interaction.original_response()
         except Exception:
-            bot.busy.discard((uid, "spar"))
+            if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)
+                release_session(bot, uid, "spar", "spar")
             raise
 
     @tree.command(name="techniques", description="See your techniques and mastery, and choose which are equipped")
