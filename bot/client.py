@@ -2,6 +2,7 @@
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py. Admin testing commands are in admin.py.
+Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
 import asyncio
 import io
@@ -19,7 +20,7 @@ from balance_card import render_balance
 from profile_card import render_profile
 from qi_card import render_qi
 
-from . import admin, combat, cooldowns, db, guide, hunt, loot, qi, trainer
+from . import admin, combat, cooldowns, db, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
@@ -38,8 +39,12 @@ def png(image, filename):
 
 
 class MortalAscent(discord.Client):
-    def __init__(self, db_path, guild_id=None):
-        super().__init__(intents=discord.Intents.default())
+    def __init__(self, db_path, guild_id=None, message_content=True):
+        intents = discord.Intents.default()
+        # Needed to read "m ..." text commands in servers. Turn on "Message Content Intent" in the
+        # Developer Portal (Bot tab). DMs with the bot work even without it.
+        intents.message_content = message_content
+        super().__init__(intents=intents, activity=discord.Game(f"{prefix.PREFIX} help | /start"))
         # Every command works both in servers and in a direct message with the bot.
         self.tree = app_commands.CommandTree(
             self, allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True))
@@ -91,6 +96,10 @@ class MortalAscent(discord.Client):
 
     async def on_ready(self):
         log.info("Logged in as %s (%s)", self.user, self.user.id)
+
+    async def on_message(self, message):
+        """Text commands: "m start", "m internal qi", "m index"... (prefix.py)."""
+        await prefix.handle_message(self, message)
 
 
 AVATAR_TIMEOUT_SECONDS = 5

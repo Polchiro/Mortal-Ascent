@@ -10,6 +10,8 @@ import logging
 import os
 import sys
 
+import discord
+
 from .client import MortalAscent
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +39,15 @@ def main():
         sys.exit("DISCORD_TOKEN is not set. Copy .env.example to .env and fill it in.")
     guild = os.environ.get("DISCORD_GUILD_ID")
     db_path = os.environ.get("MORTAL_DB_PATH", os.path.join(ROOT, "mortal_ascent.db"))
-    MortalAscent(db_path, guild_id=int(guild) if guild else None).run(token, log_handler=None)
+    guild_id = int(guild) if guild else None
+    try:
+        MortalAscent(db_path, guild_id=guild_id).run(token, log_handler=None)
+    except discord.PrivilegedIntentsRequired:
+        logging.getLogger("mortal-ascent").warning(
+            "Message Content Intent is off, so \"m\" text commands only work in DMs with the bot. "
+            "To use them in servers: Discord Developer Portal > your app > Bot > turn on "
+            "\"Message Content Intent\" > Save, then restart the bot. Starting without it for now.")
+        MortalAscent(db_path, guild_id=guild_id, message_content=False).run(token, log_handler=None)
 
 
 if __name__ == "__main__":
