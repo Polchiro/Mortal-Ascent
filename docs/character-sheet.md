@@ -5,7 +5,7 @@ card switch tabs in place, so players never have to type another command.
 
 | Tab | Command | Shows |
 |---|---|---|
-| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, weapon, deeds (beasts slain, herbs gathered, breakthroughs, server rank), the dantian orb, purse |
+| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, weapon, deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
 | 📜 Techniques | /techniques | Attack, Defense and Flex sockets, then every learned technique |
 | ⚔️ Equipment | /equipment | The weapon slot, base → final stats and where every buff comes from |
 | 🎒 Inventory | /inventory | Category tabs, a 4 × 3 item grid with pages, and an Inspect panel |

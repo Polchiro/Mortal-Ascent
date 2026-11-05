@@ -2,7 +2,8 @@
 
 Fights in /explore (wild beasts, bandits) and team hunts (Elite Lairs, Beast King Dens)
 are played **turn by turn** on one fight screen. /spar uses the same screen against the
-master (see technique.md), and /train shows its challenges in the same framed style.
+master (see technique.md), /train shows its challenges in the same framed style, and /duel plays
+player against player on it (see pvp.md).
 
 All numbers are in `battle.py`. The engine is `bot/fight.py`, the card `cards/battle.py`,
 the buttons `bot/fight_view.py`.

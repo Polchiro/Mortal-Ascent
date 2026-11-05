@@ -1,5 +1,5 @@
 """
-Admin-only testing commands: /admin reset, /admin give.
+Admin-only testing commands: /admin reset, /admin give, /admin duelstats.
 
 Only the bot's owner (the account that owns the app in the Discord Developer Portal) and the
 user IDs listed in ADMIN_IDS (comma-separated, in .env) can use them. Everyone else gets a
@@ -60,6 +60,27 @@ def give(conn, user_id, lotus_coins=0, moon_pearls=0, qi=0.0, now=None):
         fields.update(qi=p["qi"], layer=p["layer"])
     db.update_player(conn, user_id, **fields)
     return events
+
+
+def duelstats_text(conn):
+    """Each technique's (and basic move's) pick count and win rate in duels (docs/pvp.md), for balancing."""
+    summary, rows = db.duel_stats(conn)
+    if not summary["duels"]:
+        return "No duels have been fought yet."
+    head = (f"**{summary['duels']:,}** duels · {summary['draws']:,} draws · {summary['avg_turns']:.1f} turns on average\n"
+            "*Picks: turns it was played (timeouts left out). Win rate: share of the duels where a player played it "
+            "that this player won.*")
+    tech = [r for r in rows if r["kind"].endswith("_tech")]
+    basic = [r for r in rows if not r["kind"].endswith("_tech")]
+
+    def line(r):
+        rate = r["wins"] / r["duels"] if r["duels"] else 0
+        icon = "⚔️" if r["kind"] in ("attack_tech", "strike", "break") else "🛡️"
+        return f"{icon} **{r['name'].title() if r['kind'] == r['name'] else r['name']}** · {r['picks']:,} picks · " \
+               f"{r['duels']:,} duels · **{rate:.0%}** wins"
+    parts = [head, "", "**Techniques**"] + ([line(r) for r in tech] or ["None picked yet"])
+    parts += ["", "**Basic moves**"] + [line(r) for r in basic]
+    return "\n".join(parts)[:4000]
 
 
 def register(bot):
@@ -126,5 +147,15 @@ def register(bot):
                  f"Now: **{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / "
                  f"{rules.qi_needed(p['realm'], p['layer']):,} · 🪷 {p['lotus_coins']:,} · 🌙 {p['moon_pearls']:,}"]
         await interaction.response.send_message("\n".join(lines + events), ephemeral=True)
+
+    @group.command(name="duelstats", description="Duel balance: each technique's pick count and win rate")
+    async def duelstats(interaction: discord.Interaction):
+        if not await is_admin(interaction.user.id):
+            await interaction.response.send_message("⛔ Only the bot owner can use admin commands.", ephemeral=True)
+            return
+        async with bot.db_lock:
+            text = duelstats_text(bot.conn)
+        await interaction.response.send_message(
+            embed=discord.Embed(title="⚔️ Duel stats", description=text, color=0xB02C22), ephemeral=True)
 
     bot.tree.add_command(group)

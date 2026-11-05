@@ -1103,7 +1103,7 @@ class HuntView(discord.ui.View):
             await interaction.response.send_message("The hunting party is full.", ephemeral=True)
             return
         p = db.get_player(self.bot.conn, uid)
-        why = hunt.can_join(p)
+        why = hunt.can_join(p) or ("You are in a duel right now." if (uid, "duel") in self.bot.busy else None)
         if why:
             await interaction.response.send_message(why, ephemeral=True)
             return
@@ -1132,6 +1132,8 @@ class HuntView(discord.ui.View):
         async with self.bot.db_lock:
             fit = [u for u in self.members if not hunt.can_join(db.get_player(self.bot.conn, u))]
             battle = hunt.start_battle(self.bot.conn, self.lair, fit or [self.leader])
+        for f in battle.fighters:          # "in a fight": no duels meanwhile (bot/duel_view.py)
+            self.bot.busy.add((f.uid, "hunt"))
         self.clear_items()
         self.stop()
         fight_view = HuntFightView(self.bot, self.lair, battle, self.solo)
@@ -1171,8 +1173,13 @@ class HuntFightView(FightMixin, OwnedView):
             return False
         return True
 
+    def _free(self):
+        for f in self.fight.fighters:
+            self.bot.busy.discard((f.uid, "hunt"))
+
     async def on_fight_end(self, interaction):
         b = self.fight
+        self._free()
         file = await self.fight_card_file()
         async with self.bot.db_lock:
             lines, news = hunt.pay(self.bot.conn, self.lair, b)
@@ -1193,6 +1200,7 @@ class HuntFightView(FightMixin, OwnedView):
 
     async def on_timeout(self):
         self.stop_fight()
+        self._free()
 
 
 def beasts_team_size(tier):

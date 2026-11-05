@@ -25,7 +25,7 @@ log = logging.getLogger("mortal-ascent")
 
 TABS = [("profile", "Profile", "👤"), ("techniques", "Techniques", "📜"), ("equipment", "Equipment", "⚔️"),
         ("inventory", "Inventory", "🎒"), ("purse", "Purse", "🪷")]
-FIGHT_SESSIONS = ("explore", "spar")    # technique.md: techniques are swapped outside of fights
+FIGHT_SESSIONS = ("explore", "spar", "hunt", "duel")    # technique.md: techniques are swapped outside of fights
 AVATAR_TIMEOUT_SECONDS = 5
 
 
