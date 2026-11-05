@@ -553,9 +553,8 @@ def register_commands(bot):
         sent = False
         try:
             view = SparView(bot, uid, focus, trial)
-            await interaction.response.send_message(embed=view.embed(), view=view)
-            sent = True
-            view.message = await interaction.original_response()
+            sent = True        # start() answers at once (defer), so the session is shown from here on
+            await view.start(interaction)
         except Exception:
             if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)
                 release_session(bot, uid, "spar", "spar")

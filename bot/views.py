@@ -27,6 +27,9 @@ from . import result_cards
 from cards.activity import render_explore, render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
 from .fight_view import FightMixin
+from . import render as card_render
+from cards.battle import render_battle
+import battle as battle_data
 
 log = logging.getLogger("mortal-ascent")
 COLOR = 0xB02C22
@@ -606,11 +609,32 @@ def training_reveal():
 
 # ── /spar ─────────────────────────────────────────────────────────────
 
-class SparView(OwnedView):
-    TURN_SECONDS = 60
+SPAR_EMOJI = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "attack_tech",
+              "defense_tech": "defense_tech"}
+
+
+def spar_log(text):
+    """The exchange text from Spar.play -> [(icon, line)] for the Last turn panel."""
+    from cards.activity import clean
+    out = []
+    for part in text.replace("! ", "!\n").split("\n"):
+        line, _ = clean(part)
+        if not line:
+            continue
+        low = line.lower()
+        icon = ("star" if "timing" in low or "right moment" in low else "hourglass" if "still" in low
+                else "shield" if "guard" in low and "break" not in low else "sword" if "you " in low and "(−" in line
+                else "skull" if "his " in low and "(−" in line else "fist")
+        out.append((icon, line))
+    return out or [("star", "The master bows. Begin when you are ready.")]
+
+
+class SparView(FightMixin, OwnedView):
+    """/spar and mastery trials on the fight screen: the master as a robed silhouette in the Master palette.
+    15 seconds per exchange; no pick = Guard, three timeouts in a row = you walk away (forfeit)."""
 
     def __init__(self, bot, owner_id, focus=None, trial=False, rng=None):
-        super().__init__(owner_id, timeout=self.TURN_SECONDS)
+        super().__init__(owner_id, timeout=battle_data.TURN_SECONDS * (battle_data.TIMEOUTS_TO_FLEE + 2))
         from .sparring import Spar
         self.bot, self.rng = bot, rng or random.Random()
         conn = bot.conn
@@ -622,7 +646,9 @@ class SparView(OwnedView):
             strength = technique.TRIAL_MASTER_STRENGTH[rules.stage_of(focus) + 1]
         self.spar = Spar(self.player, self.techniques, db.equipped_weapon(conn, owner_id), strength, self.rng)
         self.last = ""
+        self.last_move = None
         self.result = None
+        self.timeouts = 0
         self.build()
 
     @property
@@ -637,6 +663,7 @@ class SparView(OwnedView):
         return "Sparring with the Master"
 
     def embed(self):
+        """Text version (used if the card cannot be drawn)."""
         sp = self.spar
         e = discord.Embed(title=self.title, color=COLOR)
         if self.result:
@@ -644,11 +671,7 @@ class SparView(OwnedView):
         else:
             lines = []
             if sp.turn == 1:
-                lines.append("**Counters:** 🛡️ Guard beats ⚔️ Strike · 💥 Break beats 🛡️ Guard · ⚔️ Strike beats 💥 Break\n"
-                             "Mastery EXP comes only from techniques used **at the right moment**: your attack technique "
-                             "right after you Guard his Strike, your defense technique against his Strike.\n"
-                             "Techniques need to **recover** for a few exchanges after use; plain Strike, Guard and "
-                             "Break are always ready.\n")
+                lines.append(SPAR_RULES)
                 if self.trial:
                     lines.append(f"*This master fights at ×{sp.strength:g} strength. Win to break through.*\n")
             if self.last:
@@ -660,14 +683,50 @@ class SparView(OwnedView):
         e.add_field(name="Master", value=hp_bar(round(sp.m_hp), sp.m_max, 10), inline=False)
         return e
 
+    def fight_card(self):
+        """Data for cards.battle.render_battle."""
+        from cards.activity import clean
+        from cards.theme import SCHOOL_CHAR
+        from .fight_view import SCHOOL_COLOR, _school
+        sp = self.spar
+        tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
+        loadout = []
+        for key in ("attack_tech", "defense_tech"):
+            t = sp.atk_t if key == "attack_tech" else sp.def_t
+            if not t:
+                continue
+            left = sp.cooldowns[key]
+            school = _school(t)
+            loadout.append({"name": t["name"], "seal": SCHOOL_CHAR.get(school, "武"), "color": SCHOOL_COLOR.get(school),
+                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}"})
+        timed = sum(sp.timed.values())
+        loadout.append({"name": "Well-timed techniques", "seal": "时", "color": (240, 200, 100), "ready": bool(timed),
+                        "state": f"{timed} (mastery EXP)"})
+        hint, _ = clean(sp.hint())
+        if sp.turn == 1 and not self.last:
+            warning = (hint, "Guard beats Strike · Break beats Guard · Strike beats Break. Timed techniques earn mastery.")
+        else:
+            warning = (hint, "Read his stance and counter it. Your technique right after a blocked Strike is perfect timing.")
+        return {"palette": "Master", "header": self.title_plain, "turn": min(sp.turn, MAX_TURNS_SPAR()),
+                "seconds": battle_data.TURN_SECONDS, "result": None,
+                "enemy": {"name": "The Master", "seal": "师", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
+                          "element_seal": "武", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
+                          "body": "master", "slug": None},
+                "party_title": "You",
+                "party": [{"name": self.player["name"], "realm": self.player["realm"], "layer": self.player["layer"],
+                           "hp": round(sp.hp), "max_hp": round(sp.max_hp), "move": self.last_move or "Waiting...",
+                           "arrow": True}],
+                "loadout": loadout, "log": spar_log(self.last) if self.last else [("star", "The master bows. Begin.")],
+                "warning": warning}
+
     def build(self):
         self.clear_items()
         if self.result:
             return
         choices = self.spar.choices()
-        self.rng.shuffle(choices)
-        emoji = {"strike": "⚔️", "guard": "🛡️", "break": "💥", "attack_tech": "✨", "defense_tech": "🔰"}
-        for key, label in choices:
+        basics = [c for c in choices if not c[0].endswith("_tech")]
+        self.rng.shuffle(basics)          # technique.md anti-AFK: positions shuffle every round
+        for key, label in basics + [c for c in choices if c[0].endswith("_tech")]:
             async def cb(interaction, key=key):
                 await self.play(interaction, key)
             style = discord.ButtonStyle.success if key.endswith("_tech") else discord.ButtonStyle.primary
@@ -675,27 +734,99 @@ class SparView(OwnedView):
             if left:   # technique is cooling down: greyed out with turns remaining
                 label = f"{label[:60]} (⏳ {left} turn{'s' if left > 1 else ''})"
                 style = discord.ButtonStyle.secondary
-            b = self.button(label[:80], cb, emoji=emoji[key], style=style,
+            em = SPAR_EMOJI[key]
+            if key.endswith("_tech"):
+                t = self.spar.atk_t if key == "attack_tech" else self.spar.def_t
+                from .fight_view import _school
+                em = _school(t).lower()
+            from .fight_view import emoji as fight_emoji
+            b = self.button(label[:80], cb, emoji=fight_emoji(self.bot, em), style=style,
                             row=0 if not key.endswith("_tech") else 1, disabled=bool(left))
             b.spar_key = key
 
-    async def play(self, interaction, key):
+    async def start(self, interaction):
+        """Send the first card (the slash command's answer)."""
+        await interaction.response.defer()
+        self.message = await self.show(interaction)
+
+    async def show(self, interaction):
+        """Edit the message to the current exchange (or the result). Returns the message if it was a fresh answer."""
+        if self.result:
+            file = await result_cards.card_file(render_spar, self.card, "spar.png")
+            kw = (dict(content=None, embed=None, attachments=[file], view=None) if file
+                  else dict(content=None, embed=self.embed(), attachments=[], view=None))
+        else:
+            self._deadline = time.time() + battle_data.TURN_SECONDS
+            try:
+                img = await card_render.render(render_battle, self.fight_card())
+                file = png(img, "spar_fight.png")
+            except Exception:
+                log.exception("Could not render the spar card")
+                file = None
+            self._deadline = time.time() + battle_data.TURN_SECONDS
+            text = f"⏳ Pick your move · time runs out <t:{int(self._deadline)}:R>"
+            kw = (dict(content=text, embed=None, attachments=[file], view=self) if file
+                  else dict(content=text, embed=self.embed(), attachments=[], view=self))
+        await self.edit_fight_message(interaction, **kw)
+        if not self.result:
+            self._arm_spar_timer()
+        if interaction is not None and self.message is None:
+            try:
+                return await interaction.original_response()
+            except Exception:
+                return None
+        return self.message
+
+    def _arm_spar_timer(self):
+        self._cancel_timer()
+        turn = self.spar.turn
+        self._turn_task = asyncio.create_task(self._spar_timer(turn))
+
+    async def _spar_timer(self, turn):
+        try:
+            await asyncio.sleep(max(0.0, self._deadline - time.time()) + 1.5)
+            if self.result or self.spar.turn != turn:
+                return
+            self.timeouts += 1
+            if self.timeouts >= battle_data.TIMEOUTS_TO_FLEE:
+                self.last = "⏳ You stood still too long and walked away from the spar."
+                async with self.bot.db_lock:
+                    self.result = self.finish(forfeit=True)
+                await self._end(None)
+                return
+            await self.play(None, battle_data.TIMEOUT_MOVE, timed_out=True)
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            log.exception("Spar timer failed")
+
+    async def play(self, interaction, key, timed_out=False):
+        if self.result:
+            return
+        if interaction is not None:
+            self.timeouts = 0
+            await interaction.response.defer()
+        self._cancel_timer()
         self.last = self.spar.play(key)
+        if timed_out:
+            self.last = "⏳ You hesitated and raised your guard. " + self.last
+        self.last_move = {"attack_tech": self.spar.atk_t, "defense_tech": self.spar.def_t}.get(key)
+        self.last_move = self.last_move["name"] if self.last_move else key.title()
         if self.spar.over:
             async with self.bot.db_lock:
                 self.result = self.finish()
         self.build()
-        if not self.result:
-            await interaction.response.edit_message(embed=self.embed(), view=self)
+        if self.result:
+            await self._end(interaction)
             return
+        await self.show(interaction)
+
+    async def _end(self, interaction):
         self.stop()
+        self._cancel_timer()
         self.bot.busy.discard((self.owner_id, "spar"))
-        await interaction.response.defer()
-        file = await result_cards.card_file(render_spar, self.card, "spar.png")
-        if file:
-            await interaction.edit_original_response(embed=None, attachments=[file], view=None)
-        else:
-            await interaction.edit_original_response(embed=self.embed(), view=None)
+        self.clear_items()
+        await self.show(interaction)
 
     def finish(self, forfeit=False):
         conn, uid, sp = self.bot.conn, self.owner_id, self.spar
@@ -740,22 +871,26 @@ class SparView(OwnedView):
         return "\n".join(lines).strip()
 
     async def on_timeout(self):
+        """Safety net (the turn timer normally ends an idle spar first)."""
         try:
             if not self.result:
                 self.last = "⏳ You stood still too long."
                 async with self.bot.db_lock:
                     self.result = self.finish(forfeit=True)
-                self.build()
                 if self.message:
-                    file = await result_cards.card_file(render_spar, self.card, "spar.png")
-                    if file:
-                        await self.message.edit(embed=None, attachments=[file], view=None)
-                    else:
-                        await self.message.edit(embed=self.embed(), view=None)
+                    await self._end(None)
         except Exception:
             log.exception("Spar timeout handling failed")
         finally:
+            self._cancel_timer()
             self.bot.busy.discard((self.owner_id, "spar"))
+
+
+SPAR_RULES = ("**Counters:** 🛡️ Guard beats ⚔️ Strike · 💥 Break beats 🛡️ Guard · ⚔️ Strike beats 💥 Break\n"
+              "Mastery EXP comes only from techniques used **at the right moment**: your attack technique "
+              "right after you Guard his Strike, your defense technique against his Strike.\n"
+              "Techniques need to **recover** for a few exchanges after use; plain Strike, Guard and "
+              "Break are always ready.\n")
 
 
 def MAX_TURNS_SPAR():

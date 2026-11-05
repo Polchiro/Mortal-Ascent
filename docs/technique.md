@@ -212,7 +212,8 @@ Three ways, all requiring the player's attention (no AFK).
 
 ### 2. /spar — training fight against a master NPC
 
-- Short fight using the combat moves (Strike / Guard / Break)
+- Short fight using the combat moves (Strike / Guard / Break), on the fight screen (combat.md):
+  15 seconds per exchange, no pick = Guard, three timeouts in a row = forfeit
 - Master has patterns that hint at their next move
 - Mastery EXP only for using the technique **at the right moment**
   (e.g. attack technique right after the master's Strike is blocked)
