@@ -2,7 +2,7 @@
 
 Discord bot for Mortal Ascent, built on discord.py with SQLite player storage.
 It reuses the game constants (`realms.py`, `stats.py`, `training.py`, `economy.py`, …)
-and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`) from the repo root.
+and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`, `qi_card.py`) from the repo root.
 
 ## Commands
 
@@ -16,6 +16,7 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Collects the Qi you gathered passively at your Qi Rate (stores up to 12 hours) |
 | `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
+| `/qi` | Sends the dantian card: Qi bar (plus Qi waiting to be collected), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |

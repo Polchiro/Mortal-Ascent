@@ -18,6 +18,7 @@ CARDS = [
     ("profile_card.py", "profile_preview.png"),
     ("balance_card.py", "balance_preview.png"),
     ("inventory_card.py", "inventory_preview.png"),
+    ("qi_card.py", "qi_preview.png"),
 ]
 FONTS = ["Cinzel.ttf", "Inter.ttf", "NotoSerifSC-Bold.otf"]
 
