@@ -298,3 +298,15 @@ def test_no_technique_swaps_in_a_fight(conn):
         await view.on_equip_technique(FakeInteraction(tid))
         assert db.get_technique(conn, 1, tid)["equipped"]
     asyncio.run(go())
+
+
+def test_cards_need_only_pillow(conn, monkeypatch):
+    """requirements.txt installs Pillow and discord.py only, so the cards must not need numpy."""
+    import sys
+    from cards import theme
+    monkeypatch.setitem(sys.modules, "numpy", None)        # any "import numpy" now fails
+    theme._background.cache_clear()
+    new_player(conn)
+    for tab, data in all_card_data(conn).items():
+        assert RENDERERS[tab](data).size[0] == 1200, tab
+    theme._background.cache_clear()

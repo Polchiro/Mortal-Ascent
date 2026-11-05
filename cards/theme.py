@@ -164,25 +164,22 @@ def vgradient(size, top, bottom, y0=0, y1=None):
 
 @lru_cache(maxsize=8)
 def _background(w, h, seed):
-    """Black stone with a crimson glow, ember speckles and a dark vignette (cached per size)."""
-    import numpy as np
-    rnd = np.random.default_rng(seed)
+    """Black stone with a crimson glow, stone grain, ember speckles and a dark vignette (cached per size).
+    Pillow only, so no extra packages are needed."""
     W2, H2 = w * S, h * S
-    ys, xs = np.mgrid[0:H2, 0:W2].astype(np.float32)
-    cx, cy = W2 * 0.5, H2 * 0.42
-    dist = np.sqrt(((xs - cx) / (W2 * 0.62)) ** 2 + ((ys - cy) / (H2 * 0.75)) ** 2)
-    glow = np.clip(1 - dist, 0, 1) ** 1.6
-    base = np.array(VOID, np.float32)
-    red = np.array(BLOOD, np.float32)
-    img = base + (red - base) * glow[..., None]
+    # distance from a point a little above the centre, 0 there and 1 at the edges of an ellipse
+    dist = Image.radial_gradient("L").resize((round(W2 * 1.24), round(H2 * 1.5)), Image.BILINEAR)
+    cx, cy = dist.size[0] // 2, dist.size[1] // 2
+    dist = dist.crop((cx - W2 // 2, cy - round(H2 * 0.42), cx - W2 // 2 + W2, cy - round(H2 * 0.42) + H2))
+    glow = dist.point(lambda v: round(255 * max(0.0, 1 - v / 255 * 1.41) ** 1.6))
+    out = Image.composite(Image.new("RGB", (W2, H2), BLOOD), Image.new("RGB", (W2, H2), VOID), glow)
     # stone grain
-    grain = rnd.normal(0, 1, (H2 // 4 + 1, W2 // 4 + 1)).astype(np.float32)
-    grain = np.kron(grain, np.ones((4, 4), np.float32))[:H2, :W2]
-    img += grain[..., None] * 3.0
+    random.seed(seed)
+    grain = Image.effect_noise((W2 // 4 + 1, H2 // 4 + 1), 24).resize((W2, H2), Image.NEAREST)
+    out = Image.blend(out, Image.merge("RGB", (grain, grain, grain)), 0.035)
     # vignette
-    v = np.clip(dist - 0.55, 0, 1) * 1.1
-    img *= (1 - np.clip(v, 0, 0.85))[..., None]
-    out = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8), "RGB").convert("RGBA")
+    shade = dist.point(lambda v: round(255 * min(0.85, max(0.0, v / 255 * 1.41 - 0.55) * 1.1)))
+    out = Image.composite(Image.new("RGB", (W2, H2), (0, 0, 0)), out, shade).convert("RGBA")
     # embers
     d = ImageDraw.Draw(out)
     r = random.Random(seed)
