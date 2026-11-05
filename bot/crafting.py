@@ -951,3 +951,38 @@ def register(bot):
         except Exception:
             bot.busy.discard((uid, "craft"))
             raise
+
+
+# ── Mending pills in fights (docs/combat.md) ──────────────────────────
+
+def fight_pills(conn, user_id):
+    """Mending pills in the bag, best first, as the fight engine wants them:
+    [{"id", "name", "heal", "qty"}]. heal = share of max HP (alchemy.MENDING_PILLS × patterns × toxicity)."""
+    p = db.get_player(conn, user_id)
+    mult = rules.pill_effect_mult(rules.current_toxicity(p))
+    out = []
+    for it in db.get_items(conn, user_id, "pills"):
+        kind, grade, patterns = pill_info(it)
+        if kind != "mending":
+            continue
+        effect = alchemy.pattern_effect(patterns) if patterns else 1.0
+        out.append({"id": it["id"], "name": pill_name(kind, grade), "qty": it.get("qty", 1),
+                    "heal": alchemy.MENDING_PILLS[grade]["heal"] * effect * mult, "patterns": patterns})
+    return sorted(out, key=lambda x: -x["heal"])
+
+
+def swallow_in_fight(conn, user_id, pill, now=None):
+    """Take one pill swallowed in a fight out of the bag and add its toxicity."""
+    now = time.time() if now is None else now
+    p = db.get_player(conn, user_id)
+    added = toxicity_for(pill["patterns"]) if pill.get("patterns") else 1
+    db.remove_item(conn, pill["id"])
+    db.update_player(conn, user_id, toxicity=rules.current_toxicity(p, now) + added, toxicity_at=now)
+
+
+def bank_fight_pills(conn, fighter):
+    """Remove the pills a fighter swallowed since the last call (the engine counts them in pill['used'])."""
+    for pill in fighter.pills:
+        while pill.get("used", 0) > pill.get("banked", 0):
+            swallow_in_fight(conn, fighter.uid, pill)
+            pill["banked"] = pill.get("banked", 0) + 1

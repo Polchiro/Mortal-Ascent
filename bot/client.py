@@ -23,6 +23,7 @@ from cards.dantian import render_dantian
 
 from . import admin, combat, cooldowns, crafting, db, gathering, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
+from .emojis import Emojis
 from . import player as rules
 from .sheet import items as sheet_items
 from .sheet.view import open_sheet, send_public_profile
@@ -56,6 +57,7 @@ class MortalAscent(discord.Client):
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
         self.busy = set()          # (user_id, "explore" | "train" | "spar") while a session is running
+        self.emojis_ma = Emojis()  # fight button icons (uploaded as application emojis in setup_hook)
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
         admin.register(self)
@@ -85,6 +87,8 @@ class MortalAscent(discord.Client):
             log.exception("Could not send the error message")
 
     async def setup_hook(self):
+        # Upload the fight button icons in the background; until then (or if it fails) buttons use normal emojis.
+        asyncio.create_task(self.emojis_ma.setup(self))
         # Commands are always synced globally: per-server commands never show up in DMs.
         await self.tree.sync()
         log.info("Synced commands globally (new or changed commands can take up to an hour to appear)")

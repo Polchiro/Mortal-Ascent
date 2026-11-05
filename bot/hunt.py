@@ -2,7 +2,12 @@
 Team hunts: Elite Lairs and Beast King Dens found in /explore (docs/beast.md, docs/explore.md).
 
 The finder posts a hunt call; others join with a button while the lair is
-open (30 min Elite, 60 min Beast King). The fight plays out on its own:
+open (30 min Elite, 60 min Beast King). The hunt is fought on the interactive
+fight screen (bot/fight.py, docs/combat.md): every member picks a move secretly
+each turn. start_battle() builds it and pay() hands out the rewards.
+
+resolve() / team_fight() below are the older auto-resolved version, kept as a
+quick balance simulation for the tests:
   • beast stats follow the team's highest realm and layer
   • each player beyond the intended team size adds +20% beast HP
   • Elite and Beast King beasts telegraph a charged attack every third turn,
@@ -143,18 +148,50 @@ def team_fight(fighters, beast, rng=random):
     return False, MAX_ROUNDS, log
 
 
+def start_battle(conn, lair, user_ids, rng=None):
+    """The interactive team fight for these players."""
+    from . import crafting, fight
+    team = [db.get_player(conn, u) for u in user_ids]
+    fighters = []
+    for p in team:
+        techs = db.get_techniques(conn, p["user_id"])
+        hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, p["user_id"]))
+        fighters.append(fight.Fighter(p, techs, hp, hp, atk, dfn, pills=crafting.fight_pills(conn, p["user_id"])))
+    stats_ = team_beast(lair, team)
+    enemy = fight.enemy_from_beast(stats_, stats_["name"])
+    enemy["realm"], enemy["slug"] = lair["realm"], beasts.slug(stats_["name"])
+    return fight.Battle(fighters, enemy, rng or random.Random())
+
+
+def pay(conn, lair, battle, now=None):
+    """Rewards for a finished interactive hunt. Fighters who fled get nothing (and no injury).
+    Returns (summary lines, announcements)."""
+    rows = [{"p": f.player, "techs": f.techs, "atk_uses": f.atk_uses, "guard_uses": f.guard_uses, "dealt": f.dealt,
+             "fled": f.fled} for f in battle.fighters]
+    beast = battle.enemy
+    head = (f"**{beast['name']}** · {beast['max_hp']:,} HP · {len(rows)} fighter(s) · {battle.turn} turns")
+    return _pay(conn, lair, rows, battle.result == "won", beast["name"], head, now)
+
+
 def resolve(conn, lair, user_ids, rng=random, now=None):
-    """Fight the hunt and save rewards. Returns (won, summary lines, announcements)."""
-    now = time.time() if now is None else now
+    """Auto-fight the hunt and save rewards. Returns (won, summary lines, announcements)."""
     team = [db.get_player(conn, u) for u in user_ids]
     fighters = [_fighter(conn, p) for p in team]
     beast = team_beast(lair, team)
     start_hp = beast["max_hp"]
     won, rounds, log = team_fight(fighters, beast, rng)
-    lines = [f"**{beast['name']}** · {start_hp:,} HP · {len(team)} fighter(s) · {rounds} rounds"] + log[-6:]
+    head = f"**{beast['name']}** · {start_hp:,} HP · {len(team)} fighter(s) · {rounds} rounds"
+    lines, news = _pay(conn, lair, [dict(f, fled=False) for f in fighters], won, beast["name"], head, now, rng)
+    return won, lines[:1] + log[-6:] + lines[1:], news
+
+
+def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
+    now = time.time() if now is None else now
+    lines = [head]
     news = []
     tier = lair["tier"]
-    for f in fighters:
+    winners = []
+    for f in rows:
         p = f["p"]
         uid = p["user_id"]
         bits = [f"dealt {f['dealt']:,.0f}"]
@@ -162,7 +199,10 @@ def resolve(conn, lair, user_ids, rng=random, now=None):
             uses = f["atk_uses"] if t["type"] == "attack" else f["guard_uses"]
             if uses:
                 mastery.gain(conn, p, t, uses * technique.COMBAT_EXP_PER_USE)
-        if won:
+        if f["fled"]:
+            bits.append("fled the hunt")
+        elif won:
+            winners.append(p)
             coins = loot.roll_coins(p, HUNT_COINS[tier], rng)
             db.add_coins(conn, uid, coins, "Team hunt reward")
             bits.append(f"🪷 {coins:,}")
@@ -182,10 +222,10 @@ def resolve(conn, lair, user_ids, rng=random, now=None):
             db.update_player(conn, uid, injured_until=now + LOSS_INJURY_HOURS * 3600)
             bits.append(f"injured {LOSS_INJURY_HOURS}h")
         lines.append(f"• **{p['name']}**: " + ", ".join(bits))
-    if won and tier == "beast_king":
-        news.append(f"📢 The Beast King **{beast['name']}** has fallen to "
-                    + ", ".join(f"**{p['name']}**" for p in team) + "!")
-    return won, lines, news
+    if won and tier == "beast_king" and winners:
+        news.append(f"📢 The Beast King **{beast_name}** has fallen to "
+                    + ", ".join(f"**{p['name']}**" for p in winners) + "!")
+    return lines, news
 
 
 def can_join(player, now=None):

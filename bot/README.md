@@ -64,16 +64,13 @@ Rare finds are announced in the channel: Divine weapons, Heaven manuals, the Hea
 The design docs leave some things open. Until they are decided, the bot uses these
 (each is a named constant, marked DEFAULT, in `bot/`):
 
-- **Fights are automatic.** The Strike / Guard / Break fight screen is not designed yet, so
-  beast and bandit fights play out by themselves with the stats.md damage formula and give a
-  short report. Your attack technique is used every turn; your defense technique catches about
-  a third of the hits. Each use gives +20 mastery EXP.
+- **Fights are turn-based** (docs/combat.md): explore beasts, bandits and team hunts use the
+  interactive fight screen. All fight numbers are in `battle.py`.
 - **Coins:** chests hold 10–25 (Wooden), 30–60 (Bronze), 80–150 (Silver), 200–400 (Jade) Lotus
   Coins at Mortal; Normal beasts give 3–8, beaten bandits 10–20. All amounts double each realm.
-- **Team hunts** fight on their own like solo fights. The beast telegraphs a charged attack every 3rd
-  turn (1.5× a normal hit, ignores the 30% cap); fighters with a defense technique guard it 75% of the
-  time. Up to 8 fighters. Winners get 20–40 (Elite) or 60–120 (King) Lotus Coins × realm scale;
-  losing injures everyone for 1 hour. A full team usually wins; a short-handed one rarely does.
+- **Team hunts** are played on the same fight screen; every member picks secretly each turn. Up to 8
+  fighters. Winners get 20–40 (Elite) or 60–120 (King) Lotus Coins × realm scale; losing injures
+  everyone for 1 hour; fighters who flee get nothing and are not injured.
 - **/recharge** shows the packages only. Real-money purchases must go through Discord's app
   monetization (economy.md), which needs setting up in the Discord Developer Portal first.
 - **Physician** costs 1 Lotus Coin per minute of injury left (× realm scale).

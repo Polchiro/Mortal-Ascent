@@ -140,8 +140,7 @@ can be used again. Basic Strike, Guard and Break are always available.
 
 - Heavy techniques rest 1 extra turn
 - In /spar the technique button is greyed out and shows the turns left
-- In auto fights (explore, hunts) the fighter uses basic strikes in between;
-  in hunts, fighters keep their guard ready for the beast's charged attack
+- In explore fights and hunts (combat.md) the technique buttons are greyed out the same way
 - No Qi cost: Qi is cultivation progress, not a fight resource
 
 ## Technique list

@@ -35,6 +35,8 @@ Each realm has **3 Normal, 2 Elite and 1 Beast King** — 66 beasts in total.
 
 ## Special rules
 
+Fights are turn-based; see **combat.md** for the fight screen, elements and statuses.
+
 - **Charged attacks** (Elite and Beast King only): announced one turn ahead,
   e.g. *"The Tiger crouches low, gathering power..."* — ignores the 30% cap.
   Guard or take a huge hit.
