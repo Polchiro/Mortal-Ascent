@@ -124,10 +124,16 @@ commands (usually it's a few minutes). If you see an old command list, restart D
 `DISCORD_GUILD_ID` is optional. Older versions synced a separate copy of the commands to that
 server; if it is set, the bot now removes that copy so commands are not listed twice.
 
-Run **one** copy of the bot. A second `python -m bot` on the same database stops at once with
-a message, because two copies would both answer every `m` command (that is how one `m explore`
-once started two expeditions). A copy on another computer or host with the same token can't be
-detected this way, so don't run the bot in two places.
+Run **one** copy of the bot. Two copies would both answer every `m` command, so:
+
+- A second `python -m bot` on the same computer stops at once with a message, even from another
+  folder (it locks a file next to the database and one in the temp folder named after a hash of the token).
+- Copies that share a database answer each `m` message only once (the message is claimed in the database first).
+- `m ping` answers with the computer name, process number, start time and code version. Two answers
+  mean two copies are running, and the computer name tells you where the other one is.
+- A copy on another computer or a hosting service can't be stopped from here. Stop it there, or
+  reset the token in the Developer Portal (Bot tab > Reset Token), which logs out every copy, and put
+  the new token in `.env`.
 
 ### Lag and double clicks
 

@@ -40,7 +40,11 @@ class FakeUser:
 
 
 class FakeInput:
+    next_id = 1000
+
     def __init__(self, content, author=None, guild=None):
+        FakeInput.next_id += 1
+        self.id = FakeInput.next_id
         self.content, self.author, self.guild = content, author or FakeUser(), guild
         self.channel, self.mentions = FakeChannel(), []
 
@@ -125,3 +129,15 @@ def test_chat_is_ignored(bot):
     bot_author = FakeUser()
     bot_author.bot = True
     assert run(bot, "m start", author=bot_author) == (False, [])
+
+
+def test_each_message_is_answered_once(bot):
+    msg = FakeInput("m cooldown")
+    assert asyncio.run(prefix.handle_message(bot, msg))
+    assert asyncio.run(prefix.handle_message(bot, msg))     # a second copy of the bot sees it too
+    assert len(msg.channel.sent) == 1
+
+
+def test_ping_names_this_copy(bot):
+    handled, sent = run(bot, "m ping")
+    assert handled and "Pong" in sent[0].content and "process" in sent[0].content

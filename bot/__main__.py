@@ -41,11 +41,13 @@ def main():
     guild = os.environ.get("DISCORD_GUILD_ID")
     db_path = os.environ.get("MORTAL_DB_PATH", os.path.join(ROOT, "mortal_ascent.db"))
     guild_id = int(guild) if guild else None
-    lock = instance.acquire(db_path)
+    lock = instance.acquire(db_path, token)
     if lock is None:
-        sys.exit("Mortal Ascent is already running in another window or terminal. Running two copies makes "
-                 "every \"m\" command happen twice, so this one will not start. Close the other one first "
-                 "(press Ctrl+C in it), then run python -m bot again.")
+        sys.exit("Mortal Ascent is already running on this computer (another window, terminal or folder). "
+                 "Running two copies makes every \"m\" command happen twice, so this one will not start. "
+                 "Close the other one first (press Ctrl+C in it, or end python.exe in Task Manager), "
+                 "then run python -m bot again.")
+    logging.getLogger("mortal-ascent").info("This copy: %s", instance.describe())
     try:
         MortalAscent(db_path, guild_id=guild_id).run(token, log_handler=None)
     except discord.PrivilegedIntentsRequired:

@@ -60,6 +60,11 @@ CREATE TABLE IF NOT EXISTS daily_counts (
     PRIMARY KEY (user_id, name, day)
 );
 
+CREATE TABLE IF NOT EXISTS handled_messages (
+    message_id  INTEGER PRIMARY KEY,   -- an "m" command message that a copy of the bot answered
+    at          REAL    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS cooldowns (
     user_id     INTEGER NOT NULL,
     name        TEXT    NOT NULL,
@@ -95,7 +100,7 @@ BAG_STACKABLE = {"manuals", "pills", "materials", "chests"}   # weapons are uniq
 
 
 def connect(path):
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=10)   # wait for another copy's write instead of failing
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
@@ -306,6 +311,18 @@ def set_cooldown(conn, user_id, name, seconds, now=None):
     with conn:
         conn.execute("INSERT OR REPLACE INTO cooldowns (user_id, name, until) VALUES (?, ?, ?)",
                      (user_id, name, now + seconds))
+
+
+def claim_message(conn, message_id, now=None):
+    """Claim an "m" command message so it is answered once. If two copies of the bot share this
+    database, both see the message but only the first to claim it answers. True if we got it."""
+    now = time.time() if now is None else now
+    with conn:
+        got = conn.execute("INSERT OR IGNORE INTO handled_messages (message_id, at) VALUES (?, ?)",
+                           (message_id, now)).rowcount == 1
+        if got and message_id % 100 == 0:       # now and then, forget claims older than a day
+            conn.execute("DELETE FROM handled_messages WHERE at < ?", (now - 86400,))
+    return got
 
 
 def clear_cooldown(conn, user_id, name):
