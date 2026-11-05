@@ -117,12 +117,14 @@ def test_commands_run_from_a_message(bot):
     assert sent[0].kw["view"] is not None
     handled, sent = run(bot, "m gather")
     assert "Gathering Herbs" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
+    handled, sent = run(bot, "m craft")
+    assert "Alchemy Cauldron" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
     handled, sent = run(bot, "m herbs")
     assert "Gather" in sent[0].kw["embed"].title
     handled, sent = run(bot, "m pills")
     assert "Qi Pills" in sent[0].kw["embed"].title
     handled, sent = run(bot, "m help")
-    assert "m gather" in sent[0].kw["embed"].description
+    assert "m gather" in sent[0].kw["embed"].description and "m craft" in sent[0].kw["embed"].description
     handled, sent = run(bot, "m seclusion 99")
     assert "between 8 and 24" in sent[0].content
     handled, sent = run(bot, "m internal")

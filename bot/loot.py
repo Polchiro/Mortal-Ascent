@@ -13,7 +13,6 @@ import equipments
 import explore
 import talent
 import technique
-import training
 
 from . import db
 from . import player as rules
@@ -123,6 +122,25 @@ def herb_label(item):
     return f"{AGE_EMOJI.get(age, '🌱')} {age}-year {item['name']}"
 
 
+# ── Beast Cores (alchemy.md section 3) ───────────────────────────────
+
+CORE_NAMES = {"normal": "Normal Beast Core", "elite": "Elite Beast Core", "beast_king": "Beast King Core"}
+
+
+def beast_core(beast_tier, realm):
+    """A core of this beast tier, graded by the beast's realm (same tiers as herbs)."""
+    grade = alchemy.HERB_TIER_BY_REALM[realm]
+    return {"category": "materials", "key": f"core:{beast_tier}:{grade}", "name": CORE_NAMES[beast_tier],
+            "grade": grade, "data": {"core": beast_tier, "grade": grade}}
+
+
+def roll_beast_core(beast_tier, realm, rng=random):
+    """A Beast Core dropped by a beaten beast, or None."""
+    if rng.random() < alchemy.BEAST_CORE_DROP[beast_tier]:
+        return beast_core(beast_tier, realm)
+    return None
+
+
 # Herbs from before alchemy, turned into the Mortal herb closest to them (db.connect runs this once)
 OLD_HERBS = {"Spirit Grass": "qi", "Dew Lotus Petal": "purity", "Red Ginseng Root": "healing",
              "Moonlight Fern": "purity", "Tiger Bone Moss": "breakthrough"}
@@ -178,6 +196,8 @@ def beast_chest(player, beast_tier, rng=random):
 def describe(item):
     qty = item.get("qty", 1)
     name = herb_label(item) if item["category"] == "herbs" else item["name"]
+    if item["category"] == "materials" and item["key"].startswith("core:"):
+        name = f"{item['grade']} {item['name']}"
     return name + (f" ×{qty}" if qty > 1 else "")
 
 
@@ -253,22 +273,9 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
         return f"🔥 The pill burns through your meridians... Your talent rises from **{p['talent']}** to **{new}**!"
 
     if cat == "pills":
-        current = rules.active_pill(p, now)
-        if current:
-            return f"Your **{alchemy.QI_PILLS[current[0]]['name']}** is still working ({rules.fmt_duration(current[2])} left). Pills do not stack."
-        tox = rules.current_toxicity(p, now) + 1
-        effect = rules.pill_effect_mult(tox)
-        mult = 1 + (training.QI_PILLS[item["grade"]] - 1) * effect
-        db.remove_item(conn, item_id)
-        db.update_player(conn, user_id, pill_grade=item["grade"], pill_mult=mult,
-                         pill_expires=now + training.QI_PILL_DURATION_HOURS * 3600,
-                         toxicity=tox, toxicity_at=now)
-        msg = (f"💊 You swallow the **{item['name']}**. Qi Rate ×{mult:.2f} for "
-               f"{training.QI_PILL_DURATION_HOURS} hours. Toxicity: {tox}.")
-        if effect < 1:
-            msg += " ☠️ Your body is clogged with pill toxins, so the pill works less well."
-        return msg
+        from .crafting import use_pill
+        return use_pill(conn, user_id, item, now)
 
     if cat == "herbs":
-        return f"**{item['name']}** goes into pills. Alchemy (/craft) opens soon; keep gathering with /gather."
+        return f"**{item['name']}** goes into pills. Refine it in the cauldron with **/craft**."
     return f"**{item['name']}** has no use yet."

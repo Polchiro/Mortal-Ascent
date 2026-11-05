@@ -33,14 +33,15 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
 | `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
 | `/gather` | Gather herbs for alchemy, no limit. One message updates in place: the bot names a herb and describes it, you pick the plant that matches before time runs out (10s at Mortal down to 6s at Heaven). Poisonous look-alikes cost 5% HP. Herbs have an age (10 to 1000 years); 100-year+ herbs fight back (6 choices, 3s less). Right picks in a row build the Herbal Insight streak (more old herbs). A Wandering Spirit asks a simple question every 15–25 gathers; 3 misses pause gathering for 1 hour |
-| `/tutorial` | The Old Master's eleven lessons (one is on herbs and pills) on how to play, paged with Back / Next buttons and a jump menu |
+| `/craft` | The alchemy cauldron (docs/alchemy.md). Pick a pill whose herbs you have (it shows what is ready, what is missing, and which herbs it will use; a button switches between youngest and oldest herbs), then refine it stage by stage, every decision on a timer: 🔥 keep the heat in a hidden safe zone, 🌿 add the herbs in the order the clues give, ☯️ balance Yin and Yang, 💊 condense at the perfect pulse, 🔒 seal the Beast Core (Breakthrough pills). The score becomes **1–9 pill patterns** (capped by herb age; 9 needs the ⚡ Pill Tribulation and is announced). Gives alchemy EXP toward ranks 1st–9th Grade. No cooldown |
+| `/tutorial` | The Old Master's twelve lessons (two are on herbs, pills and the cauldron) on how to play, paged with Back / Next buttons and a jump menu |
 | `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill (with recipes) and herb (with look-alikes and how to /gather), read from the game data. A menu switches section; Back / Next turn pages |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 ### Text commands with "m"
 
 Every command above also works as a normal message starting with **`m`** and a space, for when
-Discord's `/` menu is acting up: `m start`, `m gather`, `m index herbs`, `m internal qi`, `m index`, `m cooldown`,
+Discord's `/` menu is acting up: `m start`, `m gather`, `m craft`, `m index herbs`, `m internal qi`, `m index`, `m cooldown`,
 `m profile @someone`, `m seclusion 12`, `m practice Iron Fist`, `m bestiary Martial Warrior`,
 `m admin give @someone lotus_coins:500`. Capital letters don't matter. Options go in order, or by
 name like the slash menu (`m spar technique:Iron Fist`). `m help` lists them all. Shortcuts:
@@ -90,8 +91,17 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **/gather** isn't blocked by injuries, only by seclusion. HP isn't stored outside fights, so a look-alike's 5% HP
   only shows on the gathering message. Gathering is flagged for review (logged and saved in `gather_flag`, never a
   ban) at an average pick under 0.3s over 50 gathers or 12+ hours non-stop. Chests don't drop herbs yet (no odds in the docs).
-- **/craft** (the alchemy minigame), Beast Cores and alchemist ranks are designed in docs/alchemy.md but not built yet.
-  Crafted-only pills (Qi Burst, Mending, Cleansing, Breakthrough) show in /index with their recipes.
+- **/craft** follows docs/alchemy.md. Choices the doc leaves open: Stoke/Fan move the heat 12°, normal drift is ±5°
+  and a hinted spike is 12–18°; Stage 2's clues name each herb's place (a misleading clue names a wrong one); Yin
+  and Yang count as perfect within 50 ± 5; Condense scores 100% at "the light trembles", 70% one pulse early, down
+  to 15%, and 20% if it cracks; Condense counts double in the final score ("decides most of the patterns"); Seal
+  the Core is 3 balance moves and passes within 12 points of 50/50; the Pill Tribulation is 3 lightning strikes to
+  block. Herbs and the core are used up when the craft begins. Walking away lets every decision time out.
+- **Crafted pills**: Qi and Qi Burst pills below your realm's grade give half (shop pills too). Mending pills shorten
+  an injury (HP isn't stored outside fights). Cleansing pills always remove at least 1 toxicity. Breakthrough pills
+  are used by /breakthrough at a **realm** gate: the best one of your realm's grade or higher, used up either way.
+- **Beast Cores** drop from Normal beasts in /explore (5%) and from Elite (15%) and Beast King (50%) team hunts,
+  graded by the beast's realm. They sit in the Materials tab.
 - **Learning a manual** is instant and equips it in that type's slot (the old technique stays learned).
   A duplicate of a learned manual gives 100 mastery EXP (× grade EXP multiplier).
 - **Breakthroughs**: Qi stops at a full bar at a bottleneck until you use `/breakthrough`.

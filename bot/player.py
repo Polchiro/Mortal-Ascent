@@ -213,8 +213,9 @@ def add_qi(player, amount, techniques=(), rng=random, now=None):
     return player, events
 
 
-def attempt_breakthrough(player, techniques=(), rng=random, now=None):
-    """Try the phase or realm breakthrough. Mutates player. Returns (success or None if not possible, message)."""
+def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0):
+    """Try the phase or realm breakthrough. Mutates player. Returns (success or None if not possible, message).
+    bonus: added chance from a Breakthrough pill (realm gates only)."""
     now = time.time() if now is None else now
     need = qi_needed(player["realm"], player["layer"])
     kind, target = next_gate(player)
@@ -226,7 +227,7 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None):
         missing = realm_requirement_missing(player, techniques, target)
         if missing:
             return None, f"🔒 To reach **{target}** you also need {missing}."
-    chance = breakthrough_chance(player)
+    chance = breakthrough_chance(player) + (bonus if kind == "realm" else 0)
     if rng.random() < chance:
         player["qi"] -= need
         player["breakthroughs"] += 1

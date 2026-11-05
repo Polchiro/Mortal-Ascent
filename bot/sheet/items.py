@@ -8,8 +8,8 @@ has rules for them:
     Open (chests) · Learn (manuals) · Take (Qi pills, Heaven-Defying Pill)
     Equip / Unequip (weapons) · Discard (anything not equipped, after a confirm)
 
-Herbs (from /gather and /explore) go into pills once /craft opens, so for now they can only be
-inspected or discarded.
+Herbs and Beast Cores go into pills through /craft, so in the bag they can only be inspected or
+discarded.
 """
 from dataclasses import dataclass
 
@@ -53,6 +53,8 @@ def rarity(item):
     if cat == "chests":
         return TIER_LABEL.get(item["key"], item["key"].title()), item["key"]
     if cat in ("manuals", "pills"):
+        return f"{grade} Grade", grade
+    if cat == "materials" and grade:
         return f"{grade} Grade", grade
     if cat == "herbs":
         return f"{(item.get('data') or {}).get('age', 10)}-year", grade
@@ -119,10 +121,34 @@ def details(item, player, learned_names=()):
         effects.append("Raises your talent by one rank (up to Divine)")
         notes.append(("Bound: cannot be traded", "gold"))
     elif cat == "pills":
-        kind = "Qi pill"
-        lines.append("Swallow it to speed up how fast your Internal Qi gathers.")
-        effects.append(f"×{training.QI_PILLS[item['grade']]} Qi Rate for {training.QI_PILL_DURATION_HOURS} hours")
-        effects.append("+1 pill toxicity (only one pill works at a time)")
+        from ..crafting import KINDS, pill_info, pill_spec, toxicity_for
+        pkind, grade, patterns = pill_info(item)
+        e = alchemy.pattern_effect(patterns) if patterns else 1.0
+        kind = KINDS[pkind][0] + (f" · {patterns} patterns" if patterns else "")
+        spec = pill_spec(pkind, grade)
+        if pkind == "qi":
+            lines.append("Swallow it to speed up how fast your Internal Qi gathers.")
+            effects.append(f"×{1 + (training.QI_PILLS[grade] - 1) * e:.2f} Qi Rate for "
+                           f"{training.QI_PILL_DURATION_HOURS} hours")
+        elif pkind == "burst":
+            lines.append("Swallow it for a rush of Internal Qi at once.")
+            effects.append(f"+{spec['hours'] * e:.1f} hours of your Qi Rate, instantly")
+        elif pkind == "mending":
+            lines.append("Knits wounds and shortens an injury.")
+            effects.append("Cures any injury" if spec["injury_minutes"] is None
+                           else f"Injury −{rules.fmt_duration(spec['injury_minutes'] * 60 * e)}")
+        elif pkind == "cleansing":
+            lines.append("Washes pill toxins out of the meridians.")
+            effects.append(f"−{max(1, int(spec['toxicity_removed'] * e))} toxicity (adds none)")
+        else:
+            lines.append("Used automatically by /breakthrough at a realm gate, even if the attempt fails.")
+            effects.append(f"+{training.BREAKTHROUGH_PILLS[grade] * e:.1%} realm breakthrough chance")
+        if pkind in ("qi", "burst", "mending"):
+            effects.append(f"+{toxicity_for(patterns) if patterns else 1} pill toxicity"
+                           + (" (one Qi pill at a time)" if pkind == "qi" else ""))
+        if pkind in ("qi", "burst") and grade != alchemy.HERB_TIER_BY_REALM[player["realm"]] and \
+                alchemy.GRADES.index(grade) < alchemy.GRADES.index(alchemy.HERB_TIER_BY_REALM[player["realm"]]):
+            notes.append(("Below your realm's grade: half effect", "red"))
     elif cat == "chests":
         tier = item["key"]
         kind = "Treasure chest"
@@ -142,8 +168,12 @@ def details(item, player, learned_names=()):
         a = alchemy.HERB_AGES[age]
         effects.append(f"{age}-year: " + (f"+{a['score_bonus']:.0%} craft score, " if a["score_bonus"] else "")
                        + f"up to {a['max_patterns']} pill patterns")
-        notes.append(("Crafting (/craft) opens soon", "jade"))
+        notes.append(("Refine it with /craft", "jade"))
         notes.append(("The merchant does not buy herbs", "red"))
+    elif item["key"].startswith("core:"):
+        kind = "Beast Core"
+        lines.append("The crystallised essence of a slain beast. Breakthrough pills need a core of their grade.")
+        effects.append(f"Goes into: {item['grade']} Breakthrough pills")
     else:
         kind = "Material"
         lines.append("A crafting material.")
