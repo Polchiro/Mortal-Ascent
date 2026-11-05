@@ -34,6 +34,19 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill and herb, read from the game data. A menu switches section; Back / Next turn pages |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
+### Text commands with "m"
+
+Every command above also works as a normal message starting with **`m`** and a space, for when
+Discord's `/` menu is acting up: `m start`, `m internal qi`, `m index`, `m cooldown`,
+`m profile @someone`, `m seclusion 12`, `m practice Iron Fist`, `m bestiary Martial Warrior`,
+`m admin give @someone lotus_coins:500`. Capital letters don't matter. Options go in order, or by
+name like the slash menu (`m spar technique:Iron Fist`). `m help` lists them all. Shortcuts:
+`m qi`, `m cd`, `m bal`, `m inv`, `m p`.
+
+Replies that are private with a slash command are normal messages with `m`, since only slash
+commands can reply privately. To read `m` messages in servers, the bot needs **Message Content
+Intent** (see Run it). In DMs with the bot they work either way.
+
 Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call with Join / Leave /
 Start buttons. It stays open 30 / 60 minutes; the finder starts the fight and every winner rolls
 their own chest. Beating a Beast King counts toward the Martial King and Martial Saint requirements.
@@ -92,6 +105,9 @@ The design docs leave some things open. Until they are decided, the bot uses the
 
 1. Create an application and bot at https://discord.com/developers/applications,
    copy the bot token, and invite it with the `bot` and `applications.commands` scopes.
+   On the **Bot** tab, turn on **Message Content Intent** and save (needed for `m` text
+   commands in servers). If it is off, the bot still starts, logs a warning, and `m` commands
+   only work in DMs.
 2. From the repo root:
 
    ```bash
