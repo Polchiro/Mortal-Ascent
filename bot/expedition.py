@@ -155,6 +155,10 @@ class Expedition:
         if c:
             self.items.append(c)
             self.story.append(f"{loot.CHEST_EMOJI[c['key']]} It dropped a **{c['name']}**!")
+        core = loot.roll_beast_core("normal", self.player["realm"], self.rng)
+        if core:
+            self.items.append(core)
+            self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
 
     def _treasure_chest(self):
         c = loot.chest(loot.pick(explore.TREASURE_CHEST_TIER, self.rng))

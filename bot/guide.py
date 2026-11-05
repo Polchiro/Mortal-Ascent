@@ -114,10 +114,31 @@ LESSONS = [
                     "100-year and older ones try to escape: more choices, less time. Pick right many times in a row "
                     "and your 🔥 **Herbal Insight** finds old herbs more often."),
       ("Your herb bag", "Herbs stack by kind and age in the **Herbs** tab of **/inventory**. Herb Patches in /explore "
-                        "and merchants give herbs too. The merchant never buys them back."),
-      ("Pills", "Qi pills speed up your Qi, Qi Burst pills give Qi at once, Mending pills heal, Cleansing pills clear "
-                "toxicity and Breakthrough pills help at a realm gate. **/craft**, the alchemy cauldron, opens soon; "
-                "**/index** → Pills lists every recipe.")]),
+                        "and merchants give herbs too. The merchant never buys them back. Beasts sometimes drop a "
+                        "🔮 **Beast Core** (Materials tab), needed for Breakthrough pills."),
+      ("Pills", "Qi pills speed up your Qi, Qi Burst pills give Qi at once, Mending pills shorten injuries, "
+                "Cleansing pills clear toxicity and Breakthrough pills help at a realm gate. **/index** → Pills "
+                "lists every recipe.")]),
+
+    ("The Cauldron",
+     "*The Old Master taps the cauldron and it rings like a bell.*\n"
+     "\"Fire, order, balance, timing. Fail any of them and the cauldron will tell the whole mountain.\"",
+     [("/craft", "Pick a pill whose herbs you have, then refine it. Every decision has a timer. No cooldown: "
+                 "your herbs are the limit, and they are used up when you begin."),
+      ("The stages", "🔥 **Ignite**: Stoke, Fan or Hold to keep the heat in a hidden safe zone; the hints say if it "
+                     "is cold or hot and warn of spikes.\n🌿 **Add the Herbs**: follow the clues for the order. A "
+                     "wrong herb causes a backlash.\n☯️ **Fuse**: bring Yin and Yang to 50.\n💊 **Condense**: press "
+                     "at *the light trembles*. Too early is weak, too late it cracks.\n🔒 **Seal the Core**: "
+                     "Breakthrough pills only. Fail and the Beast Core shatters."),
+      ("Pill patterns 丹纹", "Your score becomes **1 to 9 patterns**. More patterns make a stronger pill with "
+                            "less toxicity. Below 40% the cauldron explodes. Older herbs raise the cap (10-year "
+                            "herbs reach 5 patterns, 1000-year herbs 9), and a 9-pattern pill must survive the "
+                            "⚡ **Pill Tribulation**."),
+      ("Harder pills", "Mortal pills are 🟢 Normal (2 stages); Heaven pills are 💀 Super Hard (4 stages, 3 "
+                       "seconds a decision, misleading hints, wild herbs). Breakthrough pills are one level harder."),
+      ("Alchemist rank", "You start as a 1st Grade Alchemist. Every craft gives alchemy EXP (an explosion gives a "
+                         "little). New ranks unlock higher grades; being above a recipe's rank makes it easier, "
+                         "but easy pills give less EXP.")]),
 
     ("Coin and Pearl",
      "\"Even immortals pay for their tea.\"",
@@ -132,7 +153,7 @@ LESSONS = [
      "*The Old Master stands and brushes off his robe.*\n"
      "\"You have taken your first step on the martial path. The rest, you must walk alone.\"",
      [("A good day's path", "**/train** → **/explore** → open chests in **/inventory** → **/practice** "
-                            "→ **/spar** → **/gather** herbs between cooldowns → **/breakthrough** when the bar is "
+                            "→ **/spar** → **/gather** herbs and **/craft** pills between cooldowns → **/breakthrough** when the bar is "
                             "full. Check **/internal qi** to see how far you are."),
       ("Lost?", "**/index** lists every beast, technique, weapon, chest, pill and herb in the world. "
                 "**/tutorial** brings back these lessons any time.")]),
@@ -334,7 +355,7 @@ def age_text(min_age):
     return "any age" if min_age <= 10 else f"{min_age}-year+"
 
 
-CRAFT_SOURCE = "/craft (opens soon)"
+CRAFT_SOURCE = "/craft"
 
 
 def pill_sources(grade):
@@ -400,6 +421,9 @@ def pill_pages():
                                       f"×{alchemy.pattern_effect(9):.2f}; 8+ patterns add no toxicity."),
                 ("一品 Alchemist rank", f"Everyone starts as a 1st Grade Alchemist. Crafting gives alchemy EXP. "
                                        f"Total EXP for each rank: {ranks}."),
+                ("🔮 Beast Cores", "Breakthrough pills need a core of their grade (the beast's realm tier): "
+                                   + " · ".join(f"{loot.CORE_NAMES[t]} {pct(c)}" for t, c in alchemy.BEAST_CORE_DROP.items())
+                                   + " from beasts you beat (Elite and King cores from team hunts)."),
                 ("天 Heaven-Defying Pill", (
                     f"Raises your talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']}). "
                     f"Cannot be traded.\nFrom: Jade Chests "

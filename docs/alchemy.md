@@ -3,9 +3,10 @@
 The alchemy loop: **gather herbs → craft pills in a minigame → raise your
 alchemist rank → train faster.**
 
-> **Built so far:** /gather (section 2), herbs with ages in the bag's Herbs tab, Herb Patches and
-> merchants giving the new herbs, and /index pages for every herb and pill. **Not built yet:**
-> /craft, Beast Cores, alchemist ranks, the player market for herbs, herbs from chests.
+> **Built:** /gather, /craft (all five stages, difficulty levels, rank relief, 1–9 patterns, Pill
+> Tribulation), alchemist ranks and EXP, Beast Cores, and using every crafted pill. The bot's own choices for
+> numbers this page leaves open are listed in bot/README.md. **Not built yet:** the player market for herbs,
+> herbs from chests.
 
 ---
 

@@ -2,7 +2,7 @@
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py,
-/gather in gathering.py. Admin testing commands are in admin.py.
+/gather in gathering.py, /craft in crafting.py. Admin testing commands are in admin.py.
 Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
 import asyncio
@@ -21,7 +21,7 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import admin, combat, cooldowns, db, gathering, guide, hunt, loot, prefix, qi, trainer
+from . import admin, combat, cooldowns, crafting, db, gathering, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .sheet import items as sheet_items
@@ -61,6 +61,7 @@ class MortalAscent(discord.Client):
         admin.register(self)
         guide.register(self)
         gathering.register(self)
+        crafting.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: bank the passive Qi gathered since last time."""
@@ -121,6 +122,10 @@ def sync_passive_qi(conn, user_id, now=None):
     p, events = rules.add_qi(p, qi, techs, now=now)
     db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], qi_collected_at=now)
     return qi, events
+
+
+def next_gate_is_realm(player):
+    return rules.next_gate(player)[0] == "realm"
 
 
 def claim_session(bot, uid, kind, cooldown=None, seconds=0):
@@ -424,15 +429,28 @@ def register_commands(bot):
         chance = rules.breakthrough_chance(p)
         risk = (f"Failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your Qi"
                 + (f" and a {training.INJURY_HOURS}-hour injury." if kind == "realm" else "."))
-        if chance >= 1:
+        pill = crafting.best_breakthrough_pill(bot.conn, uid, p) if kind == "realm" and chance < 1 else None
+        if pill:
+            chance = min(1.0, chance + pill[1])
+            risk += f"\n🏔️ Your **{pill[0]['name']}** adds **+{pill[1]:.1%}** (used up either way)."
+        if chance >= 1 and kind == "realm" and p["realm"] == "Mortal":
             risk = "The Old Master guides you; this first gate cannot fail."
 
         async def attempt():
             async with bot.db_lock:
                 fresh = db.get_player(bot.conn, uid)
-                ok, msg = rules.attempt_breakthrough(fresh, db.get_techniques(bot.conn, uid))
+                use = None
+                if next_gate_is_realm(fresh):
+                    use = crafting.best_breakthrough_pill(bot.conn, uid, fresh)
+                    if use and rules.breakthrough_chance(fresh) >= 1:
+                        use = None
+                ok, msg = rules.attempt_breakthrough(fresh, db.get_techniques(bot.conn, uid),
+                                                     bonus=use[1] if use else 0)
                 if ok is not None:
                     save_progress(uid, fresh)
+                    if use:
+                        db.remove_item(bot.conn, use[0]["id"])
+                        msg += f"\n🏔️ The **{use[0]['name']}** dissolves into your meridians."
             return embed("⛰️ Breakthrough", f"{msg}\n{qi_line(fresh)}")
 
         view = ConfirmView(uid, "Attempt breakthrough", attempt, style=discord.ButtonStyle.success, emoji="⛰️")

@@ -174,6 +174,10 @@ def resolve(conn, lair, user_ids, rng=random, now=None):
             if c:
                 stored, _ = loot.store(conn, uid, [c])
                 bits.append(f"{loot.CHEST_EMOJI[c['key']]} {c['name']}" if stored else "bag full, chest lost")
+            core = loot.roll_beast_core(tier, lair["realm"], rng)
+            if core:
+                stored, _ = loot.store(conn, uid, [core])
+                bits.append(f"🔮 {loot.describe(core)}" if stored else "bag full, core lost")
         else:
             db.update_player(conn, uid, injured_until=now + LOSS_INJURY_HOURS * 3600)
             bits.append(f"injured {LOSS_INJURY_HOURS}h")
