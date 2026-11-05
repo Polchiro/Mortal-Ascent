@@ -40,7 +40,9 @@ def png(image, filename):
 class MortalAscent(discord.Client):
     def __init__(self, db_path, guild_id=None):
         super().__init__(intents=discord.Intents.default())
-        self.tree = app_commands.CommandTree(self)
+        # Every command works both in servers and in a direct message with the bot.
+        self.tree = app_commands.CommandTree(
+            self, allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True))
         self.tree.interaction_check = self.before_command
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
@@ -72,14 +74,19 @@ class MortalAscent(discord.Client):
             log.exception("Could not send the error message")
 
     async def setup_hook(self):
+        # Commands are always synced globally: per-server commands never show up in DMs.
+        await self.tree.sync()
+        log.info("Synced commands globally (new or changed commands can take up to an hour to appear)")
         if self.guild_id:
+            # Older versions synced a copy of every command to DISCORD_GUILD_ID. Remove that copy,
+            # otherwise each command would be listed twice in that server.
             guild = discord.Object(id=self.guild_id)
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
-            log.info("Synced commands to guild %s", self.guild_id)
-        else:
-            await self.tree.sync()
-            log.info("Synced commands globally (can take up to an hour to appear)")
+            self.tree.clear_commands(guild=guild)
+            try:
+                await self.tree.sync(guild=guild)
+                log.info("Removed the old per-server copy of the commands from guild %s", self.guild_id)
+            except discord.HTTPException:
+                log.warning("Could not clear per-server commands in guild %s", self.guild_id, exc_info=True)
 
     async def on_ready(self):
         log.info("Logged in as %s (%s)", self.user, self.user.id)
@@ -154,7 +161,7 @@ def register_commands(bot):
 
     @tree.command(name="profile", description="Show your cultivation profile card")
     @app_commands.describe(member="Whose profile to view (defaults to you)")
-    async def profile(interaction: discord.Interaction, member: discord.Member | None = None):
+    async def profile(interaction: discord.Interaction, member: discord.User | None = None):
         target = member or interaction.user
         p = db.get_player(bot.conn, target.id)
         if not p:
