@@ -26,6 +26,8 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
 | `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
+| `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call with Join / Leave /
