@@ -163,3 +163,27 @@ def test_profile_command_twice_with_slow_avatar():
             i.response.defer.assert_awaited_once()
             assert i.followup.send.call_args.kwargs["file"].filename.endswith(".png")
     asyncio.run(go())
+
+
+def test_admin_reset_and_give(conn, monkeypatch):
+    from bot import admin
+    new_player(conn)
+    now = time.time()
+    db.set_cooldown(conn, 1, "explore", 3600, now)
+    db.set_cooldown(conn, 1, "train", 3600, now)
+    db.bump_daily(conn, 1, "practice", now)
+    db.update_player(conn, 1, injured_until=now + 600, seclusion_start=now - 3600, seclusion_end=now + 3600)
+    done = admin.reset_player(conn, 1, now)
+    assert len(done) == 4
+    assert db.cooldown_left(conn, 1, "explore", now) == 0 and db.cooldown_left(conn, 1, "train", now) == 0
+    assert db.daily_count(conn, 1, "practice", now) == 0
+    p = db.get_player(conn, 1)
+    assert not rules.injured_for(p, now) and rules.seclusion_qi(p, (), now)[2]
+    assert admin.reset_player(conn, 1, now + 1) == []
+
+    admin.give(conn, 1, lotus_coins=100, moon_pearls=5, qi=rules.qi_needed("Mortal", 1) + 1)
+    p = db.get_player(conn, 1)
+    assert p["lotus_coins"] == 150 and p["moon_pearls"] == 5 and p["layer"] == 2
+
+    monkeypatch.setenv("ADMIN_IDS", "123, 456,junk")
+    assert admin.admin_ids_from_env() == {123, 456}
