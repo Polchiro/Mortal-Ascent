@@ -132,6 +132,45 @@ def _landscape(img, acc, seed):
     img.alpha_composite(near)
 
 
+def _courtyard(img, acc, seed):
+    """The training courtyard: far peaks, a temple hall with curved eaves, red pillars, lanterns, stone floor."""
+    w, h = img.size
+    far = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(far).polygon(_ridge(w, h, h * 0.55, h * 0.25, seed, 5), fill=alpha(mix(acc.mist, acc.sky[0], 0.6), 255))
+    img.alpha_composite(far)
+    mist = Image.new("RGBA", img.size, acc.mist + (0,))
+    ImageDraw.Draw(mist).ellipse((-w * 0.1, h * 0.45, w * 1.1, h * 0.75), fill=alpha(acc.mist, 70))
+    img.alpha_composite(mist.filter(ImageFilter.GaussianBlur(h * 0.06)))
+    hall = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(hall)
+    dark = alpha(mix(acc.sky[0], (0, 0, 0), 0.55), 255)
+    wall = alpha(mix(acc.sky[0], (0, 0, 0), 0.3), 255)
+    for x0, x1, top in ((0.0, 0.3, 0.5), (0.7, 1.0, 0.5)):
+        d.rectangle((w * x0, h * (top + 0.1), w * x1, h), fill=wall)                       # hall body
+        d.polygon([(w * (x0 - 0.04), h * (top + 0.12)), (w * (x0 + 0.02), h * top), (w * (x1 - 0.02), h * top),
+                   (w * (x1 + 0.04), h * (top + 0.12)), (w * x1, h * (top + 0.1)), (w * x0, h * (top + 0.1))],
+                  fill=dark)                                                                 # curved eaves
+        for k in range(4):
+            px = w * (x0 + 0.03 + k * (x1 - x0 - 0.06) / 3)
+            d.rectangle((px - w * 0.006, h * (top + 0.12), px + w * 0.006, h * 0.86),
+                        fill=alpha(mix((150, 40, 32), acc.sky[0], 0.45), 255))                # red pillars
+    d.rectangle((0, h * 0.84, w, h), fill=alpha(mix(acc.sky[0], (0, 0, 0), 0.65), 255))       # stone floor
+    for k in range(9):
+        x = w * k / 8
+        d.line([(w / 2 + (x - w / 2) * 0.35, h * 0.84), (x, h)], fill=alpha(acc.mist, 40), width=max(1, S))
+    img.alpha_composite(hall)
+    glow = Image.new("RGBA", img.size, (255, 170, 80, 0))
+    gd = ImageDraw.Draw(glow)
+    for lx in (0.08, 0.22, 0.78, 0.92):
+        gd.ellipse((w * lx - h * 0.05, h * 0.66 - h * 0.05, w * lx + h * 0.05, h * 0.66 + h * 0.05),
+                   fill=(255, 170, 80, 150))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(h * 0.03)))
+    d = ImageDraw.Draw(img)
+    for lx in (0.08, 0.22, 0.78, 0.92):
+        d.ellipse((w * lx - h * 0.018, h * 0.66 - h * 0.025, w * lx + h * 0.018, h * 0.66 + h * 0.025),
+                  fill=(236, 92, 52, 255))
+
+
 # ── Silhouettes, drawn in a unit box (x, y from 0 to 1 over the scene) ──
 # each returns (eyes, fangs): eye centres and fang tips in unit coordinates
 
@@ -333,13 +372,13 @@ def _creature(img, acc, body, slug):
 @lru_cache(maxsize=48)
 def scene(palette, body, slug, seed=7, backdrop="wild"):
     """The scene window as an S× RGBA image (cached per enemy + element).
-    backdrop: "wild" (moonlit mountains); the training courtyard is added with /train."""
+    backdrop: "wild" (moonlit mountains) or "courtyard" (the training ground)."""
     acc = T.ELEMENT_ACCENTS[palette]
     size = _scene_size()
     img = _sky(acc, size, seed)
     w, h = size
     _moon(img, acc, w * 0.74, h * 0.26, h * 0.14)
-    _landscape(img, acc, seed)
+    (_courtyard if backdrop == "courtyard" else _landscape)(img, acc, seed)
     _creature(img, acc, body, slug)
     # darken the bottom so the name and HP bar read clearly
     shade = Image.new("RGBA", size, (0, 0, 0, 0))

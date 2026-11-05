@@ -286,7 +286,7 @@ def register_commands(bot):
         try:
             view = TrainView(bot, uid, trainer.roll_session(p, tech=tech))
             view.interaction = interaction
-            await interaction.response.send_message(embed=view.intro(), view=view)
+            await view.send_intro(interaction)
             sent = True
         except Exception:
             if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)

@@ -425,3 +425,40 @@ def test_spar_timeouts_guard_then_forfeit(conn):
 def battle_card_height():
     from cards.battle import H
     return H
+
+
+# ── /train in the framed card style ──────────────────────────────────
+
+@pytest.mark.parametrize("challenge,tier", [("read_the_master", 1), ("endless_waves", 1), ("ambush", 2),
+                                            ("find_the_weakness", 2)])
+def test_training_steps_show_courtyard_cards(conn, challenge, tier):
+    import time
+    from bot import trainer
+    from bot.views import TrainView
+    new_player(conn)
+    shown = []
+
+    class Interaction:
+        async def edit_original_response(self, **kw):
+            shown.append(kw)
+
+    async def go():
+        tv = TrainView(FakeBot(conn), 1, trainer.roll_session(db.get_player(conn, 1), random.Random(0)))
+        tv.session.update(challenge=challenge, tier=tier, conditions=["night_training"] if tier == 1 else [])
+        tv.interaction = Interaction()
+        assert tv.intro_card()["palette"] == "Courtyard"
+
+        async def answer():
+            while True:
+                await asyncio.sleep(0.005)
+                if tv.future and not tv.future.done():
+                    tv.future.set_result(("guard", time.monotonic()))
+        bot = asyncio.create_task(answer())
+        run = {"read_the_master": lambda: tv.read_master(tier, tv.session["conditions"]),
+               "endless_waves": lambda: tv.endless_waves(tier, tv.session["conditions"]),
+               "ambush": lambda: tv.ambush(tier, tv.session["conditions"]),
+               "find_the_weakness": lambda: tv.weakness(tier)}[challenge]
+        await run()
+        bot.cancel()
+    asyncio.run(go())
+    assert shown and all(kw["embed"] is None and kw["attachments"][0].filename == "train_step.jpg" for kw in shown)
