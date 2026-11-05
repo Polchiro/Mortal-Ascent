@@ -6,8 +6,6 @@ Discord client and slash commands: /start, /profile, /balance, /inventory, /expl
 import asyncio
 import io
 import logging
-import os
-import tempfile
 import time
 
 import discord
@@ -21,6 +19,7 @@ from balance_card import render_balance
 from profile_card import render_profile
 
 from . import combat, db, hunt, loot, trainer
+from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
                     TechniquesView, TrainView, blessing_embed, shop_embed)
@@ -74,18 +73,21 @@ class MortalAscent(discord.Client):
         log.info("Logged in as %s (%s)", self.user, self.user.id)
 
 
+AVATAR_TIMEOUT_SECONDS = 5
+
+
 async def render_with_avatar(member, render, make_data):
-    """Download the member's avatar to a temp file, build card data, render off the event loop."""
-    with tempfile.TemporaryDirectory() as tmp:
-        avatar_path = None
-        try:
-            avatar_path = os.path.join(tmp, "avatar.png")
-            await member.display_avatar.with_format("png").with_size(256).save(avatar_path)
-        except Exception:
-            log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
-            avatar_path = None
-        data = make_data(avatar_path)
-        return await asyncio.to_thread(render, data)
+    """Fetch the member's avatar into memory (no temp files), build card data, render off the event loop.
+    A slow or failed avatar download falls back to the initial instead of holding up the card."""
+    avatar = None
+    try:
+        avatar = await asyncio.wait_for(member.display_avatar.with_format("png").with_size(256).read(),
+                                        AVATAR_TIMEOUT_SECONDS)
+    except Exception:
+        log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
+    data = make_data(None)
+    data["avatar_bytes"] = avatar
+    return await card_render.render(render, data)
 
 
 def register_commands(bot):
@@ -148,7 +150,7 @@ def register_commands(bot):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
         await interaction.response.defer()
-        image = await asyncio.to_thread(render_balance, rules.balance_data(p))
+        image = await card_render.render(render_balance, rules.balance_data(p))
         await interaction.followup.send(file=png(image, "balance.png"))
 
     @tree.command(name="inventory", description="Open your bag: manuals, weapons, pills, materials and chests")

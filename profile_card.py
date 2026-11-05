@@ -6,8 +6,10 @@ Fonts (put in a fonts/ folder next to this file):
   Cinzel.ttf, Inter.ttf      — free from Google Fonts
   NotoSerifSC-Bold.otf       — free from Google Fonts (Chinese characters)
 """
+import io
 import os
 import random
+from functools import lru_cache
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -63,6 +65,15 @@ MASTERY_STAGES = ["Glimpsing the Gate", "Entering the Hall", "Pure Flame",
 
 # ── helpers ───────────────────────────────────────────────────────────
 
+# Fonts are cached: when a file is missing, Pillow searches the whole system font folder
+# for it on every call, which on Windows made each card take many seconds.
+
+def clear_font_cache():
+    for f in (fallback_font, font, cjk):
+        f.cache_clear()
+
+
+@lru_cache(maxsize=None)
 def fallback_font(size):
     """First system font that loads, else Pillow's built-in font. Never raises."""
     for name in FALLBACK_FONTS:
@@ -73,6 +84,7 @@ def fallback_font(size):
     return ImageFont.load_default(size * S)
 
 
+@lru_cache(maxsize=None)
 def font(name, size, weight=None):
     try:
         f = ImageFont.truetype(os.path.join(FONT_DIR, name), size * S)
@@ -86,6 +98,7 @@ def font(name, size, weight=None):
     return f
 
 
+@lru_cache(maxsize=None)
 def cjk(size):
     for path in CJK_CANDIDATES:
         try:
@@ -312,8 +325,12 @@ def qi_ring(img, center, radius, pct, data):
     d.ellipse(p(ex - 8, ey - 8, ex + 8, ey + 8), fill=PAPER, outline=JADE, width=3 * S)
 
     # avatar
-    if data.get("avatar_path") and os.path.exists(data["avatar_path"]):
-        av = Image.open(data["avatar_path"]).convert("RGBA").resize(p(radius * 2, radius * 2))
+    if data.get("avatar_bytes"):
+        with Image.open(io.BytesIO(data["avatar_bytes"])) as src:
+            av = src.convert("RGBA").resize(p(radius * 2, radius * 2))
+    elif data.get("avatar_path") and os.path.exists(data["avatar_path"]):
+        with Image.open(data["avatar_path"]) as src:
+            av = src.convert("RGBA").resize(p(radius * 2, radius * 2))
     else:
         av = Image.new("RGBA", p(radius * 2, radius * 2), PAPER_DARK + (255,))
         ImageDraw.Draw(av).text(p(radius, radius + 4), data["name"][0].upper(),
