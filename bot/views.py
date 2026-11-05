@@ -23,7 +23,7 @@ from inventory_card import (CHEST_CHARS, MATERIAL_CHAR, PER_PAGE, manual_item, r
 from profile_card import GRADES, JADE
 import technique
 
-from . import db, hunt, loot, mastery, trainer
+from . import combat, db, hunt, loot, mastery, trainer
 from . import render as card_render
 from . import player as rules
 from .expedition import PATH_EMOJI, Expedition
@@ -678,7 +678,9 @@ class SparView(OwnedView):
             if sp.turn == 1:
                 lines.append("**Counters:** 🛡️ Guard beats ⚔️ Strike · 💥 Break beats 🛡️ Guard · ⚔️ Strike beats 💥 Break\n"
                              "Mastery EXP comes only from techniques used **at the right moment**: your attack technique "
-                             "right after you Guard his Strike, your defense technique against his Strike.\n")
+                             "right after you Guard his Strike, your defense technique against his Strike.\n"
+                             "Techniques need to **recover** for a few exchanges after use; plain Strike, Guard and "
+                             "Break are always ready.\n")
                 if self.trial:
                     lines.append(f"*This master fights at ×{sp.strength:g} strength. Win to break through.*\n")
             if self.last:
@@ -701,7 +703,12 @@ class SparView(OwnedView):
             async def cb(interaction, key=key):
                 await self.play(interaction, key)
             style = discord.ButtonStyle.success if key.endswith("_tech") else discord.ButtonStyle.primary
-            b = self.button(label[:80], cb, emoji=emoji[key], style=style, row=0 if not key.endswith("_tech") else 1)
+            left = self.spar.cooldowns.get(key, 0)
+            if left:   # technique is cooling down: greyed out with turns remaining
+                label = f"{label[:60]} (⏳ {left} turn{'s' if left > 1 else ''})"
+                style = discord.ButtonStyle.secondary
+            b = self.button(label[:80], cb, emoji=emoji[key], style=style,
+                            row=0 if not key.endswith("_tech") else 1, disabled=bool(left))
             b.spar_key = key
 
     async def play(self, interaction, key):
@@ -851,6 +858,8 @@ class TechniquesView(OwnedView):
             m = rules.mastery_mult(t)
             power_txt = (f"×{power * m:.2f} damage" if t["type"] == "attack"
                          else f"blocks {min(technique.MAX_DAMAGE_BLOCKED, power * m):.0%}")
+            cd = combat.cooldown_turns(t)
+            power_txt += f" · ⏳ {cd} turn{'s' if cd > 1 else ''} cooldown"
             e.add_field(
                 name=f"{'✅ ' if t['equipped'] else ''}{t['name']} · {t['grade']} {t['type']}",
                 value=(f"{effect_text(t)} · {power_txt} · +{passive * m:.0%} passive "

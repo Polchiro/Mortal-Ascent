@@ -415,10 +415,10 @@ def test_spar_reading_the_master_wins_and_awards_timed_uses(conn):
     techs = db.get_techniques(conn, 1)
     sp = Spar(p, techs, rng=random.Random(1))
     while not sp.over:
-        if sp.blocked_strike:
+        if sp.blocked_strike and sp.ready("attack_tech"):
             sp.play("attack_tech")
         elif sp.master == "strike":
-            sp.play("defense_tech")
+            sp.play("defense_tech" if sp.ready("defense_tech") else "guard")
         else:
             sp.play({"guard": "break", "break": "strike"}[sp.master])
     assert sp.won
@@ -433,6 +433,60 @@ def test_spar_without_techniques_timing_gives_nothing(conn):
     while not sp.over:
         sp.play("strike")
     assert sp.mastery_awards() == {}
+
+
+def test_spar_techniques_have_cooldowns(conn):
+    from bot.sparring import Spar
+    p = new_player(conn)
+    sp = Spar(p, db.get_techniques(conn, 1), rng=random.Random(3))
+    assert sp.ready("attack_tech")
+    sp.play("attack_tech")
+    assert not sp.ready("attack_tech") and sp.ready("strike")
+    turn = sp.turn
+    assert "recovering" in sp.play("attack_tech") and sp.turn == turn   # refused, no turn spent
+    sp.play("strike")
+    assert sp.ready("attack_tech")                                     # Mortal: rests 1 turn
+
+
+def test_cooldown_turns_scale_with_grade_and_heavy():
+    def cd(name):
+        t = rules.TECH_BY_NAME[name]
+        return combat.cooldown_turns({"name": name, "grade": t["grade"]})
+    assert cd("Iron Fist") == 1
+    assert cd("Raging Bull Fist") == 2          # Yellow 1 + Heavy 1
+    assert cd("Viper Fang Finger") == 2
+    assert cd("Meteor-Falling Kick") == 4       # Heaven 3 + Heavy 1
+    assert combat.cooldown_turns(None) == 0
+
+
+def test_auto_fight_respects_attack_cooldown(conn):
+    p = new_player(conn)
+    techs = db.get_techniques(conn, 1)
+    hp, atk, dfn = rules.final_stats(p, techs)
+    hero = {"hp": hp * 100, "max_hp": hp * 100, "attack": atk * 0.01, "defense": dfn}
+    enemy = combat.beast_stats(p, ("Wild Boar", "normal", "brute"))
+    res = combat.fight(hero, enemy, techs, random.Random(0))
+    assert res["rounds"] == combat.MAX_ROUNDS
+    assert res["attack_uses"] == combat.MAX_ROUNDS // 2               # every other turn
+
+
+def test_spar_view_greys_out_cooling_technique(conn):
+    from bot.views import SparView
+
+    class FakeBot:
+        def __init__(self, c):
+            self.conn, self.db_lock, self.busy = c, asyncio.Lock(), set()
+
+    new_player(conn)
+
+    async def go():
+        sv = SparView(FakeBot(conn), 1, rng=random.Random(0))
+        sv.spar.play("attack_tech")
+        sv.build()
+        b = next(c for c in sv.children if c.spar_key == "attack_tech")
+        assert b.disabled and "1 turn" in b.label
+        assert not next(c for c in sv.children if c.spar_key == "strike").disabled
+    asyncio.run(go())
 
 
 def test_flex_slot_from_martial_warrior(conn):

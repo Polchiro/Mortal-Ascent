@@ -7,6 +7,10 @@ Strike beats Break; the winner of an exchange lands a hit, a tie hurts both
 a little. Your attack technique is a stronger Strike and your defense
 technique a stronger Guard.
 
+Techniques have a cooldown (technique.TECHNIQUE_COOLDOWN_TURNS): after you
+use one it rests for a few exchanges and its button is greyed out. Plain
+Strike, Guard and Break are always available.
+
 Mastery EXP comes only from techniques used at the right moment:
   • attack technique right after you blocked the master's Strike
   • defense technique against the master's Strike
@@ -44,6 +48,7 @@ class Spar:
         self.turn = 0
         self.blocked_strike = False      # last turn you Guarded the master's Strike
         self.timed = {}                  # technique id → well-timed uses
+        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}   # exchanges until ready
         self.log = []
         self._next()
 
@@ -75,6 +80,17 @@ class Spar:
             out.append(("defense_tech", self.def_t["name"]))
         return out
 
+    def ready(self, choice):
+        """True if this choice can be played now (techniques may be cooling down)."""
+        return self.cooldowns.get(choice, 0) == 0
+
+    def _tick_cooldowns(self, used):
+        for key in self.cooldowns:
+            self.cooldowns[key] = max(0, self.cooldowns[key] - 1)
+        if used in self.cooldowns:
+            tech = self.atk_t if used == "attack_tech" else self.def_t
+            self.cooldowns[used] = combat.cooldown_turns(tech)
+
     def _hit_master(self, skill=1.0, pierce=0.0):
         dmg = combat.damage(self.attack, self.m_defense, self.m_max, skill, pierce, self.rng)
         self.m_hp = max(0, self.m_hp - dmg)
@@ -90,6 +106,8 @@ class Spar:
 
     def play(self, choice):
         """Resolve one exchange. Returns a line describing it."""
+        if not self.ready(choice):
+            return f"⏳ That technique is still recovering ({self.cooldowns[choice]} more exchange(s))."
         m = self.master
         me = {"attack_tech": "strike", "defense_tech": "guard"}.get(choice, choice)
         use_atk = choice == "attack_tech"
@@ -149,6 +167,7 @@ class Spar:
                 dmg = self._hit_me(scale)
                 line = f"💥 His {m.title()} beats your {me.title()}! (−{dmg:.0f})"
         self.log.append(line)
+        self._tick_cooldowns(choice)
         self._next()
         return " ".join(notes + [line])
 

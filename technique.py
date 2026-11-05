@@ -74,6 +74,18 @@ TRIAL_FAIL_COOLDOWN_HOURS = 24
 # Real fights (beasts, PvP)
 COMBAT_EXP_PER_USE = 20
 
+# Technique cooldowns in every fight (spar, trials, explore, hunts, future PvP).
+# After a technique is used it rests for this many of your turns; basic
+# Strike / Guard / Break are always available. Stronger grades rest longer.
+TECHNIQUE_COOLDOWN_TURNS = {
+    "Mortal": 1,
+    "Yellow": 1,
+    "Mystic": 2,
+    "Earth":  2,
+    "Heaven": 3,
+}
+HEAVY_EXTRA_COOLDOWN = 1   # Heavy techniques rest one turn longer
+
 # Daily diminishing returns: (sessions at this rate, EXP rate)
 PRACTICE_DAILY_RATES = [(5, 1.0), (5, 0.5), (None, 0.1)]
 SPAR_DAILY_RATES = [(3, 1.0), (None, 0.5)]
@@ -88,7 +100,7 @@ STARTING_TECHNIQUES = [
 #   combo:       (hits, damage per hit)
 #   pierce:      share of defender's Defense ignored
 #   stagger:     next block weakened by this share; 1.0 = can't Guard next turn
-#   heavy:       damage multiplier (can't be used two turns in a row)
+#   heavy:       damage multiplier (rests HEAVY_EXTRA_COOLDOWN turn longer)
 #   counter:     share of blocked damage reflected
 #   recover:     share of max HP healed on block
 #   unbreakable: None (Break moves deal half damage)

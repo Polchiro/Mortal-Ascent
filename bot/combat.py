@@ -3,9 +3,10 @@ Auto-resolved fights for /explore, using the damage formula in docs/stats.md.
 
 The full Strike / Guard / Break combat screen is not designed yet, so for now
 fights play out on their own and the player gets a short battle report.
-The player strikes with their equipped attack technique every turn (Heavy
-techniques alternate with a basic strike), and their defense technique
-catches about a third of incoming hits. Each use gives +20 mastery EXP
+The player strikes with their equipped attack technique whenever it is off
+cooldown (basic strikes in between), and their defense technique catches
+about a third of incoming hits while it is ready. Cooldowns follow
+technique.TECHNIQUE_COOLDOWN_TURNS (see cooldown_turns below). Each use gives +20 mastery EXP
 (technique.COMBAT_EXP_PER_USE).
 """
 import random
@@ -20,6 +21,17 @@ GUARD_CHANCE = 0.35        # DEFAULT: share of enemy hits the defense technique 
 MAX_ROUNDS = 40
 BANDIT_STRENGTH = 0.9      # DEFAULT: bandits have 90% of a same-layer player's HP and Attack
 BANDIT_NAMES = ["Mountain Bandits", "Black Wind Robbers", "Highway Thugs", "Red Scarf Gang"]
+
+
+def cooldown_turns(tech):
+    """Turns a technique rests after use: by grade, +1 for Heavy techniques."""
+    if not tech:
+        return 0
+    turns = technique.TECHNIQUE_COOLDOWN_TURNS.get(tech["grade"], 1)
+    eff = rules.TECH_BY_NAME.get(tech["name"], {}).get("effect")
+    if eff and eff[0] == "heavy":
+        turns += technique.HEAVY_EXTRA_COOLDOWN
+    return turns
 
 
 def damage(attack, defense, target_max_hp, skill=1.0, pierce=0.0, rng=random):
@@ -60,16 +72,18 @@ def fight(hero, enemy, techniques, rng=random):
     block = min(technique.MAX_DAMAGE_BLOCKED,
                 technique.DEFENSE_TECHNIQUE[def_t["grade"]][0] * rules.mastery_mult(def_t)) if def_t else 0
     res = {"won": False, "rounds": 0, "attack_uses": 0, "guard_uses": 0, "dodged": 0, "log": []}
-    heavy_last = False
+    atk_cd = def_cd = 0          # turns left before each technique is ready again
 
     for rnd in range(1, MAX_ROUNDS + 1):
         res["rounds"] = rnd
         # hero's turn
         kind, val = atk_eff or (None, None)
-        use_tech = atk_t is not None and not (kind == "heavy" and heavy_last)
-        heavy_last = use_tech and kind == "heavy"
+        use_tech = atk_t is not None and atk_cd == 0
         if use_tech:
             res["attack_uses"] += 1
+            atk_cd = cooldown_turns(atk_t)
+        else:
+            atk_cd = max(0, atk_cd - 1)
         skill = atk_mult if use_tech else stats.BASIC_ATTACK_MULTIPLIER
         hits, per_hit, pierce = 1, 1.0, 0.0
         if use_tech and kind == "combo":
@@ -92,8 +106,9 @@ def fight(hero, enemy, techniques, rng=random):
 
         # enemy's turn
         dmg = damage(enemy["attack"], hero["defense"], hero["max_hp"], rng=rng)
-        if def_t and rng.random() < GUARD_CHANCE:
+        if def_t and def_cd == 0 and rng.random() < GUARD_CHANCE:
             res["guard_uses"] += 1
+            def_cd = cooldown_turns(def_t)
             dkind, dval = def_eff or (None, None)
             if dkind == "evade" and rng.random() < dval:
                 dmg = 0
@@ -104,6 +119,8 @@ def fight(hero, enemy, techniques, rng=random):
                     enemy["hp"] = max(0, enemy["hp"] - blocked * dval)
                 elif dkind == "recover":
                     hero["hp"] = min(hero["max_hp"], hero["hp"] + hero["max_hp"] * dval)
+        else:
+            def_cd = max(0, def_cd - 1)
         hero["hp"] = max(0, hero["hp"] - dmg)
         if enemy["hp"] <= 0:
             res["won"] = True
