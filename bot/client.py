@@ -1,7 +1,7 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
-/shop, /blessing, /recharge, /reroll, /physician, /bestiary. /tutorial and /index are in guide.py. Admin testing commands are in admin.py.
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py. Admin testing commands are in admin.py.
 """
 import asyncio
 import io
@@ -19,7 +19,7 @@ from balance_card import render_balance
 from profile_card import render_profile
 from qi_card import render_qi
 
-from . import admin, combat, db, guide, hunt, loot, qi, trainer
+from . import admin, combat, cooldowns, db, guide, hunt, loot, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
@@ -620,6 +620,21 @@ def register_commands(bot):
         await interaction.response.send_message(embed=embed("🩺 Physician", (
             f"You are injured for another **{rules.fmt_duration(left)}**. Healing now costs 🪷 **{cost:,}**.")),
             view=view, ephemeral=True)
+
+    @tree.command(name="cooldown", description="See every timer at once: cooldowns, daily limits, seclusion, injury and boons")
+    async def cooldown(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        e = discord.Embed(title=f"⏳ {p['name']}'s Incense Clock",
+                          description="*The incense burns down; the Dao waits for no one.*",
+                          color=economy.BALANCE_EMBED_COLOR)
+        for title, lines in cooldowns.timer_sections(bot.conn, p):
+            e.add_field(name=title, value="\n".join(lines), inline=False)
+        e.set_footer(text="Times are shown in your own time zone. Daily counts renew at midnight UTC.")
+        await interaction.response.send_message(embed=e)
 
     @tree.command(name="bestiary", description="The beasts of a realm, with their strength against you")
     @app_commands.describe(realm="Which realm's beasts (defaults to yours)")

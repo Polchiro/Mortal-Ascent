@@ -81,7 +81,9 @@ LESSONS = [
       ("What waits", "Wild beasts, treasure chests, herb patches, merchants, stone tablets, hermits, "
                      "Blessed Lands that multiply your Qi... and rare lairs of Elite beasts and Beast Kings."),
       ("Defeat", f"Lose a fight and you are injured for {explore.DEFEAT_INJURY_HOURS} hour and drop half the coins "
-                 "and herbs you found. **/physician** heals you for Lotus Coins.")]),
+                 "and herbs you found. **/physician** heals you for Lotus Coins."),
+      ("/cooldown", "Every timer at once: when you can explore, train, practice and spar again, your daily "
+                    "counts, seclusion, injury and active boons, in your own time zone.")]),
 
     ("Beasts and Hunts",
      "\"Know the beast before you meet it.\"",

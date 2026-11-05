@@ -27,6 +27,7 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
 | `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, seclusion, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
 | `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
 | `/tutorial` | The Old Master's ten lessons on how to play, paged with Back / Next buttons and a jump menu |
