@@ -381,7 +381,7 @@ def test_fight_card_renders_every_element_and_body(element, body):
     b = make_battle(n=1 if body != "dragon" else 3)
     b.enemy["element"], b.enemy["body"] = element, body
     img = render_battle(card_data(b, "Wild beast · Step 1 of 5"))
-    assert img.size == (1200, 860)
+    assert img.size == (1200, battle_card_height())
 
 
 def test_scene_is_cached():
@@ -389,3 +389,39 @@ def test_scene_is_cached():
     scene("Frost", "cat", None)
     scene("Frost", "cat", None)
     assert scene.cache_info().hits == 1
+
+
+# ── /spar on the fight screen ─────────────────────────────────────────
+
+def test_spar_card_renders_with_the_master(conn):
+    from bot.views import SparView
+    new_player(conn)
+
+    async def go():
+        sv = SparView(FakeBot(conn), 1, rng=random.Random(0))
+        sv.last = sv.spar.play("guard")
+        data_ = sv.fight_card()
+        assert data_["palette"] == "Master" and data_["enemy"]["body"] == "master"
+        assert render_battle(data_).size == (1200, battle_card_height())
+    asyncio.run(go())
+
+
+def test_spar_timeouts_guard_then_forfeit(conn):
+    from bot.views import SparView
+    new_player(conn)
+
+    async def go():
+        sv = SparView(FakeBot(conn), 1, rng=random.Random(0))
+        for i in range(3):
+            sv._deadline = 0
+            await sv._spar_timer(sv.spar.turn)
+            if i < 2:
+                assert not sv.result and sv.last_move == "Guard"
+        assert sv.result and "walked away" in sv.result
+        sv._cancel_timer()
+    asyncio.run(go())
+
+
+def battle_card_height():
+    from cards.battle import H
+    return H

@@ -108,6 +108,18 @@ When there is no art file, the scene draws a silhouette with rim light, glowing 
   In a hunt, a fighter who flees gets no reward and no injury.
 - After 30 turns (60 in hunts) the beast escapes.
 
+## /spar and mastery trials
+
+/spar uses the same screen against **the Master**: a robed silhouette in the Master palette
+(steel blue night). The rules stay those of technique.md: the master follows a rhythm with
+tells, mastery EXP comes only from well-timed techniques, and trials are the same fight
+against a stronger master. New here:
+
+- **15 seconds per exchange**; no pick = Guard; three timeouts in a row = you walk away (forfeit).
+- The Strike / Guard / Break buttons still shuffle every exchange (technique.md anti-AFK rule);
+  the technique buttons stay on the second row.
+- The **You** panel counts your well-timed technique uses; the warning bar shows his tell.
+
 ## Rewards (unchanged)
 
 - Wild beasts: Lotus Coins, chest chance, beast cores, beasts slain.

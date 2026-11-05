@@ -21,11 +21,12 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from . import theme as T
 from .theme import P, S, alpha, font, mix
 
-W, H = 1200, 860
-SCENE = (24, 24, 1176, 478)
-PARTY = (24, 498, 584, 750)
-LOG = (604, 498, 1176, 750)
-WARN = (24, 770, 1176, 836)
+# Discord shows the card at roughly half size on a computer, so text is drawn large (body text 20px+).
+W, H = 1200, 920
+SCENE = (24, 24, 1176, 420)
+PARTY = (24, 440, 584, 790)
+LOG = (604, 440, 1176, 790)
+WARN = (24, 810, 1176, 896)
 ART_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "beasts")
 
 MEMBER_COLORS = [(92, 150, 236), (232, 150, 62), (82, 186, 120), (196, 110, 228), (226, 84, 72), (226, 206, 96),
@@ -330,8 +331,9 @@ def _creature(img, acc, body, slug):
 
 
 @lru_cache(maxsize=48)
-def scene(palette, body, slug, seed=7):
-    """The scene window as an S× RGBA image (cached per enemy + element)."""
+def scene(palette, body, slug, seed=7, backdrop="wild"):
+    """The scene window as an S× RGBA image (cached per enemy + element).
+    backdrop: "wild" (moonlit mountains); the training courtyard is added with /train."""
     acc = T.ELEMENT_ACCENTS[palette]
     size = _scene_size()
     img = _sky(acc, size, seed)
@@ -351,120 +353,152 @@ def scene(palette, body, slug, seed=7):
 def _chip(img, x, y, label, color):
     """A rounded status chip; returns its width."""
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 12, "Bold")
+    f = font("Inter.ttf", 16, "Bold")
     tw = T.width(d, label.upper(), f)
-    w = tw + 22
-    d.rounded_rectangle(P(x, y - 11, x + w, y + 11), radius=11 * S, fill=alpha(mix(color, (0, 0, 0), 0.6), 240),
-                        outline=alpha(color, 255), width=round(1.4 * S))
-    T.text(d, (x + w / 2, y), label.upper(), f, mix(color, (255, 255, 255), 0.55), "mm")
+    w = tw + 26
+    d.rounded_rectangle(P(x, y - 15, x + w, y + 15), radius=15 * S, fill=alpha(mix(color, (0, 0, 0), 0.6), 240),
+                        outline=alpha(color, 255), width=round(1.6 * S))
+    T.text(d, (x + w / 2, y), label.upper(), f, mix(color, (255, 255, 255), 0.6), "mm")
     return w
+
+
+def _heading(img, box, title):
+    """Panel title, larger than the sheet cards' so it reads at half size."""
+    x0, y0, x1, _ = box
+    d = ImageDraw.Draw(img)
+    f = font("Cinzel.ttf", 19, "Bold")
+    T.spaced(d, (x0 + 20, y0 + 26), title.upper(), f, T.GOLD, 2.4)
+    tw = sum(T.width(d, ch, f) for ch in title.upper()) + 2.4 * (len(title) - 1)
+    T.rule(d, x0 + 34 + tw, x1 - 18, y0 + 26)
 
 
 def _enemy_plate(img, data, acc):
     e = data["enemy"]
     x0, y0, x1, y1 = SCENE
     d = ImageDraw.Draw(img)
-    T.medallion(img, (x0 + 62, y1 - 66), 34, e["seal"], acc.rim)
-    nf = font("Cinzel.ttf", 34, "Black")
-    name = T.fit(d, e["name"].upper(), nf, 700)
-    T.gold_text(img, (x0 + 110, y1 - 84), name, nf, "ls", glow=alpha(acc.rim, 120))
+    T.medallion(img, (x0 + 66, y1 - 66), 40, e["seal"], acc.rim)
+    nf = font("Cinzel.ttf", 42, "Black")
+    name = T.fit(d, e["name"].upper(), nf, 760)
+    T.gold_text(img, (x0 + 120, y1 - 92), name, nf, "ls", glow=alpha(acc.rim, 120))
     d = ImageDraw.Draw(img)
     sub = " · ".join(e["tags"]).upper()
-    T.spaced(d, (x0 + 112, y1 - 70), sub, font("Cinzel.ttf", 12, "Bold"), mix(T.GOLD, acc.rim, 0.25), 2.0)
+    T.spaced(d, (x0 + 122, y1 - 74), sub, font("Cinzel.ttf", 17, "Bold"), mix(T.GOLD_HI, acc.rim, 0.2), 2.0)
     frac = e["hp"] / e["max_hp"] if e["max_hp"] else 0
-    T.bar(img, (x0 + 112, y1 - 52, x0 + 760, y1 - 34), frac, acc.hp, f"{T.short(e['hp'])} / {T.short(e['max_hp'])}")
+    T.bar(img, (x0 + 122, y1 - 54, x0 + 780, y1 - 24), frac, acc.hp,
+          e.get("bar_label") or f"HP  {e['hp']:,} / {e['max_hp']:,}")
     # element seal and status chips on the right
-    sx = x0 + 800
-    T.medallion(img, (sx, y1 - 62), 22, e["element_seal"], acc.rim)
-    cx = sx + 32
-    for label in e["statuses"][:3]:
-        cx += _chip(img, cx, y1 - 62, label, acc.rim) + 8
+    sx = x0 + 826
+    T.medallion(img, (sx, y1 - 40), 26, e["element_seal"], acc.rim)
+    cx = sx + 36
+    for label in e["statuses"][:2]:
+        cx += _chip(img, cx, y1 - 40, label, acc.rim) + 8
 
 
 def _corner(img, data, acc):
     x0, y0, x1, y1 = SCENE
     d = ImageDraw.Draw(img)
-    T.spaced(d, (x0 + 20, y0 + 22), data["header"].upper(), font("Cinzel.ttf", 12, "Bold"), T.GOLD, 2.2)
+    T.spaced(d, (x0 + 22, y0 + 28), data["header"].upper(), font("Cinzel.ttf", 17, "Bold"), T.GOLD_HI, 2.2)
     if data.get("result"):
-        label = {"won": "VICTORY", "lost": "DEFEAT", "fled": "ESCAPED", "escaped": "IT GOT AWAY"}[data["result"]]
-        T.gold_text(img, (x1 - 22, y0 + 40), label, font("Cinzel.ttf", 26, "Black"), "rm", glow=alpha(acc.rim, 120))
+        label = {"won": "VICTORY", "lost": "DEFEAT", "fled": "ESCAPED", "escaped": "IT GOT AWAY"}.get(
+            data["result"], str(data["result"]).upper())
+        T.gold_text(img, (x1 - 24, y0 + 44), label, font("Cinzel.ttf", 34, "Black"), "rm", glow=alpha(acc.rim, 120))
         return
-    T.gold_text(img, (x1 - 22, y0 + 38), f"TURN {data['turn']}", font("Cinzel.ttf", 24, "Black"), "rm")
+    T.gold_text(img, (x1 - 24, y0 + 42), data.get("turn_label") or f"TURN {data['turn']}",
+                font("Cinzel.ttf", 32, "Black"), "rm")
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 14, "Medium")
-    label = f"{data['seconds']}s to choose"
+    f = font("Inter.ttf", 20, "SemiBold")
+    label = data.get("seconds_label") or f"{data['seconds']}s to choose"
     tw = T.width(d, label, f)
-    T.icon(img, "hourglass", (x1 - 30 - tw, y0 + 64), 13, T.GOLD)
-    T.text(d, (x1 - 22, y0 + 64), label, f, T.PARCHMENT, "rm")
+    T.icon(img, "hourglass", (x1 - 36 - tw, y0 + 76), 18, T.GOLD)
+    T.text(d, (x1 - 24, y0 + 76), label, f, T.PARCHMENT, "rm")
 
 
-def _member_row(img, m, y, x0, x1, color, acc, arrow):
+def _member_row(img, m, y, x0, x1, color, acc, arrow, tall):
+    """One fighter: seal, name, realm, HP bar and their move under the bar."""
     d = ImageDraw.Draw(img)
     if arrow:
         hl = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        ImageDraw.Draw(hl).rectangle(P(x0 + 18, y - 22, x1 - 14, y + 22), fill=alpha(mix(acc.panel, (255, 255, 255), 0.1), 200))
+        ImageDraw.Draw(hl).rectangle(P(x0 + 20, y - tall / 2 + 2, x1 - 14, y + tall / 2 - 2),
+                                     fill=alpha(mix(acc.panel, (255, 255, 255), 0.1), 210))
         img.alpha_composite(hl)
         d = ImageDraw.Draw(img)
-        d.polygon([P(x0 + 10, y - 7), P(x0 + 19, y), P(x0 + 10, y + 7)], fill=T.PARCHMENT)
-    T.medallion(img, (x0 + 46, y), 16, T.REALM_CHAR.get(m["realm"], "武"), color)
+        d.polygon([P(x0 + 9, y - 9), P(x0 + 20, y), P(x0 + 9, y + 9)], fill=T.PARCHMENT)
+    T.medallion(img, (x0 + 50, y), 20, T.REALM_CHAR.get(m["realm"], "武"), color)
     d = ImageDraw.Draw(img)
-    low = m["max_hp"] and m["hp"] / m["max_hp"] <= LOW_HP
-    name_col = (236, 84, 72) if low or m.get("ko") else T.PARCHMENT
-    nf = font("Inter.ttf", 15, "Bold")
-    T.text(d, (x0 + 72, y - 9), T.fit(d, m["name"], nf, 150), nf, name_col, "lm")
-    T.text(d, (x0 + 72, y + 10), f"{m['realm']} {m['layer']}", font("Inter.ttf", 11, "Medium"), T.ASH, "lm")
-    bx0, bx1 = x0 + 236, x0 + 396
+    low = m["max_hp"] and m["hp"] / m["max_hp"] <= LOW_HP and not m.get("bar_color")
+    name_col = (240, 90, 76) if low or m.get("ko") else (250, 240, 222)
+    nf = font("Inter.ttf", 22, "Bold")
+    T.text(d, (x0 + 80, y - 12), T.fit(d, m["name"], nf, 170), nf, name_col, "lm")
+    T.text(d, (x0 + 80, y + 14), T.fit(d, f"{m['realm']} {m['layer']}", font("Inter.ttf", 16, "Medium"), 170),
+           font("Inter.ttf", 16, "Medium"), T.ASH, "lm")
+    bx0, bx1 = x0 + 262, x1 - 22
     frac = m["hp"] / m["max_hp"] if m["max_hp"] else 0
-    T.bar(img, (bx0, y - 8, bx1, y + 8), frac, (196, 64, 52) if low else (82, 170, 120), f"{m['hp']:,}/{m['max_hp']:,}")
+    T.bar(img, (bx0, y - 28, bx1, y - 1), frac, m.get("bar_color") or ((206, 64, 52) if low else (82, 176, 120)),
+          m.get("bar_label") or f"{m['hp']:,} / {m['max_hp']:,} HP")
     d = ImageDraw.Draw(img)
-    mf = font("Inter.ttf", 12, "Medium")
-    T.text(d, (bx1 + 12, y), T.fit(d, m.get("move") or "", mf, x1 - bx1 - 24), mf,
-           T.ASH if m.get("move") in ("Waiting...", None) else T.PARCHMENT, "lm")
+    move = m.get("move")
+    if move:
+        mf = font("Inter.ttf", 17, "Medium")
+        T.text(d, (bx0 + 2, y + 15), T.fit(d, move, mf, bx1 - bx0), mf,
+               T.ASH if move in ("Waiting...", "Knocked out", "Fled") else (236, 222, 196), "lm")
 
 
 def _party(img, data, acc):
     x0, y0, x1, y1 = PARTY
-    T.panel(img, PARTY, data["party_title"], fill=mix(acc.panel, (0, 0, 0), 0.25), glow=True, accent=acc)
+    T.panel(img, PARTY, None, fill=mix(acc.panel, (0, 0, 0), 0.25), glow=True, accent=acc)
+    _heading(img, PARTY, data["party_title"])
     members = data["party"]
-    rows = members[:4] if len(members) > 1 else members
-    step = 46 if len(rows) <= 4 else 40
-    y = y0 + 58
+    rows = members[:4]
+    tall = 68 if len(rows) > 1 else 72
+    y = y0 + 52 + tall / 2
     for i, m in enumerate(rows):
-        _member_row(img, m, y, x0, x1, MEMBER_COLORS[i % len(MEMBER_COLORS)], acc, m.get("arrow"))
-        y += step
+        _member_row(img, m, y, x0, x1, MEMBER_COLORS[i % len(MEMBER_COLORS)], acc, m.get("arrow"), tall)
+        y += tall
+    d = ImageDraw.Draw(img)
     if len(members) > 4:
-        d = ImageDraw.Draw(img)
-        T.text(d, (x0 + 30, y1 - 18), f"+{len(members) - 4} more fighters", font("Inter.ttf", 12, "Medium"), T.ASH, "lm")
+        T.text(d, (x0 + 30, y1 - 18), f"+{len(members) - 4} more fighters", font("Inter.ttf", 16, "Medium"), T.ASH, "lm")
     if len(members) == 1:
-        d = ImageDraw.Draw(img)
-        y = y0 + 112
-        for item in data.get("loadout", [])[:3]:
-            T.medallion(img, (x0 + 46, y), 12, item["seal"], item["color"])
+        y = y0 + 52 + tall + 30
+        f = font("Inter.ttf", 21, "Medium")
+        sf = font("Inter.ttf", 19, "SemiBold")
+        df = font("Inter.ttf", 16, "Medium")
+        items = data.get("loadout", [])[:4]
+        step = 58 if any(i.get("desc") for i in items) else 50
+        for item in items:
+            T.medallion(img, (x0 + 50, y), 17, item["seal"], item["color"] or T.GOLD)
             d = ImageDraw.Draw(img)
-            T.text(d, (x0 + 68, y), T.fit(d, item["name"], font("Inter.ttf", 14, "Medium"), 300),
-                   font("Inter.ttf", 14, "Medium"), T.PARCHMENT, "lm")
-            col = (110, 214, 140) if item["ready"] else T.ASH
-            T.text(d, (x1 - 24, y), item["state"], font("Inter.ttf", 13, "Medium"), col, "rm")
-            y += 34
+            ny = y - 10 if item.get("desc") else y
+            T.text(d, (x0 + 80, ny), T.fit(d, item["name"], f, 320), f, (246, 236, 216), "lm")
+            if item.get("desc"):
+                T.text(d, (x0 + 80, y + 14), T.fit(d, item["desc"], df, x1 - x0 - 110), df, (196, 182, 166), "lm")
+            col = (120, 226, 150) if item["ready"] else (200, 180, 160)
+            T.text(d, (x1 - 24, ny), item["state"], sf, col, "rm")
+            y += step
 
 
-LOG_ICON_COLOR = {"sword": (226, 84, 72), "shield": (130, 160, 230), "fist": (232, 170, 70), "skull": None,
-                  "star": (240, 210, 110), "pill": (236, 100, 110), "flee": (180, 180, 190), "hourglass": T.GOLD,
-                  "flame": (240, 140, 60), "herb": (90, 200, 130)}
+LOG_ICON_COLOR = {"sword": (236, 96, 80), "shield": (140, 172, 240), "fist": (240, 178, 80), "skull": None,
+                  "star": (246, 216, 116), "pill": (240, 110, 122), "flee": (190, 192, 204), "hourglass": T.GOLD,
+                  "flame": (246, 150, 66), "herb": (100, 210, 140)}
 
 
 def _log(img, data, acc):
     x0, y0, x1, y1 = LOG
-    T.panel(img, LOG, "Last turn", fill=mix(acc.panel, (0, 0, 0), 0.25), glow=True, accent=acc)
+    T.panel(img, LOG, None, fill=mix(acc.panel, (0, 0, 0), 0.25), glow=True, accent=acc)
+    _heading(img, LOG, data.get("log_title", "Last turn"))
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 14, "Medium")
-    y = y0 + 54
-    lines = data["log"][-7:]
-    gap = 30 if len(lines) <= 6 else 26
+    f = font("Inter.ttf", 20, "Medium")
+    lines = []
+    for kind, line in data["log"]:          # long lines wrap onto a second row
+        parts = T.wrap(d, line, f, x1 - x0 - 76, lines=2)
+        lines += [(kind if i == 0 else None, part) for i, part in enumerate(parts)]
+    lines = lines[-9:]
+    y = y0 + 70
+    gap = 32 if len(lines) <= 8 else 30
     for kind, line in lines:
-        T.icon(img, kind, (x0 + 30, y), 14, LOG_ICON_COLOR.get(kind) or acc.eyes)
+        if kind:
+            T.icon(img, kind, (x0 + 32, y), 18, LOG_ICON_COLOR.get(kind) or acc.eyes)
         d = ImageDraw.Draw(img)
-        T.text(d, (x0 + 48, y), T.fit(d, line, f, x1 - x0 - 70), f, T.PARCHMENT, "lm")
+        T.text(d, (x0 + 54, y), line, f, (244, 234, 214), "lm")
         y += gap
 
 
@@ -472,26 +506,26 @@ def _warning(img, data, acc):
     x0, y0, x1, y1 = WARN
     head, hint = data["warning"]
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    g = T.vgradient((round((x1 - x0) * S), round((y1 - y0) * S)), mix(acc.warn, (255, 255, 255), 0.08),
-                    mix(acc.warn, (0, 0, 0), 0.35))
+    g = T.vgradient((round((x1 - x0) * S), round((y1 - y0) * S)), mix(acc.warn, (255, 255, 255), 0.06),
+                    mix(acc.warn, (0, 0, 0), 0.4))
     layer.alpha_composite(g, P(x0, y0))
     img.alpha_composite(layer)
     d = ImageDraw.Draw(img)
-    d.rectangle(P(x0, y0, x1, y1), outline=mix(acc.rim, (255, 255, 255), 0.3), width=round(1.6 * S))
-    T.soft_glow(img, (x0 + 18, y0 + 14, x0 + 50, y1 - 14), alpha(acc.eyes, 120), 6)
-    T.icon(img, "flame", (x0 + 34, (y0 + y1) / 2), 22, mix(acc.eyes, (255, 255, 255), 0.3))
+    d.rectangle(P(x0, y0, x1, y1), outline=mix(acc.rim, (255, 255, 255), 0.3), width=round(1.8 * S))
+    T.soft_glow(img, (x0 + 18, y0 + 18, x0 + 56, y1 - 18), alpha(acc.eyes, 120), 6)
+    T.icon(img, "flame", (x0 + 38, (y0 + y1) / 2), 28, mix(acc.eyes, (255, 255, 255), 0.3))
     d = ImageDraw.Draw(img)
-    hf = font("Inter.ttf", 17, "Bold")
-    T.text(d, (x0 + 62, y0 + 22), T.fit(d, head, hf, x1 - x0 - 90), hf, (255, 246, 226), "lm")
-    sf = font("Inter.ttf", 13, "Medium")
-    T.text(d, (x0 + 62, y0 + 46), T.fit(d, hint, sf, x1 - x0 - 90), sf, mix(acc.moon, (255, 255, 255), 0.4), "lm")
+    hf = font("Inter.ttf", 25, "Bold")
+    T.text(d, (x0 + 72, y0 + 28), T.fit(d, head, hf, x1 - x0 - 96), hf, (255, 248, 232), "lm")
+    sf = font("Inter.ttf", 19, "Medium")
+    T.text(d, (x0 + 72, y0 + 62), T.fit(d, hint, sf, x1 - x0 - 96), sf, mix(acc.moon, (255, 255, 255), 0.55), "lm")
 
 
 def render_battle(data):
     acc = T.ELEMENT_ACCENTS[data["palette"]]
     img = T.canvas(W, H, seed=11, accent=data["palette"].lower())
     e = data["enemy"]
-    sc = scene(data["palette"], e["body"], e.get("slug"))
+    sc = scene(data["palette"], e["body"], e.get("slug"), backdrop=data.get("backdrop", "wild"))
     img.alpha_composite(sc, P(SCENE[0], SCENE[1]))
     T.frame(img, SCENE, 0.8)
     _corner(img, data, acc)

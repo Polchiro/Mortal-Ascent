@@ -9,6 +9,7 @@ Each turn has a 15-second timer: no pick = Guard, three timeouts in a row = flee
 In team hunts every member picks secretly; the turn resolves when all have picked or time is up.
 """
 import asyncio
+import io
 import logging
 import time
 
@@ -31,6 +32,13 @@ SCHOOL_COLOR = {"Fist": (226, 84, 72), "Palm": (110, 150, 232), "Finger": (196, 
                 "Body": (96, 196, 160)}
 
 
+def jpg(image, filename):
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG", quality=88)
+    buf.seek(0)
+    return discord.File(buf, filename=filename)
+
+
 def emoji(bot, key):
     em = getattr(bot, "emojis_ma", None)
     return em.get(key) if em else battle_icons.FALLBACK.get(key)
@@ -39,6 +47,27 @@ def emoji(bot, key):
 def _school(tech):
     from . import player as rules
     return rules.TECH_BY_NAME.get(tech["name"], {}).get("school", "Body")
+
+
+def describe(tech):
+    """Short plain-words effect of a technique for the card: damage multiplier and its special effect."""
+    from . import player as rules
+    eff = rules.TECH_BY_NAME.get(tech["name"], {}).get("effect")
+    if tech["type"] == "attack":
+        base = f"Strike ×{technique.ATTACK_TECHNIQUE[tech['grade']][0] * rules.mastery_mult(tech):.2f} damage"
+    else:
+        block = technique.DEFENSE_TECHNIQUE[tech["grade"]][0] * rules.mastery_mult(tech)
+        base = f"Guard, +{block:.0%} block vs charged"
+    kind, val = eff or (None, None)
+    extra = {"combo": lambda: f"{val[0]} hits of {val[1]:.0%}" if val else "",
+             "pierce": lambda: f"ignores {val:.0%} defense",
+             "heavy": lambda: f"×{val:g} heavier, rests longer",
+             "stagger": lambda: "it can't Guard next turn" if val >= 1 else f"its next Guard lets {val:.0%} through",
+             "counter": lambda: f"reflects {val:.0%} of blocked dmg",
+             "recover": lambda: f"heals {val:.0%} HP on a block",
+             "unbreakable": lambda: "Break hits you for half",
+             "evade": lambda: f"{val:.0%} chance to dodge a Break"}.get(kind)
+    return base + (f" · {extra()}" if extra else "")
 
 
 def card_data(b, header):
@@ -70,11 +99,14 @@ def card_data(b, header):
             left = f.cooldowns[key]
             school = _school(t)
             loadout.append({"name": t["name"], "seal": SCHOOL_CHAR.get(school, "武"), "color": SCHOOL_COLOR.get(school),
-                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}"})
+                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
+                            "desc": describe(t)})
         n = f.pill_count()
         loadout.append({"name": f.pills[0]["name"] if f.pills else "Mending Pill", "seal": "丹", "color": (82, 186, 120),
                         "ready": f.can_pill(),
-                        "state": (f"×{n} in bag" if f.pills_used < rules_data.PILLS_PER_FIGHT else "used up") if n else "none"})
+                        "state": (f"×{n} in bag" if f.pills_used < rules_data.PILLS_PER_FIGHT else "used up") if n else "none",
+                        "desc": (f"Heals {f.pills[0]['heal']:.0%} HP · uses your turn · max "
+                                 f"{rules_data.PILLS_PER_FIGHT} per fight") if f.pills else "Craft them with /craft"})
     return {"palette": palette, "header": header, "turn": b.turn, "seconds": rules_data.TURN_SECONDS,
             "result": b.result,
             "enemy": {"name": e["name"], "seal": seal_char(e["name"], e["body"]), "tags": [t for t in tags if t],
@@ -210,14 +242,14 @@ class FightMixin:
             else:
                 await self._show_turn(interaction)
 
-    async def fight_card_file(self, filename="fight.png"):
+    async def fight_card_file(self, filename="fight.jpg"):
+        """The current card as a JPEG: about a third of the PNG size, so the turn-by-turn edits upload faster."""
         try:
             img = await card_render.render(render_battle, card_data(self.fight, self.fight_header))
         except Exception:
             log.exception("Could not render the fight card")
             return None
-        from .views import png
-        return png(img, filename)
+        return jpg(img, filename)
 
     async def _show_turn(self, interaction):
         self._deadline = time.time() + rules_data.TURN_SECONDS
