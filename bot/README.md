@@ -40,11 +40,12 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 ### Text commands with "m"
 
 Every command above also works as a normal message starting with **`m`** and a space, for when
-Discord's `/` menu is acting up: `m start`, `m internal qi`, `m index`, `m cooldown`,
+Discord's `/` menu is acting up: `m start`, `m gather`, `m index herbs`, `m internal qi`, `m index`, `m cooldown`,
 `m profile @someone`, `m seclusion 12`, `m practice Iron Fist`, `m bestiary Martial Warrior`,
 `m admin give @someone lotus_coins:500`. Capital letters don't matter. Options go in order, or by
 name like the slash menu (`m spar technique:Iron Fist`). `m help` lists them all. Shortcuts:
-`m qi`, `m cd`, `m bal`, `m inv`, `m p`.
+`m qi`, `m cd`, `m bal`, `m inv`, `m p`, `m g` (= `m gather`), `m herbs` and `m pills`
+(= `m index herbs` / `m index pills`).
 
 Replies that are private with a slash command are normal messages with `m`, since only slash
 commands can reply privately. To read `m` messages in servers, the bot needs **Message Content
