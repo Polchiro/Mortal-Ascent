@@ -477,7 +477,7 @@ def test_all_commands_register():
             c.to_dict(bot.tree)
         return names
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
-                                 "seclusion", "breakthrough", "qi", "practice", "spar", "techniques", "equipment",
+                                 "seclusion", "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
                                  "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "admin"}
 
 

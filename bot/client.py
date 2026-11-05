@@ -1,6 +1,6 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
-/meditate, /seclusion, /breakthrough, /qi, /practice, /spar, /techniques, /equipment,
+/meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary. Admin testing commands are in admin.py.
 """
 import asyncio
@@ -358,7 +358,10 @@ def register_commands(bot):
             lines.append(f"(Collected {qi:,.1f} passive Qi first.)")
         await interaction.response.send_message(embed=embed("🧘 Closed-Door Seclusion", "\n".join(lines + events)))
 
-    @tree.command(name="qi", description="See your Internal Qi, Qi Rate, time to the next gate and every active boost")
+    internal = app_commands.Group(name="internal", description="Your inner cultivation")
+    tree.add_command(internal)
+
+    @internal.command(name="qi", description="See your Internal Qi, Qi Rate, time to the next gate and every active boost")
     async def qi_status(interaction: discord.Interaction):
         uid = interaction.user.id
         p = db.get_player(bot.conn, uid)
