@@ -9,6 +9,7 @@ Each turn has a 15-second timer: no pick = Guard, three timeouts in a row = flee
 In team hunts every member picks secretly; the turn resolves when all have picked or time is up.
 """
 import asyncio
+import io
 import logging
 import time
 
@@ -29,6 +30,13 @@ GRACE_SECONDS = 1.5          # Discord round-trip allowance before the timer res
 TIER_LABEL = {"normal": "Normal", "elite": "Elite", "beast_king": "Beast King", "bandit": "Bandits"}
 SCHOOL_COLOR = {"Fist": (226, 84, 72), "Palm": (110, 150, 232), "Finger": (196, 110, 228), "Leg": (232, 160, 62),
                 "Body": (96, 196, 160)}
+
+
+def jpg(image, filename):
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG", quality=88)
+    buf.seek(0)
+    return discord.File(buf, filename=filename)
 
 
 def emoji(bot, key):
@@ -210,14 +218,14 @@ class FightMixin:
             else:
                 await self._show_turn(interaction)
 
-    async def fight_card_file(self, filename="fight.png"):
+    async def fight_card_file(self, filename="fight.jpg"):
+        """The current card as a JPEG: about a third of the PNG size, so the turn-by-turn edits upload faster."""
         try:
             img = await card_render.render(render_battle, card_data(self.fight, self.fight_header))
         except Exception:
             log.exception("Could not render the fight card")
             return None
-        from .views import png
-        return png(img, filename)
+        return jpg(img, filename)
 
     async def _show_turn(self, interaction):
         self._deadline = time.time() + rules_data.TURN_SECONDS
