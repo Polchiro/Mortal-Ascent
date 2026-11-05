@@ -98,8 +98,18 @@ The design docs leave some things open. Until they are decided, the bot uses the
    python -m bot
    ```
 
-Set `DISCORD_GUILD_ID` to your test server's ID so commands show up instantly;
-without it they sync globally, which can take up to an hour.
+Commands always sync globally, so they work in every server the bot is in **and in a
+direct message with the bot**. Discord can take up to an hour to show new or changed
+commands (usually it's a few minutes). If you see an old command list, restart Discord (Ctrl+R).
+
+`DISCORD_GUILD_ID` is optional. Older versions synced a separate copy of the commands to that
+server; if it is set, the bot now removes that copy so commands are not listed twice.
+
+### Playing in DMs
+
+Open a DM with the bot (click its name, then **Message**) and type `/`. Every command works there.
+You must share at least one server with the bot. In a DM, lairs found in `/explore` are hunted alone,
+since nobody else can see the call; explore in a server to gather a team.
 
 The token is read only from the `DISCORD_TOKEN` environment variable (or the
 git-ignored `.env`). Never commit it.

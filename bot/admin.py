@@ -91,7 +91,7 @@ def register(bot):
 
     @group.command(name="reset", description="Reset all cooldowns, daily limits and injuries (yours or a player's)")
     @app_commands.describe(member="Whose cooldowns to reset (defaults to you)")
-    async def reset(interaction: discord.Interaction, member: discord.Member | None = None):
+    async def reset(interaction: discord.Interaction, member: discord.User | None = None):
         uid = await check(interaction, member)
         if uid is None:
             return
@@ -108,7 +108,7 @@ def register(bot):
     @group.command(name="give", description="Give Lotus Coins, Moon Pearls or Internal Qi (yours or a player's)")
     @app_commands.describe(member="Who gets it (defaults to you)", lotus_coins="Lotus Coins to add",
                            moon_pearls="Moon Pearls to add", qi="Internal Qi to add (levels up like normal Qi)")
-    async def give_cmd(interaction: discord.Interaction, member: discord.Member | None = None,
+    async def give_cmd(interaction: discord.Interaction, member: discord.User | None = None,
                        lotus_coins: app_commands.Range[int, 0, 10_000_000] = 0,
                        moon_pearls: app_commands.Range[int, 0, 1_000_000] = 0,
                        qi: app_commands.Range[int, 0, 100_000_000] = 0):

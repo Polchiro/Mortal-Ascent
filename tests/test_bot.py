@@ -187,3 +187,53 @@ def test_admin_reset_and_give(conn, monkeypatch):
 
     monkeypatch.setenv("ADMIN_IDS", "123, 456,junk")
     assert admin.admin_ids_from_env() == {123, 456}
+
+
+def test_every_command_works_in_dms():
+    """All commands (including groups like /internal and /admin) are allowed in the bot's DMs,
+    and member options accept plain users, which is what Discord sends in a DM."""
+    from bot.client import MortalAscent
+
+    bot = MortalAscent(":memory:")
+    commands = bot.tree.get_commands()
+    assert commands
+    for cmd in commands:
+        payload = cmd.to_dict(bot.tree)
+        assert set(payload["contexts"]) >= {0, 1}, cmd.name      # 0 = server, 1 = DM with the bot
+    for name in ("profile",):
+        param = bot.tree.get_command(name).get_parameter("member")
+        assert param.type.name == "user"
+
+
+def test_setup_hook_syncs_globally_and_clears_old_guild_copy():
+    import asyncio
+    from unittest.mock import AsyncMock
+
+    from bot.client import MortalAscent
+
+    bot = MortalAscent(":memory:", guild_id=42)
+    bot.tree.sync = AsyncMock()
+    asyncio.run(bot.setup_hook())
+    calls = bot.tree.sync.await_args_list
+    assert calls[0].kwargs == {}                         # global sync first
+    assert calls[1].kwargs["guild"].id == 42             # then the emptied per-server copy
+    assert bot.tree.get_commands(guild=calls[1].kwargs["guild"]) == []
+
+
+def test_hunt_in_dm_is_solo():
+    import asyncio
+
+    from bot import hunt
+    from bot.client import MortalAscent
+    from bot.views import HuntView
+
+    async def go():
+        bot = MortalAscent(":memory:")
+        p = new_player(bot.conn)
+        lair = hunt.roll_lair(p, "elite", random.Random(1))
+        solo = HuntView(bot, lair, p, solo=True)
+        team = HuntView(bot, lair, p)
+        assert [b.label for b in solo.children] == ["Start the hunt"]
+        assert "alone" in solo.embed().description
+        assert len(team.children) == 3
+    asyncio.run(go())

@@ -938,21 +938,27 @@ class EquipmentView(OwnedView):
 # ── Team hunts ────────────────────────────────────────────────────────
 
 async def post_hunt(bot, interaction, lair, finder):
-    view = HuntView(bot, lair, finder)
-    content = "📢 **Server-wide alert!** A Beast King has been sighted!" if lair["tier"] == "beast_king" else None
+    # In a DM with the bot nobody else can see the call, so the finder hunts alone.
+    solo = interaction.guild is None
+    view = HuntView(bot, lair, finder, solo=solo)
+    content = ("📢 **Server-wide alert!** A Beast King has been sighted!"
+               if lair["tier"] == "beast_king" and not solo else None)
     view.message = await interaction.followup.send(content=content, embed=view.embed(), view=view, wait=True)
 
 
 class HuntView(discord.ui.View):
-    def __init__(self, bot, lair, finder):
+    def __init__(self, bot, lair, finder, solo=False):
         super().__init__(timeout=max(30, lair["closes"] - time.time()))
         self.bot, self.lair = bot, lair
+        self.solo = solo
         self.leader = finder["user_id"]
         self.members = {finder["user_id"]: finder["name"]}
         self.result = None
         self.message = None
-        self.join_btn = OwnedView.button(self, "Join hunt", self.on_join, emoji="⚔️", style=discord.ButtonStyle.success)
-        OwnedView.button(self, "Leave", self.on_leave, emoji="🚶")
+        if not solo:
+            self.join_btn = OwnedView.button(self, "Join hunt", self.on_join, emoji="⚔️",
+                                             style=discord.ButtonStyle.success)
+            OwnedView.button(self, "Leave", self.on_leave, emoji="🚶")
         OwnedView.button(self, "Start the hunt", self.on_start, emoji="🔥", style=discord.ButtonStyle.danger)
 
     def embed(self):
@@ -966,7 +972,8 @@ class HuntView(discord.ui.View):
         e.description = (f"A **{name}** ({role.title()}, {self.lair['realm']}) waits. Meant for a team of **{size}**; "
                          f"each extra fighter adds +20% to its HP. Its stats follow the team's strongest member.\n"
                          f"Watch for its **charged attacks**.\n\nThe lair closes <t:{int(self.lair['closes'])}:R>. "
-                         f"The finder starts the hunt.")
+                         + ("You are in a DM, so you hunt **alone**. Explore in a server to call a team."
+                            if self.solo else "The finder starts the hunt."))
         e.add_field(name=f"Team ({len(self.members)}/{hunt.MAX_TEAM})", value="\n".join(self.members.values()))
         return e
 
