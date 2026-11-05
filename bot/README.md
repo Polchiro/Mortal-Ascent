@@ -30,6 +30,8 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, seclusion, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
 | `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
+| `/tutorial` | The Old Master's ten lessons on how to play, paged with Back / Next buttons and a jump menu |
+| `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill and herb, read from the game data. A menu switches section; Back / Next turn pages |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call with Join / Leave /

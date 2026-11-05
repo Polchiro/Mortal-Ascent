@@ -478,7 +478,8 @@ def test_all_commands_register():
         return names
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
                                  "seclusion", "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
-                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "admin"}
+                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "admin",
+                                 "tutorial", "index"}
 
 
 # ── tier 2 challenges ─────────────────────────────────────────────────
