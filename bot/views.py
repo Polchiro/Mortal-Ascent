@@ -6,6 +6,7 @@ Each view belongs to the player who ran the command; anyone else pressing
 its buttons gets a polite "not yours". Every view answers on error, so a
 button never leaves Discord stuck on "This interaction failed".
 """
+import alchemy
 import asyncio
 import io
 import logging
@@ -18,6 +19,7 @@ import economy
 import explore
 import talent as talent_rules
 import technique
+import training
 
 from . import db, hunt, loot, mastery, trainer
 from . import player as rules
@@ -173,7 +175,7 @@ class ExploreView(OwnedView):
             return
         m = e.merchant
         if m and self.merchant_step == e.step:
-            self.button(f"{m['pill']} Qi Pill · 🪷 {m['pill_price']}", self.make_buy("pill"), emoji="💊", row=0,
+            self.button(f"{alchemy.QI_PILLS[m['pill']]['name']} · 🪷 {m['pill_price']}", self.make_buy("pill"), emoji="💊", row=0,
                         disabled="pill" in m["bought"])
             self.button(f"{m['herb']} · 🪷 {m['herb_price']}", self.make_buy("herb"), emoji="🌿", row=0,
                         disabled="herb" in m["bought"])
@@ -808,9 +810,12 @@ def beasts_team_size(tier):
 SHOP_ITEMS = {
     # key in economy.PEARL_SHOP: (label, description)
     "heavenly_fate_reroll":   ("🌟 Heavenly Fate Reroll", "Reroll your talent; it never goes lower"),
-    "mortal_qi_pill_x3":      ("💊 Mortal Qi Pill ×3", "×1.2 Qi Rate for 4h each"),
-    "yellow_qi_pill_x3":      ("💊 Yellow Qi Pill ×3", "×1.4 Qi Rate for 4h each"),
-    "mystic_qi_pill_x1":      ("💊 Mystic Qi Pill ×1", "×1.7 Qi Rate for 4h"),
+    "mortal_qi_pill_x3":      (f"💊 {alchemy.QI_PILLS['Mortal']['name']} ×3",
+                               f"×{training.QI_PILLS['Mortal']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h each"),
+    "yellow_qi_pill_x3":      (f"💊 {alchemy.QI_PILLS['Yellow']['name']} ×3",
+                               f"×{training.QI_PILLS['Yellow']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h each"),
+    "mystic_qi_pill_x1":      (f"💊 {alchemy.QI_PILLS['Mystic']['name']} ×1",
+                               f"×{training.QI_PILLS['Mystic']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h"),
     "inventory_expansion_20": ("🎒 Inventory expansion", "+20 bag slots"),
     "name_change":            ("✏️ Name change", "Change the name on your cards"),
 }
@@ -834,7 +839,7 @@ def buy_shop_item(conn, user_id, key, new_name=None, rng=random):
         if not db.add_item(conn, user_id, **dict(loot.pill(grade), qty=qty)):
             db.change_currency(conn, user_id, "moon_pearls", price, "Refund: bag full")
             return "Your bag is full.", None
-        msg = f"💊 {qty}× **{grade} Qi Pill** added to your bag."
+        msg = f"💊 {qty}× **{alchemy.QI_PILLS[grade]['name']}** added to your bag."
     elif key == "inventory_expansion_20":
         db.update_player(conn, user_id, bag_capacity=p["bag_capacity"] + 20)
         msg = f"🎒 Your bag now holds **{p['bag_capacity'] + 20}** slots."

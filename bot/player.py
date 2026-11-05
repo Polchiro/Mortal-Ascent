@@ -4,6 +4,7 @@ card renderers (profile_card.render_profile, balance_card.render_balance) expect
 
 All numbers come from the constants modules at the repo root.
 """
+import alchemy
 import random
 import time
 
@@ -425,7 +426,7 @@ def status_text(player, now=None):
         parts.append(f"{b[0]} Blessing active")
     pill = active_pill(player, now)
     if pill:
-        parts.append(f"{pill[0]} Qi Pill ({fmt_duration(pill[2])})")
+        parts.append(f"{alchemy.QI_PILLS[pill[0]]['name']} ({fmt_duration(pill[2])})")
     land = active_blessed_land(player, now)
     if land:
         parts.append(f"{land[0].replace('_', ' ').title()} ({fmt_duration(land[1])})")

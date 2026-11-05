@@ -83,9 +83,9 @@ What Moon Pearls can buy — **speed and style, never power**.
 | Item | Moon Pearls | Notes |
 |---|---|---|
 | 🌟 Heavenly Fate Reroll | 600 | Talent reroll that never goes lower (see talent.md) |
-| 💊 Mortal Qi Pill ×3 | 60 | Pill toxicity still applies |
-| 💊 Yellow Qi Pill ×3 | 150 | Pill toxicity still applies |
-| 💊 Mystic Qi Pill ×1 | 120 | Highest pill grade sold |
+| 💊 Ember Dantian Pill ×3 | 60 | Mortal grade; toxicity still applies |
+| 💊 Clear Meridian Pill ×3 | 150 | Yellow grade; toxicity still applies |
+| 💊 Jade Marrow Pill ×1 | 120 | Mystic grade; highest grade sold |
 | 🎒 Inventory expansion (+20 slots) | 300 | |
 | ✏️ Name change | 200 | |
 | 🖼️ Profile card themes | 400–800 | Cosmetic only (e.g. Night Scroll, Autumn Maple) |
@@ -94,7 +94,7 @@ What Moon Pearls can buy — **speed and style, never power**.
 - Combat stats (HP, Attack, Defense)
 - Earth or Heaven manuals
 - Treasure or Divine weapons
-- Earth or Heaven pills
+- Earth or Heaven pills, or Breakthrough pills
 - Guaranteed breakthroughs
 - Anything that wins PvP fights
 

@@ -5,6 +5,7 @@ timer_sections() is pure (it only reads), so tests can call it with a fixed `now
 Each line shows "Ready" or a Discord relative timestamp plus the local clock time,
 so every viewer sees the time in their own time zone.
 """
+import alchemy
 import calendar
 import time
 
@@ -112,7 +113,7 @@ def timer_sections(conn, player, now=None):
         boons.append(f"🌸 **{player['blessing_tier']} Blessing** — fades {stamp(player['blessing_expires'])}")
     pill = rules.active_pill(player, now)
     if pill:
-        boons.append(f"💊 **{pill[0]} Qi Pill** (×{pill[1]:g} Qi) — wears off {stamp(now + pill[2])}")
+        boons.append(f"💊 **{alchemy.QI_PILLS[pill[0]]['name']}** (×{pill[1]:g} Qi) — wears off {stamp(now + pill[2])}")
     land = rules.active_blessed_land(player, now)
     if land:
         name = land[0].replace("_", " ").title()

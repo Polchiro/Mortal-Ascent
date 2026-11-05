@@ -80,21 +80,20 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 
 ## Pills
 
-Only one Qi pill can be active at a time (pills do not stack).
+Pills will be crafted with /craft (alchemy, not built yet) — full rules in **alchemy.md**.
+For now they come from chests, merchants and the Moon Pearl shop. Summary:
 
-| Pill grade | Qi Rate multiplier | Duration |
-|---|---|---|
-| Mortal | ×1.2 | 4 hours |
-| Yellow | ×1.4 | 4 hours |
-| Mystic | ×1.7 | 4 hours |
-| Earth | ×2.0 | 4 hours |
-| Heaven | ×2.5 | 4 hours |
+| Qi pill | Grade | Qi Rate | Duration |
+|---|---|---|---|
+| Ember Dantian Pill | Mortal | ×1.3 | 2 hours |
+| Clear Meridian Pill | Yellow | ×1.5 | 2 hours |
+| Jade Marrow Pill | Mystic | ×1.8 | 2 hours |
+| Thousand Rivers Pill | Earth | ×2.2 | 2 hours |
+| Heaven-Devouring Pill | Heaven | ×2.8 | 2 hours |
 
-### Pill toxicity
-- Each pill adds 1 toxicity
-- Toxicity 4–5: pill effects ×0.5
-- Toxicity 6+: pill effects ×0.25
-- Toxicity drops by 1 every 24 hours
+- Only one Qi pill active at a time; pill patterns (丹纹) change the effect ×0.85–×1.25
+- A Qi pill below your realm's grade gives half its bonus
+- Toxicity 4–5: pill effects ×0.5 · 6+: ×0.25 · drops by 1 every 8 hours
 
 ## Layers and Qi needed
 
@@ -102,17 +101,17 @@ Qi needed for one layer in the **Early phase**:
 
 | Realm | Qi per layer |
 |---|---|
-| Mortal (3 layers, tutorial) | 10 |
-| Martial Apprentice | 20 |
-| Martial Warrior | 80 |
-| Martial Expert | 320 |
-| Martial Master | 1,120 |
-| Grand Martial Master | 3,520 |
-| Martial Grandmaster | 11,520 |
-| Martial King | 35,840 |
-| Martial Emperor | 110,080 |
-| Martial Ancestor | 327,680 |
-| Martial Saint | 972,800 |
+| Mortal (3 layers, tutorial) | 8 |
+| Martial Apprentice | 16 |
+| Martial Warrior | 64 |
+| Martial Expert | 260 |
+| Martial Master | 900 |
+| Grand Martial Master | 2,850 |
+| Martial Grandmaster | 9,300 |
+| Martial King | 29,000 |
+| Martial Emperor | 89,000 |
+| Martial Ancestor | 265,000 |
+| Martial Saint | 790,000 |
 
 Phase multipliers on Qi needed: Early ×1, Middle ×1.2, Late ×1.5, Peak ×2.
 
@@ -125,7 +124,7 @@ Phase multipliers on Qi needed: Early ×1, Middle ×1.2, Late ×1.5, Peak ×2.
 | Realm → realm (Peak → next realm) | 70% base success |
 
 - Failed realm breakthrough: lose 20% of current Qi + 6-hour injury (no exploring or fighting)
-- Breakthrough Pills: +10% / +20% / +30% / +40% success (by pill grade)
+- Breakthrough Pills: +5% / +7% / +10% / +12% / +15% success (Mortal → Heaven, see alchemy.md)
 
 ### Realm requirements (besides Qi)
 
@@ -137,9 +136,13 @@ Phase multipliers on Qi needed: Early ×1, Middle ×1.2, Late ×1.5, Peak ×2.
 
 ## Pacing (Martial Saint target)
 
-| Player | Time |
+Assumes Genius talent, a decent technique, 8 /train sessions a day for active players.
+
+| Player | Time to Martial Saint |
 |---|---|
-| Active, /train only | ~10.5 months |
-| Active + passive Qi | ~7 months |
-| Active + passive + pills | ~5.5 months |
-| Casual (2 sessions/day + passive) | ~13 months |
+| Active + passive Qi + 3 pills a day | ~3 months |
+| Active + passive Qi, no pills | ~5.5–6 months |
+| Casual (2 sessions a day + passive) | ~10–11 months |
+
+Time per realm grows as you climb (active + pills): the first five realms take about a
+week in total, Martial King about 9 days, Martial Saint about a month.

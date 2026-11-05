@@ -3,6 +3,7 @@
 cards.dantian.render_dantian expects, using the same formulas as /meditate, /seclusion and /train
 (bot/player.py, training.py).
 """
+import alchemy
 import time
 
 import economy
@@ -62,7 +63,7 @@ def sources(player, techniques, now):
 
     pill = rules.active_pill(player, now)
     if pill:
-        rows.append({"seal": "丹", "label": "Qi Pill", "detail": f"{pill[0]} · {fmt_long(pill[2])} left",
+        rows.append({"seal": "丹", "label": "Qi Pill", "detail": f"{alchemy.QI_PILLS[pill[0]]['name']} · {fmt_long(pill[2])} left",
                      "value": f"×{pill[1]:.2f}", "active": True})
     else:
         rows.append({"seal": "丹", "label": "Qi Pill", "detail": "None · use one from /inventory",

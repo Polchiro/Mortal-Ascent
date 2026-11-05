@@ -7,6 +7,7 @@ open (chest coin amounts, herb names, merchant prices) are marked DEFAULT.
 import random
 import time
 
+import alchemy
 import economy
 import equipments
 import explore
@@ -78,7 +79,7 @@ def herb(rng=random, name=None):
 
 
 def pill(grade):
-    return {"category": "pills", "key": grade, "name": f"{grade} Qi Pill", "grade": grade}
+    return {"category": "pills", "key": grade, "name": alchemy.QI_PILLS[grade]["name"], "grade": grade}
 
 
 HEAVEN_DEFYING = {"category": "pills", "key": "heaven_defying", "name": "Heaven-Defying Pill", "grade": "Heaven"}
@@ -203,7 +204,7 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
     if cat == "pills":
         current = rules.active_pill(p, now)
         if current:
-            return f"Your **{current[0]} Qi Pill** is still working ({rules.fmt_duration(current[2])} left). Pills do not stack."
+            return f"Your **{alchemy.QI_PILLS[current[0]]['name']}** is still working ({rules.fmt_duration(current[2])} left). Pills do not stack."
         tox = rules.current_toxicity(p, now) + 1
         effect = rules.pill_effect_mult(tox)
         mult = 1 + (training.QI_PILLS[item["grade"]] - 1) * effect

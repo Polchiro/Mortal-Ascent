@@ -41,7 +41,7 @@ def test_timers_show_discord_timestamps():
     assert "6 done · now at 50% gain" in s["Daily Discipline"]
     assert f"<t:{int(NOW + 8 * 3600)}:R>" in s["Body & Meridians"]
     assert f"<t:{int(NOW + 120)}:R>" in s["Body & Meridians"]
-    assert "Qi Pill" in s["Heavenly Boons"]
+    assert "Ember Dantian Pill" in s["Heavenly Boons"]
 
 
 def test_next_utc_midnight():
