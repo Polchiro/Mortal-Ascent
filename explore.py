@@ -2,7 +2,7 @@
 Exploration data. Design rules are explained in docs/explore.md.
 """
 
-EXPLORE_COOLDOWN_MINUTES = 45
+EXPLORE_COOLDOWN_MINUTES = 30
 MAX_STEPS = 5
 PATHS = ["left", "middle", "right"]
 

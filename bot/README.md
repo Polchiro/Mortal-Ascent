@@ -12,7 +12,7 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/profile [member]` | Sends the ink-wash profile card (your Discord avatar sits in the Qi ring) |
 | `/balance` | Sends the purse card: Lotus Coins, Moon Pearls, active Heavenly Blessing |
 | `/inventory [category]` | Sends the bag card. Menus under it switch tab and page, and use an item: open a chest, equip a weapon, learn a manual, take a Qi pill |
-| `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 45 min cooldown |
+| `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
 | `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
