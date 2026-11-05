@@ -59,7 +59,7 @@ def _fighter(conn, p):
     atk_t = next((t for t in techs if t["type"] == "attack"), None)
     def_t = next((t for t in techs if t["type"] == "defense"), None)
     return {"p": p, "techs": techs, "hp": hp, "max_hp": hp, "attack": atk, "defense": dfn,
-            "atk_t": atk_t, "def_t": def_t, "atk_uses": 0, "guard_uses": 0, "heavy_last": False, "dealt": 0.0}
+            "atk_t": atk_t, "def_t": def_t, "atk_uses": 0, "guard_uses": 0, "atk_cd": 0, "def_cd": 0, "dealt": 0.0}
 
 
 def team_fight(fighters, beast, rng=random):
@@ -73,8 +73,8 @@ def team_fight(fighters, beast, rng=random):
         for f in alive:
             t = f["atk_t"]
             eff = rules.TECH_BY_NAME.get(t["name"], {}).get("effect") if t else None
-            use = t is not None and not (eff and eff[0] == "heavy" and f["heavy_last"])
-            f["heavy_last"] = bool(use and eff and eff[0] == "heavy")
+            use = t is not None and f["atk_cd"] == 0
+            f["atk_cd"] = combat.cooldown_turns(t) if use else max(0, f["atk_cd"] - 1)
             skill, hits, pierce = 1.0, 1, 0.0
             if use:
                 f["atk_uses"] += 1
@@ -109,7 +109,15 @@ def team_fight(fighters, beast, rng=random):
             dmg = combat.damage(beast["attack"], target["defense"], target["max_hp"], rng=rng)
         guard_chance = CHARGE_GUARD_CHANCE if charged else combat.GUARD_CHANCE
         d = target["def_t"]
-        if d and rng.random() < guard_chance:
+        if d and not charged and beast["tier"] in beasts.CHARGED_ATTACK_TIERS:
+            # fighters keep their guard ready for the next charged attack
+            until_charge = CHARGE_EVERY - turn % CHARGE_EVERY
+            if until_charge <= combat.cooldown_turns(d):
+                guard_chance = 0
+        guarded = bool(d and target["def_cd"] == 0 and rng.random() < guard_chance)
+        for f in alive:
+            f["def_cd"] = combat.cooldown_turns(d) if (guarded and f is target) else max(0, f["def_cd"] - 1)
+        if guarded:
             target["guard_uses"] += 1
             block = min(technique.MAX_DAMAGE_BLOCKED,
                         technique.DEFENSE_TECHNIQUE[d["grade"]][0] * rules.mastery_mult(d))

@@ -114,7 +114,7 @@ to damage and block; the 30% cap applies to **total damage in one turn**.
 | Combo | Hits several times at reduced damage per hit |
 | Pierce | Ignores part of the defender's Defense |
 | Stagger | If it lands, the defender's next block is weaker |
-| Heavy | Extra damage, but can't be used two turns in a row |
+| Heavy | Extra damage, but rests 1 turn longer after use (see Cooldowns) |
 
 ### Defense effects
 | Effect | What it does |
@@ -123,6 +123,26 @@ to damage and block; the 30% cap applies to **total damage in one turn**.
 | Recover | Heals a % of max HP when it blocks |
 | Unbreakable | Break moves deal only half damage against it |
 | Evade | Chance to take no damage at all |
+
+### Cooldowns in fights
+
+Techniques can't be spammed. After a technique is used in any fight (spar,
+trials, explore, hunts, PvP later) it must rest for a number of turns before it
+can be used again. Basic Strike, Guard and Break are always available.
+
+| Grade | Cooldown after use |
+|---|---|
+| Mortal | 1 turn |
+| Yellow | 1 turn |
+| Mystic | 2 turns |
+| Earth | 2 turns |
+| Heaven | 3 turns |
+
+- Heavy techniques rest 1 extra turn
+- In /spar the technique button is greyed out and shows the turns left
+- In auto fights (explore, hunts) the fighter uses basic strikes in between;
+  in hunts, fighters keep their guard ready for the beast's charged attack
+- No Qi cost: Qi is cultivation progress, not a fight resource
 
 ## Technique list
 
