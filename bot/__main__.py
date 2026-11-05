@@ -43,10 +43,13 @@ def main():
     guild_id = int(guild) if guild else None
     lock = instance.acquire(db_path, token)
     if lock is None:
-        sys.exit("Mortal Ascent is already running on this computer (another window, terminal or folder). "
-                 "Running two copies makes every \"m\" command happen twice, so this one will not start. "
-                 "Close the other one first (press Ctrl+C in it, or end python.exe in Task Manager), "
-                 "then run python -m bot again.")
+        pid = instance.holder(db_path, token)
+        how = (f"It is process {pid}. To close it, run:  taskkill /PID {pid} /F" if os.name == "nt" and pid else
+               f"It is process {pid}. To close it, run:  kill {pid}" if pid else
+               "Close it with Ctrl+C in its window, or end python.exe in Task Manager (Details tab).")
+        sys.exit("Mortal Ascent is already running on this computer (another window, terminal or folder, "
+                 "maybe hidden in the background). Running two copies makes every \"m\" command happen "
+                 f"twice, so this one will not start.\n{how}\nThen run python -m bot again.")
     logging.getLogger("mortal-ascent").info("This copy: %s", instance.describe())
     try:
         MortalAscent(db_path, guild_id=guild_id).run(token, log_handler=None)
