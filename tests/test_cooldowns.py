@@ -19,7 +19,7 @@ def text(sections):
 def test_fresh_player_is_ready():
     conn = setup()
     s = text(cooldowns.timer_sections(conn, db.get_player(conn, 1), NOW))
-    assert s["Martial Pursuits"].count(cooldowns.READY) == 4
+    assert s["Martial Pursuits"].count(cooldowns.READY) == 5     # explore, train, practice, spar, gather
     assert "Mastery Trials" not in s
     assert "0 / 5 at full gain" in s["Daily Discipline"]
     assert "meridians whole" in s["Body & Meridians"]

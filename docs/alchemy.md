@@ -3,6 +3,10 @@
 The alchemy loop: **gather herbs → craft pills in a minigame → raise your
 alchemist rank → train faster.**
 
+> **Built so far:** /gather (section 2), herbs with ages in the bag's Herbs tab, Herb Patches and
+> merchants giving the new herbs, and /index pages for every herb and pill. **Not built yet:**
+> /craft, Beast Cores, alchemist ranks, the player market for herbs, herbs from chests.
+
 ---
 
 ## 1. Herbs

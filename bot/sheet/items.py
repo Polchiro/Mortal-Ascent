@@ -8,10 +8,12 @@ has rules for them:
     Open (chests) · Learn (manuals) · Take (Qi pills, Heaven-Defying Pill)
     Equip / Unequip (weapons) · Discard (anything not equipped, after a confirm)
 
-Herbs have no use until alchemy exists, so they can only be inspected or discarded.
+Herbs (from /gather and /explore) go into pills once /craft opens, so for now they can only be
+inspected or discarded.
 """
 from dataclasses import dataclass
 
+import alchemy
 import equipments
 import explore
 import technique
@@ -34,6 +36,7 @@ CATEGORIES = {
     "manuals": Category("manuals", "Manuals", "scroll", "Learn"),
     "weapons": Category("weapons", "Weapons", "sword", "Equip"),
     "pills": Category("pills", "Pills", "pill", "Take"),
+    "herbs": Category("herbs", "Herbs", "herb", ""),
     "materials": Category("materials", "Materials", "herb", ""),
 }
 ORDER = list(CATEGORIES)
@@ -51,6 +54,8 @@ def rarity(item):
         return TIER_LABEL.get(item["key"], item["key"].title()), item["key"]
     if cat in ("manuals", "pills"):
         return f"{grade} Grade", grade
+    if cat == "herbs":
+        return f"{(item.get('data') or {}).get('age', 10)}-year", grade
     return "Common", None
 
 
@@ -127,12 +132,34 @@ def details(item, player, learned_names=()):
         lo, hi = loot.CHEST_COINS[tier]
         scale = rules.realm_scale(player["realm"])
         effects.append(f"{lo * scale:,}–{hi * scale:,} Lotus Coins")
+    elif cat == "herbs":
+        h = item.get("data") or {}
+        type_, age, tier = h.get("type", "qi"), h.get("age", 10), h.get("tier", item.get("grade") or "Mortal")
+        kind = f"{tier} {loot.TYPE_LABEL[type_]} herb"
+        lines.append(alchemy.HERBS[tier][type_][1] + ".")
+        uses = herb_uses(type_)
+        effects.append("Goes into: " + ("every pill recipe" if len(uses) == len(PILL_KINDS) else ", ".join(uses)))
+        a = alchemy.HERB_AGES[age]
+        effects.append(f"{age}-year: " + (f"+{a['score_bonus']:.0%} craft score, " if a["score_bonus"] else "")
+                       + f"up to {a['max_patterns']} pill patterns")
+        notes.append(("Crafting (/craft) opens soon", "jade"))
+        notes.append(("The merchant does not buy herbs", "red"))
     else:
-        kind = "Herb"
-        lines.append("A wild herb gathered on expeditions. It will be used for pills once alchemy arrives.")
+        kind = "Material"
+        lines.append("A crafting material.")
     return {"name": item["name"], "qty": item["qty"], "rarity": label, "rarity_key": key, "icon": item_icon(item),
             "kind": kind, "lines": lines, "effects": effects, "notes": notes,
             "equipped": bool(item["equipped"])}
+
+
+PILL_KINDS = [("Qi pills", alchemy.QI_PILL_RECIPE), ("Qi Burst pills", alchemy.QI_BURST_RECIPE),
+              ("Mending pills", alchemy.MENDING_RECIPE), ("Cleansing pills", alchemy.CLEANSING_RECIPE),
+              ("Breakthrough pills", alchemy.BREAKTHROUGH_RECIPE)]
+
+
+def herb_uses(type_):
+    """Which kinds of pill use a herb of this type (alchemy.py recipes)."""
+    return [name for name, recipe in PILL_KINDS if any(t == type_ for t, _ in recipe)]
 
 
 def technique_effect(eff):

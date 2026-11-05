@@ -13,7 +13,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/start` | Creates your character: rolls a talent, Mortal 1st Layer, Iron Fist + Horse Stance Guard, 50 Lotus Coins |
 | `/profile [member]` | Opens your **Character Sheet** on the Profile tab: realm, phase and layer, HP / Attack / Defense, Internal Qi, equipped techniques and weapon, your avatar as the portrait. Buttons under it switch to the Techniques, Equipment, Inventory and Purse tabs. With a member it shows only their Profile card, with their purse hidden |
 | `/balance` | Opens the sheet on the Purse tab: Lotus Coins, Moon Pearls, active Heavenly Blessing and your last 8 transactions |
-| `/inventory [category]` | Opens the sheet on the Inventory tab: a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
+| `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
@@ -32,8 +32,9 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, seclusion, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
 | `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
-| `/tutorial` | The Old Master's ten lessons on how to play, paged with Back / Next buttons and a jump menu |
-| `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill and herb, read from the game data. A menu switches section; Back / Next turn pages |
+| `/gather` | Gather herbs for alchemy, no limit. One message updates in place: the bot names a herb and describes it, you pick the plant that matches before time runs out (10s at Mortal down to 6s at Heaven). Poisonous look-alikes cost 5% HP. Herbs have an age (10 to 1000 years); 100-year+ herbs fight back (6 choices, 3s less). Right picks in a row build the Herbal Insight streak (more old herbs). A Wandering Spirit asks a simple question every 15–25 gathers; 3 misses pause gathering for 1 hour |
+| `/tutorial` | The Old Master's eleven lessons (one is on herbs and pills) on how to play, paged with Back / Next buttons and a jump menu |
+| `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill (with recipes) and herb (with look-alikes and how to /gather), read from the game data. A menu switches section; Back / Next turn pages |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 ### Text commands with "m"
@@ -81,8 +82,15 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **Defeat** keeps chests as well as manuals and weapons; half the coins and herbs found are lost.
 - **Merchant** sells one Qi pill (Mortal grade at tier 1, Yellow at tier 2, Mystic above) for
   40 / 120 / 400 coins and one herb for 10 (× realm scale).
-- **Herbs** are Spirit Grass, Dew Lotus Petal, Red Ginseng Root, Moonlight Fern and Tiger Bone Moss.
-  They have no use until alchemy exists.
+- **Herbs** are the alchemy herbs in `alchemy.py` (docs/alchemy.md): 4 types × 5 tiers, each with an age.
+  They come from /gather, Herb Patches in /explore (1–3 of your tier) and merchants (a 10-year herb of your tier).
+  They stack by kind and age in the Herbs bag tab. The old herbs (Dew Lotus Petal, Tiger Bone Moss, ...) are gone:
+  any left in a bag turn into the closest 10-year Mortal herb when the bot starts.
+- **/gather** isn't blocked by injuries, only by seclusion. HP isn't stored outside fights, so a look-alike's 5% HP
+  only shows on the gathering message. Gathering is flagged for review (logged and saved in `gather_flag`, never a
+  ban) at an average pick under 0.3s over 50 gathers or 12+ hours non-stop. Chests don't drop herbs yet (no odds in the docs).
+- **/craft** (the alchemy minigame), Beast Cores and alchemist ranks are designed in docs/alchemy.md but not built yet.
+  Crafted-only pills (Qi Burst, Mending, Cleansing, Breakthrough) show in /index with their recipes.
 - **Learning a manual** is instant and equips it in that type's slot (the old technique stays learned).
   A duplicate of a learned manual gives 100 mastery EXP (× grade EXP multiplier).
 - **Breakthroughs**: Qi stops at a full bar at a bottleneck until you use `/breakthrough`.

@@ -69,6 +69,10 @@ def timer_sections(conn, player, now=None):
         else:
             state = READY
         pursuits.append(f"{icon} **{label}** ({base}) — {state}")
+    paused = player.get("gather_paused_until") or 0
+    pursuits.append("🌿 **Gather** (no cooldown) — " + (f"paused by the Wandering Spirit until {stamp(paused)}"
+                                                        if paused > now else READY)
+                    + f" · 🔥 streak {player.get('herb_streak') or 0}")
 
     # ── Technique trials ─────────────────────────────────────────────
     trials = []

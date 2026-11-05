@@ -98,9 +98,9 @@ def test_shop_refunds_when_the_bag_is_full(conn):
 def test_discard_rules(conn):
     new_player(conn)
     new_player(conn, 2)
-    db.add_item(conn, 1, **dict(loot.herb(name="Spirit Grass"), qty=5))
+    db.add_item(conn, 1, **dict(loot.herb("Mortal", "qi", 10), qty=5))
     db.add_item(conn, 1, **loot.roll_weapon("ordinary", random.Random(0)))
-    herb = db.get_items(conn, 1, "materials")[0]
+    herb = db.get_items(conn, 1, "herbs")[0]
     weapon = db.get_items(conn, 1, "weapons")[0]
     db.equip_weapon(conn, 1, weapon["id"])
 
@@ -117,12 +117,12 @@ def test_discard_rules(conn):
 
 def test_item_actions_match_the_game(conn):
     new_player(conn)
-    for it in (loot.chest("bronze"), loot.manual("iron_fist"), loot.pill("Mortal"), loot.herb(name="Spirit Grass"),
+    for it in (loot.chest("bronze"), loot.manual("iron_fist"), loot.pill("Mortal"), loot.herb("Mortal", "qi", 10),
                loot.roll_weapon("ordinary", random.Random(0))):
         db.add_item(conn, 1, **it)
     by_cat = {i["category"]: i for i in db.get_items(conn, 1)}
     assert items.actions(by_cat["chests"]) == ["use", "discard"] and items.use_label(by_cat["chests"]) == "Open"
-    assert items.actions(by_cat["materials"]) == ["discard"]             # herbs have no use yet
+    assert items.actions(by_cat["herbs"]) == ["discard"]             # herbs have no use yet
     db.equip_weapon(conn, 1, by_cat["weapons"]["id"])
     assert items.actions(db.get_item(conn, 1, by_cat["weapons"]["id"])) == ["unequip"]
     p = db.get_player(conn, 1)
@@ -243,7 +243,7 @@ def test_sheet_builds_every_tab(conn):
 def test_sheet_discard_needs_a_confirm(conn):
     from bot.sheet.view import CharacterSheet
     new_player(conn)
-    db.add_item(conn, 1, **dict(loot.herb(name="Spirit Grass"), qty=4))
+    db.add_item(conn, 1, **dict(loot.herb("Mortal", "qi", 10), qty=4))
 
     class FakeInteraction:
         def __init__(self):
@@ -257,14 +257,14 @@ def test_sheet_discard_needs_a_confirm(conn):
             self.edits.append(kw)
 
     async def go():
-        view = CharacterSheet(FakeBot(conn), fake_user(), "inventory", "materials")
+        view = CharacterSheet(FakeBot(conn), fake_user(), "inventory", "herbs")
         await view.render()
         await view.on_ask_discard(FakeInteraction())
         labels = [getattr(c, "label", "") for c in view.children]
         assert "Discard all ×4" in labels and "Cancel" in labels
-        assert db.get_items(conn, 1, "materials")[0]["qty"] == 4            # nothing gone yet
+        assert db.get_items(conn, 1, "herbs")[0]["qty"] == 4            # nothing gone yet
         await view.discard_callback(1)(FakeInteraction())
-        assert db.get_items(conn, 1, "materials")[0]["qty"] == 3
+        assert db.get_items(conn, 1, "herbs")[0]["qty"] == 3
     asyncio.run(go())
 
 

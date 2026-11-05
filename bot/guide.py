@@ -3,7 +3,7 @@
 an index of every beast, technique manual, weapon, chest, pill and herb in the game.
 
 Everything in the index is read from the game data modules (beasts.py, technique.py,
-equipments.py, explore.py, training.py, bot/loot.py), so it stays in step when they change.
+equipments.py, explore.py, training.py, alchemy.py, bot/loot.py), so it stays in step when they change.
 """
 import alchemy
 import discord
@@ -18,7 +18,7 @@ import talent as talent_rules
 from . import loot
 from . import player as rules
 from .expedition import MERCHANT_HERB_PRICE, MERCHANT_PILL_PRICE
-from .sheet.items import technique_effect
+from .sheet.items import herb_uses as sheet_herb_uses, technique_effect
 from .views import COLOR, SHOP_PILLS, OwnedView
 
 GUIDE_TIMEOUT = 600   # seconds the page buttons keep working
@@ -80,7 +80,7 @@ LESSONS = [
      "\"The mountains hold beasts, bandits, herbs and treasure. Mostly beasts.\"",
      [("/explore", f"A {explore.MAX_STEPS}-step expedition. At each step, read the clue and pick a path. "
                    f"Go deeper for better finds, or turn back with what you have. Every {explore.EXPLORE_COOLDOWN_MINUTES} minutes."),
-      ("What waits", "Wild beasts, treasure chests, herb patches, merchants, stone tablets, hermits, "
+      ("What waits", "Wild beasts, treasure chests, herb patches (1–3 herbs of your tier), merchants, stone tablets, hermits, "
                      "Blessed Lands that multiply your Qi... and rare lairs of Elite beasts and Beast Kings."),
       ("Defeat", f"Lose a fight and you are injured for {explore.DEFEAT_INJURY_HOURS} hour and drop half the coins "
                  "and herbs you found. **/physician** heals you for Lotus Coins."),
@@ -96,10 +96,28 @@ LESSONS = [
 
     ("Spoils of the Road",
      "\"Treasure means nothing if it rots in your bag.\"",
-     [("/inventory", "Your bag in tabs: manuals, weapons, pills, materials and chests. Pick an item "
+     [("/inventory", "Your bag in tabs: chests, manuals, weapons, pills, herbs and materials. Pick an item "
                      "to **open** a chest, **learn** a manual, **equip** a weapon or **take** a pill."),
       ("/equipment", "Your weapon and your stats before and after it. Swap or remove it here."),
       ("Manuals", "Learning one is instant and equips it. A copy of a manual you already know becomes mastery EXP.")]),
+
+    ("Herbs and the Cauldron",
+     "*The Old Master lifts the lid of a blackened cauldron.*\n"
+     "\"A pill is only as good as the herbs in it, and the herbs are only as good as the eyes that picked them.\"",
+     [("/gather", "Gather herbs as long as you like. I name a herb and describe it; pick the plant that matches "
+                  "before time runs out. **Read carefully:** poisonous look-alikes differ in one detail and cost you "
+                  f"{alchemy.DECOY_HP_LOSS:.0%} HP."),
+      ("Tiers and types", "You find herbs of your own realm's tier (凡 黄 玄 地 天). 🌀 Qi herbs make Qi pills, "
+                          "❤️ Healing herbs make Mending pills, 💧 Purity herbs go into every recipe, and 🏔️ "
+                          "Breakthrough herbs make Breakthrough pills."),
+      ("Old herbs", "Every herb has an age, from 🌱 10-year to 🏵️ 1000-year. Older herbs make better pills, but "
+                    "100-year and older ones try to escape: more choices, less time. Pick right many times in a row "
+                    "and your 🔥 **Herbal Insight** finds old herbs more often."),
+      ("Your herb bag", "Herbs stack by kind and age in the **Herbs** tab of **/inventory**. Herb Patches in /explore "
+                        "and merchants give herbs too. The merchant never buys them back."),
+      ("Pills", "Qi pills speed up your Qi, Qi Burst pills give Qi at once, Mending pills heal, Cleansing pills clear "
+                "toxicity and Breakthrough pills help at a realm gate. **/craft**, the alchemy cauldron, opens soon; "
+                "**/index** → Pills lists every recipe.")]),
 
     ("Coin and Pearl",
      "\"Even immortals pay for their tea.\"",
@@ -114,8 +132,8 @@ LESSONS = [
      "*The Old Master stands and brushes off his robe.*\n"
      "\"You have taken your first step on the martial path. The rest, you must walk alone.\"",
      [("A good day's path", "**/train** → **/explore** → open chests in **/inventory** → **/practice** "
-                            "→ **/spar** → **/breakthrough** when the bar is full. Check **/internal qi** "
-                            "to see how far you are."),
+                            "→ **/spar** → **/gather** herbs between cooldowns → **/breakthrough** when the bar is "
+                            "full. Check **/internal qi** to see how far you are."),
       ("Lost?", "**/index** lists every beast, technique, weapon, chest, pill and herb in the world. "
                 "**/tutorial** brings back these lessons any time.")]),
 ]
@@ -293,26 +311,146 @@ def chest_pages():
              fields)]
 
 
-def item_pages():
-    shop = {grade for grade, _ in SHOP_PILLS.values()}
-    fields = []
-    for grade, mult in training.QI_PILLS.items():
-        src = []
-        if grade in shop:
-            src.append("/shop")
-        if grade in MERCHANT_PILL_PRICE:
-            src.append(f"merchants (🪷 {MERCHANT_PILL_PRICE[grade]})")
-        fields.append((f"{GRADE_SEAL[grade]} {alchemy.QI_PILLS[grade]['name']}", (
-            f"×{mult:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h\n"
-            f"From: {', '.join(src) or 'not yet in the world'}")))
-    fields.append(("天 Heaven-Defying Pill", (
-        f"Raises your talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']}). Cannot be traded.\n"
-        f"From: Jade Chests ({pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])})")))
-    herbs = "\n".join(f"· {h}" for h in loot.HERBS)
-    fields.append(("🌿 Herbs", f"{herbs}\nFrom herb patches and merchants (🪷 {MERCHANT_HERB_PRICE}). Kept for alchemy, which "
-                              "is not open yet."))
-    return [("Pills and Herbs", "Take pills from **/inventory**. Too many pills in a short time build "
-                                "toxicity and weaken the next ones.", fields)]
+RANK_NAMES = {1: "1st", 2: "2nd", 3: "3rd"}
+
+
+def rank_name(n):
+    return f"{RANK_NAMES.get(n, f'{n}th')} Grade"
+
+
+def first_realm(tier):
+    """The first realm that finds (and can use) herbs and pills of this grade."""
+    return next(r for r in rules.REALM_ORDER if alchemy.HERB_TIER_BY_REALM[r] == tier)
+
+
+def recipe_text(grade, recipe, core=None):
+    parts = [f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in recipe]
+    if core:
+        parts.append("1 Beast King Core" if core == "beast_king" else f"1 {TIER_LABEL[core]} Beast Core")
+    return " + ".join(parts)
+
+
+def age_text(min_age):
+    return "any age" if min_age <= 10 else f"{min_age}-year+"
+
+
+CRAFT_SOURCE = "/craft (opens soon)"
+
+
+def pill_sources(grade):
+    shop = {g for g, _ in SHOP_PILLS.values()}
+    src = []
+    if grade in shop:
+        src.append("/shop")
+    if grade in MERCHANT_PILL_PRICE:
+        src.append(f"merchants (🪷 {MERCHANT_PILL_PRICE[grade]})")
+    return src + [CRAFT_SOURCE]
+
+
+def pill_pages():
+    def page(title, desc, table, effect, recipe, core_key=None):
+        fields = []
+        for grade, spec in table.items():
+            core = spec.get(core_key) if core_key else None
+            fields.append((f"{GRADE_SEAL[grade]} {effect[0](grade, spec)}", "\n".join([
+                effect[1](grade, spec),
+                f"Recipe: {recipe_text(grade, recipe, core)}",
+                f"Herbs: {age_text(spec['min_age'])} · Alchemist {rank_name(spec['rank'])}",
+                "From: " + ", ".join(effect[2](grade) if len(effect) > 2 else [CRAFT_SOURCE]),
+            ])))
+        return (title, desc, fields)
+
+    qi = page("Qi Pills", f"Swallow one from **/inventory** for a faster Qi Rate for {training.QI_PILL_DURATION_HOURS} "
+              "hours. Only one Qi pill works at a time. A pill below your realm's grade gives half its bonus.",
+              alchemy.QI_PILLS,
+              (lambda g, s: s["name"],
+               lambda g, s: f"×{training.QI_PILLS[g]:g} Qi Rate · from {first_realm(g)}",
+               pill_sources), alchemy.QI_PILL_RECIPE)
+    burst = page("Qi Burst Pills", "Instant Internal Qi: hours of your Qi Rate in one swallow. "
+                 "Below your realm's grade: half the Qi.", alchemy.QI_BURST_PILLS,
+                 (lambda g, s: f"{g} Qi Burst Pill", lambda g, s: f"+{s['hours']} hours of Qi Rate at once"),
+                 alchemy.QI_BURST_RECIPE)
+    mending = page("Mending Pills", "Heal HP and shorten an injury, so you can explore again sooner.",
+                   alchemy.MENDING_PILLS,
+                   (lambda g, s: f"{g} Mending Pill",
+                    lambda g, s: f"Heals {pct(s['heal'])} HP · "
+                                 + ("cures any injury" if s["injury_minutes"] is None
+                                    else f"injury −{rules.fmt_duration(s['injury_minutes'] * 60)}")),
+                   alchemy.MENDING_RECIPE)
+    cleansing = page("Cleansing Pills", "Remove pill toxicity. They add none themselves.", alchemy.CLEANSING_PILLS,
+                     (lambda g, s: f"{g} Cleansing Pill", lambda g, s: f"−{s['toxicity_removed']} toxicity"),
+                     alchemy.CLEANSING_RECIPE)
+    breakthrough = page("Breakthrough Pills", "Raise the chance of a **realm** breakthrough. One pill per attempt, "
+                        "used up even on a failure. Crafted one difficulty harder, plus a Seal the Core stage that "
+                        "destroys the Beast Core if it fails.", alchemy.BREAKTHROUGH_PILLS,
+                        (lambda g, s: f"{g} Breakthrough Pill",
+                         lambda g, s: f"+{pct(training.BREAKTHROUGH_PILLS[g])} breakthrough chance"),
+                        alchemy.BREAKTHROUGH_RECIPE, "core")
+
+    tox = " · ".join(f"{t}+: ×{m:g}" for t, m in training.PILL_TOXICITY_PENALTY if t)
+    patterns = " · ".join(f"{pct(score)}+ → {n}" for score, n in alchemy.SCORE_TO_PATTERNS[::2])
+    ranks = " · ".join(f"{RANK_NAMES.get(r, f'{r}th')} {exp:,}" for r, exp in alchemy.ALCHEMIST_RANK_EXP.items() if r > 1)
+    rare = ("Toxicity, Patterns and Rare Pills",
+            "Every pill you swallow adds toxicity; too much weakens the next ones.", [
+                ("☠️ Pill toxicity", f"Effects at toxicity {tox}.\n"
+                                    f"Toxicity drops by 1 every {training.TOXICITY_DECAY_HOURS} hours."),
+                ("丹纹 Pill patterns", f"A crafted pill gets 1–9 patterns from its craft score: {patterns}. "
+                                      f"Below {pct(alchemy.EXPLODE_BELOW)} the cauldron explodes. "
+                                      f"Each pattern: effect ×{alchemy.pattern_effect(1):.2f} … "
+                                      f"×{alchemy.pattern_effect(9):.2f}; 8+ patterns add no toxicity."),
+                ("一品 Alchemist rank", f"Everyone starts as a 1st Grade Alchemist. Crafting gives alchemy EXP. "
+                                       f"Total EXP for each rank: {ranks}."),
+                ("天 Heaven-Defying Pill", (
+                    f"Raises your talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']}). "
+                    f"Cannot be traded.\nFrom: Jade Chests "
+                    f"({pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])})")),
+            ])
+    return [qi, burst, mending, cleansing, breakthrough, rare]
+
+
+def herb_pages():
+    tiers = {}
+    for realm, tier in alchemy.HERB_TIER_BY_REALM.items():
+        tiers.setdefault(tier, []).append(realm)
+    ages = "\n".join(f"{loot.AGE_EMOJI[age]} {age}-year · {pct(a['chance'])}"
+                     + (f" · +{pct(a['score_bonus'])} craft score" if a["score_bonus"] else "")
+                     + f" · up to {a['max_patterns']} patterns" for age, a in alchemy.HERB_AGES.items())
+    streak = " · ".join(f"{s}+: ×{m:g}" for s, m in reversed(alchemy.STREAK_BONUS) if m > 1)
+    lo, hi = alchemy.HERB_PATCH_HERBS
+    guide_page = ("How to Gather",
+                  "Use **/gather** as long as you like. The bot names a herb and describes it; pick the plant that "
+                  "matches before time runs out. Poisonous look-alikes differ in **one detail**.", [
+                      ("Results", f"✅ Right plant: the herb is yours (age rolled)\n"
+                                  f"☠️ Look-alike: −{pct(alchemy.DECOY_HP_LOSS)} HP, nothing gathered\n"
+                                  "⏳ Too slow: nothing gathered"),
+                      ("Time to pick", " · ".join(f"{t} {s}s" for t, s in alchemy.GATHER_SECONDS.items())),
+                      ("Herb tier by realm", "\n".join(f"{GRADE_SEAL[t]} {t}: {', '.join(r)}" for t, r in tiers.items())
+                       + f"\n{pct(alchemy.LOWER_TIER_CHANCE)} of herbs are one tier lower."),
+                      ("Herb types", "\n".join(f"{loot.TYPE_EMOJI[t]} {loot.TYPE_LABEL[t]} {pct(c)}"
+                                               for t, c in alchemy.HERB_TYPE_CHANCE.items())),
+                      ("Herb age", ages),
+                      ("Old herbs fight back", f"{alchemy.OLD_HERB_FROM_AGE}-year+ herbs: {alchemy.OLD_HERB_CHOICES} "
+                                               f"choices, {alchemy.OLD_HERB_SECONDS_LESS}s less to pick. Miss and it escapes."),
+                      ("🔥 Herbal Insight", f"Right picks in a row raise the chance of 50-year+ herbs: {streak}. "
+                                           "A wrong pick or a timeout resets it."),
+                      ("👻 Wandering Spirit", f"Every {alchemy.SPIRIT_CHECK_EVERY[0]}–{alchemy.SPIRIT_CHECK_EVERY[1]} "
+                                             f"gathers a spirit asks a simple question. Miss "
+                                             f"{alchemy.SPIRIT_CHECK_FAILS_TO_PAUSE} in a row and gathering pauses "
+                                             f"{alchemy.SPIRIT_CHECK_PAUSE_MINUTES} minutes."),
+                      ("Other sources", f"🌿 Herb Patches in /explore ({lo}–{hi} herbs of your tier) · merchants sell "
+                                        f"10-year herbs (🪷 {MERCHANT_HERB_PRICE}). The merchant never buys herbs."),
+                  ])
+    pages = [guide_page]
+    for tier in alchemy.GRADES:
+        fields = []
+        for type_, (name, desc) in alchemy.HERBS[tier].items():
+            fields.append((f"{loot.TYPE_EMOJI[type_]} {name}",
+                           f"*{desc}*\n{loot.TYPE_LABEL[type_]} · used in {', '.join(sheet_herb_uses(type_))}"))
+        for name, desc in alchemy.DECOYS[tier]:
+            fields.append((f"☠️ {name}", f"*{desc}*\nPoisonous look-alike"))
+        pages.append((f"{GRADE_SEAL[tier]} {tier} Herbs", f"Found from **{', '.join(tiers[tier])}**. Every recipe for "
+                      f"a {tier} grade pill uses these.", fields))
+    return pages
 
 
 # section key → (menu label, emoji, page builder, short description)
@@ -321,7 +459,8 @@ SECTIONS = {
     "techniques": ("Techniques", "📜", technique_pages, "Manuals by grade, with effects"),
     "weapons":    ("Weapons", "⚔️", weapon_pages, "Weapons by tier, with buffs"),
     "chests":     ("Chests", "📦", chest_pages, "What each chest holds"),
-    "items":      ("Pills and Herbs", "💊", item_pages, "Qi pills, rare pills, herbs"),
+    "pills":      ("Pills", "💊", pill_pages, "Every pill: effects, recipes, where to get them"),
+    "herbs":      ("Herbs", "🌿", herb_pages, "How to /gather, and every herb and look-alike"),
 }
 
 
@@ -392,7 +531,7 @@ def register(bot):
         await interaction.response.send_message(embed=lesson_embed(0), view=view)
         view.message = await interaction.original_response()
 
-    @bot.tree.command(name="index", description="The Jianghu Compendium: every beast, technique, weapon, chest and pill")
+    @bot.tree.command(name="index", description="The Jianghu Compendium: every beast, technique, weapon, chest, pill and herb")
     @app_commands.describe(section="Which section to open first", realm="For beasts: which realm")
     @app_commands.choices(
         section=[app_commands.Choice(name=v[0], value=k) for k, v in SECTIONS.items()],

@@ -1,8 +1,8 @@
 """
-Loot: rolling chests, manuals, weapons and herbs, and using items from the bag.
+Loot: rolling chests, manuals, weapons and herbs (alchemy.py), and using items from the bag.
 
 Odds come from explore.py and equipments.py. Numbers the design docs leave
-open (chest coin amounts, herb names, merchant prices) are marked DEFAULT.
+open (chest coin amounts, merchant prices) are marked DEFAULT.
 """
 import random
 import time
@@ -25,8 +25,6 @@ GRADE_ORDER = list(technique.GRADES)
 
 # DEFAULT: Lotus Coins in a chest at Mortal (×2 per realm, see rules.realm_scale)
 CHEST_COINS = {"wooden": (10, 25), "bronze": (30, 60), "silver": (80, 150), "jade": (200, 400)}
-# DEFAULT: herbs for future pills (explore.md only says "materials")
-HERBS = ["Spirit Grass", "Dew Lotus Petal", "Red Ginseng Root", "Moonlight Fern", "Tiger Bone Moss"]
 # DEFAULT: duplicate of a learned manual turns into this much mastery EXP (× grade EXP multiplier)
 INSIGHT_EXP = 100
 
@@ -73,9 +71,61 @@ def chest(tier):
     return {"category": "chests", "key": tier, "name": CHEST_NAMES[tier], "grade": tier}
 
 
-def herb(rng=random, name=None):
-    name = name or rng.choice(HERBS)
-    return {"category": "materials", "key": name, "name": name, "grade": None}
+# ── Herbs (alchemy.py, docs/alchemy.md) ──────────────────────────────
+
+AGE_EMOJI = {10: "🌱", 50: "🌿", 100: "🍃", 500: "🌳", 1000: "🏵️"}
+TYPE_EMOJI = {"qi": "🌀", "healing": "❤️", "purity": "💧", "breakthrough": "🏔️"}
+TYPE_LABEL = {"qi": "Qi", "healing": "Healing", "purity": "Purity", "breakthrough": "Breakthrough"}
+
+
+def herb_tier(realm, rng=random):
+    """The tier of herb a cultivator of this realm finds: their own, or 15% of the time one lower."""
+    tier = alchemy.HERB_TIER_BY_REALM[realm]
+    i = alchemy.GRADES.index(tier)
+    if i > 0 and rng.random() < alchemy.LOWER_TIER_CHANCE:
+        return alchemy.GRADES[i - 1]
+    return tier
+
+
+def age_odds(streak=0):
+    """{age: chance}. The Herbal Insight streak multiplies the 50-year-and-older chances;
+    the 10-year chance takes whatever is left."""
+    mult = next(m for min_streak, m in alchemy.STREAK_BONUS if streak >= min_streak)
+    odds = {age: a["chance"] * (mult if age > 10 else 1) for age, a in alchemy.HERB_AGES.items()}
+    odds[10] = max(0.0, 1 - sum(v for age, v in odds.items() if age > 10))
+    return odds
+
+
+def roll_herb_type(rng=random):
+    return pick(alchemy.HERB_TYPE_CHANCE, rng)
+
+
+def roll_age(rng=random, streak=0):
+    return pick(age_odds(streak), rng)
+
+
+def herb(tier="Mortal", type_=None, age=10, rng=random):
+    """A herb ready for the bag. Herbs of the same kind and age stack."""
+    type_ = type_ or roll_herb_type(rng)
+    name = alchemy.HERBS[tier][type_][0]
+    return {"category": "herbs", "key": f"{tier}:{type_}:{age}", "name": name, "grade": tier,
+            "data": {"tier": tier, "type": type_, "age": age}}
+
+
+def roll_herb(realm, rng=random, streak=0):
+    """A random herb for this realm with a rolled type and age (herb patches, rewards)."""
+    return herb(herb_tier(realm, rng), roll_herb_type(rng), roll_age(rng, streak))
+
+
+def herb_label(item):
+    """'🌿 50-year Silver Moss'."""
+    age = (item.get("data") or {}).get("age", 10)
+    return f"{AGE_EMOJI.get(age, '🌱')} {age}-year {item['name']}"
+
+
+# Herbs from before alchemy, turned into the Mortal herb closest to them (db.connect runs this once)
+OLD_HERBS = {"Spirit Grass": "qi", "Dew Lotus Petal": "purity", "Red Ginseng Root": "healing",
+             "Moonlight Fern": "purity", "Tiger Bone Moss": "breakthrough"}
 
 
 def pill(grade):
@@ -127,7 +177,8 @@ def beast_chest(player, beast_tier, rng=random):
 
 def describe(item):
     qty = item.get("qty", 1)
-    return f"{item['name']}" + (f" ×{qty}" if qty > 1 else "")
+    name = herb_label(item) if item["category"] == "herbs" else item["name"]
+    return name + (f" ×{qty}" if qty > 1 else "")
 
 
 def store(conn, user_id, items):
@@ -218,4 +269,6 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
             msg += " ☠️ Your body is clogged with pill toxins, so the pill works less well."
         return msg
 
-    return f"**{item['name']}** will be used for pills once alchemy arrives."
+    if cat == "herbs":
+        return f"**{item['name']}** goes into pills. Alchemy (/craft) opens soon; keep gathering with /gather."
+    return f"**{item['name']}** has no use yet."

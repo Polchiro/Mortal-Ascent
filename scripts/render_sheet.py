@@ -26,7 +26,7 @@ def demo_player(conn, uid=1):
     db.create_player(conn, uid, "Shoaib", "Genius", rules.STARTING_LOTUS_COINS, rules.starting_techniques())
     now = time.time()
     db.update_player(conn, uid, realm="Martial King", layer=8, qi=18240, beasts_slain=1284, breakthroughs=74,
-                     failed_breakthroughs=9, qi_collected_at=now - 3 * 3600, pill_grade="Mystic", pill_mult=1.7,
+                     failed_breakthroughs=9, herbs_gathered=3120, qi_collected_at=now - 3 * 3600, pill_grade="Mystic", pill_mult=1.7,
                      pill_expires=now + 7200)
     for key in ("rolling_thunder_palm", "golden_bell_cover", "viper_fang_finger", "crescent_sweep"):
         t = loot.technique.TECHNIQUES[key]
@@ -38,7 +38,9 @@ def demo_player(conn, uid=1):
     db.equip_weapon(conn, uid, db.get_items(conn, uid, "weapons")[0]["id"])
     for item in (loot.roll_weapon("spirit", rng), loot.chest("jade"), dict(loot.chest("silver"), qty=3),
                  dict(loot.pill("Mystic"), qty=2), dict(loot.HEAVEN_DEFYING), loot.manual("meteor_falling_kick"),
-                 dict(loot.herb(name="Red Ginseng Root"), qty=7), loot.manual("iron_cloth_body")):
+                 dict(loot.herb("Heaven", "qi", 10), qty=7), dict(loot.herb("Heaven", "purity", 50), qty=3),
+                 loot.herb("Heaven", "breakthrough", 500), dict(loot.herb("Earth", "healing", 10), qty=12),
+                 loot.manual("iron_cloth_body")):
         db.add_item(conn, uid, item["category"], item["key"], item["name"], item.get("grade"), item.get("qty", 1),
                     item.get("data"))
     db.change_currency(conn, uid, "lotus_coins", 128400, "Opened Jade Chest", now=now - 86400 * 2)
@@ -60,12 +62,13 @@ def main():
         "techniques": sheet.techniques_data(conn, uid),
         "equipment": sheet.equipment_data(conn, uid),
         "inventory": sheet.bag_data(conn, uid, "chests")[0],
+        "herbs": sheet.bag_data(conn, uid, "herbs")[0],
         "purse": sheet.purse_data(conn, uid),
     }
     for name, data in cards.items():
         t0 = time.perf_counter()
         path = os.path.join(out, f"sheet_{name}.png")
-        RENDERERS[name](data).save(path)
+        RENDERERS["inventory" if name == "herbs" else name](data).save(path)
         print(f"{path}  ({time.perf_counter() - t0:.2f}s)")
     path = os.path.join(out, "sheet_qi.png")
     render_dantian(qi.qi_data(db.get_player(conn, uid), db.get_techniques(conn, uid))).save(path)
