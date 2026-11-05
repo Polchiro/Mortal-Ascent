@@ -63,6 +63,23 @@ REALM_CHAR = {
 }
 SCHOOL_CHAR = {"Fist": "拳", "Palm": "掌", "Finger": "指", "Leg": "腿", "Body": "体"}
 
+# ── Accents: the same frame in another colour for each activity ──────
+# deep: background glow · lacquer: banner gradient (top, bottom) · main/bright: bars, glows, seals · ink: faded marks
+
+class Accent:
+    def __init__(self, name, deep, lacquer, main, bright, ink):
+        self.name, self.deep, self.lacquer, self.main, self.bright, self.ink = name, deep, lacquer, main, bright, ink
+
+
+CRIMSON_HALL = Accent("crimson", BLOOD, ((96, 14, 18), (34, 6, 8)), EMBER, GLOW, CRIMSON)
+ACCENTS = {
+    "crimson": CRIMSON_HALL,
+    "spar": Accent("spar", (10, 24, 46), ((26, 56, 98), (8, 18, 36)), (72, 132, 206), (128, 186, 246), (36, 72, 124)),
+    "train": Accent("train", (6, 38, 28), ((18, 86, 62), (6, 28, 20)), (54, 170, 120), (112, 224, 172), (24, 98, 70)),
+    "explore": Accent("explore", (50, 30, 6), ((124, 76, 16), (42, 24, 4)), (216, 140, 42), (252, 194, 96),
+                      (132, 82, 20)),
+}
+
 TABS = [("profile", "Profile"), ("techniques", "Techniques"), ("equipment", "Equipment"),
         ("inventory", "Inventory"), ("purse", "Purse")]
 
@@ -162,17 +179,18 @@ def vgradient(size, top, bottom, y0=0, y1=None):
 
 # ── Background and frames ─────────────────────────────────────────────
 
-@lru_cache(maxsize=8)
-def _background(w, h, seed):
-    """Black stone with a crimson glow, stone grain, ember speckles and a dark vignette (cached per size).
-    Pillow only, so no extra packages are needed."""
+@lru_cache(maxsize=12)
+def _background(w, h, seed, accent="crimson"):
+    """Black stone with a coloured glow (crimson unless an accent is given), stone grain, ember speckles
+    and a dark vignette (cached per size). Pillow only, so no extra packages are needed."""
+    a = ACCENTS[accent]
     W2, H2 = w * S, h * S
     # distance from a point a little above the centre, 0 there and 1 at the edges of an ellipse
     dist = Image.radial_gradient("L").resize((round(W2 * 1.24), round(H2 * 1.5)), Image.BILINEAR)
     cx, cy = dist.size[0] // 2, dist.size[1] // 2
     dist = dist.crop((cx - W2 // 2, cy - round(H2 * 0.42), cx - W2 // 2 + W2, cy - round(H2 * 0.42) + H2))
     glow = dist.point(lambda v: round(255 * max(0.0, 1 - v / 255 * 1.41) ** 1.6))
-    out = Image.composite(Image.new("RGB", (W2, H2), BLOOD), Image.new("RGB", (W2, H2), VOID), glow)
+    out = Image.composite(Image.new("RGB", (W2, H2), a.deep), Image.new("RGB", (W2, H2), VOID), glow)
     # stone grain
     random.seed(seed)
     grain = Image.effect_noise((W2 // 4 + 1, H2 // 4 + 1), 24).resize((W2, H2), Image.NEAREST)
@@ -186,12 +204,12 @@ def _background(w, h, seed):
     for _ in range(int(w * h / 9000)):
         x, y = r.uniform(0, w), r.uniform(0, h)
         rad = r.uniform(0.4, 1.4)
-        d.ellipse(P(x - rad, y - rad, x + rad, y + rad), fill=alpha(mix(EMBER, GOLD, r.random()), r.randint(30, 110)))
+        d.ellipse(P(x - rad, y - rad, x + rad, y + rad), fill=alpha(mix(a.main, GOLD, r.random()), r.randint(30, 110)))
     return out
 
 
-def canvas(w, h, seed=7):
-    return _background(w, h, seed).copy()
+def canvas(w, h, seed=7, accent="crimson"):
+    return _background(w, h, seed, accent).copy()
 
 
 def frame(img, box, thick=1.0, corners=True):
@@ -212,14 +230,14 @@ def stud(d, cx, cy, r):
     d.polygon([P(cx, cy - r * 0.45), P(cx + r * 0.45, cy), P(cx, cy + r * 0.45), P(cx - r * 0.45, cy)], fill=GOLD_HI)
 
 
-def panel(img, box, title=None, fill=PANEL, glow=False):
+def panel(img, box, title=None, fill=PANEL, glow=False, accent=CRIMSON_HALL):
     """A dark recessed panel with a thin gold frame and an optional engraved title."""
     x0, y0, x1, y1 = box
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
     ld.rectangle(P(x0, y0, x1, y1), fill=alpha(fill, 228))
     if glow:
-        ld.rectangle(P(x0, y0, x1, y0 + (y1 - y0) * 0.35), fill=alpha(CRIMSON, 26))
+        ld.rectangle(P(x0, y0, x1, y0 + (y1 - y0) * 0.35), fill=alpha(accent.ink, 26))
     img.alpha_composite(layer)
     d = ImageDraw.Draw(img)
     d.rectangle(P(x0, y0, x1, y1), outline=alpha(BRONZE, 235), width=round(1.6 * S))
@@ -256,10 +274,10 @@ def divider(d, x0, x1, y):
     stud(d, mid, y, 5)
 
 
-def banner(img, box):
-    """Crimson lacquer banner with gold rules above and below."""
+def banner(img, box, accent=CRIMSON_HALL):
+    """Lacquer banner (crimson unless an accent is given) with gold rules above and below."""
     x0, y0, x1, y1 = box
-    g = vgradient((round((x1 - x0) * S), round((y1 - y0) * S)), (96, 14, 18), (34, 6, 8))
+    g = vgradient((round((x1 - x0) * S), round((y1 - y0) * S)), *accent.lacquer)
     img.alpha_composite(g, P(x0, y0))
     d = ImageDraw.Draw(img)
     for y in (y0, y1):

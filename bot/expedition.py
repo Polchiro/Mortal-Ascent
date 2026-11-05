@@ -82,6 +82,7 @@ class Expedition:
         self.notes = []           # mastery trial reminders, shown at the end
         self.lair = None          # set when an Elite Lair or Beast King Den is found
         self.announce = []        # server-wide announcements for rare finds
+        self.banked = None        # what finish() put in the purse and bag
 
     # ── steps ────────────────────────────────────────────────────────
 
@@ -339,6 +340,7 @@ class Expedition:
             lines.append(f"☠️ **You were defeated.** Half of the coins and herbs you found are lost, and you are "
                          f"injured for {explore.DEFEAT_INJURY_HOURS} hour(s).")
         stored, lost = loot.store(self.conn, self.user_id, items)
+        self.banked = {"coins": coins, "stored": stored, "lost": lost}     # for the result card
         self.announce += [a for a in (loot.announcement(self.player["name"], i) for i in stored) if a]
         db.add_coins(self.conn, self.user_id, coins, "Expedition loot")
         fields = {"beasts_slain": self.player["beasts_slain"] + self.beasts_slain}

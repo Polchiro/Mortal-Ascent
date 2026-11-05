@@ -23,6 +23,8 @@ import training
 
 from . import db, hunt, loot, mastery, trainer
 from . import player as rules
+from . import result_cards
+from cards.activity import render_explore, render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
 
 log = logging.getLogger("mortal-ascent")
@@ -190,7 +192,15 @@ class ExploreView(OwnedView):
 
     async def update(self, interaction):
         self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
+        if self.exp.over:
+            await interaction.response.defer()
+            file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
+            if file:
+                await interaction.edit_original_response(embed=None, attachments=[file], view=None)
+            else:
+                await interaction.edit_original_response(embed=self.embed(), view=None)
+        else:
+            await interaction.response.edit_message(embed=self.embed(), view=self)
         self.notice = None
         if self.exp.lair and not self.lair_posted:
             self.lair_posted = True
@@ -257,7 +267,11 @@ class ExploreView(OwnedView):
                     self.exp.finish()
             self.build()
             if self.message:
-                await self.message.edit(embed=self.embed(), view=self)
+                file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
+                if file:
+                    await self.message.edit(embed=None, attachments=[file], view=None)
+                else:
+                    await self.message.edit(embed=self.embed(), view=None)
         except Exception:
             log.exception("Explore timeout handling failed")
         finally:
@@ -486,10 +500,14 @@ class TrainView(OwnedView):
                 cap = rules.mastery_cap(tech)
                 bar = f"{tech['mastery_exp']:,} / {cap:,}" if cap else f"{tech['mastery_exp']:,} (final stage)"
                 lines = [last, ""] + notes + [score_line, f"**{tech['name']}:** +{exp:,} mastery EXP · {bar}"]
+                card_notes = [last] + notes
                 if daily < 1:
                     lines.append(f"*Tired from practising today: EXP ×{daily:g}.*")
+                    card_notes.append(lines[-1])
                 if note:
                     lines.append(note)
+                    card_notes.append(note)
+                reward = {"technique": tech["name"], "exp": round(exp), "total": tech["mastery_exp"], "cap": cap}
                 done_title, verb = "🥋 Practice complete", "practise"
             else:
                 async with self.bot.db_lock:
@@ -499,11 +517,18 @@ class TrainView(OwnedView):
                     score_line, f"**Internal Qi:** +{qi:,.1f}",
                     f"**{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / {need:,}",
                 ] + events
+                card_notes = [last] + notes + events
+                reward = {"qi": qi, "total": p["qi"], "need": need, "realm": p["realm"], "layer": p["layer"]}
                 done_title, verb = "🥋 Training complete", "train"
             mins = trainer.cooldown_seconds(p, mode=s["mode"]) / 60
             self.clear_items()
-            await self.edit(self.step_embed("\n".join(lines).strip(), title=done_title,
-                                            footer=f"You can {verb} again in {mins:g} minutes."), view=False)
+            card = result_cards.train_data(p, s, score, reward, card_notes, mins, verb)
+            file = await result_cards.card_file(render_train, card, "train.png")
+            if file:
+                await self.interaction.edit_original_response(embed=None, attachments=[file], view=None)
+            else:
+                await self.edit(self.step_embed("\n".join(lines).strip(), title=done_title,
+                                                footer=f"You can {verb} again in {mins:g} minutes."), view=False)
         except Exception:
             log.exception("/train session failed")
             try:
@@ -554,10 +579,14 @@ class SparView(OwnedView):
 
     @property
     def title(self):
+        return ("🏯 " if self.trial else "🥋 ") + self.title_plain
+
+    @property
+    def title_plain(self):
         if self.trial:
             nxt = technique.MASTERY_STAGES[rules.stage_of(self.focus) + 1]["name"]
-            return f"🏯 Mastery Trial: {self.focus['name']} → {nxt}"
-        return "🥋 Sparring with the Master"
+            return f"Mastery Trial: {self.focus['name']} → {nxt}"
+        return "Sparring with the Master"
 
     def embed(self):
         sp = self.spar
@@ -608,10 +637,17 @@ class SparView(OwnedView):
             async with self.bot.db_lock:
                 self.result = self.finish()
         self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-        if self.result:
-            self.stop()
-            self.bot.busy.discard((self.owner_id, "spar"))
+        if not self.result:
+            await interaction.response.edit_message(embed=self.embed(), view=self)
+            return
+        self.stop()
+        self.bot.busy.discard((self.owner_id, "spar"))
+        await interaction.response.defer()
+        file = await result_cards.card_file(render_spar, self.card, "spar.png")
+        if file:
+            await interaction.edit_original_response(embed=None, attachments=[file], view=None)
+        else:
+            await interaction.edit_original_response(embed=self.embed(), view=None)
 
     def finish(self, forfeit=False):
         conn, uid, sp = self.bot.conn, self.owner_id, self.spar
@@ -622,6 +658,8 @@ class SparView(OwnedView):
         lines = [self.last, ""] if self.last else []
         lines.append("🏆 **You win the spar!**" if won else ("🏳️ You walked away from the spar." if forfeit
                                                             else "😤 **The master wins this time.**"))
+        notes = [self.last] if self.last else []        # for the result card
+        gains = []
         by_id = {t["id"]: t for t in self.techniques}
         for tid, exp in sp.mastery_awards(daily).items():
             if forfeit:
@@ -629,12 +667,15 @@ class SparView(OwnedView):
             gained, note = mastery.gain(conn, self.player, by_id[tid], exp)
             if gained:
                 lines.append(f"📈 **{by_id[tid]['name']}** +{gained} mastery EXP")
+                gains.append((by_id[tid], gained))
             if note and not self.trial:
                 lines.append(note)
+                notes.append(note)
         if not sp.timed and not forfeit:
             lines.append("*No technique was used at the right moment, so no mastery EXP this time.*")
         if daily < 1:
             lines.append(f"*You have sparred a lot today: EXP ×{daily:g}.*")
+            notes.append(lines[-1])
         if self.trial:
             if won:
                 stage = mastery.pass_trial(conn, self.focus)
@@ -642,9 +683,12 @@ class SparView(OwnedView):
             else:
                 db.set_cooldown(conn, uid, f"trial:{self.focus['id']}", technique.TRIAL_FAIL_COOLDOWN_HOURS * 3600)
                 lines.append(f"The trial failed. No EXP is lost; you may retry in {technique.TRIAL_FAIL_COOLDOWN_HOURS} hours.")
+            notes.append(lines[-1])
         db.bump_daily(conn, uid, "spar")
         db.set_cooldown(conn, uid, "spar", technique.SPAR_COOLDOWN_MINUTES * 60)
         lines.append(f"\n*You can spar again in {technique.SPAR_COOLDOWN_MINUTES // 60} hours.*")
+        outcome = "victory" if won else ("forfeit" if forfeit else "defeat")
+        self.card = result_cards.spar_data(self, outcome, gains, notes)
         return "\n".join(lines).strip()
 
     async def on_timeout(self):
@@ -655,7 +699,11 @@ class SparView(OwnedView):
                     self.result = self.finish(forfeit=True)
                 self.build()
                 if self.message:
-                    await self.message.edit(embed=self.embed(), view=self)
+                    file = await result_cards.card_file(render_spar, self.card, "spar.png")
+                    if file:
+                        await self.message.edit(embed=None, attachments=[file], view=None)
+                    else:
+                        await self.message.edit(embed=self.embed(), view=None)
         except Exception:
             log.exception("Spar timeout handling failed")
         finally:
