@@ -97,6 +97,43 @@ def alpha(c, a):
     return c[:3] + (a,)
 
 
+# ── Fight scenes: one palette per beast element (cards/battle.py) ─────
+# sky: (top, bottom) · moon · mist · rim: light around the silhouette · eyes · hp: enemy HP bar
+# panel: tint of the party / log panels · warn: the warning bar
+
+class SceneAccent(Accent):
+    def __init__(self, name, sky, moon, mist, rim, eyes, hp, panel, warn):
+        super().__init__(name, deep=panel, lacquer=(mix(warn, (255, 255, 255), 0.1), mix(warn, (0, 0, 0), 0.55)),
+                         main=hp, bright=rim, ink=mix(mist, (0, 0, 0), 0.5))
+        self.sky, self.moon, self.mist, self.rim, self.eyes = sky, moon, mist, rim, eyes
+        self.hp, self.panel, self.warn = hp, panel, warn
+
+
+ELEMENT_ACCENTS = {
+    "Blood":   SceneAccent("Blood", ((18, 4, 6), (64, 12, 16)), (240, 204, 194), (150, 40, 40), (232, 74, 62),
+                           (255, 96, 72), (204, 54, 48), (30, 8, 10), (128, 30, 30)),
+    "Frost":   SceneAccent("Frost", ((6, 12, 26), (24, 44, 70)), (222, 232, 246), (92, 132, 172), (150, 202, 242),
+                           (170, 236, 255), (132, 182, 226), (12, 22, 36), (66, 108, 148)),
+    "Flame":   SceneAccent("Flame", ((16, 8, 4), (74, 38, 10)), (246, 222, 164), (192, 110, 40), (242, 152, 60),
+                           (255, 232, 140), (226, 162, 72), (34, 18, 8), (168, 108, 38)),
+    "Shadow":  SceneAccent("Shadow", ((10, 6, 20), (38, 22, 60)), (216, 202, 242), (112, 72, 164), (172, 112, 242),
+                           (204, 152, 255), (152, 112, 212), (22, 12, 34), (100, 70, 142)),
+    "Thunder": SceneAccent("Thunder", ((10, 10, 22), (32, 32, 54)), (240, 236, 202), (92, 92, 142), (240, 222, 112),
+                           (255, 246, 170), (216, 202, 112), (16, 16, 30), (146, 136, 58)),
+    "Venom":   SceneAccent("Venom", ((6, 16, 8), (24, 52, 22)), (222, 240, 192), (92, 150, 62), (152, 222, 82),
+                           (204, 255, 102), (122, 192, 72), (12, 26, 12), (78, 118, 40)),
+    "Earth":   SceneAccent("Earth", ((16, 12, 6), (56, 42, 22)), (236, 222, 192), (142, 112, 72), (212, 162, 92),
+                           (255, 202, 122), (182, 142, 82), (28, 22, 12), (128, 94, 50)),
+    "Jade":    SceneAccent("Jade", ((4, 18, 16), (14, 56, 48)), (212, 246, 232), (62, 162, 132), (92, 222, 182),
+                           (142, 255, 212), (72, 192, 152), (8, 28, 24), (40, 118, 94)),
+    # sparring master (robed human) and the training courtyard
+    "Master":  SceneAccent("Master", ((10, 14, 26), (42, 50, 74)), (236, 232, 216), (122, 132, 164), (206, 194, 162),
+                           (236, 226, 190), (122, 152, 204), (14, 18, 30), (70, 90, 132)),
+    "Courtyard": SceneAccent("Courtyard", ((8, 22, 16), (30, 70, 52)), (232, 242, 222), (90, 160, 120),
+                             (130, 220, 170), (190, 255, 220), (84, 186, 130), (8, 26, 18), (40, 120, 84)),
+}
+ACCENTS.update({k.lower(): v for k, v in ELEMENT_ACCENTS.items()})
+
 # ── Text ──────────────────────────────────────────────────────────────
 
 def text(d, xy, s, f, fill, anchor="la", shadow=True):

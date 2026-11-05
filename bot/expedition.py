@@ -14,7 +14,7 @@ import explore
 import technique
 import training
 
-from . import combat, db, hunt, loot, mastery
+from . import combat, db, fight, hunt, loot, mastery
 from . import player as rules
 
 CLUES = {
@@ -84,6 +84,9 @@ class Expedition:
         self.lair = None          # set when an Elite Lair or Beast King Den is found
         self.announce = []        # server-wide announcements for rare finds
         self.banked = None        # what finish() put in the purse and bag
+        self.battle = None        # the fight in progress (pending == "fight"), see bot/fight.py
+        self.last_battle = None   # the fight that just ended (its final card is shown with the story)
+        self.enemy_kind = None    # "beast" or "bandit"
 
     # ── steps ────────────────────────────────────────────────────────
 
@@ -116,13 +119,78 @@ class Expedition:
     def _hero(self):
         return {"hp": self.hp, "max_hp": self.max_hp, "attack": self.attack, "defense": self.defense}
 
-    def _fight(self, enemy):
-        hero = self._hero()
-        res = combat.fight(hero, enemy, self.techniques, self.rng)
-        self.hp = hero["hp"]
-        self._mastery_from_fight(res)
-        self.story += res["log"]
-        return res
+    def _start_fight(self, enemy, kind):
+        """Begin an interactive fight (bot/fight.py). The view plays it; end_fight() applies the result."""
+        from . import crafting      # imported here: crafting imports the views, which import this module
+        f = fight.Fighter(self.player, self.techniques, self.hp, self.max_hp, self.attack, self.defense,
+                          pills=crafting.fight_pills(self.conn, self.user_id))
+        enemy["realm"] = self.player["realm"]
+        if kind == "beast":
+            enemy = fight.enemy_from_beast(enemy, enemy["name"])
+            enemy["slug"] = beasts.slug(enemy["name"])
+        else:
+            enemy = fight.enemy_from_bandits(enemy)
+        self.battle = fight.Battle([f], enemy, self.rng)
+        self.enemy_kind = kind
+        self.pending = "fight"
+
+    def end_fight(self):
+        """Apply the result of the finished (or abandoned) fight: HP, mastery EXP, rewards or defeat."""
+        b = self.battle
+        if b is None:
+            return
+        if not b.over:
+            b.result = "fled"
+        f = b.fighters[0]
+        self.hp = round(f.hp)
+        self.battle, self.last_battle, self.pending = None, b, None
+        self._mastery_from_fight({"attack_uses": f.atk_uses, "guard_uses": f.guard_uses})
+        name = b.enemy["name"]
+        self.story = []
+        if self.enemy_kind == "beast":
+            self._beast_result(b, name)
+        else:
+            self._bandit_result(b, name)
+        if self.hp <= 0:
+            self._defeat()
+
+    def _beast_result(self, b, name):
+        if b.result == "fled":
+            self.story.append(f"🏃 You escape from the **{name}**. It does not follow.")
+            return
+        if b.result == "escaped":
+            self.story.append(f"🌫️ The **{name}** slinks away into the wilds.")
+            return
+        if b.result != "won":
+            self.story.append(f"The {name} overwhelms you...")
+            return
+        self.beasts_slain += 1
+        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng)
+        self.coins += coins
+        self.story.append(f"⚔️ The **{name}** falls in {b.turn} turns! +🪷 {coins}")
+        c = loot.beast_chest(self.player, "normal", self.rng)
+        if c:
+            self.items.append(c)
+            self.story.append(f"{loot.CHEST_EMOJI[c['key']]} It dropped a **{c['name']}**!")
+        core = loot.roll_beast_core("normal", self.player["realm"], self.rng)
+        if core:
+            self.items.append(core)
+            self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
+
+    def _bandit_result(self, b, name):
+        if b.result in ("fled", "escaped"):
+            self.story.append(f"🏃 You slip away from the **{name}**." if b.result == "fled"
+                              else f"The **{name}** lose heart and scatter.")
+            return
+        if b.result == "won":
+            coins = loot.roll_coins(self.player, BANDIT_WIN_COINS, self.rng)
+            self.coins += coins
+            self.story.append(f"You drive them off and take their purse: +🪷 {coins}")
+            return
+        wallet = db.get_player(self.conn, self.user_id)["lotus_coins"]
+        stolen = int(wallet * explore.BANDIT_COIN_LOSS)
+        db.add_coins(self.conn, self.user_id, -stolen, "Robbed by bandits")
+        self.story.append(f"They beat you and rob **🪷 {stolen}** from your purse.")
 
     def _mastery_from_fight(self, res):
         for t in self.techniques:
@@ -143,22 +211,7 @@ class Expedition:
         enemy = combat.beast_stats(self.player, self.rng.choice(normals), self.step)
         bonus = f" (+{(self.step - 1) * 10}% stronger this deep)" if self.step > 1 else ""
         self.story.append(f"🐾 A **{enemy['name']}** ({enemy['role'].title()}) leaps out{bonus}!")
-        res = self._fight(enemy)
-        if not res["won"]:
-            self.story.append(f"The {enemy['name']} overwhelms you...")
-            return
-        self.beasts_slain += 1
-        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng)
-        self.coins += coins
-        self.story.append(f"⚔️ The **{enemy['name']}** falls! +🪷 {coins}")
-        c = loot.beast_chest(self.player, "normal", self.rng)
-        if c:
-            self.items.append(c)
-            self.story.append(f"{loot.CHEST_EMOJI[c['key']]} It dropped a **{c['name']}**!")
-        core = loot.roll_beast_core("normal", self.player["realm"], self.rng)
-        if core:
-            self.items.append(core)
-            self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
+        self._start_fight(enemy, "beast")
 
     def _treasure_chest(self):
         c = loot.chest(loot.pick(explore.TREASURE_CHEST_TIER, self.rng))
@@ -207,16 +260,7 @@ class Expedition:
     def _bandits(self, ambush=False):
         enemy = combat.bandit_stats(self.player, self.rng)
         self.story.append(f"🗡️ {'Ambush! ' if ambush else ''}**{enemy['name']}** block the path!")
-        res = self._fight(enemy)
-        if res["won"]:
-            coins = loot.roll_coins(self.player, BANDIT_WIN_COINS, self.rng)
-            self.coins += coins
-            self.story.append(f"You drive them off and take their purse: +🪷 {coins}")
-        else:
-            wallet = db.get_player(self.conn, self.user_id)["lotus_coins"]
-            stolen = int(wallet * explore.BANDIT_COIN_LOSS)
-            db.add_coins(self.conn, self.user_id, -stolen, "Robbed by bandits")
-            self.story.append(f"They beat you and rob **🪷 {stolen}** from your purse.")
+        self._start_fight(enemy, "bandit")
 
     def _wandering_merchant(self):
         grade = {1: "Mortal", 2: "Yellow"}.get(self.tier, "Mystic")
@@ -278,8 +322,6 @@ class Expedition:
         else:
             self.story.append("😈 The stranger leaps up, laughing. It was a trap!")
             self._bandits(ambush=True)
-            if self.hp <= 0:
-                self._defeat()
 
     def _stone_tablet(self):
         self.story.append("🪨 An ancient stone tablet. Its carvings speak of the martial path...")
@@ -329,6 +371,10 @@ class Expedition:
         """Bank the loot, set the cooldown (and injury on defeat). Safe to call twice."""
         if self.over:
             return
+        if self.battle is not None:       # walked away mid-fight (the view timed out): you flee
+            self.end_fight()
+            if self.over:
+                return
         now = time.time() if now is None else now
         self.over, self.pending = True, None
         coins, items = self.coins, list(self.items)

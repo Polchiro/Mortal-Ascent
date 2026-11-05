@@ -26,6 +26,7 @@ from . import player as rules
 from . import result_cards
 from cards.activity import render_explore, render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
+from .fight_view import FightMixin
 
 log = logging.getLogger("mortal-ascent")
 COLOR = 0xB02C22
@@ -111,6 +112,17 @@ class OwnedView(discord.ui.View):
             item.disabled = True
 
 
+async def announce(interaction, message, line):
+    """Post a public line after the interaction (or, when a timer ended the fight, in the message's channel)."""
+    try:
+        if interaction is not None:
+            await interaction.followup.send(line)
+        elif message is not None:
+            await message.channel.send(line)
+    except discord.HTTPException:
+        log.warning("Could not post an announcement", exc_info=True)
+
+
 def hp_bar(hp, max_hp, width=12):
     filled = round(width * hp / max_hp) if max_hp else 0
     return "▰" * filled + "▱" * (width - filled) + f"  {hp:,}/{max_hp:,}"
@@ -118,7 +130,7 @@ def hp_bar(hp, max_hp, width=12):
 
 # ── /explore ──────────────────────────────────────────────────────────
 
-class ExploreView(OwnedView):
+class ExploreView(FightMixin, OwnedView):
     def __init__(self, bot, owner_id, rng=None):
         super().__init__(owner_id, timeout=300)
         self.bot = bot
@@ -162,6 +174,9 @@ class ExploreView(OwnedView):
         e = self.exp
         if e.over:
             return
+        if e.pending == "fight":
+            self.fight_buttons()
+            return
         if self.choosing:
             for path in explore.PATHS:
                 self.button(path.title(), self.make_path(path), emoji=PATH_EMOJI[path], style=discord.ButtonStyle.primary)
@@ -190,28 +205,56 @@ class ExploreView(OwnedView):
     lair_posted = False
     news_sent = False
 
-    async def update(self, interaction):
+    async def update(self, interaction, fight_file=None):
+        """Show the expedition step. `interaction` may be fresh, already deferred, or None (a timer)."""
         self.build()
         if self.exp.over:
-            await interaction.response.defer()
+            if interaction and not interaction.response.is_done():
+                await interaction.response.defer()
             file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
-            if file:
-                await interaction.edit_original_response(embed=None, attachments=[file], view=None)
-            else:
-                await interaction.edit_original_response(embed=self.embed(), view=None)
+            kw = (dict(content=None, embed=None, attachments=[file], view=None) if file
+                  else dict(content=None, embed=self.embed(), attachments=[], view=None))
         else:
-            await interaction.response.edit_message(embed=self.embed(), view=self)
+            emb = self.embed()
+            kw = dict(content=None, embed=emb, view=self, attachments=[])
+            if fight_file:
+                emb.set_image(url=f"attachment://{fight_file.filename}")
+                kw["attachments"] = [fight_file]
+        if interaction and not interaction.response.is_done():
+            await interaction.response.edit_message(**kw)
+        else:
+            await self.edit_fight_message(interaction, **kw)
         self.notice = None
-        if self.exp.lair and not self.lair_posted:
+        if self.exp.lair and not self.lair_posted and interaction:
             self.lair_posted = True
             await post_hunt(self.bot, interaction, self.exp.lair, self.exp.player)
         if self.exp.over and not self.news_sent:
             self.news_sent = True
             for line in self.exp.announce:
-                await interaction.followup.send(line)
+                await announce(interaction, self.message, line)
         if self.exp.over:
             self.stop()
+            self.stop_fight()
             self.bot.busy.discard((self.owner_id, "explore"))
+
+    def fight_title(self):
+        what = "Bandits" if self.exp.enemy_kind == "bandit" else "Wild beast"
+        return f"{what} · Step {self.exp.step} of {explore.MAX_STEPS}"
+
+    async def maybe_fight(self, interaction):
+        """If the step started a fight, switch this message to the fight screen. Returns True if it did."""
+        if self.exp.pending != "fight":
+            return False
+        await self.start_fight(interaction, self.exp.battle, self.fight_title())
+        return True
+
+    async def on_fight_end(self, interaction):
+        file = await self.fight_card_file()       # the final card, shown above the story
+        async with self.bot.db_lock:
+            self.exp.end_fight()
+        self.fight = None
+        self.choosing = False
+        await self.update(interaction, fight_file=file)
 
     def make_path(self, path):
         async def cb(interaction):
@@ -221,6 +264,8 @@ class ExploreView(OwnedView):
             self.choosing = False
             if enc == "wandering_merchant":
                 self.merchant_step = self.exp.step
+            if await self.maybe_fight(interaction):
+                return
             await self.update(interaction)
             if self.exp.pending == "hazard":
                 self.exp.hazard["shown_at"] = time.time()
@@ -237,6 +282,8 @@ class ExploreView(OwnedView):
         async def cb(interaction):
             async with self.bot.db_lock:
                 self.exp.help_stranger(how)
+            if await self.maybe_fight(interaction):
+                return
             await self.update(interaction)
         return cb
 
@@ -260,6 +307,7 @@ class ExploreView(OwnedView):
 
     async def on_timeout(self):
         """Idle for 5 minutes: walk home with what was found."""
+        self.stop_fight()
         try:
             if not self.exp.over:
                 async with self.bot.db_lock:
@@ -828,14 +876,12 @@ class HuntView(discord.ui.View):
         await interaction.response.defer()
         async with self.bot.db_lock:
             fit = [u for u in self.members if not hunt.can_join(db.get_player(self.bot.conn, u))]
-            won, lines, news = hunt.resolve(self.bot.conn, self.lair, fit or [self.leader])
-        head = "🏆 **Victory!**" if won else "☠️ **The hunt failed.** Everyone limps home injured."
-        self.result = "\n".join([head] + lines)
+            battle = hunt.start_battle(self.bot.conn, self.lair, fit or [self.leader])
         self.clear_items()
         self.stop()
-        await interaction.edit_original_response(content=None, embed=self.embed(), view=None)
-        for line in news:
-            await interaction.followup.send(line)
+        fight_view = HuntFightView(self.bot, self.lair, battle, self.solo)
+        fight_view.message = self.message
+        await fight_view.start_fight(interaction, battle, fight_view.header())
 
     async def on_timeout(self):
         if self.result or not self.message:
@@ -846,6 +892,52 @@ class HuntView(discord.ui.View):
             await self.message.edit(content=None, embed=self.embed(), view=None)
         except discord.HTTPException:
             pass
+
+
+class HuntFightView(FightMixin, OwnedView):
+    """The team hunt on the fight screen: every member presses the buttons on the same message."""
+
+    def __init__(self, bot, lair, battle, solo=False):
+        super().__init__(battle.fighters[0].uid, timeout=900)
+        self.bot, self.lair, self.solo = bot, lair, solo
+        self.fight = battle
+
+    def header(self):
+        place = "Beast King's den" if self.lair["tier"] == "beast_king" else "Elite lair"
+        return f"{place} · {'Solo hunt' if self.solo or not self.fight.team else 'Team hunt'}"
+
+    async def interaction_check(self, interaction):
+        f = self.fight.fighter(interaction.user.id) if self.fight else None
+        if f is None:
+            await interaction.response.send_message("You are not part of this hunt.", ephemeral=True)
+            return False
+        if not f.active:
+            await interaction.response.send_message("You are out of this fight.", ephemeral=True)
+            return False
+        return True
+
+    async def on_fight_end(self, interaction):
+        b = self.fight
+        file = await self.fight_card_file()
+        async with self.bot.db_lock:
+            lines, news = hunt.pay(self.bot.conn, self.lair, b)
+        head = {"won": "🏆 **Victory!**", "fled": "🏃 **The hunters scattered.** Nobody is hurt, nobody is paid.",
+                "escaped": f"🌫️ **The {b.enemy['name']} escaped.** Everyone limps home injured."}.get(
+            b.result, "☠️ **The hunt failed.** Everyone limps home injured.")
+        place = "👑 Beast King Den" if self.lair["tier"] == "beast_king" else "⚔️ Elite Lair"
+        e = discord.Embed(title=f"{place}: {b.enemy['name']}", description="\n".join([head] + lines), color=COLOR)
+        kw = dict(content=None, embed=e, view=None, attachments=[])
+        if file:
+            e.set_image(url=f"attachment://{file.filename}")
+            kw["attachments"] = [file]
+        self.clear_items()
+        self.stop()
+        await self.edit_fight_message(interaction, **kw)
+        for line in news:
+            await announce(interaction, self.message, line)
+
+    async def on_timeout(self):
+        self.stop_fight()
 
 
 def beasts_team_size(tier):

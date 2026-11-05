@@ -1,9 +1,9 @@
 """
-Auto-resolved fights for /explore, using the damage formula in docs/stats.md.
+Shared combat maths (damage formula from docs/stats.md, beast and bandit stats, technique cooldowns).
 
-The full Strike / Guard / Break combat screen is not designed yet, so for now
-fights play out on their own and the player gets a short battle report.
-The player strikes with their equipped attack technique whenever it is off
+Real fights are interactive now (bot/fight.py, docs/combat.md). fight() below is the old
+auto-resolved fight, kept as a quick balance simulation for the tests:
+the player strikes with their equipped attack technique whenever it is off
 cooldown (basic strikes in between), and their defense technique catches
 about a third of incoming hits while it is ready. Cooldowns follow
 technique.TECHNIQUE_COOLDOWN_TURNS (see cooldown_turns below). Each use gives +20 mastery EXP
