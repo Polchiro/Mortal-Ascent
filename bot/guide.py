@@ -77,7 +77,7 @@ LESSONS = [
     ("Into the Wild",
      "\"The mountains hold beasts, bandits, herbs and treasure. Mostly beasts.\"",
      [("/explore", f"A {explore.MAX_STEPS}-step expedition. At each step, read the clue and pick a path. "
-                   "Go deeper for better finds, or turn back with what you have. Every 45 minutes."),
+                   f"Go deeper for better finds, or turn back with what you have. Every {explore.EXPLORE_COOLDOWN_MINUTES} minutes."),
       ("What waits", "Wild beasts, treasure chests, herb patches, merchants, stone tablets, hermits, "
                      "Blessed Lands that multiply your Qi... and rare lairs of Elite beasts and Beast Kings."),
       ("Defeat", f"Lose a fight and you are injured for {explore.DEFEAT_INJURY_HOURS} hour and drop half the coins "
