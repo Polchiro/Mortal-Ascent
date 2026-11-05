@@ -9,16 +9,18 @@ the buttons `bot/fight_view.py`.
 
 ## The fight screen
 
-One image card plus buttons, in a **single message that is edited every turn**.
+One image card, a short text panel under it, and buttons, in a **single message that is edited every turn**.
+Discord shows the image well under half size on a computer, so the card keeps only the big things in
+large type, and the details sit in the text panel, which Discord shows at normal reading size.
 
 | Part | What it shows |
 |---|---|
 | Scene window | The beast under a moon, mist and mountains, in its element's colours. Beast art from `art/beasts/<beast_slug>.png` if the file exists, otherwise a silhouette for its body type |
-| Over the scene | Beast seal, name, tier · role · element · realm, HP bar, element seal, status chips (Staggered, Hidden, Charged…) |
-| Top right | Turn number and seconds to choose |
-| Bottom left | **Hunting Party**: each member's seal, name, realm, HP bar and last move. The arrow marks the fighter the beast is going for; names turn red below 25% HP. Solo fights show **You** plus your equipped techniques and Mending pills, and whether each is ready |
-| Bottom right | **Last turn**: what happened, with small icons |
+| Over the scene | Beast seal, name, tier · role · element · realm, a big HP bar with the numbers, element seal |
+| Top right | Turn number, seconds to choose, status chips (Staggered, Hidden, Charged…) |
+| Middle | **You**: your seal, name, realm, a big HP bar, then your techniques and Mending pills and whether each is ready. Team hunts show the **Hunting Party** instead: each member's seal, name and HP bar (up to six); the arrow marks the fighter the beast is going for; names turn red below 25% HP |
 | Warning bar | The beast's next move: a tell, or its telegraphed element move |
+| Text panel | Everyone's HP, each member's last move (team hunts), **Last turn** with small icons, the full warning, and **Your moves**: what each technique and pill does and how many turns it still rests |
 
 Buttons, each with a round medallion icon (uploaded as the bot's application emojis at start-up;
 normal emojis if that fails):
@@ -131,7 +133,7 @@ pillars, lanterns) with the green Courtyard accent, and the buttons use the same
 | Top right | Move / Wave / Round / Try number and the seconds to answer |
 | Bars | Challenge progress (moves, points, rounds survived, tries) and yours (correct answers, stamina, HP) |
 | Chips | The session's conditions (Heavy Rain, Night Training…) |
-| Last move | The result of your last answer (Find the Weakness: your earlier guesses) |
+| Last move (text under the card) | The result of your last answer (Find the Weakness: your earlier guesses) |
 | Warning bar | The master's tell, or what the disciples are doing |
 
 Each card is drawn **before** its timer starts, so drawing never eats into your answer time.

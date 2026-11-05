@@ -461,4 +461,22 @@ def test_training_steps_show_courtyard_cards(conn, challenge, tier):
         await run()
         bot.cancel()
     asyncio.run(go())
-    assert shown and all(kw["embed"] is None and kw["attachments"][0].filename == "train_step.jpg" for kw in shown)
+    assert shown and all(kw["embed"] is not None and kw["attachments"][0].filename == "train_step.jpg" for kw in shown)
+
+
+def test_card_embed_has_the_readable_details():
+    from bot.fight_view import card_embed
+    b = make_battle()
+    force(b, "guard")
+    b.choose(b.fighters[0].uid, "strike")
+    b.resolve()
+    data_ = card_data(b, "Wild beast · Step 1 of 5")
+    text = card_embed(data_).description
+    assert "Wild Boar" in text and f"{round(b.fighters[0].hp):,} / " in text
+    assert "**Last turn**" in text and "Iron Fist" in text and "Strike ×" in text
+    t = make_battle(n=3)
+    for f in t.fighters:
+        t.choose(f.uid, "guard")
+    t.resolve()
+    text = card_embed(card_data(t, "Elite lair")).description
+    assert all(f.name in text for f in t.fighters) and "Guard" in text
