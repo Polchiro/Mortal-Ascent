@@ -136,12 +136,12 @@ def test_profile_command_twice_with_slow_avatar():
     import asyncio
     from unittest.mock import AsyncMock, MagicMock
 
-    from bot import client
     from bot.client import MortalAscent
+    from bot.sheet import view as sheet_view
 
     async def go():
         bot = MortalAscent(":memory:")
-        client.AVATAR_TIMEOUT_SECONDS = 0.2
+        sheet_view.AVATAR_TIMEOUT_SECONDS = 0.2
         start = bot.tree.get_command("start").callback
         profile = bot.tree.get_command("profile").callback
         balance = bot.tree.get_command("balance").callback

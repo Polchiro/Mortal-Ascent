@@ -1,6 +1,6 @@
 # fonts/
 
-The card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`) load fonts from this folder.
+The card renderers (the Character Sheet cards in `cards/`, plus `qi_card.py` and the older ink-wash cards) load fonts from this folder.
 The font files are not committed; download them from Google Fonts and drop them here with these exact names:
 
 | File | Source | Used for |

@@ -51,10 +51,9 @@ def give(conn, user_id, lotus_coins=0, moon_pearls=0, qi=0.0, now=None):
     p = db.get_player(conn, user_id)
     events = []
     fields = {}
-    if lotus_coins:
-        fields["lotus_coins"] = max(0, p["lotus_coins"] + lotus_coins)
-    if moon_pearls:
-        fields["moon_pearls"] = max(0, p["moon_pearls"] + moon_pearls)
+    for currency, amount in (("lotus_coins", lotus_coins), ("moon_pearls", moon_pearls)):
+        if amount:
+            db.change_currency(conn, user_id, currency, amount, "Admin gift", clamp=True)
     if qi:
         techs = db.get_techniques(conn, user_id)
         p, events = rules.add_qi(p, qi, techs, now=now)

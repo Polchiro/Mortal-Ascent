@@ -15,3 +15,7 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# font files (download them yourself, see fonts/README.md)
+fonts/*.ttf
+fonts/*.otf

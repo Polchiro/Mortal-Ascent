@@ -2,16 +2,18 @@
 
 Discord bot for Mortal Ascent, built on discord.py with SQLite player storage.
 It reuses the game constants (`realms.py`, `stats.py`, `training.py`, `economy.py`, …)
-and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`, `qi_card.py`) from the repo root.
+the Character Sheet cards in `cards/` (crimson and gold), and the `qi_card.py` renderer from the repo root.
+The older ink-wash cards (`profile_card.py`, `balance_card.py`, `inventory_card.py`) stay in the repo as a
+future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `/start` | Creates your character: rolls a talent, Mortal 1st Layer, Iron Fist + Horse Stance Guard, 50 Lotus Coins |
-| `/profile [member]` | Sends the ink-wash profile card (your Discord avatar sits in the Qi ring) |
-| `/balance` | Sends the purse card: Lotus Coins, Moon Pearls, active Heavenly Blessing |
-| `/inventory [category]` | Sends the bag card. Menus under it switch tab and page, and use an item: open a chest, equip a weapon, learn a manual, take a Qi pill |
+| `/profile [member]` | Opens your **Character Sheet** on the Profile tab: realm, phase and layer, HP / Attack / Defense, Internal Qi, equipped techniques and weapon, your avatar as the portrait. Buttons under it switch to the Techniques, Equipment, Inventory and Purse tabs. With a member it shows only their Profile card, with their purse hidden |
+| `/balance` | Opens the sheet on the Purse tab: Lotus Coins, Moon Pearls, active Heavenly Blessing and your last 8 transactions |
+| `/inventory [category]` | Opens the sheet on the Inventory tab: a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
@@ -20,8 +22,8 @@ and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
-| `/techniques` | All learned techniques with effects, power and mastery bars; equip or unequip (flex slot from Martial Warrior) |
-| `/equipment` | Your weapon, base → final stats, and menus to swap or remove your weapon |
+| `/techniques` | Opens the sheet on the Techniques tab: the Attack, Defense and Flex sockets, then every learned technique with effect, power, cooldown and mastery. Equip or unequip (not during a fight) |
+| `/equipment` | Opens the sheet on the Equipment tab: your weapon slot, base → final stats with every buff's source, and menus to swap or remove your weapon (not during a fight) |
 | `/shop` | Moon Pearl shop: Heavenly Fate Reroll (never lower), Qi pills, +20 bag slots, name change |
 | `/blessing` | The eight Heavenly Blessing tiers; buy one with Moon Pearls (same tier adds 30 days) |
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
@@ -72,7 +74,9 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **/recharge** shows the packages only. Real-money purchases must go through Discord's app
   monetization (economy.md), which needs setting up in the Discord Developer Portal first.
 - **Physician** costs 1 Lotus Coin per minute of injury left (× realm scale).
-- **Not built because the docs leave them undesigned:** player trading / market, armor and artifacts,
+- **Discard** removes items for good, with no refund. It asks first and refuses equipped items.
+- **Transactions:** every Lotus Coin and Moon Pearl change is written to a ledger (last 100 kept per player); the Purse tab shows the newest 8.
+- **Not built because the docs leave them undesigned:** player trading / market, armor and artifacts, character titles, a numeric level,
   Divine pity, profile card themes, Contribution Points and Spirit Stones, regions and weather.
 - **Defeat** keeps chests as well as manuals and weapons; half the coins and herbs found are lost.
 - **Merchant** sells one Qi pill (Mortal grade at tier 1, Yellow at tier 2, Mystic above) for
@@ -158,6 +162,8 @@ The token is read only from the `DISCORD_TOKEN` environment variable (or the
 git-ignored `.env`). Never commit it.
 
 ## Fonts
+
+Run `python scripts/render_sheet.py` to save every Character Sheet card for a made-up player in `previews/`.
 
 The cards look best with `Cinzel.ttf`, `Inter.ttf` and `NotoSerifSC-Bold.otf`
 (all free on Google Fonts) in the `fonts/` folder at the repo root (see `fonts/README.md`). Without them the

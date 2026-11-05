@@ -1,0 +1,161 @@
+"""
+Bag categories, item details for the Inspect panel, and which actions each item allows.
+
+Adding a category later (Beast Cores, Rare Treasures, ...) means one entry in
+CATEGORIES plus its details in `details()`. Actions only exist where the game
+has rules for them:
+
+    Open (chests) · Learn (manuals) · Take (Qi pills, Heaven-Defying Pill)
+    Equip / Unequip (weapons) · Discard (anything not equipped, after a confirm)
+
+Herbs have no use until alchemy exists, so they can only be inspected or discarded.
+"""
+from dataclasses import dataclass
+
+import equipments
+import explore
+import technique
+import training
+
+from .. import combat, db, loot
+from .. import player as rules
+
+
+@dataclass(frozen=True)
+class Category:
+    key: str
+    label: str
+    icon: str          # cards.theme.icon kind
+    use_verb: str      # button label for the main action ("" = none)
+
+
+CATEGORIES = {
+    "chests": Category("chests", "Chests", "chest", "Open"),
+    "manuals": Category("manuals", "Manuals", "scroll", "Learn"),
+    "weapons": Category("weapons", "Weapons", "sword", "Equip"),
+    "pills": Category("pills", "Pills", "pill", "Take"),
+    "materials": Category("materials", "Materials", "herb", ""),
+}
+ORDER = list(CATEGORIES)
+
+TIER_LABEL = {"wooden": "Wooden", "bronze": "Bronze", "silver": "Silver", "jade": "Jade"}
+CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
+
+
+def rarity(item):
+    """(label, key into cards.theme.RARITY)."""
+    cat, grade = item["category"], item.get("grade")
+    if cat == "weapons":
+        return grade.title(), grade
+    if cat == "chests":
+        return TIER_LABEL.get(item["key"], item["key"].title()), item["key"]
+    if cat in ("manuals", "pills"):
+        return f"{grade} Grade", grade
+    return "Common", None
+
+
+def item_icon(item):
+    if item["category"] == "weapons":
+        return (item.get("data") or {}).get("type") or item["key"]
+    return CATEGORIES[item["category"]].icon
+
+
+def actions(item):
+    """Action keys this item allows: use, unequip, discard."""
+    out = []
+    if item["category"] == "weapons" and item["equipped"]:
+        out.append("unequip")
+    elif CATEGORIES[item["category"]].use_verb:
+        out.append("use")
+    if not item["equipped"]:
+        out.append("discard")
+    return out
+
+
+def use_label(item):
+    return CATEGORIES[item["category"]].use_verb
+
+
+def details(item, player, learned_names=()):
+    """What the Inspect panel shows: {name, qty, rarity, rarity_key, icon, kind, lines, effects, notes}."""
+    cat = item["category"]
+    label, key = rarity(item)
+    lines, effects, notes = [], [], []
+    if cat == "manuals":
+        t = technique.TECHNIQUES[item["key"]]
+        kind = f"{t['school']} {t['type']} manual"
+        table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
+        power, passive = table[t["grade"]]
+        lines.append(f"Teaches {t['name']}, a {t['grade']} grade {t['type']} technique of the {t['school']} school.")
+        effects.append(f"×{power:.2f} damage when used" if t["type"] == "attack" else f"Blocks {power:.0%} when used")
+        effects.append(f"+{passive:.0%} {'Attack' if t['type'] == 'attack' else 'Defense'} while equipped")
+        if t.get("effect"):
+            effects.append(technique_effect(t["effect"]))
+        cd = combat.cooldown_turns(dict(t, stage=0))
+        effects.append(f"Rests {cd} turn{'s' if cd > 1 else ''} after use")
+        need = technique.GRADES[t["grade"]]
+        if t["name"] in learned_names:
+            notes.append(("Already learned: reading it again gives mastery EXP", "jade"))
+        if rules.realm_index(player["realm"]) < rules.realm_index(need):
+            notes.append((f"Needs {need} to comprehend", "red"))
+    elif cat == "weapons":
+        wtype = (item.get("data") or {}).get("type") or item["key"]
+        kind = f"{wtype.title()} weapon"
+        lines.append(f"A {label.lower()} tier {wtype}. Weapons only give stat buffs.")
+        effects += [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%") for k, v in rules.weapon_buffs(item).items()]
+        need = equipments.TIER_REALM_REQUIREMENT[item["grade"]]
+        if item["equipped"]:
+            notes.append(("Equipped", "gold"))
+        if rules.realm_index(player["realm"]) < rules.realm_index(need):
+            notes.append((f"Needs {need} to wield", "red"))
+    elif cat == "pills" and item["key"] == "heaven_defying":
+        kind = "Fate-changing pill"
+        lines.append("An ultra rare pill that defies the heavens themselves.")
+        effects.append("Raises your talent by one rank (up to Divine)")
+        notes.append(("Bound: cannot be traded", "gold"))
+    elif cat == "pills":
+        kind = "Qi pill"
+        lines.append("Swallow it to speed up how fast your Internal Qi gathers.")
+        effects.append(f"×{training.QI_PILLS[item['grade']]} Qi Rate for {training.QI_PILL_DURATION_HOURS} hours")
+        effects.append("+1 pill toxicity (only one pill works at a time)")
+    elif cat == "chests":
+        tier = item["key"]
+        kind = "Treasure chest"
+        lines.append("Dropped by beasts. Open it for Lotus Coins and a chance at rarer finds.")
+        effects.append(f"{explore.CHEST_MANUAL_CHANCE[tier]:.0%} chance of a technique manual")
+        effects.append(f"{equipments.CHEST_WEAPON_CHANCE[tier]:.0%} chance of a weapon")
+        lo, hi = loot.CHEST_COINS[tier]
+        scale = rules.realm_scale(player["realm"])
+        effects.append(f"{lo * scale:,}–{hi * scale:,} Lotus Coins")
+    else:
+        kind = "Herb"
+        lines.append("A wild herb gathered on expeditions. It will be used for pills once alchemy arrives.")
+    return {"name": item["name"], "qty": item["qty"], "rarity": label, "rarity_key": key, "icon": item_icon(item),
+            "kind": kind, "lines": lines, "effects": effects, "notes": notes,
+            "equipped": bool(item["equipped"])}
+
+
+def technique_effect(eff):
+    kind, val = eff
+    if kind == "combo":
+        return f"Combo: {val[0]} hits × {val[1]:.0%}"
+    if kind == "stagger":
+        return "Stagger: opponent can't Guard next turn" if val >= 1 else f"Stagger: next block −{val:.0%}"
+    if kind == "heavy":
+        return f"Heavy ×{val} (rests 1 turn longer)"
+    if kind == "unbreakable":
+        return "Unbreakable: Break moves deal half damage"
+    return f"{kind.title()} {val:.0%}"
+
+
+def discard(conn, user_id, item_id, qty=1):
+    """Throw away up to `qty` of an item. Returns (ok, message). Equipped items can't be discarded."""
+    item = db.get_item(conn, user_id, item_id)
+    if not item:
+        return False, "That item is no longer in your bag."
+    if item["equipped"]:
+        return False, f"Unequip **{item['name']}** before discarding it."
+    qty = min(qty, item["qty"])
+    if not db.discard_item(conn, user_id, item_id, qty):
+        return False, "That item changed in the meantime. Nothing was discarded."
+    return True, f"🗑️ You discarded **{item['name']}**" + (f" ×{qty}" if qty > 1 else "") + "."

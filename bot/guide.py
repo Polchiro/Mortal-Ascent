@@ -17,7 +17,8 @@ import talent as talent_rules
 from . import loot
 from . import player as rules
 from .expedition import MERCHANT_HERB_PRICE, MERCHANT_PILL_PRICE
-from .views import COLOR, SHOP_PILLS, OwnedView, effect_text
+from .sheet.items import technique_effect
+from .views import COLOR, SHOP_PILLS, OwnedView
 
 GUIDE_TIMEOUT = 600   # seconds the page buttons keep working
 
@@ -242,7 +243,7 @@ def technique_pages():
             if t["grade"] != grade:
                 continue
             kind = "⚔️ Attack" if t["type"] == "attack" else "🛡️ Defense"
-            fields.append((t["name"], f"{kind} · {t['school']}\n{effect_text(t)}"))
+            fields.append((t["name"], f"{kind} · {t['school']}\n{technique_effect(t['effect']) if t.get('effect') else 'No special effect'}"))
         start = [s["name"] for s in rules.starting_techniques()] if grade == "Mortal" else []
         pages.append((f"{GRADE_SEAL[grade]} {grade} Manuals", (
             f"Learn from **{min_realm}**. Attack: ×{skill:g} skill damage, +{pct(atk_passive)} ATK passive. "

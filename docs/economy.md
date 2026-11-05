@@ -13,18 +13,26 @@ Contribution Points and Spirit Stones stay hidden until they unlock.
 
 ## /balance
 
-Shows an **image card** in the same ink-wash scroll style as /profile
-(rendered by balance_card.py):
+Opens the **Purse** tab of the Character Sheet (see character-sheet.md), drawn in the
+crimson-and-gold style of the other sheet cards (cards/purse.py):
 
-- 钱囊 ("money pouch") in calligraphy down the left edge, with a red 财 seal
-- Title: **"<NAME>'S PURSE"** with a red brush stroke, realm and talent underneath
-- Two currency panels:
-  - 🪷 **Lotus Coins** in gold with a lotus icon
-  - 🌙 **Moon Pearls** in moon-blue with a crescent-and-pearl icon
+- Title: **"<NAME>'S TREASURY"**, realm and talent underneath
+- One panel per live currency:
+  - 🪷 **Lotus Coins** in gold with a lotus medallion
+  - 🌙 **Moon Pearls** in moon-blue with a pearl medallion
   - Each shows the short number large (128.45K) and the exact number small (128,450)
 - **Heavenly Blessing** panel: tier name, its perks, and a bar showing days left out of 30
   (or "No active blessing · /blessing to view tiers")
-- Footer hint: "/recharge · Moon Pearl Pavilion"
+- **Recent Transactions:** the last 8 changes to coins or pearls, with the reason, how long ago,
+  the amount (+ green, − red) and the balance after
+
+Contribution Points and Spirit Stones get their own panel once they unlock.
+
+### Transaction rules
+
+- Every change to a currency goes through one function that writes a ledger row in the same step
+- A balance can never go below 0: a purchase you can't afford changes nothing
+- If something can't be delivered after paying (e.g. a full bag), the price is refunded at once
 
 ## /recharge — Moon Pearl Pavilion
 

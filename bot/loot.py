@@ -153,7 +153,7 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
     if cat == "chests":
         coins, found = open_chest(p, item["key"], rng)
         db.remove_item(conn, item_id)
-        db.add_coins(conn, user_id, coins)
+        db.add_coins(conn, user_id, coins, f"Opened {item['name']}")
         stored, lost = store(conn, user_id, found)
         if announce is not None:
             announce += [a for a in (announcement(p["name"], i) for i in stored) if a]
