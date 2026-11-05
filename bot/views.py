@@ -687,7 +687,7 @@ class SparView(FightMixin, OwnedView):
         """Data for cards.battle.render_battle."""
         from cards.activity import clean
         from cards.theme import SCHOOL_CHAR
-        from .fight_view import SCHOOL_COLOR, _school
+        from .fight_view import SCHOOL_COLOR, _school, describe
         sp = self.spar
         tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
         loadout = []
@@ -698,10 +698,11 @@ class SparView(FightMixin, OwnedView):
             left = sp.cooldowns[key]
             school = _school(t)
             loadout.append({"name": t["name"], "seal": SCHOOL_CHAR.get(school, "武"), "color": SCHOOL_COLOR.get(school),
-                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}"})
+                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
+                            "desc": describe(t)})
         timed = sum(sp.timed.values())
         loadout.append({"name": "Well-timed techniques", "seal": "时", "color": (240, 200, 100), "ready": bool(timed),
-                        "state": f"{timed} (mastery EXP)"})
+                        "state": str(timed), "desc": "Only these give mastery EXP"})
         hint, _ = clean(sp.hint())
         if sp.turn == 1 and not self.last:
             warning = (hint, "Guard beats Strike · Break beats Guard · Strike beats Break. Timed techniques earn mastery.")

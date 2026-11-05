@@ -381,7 +381,7 @@ def test_fight_card_renders_every_element_and_body(element, body):
     b = make_battle(n=1 if body != "dragon" else 3)
     b.enemy["element"], b.enemy["body"] = element, body
     img = render_battle(card_data(b, "Wild beast · Step 1 of 5"))
-    assert img.size == (1200, 860)
+    assert img.size == (1200, battle_card_height())
 
 
 def test_scene_is_cached():
@@ -402,7 +402,7 @@ def test_spar_card_renders_with_the_master(conn):
         sv.last = sv.spar.play("guard")
         data_ = sv.fight_card()
         assert data_["palette"] == "Master" and data_["enemy"]["body"] == "master"
-        assert render_battle(data_).size == (1200, 860)
+        assert render_battle(data_).size == (1200, battle_card_height())
     asyncio.run(go())
 
 
@@ -420,3 +420,8 @@ def test_spar_timeouts_guard_then_forfeit(conn):
         assert sv.result and "walked away" in sv.result
         sv._cancel_timer()
     asyncio.run(go())
+
+
+def battle_card_height():
+    from cards.battle import H
+    return H
