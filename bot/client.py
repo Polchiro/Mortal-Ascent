@@ -1,6 +1,6 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
-/meditate, /seclusion, /breakthrough, /practice, /spar, /techniques, /equipment,
+/meditate, /seclusion, /breakthrough, /qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary. Admin testing commands are in admin.py.
 """
 import asyncio
@@ -17,8 +17,9 @@ import talent as talent_rules
 import training
 from balance_card import render_balance
 from profile_card import render_profile
+from qi_card import render_qi
 
-from . import admin, combat, db, hunt, loot, trainer
+from . import admin, combat, db, hunt, loot, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
@@ -356,6 +357,18 @@ def register_commands(bot):
         if qi >= 0.1:
             lines.append(f"(Collected {qi:,.1f} passive Qi first.)")
         await interaction.response.send_message(embed=embed("🧘 Closed-Door Seclusion", "\n".join(lines + events)))
+
+    @tree.command(name="qi", description="See your Internal Qi, Qi Rate, time to the next gate and every active boost")
+    async def qi_status(interaction: discord.Interaction):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        await interaction.response.defer()
+        data = qi.qi_data(p, db.get_techniques(bot.conn, uid))
+        image = await card_render.render(render_qi, data)
+        await interaction.followup.send(file=png(image, "qi.png"))
 
     @tree.command(name="breakthrough", description="Attempt to break through a phase bottleneck or into the next realm")
     async def breakthrough(interaction: discord.Interaction):
