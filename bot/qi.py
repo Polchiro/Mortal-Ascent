@@ -1,6 +1,6 @@
 """
 /qi: everything about a player's Internal Qi in one place. Builds the data dict that
-qi_card.render_qi expects, using the same formulas as /meditate, /seclusion and /train
+cards.dantian.render_dantian expects, using the same formulas as /meditate, /seclusion and /train
 (bot/player.py, training.py).
 """
 import time

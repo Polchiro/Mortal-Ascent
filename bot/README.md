@@ -2,8 +2,8 @@
 
 Discord bot for Mortal Ascent, built on discord.py with SQLite player storage.
 It reuses the game constants (`realms.py`, `stats.py`, `training.py`, `economy.py`, …)
-the Character Sheet cards in `cards/` (crimson and gold), and the `qi_card.py` renderer from the repo root.
-The older ink-wash cards (`profile_card.py`, `balance_card.py`, `inventory_card.py`) stay in the repo as a
+the Character Sheet cards and the `/internal qi` dantian card in `cards/` (crimson and gold).
+The older ink-wash cards (`profile_card.py`, `balance_card.py`, `inventory_card.py`, `qi_card.py`) stay in the repo as a
 future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 
 ## Commands
@@ -18,7 +18,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
 | `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
-| `/internal qi` | Sends the dantian card: Qi bar (plus Qi waiting to be collected), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
+| `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting to be collected), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |

@@ -70,3 +70,18 @@ def test_card_renders(conn, monkeypatch):
     monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
     monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])
     assert render_qi(qi.qi_data(p, techs)).size == (1200, H_QI)
+
+
+def test_dantian_card_renders(conn, monkeypatch):
+    import profile_card
+    from cards.dantian import H, render_dantian
+
+    p, techs = make(conn)
+    assert render_dantian(qi.qi_data(p, techs)).size == (1200, H)
+    p["seclusion_start"], p["seclusion_end"] = p["created_at"], p["created_at"] + 3600   # another status
+    assert render_dantian(qi.qi_data(p, techs)).size == (1200, H)
+    monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
+    monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])
+    profile_card.clear_font_cache()
+    assert render_dantian(qi.qi_data(p, techs)).size == (1200, H)
+    profile_card.clear_font_cache()

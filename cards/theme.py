@@ -412,7 +412,7 @@ def orb(img, center, r, frac, label=None):
     # highlight
     hl = Image.new("RGBA", sphere.size, (0, 0, 0, 0))
     ImageDraw.Draw(hl).ellipse((sphere.size[0] * 0.24, sphere.size[1] * 0.12, sphere.size[0] * 0.5,
-                                sphere.size[1] * 0.26), fill=(255, 255, 255, 60))
+                                sphere.size[1] * 0.26), fill=(255, 255, 255, 40))
     sphere.alpha_composite(hl.filter(ImageFilter.GaussianBlur(3 * S)))
     img.alpha_composite(sphere, P(cx - r, cy - r))
     d = ImageDraw.Draw(img)
