@@ -759,7 +759,8 @@ class SparView(FightMixin, OwnedView):
             self._deadline = time.time() + battle_data.TURN_SECONDS
             try:
                 img = await card_render.render(render_battle, self.fight_card())
-                file = png(img, "spar_fight.png")
+                from .fight_view import jpg
+                file = jpg(img, "spar_fight.jpg")
             except Exception:
                 log.exception("Could not render the spar card")
                 file = None
