@@ -124,6 +124,24 @@ commands (usually it's a few minutes). If you see an old command list, restart D
 `DISCORD_GUILD_ID` is optional. Older versions synced a separate copy of the commands to that
 server; if it is set, the bot now removes that copy so commands are not listed twice.
 
+Run **one** copy of the bot. A second `python -m bot` on the same database stops at once with
+a message, because two copies would both answer every `m` command (that is how one `m explore`
+once started two expeditions). A copy on another computer or host with the same token can't be
+detected this way, so don't run the bot in two places.
+
+### Lag and double clicks
+
+- `/explore`, `/train`, `/practice` and `/spar` start their cooldown the moment the session starts,
+  and mark the session as running in the same step, before the bot waits on anything. A second
+  send of the same command (slash or `m`) is turned away, and a restart can't skip the cooldown.
+  The cooldown is set again when the session ends, so the footer's "again in N minutes" still holds.
+- Every button and menu on a player's view handles one click at a time. A double click during lag
+  gets "still being handled", and a button from an earlier step (or a finished view) does nothing.
+  This covers confirmations (breakthrough, reroll, physician, shop, blessings), so nothing is
+  bought or claimed twice. Starting a team hunt also only happens once.
+- `/seclusion` checks again under the database lock that you are not already in seclusion,
+  exploring or sparring.
+
 ### Playing in DMs
 
 Open a DM with the bot (click its name, then **Message**) and type `/`. Every command works there.

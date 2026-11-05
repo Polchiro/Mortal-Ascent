@@ -4,6 +4,7 @@
 # local data
 *.db
 *.db-journal
+*.db.lock
 
 # preview images written by the card renderers and scripts/render_cards.py
 *_preview.png

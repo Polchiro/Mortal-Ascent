@@ -50,11 +50,46 @@ async def safe_reply(interaction, msg):
         log.exception("Could not send a reply")
 
 
+STILL_WORKING_MSG = "⏳ Your last click is still being handled. Wait a moment."
+OLD_BUTTON_MSG = "That button is from an earlier step and no longer works. Use the newest buttons."
+
+
 class OwnedView(discord.ui.View):
+    """A view only its owner can press.
+
+    Every button and menu is guarded against lag exploits: while one click is being handled, other
+    clicks on the view are turned away, and buttons from an earlier step (before the view was
+    rebuilt) or from a finished view do nothing. So a double click can't run an action twice."""
+
     def __init__(self, owner_id, timeout=180):
+        self._generation = 0       # goes up every time the buttons are rebuilt
+        self._handling = False     # a click is being handled right now
         super().__init__(timeout=timeout)
         self.owner_id = owner_id
         self.message = None
+
+    def clear_items(self):
+        self._generation += 1
+        return super().clear_items()
+
+    def add_item(self, item):
+        inner, generation = item.callback, self._generation
+
+        async def guarded(interaction):
+            if self._handling:
+                await safe_reply(interaction, STILL_WORKING_MSG)
+                return
+            if generation != self._generation or self.is_finished():
+                await safe_reply(interaction, OLD_BUTTON_MSG)
+                return
+            self._handling = True       # set before any await, so a second click can't slip in
+            try:
+                await inner(interaction)
+            finally:
+                self._handling = False
+
+        item.callback = guarded
+        return super().add_item(item)
 
     async def interaction_check(self, interaction):
         if interaction.user.id != self.owner_id:
@@ -955,6 +990,7 @@ class HuntView(discord.ui.View):
         self.members = {finder["user_id"]: finder["name"]}
         self.result = None
         self.message = None
+        self.started = False
         if not solo:
             self.join_btn = OwnedView.button(self, "Join hunt", self.on_join, emoji="⚔️",
                                              style=discord.ButtonStyle.success)
@@ -1011,6 +1047,10 @@ class HuntView(discord.ui.View):
         if interaction.user.id != self.leader:
             await interaction.response.send_message("Only the one who found the lair can start the hunt.", ephemeral=True)
             return
+        if self.started:     # a double click during lag must not fight (and pay out) twice
+            await interaction.response.send_message("The hunt has already begun!", ephemeral=True)
+            return
+        self.started = True
         await interaction.response.defer()
         async with self.bot.db_lock:
             fit = [u for u in self.members if not hunt.can_join(db.get_player(self.bot.conn, u))]
