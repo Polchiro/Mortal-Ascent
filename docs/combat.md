@@ -120,6 +120,23 @@ against a stronger master. New here:
   the technique buttons stay on the second row.
 - The **You** panel counts your well-timed technique uses; the warning bar shows his tell.
 
+## /train and /practice
+
+The challenges keep their rules from challenges.md and `challenges.py`. Only the look changes:
+every step is shown in the same framed card, in the **training courtyard** (temple halls, red
+pillars, lanterns) with the green Courtyard accent, and the buttons use the same medallion icons.
+
+| Part | What it shows |
+|---|---|
+| Top right | Move / Wave / Round / Try number and the seconds to answer |
+| Bars | Challenge progress (moves, points, rounds survived, tries) and yours (correct answers, stamina, HP) |
+| Chips | The session's conditions (Heavy Rain, Night Training…) |
+| Last move | The result of your last answer (Find the Weakness: your earlier guesses) |
+| Warning bar | The master's tell, or what the disciples are doing |
+
+Each card is drawn **before** its timer starts, so drawing never eats into your answer time.
+Night Training shows a dark card first and the real one when the moonlight reveals the move.
+
 ## Rewards (unchanged)
 
 - Wild beasts: Lotus Coins, chest chance, beast cores, beasts slain.

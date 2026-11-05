@@ -339,6 +339,7 @@ class TrainView(OwnedView):
         self.future = None
         self.interaction = None    # the /train command interaction; we edit its message
         self.task = None
+        self.player = db.get_player(bot.conn, owner_id)
         self.button("Begin", self.on_begin, emoji="🥋", style=discord.ButtonStyle.success)
 
     @property
@@ -346,6 +347,67 @@ class TrainView(OwnedView):
         s = self.session
         what = f"Practice: {s['technique_name']}" if s["mode"] == "practice" else "Training"
         return f"{what} · {trainer.CHALLENGE_NAMES[s['challenge']]}"
+
+    # ── the framed courtyard card (cards/battle.py with the Courtyard palette) ──
+
+    def card(self, turn_label, prompt, hint, progress, bar_label, you, you_label, stats, log_lines,
+             seconds=None, enemy="The Master", conditions=True):
+        """Data for one step of the challenge. progress/you: fractions for the two bars."""
+        from cards.activity import clean
+        s = self.session
+        p = self.player
+        chips = [clean(trainer.CONDITION_NAMES[c])[0] for c in s["conditions"]] if conditions else []
+        name = clean(trainer.CHALLENGE_NAMES[s["challenge"]])[0]
+        log_ = [(icon, clean(t)[0]) for icon, t in log_lines if clean(t)[0]]
+        return {"palette": "Courtyard", "backdrop": "courtyard", "header": clean(self.title)[0],
+                "turn": 0, "turn_label": turn_label, "seconds": seconds or 0,
+                "seconds_label": f"{seconds:.2g}s to answer" if seconds else "No time limit", "result": None,
+                "enemy": {"name": enemy, "seal": "师" if "Master" in enemy else "徒", "tags":
+                          [name, f"Tier {s['tier']}", "Practice" if s["mode"] == "practice" else "Training"],
+                          "hp": max(0.0, min(1.0, progress)), "max_hp": 1, "bar_label": bar_label,
+                          "element_seal": "院", "statuses": chips, "body": "master", "slug": None},
+                "party_title": "You",
+                "party": [{"name": p["name"], "realm": p["realm"], "layer": p["layer"], "hp": max(0.0, min(1.0, you)),
+                           "max_hp": 1, "bar_label": you_label, "bar_color": (84, 186, 130), "move": "", "arrow": True}],
+                "loadout": [{"name": k, "seal": "练", "color": (84, 186, 130), "ready": True, "state": str(v)}
+                            for k, v in stats[:3]],
+                "log": log_ or [("star", "Breathe in. Wait for his first move.")], "log_title": "Last move",
+                "warning": (clean(prompt)[0], clean(hint)[0])}
+
+    async def card_files(self, *cards):
+        """Render the cards before the timer starts (so drawing never eats into the answer time)."""
+        out = []
+        for c in cards:
+            if c is None:
+                out.append(None)
+                continue
+            try:
+                from .fight_view import jpg
+                out.append(jpg(await card_render.render(render_battle, c), "train_step.jpg"))
+            except Exception:
+                log.exception("Could not render the training card")
+                out.append(None)
+        return out
+
+    def intro_card(self):
+        s = self.session
+        conds = [(("hourglass", f"{trainer.CONDITION_NAMES[c]}: {trainer.CONDITION_TEXT[c]}")) for c in s["conditions"]]
+        if s["event"] == "wandering_hermit":
+            conds.insert(0, ("star", "A Wandering Hermit appears! Hardest version, two conditions, x5 Qi."))
+        return self.card("READY", "Guard beats Strike · Break beats Guard · Strike beats Break",
+                         "Press Begin when you are ready. Buttons shuffle every round.", 0, "Not started", 1,
+                         self.player["realm"], [("Tier", s["tier"]), ("Conditions", len(s["conditions"]))], conds)
+
+    async def send_intro(self, interaction):
+        """The /train answer: the courtyard card above the rules, with the Begin button."""
+        await interaction.response.defer()
+        e = self.intro()
+        (file,) = await self.card_files(self.intro_card())
+        kw = dict(embed=e, view=self)
+        if file:
+            e.set_image(url=f"attachment://{file.filename}")
+            kw["attachments"] = [file]
+        await interaction.edit_original_response(**kw)
 
     def intro(self):
         s = self.session
@@ -386,7 +448,7 @@ class TrainView(OwnedView):
 
     async def on_begin(self, interaction):
         self.clear_items()
-        await interaction.response.edit_message(embed=self.step_embed("*Get ready...*"), view=self)
+        await interaction.response.edit_message(embed=self.step_embed("*Get ready...*"), attachments=[], view=self)
         self.task = asyncio.create_task(self.run())
 
     def step_embed(self, body, title=None, footer=None):
@@ -400,21 +462,33 @@ class TrainView(OwnedView):
         self.clear_items()
         choices = list(choices)
         self.rng.shuffle(choices)   # anti-AFK: positions shuffle every round
+        from .fight_view import emoji as icon
         for key, label, emoji in choices:
             async def cb(interaction, key=key):
                 await interaction.response.defer()
                 if self.future and not self.future.done():
                     self.future.set_result((key, time.monotonic()))
-            self.button(label, cb, emoji=emoji, style=discord.ButtonStyle.primary)
+            em = icon(self.bot, "attack_tech" if key == "technique" else key) if key in (
+                "strike", "guard", "break", "technique") else emoji
+            self.button(label, cb, emoji=em, style=discord.ButtonStyle.primary)
 
-    async def edit(self, embed, view=True):
-        await self.interaction.edit_original_response(embed=embed, view=self if view else None)
+    async def edit(self, embed, view=True, file=None):
+        """Show a step: the card image when it rendered, else the text embed."""
+        if file is not None:
+            await self.interaction.edit_original_response(embed=None, attachments=[file], view=self if view else None)
+            return
+        await self.interaction.edit_original_response(embed=embed, attachments=[], view=self if view else None)
 
-    async def ask(self, embed, hidden_embed, choices, seconds):
-        """Show a prompt with buttons. Returns (choice or None, elapsed seconds)."""
+    async def ask(self, embed, hidden_embed, choices, seconds, card=None, hidden_card=None):
+        """Show a prompt with buttons. Returns (choice or None, elapsed seconds).
+        card / hidden_card: the framed card versions, drawn before the clock starts."""
         self.set_choices(choices)
         self.future = asyncio.get_running_loop().create_future()
-        await self.edit(hidden_embed or embed)
+        file, hidden_file = await self.card_files(card, hidden_card if hidden_embed else None)
+        if hidden_embed:
+            await self.edit(hidden_embed, file=hidden_file)
+        else:
+            await self.edit(embed, file=file)
         t0 = time.monotonic()
         wait = seconds + trainer.TIMER_GRACE_SECONDS
         if hidden_embed:
@@ -423,7 +497,7 @@ class TrainView(OwnedView):
                 key, at = await asyncio.wait_for(asyncio.shield(self.future), reveal)
                 return key, at - t0
             except asyncio.TimeoutError:
-                await self.edit(embed)
+                await self.edit(embed, file=file)
                 wait -= reveal
         try:
             key, at = await asyncio.wait_for(self.future, max(0.1, wait))
@@ -442,7 +516,17 @@ class TrainView(OwnedView):
             head = f"{last}\n\n**Move {i}/{len(plan)}** · ⏱️ {secs:g}s\n"
             embed = self.step_embed(head + f"🥋 *{tell}*", title)
             hidden = self.step_embed(head + "🌙 *Darkness... you cannot see his move yet.*", title) if night else None
-            key, elapsed = await self.ask(embed, hidden, self.counter_choices(), secs)
+            done = i - 1
+            args = (f"MOVE {i}/{len(plan)}",)
+            kw = dict(progress=done / len(plan), bar_label=f"Move {i} of {len(plan)}",
+                      you=right / done if done else 0, you_label=f"{right} correct",
+                      stats=[("Correct", f"{right}/{done}"), ("Time per move", f"{secs:g}s")],
+                      log_lines=[("star", last)] if last else [], seconds=secs,
+                      enemy="Rival Disciple" if title else "The Master")
+            card = self.card(*args, tell, "Press the counter before time runs out.", **kw)
+            hidden_card = self.card(*args, "Darkness... you cannot see his move yet.", "Wait for the moonlight.",
+                                    **kw) if night else None
+            key, elapsed = await self.ask(embed, hidden, self.counter_choices(), secs, card, hidden_card)
             want = trainer.counter_of(stance)
             if key == want and elapsed <= secs + trainer.TIMER_GRACE_SECONDS:
                 right += 1
@@ -466,7 +550,15 @@ class TrainView(OwnedView):
             embed = self.step_embed(head + f"A disciple attacks with a **{trainer.STANCE_EMOJI[stance]} "
                                            f"{trainer.STANCE_LABEL[stance]}**!")
             hidden = self.step_embed(head + "🌙 *A shape moves in the dark...*") if night else None
-            key, elapsed = await self.ask(embed, hidden, choices, secs)
+            kw = dict(progress=w.points / w.target if w.target else 0, bar_label=f"Points {w.points:g} / {w.target}",
+                      you=w.stamina / trainer.challenges.ENDLESS_WAVES["start_stamina"],
+                      you_label=f"Stamina {w.stamina:g}", stats=[("Wave", w.wave + 1), ("Time", f"{secs:.2g}s")],
+                      log_lines=[("star", last)] if last else [], seconds=secs, enemy="Disciples")
+            card = self.card(f"WAVE {w.wave + 1}", f"A disciple attacks with a {trainer.STANCE_LABEL[stance]}!",
+                             "Counter it, or spend stamina on your Technique for double points.", **kw)
+            hidden_card = self.card(f"WAVE {w.wave + 1}", "A shape moves in the dark...", "Wait for the moonlight.",
+                                    **kw) if night else None
+            key, elapsed = await self.ask(embed, hidden, choices, secs, card, hidden_card)
             last = w.answer(stance, key, elapsed, secs)
         return w.score, f"{last}\n\nYou scored **{w.points:g}** of {w.target} points."
 
@@ -484,7 +576,17 @@ class TrainView(OwnedView):
                              f"{trainer.STANCE_LABEL[mv]}**")
             embed = self.step_embed(head + "\n".join(sides))
             hidden = self.step_embed(head + "🌙 *Two shapes move in the dark...*") if night else None
-            key, elapsed = await self.ask(embed, hidden, self.counter_choices(), secs)
+            prompt = " · ".join(f"{'Left' if i == 0 else 'Right'}{' (strong)' if i == a.strong else ''}: "
+                                f"{trainer.STANCE_LABEL[mv]}" for i, mv in enumerate(a.moves))
+            start_hp = trainer.challenges.AMBUSH["player_hp"]
+            kw = dict(progress=a.survived / a.target, bar_label=f"Survived {a.survived} / {a.target}",
+                      you=a.hp / start_hp, you_label=f"{a.hp} / {start_hp} HP",
+                      stats=[("Round", a.round), ("Time", f"{secs:g}s")],
+                      log_lines=[("star", last)] if last else [], seconds=secs, enemy="Two Disciples")
+            card = self.card(f"ROUND {a.round}", prompt, "One counter stops every attacker whose move it beats.", **kw)
+            hidden_card = self.card(f"ROUND {a.round}", "Two shapes move in the dark...", "Wait for the moonlight.",
+                                    **kw) if night else None
+            key, elapsed = await self.ask(embed, hidden, self.counter_choices(), secs, card, hidden_card)
             last = a.answer(key, elapsed, secs)
         return a.score, f"{last}\n\nYou survived **{a.survived}** of {a.target} rounds."
 
@@ -498,7 +600,19 @@ class TrainView(OwnedView):
                 cur = " ".join(trainer.STANCE_EMOJI[m] for m in guess) + " ▫️" * (w.length - len(guess))
                 body = (f"**Try {len(w.history) + 1}/{w.tries}** · build a guess of {w.length} moves\n"
                         + (hist + "\n\n" if hist else "") + f"Your guess: {cur}")
-                key, _ = await self.ask(self.step_embed(body), None, self.counter_choices(), 60)
+                names = lambda g: " · ".join(trainer.STANCE_LABEL[m] for m in g)   # noqa: E731
+                history = [("shield", f"{names(g)}  ->  {ex} right place, {near} wrong place")
+                           for g, (ex, near) in w.history[-6:]]
+                used = len(w.history)
+                card = self.card(f"TRY {used + 1}/{w.tries}",
+                                 "Your guess: " + " · ".join([trainer.STANCE_LABEL[m] for m in guess]
+                                                             + ["_"] * (w.length - len(guess))),
+                                 f"Build a guess of {w.length} moves. Fewer tries, higher score.",
+                                 progress=used / w.tries, bar_label=f"Tries {used} / {w.tries}",
+                                 you=len(guess) / w.length, you_label=f"{len(guess)} / {w.length} moves",
+                                 stats=[("Sequence length", w.length), ("Tries left", w.tries - used)],
+                                 log_lines=history, seconds=None)
+                key, _ = await self.ask(self.step_embed(body), None, self.counter_choices(), 60, card)
                 if key is None:
                     w.history.append((guess, (0, 0)))
                     break
