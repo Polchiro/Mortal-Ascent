@@ -1,7 +1,7 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
-/shop, /blessing, /recharge, /reroll, /physician, /bestiary. Admin testing commands are in admin.py.
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary. /tutorial and /index are in guide.py. Admin testing commands are in admin.py.
 """
 import asyncio
 import io
@@ -19,7 +19,7 @@ from balance_card import render_balance
 from profile_card import render_profile
 from qi_card import render_qi
 
-from . import admin, combat, db, hunt, loot, qi, trainer
+from . import admin, combat, db, guide, hunt, loot, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
@@ -49,6 +49,7 @@ class MortalAscent(discord.Client):
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
         admin.register(self)
+        guide.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: bank the passive Qi gathered since last time."""
