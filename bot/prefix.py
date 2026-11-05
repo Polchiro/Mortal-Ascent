@@ -37,6 +37,9 @@ ALIASES = {
     "bal": "balance",
     "inv": "inventory",
     "p": "profile",
+    "g": "gather",
+    "herbs": "index herbs",
+    "pills": "index pills",
 }
 
 USER_ID = re.compile(r"^<@!?(\d+)>$|^(\d{15,21})$")
