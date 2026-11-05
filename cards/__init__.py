@@ -10,6 +10,7 @@ from .profile import render_profile
 from .purse import render_purse
 from .techniques import render_techniques
 
+# /internal qi is its own message, not a sheet tab: cards.dantian.render_dantian
 RENDERERS = {
     "profile": render_profile,
     "techniques": render_techniques,

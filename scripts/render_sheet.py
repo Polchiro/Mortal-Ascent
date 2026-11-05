@@ -1,5 +1,5 @@
 """
-Render every Character Sheet card for a made-up player and save them as PNGs.
+Render every Character Sheet card (and the /internal qi card) for a made-up player and save them as PNGs.
 
     python scripts/render_sheet.py            # writes previews/sheet_*.png
 
@@ -16,7 +16,9 @@ sys.path.insert(0, ROOT)
 from bot import db, loot                          # noqa: E402
 from bot import player as rules                   # noqa: E402
 from bot.sheet import data as sheet               # noqa: E402
+from bot import qi                                # noqa: E402
 from cards import RENDERERS                       # noqa: E402
+from cards.dantian import render_dantian          # noqa: E402
 
 
 def demo_player(conn, uid=1):
@@ -65,6 +67,9 @@ def main():
         path = os.path.join(out, f"sheet_{name}.png")
         RENDERERS[name](data).save(path)
         print(f"{path}  ({time.perf_counter() - t0:.2f}s)")
+    path = os.path.join(out, "sheet_qi.png")
+    render_dantian(qi.qi_data(db.get_player(conn, uid), db.get_techniques(conn, uid))).save(path)
+    print(path)
 
 
 if __name__ == "__main__":

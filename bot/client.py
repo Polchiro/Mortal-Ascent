@@ -18,7 +18,7 @@ import explore as explore_rules
 import technique as technique_rules
 import talent as talent_rules
 import training
-from qi_card import render_qi
+from cards.dantian import render_dantian
 
 from . import admin, combat, cooldowns, db, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
@@ -396,7 +396,7 @@ def register_commands(bot):
             return
         await interaction.response.defer()
         data = qi.qi_data(p, db.get_techniques(bot.conn, uid))
-        image = await card_render.render(render_qi, data)
+        image = await card_render.render(render_dantian, data)
         await interaction.followup.send(file=png(image, "qi.png"))
 
     @tree.command(name="breakthrough", description="Attempt to break through a phase bottleneck or into the next realm")
