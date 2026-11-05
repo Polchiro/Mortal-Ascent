@@ -22,6 +22,20 @@ frames, Cinzel headings, a glowing tab strip across the top, and icons drawn in 
   bar fills
 - **Rarity colours** are shared by technique grades, weapon tiers and chest tiers
 
+### Activity result cards
+
+When a /spar, /train, /practice or /explore ends, its last message becomes a card in the same frame
+(cards/activity.py), each with its own accent colour (`theme.ACCENTS`) so players can tell them apart:
+
+| Activity | Accent | Shows |
+| --- | --- | --- |
+| /spar | Steel blue | Victory / Defeat / Forfeit, both HP bars, mastery EXP per technique, the last exchange and notes |
+| /train, /practice | Jade green | Score ring, Qi gained with the layer bar (or mastery EXP with the mastery bar), events and conditions |
+| /explore | Amber | Returned or failed, steps reached, HP, Lotus Coins, beasts slain, item tiles (and items left behind), the last step |
+
+Every step before the end is still the normal embed with buttons. If a card fails to render, the
+text embed is sent instead.
+
 ## What each part shows (and what it does not)
 
 | Part | Shows | Not shown, because the docs don't define it |
@@ -87,3 +101,5 @@ frames, Cinzel headings, a glowing tab strip across the top, and icons drawn in 
 | cards/theme.py | Shared drawing: background, frames, panels, bars, sockets, medallions, orb, portrait, icons |
 | cards/profile.py, techniques.py, equipment.py, bag.py, purse.py | One card per tab |
 | scripts/render_sheet.py | Saves every card for a made-up player into previews/ |
+| cards/activity.py, bot/result_cards.py | /spar, /train and /explore result cards and their data |
+| scripts/render_results.py | Saves every result card with made-up data into previews/ |

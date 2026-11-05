@@ -163,7 +163,8 @@ git-ignored `.env`). Never commit it.
 
 ## Fonts
 
-Run `python scripts/render_sheet.py` to save every Character Sheet card for a made-up player in `previews/`.
+Run `python scripts/render_sheet.py` to save every Character Sheet card for a made-up player in `previews/`,
+and `python scripts/render_results.py` for the /spar (blue), /train (green) and /explore (amber) result cards.
 
 The cards look best with `Cinzel.ttf`, `Inter.ttf` and `NotoSerifSC-Bold.otf`
 (all free on Google Fonts) in the `fonts/` folder at the repo root (see `fonts/README.md`). Without them the
