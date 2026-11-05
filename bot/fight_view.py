@@ -117,6 +117,43 @@ def card_data(b, header):
             "log": list(b.log), "warning": b.warning or ("", "")}
 
 
+LOG_EMOJI = {"sword": "⚔️", "shield": "🛡️", "fist": "💥", "skull": "💀", "star": "✨", "pill": "💊", "flee": "🏃",
+             "hourglass": "⏳", "flame": "🔥", "herb": "🌿"}
+
+
+def _hp(x):
+    return x.get("bar_label") or f"{x['hp']:,} / {x['max_hp']:,} HP"
+
+
+def card_embed(data):
+    """The readable text under the card: Discord shows the image small on a computer, but text at full size.
+    HP, the last turn, the warning in full and what each technique does. Takes render_battle's data."""
+    from cards.theme import ELEMENT_ACCENTS
+    e, party = data["enemy"], data["party"]
+    team = len(party) > 1
+    lines = [f"**{e['name']}** · {_hp(e)}" + (f" · *{', '.join(e['statuses'])}*" if e.get("statuses") else "")]
+    for m in party:
+        mark = "▶ " if team and m.get("arrow") else ""
+        move = m.get("move") if team and m.get("move") else ""
+        lines.append(f"{mark}**{m['name']}** · {_hp(m)}" + (f" · {move}" if move else ""))
+    log_ = data.get("log") or []
+    if log_:
+        lines += ["", f"**{data.get('log_title', 'Last turn')}**"]
+        lines += [f"{LOG_EMOJI.get(kind, '•')} {text}" for kind, text in log_[-8:]]
+    head, hint = data.get("warning") or ("", "")
+    if head and not data.get("result"):
+        lines += ["", f"⚠️ **{head}**" + (f"\n{hint}" if hint else "")]
+    moves = [i for i in data.get("loadout", []) if i.get("desc")]
+    if moves and not data.get("result"):
+        lines += ["", "**Your moves**"]
+        for i in moves:
+            mark = "✅" if i["ready"] else "⏳"
+            lines.append(f"{mark} **{i['name']}** ({i['state']}): {i['desc']}")
+    acc = ELEMENT_ACCENTS.get(data["palette"])
+    return discord.Embed(description="\n".join(lines)[:4000],
+                         color=discord.Color.from_rgb(*acc.rim) if acc else None)
+
+
 def fight_text(b):
     """Text fallback when the card cannot be rendered."""
     e = b.enemy
@@ -242,10 +279,10 @@ class FightMixin:
             else:
                 await self._show_turn(interaction)
 
-    async def fight_card_file(self, filename="fight.jpg"):
+    async def fight_card_file(self, filename="fight.jpg", data=None):
         """The current card as a JPEG: about a third of the PNG size, so the turn-by-turn edits upload faster."""
         try:
-            img = await card_render.render(render_battle, card_data(self.fight, self.fight_header))
+            img = await card_render.render(render_battle, data or card_data(self.fight, self.fight_header))
         except Exception:
             log.exception("Could not render the fight card")
             return None
@@ -255,11 +292,12 @@ class FightMixin:
         self._deadline = time.time() + rules_data.TURN_SECONDS
         self.clear_items()
         self.fight_buttons()
-        file = await self.fight_card_file()
+        data = card_data(self.fight, self.fight_header)
+        file = await self.fight_card_file(data=data)
         self._deadline = time.time() + rules_data.TURN_SECONDS     # the timer starts when the card is shown
         kw = {"content": self.waiting_text(), "view": self}
         if file:
-            kw.update(attachments=[file], embed=None)
+            kw.update(attachments=[file], embed=card_embed(data))     # the card, then the readable details
         else:
             kw.update(attachments=[], embed=discord.Embed(title=self.fight_header, description=fight_text(self.fight)))
         await self.edit_fight_message(interaction, **kw)

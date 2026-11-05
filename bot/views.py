@@ -472,10 +472,12 @@ class TrainView(OwnedView):
                 "strike", "guard", "break", "technique") else emoji
             self.button(label, cb, emoji=em, style=discord.ButtonStyle.primary)
 
-    async def edit(self, embed, view=True, file=None):
-        """Show a step: the card image when it rendered, else the text embed."""
+    async def edit(self, embed, view=True, file=None, card=None):
+        """Show a step: the card image (with its readable details under it) when it rendered, else the text embed."""
         if file is not None:
-            await self.interaction.edit_original_response(embed=None, attachments=[file], view=self if view else None)
+            from .fight_view import card_embed
+            await self.interaction.edit_original_response(embed=card_embed(card) if card else None, attachments=[file],
+                                                          view=self if view else None)
             return
         await self.interaction.edit_original_response(embed=embed, attachments=[], view=self if view else None)
 
@@ -486,9 +488,9 @@ class TrainView(OwnedView):
         self.future = asyncio.get_running_loop().create_future()
         file, hidden_file = await self.card_files(card, hidden_card if hidden_embed else None)
         if hidden_embed:
-            await self.edit(hidden_embed, file=hidden_file)
+            await self.edit(hidden_embed, file=hidden_file, card=hidden_card)
         else:
-            await self.edit(embed, file=file)
+            await self.edit(embed, file=file, card=card)
         t0 = time.monotonic()
         wait = seconds + trainer.TIMER_GRACE_SECONDS
         if hidden_embed:
@@ -497,7 +499,7 @@ class TrainView(OwnedView):
                 key, at = await asyncio.wait_for(asyncio.shield(self.future), reveal)
                 return key, at - t0
             except asyncio.TimeoutError:
-                await self.edit(embed, file=file)
+                await self.edit(embed, file=file, card=card)
                 wait -= reveal
         try:
             key, at = await asyncio.wait_for(self.future, max(0.1, wait))
@@ -815,7 +817,7 @@ class SparView(FightMixin, OwnedView):
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
                             "desc": describe(t)})
         timed = sum(sp.timed.values())
-        loadout.append({"name": "Well-timed techniques", "seal": "时", "color": (240, 200, 100), "ready": bool(timed),
+        loadout.append({"name": "Timed uses", "seal": "时", "color": (240, 200, 100), "ready": bool(timed),
                         "state": str(timed), "desc": "Only these give mastery EXP"})
         hint, _ = clean(sp.hint())
         if sp.turn == 1 and not self.last:
@@ -872,8 +874,9 @@ class SparView(FightMixin, OwnedView):
                   else dict(content=None, embed=self.embed(), attachments=[], view=None))
         else:
             self._deadline = time.time() + battle_data.TURN_SECONDS
+            data = self.fight_card()
             try:
-                img = await card_render.render(render_battle, self.fight_card())
+                img = await card_render.render(render_battle, data)
                 from .fight_view import jpg
                 file = jpg(img, "spar_fight.jpg")
             except Exception:
@@ -881,7 +884,8 @@ class SparView(FightMixin, OwnedView):
                 file = None
             self._deadline = time.time() + battle_data.TURN_SECONDS
             text = f"⏳ Pick your move · time runs out <t:{int(self._deadline)}:R>"
-            kw = (dict(content=text, embed=None, attachments=[file], view=self) if file
+            from .fight_view import card_embed
+            kw = (dict(content=text, embed=card_embed(data), attachments=[file], view=self) if file
                   else dict(content=text, embed=self.embed(), attachments=[], view=self))
         await self.edit_fight_message(interaction, **kw)
         if not self.result:
