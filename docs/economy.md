@@ -98,6 +98,20 @@ What Moon Pearls can buy — **speed and style, never power**.
 - Guaranteed breakthroughs
 - Anything that wins PvP fights
 
+## Herbs and pills in the economy
+
+Alchemy (alchemy.md) adds a grind that must not print money:
+
+| Rule | Why |
+|---|---|
+| /gather has no limit, but the NPC merchant **never buys herbs** | Unlimited gathering can't create Lotus Coins |
+| Herbs are sold to other players on the market (5% tax, once the market exists) | Gatherers earn from players, and the tax removes coins |
+| The Wandering Merchant sells a 10-year herb of your tier for 🪷 10 × realm scale | A small coin sink for players who don't want to gather |
+| The Wandering Merchant sells Qi pills: Mortal 🪷 40, Yellow 🪷 120, Mystic 🪷 400 (× realm scale) | Coin sink; crafted pills can be stronger (pill patterns) |
+| The Moon Pearl shop sells only Mortal to Mystic Qi pills | Earth and Heaven pills, and every Breakthrough pill, must be crafted |
+
+Herb and pill purchases show in the Purse tab's transaction list like every other coin change.
+
 ## Trading Moon Pearls
 
 - Players can sell items to each other for Moon Pearls or Lotus Coins
@@ -110,7 +124,7 @@ What Moon Pearls can buy — **speed and style, never power**.
 
 | Spend on | Example |
 |---|---|
-| 🧳 Wandering Merchant | Herbs, pills, materials |
+| 🧳 Wandering Merchant | Herbs (10-year, your tier), Qi pills |
 | 📜 Comprehension | Hire a teacher to learn a manual faster |
 | ⚡ Breakthrough guidance | + breakthrough success chance |
 | 🩹 Physician | Heal injuries faster |

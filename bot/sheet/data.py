@@ -94,7 +94,7 @@ def profile_data(conn, user_id, username=None, private=True, now=None):
         weapon=weapon_view(weapon),
         coins=p["lotus_coins"] if private else None,
         pearls=p["moon_pearls"] if private else None,
-        beasts=p["beasts_slain"], breakthroughs=p["breakthroughs"], failed=p["failed_breakthroughs"],
+        beasts=p["beasts_slain"], herbs=p.get("herbs_gathered", 0), breakthroughs=p["breakthroughs"], failed=p["failed_breakthroughs"],
         status=rules.status_text(p, now),
         avatar_bytes=None,
     )

@@ -5,7 +5,7 @@ card switch tabs in place, so players never have to type another command.
 
 | Tab | Command | Shows |
 |---|---|---|
-| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, weapon, deeds, the dantian orb, purse |
+| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, weapon, deeds (beasts slain, herbs gathered, breakthroughs, server rank), the dantian orb, purse |
 | 📜 Techniques | /techniques | Attack, Defense and Flex sockets, then every learned technique |
 | ⚔️ Equipment | /equipment | The weapon slot, base → final stats and where every buff comes from |
 | 🎒 Inventory | /inventory | Category tabs, a 4 × 3 item grid with pages, and an Inspect panel |
@@ -46,7 +46,7 @@ text embed is sent instead.
 | HP | Max HP, and an injury timer in the status line | Current HP: fights start at full HP; losing gives an injury instead |
 | Techniques | Sockets: 1 attack + 1 defense, Flex from Martial Warrior (technique.md) | More slots |
 | Equipment | One weapon slot (equipment.md) | Armor, artifacts, accessories |
-| Bag | Chests, Manuals, Weapons, Pills, Materials | Beast cores, elixirs, rare treasures |
+| Bag | Chests, Manuals, Weapons, Pills, Herbs (by kind and age), Materials | Beast cores, elixirs, rare treasures |
 | Title | — | Character titles |
 
 ## Item actions

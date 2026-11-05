@@ -176,12 +176,12 @@ def footer(img, data, box):
     if data.get("status"):
         t.text(d, (t.W / 2, y0 - 16), t.fit(d, data["status"], font("Inter.ttf", 13, "SemiBold"), 900),
                font("Inter.ttf", 13, "SemiBold"), t.GLOW, "mm")
-    deeds = [("skull", "Beasts slain", f"{data['beasts']:,}"), ("flame", "Breakthroughs", f"{data['breakthroughs']:,}"),
-             ("star", "Server rank", f"#{data['rank']}")]
+    deeds = [("skull", "Beasts", f"{data['beasts']:,}"), ("herb", "Herbs", f"{data.get('herbs', 0):,}"),
+             ("flame", "Breakthroughs", f"{data['breakthroughs']:,}"), ("star", "Rank", f"#{data['rank']}")]
     f_k = font("Cinzel.ttf", 11, "Bold")
     f_v = font("Inter.ttf", 20, "Bold")
     for i, (ic, k, v) in enumerate(deeds):
-        x = x0 + 30 + i * 165
+        x = x0 + 24 + (0, 112, 224, 392)[i]
         t.icon(img, ic, (x + 10, cy - 12), 16, t.BRONZE)
         d = ImageDraw.Draw(img)
         t.spaced(d, (x + 26, cy - 12), k.upper(), f_k, t.ASH, 1.2)

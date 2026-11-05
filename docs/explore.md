@@ -43,11 +43,11 @@ Players venture into the wild, choose paths, and decide how far to push their lu
 |---|---|---|
 | 🐾 Wild Beast | 35% | Fight a Normal beast of your realm (see beast.md) |
 | 📦 Treasure Chest | 15% | Wooden 60% · Bronze 30% · Silver 10% |
-| 🌿 Herb Patch | 12% | Herbs for pills (with alchemy: 1–3 herbs of your tier, see alchemy.md) |
+| 🌿 Herb Patch | 12% | 1–3 alchemy herbs of your tier, ages rolled normally (see alchemy.md) |
 | 🏕️ Peaceful Clearing | 10% | Rest: heal 25% max HP |
 | ⚠️ Hazard | 7% | Poison mist or landslide: quick dodge challenge, fail = lose 15% HP |
 | 🗡️ Bandits | 6% | Human enemies; lose the fight = lose 10% of your Lotus Coins |
-| 🧳 Wandering Merchant | 4% | Sells pills, herbs and materials for Lotus Coins |
+| 🧳 Wandering Merchant | 4% | Sells a Qi pill and a 10-year herb of your tier for Lotus Coins (never buys herbs) |
 | 🩸 Injured Stranger | 4% | Help (costs coins or HP): 70% grateful reward, 30% bandit ambush |
 | 🪨 Ancient Stone Tablet | 3% | Mastery EXP for one equipped technique (2× a /practice session) |
 | ⚔️ Elite Beast Lair | 2.5% | Elite beast — invite a team; the lair stays open 30 minutes |

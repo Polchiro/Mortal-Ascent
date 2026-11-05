@@ -90,7 +90,7 @@ Big numbers are shortened: 18,240 → 18.24K, 83,370,000,000,000 → 83.37T.
 | Button | Shows |
 |---|---|
 | Techniques | All learned techniques, mastery EXP, equipped slots |
-| Inventory | Manuals, weapons, pills, materials |
+| Inventory | Manuals, weapons, pills, herbs, materials |
 | Stats | Beasts slain, duels won, Beast Kings defeated, breakthroughs |
 
 ## /inventory
@@ -101,12 +101,12 @@ Shows an **image card** of the player's bag in the same ink-wash style
 ### Card layout
 - 行囊 ("traveller's bag") in calligraphy down the left edge, with a red 藏 seal
 - Title: **"<NAME>'S BAG"** with a red brush stroke
-- **Category tabs** with item counts: Manuals · Weapons · Pills · Materials · Chests
+- **Category tabs** with item counts: Manuals · Weapons · Pills · Herbs · Materials · Chests
   (the open tab is underlined in red)
 - **Item grid:** 4 × 3 tiles per page. Each tile shows:
   - A seal with the grade or tier character, in its colour
     (凡 黄 玄 地 天 for manuals and pills, 凡 精 灵 宝 神 for weapons,
-    木 铜 银 玉 for chests, 草 for materials)
+    木 铜 银 玉 for chests, 草 for herbs and materials; herbs show their age, e.g. 50-year)
   - Item name
   - One line of detail (e.g. "Attack · Pierce 25%", "+13% ATK · +9% HP", "×1.7 Qi · 4h")
   - Quantity badge (×2) when holding more than one
@@ -117,7 +117,7 @@ Shows an **image card** of the player's bag in the same ink-wash style
 
 | Control | Does |
 |---|---|
-| Category menu | Switch tab (Manuals, Weapons, Pills, Materials, Chests) |
+| Category menu | Switch tab (Manuals, Weapons, Pills, Herbs, Materials, Chests) |
 | ◀ Prev / Next ▶ | Change page |
 | Item menu | Pick an item on this page to use it: learn a manual, equip a weapon, take a pill, open a chest |
 

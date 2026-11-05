@@ -43,8 +43,8 @@ CREATE INDEX IF NOT EXISTS techniques_user ON techniques(user_id);
 CREATE TABLE IF NOT EXISTS items (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES players(user_id) ON DELETE CASCADE,
-    category    TEXT    NOT NULL,   -- manuals, weapons, pills, materials, chests
-    key         TEXT    NOT NULL,   -- technique key, pill grade, material name, chest tier, weapon type
+    category    TEXT    NOT NULL,   -- manuals, weapons, pills, herbs, materials, chests
+    key         TEXT    NOT NULL,   -- technique key, pill grade, "tier:type:age" herb, chest tier, weapon type
     name        TEXT    NOT NULL,
     grade       TEXT,               -- technique/pill grade or weapon/chest tier
     qty         INTEGER NOT NULL DEFAULT 1,
@@ -103,12 +103,20 @@ PLAYER_COLUMNS = {
     "seclusion_end":        "REAL",
     "fate_rerolls":         "INTEGER NOT NULL DEFAULT 0",    # Lotus Coin rerolls used (cost ×1.5 each)
     "king_kills":           "TEXT NOT NULL DEFAULT ''",       # realms whose Beast King you helped slay
+    # /gather (docs/alchemy.md)
+    "herb_streak":          "INTEGER NOT NULL DEFAULT 0",    # Herbal Insight: correct picks in a row
+    "herbs_gathered":       "INTEGER NOT NULL DEFAULT 0",
+    "spirit_check_in":      "INTEGER",                       # gathers until the next Wandering Spirit check
+    "spirit_check_fails":   "INTEGER NOT NULL DEFAULT 0",
+    "gather_paused_until":  "REAL",
+    "gather_flag":          "TEXT",                          # why gathering was flagged for review (no ban)
+    "alchemy_exp":          "INTEGER NOT NULL DEFAULT 0",    # alchemist rank comes from this (alchemy.py)
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
 }
 
-BAG_STACKABLE = {"manuals", "pills", "materials", "chests"}   # weapons are unique (rolled buffs)
+BAG_STACKABLE = {"manuals", "pills", "herbs", "materials", "chests"}   # weapons are unique (rolled buffs)
 
 
 def connect(path):
@@ -122,7 +130,28 @@ def connect(path):
             for col, decl in cols.items():
                 if col not in have:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+    replace_old_herbs(conn)
     return conn
+
+
+def replace_old_herbs(conn):
+    """The herbs from before alchemy (Dew Lotus Petal, Tiger Bone Moss, ...) are no longer in the game.
+    Any still in a bag become 10-year Mortal herbs of the closest kind, so nobody loses them."""
+    from .loot import OLD_HERBS, herb
+    rows = conn.execute("SELECT * FROM items WHERE category = 'materials' AND key IN (%s)"
+                        % ",".join("?" * len(OLD_HERBS)), list(OLD_HERBS)).fetchall()
+    for r in rows:
+        new = herb("Mortal", OLD_HERBS[r["key"]], 10)
+        with conn:
+            conn.execute("DELETE FROM items WHERE id = ?", (r["id"],))
+            row = conn.execute("SELECT id FROM items WHERE user_id = ? AND category = 'herbs' AND key = ?",
+                               (r["user_id"], new["key"])).fetchone()
+            if row:
+                conn.execute("UPDATE items SET qty = qty + ? WHERE id = ?", (r["qty"], row[0]))
+            else:
+                conn.execute("INSERT INTO items (user_id, category, key, name, grade, qty, data) "
+                             "VALUES (?, ?, ?, ?, ?, ?, ?)", (r["user_id"], "herbs", new["key"], new["name"],
+                                                              new["grade"], r["qty"], json.dumps(new["data"])))
 
 
 def get_player(conn, user_id):

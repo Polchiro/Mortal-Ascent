@@ -113,8 +113,10 @@ def test_commands_run_from_a_message(bot):
     assert "Incense Clock" in sent[0].kw["embed"].title
     handled, sent = run(bot, "m internal qi")
     assert sent[0].kw["file"].filename == "qi.png"
-    handled, sent = run(bot, "m index items")
+    handled, sent = run(bot, "m index pills")
     assert sent[0].kw["view"] is not None
+    handled, sent = run(bot, "m gather")
+    assert "Gathering Herbs" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
     handled, sent = run(bot, "m seclusion 99")
     assert "between 8 and 24" in sent[0].content
     handled, sent = run(bot, "m internal")

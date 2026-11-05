@@ -1,7 +1,8 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
-/shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py. Admin testing commands are in admin.py.
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py,
+/gather in gathering.py. Admin testing commands are in admin.py.
 Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
 import asyncio
@@ -20,7 +21,7 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import admin, combat, cooldowns, db, guide, hunt, loot, prefix, qi, trainer
+from . import admin, combat, cooldowns, db, gathering, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
 from . import player as rules
 from .sheet import items as sheet_items
@@ -59,6 +60,7 @@ class MortalAscent(discord.Client):
         register_commands(self)
         admin.register(self)
         guide.register(self)
+        gathering.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: bank the passive Qi gathered since last time."""
@@ -199,7 +201,7 @@ def register_commands(bot):
             return
         await open_sheet(bot, interaction, "purse")
 
-    @tree.command(name="inventory", description="Open your bag: chests, manuals, weapons, pills and materials")
+    @tree.command(name="inventory", description="Open your bag: chests, manuals, weapons, pills, herbs and materials")
     @app_commands.describe(category="Which tab to open first")
     @app_commands.choices(category=[app_commands.Choice(name=c.label, value=c.key)
                                     for c in sheet_items.CATEGORIES.values()])

@@ -7,6 +7,7 @@ directly. bot/views.py drives it with buttons.
 import random
 import time
 
+import alchemy
 import beasts
 import challenges
 import explore
@@ -161,10 +162,11 @@ class Expedition:
         self.story.append(f"📦 Hidden under the roots: a **{c['name']}**! (Open it from /inventory.)")
 
     def _herb_patch(self):
-        h = loot.herb(self.rng)
-        h["qty"] = self.rng.randint(1, 3)
-        self.items.append(h)
-        self.story.append(f"🌿 You gather **{loot.describe(h)}**.")
+        found = [loot.roll_herb(self.player["realm"], self.rng)
+                 for _ in range(self.rng.randint(*alchemy.HERB_PATCH_HERBS))]
+        self.items += found
+        self.story.append("🌿 A patch of wild herbs! You gather " + ", ".join(f"**{loot.describe(h)}**" for h in found)
+                          + ". (**/gather** finds more.)")
 
     def _peaceful_clearing(self):
         heal = round(self.max_hp * explore.PEACEFUL_CLEARING_HEAL)
@@ -215,8 +217,9 @@ class Expedition:
     def _wandering_merchant(self):
         grade = {1: "Mortal", 2: "Yellow"}.get(self.tier, "Mystic")
         scale = rules.realm_scale(self.player["realm"])
+        herb = loot.herb(alchemy.HERB_TIER_BY_REALM[self.player["realm"]], rng=self.rng)    # a 10-year herb
         self.merchant = {"pill": grade, "pill_price": MERCHANT_PILL_PRICE[grade] * scale,
-                         "herb": self.rng.choice(loot.HERBS), "herb_price": MERCHANT_HERB_PRICE * scale,
+                         "herb_item": herb, "herb": herb["name"], "herb_price": MERCHANT_HERB_PRICE * scale,
                          "bought": set()}
         self.story.append("🧳 A wandering merchant waves you over: *\"Fine wares for a fine warrior!\"*")
 
@@ -228,7 +231,7 @@ class Expedition:
             return "You already bought that."
         if wallet < price:
             return f"You need 🪷 {price} but only have 🪷 {wallet}."
-        item = loot.pill(m["pill"]) if what == "pill" else loot.herb(name=m["herb"])
+        item = loot.pill(m["pill"]) if what == "pill" else dict(m["herb_item"])
         if db.spend(self.conn, self.user_id, "lotus_coins", price, f"Merchant: {item['name']}") is None:
             return f"You need 🪷 {price} but only have 🪷 {wallet}."
         stored, _ = loot.store(self.conn, self.user_id, [item])
@@ -264,10 +267,10 @@ class Expedition:
         if self.rng.random() < explore.INJURED_STRANGER_GRATEFUL:
             coins = loot.roll_coins(self.player, STRANGER_REWARD_COINS, self.rng)
             self.coins += coins
-            h = loot.herb(self.rng)
+            h = loot.roll_herb(self.player["realm"], self.rng)
             self.items.append(h)
             self.story.append(f"🙏 *\"I won't forget this!\"* They press a reward into your hands: "
-                              f"🪷 {coins} and **{h['name']}**.")
+                              f"🪷 {coins} and **{loot.describe(h)}**.")
         else:
             self.story.append("😈 The stranger leaps up, laughing. It was a trap!")
             self._bandits(ambush=True)
@@ -330,7 +333,7 @@ class Expedition:
             coins = round(coins * (1 - explore.DEFEAT_LOOT_LOSS))
             kept = []
             for it in items:
-                if it["category"] == "materials":
+                if it["category"] == "herbs":
                     q = it.get("qty", 1) - round(it.get("qty", 1) * explore.DEFEAT_LOOT_LOSS)
                     if q > 0:
                         kept.append(dict(it, qty=q))

@@ -232,13 +232,13 @@ def test_defeat_halves_found_coins_and_injures(conn):
     e = Expedition(conn, 1, random.Random(0))
     e.next_step()
     e.coins = 100
-    e.items = [dict(loot.herb(name="Spirit Grass"), qty=4), loot.manual("iron_fist")]
+    e.items = [dict(loot.herb("Mortal", "qi", 10), qty=4), loot.manual("iron_fist")]
     e.hp = 0
     e._defeat()
     p = db.get_player(conn, 1)
     assert p["lotus_coins"] == 50 + 50
     assert rules.injured_for(p) > 3000
-    assert db.get_items(conn, 1, "materials")[0]["qty"] == 2
+    assert db.get_items(conn, 1, "herbs")[0]["qty"] == 2
     assert len(db.get_items(conn, 1, "manuals")) == 1
 
 
@@ -507,7 +507,7 @@ def test_all_commands_register():
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
                                  "seclusion", "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
                                  "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "admin",
-                                 "tutorial", "index"}
+                                 "tutorial", "index", "gather"}
 
 
 # ── tier 2 challenges ─────────────────────────────────────────────────
