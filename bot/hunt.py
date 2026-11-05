@@ -164,7 +164,7 @@ def resolve(conn, lair, user_ids, rng=random, now=None):
                 mastery.gain(conn, p, t, uses * technique.COMBAT_EXP_PER_USE)
         if won:
             coins = loot.roll_coins(p, HUNT_COINS[tier], rng)
-            db.add_coins(conn, uid, coins)
+            db.add_coins(conn, uid, coins, "Team hunt reward")
             bits.append(f"🪷 {coins:,}")
             fields = {"beasts_slain": p["beasts_slain"] + 1}
             if tier == "beast_king" and lair["realm"] not in rules.king_kills(p):

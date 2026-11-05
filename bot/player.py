@@ -344,15 +344,21 @@ def buff_text(buffs):
     return "  ·  ".join(f"+{round(v * 100)}% {STAT_LABELS[k]}" for k, v in buffs.items()) or "No buffs"
 
 
+def stat_buffs(techniques=(), weapon=None):
+    """Every % buff by stat, with where it comes from: {"hp": [(source, pct), ...], ...}."""
+    out = {"hp": [], "attack": [], "defense": []}
+    for k, v in weapon_buffs(weapon).items():
+        out[k].append((weapon["name"], v))
+    for t in techniques:
+        table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
+        out["attack" if t["type"] == "attack" else "defense"].append((t["name"], table[t["grade"]][1] * mastery_mult(t)))
+    return out
+
+
 def final_stats(player, techniques=(), weapon=None):
     """(hp, attack, defense) after weapon and technique passive buffs."""
     hp, attack, defense = base_stats(player["realm"], player["layer"])
-    pct = {"hp": 0.0, "attack": 0.0, "defense": 0.0}
-    for k, v in weapon_buffs(weapon).items():
-        pct[k] += v
-    for t in techniques:
-        table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
-        pct["attack" if t["type"] == "attack" else "defense"] += table[t["grade"]][1] * mastery_mult(t)
+    pct = {k: sum(v for _, v in src) for k, src in stat_buffs(techniques, weapon).items()}
     return (round(hp * (1 + pct["hp"])), round(attack * (1 + pct["attack"])),
             round(defense * (1 + pct["defense"])))
 

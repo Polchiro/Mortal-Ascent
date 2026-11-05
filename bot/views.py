@@ -1,5 +1,6 @@
 """
-Discord buttons and menus for /inventory, /explore and /train.
+Discord buttons and menus for /explore, /train, /spar, hunts, the shop and blessings.
+The Character Sheet tabs (/profile, /inventory, /techniques, ...) are in bot/sheet/view.py.
 
 Each view belongs to the player who ran the command; anyone else pressing
 its buttons gets a polite "not yours". Every view answers on error, so a
@@ -14,17 +15,11 @@ import time
 import discord
 
 import economy
-import equipments
 import explore
 import talent as talent_rules
-import training
-from inventory_card import (CHEST_CHARS, MATERIAL_CHAR, PER_PAGE, manual_item, render_inventory,
-                            weapon_item)
-from profile_card import GRADES, JADE
 import technique
 
-from . import combat, db, hunt, loot, mastery, trainer
-from . import render as card_render
+from . import db, hunt, loot, mastery, trainer
 from . import player as rules
 from .expedition import PATH_EMOJI, Expedition
 
@@ -115,112 +110,6 @@ class OwnedView(discord.ui.View):
 def hp_bar(hp, max_hp, width=12):
     filled = round(width * hp / max_hp) if max_hp else 0
     return "▰" * filled + "▱" * (width - filled) + f"  {hp:,}/{max_hp:,}"
-
-
-# ── /inventory ────────────────────────────────────────────────────────
-
-USE_VERB = {"chests": "Open", "weapons": "Equip", "manuals": "Learn", "pills": "Take"}
-
-
-def tile_for(item, learned_names):
-    cat, qty = item["category"], item["qty"]
-    if cat == "manuals":
-        t = technique.TECHNIQUES[item["key"]]
-        return manual_item(t, qty=qty, learned=t["name"] in learned_names)
-    if cat == "weapons":
-        return weapon_item(item["name"], item["grade"], rules.buff_text(rules.weapon_buffs(item)).replace("  ·  ", " · "),
-                           equipped=bool(item["equipped"]))
-    if cat == "pills":
-        char, color = GRADES[item["grade"]]
-        sub = ("Talent +1 rank" if item["key"] == "heaven_defying"
-               else f"×{training.QI_PILLS[item['grade']]} Qi · {training.QI_PILL_DURATION_HOURS}h")
-        return {"char": char, "color": color, "name": item["name"], "qty": qty, "sub": sub}
-    if cat == "chests":
-        char, color = CHEST_CHARS[item["key"]]
-        return {"char": char, "color": color, "name": item["name"], "qty": qty, "sub": "Open for loot"}
-    return {"char": MATERIAL_CHAR, "color": JADE, "name": item["name"], "qty": qty, "sub": "Pill ingredient"}
-
-
-def inventory_data(conn, user_id, category, page):
-    p = db.get_player(conn, user_id)
-    items = db.get_items(conn, user_id, category)
-    learned = {t["name"] for t in db.get_techniques(conn, user_id, equipped_only=False)}
-    pages = max(1, -(-len(items) // PER_PAGE))
-    page = min(max(1, page), pages)
-    data = {"name": p["name"], "category": category, "page": page,
-            "items": [tile_for(i, learned) for i in items],
-            "counts": db.category_counts(conn, user_id), "capacity": p["bag_capacity"]}
-    return data, items[(page - 1) * PER_PAGE: page * PER_PAGE], pages
-
-
-class InventoryView(OwnedView):
-    def __init__(self, bot, owner_id, category="manuals"):
-        super().__init__(owner_id, timeout=300)
-        self.bot, self.category, self.page, self.pages = bot, category, 1, 1
-
-    async def render(self):
-        """Build components for the current page and return the card as a discord.File."""
-        data, page_items, self.pages = inventory_data(self.bot.conn, self.owner_id, self.category, self.page)
-        self.page = data["page"]
-        self.clear_items()
-
-        cat_select = discord.ui.Select(placeholder="Category", row=0, options=[
-            discord.SelectOption(label=label, value=key, default=key == self.category)
-            for key, label in (("manuals", "Manuals"), ("weapons", "Weapons"), ("pills", "Pills"),
-                               ("materials", "Materials"), ("chests", "Chests"))])
-        cat_select.callback = self.on_category
-        self.add_item(cat_select)
-
-        usable = [i for i in page_items if i["category"] in USE_VERB]
-        if usable:
-            use = discord.ui.Select(placeholder="Use an item...", row=1, options=[
-                discord.SelectOption(label=f"{USE_VERB[i['category']]}: {i['name']}"[:100], value=str(i["id"]),
-                                     description=(f"×{i['qty']}" if i["qty"] > 1 else None))
-                for i in usable])
-            use.callback = self.on_use
-            self.add_item(use)
-
-        self.button("Prev", self.on_prev, emoji="◀️", row=2, disabled=self.page <= 1)
-        self.button("Next", self.on_next, emoji="▶️", row=2, disabled=self.page >= self.pages)
-        image = await card_render.render(render_inventory, data)
-        return png(image, "inventory.png")
-
-    async def refresh(self, interaction):
-        await interaction.response.defer()
-        file = await self.render()
-        await interaction.edit_original_response(attachments=[file], view=self)
-
-    async def on_category(self, interaction):
-        self.category, self.page = interaction.data["values"][0], 1
-        await self.refresh(interaction)
-
-    async def on_prev(self, interaction):
-        self.page -= 1
-        await self.refresh(interaction)
-
-    async def on_next(self, interaction):
-        self.page += 1
-        await self.refresh(interaction)
-
-    async def on_use(self, interaction):
-        item_id = int(interaction.data["values"][0])
-        await interaction.response.defer()
-        news = []
-        async with self.bot.db_lock:
-            msg = loot.use_item(self.bot.conn, self.owner_id, item_id, announce=news)
-        file = await self.render()
-        await interaction.edit_original_response(attachments=[file], view=self)
-        await interaction.followup.send(msg, ephemeral=True)
-        for line in news:
-            await interaction.followup.send(line)
-
-    async def on_timeout(self):
-        self.disable_all()
-        if self.message:
-            try:
-                await self.message.edit(view=self)
-            except discord.HTTPException:
-                pass
 
 
 # ── /explore ──────────────────────────────────────────────────────────
@@ -805,180 +694,6 @@ class ConfirmView(OwnedView):
                 pass
 
 
-# ── /techniques ───────────────────────────────────────────────────────
-
-def effect_text(tech):
-    eff = rules.TECH_BY_NAME.get(tech["name"], {}).get("effect")
-    if not eff:
-        return "No special effect"
-    kind, val = eff
-    if kind == "combo":
-        return f"Combo {val[0]} hits × {val[1]:.0%}"
-    if kind == "stagger":
-        return "Stagger: opponent can't Guard next turn" if val >= 1 else f"Stagger: next block −{val:.0%}"
-    if kind == "heavy":
-        return f"Heavy ×{val}"
-    if kind == "unbreakable":
-        return "Unbreakable"
-    return f"{kind.title()} {val:.0%}"
-
-
-def mastery_bar(tech, width=10):
-    cap = rules.mastery_cap(tech)
-    stage = technique.MASTERY_STAGES[rules.stage_of(tech)]["name"]
-    if cap is None:
-        return f"{stage} · {tech['mastery_exp']:,} EXP (final stage)"
-    filled = min(width, round(width * tech["mastery_exp"] / cap))
-    tail = "  🔔 trial ready (/spar)" if rules.bar_full(tech) else ""
-    return f"{stage} · {'▰' * filled}{'▱' * (width - filled)} {tech['mastery_exp']:,}/{cap:,}{tail}"
-
-
-class TechniquesView(OwnedView):
-    def __init__(self, bot, owner_id):
-        super().__init__(owner_id, timeout=300)
-        self.bot = bot
-        self.notice = None
-        self.build()
-
-    def embed(self):
-        conn, uid = self.bot.conn, self.owner_id
-        p = db.get_player(conn, uid)
-        techs = db.get_techniques(conn, uid, equipped_only=False)
-        slots = rules.technique_slots(p["realm"])
-        equipped = [t for t in techs if t["equipped"]]
-        e = discord.Embed(title=f"📜 {p['name']}'s Techniques", color=COLOR)
-        e.description = (f"**Slots:** {len(equipped)}/{slots} (1 attack + 1 defense"
-                         + (" + 1 flex" if slots == 3 else ", flex slot opens at Martial Warrior") + ")\n"
-                         f"**Qi Rate bonus:** +{rules.technique_qi_bonus(equipped):.1%} (best equipped technique)")
-        if self.notice:
-            e.description += f"\n\n*{self.notice}*"
-        for t in sorted(techs, key=lambda t: (not t["equipped"], t["type"], t["id"]))[:20]:
-            table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
-            power, passive = table[t["grade"]]
-            m = rules.mastery_mult(t)
-            power_txt = (f"×{power * m:.2f} damage" if t["type"] == "attack"
-                         else f"blocks {min(technique.MAX_DAMAGE_BLOCKED, power * m):.0%}")
-            cd = combat.cooldown_turns(t)
-            power_txt += f" · ⏳ {cd} turn{'s' if cd > 1 else ''} cooldown"
-            e.add_field(
-                name=f"{'✅ ' if t['equipped'] else ''}{t['name']} · {t['grade']} {t['type']}",
-                value=(f"{effect_text(t)} · {power_txt} · +{passive * m:.0%} passive "
-                       f"{'Attack' if t['type'] == 'attack' else 'Defense'}\n{mastery_bar(t)}"),
-                inline=False)
-        e.set_footer(text="Learn more from manuals in /inventory. Train mastery with /practice and /spar.")
-        return e
-
-    def build(self):
-        self.clear_items()
-        conn, uid = self.bot.conn, self.owner_id
-        techs = db.get_techniques(conn, uid, equipped_only=False)
-        spare = [t for t in techs if not t["equipped"]][:25]
-        if spare:
-            sel = discord.ui.Select(placeholder="Equip a technique...", row=0, options=[
-                discord.SelectOption(label=t["name"], value=str(t["id"]), description=f"{t['grade']} {t['type']}")
-                for t in spare])
-            sel.callback = self.on_equip
-            self.add_item(sel)
-        equipped = [t for t in techs if t["equipped"]]
-        removable = [t for t in equipped if sum(x["type"] == t["type"] for x in equipped) > 1]
-        if removable:
-            sel = discord.ui.Select(placeholder="Unequip from the flex slot...", row=1, options=[
-                discord.SelectOption(label=t["name"], value=str(t["id"])) for t in removable])
-            sel.callback = self.on_unequip
-            self.add_item(sel)
-
-    async def on_equip(self, interaction):
-        tid = int(interaction.data["values"][0])
-        async with self.bot.db_lock:
-            p = db.get_player(self.bot.conn, self.owner_id)
-            tech = db.get_technique(self.bot.conn, self.owner_id, tid)
-            replaced = db.equip_technique(self.bot.conn, self.owner_id, tid, rules.technique_slots(p["realm"]))
-        self.notice = f"Equipped {tech['name']}" + (f" in place of {replaced}." if replaced else ".")
-        self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-
-    async def on_unequip(self, interaction):
-        tid = int(interaction.data["values"][0])
-        async with self.bot.db_lock:
-            ok = db.unequip_technique(self.bot.conn, self.owner_id, tid)
-        self.notice = "Unequipped." if ok else "You must keep one technique of each type equipped."
-        self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-
-    async def on_timeout(self):
-        if self.message:
-            try:
-                await self.message.edit(view=None)
-            except discord.HTTPException:
-                pass
-
-
-# ── /equipment ────────────────────────────────────────────────────────
-
-class EquipmentView(OwnedView):
-    def __init__(self, bot, owner_id):
-        super().__init__(owner_id, timeout=300)
-        self.bot = bot
-        self.notice = None
-        self.build()
-
-    def embed(self):
-        conn, uid = self.bot.conn, self.owner_id
-        p = db.get_player(conn, uid)
-        techs = db.get_techniques(conn, uid)
-        weapon = db.equipped_weapon(conn, uid)
-        bhp, batk, bdef = rules.base_stats(p["realm"], p["layer"])
-        hp, atk, dfn = rules.final_stats(p, techs, weapon)
-        e = discord.Embed(title=f"⚔️ {p['name']}'s Equipment", color=COLOR)
-        if weapon:
-            e.add_field(name="Weapon", value=f"{equipments.TIER_DISPLAY[weapon['grade']]} **{weapon['name']}**\n"
-                                             f"{rules.buff_text(rules.weapon_buffs(weapon))}", inline=False)
-        else:
-            e.add_field(name="Weapon", value="🤜 Bare hands. Weapons drop from chests found in /explore.", inline=False)
-        e.add_field(name="Stats (base → final)",
-                    value=f"❤️ HP {bhp:,} → **{hp:,}**\n⚔️ Attack {batk:,} → **{atk:,}**\n🛡️ Defense {bdef:,} → **{dfn:,}**",
-                    inline=False)
-        e.add_field(name="Armor & artifacts", value="*Coming in a later update.*", inline=False)
-        if self.notice:
-            e.description = f"*{self.notice}*"
-        e.set_footer(text="Final stats include your weapon and equipped techniques' passive buffs.")
-        return e
-
-    def build(self):
-        self.clear_items()
-        weapons = db.get_items(self.bot.conn, self.owner_id, "weapons")
-        spare = [w for w in weapons if not w["equipped"]][:25]
-        if spare:
-            sel = discord.ui.Select(placeholder="Equip a weapon...", row=0, options=[
-                discord.SelectOption(label=w["name"][:100], value=str(w["id"]),
-                                     description=f"{w['grade'].title()} · {rules.buff_text(rules.weapon_buffs(w))}"[:100])
-                for w in spare])
-            sel.callback = self.on_equip
-            self.add_item(sel)
-        if any(w["equipped"] for w in weapons):
-            self.button("Unequip weapon", self.on_unequip, emoji="🤜", row=1)
-
-    async def on_equip(self, interaction):
-        async with self.bot.db_lock:
-            self.notice = loot.use_item(self.bot.conn, self.owner_id, int(interaction.data["values"][0]))
-        self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-
-    async def on_unequip(self, interaction):
-        async with self.bot.db_lock:
-            db.unequip_weapon(self.bot.conn, self.owner_id)
-        self.notice = "You put your weapon away."
-        self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-
-    async def on_timeout(self):
-        if self.message:
-            try:
-                await self.message.edit(view=None)
-            except discord.HTTPException:
-                pass
-
-
 # ── Team hunts ────────────────────────────────────────────────────────
 
 async def post_hunt(bot, interaction, lair, finder):
@@ -1108,19 +823,23 @@ def buy_shop_item(conn, user_id, key, new_name=None, rng=random):
     price = economy.PEARL_SHOP[key]
     if p["moon_pearls"] < price:
         return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}.", None
+    if key == "name_change" and not (new_name or "").strip():
+        return "Please give a name.", None
+    # Pay first: the spend fails (and nothing is given) if the pearls are gone by now.
+    if db.spend(conn, user_id, "moon_pearls", price, f"Shop: {SHOP_ITEMS[key][0].split(' ', 1)[1]}") is None:
+        return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}.", None
     news = None
     if key in SHOP_PILLS:
         grade, qty = SHOP_PILLS[key]
         if not db.add_item(conn, user_id, **dict(loot.pill(grade), qty=qty)):
+            db.change_currency(conn, user_id, "moon_pearls", price, "Refund: bag full")
             return "Your bag is full.", None
         msg = f"💊 {qty}× **{grade} Qi Pill** added to your bag."
     elif key == "inventory_expansion_20":
         db.update_player(conn, user_id, bag_capacity=p["bag_capacity"] + 20)
         msg = f"🎒 Your bag now holds **{p['bag_capacity'] + 20}** slots."
     elif key == "name_change":
-        new_name = (new_name or "").strip()[:32]
-        if not new_name:
-            return "Please give a name.", None
+        new_name = new_name.strip()[:32]
         db.update_player(conn, user_id, name=new_name)
         msg = f"✏️ You are now known as **{new_name}**."
     else:   # heavenly_fate_reroll
@@ -1130,7 +849,6 @@ def buy_shop_item(conn, user_id, key, new_name=None, rng=random):
                else f"🌟 The stone flickers and settles. You remain **{new}** (it never goes lower).")
         if new != p["talent"]:
             news = loot.talent_announcement(p["name"], new)
-    db.update_player(conn, user_id, moon_pearls=p["moon_pearls"] - price)
     return msg + f"\n🌙 −{price:,} Moon Pearls", news
 
 
@@ -1208,7 +926,9 @@ def buy_blessing(conn, user_id, tier, now=None):
         msg = f"{BLESSING_EMOJI[tier]} Heaven smiles on you: **{tier}** for {economy.BLESSING_DURATION_DAYS} days!"
         if current:
             msg += f" (It replaces {current[0]}.)"
-    db.update_player(conn, user_id, moon_pearls=p["moon_pearls"] - price, blessing_tier=tier, blessing_expires=expires)
+    if db.spend(conn, user_id, "moon_pearls", price, f"Blessing: {tier}") is None:
+        return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}."
+    db.update_player(conn, user_id, blessing_tier=tier, blessing_expires=expires)
     return msg + f"\n🌙 −{price:,} Moon Pearls"
 
 

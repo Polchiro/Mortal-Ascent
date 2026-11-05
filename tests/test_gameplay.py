@@ -313,26 +313,8 @@ def test_train_reward_and_cooldown(conn):
     assert low == pytest.approx(2.5 * 1.05 * 4 * 0.4 * 0.1)
 
 
-# ── /inventory card ───────────────────────────────────────────────────
-
-def test_inventory_card_renders_every_category(conn):
-    from bot.views import inventory_data
-    from inventory_card import render_inventory
-    new_player(conn)
-    rng = random.Random(0)
-    for it in [loot.chest("bronze"), loot.manual("iron_fist"), loot.manual("viper_fang_finger"),
-               loot.roll_weapon("spirit", rng), loot.pill("Yellow"), loot.herb(rng)]:
-        db.add_item(conn, 1, **it)
-    for cat in ("manuals", "weapons", "pills", "materials", "chests"):
-        data, page_items, pages = inventory_data(conn, 1, cat, 1)
-        assert page_items and pages == 1
-        assert render_inventory(data).size[0] == 1200
-    data, _, _ = inventory_data(conn, 1, "manuals", 1)
-    assert data["items"][0]["status"] == "Learned"
-
-
 def test_views_build_without_discord_connection(conn):
-    from bot.views import ExploreView, InventoryView, TrainView
+    from bot.views import ExploreView, TrainView
 
     class FakeBot:
         def __init__(self, c):
@@ -344,9 +326,6 @@ def test_views_build_without_discord_connection(conn):
         bot = FakeBot(conn)
         ev = ExploreView(bot, 1, random.Random(0))
         assert len(ev.children) == 3 and ev.embed().title.startswith("🌲")
-        iv = InventoryView(bot, 1)
-        f = await iv.render()
-        assert f.filename == "inventory.png"
         tv = TrainView(bot, 1, trainer.roll_session(db.get_player(conn, 1), random.Random(0)))
         assert tv.intro().description
     asyncio.run(go())
@@ -501,22 +480,17 @@ def test_flex_slot_from_martial_warrior(conn):
     assert not db.unequip_technique(conn, 1, guard["id"])                 # must keep one defense
 
 
-def test_new_views_build(conn):
-    from bot.views import EquipmentView, SparView, TechniquesView
+def test_spar_view_builds(conn):
+    from bot.views import SparView
 
     class FakeBot:
         def __init__(self, c):
             self.conn, self.db_lock, self.busy = c, asyncio.Lock(), set()
 
     new_player(conn)
-    db.add_item(conn, 1, **loot.roll_weapon("ordinary", random.Random(0)))
 
     async def go():
-        bot = FakeBot(conn)
-        assert TechniquesView(bot, 1).embed().fields
-        ev = EquipmentView(bot, 1)
-        assert ev.children and "Bare hands" in ev.embed().fields[0].value
-        sv = SparView(bot, 1, rng=random.Random(0))
+        sv = SparView(FakeBot(conn), 1, rng=random.Random(0))
         assert len(sv.children) == 5 and sv.embed().title
     asyncio.run(go())
 

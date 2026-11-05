@@ -18,15 +18,15 @@ import explore as explore_rules
 import technique as technique_rules
 import talent as talent_rules
 import training
-from balance_card import render_balance
-from profile_card import render_profile
 from qi_card import render_qi
 
 from . import admin, combat, cooldowns, db, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
 from . import player as rules
-from .views import (BlessingView, ConfirmView, EquipmentView, ExploreView, InventoryView, ShopView, SparView,
-                    TechniquesView, TrainView, blessing_embed, shop_embed)
+from .sheet import items as sheet_items
+from .sheet.view import open_sheet, send_public_profile
+from .views import (BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
+                    shop_embed)
 
 log = logging.getLogger("mortal-ascent")
 
@@ -104,7 +104,6 @@ class MortalAscent(discord.Client):
         await prefix.handle_message(self, message)
 
 
-AVATAR_TIMEOUT_SECONDS = 5
 
 
 def sync_passive_qi(conn, user_id, now=None):
@@ -120,20 +119,6 @@ def sync_passive_qi(conn, user_id, now=None):
     p, events = rules.add_qi(p, qi, techs, now=now)
     db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], qi_collected_at=now)
     return qi, events
-
-
-async def render_with_avatar(member, render, make_data):
-    """Fetch the member's avatar into memory (no temp files), build card data, render off the event loop.
-    A slow or failed avatar download falls back to the initial instead of holding up the card."""
-    avatar = None
-    try:
-        avatar = await asyncio.wait_for(member.display_avatar.with_format("png").with_size(256).read(),
-                                        AVATAR_TIMEOUT_SECONDS)
-    except Exception:
-        log.warning("Could not download avatar for %s; using initial instead", member, exc_info=True)
-    data = make_data(None)
-    data["avatar_bytes"] = avatar
-    return await card_render.render(render, data)
 
 
 def claim_session(bot, uid, kind, cooldown=None, seconds=0):
@@ -192,56 +177,37 @@ def register_commands(bot):
         if news:
             await interaction.followup.send(news)
 
-    @tree.command(name="profile", description="Show your cultivation profile card")
+    @tree.command(name="profile", description="Open your Character Sheet: realm, attributes, Internal Qi, techniques")
     @app_commands.describe(member="Whose profile to view (defaults to you)")
     async def profile(interaction: discord.Interaction, member: discord.User | None = None):
         target = member or interaction.user
-        p = db.get_player(bot.conn, target.id)
-        if not p:
+        if not db.get_player(bot.conn, target.id):
             msg = NOT_STARTED if target == interaction.user else f"{target.display_name} has not begun their journey yet."
             await interaction.response.send_message(msg, ephemeral=True)
             return
-        await interaction.response.defer()
         if target != interaction.user:
             async with bot.db_lock:
                 sync_passive_qi(bot.conn, target.id)
-        p = db.get_player(bot.conn, target.id)
-        techniques = db.get_techniques(bot.conn, target.id)
-        rank = db.server_rank(bot.conn, target.id, rules.REALM_ORDER)
-        weapon = db.equipped_weapon(bot.conn, target.id)
-        image = await render_with_avatar(
-            target, render_profile,
-            lambda av: rules.profile_data(p, techniques, rank, avatar_path=av, weapon=weapon))
-        await interaction.followup.send(file=png(image, "profile.png"))
+            await send_public_profile(bot, interaction, target)
+            return
+        await open_sheet(bot, interaction, "profile")
 
-    @tree.command(name="balance", description="Show your Lotus Coins, Moon Pearls and blessing")
+    @tree.command(name="balance", description="Open your purse: Lotus Coins, Moon Pearls, blessing and recent transactions")
     async def balance(interaction: discord.Interaction):
-        p = db.get_player(bot.conn, interaction.user.id)
-        if not p:
+        if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        await interaction.response.defer()
-        image = await card_render.render(render_balance, rules.balance_data(p))
-        await interaction.followup.send(file=png(image, "balance.png"))
+        await open_sheet(bot, interaction, "purse")
 
-    @tree.command(name="inventory", description="Open your bag: manuals, weapons, pills, materials and chests")
+    @tree.command(name="inventory", description="Open your bag: chests, manuals, weapons, pills and materials")
     @app_commands.describe(category="Which tab to open first")
-    @app_commands.choices(category=[app_commands.Choice(name=n, value=v) for n, v in (
-        ("Manuals", "manuals"), ("Weapons", "weapons"), ("Pills", "pills"),
-        ("Materials", "materials"), ("Chests", "chests"))])
+    @app_commands.choices(category=[app_commands.Choice(name=c.label, value=c.key)
+                                    for c in sheet_items.CATEGORIES.values()])
     async def inventory(interaction: discord.Interaction, category: app_commands.Choice[str] | None = None):
         if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        await interaction.response.defer()
-        if category is None:
-            counts = db.category_counts(bot.conn, interaction.user.id)
-            first = next((k for k in ("chests", "manuals", "weapons", "pills", "materials") if counts.get(k)), "manuals")
-        else:
-            first = category.value
-        view = InventoryView(bot, interaction.user.id, first)
-        file = await view.render()
-        view.message = await interaction.followup.send(file=file, view=view, wait=True)
+        await open_sheet(bot, interaction, "inventory", category.value if category else None)
 
     @tree.command(name="explore", description="Venture into the wild: pick paths, fight beasts, find chests")
     async def explore(interaction: discord.Interaction):
@@ -576,18 +542,14 @@ def register_commands(bot):
         if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        view = TechniquesView(bot, interaction.user.id)
-        await interaction.response.send_message(embed=view.embed(), view=view)
-        view.message = await interaction.original_response()
+        await open_sheet(bot, interaction, "techniques")
 
     @tree.command(name="equipment", description="See your weapon and final stats, and change your weapon")
     async def equipment(interaction: discord.Interaction):
         if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        view = EquipmentView(bot, interaction.user.id)
-        await interaction.response.send_message(embed=view.embed(), view=view)
-        view.message = await interaction.original_response()
+        await open_sheet(bot, interaction, "equipment")
 
     @tree.command(name="shop", description="The Moon Pearl shop: rerolls, pills, bag space, name change")
     async def shop(interaction: discord.Interaction):
@@ -638,9 +600,10 @@ def register_commands(bot):
                 price = rules.fate_reroll_cost(fresh)
                 if fresh["lotus_coins"] < price:
                     return embed("🎲 Fate Reroll", "You can no longer afford it.")
+                if db.spend(bot.conn, uid, "lotus_coins", price, "Fate Reroll") is None:
+                    return embed("🎲 Fate Reroll", "You can no longer afford it.")
                 new = rules.reroll_talent(fresh["talent"], talent_rules.FATE_REROLL["can_go_lower"])
-                db.update_player(bot.conn, uid, talent=new, lotus_coins=fresh["lotus_coins"] - price,
-                                 fate_rerolls=fresh["fate_rerolls"] + 1)
+                db.update_player(bot.conn, uid, talent=new, fate_rerolls=fresh["fate_rerolls"] + 1)
             news = loot.talent_announcement(fresh["name"], new) if new != fresh["talent"] else None
             if news:
                 await interaction.channel.send(news)
@@ -670,7 +633,9 @@ def register_commands(bot):
                 price = rules.physician_cost(fresh)
                 if fresh["lotus_coins"] < price:
                     return embed("🩺 Physician", f"You need 🪷 {price:,} but have 🪷 {fresh['lotus_coins']:,}.")
-                db.update_player(bot.conn, uid, injured_until=None, lotus_coins=fresh["lotus_coins"] - price)
+                if db.spend(bot.conn, uid, "lotus_coins", price, "Physician") is None:
+                    return embed("🩺 Physician", f"You need 🪷 {price:,} but have 🪷 {fresh['lotus_coins']:,}.")
+                db.update_player(bot.conn, uid, injured_until=None)
             return embed("🩺 Physician", f"Needles, herbs and a bitter tea. You are healed! 🪷 −{price:,}")
 
         view = ConfirmView(uid, f"Heal for {cost:,} coins", heal, style=discord.ButtonStyle.success, emoji="🩺")

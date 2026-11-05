@@ -2,7 +2,8 @@
 SQLite player storage.
 
 One row per Discord account in `players`, plus learned techniques in
-`techniques`, bag contents in `items` and command cooldowns in `cooldowns`.
+`techniques`, bag contents in `items`, currency changes in `ledger` and command cooldowns
+in `cooldowns`.
 All functions take an open sqlite3.Connection so tests can use an in-memory
 database.
 """
@@ -64,6 +65,17 @@ CREATE TABLE IF NOT EXISTS handled_messages (
     message_id  INTEGER PRIMARY KEY,   -- an "m" command message that a copy of the bot answered
     at          REAL    NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ledger (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    currency    TEXT    NOT NULL,   -- a key of economy.CURRENCIES (lotus_coins, moon_pearls)
+    delta       INTEGER NOT NULL,   -- what actually changed (+ gained, - spent)
+    balance     INTEGER NOT NULL,   -- balance right after
+    reason      TEXT    NOT NULL,
+    at          REAL    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ledger_user ON ledger(user_id, id);
 
 CREATE TABLE IF NOT EXISTS cooldowns (
     user_id     INTEGER NOT NULL,
@@ -129,6 +141,9 @@ def create_player(conn, user_id, name, talent, lotus_coins, techniques):
             "INSERT INTO techniques (user_id, name, type, grade) VALUES (?, ?, ?, ?)",
             [(user_id, t["name"], t["type"], t["grade"]) for t in techniques],
         )
+        if lotus_coins:
+            conn.execute("INSERT INTO ledger (user_id, currency, delta, balance, reason, at) VALUES (?, ?, ?, ?, ?, ?)",
+                         (user_id, "lotus_coins", lotus_coins, lotus_coins, "Starting purse", time.time()))
     return get_player(conn, user_id)
 
 
@@ -156,10 +171,63 @@ def update_player(conn, user_id, **fields):
         conn.execute(f"UPDATE players SET {cols} WHERE user_id = ?", (*fields.values(), user_id))
 
 
-def add_coins(conn, user_id, amount):
-    with conn:
-        conn.execute("UPDATE players SET lotus_coins = MAX(0, lotus_coins + ?) WHERE user_id = ?",
-                     (int(amount), user_id))
+# ── Currencies (every change goes through change_currency, which keeps the ledger) ──
+
+CURRENCY_COLUMNS = ("lotus_coins", "moon_pearls")   # economy.CURRENCIES that are live
+LEDGER_KEEP = 100                                   # newest ledger rows kept per player
+
+
+def change_currency(conn, user_id, currency, delta, reason, clamp=False, now=None):
+    """Add `delta` (negative to spend) to one currency and write a ledger row in the same step.
+
+    A balance can never go below 0: a spend larger than the balance changes nothing and returns
+    None, unless clamp=True (then it takes what there is, e.g. bandits stealing). The update only
+    applies if the balance is still the one just read, so two changes at once can't both spend the
+    same coins. Returns the new balance, or None (no such player, or not enough)."""
+    if currency not in CURRENCY_COLUMNS:
+        raise ValueError(f"unknown currency {currency!r}")
+    delta = int(delta)
+    now = time.time() if now is None else now
+    for _ in range(5):
+        row = conn.execute(f"SELECT {currency} FROM players WHERE user_id = ?", (user_id,)).fetchone()
+        if row is None:
+            return None
+        balance = row[0]
+        new = balance + delta
+        if new < 0:
+            if not clamp:
+                return None
+            new = 0
+        if new == balance:
+            return balance
+        with conn:
+            done = conn.execute(f"UPDATE players SET {currency} = ? WHERE user_id = ? AND {currency} = ?",
+                                (new, user_id, balance)).rowcount
+            if done:
+                conn.execute("INSERT INTO ledger (user_id, currency, delta, balance, reason, at) "
+                             "VALUES (?, ?, ?, ?, ?, ?)", (user_id, currency, new - balance, new, reason, now))
+                conn.execute("DELETE FROM ledger WHERE user_id = ? AND id NOT IN "
+                             "(SELECT id FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT ?)",
+                             (user_id, user_id, LEDGER_KEEP))
+                return new
+    raise RuntimeError("balance kept changing; try again")
+
+
+def spend(conn, user_id, currency, amount, reason):
+    """Take `amount` (> 0) if the player has it. Returns the new balance, or None if not enough."""
+    if int(amount) <= 0:
+        raise ValueError("amount must be positive")
+    return change_currency(conn, user_id, currency, -int(amount), reason)
+
+
+def add_coins(conn, user_id, amount, reason="Lotus Coins"):
+    """Give (or, with a negative amount, take up to everything) Lotus Coins."""
+    change_currency(conn, user_id, "lotus_coins", amount, reason, clamp=True)
+
+
+def ledger(conn, user_id, limit=10):
+    return [dict(r) for r in conn.execute(
+        "SELECT * FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT ?", (user_id, limit))]
 
 
 # ── Techniques ────────────────────────────────────────────────────────
@@ -272,6 +340,18 @@ def add_item(conn, user_id, category, key, name, grade=None, qty=1, data=None):
             "INSERT INTO items (user_id, category, key, name, grade, qty, data) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (user_id, category, key, name, grade, qty, json.dumps(data) if data else None))
     return True
+
+
+def discard_item(conn, user_id, item_id, qty=1):
+    """Throw away `qty` of an item the player owns. Refuses (returns False) if the item is gone,
+    belongs to someone else, is equipped, or the stack is smaller than `qty`."""
+    if qty < 1:
+        return False
+    with conn:
+        done = conn.execute("UPDATE items SET qty = qty - ? WHERE id = ? AND user_id = ? AND equipped = 0 "
+                            "AND qty >= ?", (qty, item_id, user_id, qty)).rowcount
+        conn.execute("DELETE FROM items WHERE id = ? AND qty <= 0", (item_id,))
+    return bool(done)
 
 
 def remove_item(conn, item_id, qty=1):

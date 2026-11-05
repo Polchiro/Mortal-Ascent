@@ -208,7 +208,7 @@ class Expedition:
         else:
             wallet = db.get_player(self.conn, self.user_id)["lotus_coins"]
             stolen = int(wallet * explore.BANDIT_COIN_LOSS)
-            db.add_coins(self.conn, self.user_id, -stolen)
+            db.add_coins(self.conn, self.user_id, -stolen, "Robbed by bandits")
             self.story.append(f"They beat you and rob **🪷 {stolen}** from your purse.")
 
     def _wandering_merchant(self):
@@ -228,10 +228,12 @@ class Expedition:
         if wallet < price:
             return f"You need 🪷 {price} but only have 🪷 {wallet}."
         item = loot.pill(m["pill"]) if what == "pill" else loot.herb(name=m["herb"])
+        if db.spend(self.conn, self.user_id, "lotus_coins", price, f"Merchant: {item['name']}") is None:
+            return f"You need 🪷 {price} but only have 🪷 {wallet}."
         stored, _ = loot.store(self.conn, self.user_id, [item])
         if not stored:
+            db.change_currency(self.conn, self.user_id, "lotus_coins", price, "Refund: bag full")
             return "Your bag is full."
-        db.add_coins(self.conn, self.user_id, -price)
         m["bought"].add(what)
         self.story.append(f"🛒 You bought **{item['name']}** for 🪷 {price}.")
         return None
@@ -252,7 +254,7 @@ class Expedition:
         if how == "coins":
             wallet = db.get_player(self.conn, self.user_id)["lotus_coins"]
             paid = min(wallet, self.stranger_cost)
-            db.add_coins(self.conn, self.user_id, -paid)
+            db.add_coins(self.conn, self.user_id, -paid, "Helped a wounded traveller")
             self.story.append(f"You give them 🪷 {paid} for medicine.")
         else:
             lost = round(self.max_hp * STRANGER_HP_COST)
@@ -338,7 +340,7 @@ class Expedition:
                          f"injured for {explore.DEFEAT_INJURY_HOURS} hour(s).")
         stored, lost = loot.store(self.conn, self.user_id, items)
         self.announce += [a for a in (loot.announcement(self.player["name"], i) for i in stored) if a]
-        db.add_coins(self.conn, self.user_id, coins)
+        db.add_coins(self.conn, self.user_id, coins, "Expedition loot")
         fields = {"beasts_slain": self.player["beasts_slain"] + self.beasts_slain}
         if self.defeated:
             fields["injured_until"] = now + explore.DEFEAT_INJURY_HOURS * 3600
