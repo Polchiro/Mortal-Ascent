@@ -76,9 +76,11 @@ def test_cards_render_without_any_system_fonts(conn, monkeypatch):
 
     monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
     monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])
+    profile_card.clear_font_cache()
     p = new_player(conn)
     assert profile_card.render_profile(rules.profile_data(p, db.get_techniques(conn, 1), 1)).size == (1200, 720)
     assert render_balance(rules.balance_data(p)).size == (1200, 500)
+    profile_card.clear_font_cache()
 
 
 def test_command_error_always_answers():
@@ -96,6 +98,71 @@ def test_command_error_always_answers():
         asyncio.run(bot.on_app_command_error(inter, RuntimeError("boom")))
         sent = inter.followup.send if deferred else inter.response.send_message
         sent.assert_awaited_once()
+
+
+def test_fonts_are_looked_up_once(conn, monkeypatch):
+    """A missing font made Pillow search the whole system font folder on every call (slow /profile on Windows)."""
+    import PIL.ImageFont
+    import profile_card
+    from balance_card import render_balance
+
+    p = new_player(conn)
+    data = rules.profile_data(p, db.get_techniques(conn, 1), 1)
+    profile_card.render_profile(data)
+    render_balance(rules.balance_data(p))
+    calls = []
+    real = PIL.ImageFont.truetype
+    monkeypatch.setattr(PIL.ImageFont, "truetype", lambda *a, **k: calls.append(a) or real(*a, **k))
+    profile_card.render_profile(data)
+    render_balance(rules.balance_data(p))
+    assert calls == []
+
+
+def test_profile_renders_from_avatar_bytes(conn):
+    import io
+    from PIL import Image
+    from profile_card import render_profile
+
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 64), (200, 30, 30)).save(buf, format="PNG")
+    p = new_player(conn)
+    data = rules.profile_data(p, db.get_techniques(conn, 1), 1)
+    data["avatar_bytes"] = buf.getvalue()
+    assert render_profile(data).size == (1200, 720)
+
+
+def test_profile_command_twice_with_slow_avatar():
+    """Run /profile twice in a row with an avatar download that never finishes: both must reply."""
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+
+    from bot import client
+    from bot.client import MortalAscent
+
+    async def go():
+        bot = MortalAscent(":memory:")
+        client.AVATAR_TIMEOUT_SECONDS = 0.2
+        start = bot.tree.get_command("start").callback
+        profile = bot.tree.get_command("profile").callback
+        balance = bot.tree.get_command("balance").callback
+
+        def inter():
+            i = MagicMock()
+            i.user.id, i.user.display_name = 1, "Tester"
+            i.response.send_message, i.response.defer, i.followup.send = AsyncMock(), AsyncMock(), AsyncMock()
+
+            async def never():
+                await asyncio.sleep(3600)
+            i.user.display_avatar.with_format.return_value.with_size.return_value.read = never
+            return i
+
+        await start(inter())
+        for cmd in (profile, profile, balance, balance):
+            i = inter()
+            await asyncio.wait_for(cmd(i), 30)
+            i.response.defer.assert_awaited_once()
+            assert i.followup.send.call_args.kwargs["file"].filename.endswith(".png")
+    asyncio.run(go())
 
 
 def test_admin_reset_and_give(conn, monkeypatch):

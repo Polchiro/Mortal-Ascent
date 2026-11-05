@@ -610,3 +610,16 @@ def test_explore_lair_creates_hunt(conn):
     e.paths["left"] = ("beast_king_den", "clue")
     e.choose("left")
     assert e.lair and e.lair["tier"] == "beast_king"
+
+
+def test_passive_qi_rises_before_every_command(conn):
+    from bot.client import sync_passive_qi
+    new_player(conn, talent="Ordinary")
+    db.update_player(conn, 1, qi_collected_at=0)
+    qi, events = sync_passive_qi(conn, 1, now=2 * 3600)
+    p = db.get_player(conn, 1)
+    assert qi == pytest.approx(2.5 * 1.05 * 2) and p["qi_collected_at"] == 2 * 3600
+    assert (p["layer"], p["qi"]) == (1, pytest.approx(5.25))
+    assert sync_passive_qi(conn, 1, now=2 * 3600)[0] == 0          # nothing twice
+    db.update_player(conn, 1, seclusion_start=0, seclusion_end=8 * 3600)
+    assert sync_passive_qi(conn, 1, now=5 * 3600)[0] == 0          # seclusion gathers its own way
