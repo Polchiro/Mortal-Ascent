@@ -12,7 +12,9 @@ stage is turn-based with a timer per decision, never a moving bar:
     ⚡ Pill Tribulation        a 95%+ craft that may reach 9 patterns must survive the lightning
 
 Score → 1–9 pill patterns (丹纹), capped by herb age. Every number comes from alchemy.py.
-Craft holds the game and has no Discord code, so it can be tested directly. CraftView drives it.
+Craft holds the game and has no Discord code, so it can be tested directly. CraftView drives it:
+while a craft runs, the message shows the Alchemy Chamber card (cards/alchemy.py, data from
+bot/craft_card.py) with the readable details in the text under it, edited after every decision.
 """
 import asyncio
 import logging
@@ -25,9 +27,12 @@ import discord
 import alchemy
 import training
 
-from . import db, loot
+from . import craft_card, db, loot
 from . import player as rules
+from . import render as card_render
+from .fight_view import jpg
 from .views import COLOR, OwnedView
+from cards.alchemy import render_alchemy
 
 log = logging.getLogger("mortal-ascent")
 
@@ -171,6 +176,7 @@ class Prompt:
     options: list            # [(key, label, emoji)]
     seconds: float
     style: dict = field(default_factory=dict)    # key → "primary" / "danger" / "success"
+    view: dict = field(default_factory=dict)     # what the card draws: the shown heat state / pulse (bot/craft_card)
 
 
 STAGE_NAMES = {1: "🔥 Ignite the Cauldron", 2: "🌿 Add the Herbs", 3: "☯️ Fuse the Essences",
@@ -297,7 +303,7 @@ class Craft:
                  f"🌡️ **{self.heat}°** {heat_bar(self.heat)}", texts[state], omen]
         return Prompt(1, STAGE_NAMES[1], lines, [("stoke", f"Stoke +{HEAT_STEP}°", "🔥"),
                                                  ("hold", "Hold", "✋"), ("fan", f"Fan −{HEAT_STEP}°", "🌬️")],
-                      self.seconds)
+                      self.seconds, view={"heat_state": state})
 
     def _act_1(self, key):
         move = {"stoke": HEAT_STEP, "fan": -HEAT_STEP}.get(key, 0)
@@ -444,7 +450,7 @@ class Craft:
         lines = ["The pill pulses in the cauldron. Press **Condense** at the perfect pulse: too early is weak, "
                  "too late and it cracks.", f"💊 *{PULSES[shown].capitalize()}...*"]
         return Prompt(4, STAGE_NAMES[4], lines, [("condense", "Condense", "💊"), ("wait", "Wait", "⏳")],
-                      self.seconds, {"condense": "success"})
+                      self.seconds, {"condense": "success"}, view={"pulse": shown})
 
     def _act_4(self, key):
         if key == "condense":
@@ -662,6 +668,19 @@ def best_breakthrough_pill(conn, user_id, player):
 
 # ── Discord ───────────────────────────────────────────────────────────
 
+# button colours per action (the look only: the actions themselves come from Craft.prompt)
+BUTTON_STYLE = {"stoke": discord.ButtonStyle.danger, "ignite": discord.ButtonStyle.danger,
+                "hold": discord.ButtonStyle.secondary, "wait": discord.ButtonStyle.secondary,
+                "compress": discord.ButtonStyle.secondary, "condense": discord.ButtonStyle.success}
+
+
+def button_emoji(bot, key, default):
+    """The medallion icon uploaded as an application emoji (cards/alchemy_icons.py), else the plain emoji."""
+    em = getattr(bot, "emojis_ma", None)
+    custom = getattr(em, "custom", {}).get("craft_" + key) if em else None
+    return custom or default
+
+
 class CraftView(OwnedView):
     """Picker → recipe → stages → result, all in one message."""
 
@@ -675,6 +694,8 @@ class CraftView(OwnedView):
         self.notice = None
         self.timer = None
         self.shown_at = None
+        self.herbs = []             # the planned ingredients, as card rows (bot/craft_card.herb_rows)
+        self.outcome = None         # {exp, rank_up, stored} once the craft is over
         self.build()
 
     @property
@@ -779,11 +800,13 @@ class CraftView(OwnedView):
         if self.craft and not self.craft.done:
             pr = self.craft.prompt()
             for key, label, emoji in pr.options:
-                style = {"success": discord.ButtonStyle.success}.get(pr.style.get(key), discord.ButtonStyle.primary)
-                self.button(label, self.make_act(key), emoji=emoji, style=style)
+                style = BUTTON_STYLE.get(key) or {"success": discord.ButtonStyle.success}.get(
+                    pr.style.get(key), discord.ButtonStyle.primary)
+                self.button(label, self.make_act(key), emoji=button_emoji(self.bot, key, emoji), style=style)
             return
         if self.result_lines:
-            self.button("Craft Again", self.on_again, emoji="🏺", style=discord.ButtonStyle.success)
+            self.button("Craft Again", self.on_again, emoji=button_emoji(self.bot, "again", "🏺"),
+                        style=discord.ButtonStyle.success)
             self.button("Close", self.on_close, emoji="🏮")
             return
         if self.choice:
@@ -806,8 +829,9 @@ class CraftView(OwnedView):
         self.add_item(sel)
 
     async def redraw(self, interaction):
+        """The picker and recipe screens: text only, so any card from the last craft is taken off."""
         self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
+        await interaction.response.edit_message(embed=self.embed(), view=self, attachments=[])
         self.notice = None
 
     async def on_pick(self, interaction):
@@ -833,7 +857,8 @@ class CraftView(OwnedView):
             await self.redraw(interaction)
             return
         self.craft = Craft(kind, grade, self.rank(), pl["age"], self.rng)
-        self.result_lines = None
+        self.herbs = craft_card.herb_rows(pl["uses"], pl["core"])
+        self.result_lines, self.outcome = None, None
         await self.show_step(interaction)
 
     def make_act(self, key):
@@ -851,16 +876,9 @@ class CraftView(OwnedView):
             key = None
         c.act(key)
         if c.done:
-            async with self.bot.db_lock:
-                self.result_lines, news = finish_craft(self.bot.conn, self.owner_id, c)
-            self.result_lines = c.log + [""] + self.result_lines if c.log else self.result_lines
-            self.news = news
-        if interaction is not None:
+            await self.finish_and_store(c)
+        if interaction is not None or self.message:
             await self.show_step(interaction)
-        elif self.message:
-            self.build()
-            await self.message.edit(embed=self.embed(), view=self)
-            self.after_show()
         if c.done and getattr(self, "news", None) and self.message:
             try:
                 await self.message.channel.send(self.news)
@@ -868,10 +886,52 @@ class CraftView(OwnedView):
                 log.warning("Could not announce a nine-pattern pill", exc_info=True)
             self.news = None
 
-    async def show_step(self, interaction):
+    async def finish_and_store(self, c):
+        async with self.bot.db_lock:
+            old_rank = self.rank()
+            self.result_lines, news = finish_craft(self.bot.conn, self.owner_id, c)
+            new_rank = self.rank()
+        self.outcome = {"exp": c.exp(), "rank_up": rank_label(new_rank) if new_rank > old_rank else None,
+                        "stored": not any("bag is full" in line.lower() for line in self.result_lines)}
+        self.result_lines = c.log + [""] + self.result_lines if c.log else self.result_lines
+        self.news = news
+
+    async def card_file(self):
+        """The Alchemy Chamber card as a JPEG (rendered on the card thread), or None if it can't be drawn."""
+        try:
+            data = craft_card.card_data(self.craft, self.herbs, self.outcome)
+            img = await card_render.render(render_alchemy, data)
+        except Exception:
+            log.exception("Could not render the alchemy card")
+            return None
+        return jpg(img, "craft.jpg")
+
+    async def show_step(self, interaction, view=True):
+        """Render the card for the current decision (or the result) and edit the one craft message."""
         self.build()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
-        self.after_show()
+        if interaction is not None and not interaction.response.is_done():
+            await interaction.response.defer()          # rendering can take a moment: answer Discord first
+        file = await self.card_file()
+        kw = {"embed": self.embed(), "view": self if view else None, "attachments": [file] if file else []}
+        await self.edit(interaction, **kw)
+        if view:
+            self.after_show()                            # the decision timer starts once the card is shown
+
+    async def edit(self, interaction, **kw):
+        try:
+            if interaction is not None:
+                await interaction.edit_original_response(**kw)
+                return
+        except discord.HTTPException:
+            log.warning("Editing the craft through the interaction failed; editing the message instead", exc_info=True)
+        if self.message is not None:
+            try:
+                await self.message.edit(**kw)
+            except discord.HTTPException:   # interaction token expired (15 min): edit through the channel
+                ch = getattr(self.message, "channel", None)
+                if ch is None:
+                    raise
+                await ch.get_partial_message(self.message.id).edit(**kw)
 
     def after_show(self):
         if self.craft and not self.craft.done:
@@ -895,7 +955,7 @@ class CraftView(OwnedView):
         self.timer = asyncio.create_task(expire())
 
     async def on_again(self, interaction):
-        self.craft, self.result_lines = None, None
+        self.craft, self.result_lines, self.outcome = None, None, None
         await self.redraw(interaction)
 
     async def on_close(self, interaction):
@@ -916,10 +976,14 @@ class CraftView(OwnedView):
                     if c.done:
                         break
                     c.act(None)
-                async with self.bot.db_lock:
-                    self.result_lines, _ = finish_craft(self.bot.conn, self.owner_id, c)
+                await self.finish_and_store(c)
+                self.news = None
             if self.message:
-                await self.message.edit(embed=self.embed(), view=None)
+                if c:
+                    self.clear_items()
+                    await self.show_step(None, view=False)
+                else:
+                    await self.message.edit(embed=self.embed(), view=None)
         except Exception:
             log.exception("Craft timeout handling failed")
         finally:
