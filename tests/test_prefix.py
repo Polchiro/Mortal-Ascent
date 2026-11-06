@@ -98,8 +98,7 @@ def test_parse_choices_numbers_and_text(bot):
     assert parse("admin give qi:500 lotus_coins:20") == {"qi": 500, "lotus_coins": 20}
     with pytest.raises(prefix.UsageError):
         parse("seclusion 99")
-    with pytest.raises(prefix.UsageError):
-        parse("index dragons")
+    assert parse("index dragons") == {"search": "dragons"}             # free text searches the Compendium
     with pytest.raises(prefix.UsageError):
         parse("practice")
 
@@ -120,9 +119,9 @@ def test_commands_run_from_a_message(bot):
     handled, sent = run(bot, "m craft")
     assert "Alchemy Cauldron" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
     handled, sent = run(bot, "m herbs")
-    assert "Gather" in sent[0].kw["embed"].title
+    assert "How to /gather" in sent[0].kw["embed"].description and sent[0].kw["file"].filename == "compendium.png"
     handled, sent = run(bot, "m pills")
-    assert "Qi Pills" in sent[0].kw["embed"].title
+    assert "Pills · Overview" in sent[0].kw["embed"].description
     handled, sent = run(bot, "m help")
     assert "m gather" in sent[0].kw["embed"].description and "m craft" in sent[0].kw["embed"].description
     handled, sent = run(bot, "m seclusion 99")

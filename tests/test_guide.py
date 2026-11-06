@@ -1,21 +1,29 @@
 import beasts
+import discord
 import equipments
 import technique
 
-from bot import guide
+from bot import compendium, guide
 from bot import player as rules
 
 
-def all_index_embeds():
-    for key, (_, _, build, _) in guide.SECTIONS.items():
-        for page in range(len(build())):
-            yield key, page, guide.index_embed(key, page)[0]
+def all_pages():
+    """Every page of every tier (Overview included) of every section."""
+    for key in compendium.SECTIONS:
+        for tier in [compendium.OVERVIEW] + [t[0] for t in compendium.tiers(key)]:
+            first = compendium.tier_page(key, tier)
+            for n in range(first["pages"]):
+                yield compendium.tier_page(key, tier, n)
 
 
 def fits_discord(e):
-    return (len(e) <= 6000 and len(e.fields) <= 25 and len(e.title) <= 256
+    return (len(e) <= 6000 and len(e.fields) <= 25 and len(e.title or "") <= 256
             and len(e.description or "") <= 4096
             and all(len(f.name) <= 256 and len(f.value) <= 1024 for f in e.fields))
+
+
+def all_names():
+    return "\n".join(f"{t['name']}\n" + "\n".join(t["lines"]) for p in all_pages() for t in p["tiles"])
 
 
 def test_tutorial_pages_fit_discord_limits():
@@ -25,13 +33,75 @@ def test_tutorial_pages_fit_discord_limits():
         assert fits_discord(guide.lesson_embed(i))
 
 
-def test_index_pages_fit_discord_limits():
-    for key, page, e in all_index_embeds():
-        assert fits_discord(e), (key, page)
+def test_every_section_and_tier_renders():
+    from cards.compendium import render_compendium
+    seen = set()
+    for p in all_pages():
+        img = render_compendium(p)
+        assert img.size[0] == 1200 and 600 < img.size[1] < 1400, (p["section"], p["tier"], img.size)
+        seen.add((p["section"], p["tier"]))
+        e = guide.page_embed(p)
+        assert fits_discord(e), (p["section"], p["tier"])
+        assert 1 <= len(p["tiles"]) <= compendium.PER_PAGE
+        for t in p["tiles"]:
+            assert t["name"] and 1 <= len(t["lines"]) <= 3
+    for key in compendium.SECTIONS:
+        assert (key, compendium.OVERVIEW) in seen
+        for tier in compendium.tiers(key):
+            assert (key, tier[0]) in seen
+
+
+def test_tier_menus_follow_the_sections():
+    assert [t[0] for t in compendium.tiers("beasts")] == rules.REALM_ORDER
+    assert [t[0] for t in compendium.tiers("techniques")] == list(technique.GRADES)
+    for key in ("weapons", "armor", "artifacts"):
+        assert [t[0] for t in compendium.tiers(key)] == equipments.TIERS
+        assert [t[1] for t in compendium.tiers(key)] == list("凡精灵宝神")
+    assert [t[1] for t in compendium.tiers("herbs")] == list("凡黄玄地天")
+    assert [t[0] for t in compendium.tiers("chests")] == ["wooden", "bronze", "silver", "jade"]
+    assert [t[2] for t in compendium.tiers("pills")] == ["Qi", "Qi Burst", "Mending", "Cleansing", "Breakthrough"]
+
+
+def test_index_menus_fit_discord_limits():
+    import asyncio
+
+    async def go():
+        for key in compendium.SECTIONS:
+            view = guide.IndexView(1, key)
+            view.page_data()
+            view.build()
+            selects = [c for c in view.children if isinstance(c, discord.ui.Select)]
+            assert len(selects) == 2 and len(selects[1].options) <= 25
+            assert selects[1].options[0].label == "Overview"
+            for s in selects:
+                for o in s.options:
+                    assert len(o.label) <= 100 and len(o.description or "") <= 100
+    asyncio.run(go())
+
+
+def test_back_and_next_only_when_a_tier_overflows():
+    import asyncio
+
+    async def go():
+        view = guide.IndexView(1, "weapons", "spirit")
+        view.page_data()
+        view.build()
+        assert not [c for c in view.children if isinstance(c, discord.ui.Button)]
+        view = guide.IndexView(1, "artifacts", "treasure")
+        view.page_data()
+        view.build()
+        labels = [c.label for c in view.children if isinstance(c, discord.ui.Button)]
+        assert labels == ["Back", "Page 1 of 2", "Next"]
+    asyncio.run(go())
+
+
+def test_artifact_groups_stay_together():
+    pages = compendium.paginate(compendium.artifacts_page("treasure")["tiles"])
+    assert [{t["group"] for t in p} for p in pages] == [{"Combat"}, {"Cultivation", "Exploration"}]
 
 
 def test_index_lists_every_beast_technique_and_weapon():
-    text = "\n".join(f.name for _, _, e in all_index_embeds() for f in e.fields)
+    text = all_names()
     for realm in beasts.BEASTS.values():
         for name, _, _ in realm:
             assert name in text
@@ -42,9 +112,45 @@ def test_index_lists_every_beast_technique_and_weapon():
             assert name in text
 
 
-def test_beast_pages_follow_realm_order():
-    pages = guide.beast_pages()
-    assert [p[0] for p in pages] == [f"Beasts · {r}" for r in rules.REALM_ORDER]
+def test_index_numbers_come_from_the_data():
+    p = compendium.tier_page("weapons", "spirit")
+    lo, hi = equipments.WEAPON_BUFFS["saber"]["spirit"]["attack"]
+    saber = next(t for t in p["tiles"] if t["name"] == equipments.WEAPON_NAMES["spirit"]["saber"])
+    assert f"+{round(lo * 100)}–{round(hi * 100)}% ATK" in saber["lines"][1]
+    p = compendium.tier_page("artifacts", "treasure", 1)
+    qi = next(t for t in p["tiles"] if t["name"] == equipments.ARTIFACT_FAMILIES["qi"]["names"][3])
+    assert f"{equipments.ARTIFACT_FAMILIES['qi']['values'][3] * 100:g}%" in qi["lines"][1]
+
+
+def test_search_jumps_to_the_page():
+    assert compendium.search("Qilin") == ("beasts", "Martial King", 0, "Qilin")
+    assert compendium.search("  qilin ") == ("beasts", "Martial King", 0, "Qilin")
+    assert compendium.search("jade chest") == ("chests", "jade", 0, None)
+    assert compendium.search("azur frost swrd")[3] == "Azure Frost Sword"           # close spelling
+    name = equipments.ARTIFACT_FAMILIES["hunter"]["names"][3]
+    assert compendium.search(name) == ("artifacts", "treasure", 1, name)            # second page
+    assert compendium.search("zzzz nothing") is None
+    p = compendium.tier_page("beasts", "Martial King", 0, found="Qilin")
+    assert [t["name"] for t in p["tiles"] if t["found"]] == ["Qilin"]
+    assert "▶ **Qilin**" in compendium.text_version(p)
+    names = compendium.search_names("drag")
+    assert names and len(names) <= 25 and all("drag" in n.lower() for n in names)
+
+
+def test_index_runs_from_a_message():
+    import asyncio
+    from bot import prefix
+    from bot.client import MortalAscent
+    from tests.test_prefix import FakeInput
+
+    async def make():
+        return MortalAscent(":memory:")
+    bot = asyncio.run(make())
+    msg = FakeInput("m index search:Qilin")
+    assert asyncio.run(prefix.handle_message(bot, msg))
+    sent = msg.channel.sent[-1]
+    assert sent.kw["file"].filename == "compendium.png"
+    assert "Qilin" in sent.kw["embed"].description
 
 
 def test_beast_multipliers():
