@@ -2,7 +2,7 @@
 Character attributes and resources shown on the Character Sheet.
 
 The Martial path has three attributes, HP, Attack and Defense (docs/stats.md),
-all worked out from realm + layer and raised by the weapon and the equipped
+all worked out from realm + layer and raised by the weapon, the armor and the equipped
 techniques' passive buffs. Cards draw whatever this module lists, so a later
 path (Cultivation) adds its own entries to PATHS without touching the cards.
 
@@ -39,11 +39,11 @@ def path_for(player):
     return "martial"
 
 
-def attribute_values(player, techniques=(), weapon=None):
+def attribute_values(player, techniques=(), weapon=None, armor=None):
     """[{key, label, icon, color, base, final, bonus, sources: [(name, pct)]}] for the player's path."""
     base = dict(zip(("hp", "attack", "defense"), rules.base_stats(player["realm"], player["layer"])))
-    final = dict(zip(("hp", "attack", "defense"), rules.final_stats(player, techniques, weapon)))
-    buffs = rules.stat_buffs(techniques, weapon)
+    final = dict(zip(("hp", "attack", "defense"), rules.final_stats(player, techniques, weapon, armor)))
+    buffs = rules.stat_buffs(techniques, weapon, armor)
     out = []
     for a in PATHS[path_for(player)]:
         src = buffs.get(a.key, [])
@@ -61,5 +61,5 @@ def qi_resource(player, techniques=(), now=None):
             "status": d["status"], "status_tone": d["status_tone"]}
 
 
-def hp_resource(player, techniques=(), weapon=None, now=None):
-    return {"max": rules.final_stats(player, techniques, weapon)[0], "injured_for": rules.injured_for(player, now)}
+def hp_resource(player, techniques=(), weapon=None, now=None, armor=None):
+    return {"max": rules.final_stats(player, techniques, weapon, armor)[0], "injured_for": rules.injured_for(player, now)}

@@ -18,7 +18,7 @@ import discord
 
 import alchemy
 
-from . import db, loot
+from . import db, gear, loot
 from . import player as rules
 from .views import COLOR, OwnedView
 
@@ -61,7 +61,8 @@ class Gathering:
         self.rng = rng or random.Random()
         self.started = time.time() if now is None else now
         p = self.player
-        self.max_hp = rules.final_stats(p, db.get_techniques(conn, user_id), db.equipped_weapon(conn, user_id))[0]
+        self.max_hp = rules.final_stats(p, db.get_techniques(conn, user_id), db.equipped_weapon(conn, user_id),
+                                       db.equipped_armor(conn, user_id))[0]
         self.hp = self.max_hp           # HP isn't stored outside fights, so poison only lasts this session
         self.round = None
         self.gathered = []              # herbs gathered this session
@@ -87,7 +88,7 @@ class Gathering:
     def _herb_round(self, p):
         tier = loot.herb_tier(p["realm"], self.rng)
         type_ = loot.roll_herb_type(self.rng)
-        age = loot.roll_age(self.rng, p["herb_streak"])
+        age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]
         old = age >= alchemy.OLD_HERB_FROM_AGE
         n = alchemy.OLD_HERB_CHOICES if old else alchemy.GATHER_CHOICES

@@ -5,9 +5,9 @@ card switch tabs in place, so players never have to type another command.
 
 | Tab | Command | Shows |
 |---|---|---|
-| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, weapon, deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
+| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, the **Gear** row (4 sockets: weapon, armor, artifact 1, artifact 2, each with its icon or seal in its tier colour, name and a short effect line; empty sockets say what fills them), deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
 | 📜 Techniques | /techniques | Attack, Defense and Flex sockets, then every learned technique |
-| ⚔️ Equipment | /equipment | The weapon slot, base → final stats and where every buff comes from |
+| ⚔️ Equipment | /equipment | All four gear slots with full details, base → final stats (weapon + armor + techniques) with every buff's source, and the worn artifacts' effects in their own list |
 | 🎒 Inventory | /inventory | Category tabs, a 4 × 3 item grid with pages, and an Inspect panel |
 | 🪷 Purse | /balance | Lotus Coins, Moon Pearls, Heavenly Blessing, recent transactions |
 
@@ -20,7 +20,7 @@ frames, Cinzel headings, a glowing tab strip across the top, and icons drawn in 
   colour, with their realm's character behind it
 - **Dantian orb:** a glass orb at the bottom of the Profile card that fills with red Qi as the layer
   bar fills
-- **Rarity colours** are shared by technique grades, weapon tiers and chest tiers
+- **Rarity colours** are shared by technique grades, weapon / armor / artifact tiers and chest tiers
 
 ### Activity result cards
 
@@ -45,8 +45,8 @@ text embed is sent instead.
 | Internal Qi | Qi / layer capacity, Qi Rate, Qi waiting to be banked, time to a full bar, next gate (training.md) | Qi as a fight resource: it is never spent in fights |
 | HP | Max HP, and an injury timer in the status line | Current HP: fights start at full HP; losing gives an injury instead |
 | Techniques | Sockets: 1 attack + 1 defense, Flex from Martial Warrior (technique.md) | More slots |
-| Equipment | One weapon slot (equipment.md) | Armor, artifacts, accessories |
-| Bag | Chests, Manuals, Weapons, Pills, Herbs (by kind and age), Materials | Beast cores, elixirs, rare treasures |
+| Equipment | One weapon, one armor and two artifact slots (equipment.md) | Accessories, more artifact slots at high realms |
+| Bag | Chests, Manuals, Weapons, Armor, Artifacts (tiles show their seal in the tier colour), Pills, Herbs (by kind and age), Materials | Elixirs, rare treasures |
 | Title | — | Character titles |
 
 ## Item actions
@@ -55,7 +55,7 @@ text embed is sent instead.
 |---|---|
 | Chest | Open, Discard |
 | Manual | Learn (or reread for mastery EXP if already learned), Discard |
-| Weapon | Equip / Unequip, Discard (only when not equipped) |
+| Weapon, armor, artifact | Equip / Unequip, Discard (only when not equipped). Artifacts fill the first free slot; with both full, or with one of the same family worn, Equip says why and nothing changes |
 | Qi pill, Heaven-Defying Pill | Take, Discard |
 | Herb | Discard (herbs have no use until alchemy exists) |
 
@@ -87,7 +87,7 @@ text embed is sent instead.
 | A new resource (e.g. Spirit Qi) | Add a function next to `qi_resource()` in bot/sheet/attributes.py and a panel in cards/profile.py |
 | A new currency | Add its column to `CURRENCY_COLUMNS` in bot/db.py and a style in `CURRENCY_STYLE` (bot/sheet/data.py) |
 | A new bag category | One entry in `CATEGORIES` and its details in `details()` (bot/sheet/items.py) |
-| Armor or artifact slots | Once designed in equipment.md: a slot list in bot/sheet/data.py `equipment_data()` and sockets in cards/equipment.py |
+| More gear slots | `worn()` / `gear_sockets()` / `equipment_data()` in bot/sheet/data.py, sockets in cards/profile.py `gear_row` and cards/equipment.py |
 | Profile themes (shop) | Another set of renderers next to cards/; the ink-wash cards at the repo root are the first one |
 
 ## Files

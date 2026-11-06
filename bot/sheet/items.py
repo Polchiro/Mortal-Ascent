@@ -6,7 +6,7 @@ CATEGORIES plus its details in `details()`. Actions only exist where the game
 has rules for them:
 
     Open (chests) · Learn (manuals) · Take (Qi pills, Heaven-Defying Pill)
-    Equip / Unequip (weapons) · Discard (anything not equipped, after a confirm)
+    Equip / Unequip (weapons, armor, artifacts) · Discard (anything not equipped, after a confirm)
 
 Herbs and Beast Cores go into pills through /craft, so in the bag they can only be inspected or
 discarded.
@@ -19,7 +19,7 @@ import explore
 import technique
 import training
 
-from .. import combat, db, loot
+from .. import combat, db, gear, loot
 from .. import player as rules
 
 
@@ -35,11 +35,14 @@ CATEGORIES = {
     "chests": Category("chests", "Chests", "chest", "Open"),
     "manuals": Category("manuals", "Manuals", "scroll", "Learn"),
     "weapons": Category("weapons", "Weapons", "sword", "Equip"),
+    "armor": Category("armor", "Armor", "seal:甲", "Equip"),
+    "artifacts": Category("artifacts", "Artifacts", "seal:宝", "Equip"),
     "pills": Category("pills", "Pills", "pill", "Take"),
     "herbs": Category("herbs", "Herbs", "herb", ""),
     "materials": Category("materials", "Materials", "herb", ""),
 }
 ORDER = list(CATEGORIES)
+GEAR = ("weapons", "armor", "artifacts")      # items you wear: Equip / Unequip
 
 TIER_LABEL = {"wooden": "Wooden", "bronze": "Bronze", "silver": "Silver", "jade": "Jade"}
 CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
@@ -48,7 +51,7 @@ CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
 def rarity(item):
     """(label, key into cards.theme.RARITY)."""
     cat, grade = item["category"], item.get("grade")
-    if cat == "weapons":
+    if cat in GEAR:
         return grade.title(), grade
     if cat == "chests":
         return TIER_LABEL.get(item["key"], item["key"].title()), item["key"]
@@ -64,13 +67,15 @@ def rarity(item):
 def item_icon(item):
     if item["category"] == "weapons":
         return (item.get("data") or {}).get("type") or item["key"]
+    if item["category"] in ("armor", "artifacts"):
+        return gear.icon_kind(item)
     return CATEGORIES[item["category"]].icon
 
 
 def actions(item):
     """Action keys this item allows: use, unequip, discard."""
     out = []
-    if item["category"] == "weapons" and item["equipped"]:
+    if item["category"] in GEAR and item["equipped"]:
         out.append("unequip")
     elif CATEGORIES[item["category"]].use_verb:
         out.append("use")
@@ -115,6 +120,30 @@ def details(item, player, learned_names=()):
             notes.append(("Equipped", "gold"))
         if rules.realm_index(player["realm"]) < rules.realm_index(need):
             notes.append((f"Needs {need} to wield", "red"))
+    elif cat == "armor":
+        kind = f"{gear.armor_label(item)} armor"
+        lines.append(f"A {label.lower()} tier {gear.armor_label(item).lower()}. Armor only gives stat buffs, "
+                     "added to your weapon's and techniques'.")
+        effects += [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%") for k, v in rules.weapon_buffs(item).items()]
+        ok, need = gear.can_wield(player, item["grade"])
+        if item["equipped"]:
+            notes.append(("Equipped", "gold"))
+        if not ok:
+            notes.append((f"Needs {need} to wear", "red"))
+    elif cat == "artifacts":
+        spec = gear.family_spec(item)
+        kind = f"{gear.GROUP_LABEL[spec['group']]} artifact · {gear.family(item).title()} family"
+        lines.append(f"{spec['text']}. Every rarity of the {gear.family(item).title()} family has its "
+                     "own name and a fixed power.")
+        effects.append(gear.effect_text(item))
+        if spec["group"] == "combat":
+            effects.append(f"Fair Duels: {equipments.DUEL_COMBAT_ARTIFACT_STRENGTH:.0%} strength")
+        effects.append("One artifact of each family at a time")
+        ok, need = gear.can_wield(player, item["grade"])
+        if item["equipped"]:
+            notes.append((f"Equipped · artifact slot {item['equipped']}", "gold"))
+        if not ok:
+            notes.append((f"Needs {need} to wear", "red"))
     elif cat == "pills" and item["key"] == "heaven_defying":
         kind = "Fate-changing pill"
         lines.append("An ultra rare pill that defies the heavens themselves.")
@@ -155,6 +184,7 @@ def details(item, player, learned_names=()):
         lines.append("Dropped by beasts. Open it for Lotus Coins and a chance at rarer finds.")
         effects.append(f"{explore.CHEST_MANUAL_CHANCE[tier]:.0%} chance of a technique manual")
         effects.append(f"{equipments.CHEST_WEAPON_CHANCE[tier]:.0%} chance of a weapon")
+        effects.append(f"{equipments.CHEST_ARMOR_CHANCE[tier]:.0%} armor · {equipments.CHEST_ARTIFACT_CHANCE[tier]:.0%} artifact")
         lo, hi = loot.CHEST_COINS[tier]
         scale = rules.realm_scale(player["realm"])
         effects.append(f"{lo * scale:,}–{hi * scale:,} Lotus Coins")

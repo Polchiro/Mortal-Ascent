@@ -36,6 +36,14 @@ def demo_player(conn, uid=1):
     w = loot.roll_weapon("treasure", rng)
     db.add_item(conn, uid, **w)
     db.equip_weapon(conn, uid, db.get_items(conn, uid, "weapons")[0]["id"])
+    db.add_item(conn, uid, **loot.roll_armor("spirit", rng))
+    db.equip_single(conn, uid, "armor", db.get_items(conn, uid, "armor")[0]["id"])
+    for slot, (fam, tier) in enumerate((("mirror", "treasure"), ("qi", "spirit")), 1):
+        db.add_item(conn, uid, **loot.artifact(fam, tier))
+        db.equip_artifact(conn, uid, db.get_items(conn, uid, "artifacts")[-1]["id"], slot)
+    for item in (loot.roll_armor("refined", rng), loot.roll_armor("divine", rng), loot.artifact("lotus", "divine"),
+                 loot.artifact("fortune", "refined"), loot.artifact("furnace", "ordinary")):
+        db.add_item(conn, uid, **item)
     for item in (loot.roll_weapon("spirit", rng), loot.chest("jade"), dict(loot.chest("silver"), qty=3),
                  dict(loot.pill("Mystic"), qty=2), dict(loot.HEAVEN_DEFYING), loot.manual("meteor_falling_kick"),
                  dict(loot.herb("Heaven", "qi", 10), qty=7), dict(loot.herb("Heaven", "purity", 50), qty=3),
@@ -63,12 +71,14 @@ def main():
         "equipment": sheet.equipment_data(conn, uid),
         "inventory": sheet.bag_data(conn, uid, "chests")[0],
         "herbs": sheet.bag_data(conn, uid, "herbs")[0],
+        "armor": sheet.bag_data(conn, uid, "armor")[0],
+        "artifacts": sheet.bag_data(conn, uid, "artifacts")[0],
         "purse": sheet.purse_data(conn, uid),
     }
     for name, data in cards.items():
         t0 = time.perf_counter()
         path = os.path.join(out, f"sheet_{name}.png")
-        RENDERERS["inventory" if name == "herbs" else name](data).save(path)
+        RENDERERS["inventory" if name in ("herbs", "armor", "artifacts") else name](data).save(path)
         print(f"{path}  ({time.perf_counter() - t0:.2f}s)")
     path = os.path.join(out, "sheet_qi.png")
     render_dantian(qi.qi_data(db.get_player(conn, uid), db.get_techniques(conn, uid))).save(path)

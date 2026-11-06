@@ -11,7 +11,7 @@ the card `render_duel` in `cards/battle.py`.
 **/duel @player** (or `m duel @player`), in a server channel.
 
 - The challenged player gets **Accept / Decline** buttons for **60 seconds**. The challenger can withdraw with Decline.
-- Before accepting, both see each other's **realm, layer, talent, equipped techniques and weapon**, and the
+- Before accepting, both see each other's **realm, layer, talent, equipped techniques, weapon, armor and artifacts**, and the
   realm and layer both will fight at.
 - Not allowed while either player is **in a fight** (an expedition, spar, training challenge, hunt or another
   duel), **in seclusion** or **injured**.
@@ -22,7 +22,9 @@ the card `render_duel` in `cards/battle.py`.
 
 - Both fight with the **base stats of the lower player's realm and layer** (stats.md). Lower = the lower realm,
   or the lower layer in the same realm.
-- **Weapon and technique % buffs count at half strength** (`BUFF_SHARE = 0.5`).
+- **Weapon, armor and technique % buffs count at half strength** (`BUFF_SHARE = 0.5`).
+- **Combat artifacts work at half strength** (`equipments.DUEL_COMBAT_ARTIFACT_STRENGTH`). Duels have no
+  charged attacks, so the Bell (钟) does nothing here.
 - **Technique effects and mastery count fully** (damage multipliers, Combo, Pierce, Heavy, Stagger, Counter,
   Recover, Unbreakable, Evade).
 - **No pills.** **Flee = forfeit** (it counts as a loss).

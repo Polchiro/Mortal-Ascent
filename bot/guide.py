@@ -1,6 +1,6 @@
 """
 /tutorial and /index: the Old Master's lessons (paged with buttons) and the Jianghu Compendium,
-an index of every beast, technique manual, weapon, chest, pill and herb in the game.
+an index of every beast, technique manual, weapon, armor piece, artifact, chest, pill and herb in the game.
 
 Everything in the index is read from the game data modules (beasts.py, technique.py,
 equipments.py, explore.py, training.py, alchemy.py, bot/loot.py), so it stays in step when they change.
@@ -15,7 +15,7 @@ import technique
 import training
 import talent as talent_rules
 
-from . import loot
+from . import gear, loot
 from . import player as rules
 from .expedition import MERCHANT_HERB_PRICE, MERCHANT_PILL_PRICE
 from .sheet.items import herb_uses as sheet_herb_uses, technique_effect
@@ -98,9 +98,10 @@ LESSONS = [
 
     ("Spoils of the Road",
      "\"Treasure means nothing if it rots in your bag.\"",
-     [("/inventory", "Your bag in tabs: chests, manuals, weapons, pills, herbs and materials. Pick an item "
-                     "to **open** a chest, **learn** a manual, **equip** a weapon or **take** a pill."),
-      ("/equipment", "Your weapon and your stats before and after it. Swap or remove it here."),
+     [("/inventory", "Your bag in tabs: chests, manuals, weapons, armor, artifacts, pills, herbs and materials. "
+                     "Pick an item to **open** a chest, **learn** a manual, **equip** gear or **take** a pill."),
+      ("/equipment", "Your four gear slots (weapon, armor, two artifacts), your stats before and after them, and "
+                     "what your artifacts do. Swap or remove gear here. Two artifacts of one family can't be worn together."),
       ("Manuals", "Learning one is instant and equips it. A copy of a manual you already know becomes mastery EXP.")]),
 
     ("Herbs and the Cauldron",
@@ -149,7 +150,8 @@ LESSONS = [
       ("🌙 Moon Pearls", "Spent in **/shop** (Qi pills, a Heavenly Fate Reroll that never goes lower, bag space, "
                         "a new name) and on **/blessing**, 30-day boosts to Qi, coins and more. "
                         "**/recharge** lists the pearl packages."),
-      ("Rare finds", "Divine weapons, Heaven manuals and the Heaven-Defying Pill are announced to the whole server.")]),
+      ("Rare finds", "Divine weapons, armor and artifacts, Heaven manuals and the Heaven-Defying Pill are announced "
+                     "to the whole server.")]),
 
     ("Walk Alone",
      "*The Old Master stands and brushes off his robe.*\n"
@@ -157,7 +159,7 @@ LESSONS = [
      [("A good day's path", "**/train** → **/explore** → open chests in **/inventory** → **/practice** "
                             "→ **/spar** → **/gather** herbs and **/craft** pills between cooldowns → **/breakthrough** when the bar is "
                             "full. Check **/internal qi** to see how far you are."),
-      ("Lost?", "**/index** lists every beast, technique, weapon, chest, pill and herb in the world. "
+      ("Lost?", "**/index** lists every beast, technique, weapon, armor, artifact, chest, pill and herb in the world. "
                 "**/tutorial** brings back these lessons any time.")]),
 ]
 
@@ -317,6 +319,51 @@ def weapon_pages():
     return pages
 
 
+def armor_pages():
+    pages = []
+    for tier in equipments.TIERS:
+        chests = [f"{CHEST_SEAL[c]} {loot.CHEST_NAMES[c]} ({pct(equipments.CHEST_ARMOR_CHANCE[c] * odds[tier])})"
+                  for c, odds in equipments.CHEST_TIER_ODDS.items() if tier in odds]
+        fields = []
+        for atype in equipments.ARMOR_TYPES:
+            buffs = equipments.ARMOR_BUFFS[atype][tier]
+            text = " · ".join(f"+{round(lo * 100)}–{round(hi * 100)}% {rules.STAT_LABELS[s]}"
+                              if lo != hi else f"+{round(lo * 100)}% {rules.STAT_LABELS[s]}"
+                              for s, (lo, hi) in buffs.items())
+            seal, label = equipments.ARMOR_TYPE_DISPLAY[atype]
+            fields.append((f"{seal} {equipments.ARMOR_NAMES[tier][atype]}", f"{label}\n{text}"))
+        label = equipments.TIER_DISPLAY[tier].split(" ", 1)[1]
+        pages.append((f"{TIER_SEAL[tier]} {label} Armor", (
+            f"Wear from **{equipments.TIER_REALM_REQUIREMENT[tier]}**. One armor at a time; its buffs add to your "
+            f"weapon's and techniques'.\nFound in: {', '.join(chests)}.\n"
+            "Each drop rolls its buffs inside the range: *Flawless*, *Fine* or *Cracked* like weapons."), fields))
+    return pages
+
+
+def artifact_pages():
+    pages = []
+    for group, label in gear.GROUP_LABEL.items():
+        fields = []
+        for fam, spec in equipments.ARTIFACT_FAMILIES.items():
+            if spec["group"] != group:
+                continue
+            lines = [f"*{spec['text']}*"]
+            for tier, name in zip(equipments.TIERS, spec["names"]):
+                lines.append(f"{TIER_SEAL[tier]} {name}: "
+                             + gear.effect_text({"category": "artifacts", "key": fam, "grade": tier}, tiny=True))
+            fields.append((f"{spec['seal']} {fam.title()} family", "\n".join(lines)))
+        drops = " · ".join(f"{CHEST_SEAL[c]} {loot.CHEST_NAMES[c]} {pct(equipments.CHEST_ARTIFACT_CHANCE[c])}"
+                           for c in equipments.CHEST_ARTIFACT_CHANCE)
+        note = (f" In Fair Duels they work at {pct(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH)} strength."
+                if group == "combat" else "")
+        pages.append((f"{label} Artifacts", (
+            f"**{equipments.ARTIFACT_SLOTS} artifact slots**, open from the start. Each artifact adds one effect; "
+            f"every rarity has its own name and a fixed power. Two of the same family can't be worn together. "
+            f"Same realm needs as weapons.{note}\nFound in: {drops} "
+            "(Treasure and Divine only in Jade Chests)."), fields))
+    return pages
+
+
 def chest_pages():
     fields = []
     for tier, name in loot.CHEST_NAMES.items():
@@ -325,7 +372,11 @@ def chest_pages():
                  f"Manual {pct(explore.CHEST_MANUAL_CHANCE[tier])}: "
                  + odds_text(explore.CHEST_MANUAL_GRADE_ODDS[tier]),
                  f"Weapon {pct(equipments.CHEST_WEAPON_CHANCE[tier])}: "
-                 + odds_text(equipments.CHEST_TIER_ODDS[tier], str.title)]
+                 + odds_text(equipments.CHEST_TIER_ODDS[tier], str.title),
+                 f"Armor {pct(equipments.CHEST_ARMOR_CHANCE[tier])}: "
+                 + odds_text(equipments.CHEST_TIER_ODDS[tier], str.title),
+                 f"Artifact {pct(equipments.CHEST_ARTIFACT_CHANCE[tier])}: "
+                 + odds_text(equipments.CHEST_ARTIFACT_TIER_ODDS[tier], str.title)]
         if tier == "jade":
             lines.append(f"Heaven-Defying Pill {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])}")
         lines.append(f"From: {chest_sources(tier)}")
@@ -484,6 +535,8 @@ SECTIONS = {
     "beasts":     ("Beasts", "🐾", beast_pages, "Every beast, realm by realm"),
     "techniques": ("Techniques", "📜", technique_pages, "Manuals by grade, with effects"),
     "weapons":    ("Weapons", "⚔️", weapon_pages, "Weapons by tier, with buffs"),
+    "armor":      ("Armor", "🥋", armor_pages, "Armor by tier, with buffs"),
+    "artifacts":  ("Artifacts", "🔮", artifact_pages, "Every artifact family and its power by tier"),
     "chests":     ("Chests", "📦", chest_pages, "What each chest holds"),
     "pills":      ("Pills", "💊", pill_pages, "Every pill: effects, recipes, where to get them"),
     "herbs":      ("Herbs", "🌿", herb_pages, "How to /gather, and every herb and look-alike"),
@@ -557,7 +610,7 @@ def register(bot):
         await interaction.response.send_message(embed=lesson_embed(0), view=view)
         view.message = await interaction.original_response()
 
-    @bot.tree.command(name="index", description="The Jianghu Compendium: every beast, technique, weapon, chest, pill and herb")
+    @bot.tree.command(name="index", description="The Jianghu Compendium: every beast, technique, weapon, armor, artifact, chest, pill and herb")
     @app_commands.describe(section="Which section to open first", realm="For beasts: which realm")
     @app_commands.choices(
         section=[app_commands.Choice(name=v[0], value=k) for k, v in SECTIONS.items()],

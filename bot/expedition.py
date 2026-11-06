@@ -14,7 +14,7 @@ import explore
 import technique
 import training
 
-from . import combat, db, fight, hunt, loot, mastery
+from . import combat, db, fight, gear, hunt, loot, mastery
 from . import player as rules
 
 CLUES = {
@@ -49,9 +49,10 @@ HAZARD_SECONDS = 3.0
 TIMER_GRACE_SECONDS = 1.0                 # Discord round-trip allowance on timed buttons
 
 
-def encounter_odds(step):
-    """Base chances with rare ones multiplied by the step bonus; commons scaled so the sum stays 1."""
-    mult = explore.RARE_CHANCE_BY_STEP[step]
+def encounter_odds(step, luck=0.0):
+    """Base chances with rare ones multiplied by the step bonus (and the Compass artifact's `luck`);
+    commons scaled so the sum stays 1."""
+    mult = explore.RARE_CHANCE_BY_STEP[step] * (1 + luck)
     rare = {k: v["chance"] * mult for k, v in explore.ENCOUNTERS.items() if v["rare"]}
     common = {k: v["chance"] for k, v in explore.ENCOUNTERS.items() if not v["rare"]}
     scale = (1 - sum(rare.values())) / sum(common.values())
@@ -64,8 +65,8 @@ class Expedition:
         self.rng = rng or random.Random()
         self.player = db.get_player(conn, user_id)
         self.techniques = db.get_techniques(conn, user_id)
-        weapon = db.equipped_weapon(conn, user_id)
-        hp, self.attack, self.defense = rules.final_stats(self.player, self.techniques, weapon)
+        weapon, armor = db.equipped_weapon(conn, user_id), db.equipped_armor(conn, user_id)
+        hp, self.attack, self.defense = rules.final_stats(self.player, self.techniques, weapon, armor)
         self.hp = self.max_hp = hp
         self.tier = challenges.REALM_TIER[self.player["realm"]]
         self.step = 0
@@ -93,7 +94,7 @@ class Expedition:
     def next_step(self):
         self.step += 1
         self.story, self.pending = [], None
-        odds = encounter_odds(self.step)
+        odds = encounter_odds(self.step, gear.artifact_bonus(self.player, "explore_luck"))
         mislead = explore.MISLEADING_CLUE_CHANCE[self.tier]
         self.paths = {}
         for path in explore.PATHS:
@@ -165,14 +166,15 @@ class Expedition:
             self.story.append(f"The {name} overwhelms you...")
             return
         self.beasts_slain += 1
-        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng)
+        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng, fortune=True)
         self.coins += coins
         self.story.append(f"⚔️ The **{name}** falls in {b.turn} turns! +🪷 {coins}")
-        c = loot.beast_chest(self.player, "normal", self.rng)
+        c = loot.beast_chest(self.player, "normal", self.rng, luck=gear.artifact_bonus(self.player, "explore_luck"))
         if c:
             self.items.append(c)
             self.story.append(f"{loot.CHEST_EMOJI[c['key']]} It dropped a **{c['name']}**!")
-        core = loot.roll_beast_core("normal", self.player["realm"], self.rng)
+        core = loot.roll_beast_core("normal", self.player["realm"], self.rng,
+                                    bonus=gear.artifact_bonus(self.player, "beast_core_chance"))
         if core:
             self.items.append(core)
             self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
@@ -183,7 +185,7 @@ class Expedition:
                               else f"The **{name}** lose heart and scatter.")
             return
         if b.result == "won":
-            coins = loot.roll_coins(self.player, BANDIT_WIN_COINS, self.rng)
+            coins = loot.roll_coins(self.player, BANDIT_WIN_COINS, self.rng, fortune=True)
             self.coins += coins
             self.story.append(f"You drive them off and take their purse: +🪷 {coins}")
             return

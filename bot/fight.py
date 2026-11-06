@@ -10,6 +10,10 @@ Each turn:
   2. Every fighter picks a move (secretly in team hunts): Strike, Guard, Break, a technique,
      a Mending pill or Flee. No pick in time = Guard; three timeouts in a row = flee.
   3. resolve() plays the turn: Strike beats Break, Guard beats Strike, Break beats Guard.
+
+Combat artifacts (bot/gear.py, docs/equipment.md) ride on each Fighter as `fx`: Fang (Strike beats
+Break), Bell (charged attacks), Mirror (Guard reflects), Thunder (Break staggers), Lotus (heal per
+turn), Feather (dodge) and Focus (cooldown reset).
 """
 import random
 
@@ -19,7 +23,7 @@ import challenges
 import stats
 import technique
 
-from . import combat
+from . import combat, gear
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
@@ -75,6 +79,7 @@ class Fighter:
         self.fled = False
         self.atk_uses = self.guard_uses = 0
         self.dealt = 0.0
+        self.fx = gear.combat_fx(player)  # combat artifact effects {effect: value}
 
     @property
     def active(self):
@@ -275,7 +280,8 @@ class Battle:
     def _enemy_hit(self, f, kind):
         e = self.enemy
         if kind == "charged":
-            return combat.damage(e["attack"], f.defense, float("inf"), battle.CHARGE_MULT, rng=self.rng)
+            dmg = combat.damage(e["attack"], f.defense, float("inf"), battle.CHARGE_MULT, rng=self.rng)
+            return dmg * (1 - min(1.0, f.fx.get("charged_damage_reduction", 0)))     # Bell artifact
         mult = battle.SIGNATURE_MULT if kind == "signature" else 1.0
         return combat.damage(e["attack"], f.defense, f.max_hp, mult, rng=self.rng)
 
@@ -346,6 +352,10 @@ class Battle:
             if used:
                 extra = battle.STATUSES["chilled"]["cooldown_plus"] if "chilled" in f.statuses else 0
                 f.cooldowns[used] = combat.cooldown_turns(f.tech(used)) + extra
+                reset = f.fx.get("cooldown_reset_chance")
+                if reset and self.rng.random() < reset:                      # Focus artifact
+                    f.cooldowns[used] = 0
+                    log.append(("star", f"{f.name} — Focus: {f.tech(used)['name']} is ready again at once!"))
 
             if base == "guard":
                 continue                  # resolved with the enemy's attack below
@@ -382,12 +392,20 @@ class Battle:
             elif m == "break":
                 if base == "break":
                     share, note = battle.CLASH_DAMAGE, "the two charges collide"
+                elif f.fx.get("strike_vs_break_damage"):                      # Fang artifact
+                    bonus = f.fx["strike_vs_break_damage"]
+                    share, note = 1 + bonus, f"beats its Break (Fang +{bonus:.0%})"
             if base == "break" and hidden:
                 e["statuses"].pop("hidden", None)
                 note = (note + " " if note else "") + "drags it out of the shadows!"
             dmg = self._hit_enemy(f, skill, pierce, hits, share)
             if stagger and dmg > 0:
                 e["guard_weak"] = max(e["guard_weak"], stagger)
+            jolt = f.fx.get("break_stagger_chance")
+            if (base == "break" and dmg > 0 and jolt and e["hp"] > 0 and "staggered" not in e["statuses"]
+                    and self.rng.random() < jolt):                           # Thunder artifact
+                e["statuses"]["staggered"] = battle.STAGGER_TURNS + 1
+                note = (note + ", " if note else "") + "Thunder: it staggers!"
             icon = "sword" if base == "strike" else "fist"
             text = f"{f.name} — {label}: " + (f"{dmg:,.0f} dmg" if dmg else "dodged!")
             if note:
@@ -420,6 +438,11 @@ class Battle:
                         blocked = dmg * block
                         dmg -= blocked
                         blocked_note = f"blocked {block:.0%}"
+                        mirror = t.fx.get("guard_reflect")
+                        if mirror and blocked > 0 and e["hp"] > 0:              # Mirror artifact
+                            back = min(e["hp"], blocked * mirror)
+                            e["hp"] = max(0, e["hp"] - back)
+                            blocked_note += f", Mirror reflects {back:,.0f}"
                         if t.def_t and t.last_move == t.def_t["name"]:
                             eff = tech_effect(t.def_t)
                             if eff and eff[0] == "counter":
@@ -445,6 +468,10 @@ class Battle:
                             log.append(("shield", f"{t.name} slipped away from the {en}'s Break"))
                     dmg = round(dmg)
                     if dmg <= 0:
+                        continue
+                    dodge = t.fx.get("dodge_chance")
+                    if dodge and self.rng.random() < dodge:                     # Feather artifact
+                        log.append(("shield", f"{t.name} sidesteps the blow (Feather)"))
                         continue
                     t.hp = max(0, t.hp - dmg)
                     hit_names.append(f"{t.name} −{dmg:,}")
@@ -488,6 +515,11 @@ class Battle:
                 f.statuses[key] -= 1
                 if f.statuses[key] <= 0:
                     del f.statuses[key]
+            lotus = f.fx.get("heal_per_turn")
+            if lotus and 0 < f.hp < f.max_hp:                                # Lotus artifact
+                heal = min(f.max_hp - f.hp, max(1, round(f.max_hp * lotus)))
+                f.hp += heal
+                log.append(("herb", f"{f.name} — Lotus: +{heal:,}"))
         if e["hp"] > 0:
             for key in list(e["statuses"]):
                 spec = battle.STATUSES[key]

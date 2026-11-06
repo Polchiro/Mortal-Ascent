@@ -760,7 +760,8 @@ class SparView(FightMixin, OwnedView):
         strength = 1.0
         if trial:
             strength = technique.TRIAL_MASTER_STRENGTH[rules.stage_of(focus) + 1]
-        self.spar = Spar(self.player, self.techniques, db.equipped_weapon(conn, owner_id), strength, self.rng)
+        self.spar = Spar(self.player, self.techniques, db.equipped_weapon(conn, owner_id), strength, self.rng,
+                         armor=db.equipped_armor(conn, owner_id))
         self.last = ""
         self.last_move = None
         self.result = None

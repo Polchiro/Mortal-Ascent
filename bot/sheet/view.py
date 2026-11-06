@@ -14,7 +14,7 @@ import discord
 
 from cards import RENDERERS
 
-from .. import db, loot
+from .. import db, gear, loot
 from .. import player as rules
 from .. import render as card_render
 from ..views import OwnedView, png
@@ -36,6 +36,15 @@ async def fetch_avatar(user):
     except Exception:
         log.warning("Could not download avatar for %s; using initial instead", user, exc_info=True)
         return None
+
+
+GEAR_EMOJI = {"weapons": "🤜", "armor": "🥋", "artifacts": "🔮"}
+
+
+def gear_line(item):
+    """Menu description: tier and buffs or effect."""
+    what = gear.effect_text(item) if item["category"] == "artifacts" else rules.buff_text(rules.weapon_buffs(item))
+    return f"{item['grade'].title()} · {what}"
 
 
 def first_category(conn, user_id):
@@ -170,34 +179,53 @@ class CharacterSheet(OwnedView):
         self.tech_page += 1
         await self.show(interaction)
 
-    # Equipment
+    # Equipment: rows 1-3 equip a weapon / armor / artifact, row 4 takes things off
     def build_equipment(self):
-        weapons = db.get_items(self.bot.conn, self.owner_id, "weapons")
-        spare = [w for w in weapons if not w["equipped"]]
-        if spare:
-            self.select("Equip a weapon...", [
-                discord.SelectOption(label=w["name"][:100], value=str(w["id"]),
-                                     description=f"{w['grade'].title()} · {rules.buff_text(rules.weapon_buffs(w))}"[:100])
-                for w in spare], self.on_equip_weapon, 1)
-        if any(w["equipped"] for w in weapons):
-            self.button("Unequip weapon", self.on_unequip_weapon, emoji="🤜", row=2)
+        conn, uid = self.bot.conn, self.owner_id
+        menus = [("weapons", "Equip a weapon...", 1), ("armor", "Equip armor...", 2),
+                 ("artifacts", "Equip an artifact...", 3)]
+        worn = []
+        for cat, placeholder, row in menus:
+            owned = db.get_items(conn, uid, cat)
+            worn += [i for i in owned if i["equipped"]]
+            spare = [i for i in owned if not i["equipped"]]
+            if spare:
+                self.select(placeholder, [
+                    discord.SelectOption(label=i["name"][:100], value=str(i["id"]), description=gear_line(i)[:100])
+                    for i in spare], self.on_equip_gear, row)
+        for item in worn[:5]:
+            label = {"weapons": "Unequip weapon", "armor": "Take off armor"}.get(
+                item["category"], f"Remove {item['name']}"[:80])
+            self.button(label, self.unequip_callback(item["id"]), emoji=GEAR_EMOJI[item["category"]], row=4)
 
-    async def on_equip_weapon(self, interaction):
+    async def on_equip_gear(self, interaction):
         if self.in_fight():
-            self.notice = "⚔️ You can't change weapons in the middle of a fight."
+            self.notice = "⚔️ You can't change your gear in the middle of a fight."
             return await self.show(interaction)
         async with self.bot.db_lock:
             self.notice = loot.use_item(self.bot.conn, self.owner_id, int(interaction.data["values"][0]))
         await self.show(interaction)
 
-    async def on_unequip_weapon(self, interaction):
+    def unequip_callback(self, item_id):
+        async def cb(interaction):
+            await self.unequip(interaction, item_id)
+        return cb
+
+    async def unequip(self, interaction, item_id):
         if self.in_fight():
-            self.notice = "⚔️ You can't change weapons in the middle of a fight."
+            self.notice = "⚔️ You can't change your gear in the middle of a fight."
             return await self.show(interaction)
         async with self.bot.db_lock:
-            db.unequip_weapon(self.bot.conn, self.owner_id)
-        self.notice = "🤜 You put your weapon away."
+            item = db.get_item(self.bot.conn, self.owner_id, item_id)
+            ok = item is not None and db.unequip_item(self.bot.conn, self.owner_id, item_id)
+        self.notice = (f"{GEAR_EMOJI[item['category']]} You take off **{item['name']}**." if ok
+                       else "That item isn't equipped any more.")
         await self.show(interaction)
+
+    async def on_unequip_selected(self, interaction):
+        if self.selected is None:
+            return await self.show(interaction)
+        await self.unequip(interaction, self.selected)
 
     # Inventory
     def build_inventory(self):
@@ -229,7 +257,7 @@ class CharacterSheet(OwnedView):
             if "use" in acts:
                 self.button(items.use_label(sel), self.on_use, emoji="✨", style=discord.ButtonStyle.success, row=3)
             if "unequip" in acts:
-                self.button("Unequip", self.on_unequip_weapon, emoji="🤜", row=3)
+                self.button("Unequip", self.on_unequip_selected, emoji="🤜", row=3)
             if "discard" in acts:
                 self.button("Discard", self.on_ask_discard, emoji="🗑️", row=3)
 
@@ -254,8 +282,8 @@ class CharacterSheet(OwnedView):
         if item_id is None:
             return await self.show(interaction)
         sel = getattr(self, "selected_item", None)
-        if sel and sel["category"] == "weapons" and self.in_fight():
-            self.notice = "⚔️ You can't change weapons in the middle of a fight."
+        if sel and sel["category"] in items.GEAR and self.in_fight():
+            self.notice = "⚔️ You can't change your gear in the middle of a fight."
             return await self.show(interaction)
         news = []
         async with self.bot.db_lock:

@@ -11,9 +11,9 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | Command | What it does |
 |---|---|
 | `/start` | Creates your character: rolls a talent, Mortal 1st Layer, Iron Fist + Horse Stance Guard, 50 Lotus Coins |
-| `/profile [member]` | Opens your **Character Sheet** on the Profile tab: realm, phase and layer, HP / Attack / Defense, Internal Qi, equipped techniques and weapon, your avatar as the portrait. Buttons under it switch to the Techniques, Equipment, Inventory and Purse tabs. With a member it shows only their Profile card, with their purse hidden |
+| `/profile [member]` | Opens your **Character Sheet** on the Profile tab: realm, phase and layer, HP / Attack / Defense, Internal Qi, equipped techniques, the Gear row (weapon, armor, two artifacts), your avatar as the portrait. Buttons under it switch to the Techniques, Equipment, Inventory and Purse tabs. With a member it shows only their Profile card, with their purse hidden |
 | `/balance` | Opens the sheet on the Purse tab: Lotus Coins, Moon Pearls, active Heavenly Blessing and your last 8 transactions |
-| `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
+| `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Armor, Artifacts, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
@@ -24,7 +24,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
 | `/duel @player` | A friendly PvP duel on the fight screen: Accept/Decline for 60 s, both fight at the lower player's realm and layer, picks are secret. No rewards, no risk; wins/losses show on the Profile. Rules: docs/pvp.md |
 | `/techniques` | Opens the sheet on the Techniques tab: the Attack, Defense and Flex sockets, then every learned technique with effect, power, cooldown and mastery. Equip or unequip (not during a fight) |
-| `/equipment` | Opens the sheet on the Equipment tab: your weapon slot, base → final stats with every buff's source, and menus to swap or remove your weapon (not during a fight) |
+| `/equipment` | Opens the sheet on the Equipment tab: your four gear slots (weapon, armor, two artifacts), base → final stats with every buff's source, your artifacts' effects, and menus to swap or remove gear (not during a fight) |
 | `/shop` | Moon Pearl shop: Heavenly Fate Reroll (never lower), Qi pills, +20 bag slots, name change |
 | `/blessing` | The eight Heavenly Blessing tiers; buy one with Moon Pearls (same tier adds 30 days) |
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
@@ -37,7 +37,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/gather` | Gather herbs for alchemy, no limit. One message updates in place: the bot names a herb and describes it, you pick the plant that matches before time runs out (10s at Mortal down to 6s at Heaven). Poisonous look-alikes cost 5% HP. Herbs have an age (10 to 1000 years); 100-year+ herbs fight back (6 choices, 3s less). Right picks in a row build the Herbal Insight streak (more old herbs). A Wandering Spirit asks a simple question every 15–25 gathers; 3 misses pause gathering for 1 hour |
 | `/craft` | The alchemy cauldron (docs/alchemy.md). Pick a pill whose herbs you have (it shows what is ready, what is missing, and which herbs it will use; a button switches between youngest and oldest herbs), then refine it stage by stage, every decision on a timer: 🔥 keep the heat in a hidden safe zone, 🌿 add the herbs in the order the clues give, ☯️ balance Yin and Yang, 💊 condense at the perfect pulse, 🔒 seal the Beast Core (Breakthrough pills). The score becomes **1–9 pill patterns** (capped by herb age; 9 needs the ⚡ Pill Tribulation and is announced). Gives alchemy EXP toward ranks 1st–9th Grade. No cooldown. While a craft runs, the message shows the Alchemy Chamber card (cards/alchemy.py) with round icon buttons, edited after every decision |
 | `/tutorial` | The Old Master's twelve lessons (two are on herbs, pills and the cauldron) on how to play, paged with Back / Next buttons and a jump menu |
-| `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, chest, pill (with recipes) and herb (with look-alikes and how to /gather), read from the game data. A menu switches section; Back / Next turn pages |
+| `/index [section] [realm]` | The Jianghu Compendium: every beast (by realm), technique manual, weapon, armor, artifact family, chest, pill (with recipes) and herb (with look-alikes and how to /gather), read from the game data. A menu switches section; Back / Next turn pages |
 | `/bestiary [realm]` | A realm's six beasts with tier, role and stats against you, and the Beast Kings you've slain |
 
 ### Text commands with "m"
@@ -58,7 +58,7 @@ Finding an **Elite Lair** or **Beast King Den** in /explore posts a hunt call wi
 Start buttons. It stays open 30 / 60 minutes; the finder starts the fight and every winner rolls
 their own chest. Beating a Beast King counts toward the Martial King and Martial Saint requirements.
 
-Rare finds are announced in the channel: Divine weapons, Heaven manuals, the Heaven-Defying Pill
+Rare finds are announced in the channel: Divine weapons, armor and artifacts, Heaven manuals, the Heaven-Defying Pill
 (0.05% in Jade Chests, raises talent one rank), Saint and Divine talents, and Beast King kills.
 
 ## Gameplay defaults
@@ -78,9 +78,9 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **Physician** costs 1 Lotus Coin per minute of injury left (× realm scale).
 - **Discard** removes items for good, with no refund. It asks first and refuses equipped items.
 - **Transactions:** every Lotus Coin and Moon Pearl change is written to a ledger (last 100 kept per player); the Purse tab shows the newest 8.
-- **Not built because the docs leave them undesigned:** player trading / market, armor and artifacts, character titles, a numeric level,
+- **Not built because the docs leave them undesigned:** player trading / market, character titles, a numeric level,
   Divine pity, profile card themes, Contribution Points and Spirit Stones, regions and weather.
-- **Defeat** keeps chests as well as manuals and weapons; half the coins and herbs found are lost.
+- **Defeat** keeps chests as well as manuals and gear; half the coins and herbs found are lost.
 - **Merchant** sells one Qi pill (Mortal grade at tier 1, Yellow at tier 2, Mystic above) for
   40 / 120 / 400 coins and one herb for 10 (× realm scale).
 - **Herbs** are the alchemy herbs in `alchemy.py` (docs/alchemy.md): 4 types × 5 tiers, each with an age.

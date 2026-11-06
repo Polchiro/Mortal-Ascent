@@ -43,13 +43,14 @@ CREATE INDEX IF NOT EXISTS techniques_user ON techniques(user_id);
 CREATE TABLE IF NOT EXISTS items (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES players(user_id) ON DELETE CASCADE,
-    category    TEXT    NOT NULL,   -- manuals, weapons, pills, herbs, materials, chests
-    key         TEXT    NOT NULL,   -- technique key, pill grade, "tier:type:age" herb, chest tier, weapon type
+    category    TEXT    NOT NULL,   -- manuals, weapons, armor, artifacts, pills, herbs, materials, chests
+    key         TEXT    NOT NULL,   -- technique key, pill grade, "tier:type:age" herb, chest tier, weapon/armor type,
+                                    -- artifact family
     name        TEXT    NOT NULL,
-    grade       TEXT,               -- technique/pill grade or weapon/chest tier
+    grade       TEXT,               -- technique/pill grade or weapon/armor/artifact/chest tier
     qty         INTEGER NOT NULL DEFAULT 1,
-    data        TEXT,               -- JSON extras (weapon buffs)
-    equipped    INTEGER NOT NULL DEFAULT 0
+    data        TEXT,               -- JSON extras (weapon / armor buffs, artifact family)
+    equipped    INTEGER NOT NULL DEFAULT 0      -- 1 = worn; artifacts store their slot (1 or 2)
 );
 CREATE INDEX IF NOT EXISTS items_user ON items(user_id);
 
@@ -148,7 +149,7 @@ TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
 }
 
-BAG_STACKABLE = {"manuals", "pills", "herbs", "materials", "chests"}   # weapons are unique (rolled buffs)
+BAG_STACKABLE = {"manuals", "pills", "herbs", "materials", "chests"}   # gear is unique (rolled buffs, slots)
 
 
 def connect(path):
@@ -187,8 +188,15 @@ def replace_old_herbs(conn):
 
 
 def get_player(conn, user_id):
+    """The player's row as a dict, plus "artifact_fx": {effect: value} of the artifacts they wear
+    (bot/gear.py), so every rule that has the player can apply them."""
     row = conn.execute("SELECT * FROM players WHERE user_id = ?", (user_id,)).fetchone()
-    return dict(row) if row else None
+    if not row:
+        return None
+    from . import gear
+    p = dict(row)
+    p["artifact_fx"] = gear.artifact_effects(equipped_artifacts(conn, user_id))
+    return p
 
 
 def create_player(conn, user_id, name, talent, lotus_coins, techniques):
@@ -366,7 +374,7 @@ def get_items(conn, user_id, category=None):
     if category:
         sql += " AND category = ?"
         args.append(category)
-    return [_item(r) for r in conn.execute(sql + " ORDER BY equipped DESC, id", args)]
+    return [_item(r) for r in conn.execute(sql + " ORDER BY equipped > 0 DESC, equipped, id", args)]
 
 
 def get_item(conn, user_id, item_id):
@@ -422,7 +430,7 @@ def remove_item(conn, item_id, qty=1):
 
 
 def equipped_weapon(conn, user_id):
-    row = conn.execute("SELECT * FROM items WHERE user_id = ? AND category = 'weapons' AND equipped = 1",
+    row = conn.execute("SELECT * FROM items WHERE user_id = ? AND category = 'weapons' AND equipped > 0",
                        (user_id,)).fetchone()
     return _item(row) if row else None
 
@@ -433,9 +441,47 @@ def unequip_weapon(conn, user_id):
 
 
 def equip_weapon(conn, user_id, item_id):
+    equip_single(conn, user_id, "weapons", item_id)
+
+
+def equip_single(conn, user_id, category, item_id):
+    """Wear this item in its category's only slot (weapon, armor), taking off whatever was there."""
     with conn:
-        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = 'weapons'", (user_id,))
-        conn.execute("UPDATE items SET equipped = 1 WHERE id = ? AND user_id = ?", (item_id, user_id))
+        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = ?", (user_id, category))
+        conn.execute("UPDATE items SET equipped = 1 WHERE id = ? AND user_id = ? AND category = ?",
+                     (item_id, user_id, category))
+
+
+def equipped_armor(conn, user_id):
+    row = conn.execute("SELECT * FROM items WHERE user_id = ? AND category = 'armor' AND equipped > 0",
+                       (user_id,)).fetchone()
+    return _item(row) if row else None
+
+
+def equipped_artifacts(conn, user_id):
+    """Worn artifacts, slot 1 first. `equipped` holds the slot number."""
+    return [_item(r) for r in conn.execute(
+        "SELECT * FROM items WHERE user_id = ? AND category = 'artifacts' AND equipped > 0 ORDER BY equipped",
+        (user_id,))]
+
+
+def equip_artifact(conn, user_id, item_id, slot):
+    with conn:
+        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = 'artifacts' AND equipped = ?",
+                     (user_id, slot))
+        conn.execute("UPDATE items SET equipped = ? WHERE id = ? AND user_id = ? AND category = 'artifacts'",
+                     (slot, item_id, user_id))
+
+
+def unequip_category(conn, user_id, category):
+    with conn:
+        conn.execute("UPDATE items SET equipped = 0 WHERE user_id = ? AND category = ?", (user_id, category))
+
+
+def unequip_item(conn, user_id, item_id):
+    with conn:
+        return conn.execute("UPDATE items SET equipped = 0 WHERE id = ? AND user_id = ? AND equipped > 0",
+                            (item_id, user_id)).rowcount > 0
 
 
 # ── Cooldowns ─────────────────────────────────────────────────────────

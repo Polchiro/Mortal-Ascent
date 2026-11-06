@@ -15,6 +15,8 @@ import talent
 import technique
 import training
 
+from . import gear
+
 REALM_ORDER = ["Mortal"] + realms.REALMS
 
 STARTING_LOTUS_COINS = 50                       # docs/tutorial.md: /start
@@ -117,9 +119,10 @@ def active_blessing(player, now=None):
 
 
 def qi_rate(player, now=None, techniques=()):
-    """Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill × Blessed Land.
+    """Final Qi Rate = Base Rate × (1 + Talent + Technique + Qi artifact + Blessing) × Pill × Blessed Land.
     Returns (rate, multiplier)."""
-    bonus = training.TALENT_QI_BONUS[player["talent"]] + technique_qi_bonus(techniques)
+    bonus = (training.TALENT_QI_BONUS[player["talent"]] + technique_qi_bonus(techniques)
+             + gear.artifact_bonus(player, "qi_rate"))          # Qi artifact (聚) adds like the other % buffs
     b = active_blessing(player, now)
     if b:
         bonus += economy.BLESSING_TIERS[b[0]]["qi_rate"]
@@ -318,9 +321,9 @@ def bar_full(tech):
 
 
 def mastery_bonus(player, now=None):
-    """Multiplier on mastery EXP from a Heavenly Blessing and a Blessed Land."""
+    """Multiplier on mastery EXP from a Heavenly Blessing, the Insight artifact (书) and a Blessed Land."""
     b = active_blessing(player, now)
-    mult = 1 + (economy.BLESSING_TIERS[b[0]]["mastery_exp"] if b else 0)
+    mult = 1 + (economy.BLESSING_TIERS[b[0]]["mastery_exp"] if b else 0) + gear.artifact_bonus(player, "mastery_exp")
     land = active_blessed_land(player, now)
     if land:
         mult *= training.BLESSED_LANDS[land[0]]["mastery_multiplier"]
@@ -346,21 +349,23 @@ def buff_text(buffs):
     return "  ·  ".join(f"+{round(v * 100)}% {STAT_LABELS[k]}" for k, v in buffs.items()) or "No buffs"
 
 
-def stat_buffs(techniques=(), weapon=None):
-    """Every % buff by stat, with where it comes from: {"hp": [(source, pct), ...], ...}."""
+def stat_buffs(techniques=(), weapon=None, armor=None):
+    """Every % buff by stat, with where it comes from: {"hp": [(source, pct), ...], ...}.
+    Armor buffs add in exactly like weapon buffs (equipment.md)."""
     out = {"hp": [], "attack": [], "defense": []}
-    for k, v in weapon_buffs(weapon).items():
-        out[k].append((weapon["name"], v))
+    for item in (weapon, armor):
+        for k, v in weapon_buffs(item).items():
+            out[k].append((item["name"], v))
     for t in techniques:
         table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
         out["attack" if t["type"] == "attack" else "defense"].append((t["name"], table[t["grade"]][1] * mastery_mult(t)))
     return out
 
 
-def final_stats(player, techniques=(), weapon=None):
-    """(hp, attack, defense) after weapon and technique passive buffs."""
+def final_stats(player, techniques=(), weapon=None, armor=None):
+    """(hp, attack, defense) after weapon, armor and technique passive buffs."""
     hp, attack, defense = base_stats(player["realm"], player["layer"])
-    pct = {k: sum(v for _, v in src) for k, src in stat_buffs(techniques, weapon).items()}
+    pct = {k: sum(v for _, v in src) for k, src in stat_buffs(techniques, weapon, armor).items()}
     return (round(hp * (1 + pct["hp"])), round(attack * (1 + pct["attack"])),
             round(defense * (1 + pct["defense"])))
 
@@ -384,8 +389,13 @@ def current_toxicity(player, now=None):
     tox = player.get("toxicity") or 0
     if not tox or player.get("toxicity_at") is None:
         return tox
-    decayed = int((now - player["toxicity_at"]) // (training.TOXICITY_DECAY_HOURS * 3600))
+    decayed = int((now - player["toxicity_at"]) // (toxicity_decay_hours(player) * 3600))
     return max(0, tox - decayed)
+
+
+def toxicity_decay_hours(player=None):
+    """Hours for 1 toxicity to fade. The Purity artifact (玉) makes it fade that much faster."""
+    return training.TOXICITY_DECAY_HOURS / (1 + gear.artifact_bonus(player, "toxicity_decay_faster"))
 
 
 def pill_effect_mult(toxicity):

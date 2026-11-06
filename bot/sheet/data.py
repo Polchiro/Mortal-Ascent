@@ -12,7 +12,7 @@ import economy
 import equipments
 import technique
 
-from .. import combat, db
+from .. import combat, db, gear
 from .. import player as rules
 from . import attributes, items
 
@@ -70,6 +70,57 @@ def weapon_view(weapon):
                       for k, v in rules.weapon_buffs(weapon).items()]}
 
 
+def armor_view(armor):
+    if not armor:
+        return None
+    return {"id": armor["id"], "name": armor["name"], "tier": armor["grade"], "type": gear.armor_type(armor),
+            "type_label": gear.armor_label(armor), "seal": gear.armor_seal(armor), "icon": gear.icon_kind(armor),
+            "requires": equipments.TIER_REALM_REQUIREMENT[armor["grade"]],
+            "buffs": [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%")
+                      for k, v in rules.weapon_buffs(armor).items()]}
+
+
+def artifact_view(a):
+    if not a:
+        return None
+    spec = gear.family_spec(a)
+    return {"id": a["id"], "name": a["name"], "tier": a["grade"], "family": gear.family(a), "seal": spec["seal"],
+            "icon": gear.icon_kind(a), "group": spec["group"], "group_label": gear.GROUP_LABEL[spec["group"]],
+            "requires": equipments.TIER_REALM_REQUIREMENT[a["grade"]], "slot": a["equipped"],
+            "effect": gear.effect_text(a), "effect_short": gear.effect_text(a, tiny=True), "text": spec["text"]}
+
+
+GEAR_EMPTY = {"weapon": "Weapons drop from chests", "armor": "Armor drops from chests",
+              "artifact": "Artifacts drop from chests"}
+
+
+def worn(conn, user_id):
+    """(weapon, armor, [artifact slot 1, artifact slot 2]) items; empty artifact slots are None."""
+    arts = {a["equipped"]: a for a in db.equipped_artifacts(conn, user_id)}
+    return (db.equipped_weapon(conn, user_id), db.equipped_armor(conn, user_id),
+            [arts.get(s) for s in range(1, equipments.ARTIFACT_SLOTS + 1)])
+
+
+def gear_sockets(weapon, armor, artifacts):
+    """The Profile tab's Gear row: weapon, armor, artifact 1, artifact 2.
+    Each: {slot, label, icon, tier, name, line} or an empty socket {slot, label, empty}."""
+    out = []
+    w = weapon_view(weapon)
+    out.append({"slot": "weapon", "label": "Weapon", "icon": w["type"], "tier": w["tier"], "name": w["name"],
+                "line": rules.buff_text(rules.weapon_buffs(weapon)).replace("  ·  ", " · ")} if w else
+               {"slot": "weapon", "label": "Weapon", "empty": GEAR_EMPTY["weapon"]})
+    a = armor_view(armor)
+    out.append({"slot": "armor", "label": "Armor", "icon": a["icon"], "tier": a["tier"], "name": a["name"],
+                "line": rules.buff_text(rules.weapon_buffs(armor)).replace("  ·  ", " · ")} if a else
+               {"slot": "armor", "label": "Armor", "empty": GEAR_EMPTY["armor"]})
+    for i, art in enumerate(artifacts, 1):
+        v = artifact_view(art)
+        out.append({"slot": f"artifact{i}", "label": f"Artifact {i}", "icon": v["icon"], "tier": v["tier"],
+                    "name": v["name"], "line": v["effect_short"]} if v else
+                   {"slot": f"artifact{i}", "label": f"Artifact {i}", "empty": GEAR_EMPTY["artifact"]})
+    return out
+
+
 def header(player, username=None):
     return {"name": player["name"], "username": username, "talent": player["talent"], "realm": player["realm"],
             "phase": rules.phase_for(player["layer"]), "layer": player["layer"],
@@ -82,16 +133,17 @@ def profile_data(conn, user_id, username=None, private=True, now=None):
     p = db.get_player(conn, user_id)
     learned = db.get_techniques(conn, user_id, equipped_only=False)
     equipped = [t for t in learned if t["equipped"]]
-    weapon = db.equipped_weapon(conn, user_id)
+    weapon, armor, artifacts = worn(conn, user_id)
     return dict(
         header(p, username),
         rank=db.server_rank(conn, user_id, rules.REALM_ORDER),
-        attributes=attributes.attribute_values(p, equipped, weapon),
+        attributes=attributes.attribute_values(p, equipped, weapon, armor),
         qi=attributes.qi_resource(p, equipped, now),
-        hp=attributes.hp_resource(p, equipped, weapon, now),
+        hp=attributes.hp_resource(p, equipped, weapon, now, armor),
         slots=technique_slots(p, learned),
         learned_count=len(learned),
         weapon=weapon_view(weapon),
+        gear=gear_sockets(weapon, armor, artifacts),
         coins=p["lotus_coins"] if private else None,
         pearls=p["moon_pearls"] if private else None,
         beasts=p["beasts_slain"], herbs=p.get("herbs_gathered", 0), breakthroughs=p["breakthroughs"], failed=p["failed_breakthroughs"],
@@ -169,12 +221,21 @@ def techniques_data(conn, user_id, page=1):
 
 
 def equipment_data(conn, user_id):
+    """All four slots with full details, base -> final stats (weapon + armor + techniques) and the
+    artifacts' effects in their own list."""
     p = db.get_player(conn, user_id)
     equipped = db.get_techniques(conn, user_id)
-    weapon = db.equipped_weapon(conn, user_id)
+    weapon, armor, artifacts = worn(conn, user_id)
     spare = [w for w in db.get_items(conn, user_id, "weapons") if not w["equipped"]]
     w = weapon_view(weapon)
     if w:
         w["requires"] = equipments.TIER_REALM_REQUIREMENT[weapon["grade"]]
-    return dict(header(p), weapon=w, attributes=attributes.attribute_values(p, equipped, weapon),
-                spare=[weapon_view(x) for x in spare[:4]], spare_count=len(spare))
+    spare_counts = {c: sum(1 for i in db.get_items(conn, user_id, c) if not i["equipped"])
+                    for c in ("weapons", "armor", "artifacts")}
+    effects = [{"seal": v["seal"], "tier": v["tier"], "name": v["name"], "effect": v["effect"], "group": v["group"],
+                "duel": f"{equipments.DUEL_COMBAT_ARTIFACT_STRENGTH:.0%} in Fair Duels" if v["group"] == "combat"
+                else None}
+               for v in (artifact_view(a) for a in artifacts) if v]
+    return dict(header(p), weapon=w, armor=armor_view(armor), artifacts=[artifact_view(a) for a in artifacts],
+                attributes=attributes.attribute_values(p, equipped, weapon, armor), effects=effects,
+                spare=[weapon_view(x) for x in spare[:4]], spare_count=len(spare), spare_counts=spare_counts)

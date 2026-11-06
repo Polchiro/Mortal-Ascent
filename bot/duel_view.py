@@ -20,7 +20,7 @@ from discord import app_commands
 
 import pvp
 
-from . import db
+from . import db, gear
 from . import duel as duel_rules
 from . import player as rules
 from . import render as card_render
@@ -87,6 +87,11 @@ def loadout_text(conn, player):
         lines.append(f"🗡️ {weapon['name']} · {rules.buff_text(rules.weapon_buffs(weapon))}")
     else:
         lines.append("🗡️ Bare hands")
+    armor = db.equipped_armor(conn, player["user_id"])
+    if armor:
+        lines.append(f"🥋 {armor['name']} · {rules.buff_text(rules.weapon_buffs(armor))}")
+    for a in db.equipped_artifacts(conn, player["user_id"]):
+        lines.append(f"🔮 {a['name']} · {gear.effect_text(a)}")
     return "\n".join(lines)
 
 
@@ -95,8 +100,8 @@ def challenge_embed(conn, p1, p2, deadline):
     e = discord.Embed(
         title="⚔️ A duel challenge!", color=COLOR,
         description=(f"<@{p1['user_id']}> challenges <@{p2['user_id']}> to a **friendly duel**.\n\n"
-                     f"**Fair duel:** both fight as **{realm}, {rules.ordinal(layer)} layer**. Weapon and technique "
-                     f"buffs count at half; technique effects and mastery count fully. No pills, Flee = forfeit.\n"
+                     f"**Fair duel:** both fight as **{realm}, {rules.ordinal(layer)} layer**. Weapon, armor and "
+                     f"technique buffs count at half, so do combat artifacts; technique effects and mastery count fully. No pills, Flee = forfeit.\n"
                      f"Nothing to win or lose: HP is full again afterwards.\n\n"
                      f"<@{p2['user_id']}>, accept <t:{int(deadline)}:R>?"))
     e.add_field(name=p1["name"], value=loadout_text(conn, p1))
@@ -183,7 +188,9 @@ class ChallengeView(discord.ui.View):
                 conn = bot.conn
                 p1, p2 = db.get_player(conn, self.challenger.id), db.get_player(conn, self.target.id)
                 d = duel_rules.start(p1, db.get_techniques(conn, p1["user_id"]), db.equipped_weapon(conn, p1["user_id"]),
-                                     p2, db.get_techniques(conn, p2["user_id"]), db.equipped_weapon(conn, p2["user_id"]))
+                                     p2, db.get_techniques(conn, p2["user_id"]), db.equipped_weapon(conn, p2["user_id"]),
+                                     armor1=db.equipped_armor(conn, p1["user_id"]),
+                                     armor2=db.equipped_armor(conn, p2["user_id"]))
                 set_pair_cooldown(conn, p1["user_id"], p2["user_id"])
             avatars = await asyncio.gather(fetch_avatar(self.challenger), fetch_avatar(self.target))
             view = DuelView(bot, d, avatars, getattr(interaction.channel, "id", None))

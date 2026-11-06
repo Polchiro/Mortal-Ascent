@@ -147,3 +147,9 @@ Night Training shows a dark card first and the real one when the moonlight revea
 - Losing a fight in /explore ends the expedition as a defeat (explore.md).
 - Hunts: every winner rolls their own chest and core, Beast King kills count for the realm
   gate, and a fallen Beast King is announced. Losing injures the team for 1 hour.
+
+## Gear
+
+- Weapon and armor % buffs are part of your HP, Attack and Defense (stats.md).
+- Combat artifacts (Fang, Bell, Mirror, Thunder, Lotus, Feather, Focus) work in every fight here and in
+  team hunts; see equipment.md "How artifact effects work in the game".

@@ -553,6 +553,9 @@ def icon(img, kind, center, size, color):
     cx, cy = center
     s = size / 2
     dark = mix(color, (0, 0, 0), 0.55)
+    if kind.startswith("seal:"):            # armor / artifact seal: the character itself (gear.icon_kind)
+        text(d, (cx, cy + size * 0.03), kind[5:], cjk(max(8, round(size * 0.82))), color, "mm")
+        return
     if kind == "heart":
         r = s * 0.55
         d.ellipse(P(cx - s, cy - s * 0.75, cx - s + 2 * r, cy - s * 0.75 + 2 * r), fill=color)
