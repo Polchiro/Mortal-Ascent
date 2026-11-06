@@ -10,8 +10,24 @@ All numbers are in `forge.py`. Numbers marked DEFAULT there were not in the desi
 > (cards/material_icons.py), and the Index sections Materials and Passives (weapon, armor, artifact).
 > Part 3: the **/forge** command (and `m forge`) with the Forge Hall card (cards/forge.py), round button icons
 > (cards/forge_icons.py), blacksmith ranks, and the Swift Hands, Steady Hand and Second Chance artifact passives.
-> **Not built yet:** passives in fights and on cards (Part 4). Until then forged passives are saved on the gear and
-> shown in /forge, but don't change fights yet.
+> Part 4: passives in play (bot/passives.py). Weapon and armor passives work in /explore, /hunt and /train fights
+> and in /duel (half strength), artifact passives work where they belong, and the Equipment card shows each slot's
+> passive in its rarity colour (or "Empty slot"). See "How passives play" below.
+
+## How passives play
+
+- **Stat passives** (Keen Edge, Thick Hide...) add to Attack, HP or Defense like weapon buffs, everywhere (also /spar).
+- **Fight passives** (Lifesteal, Phoenix Rebirth...) trigger in /explore, /hunt, /train and /duel fights, and each
+  trigger is a line in the battle log ("Lifesteal: +38 HP", "Phoenix Rebirth! Back at 120 HP"). /spar uses stats only.
+- **Caps:** one turn of damage never passes 30% of the target's max HP, whatever passives add (the old "guard
+  shatters" stagger bonus still applies on top, as before). Thorns + Spiked + Mirror reflect is at most 20%, and Mirror
+  Shell's full reflect is also capped at 30% of the beast's max HP. Once-per-fight passives (Phoenix Rebirth, Undying
+  Blade, Ten Thousand Swords, Heaven-Splitting, Mirror Shell) fire only once.
+- **Duels:** every passive number is halved (`DUEL_PASSIVE_STRENGTH`); counts like "every 4th hit" are not.
+- **Picks made by the bot:** Unshaken / Unbreakable Will resist being stunned in beast fights and being staggered in
+  duels. Thunder Edge's "can't Guard next turn" stops the beast from guarding (in duels, the Guard and defense moves).
+  Fate Weaver is automatic: the first chest you open each week (Monday UTC) is rolled twice, the better kept. Deep
+  Pockets rolls the chest's items again, not the coins.
 
 Forging materials sit in a materials pouch: they stack by type and **don't use bag slots** (DEFAULT,
 `forge.MATERIALS_USE_BAG_SLOTS`). Beast Cores still do.

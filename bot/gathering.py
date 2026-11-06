@@ -19,7 +19,7 @@ import discord
 
 import alchemy
 
-from . import db, gather_card, gear, loot, materials
+from . import db, gather_card, gear, loot, materials, passives
 from . import player as rules
 from .views import COLOR, OwnedView
 
@@ -107,7 +107,7 @@ class Gathering:
         self.rng.shuffle(options)
         keyed = [(f"o{i}", kind, plant) for i, (kind, plant) in enumerate(options)]
         answer = next(k for k, kind, _ in keyed if kind == "herb")
-        seconds = alchemy.GATHER_SECONDS[tier]
+        seconds = alchemy.GATHER_SECONDS[tier] + passives.artifact_passive(self.player, "swift_hands", "decision_seconds")
         place = self.rng.choice(PLACES)
         prompt = self.rng.choice(SEARCH_LINES).format(place=place, name=name) + f"\n> *{desc}*"
         if old:
@@ -150,7 +150,7 @@ class Gathering:
                 text = f"✅ You gather **{loot.describe(r.herb)}**."
                 if r.old:
                     text = f"✨ You pull it free before it escapes: **{loot.describe(r.herb)}**!"
-                extra = materials.roll_gather(p["realm"], self.rng)
+                extra = materials.roll_gather(p["realm"], self.rng, materials.prospector(p))
                 if extra:
                     loot.store(self.conn, self.user_id, extra)
                     text += " Nearby you also find " + ", ".join(materials.lines(extra)) + "."

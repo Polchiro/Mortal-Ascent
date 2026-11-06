@@ -114,8 +114,11 @@ def artifact_effects(artifacts, groups=None, scale=1.0):
 
 
 def artifact_bonus(player, effect):
-    """The value of an equipped artifact effect for this player (0 when none is worn)."""
-    return (player or {}).get("artifact_fx", {}).get(effect, 0)
+    """The value of an equipped artifact effect for this player (0 when none is worn), plus any forged artifact
+    passive with a number of the same name (Qi Flow adds to qi_rate, Lucky Coin to lotus_coins...)."""
+    p = player or {}
+    return p.get("artifact_fx", {}).get(effect, 0) + sum(fx.get(effect, 0) for fx in
+                                                          p.get("artifact_passives", {}).values())
 
 
 def combat_fx(player, scale=1.0):

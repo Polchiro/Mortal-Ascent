@@ -14,6 +14,11 @@ Each turn:
 Combat artifacts (bot/gear.py, docs/equipment.md) ride on each Fighter as `fx`: Fang (Strike beats
 Break), Bell (charged attacks), Mirror (Guard reflects), Thunder (Break staggers), Lotus (heal per
 turn), Feather (dodge) and Focus (cooldown reset).
+
+Forged weapon and armor passives (docs/forge.md) ride on each Fighter as `kit` (bot/passives.Kit): the turn
+asks it for damage bonuses, what a landed hit does (Lifesteal...), how a hit taken is softened (Golden Body...),
+lethal saves (Phoenix Rebirth) and the end-of-turn effects, and writes its lines in the battle log.
+The 30% per-hit cap still applies after every passive.
 """
 import random
 
@@ -23,7 +28,7 @@ import challenges
 import stats
 import technique
 
-from . import combat, gear
+from . import combat, gear, passives
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
@@ -80,6 +85,7 @@ class Fighter:
         self.atk_uses = self.guard_uses = 0
         self.dealt = 0.0
         self.fx = gear.combat_fx(player)  # combat artifact effects {effect: value}
+        self.kit = passives.kit_for(player)   # forged weapon / armor passives (bot/passives.py)
 
     @property
     def active(self):
@@ -139,6 +145,8 @@ class Battle:
         self.warning = None
         self.result = None                # "won", "lost", "fled", "escaped" (enemy got away at the turn limit)
         self.history = []                 # every turn's log, oldest first
+        for f in fighters:
+            f.kit.rng = self.rng
         self._plan()
 
     # ── state ─────────────────────────────────────────────────────────
@@ -209,7 +217,7 @@ class Battle:
             self.warning = (head, hint)
         else:
             weights = dict(battle.MOVE_WEIGHTS[e["role"]])
-            if e["guard_weak"] >= 1.0:
+            if e["guard_weak"] >= 1.0 or e.pop("no_guard", False):      # no_guard: Thunder Edge passive
                 weights["guard"] = 0
             move = self.rng.choices(list(weights), weights=list(weights.values()))[0]
             if self.rng.random() < battle.TELL_CHANCE:
@@ -358,12 +366,15 @@ class Battle:
                     log.append(("star", f"{f.name} — Focus: {f.tech(used)['name']} is ready again at once!"))
 
             if base == "guard":
+                f.kit.moved(base)
                 continue                  # resolved with the enemy's attack below
             skill, pierce, hits, stagger = self._attack_skill(f, used == "attack_tech")
+            combo = used == "attack_tech" and (tech_effect(f.atk_t) or ("",))[0] == "combo"
             label = f.move_label(choice)
             if base == "break":
                 skill = battle.BREAK_SKILL
             hidden = "hidden" in e["statuses"]
+            f.kit.moved(base)
             if base == "strike" and hidden:
                 log.append(("strike", f"{f.name} — {label}: the {en} is hidden, it misses!"))
                 continue
@@ -376,10 +387,13 @@ class Battle:
                     note = "interrupts the charge!"
             elif m == "guard":
                 if base == "strike":
-                    if weak <= 0:
+                    if weak <= 0 and f.kit.can_pierce_guard():
+                        note = "Heaven-Splitting: no guard can stop it!"
+                    elif weak <= 0:
                         log.append(("shield", f"{f.name} — {label}: blocked by the {en}'s guard"))
                         continue
-                    share, note = weak, "slips through its weakened guard"
+                    else:
+                        share, note = weak, "slips through its weakened guard"
                 else:
                     e["statuses"]["staggered"] = battle.STAGGER_TURNS + 1   # this turn's tick + its next turn
                     note = "the guard shatters!"
@@ -398,7 +412,14 @@ class Battle:
             if base == "break" and hidden:
                 e["statuses"].pop("hidden", None)
                 note = (note + " " if note else "") + "drags it out of the shadows!"
-            dmg = self._hit_enemy(f, skill, pierce, hits, share)
+            mult, more_pierce, more_hits, kit_lines = f.kit.attack_mods(
+                base, self.turn, vs_beast=e["kind"] == "beast", target_staggered="staggered" in e["statuses"],
+                target_hp_frac=e["hp"] / e["max_hp"], own_hp_frac=f.hp / f.max_hp, combo=combo)
+            dmg = self._hit_enemy(f, skill, min(0.95, pierce + more_pierce), hits + more_hits, share * mult)
+            stun, dealt_lines = f.kit.dealt(f, dmg, base, e)
+            if stun and e["hp"] > 0:
+                e["no_guard"] = True
+            kit_lines += dealt_lines
             if stagger and dmg > 0:
                 e["guard_weak"] = max(e["guard_weak"], stagger)
             jolt = f.fx.get("break_stagger_chance")
@@ -411,6 +432,7 @@ class Battle:
             if note:
                 text += f", {note}"
             log.append((icon, text))
+            log += kit_lines
             if e["hp"] <= 0:
                 break
 
@@ -432,12 +454,13 @@ class Battle:
                             block = battle.CHARGE_GUARD_BLOCK
                             if t.def_t and t.last_move == t.def_t["name"]:
                                 block += technique.DEFENSE_TECHNIQUE[t.def_t["grade"]][0] * rules.mastery_mult(t.def_t)
-                            block = min(technique.MAX_DAMAGE_BLOCKED, block)
+                            block = min(technique.MAX_DAMAGE_BLOCKED, block + t.kit.guard_block())   # Bulwark
                         else:
                             block = 1.0
                         blocked = dmg * block
                         dmg -= blocked
                         blocked_note = f"blocked {block:.0%}"
+                        t.kit.guarded()                                         # Riposte
                         mirror = t.fx.get("guard_reflect")
                         if mirror and blocked > 0 and e["hp"] > 0:              # Mirror artifact
                             back = min(e["hp"], blocked * mirror)
@@ -473,15 +496,32 @@ class Battle:
                     if dodge and self.rng.random() < dodge:                     # Feather artifact
                         log.append(("shield", f"{t.name} sidesteps the blow (Feather)"))
                         continue
+                    dmg, back, kit_lines = t.kit.taken(
+                        t, dmg, self.turn, from_break=m == "break", charged=kind == "charged",
+                        vs_beast=e["kind"] == "beast", aura=self._aura(t),
+                        mirror_artifact=t.fx.get("guard_reflect", 0) if mine == "guard" else 0)
+                    log += kit_lines
+                    if back and e["hp"] > 0:                                    # Thorns, Mirror Shell
+                        e["hp"] = max(0, e["hp"] - min(back, e["max_hp"] * stats.MAX_HIT_PERCENT))
+                    dmg = round(dmg)
+                    if dmg <= 0:
+                        continue
                     t.hp = max(0, t.hp - dmg)
                     hit_names.append(f"{t.name} −{dmg:,}")
+                    saves = t.kit.after_taken(t)
                     status = battle.ELEMENTS[e["element"]]["status"]
                     if battle.STATUSES[status]["on"] == "player" and t.hp > 0 and (
                             kind != "normal" or self.rng.random() < battle.STATUS_ON_HIT_CHANCE):
-                        self._apply_status(t, status)
-                        hit_names[-1] += f" ({battle.STATUSES[status]['name']})"
+                        if t.kit.immune(status):
+                            hit_names[-1] += f" (Immortal Body: no {battle.STATUSES[status]['name']})"
+                        elif status == "stunned" and t.kit.resists_stun():
+                            hit_names[-1] += " (resists the stun)"
+                        else:
+                            self._apply_status(t, status)
+                            hit_names[-1] += f" ({battle.STATUSES[status]['name']})"
                     if t.hp <= 0:
                         hit_names[-1] += ", knocked out!"
+                    log += saves
                 if hit_names:
                     what = it["name"] if kind != "normal" else MOVE_LABEL[m]
                     log.append(("skull", f"{en} — {what} on " + ", ".join(hit_names)))
@@ -500,6 +540,11 @@ class Battle:
                 self._plan()
         return self.log
 
+    def _aura(self, t):
+        """Heavenly Aegis: the damage cut an ally's armor gives this fighter in a team hunt."""
+        return max([o.kit.fx("heavenly_aegis", "team_damage_taken") for o in self.fighters
+                    if o is not t and o.active] or [0])
+
     def _end_of_turn(self, log):
         e = self.enemy
         for f in self.fighters:
@@ -512,9 +557,17 @@ class Battle:
                     dmg = max(1, round(f.max_hp * spec["dot"]))
                     f.hp = max(0, f.hp - dmg)
                     log.append(("flame", f"{f.name} — {spec['name']}: −{dmg:,}"))
+                    log += f.kit.after_taken(f)
                 f.statuses[key] -= 1
                 if f.statuses[key] <= 0:
                     del f.statuses[key]
+            if f.active:
+                log += f.kit.end_turn(f, self.turn, f.cooldowns)
+            bleed = f.kit.bleed_tick(e["max_hp"]) if e["hp"] > 0 else 0
+            if bleed:
+                e["hp"] = max(0, e["hp"] - bleed)
+                f.dealt += bleed
+                log.append(("flame", f"{f.name} — Bleeding Cut: the {short_name(e['name'])} bleeds −{bleed:,}"))
             lotus = f.fx.get("heal_per_turn")
             if lotus and 0 < f.hp < f.max_hp:                                # Lotus artifact
                 heal = min(f.max_hp - f.hp, max(1, round(f.max_hp * lotus)))

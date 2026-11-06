@@ -27,7 +27,7 @@ import discord
 import alchemy
 import training
 
-from . import craft_card, db, gear, loot, materials
+from . import craft_card, db, gear, loot, materials, passives
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
@@ -189,7 +189,9 @@ DIRECTIONS = [("left", "⬅️", "the LEFT"), ("above", "⬆️", "ABOVE"), ("ri
 
 
 class Craft:
-    def __init__(self, kind, grade, rank, age, rng=None, zone_bonus=0):
+    def __init__(self, kind, grade, rank, age, rng=None, zone_bonus=0, extra_seconds=0.0, extra_patterns=0):
+        """zone_bonus: Furnace artifact + Steady Hand passive. extra_seconds: Swift Hands. extra_patterns: Alchemy
+        Sage (pills may reach that many patterns beyond the herb-age cap, never above 9)."""
         self.rng = rng or random.Random()
         self.kind, self.grade, self.age = kind, grade, age
         spec = pill_spec(kind, grade)
@@ -203,12 +205,12 @@ class Craft:
         self.diff = alchemy.DIFFICULTY[dgrade]
         self.zone_width = round(self.diff["zone"] * (1 + alchemy.RANK_RELIEF["zone_bonus"] * relief)) + round(zone_bonus)
         self.zone_bonus = round(zone_bonus)       # degrees from the Furnace artifact (炉)
-        self.seconds = self.diff["seconds"] + alchemy.RANK_RELIEF["seconds_bonus"] * relief
+        self.seconds = self.diff["seconds"] + alchemy.RANK_RELIEF["seconds_bonus"] * relief + extra_seconds
         self.hints = alchemy.RANK_RELIEF["hints_per_rank"] * relief
         a = alchemy.HERB_AGES[age]
         self.forgive = (1 if relief >= alchemy.RANK_RELIEF["forgive_from_ranks"] else 0) + a.get("mistakes_forgiven", 0)
         self.explode_below = a.get("explode_below", alchemy.EXPLODE_BELOW)
-        self.score_bonus, self.max_patterns = a["score_bonus"], a["max_patterns"]
+        self.score_bonus, self.max_patterns = a["score_bonus"], min(9, a["max_patterns"] + extra_patterns)
         self.stages = list(self.diff["stages"]) + ([alchemy.SEAL_CORE_STAGE] if kind == "breakthrough" else [])
         self.scores = {}
         self.log = []                # feedback for the last decision
@@ -548,8 +550,9 @@ def heat_bar(value, width=20, mark=None):
     return "".join(cells)
 
 
-def finish_craft(conn, user_id, craft, now=None):
-    """Store the pill, add alchemy EXP. Returns (lines, announcement or None)."""
+def finish_craft(conn, user_id, craft, now=None, ingredients=None):
+    """Store the pill, add alchemy EXP. Returns (lines, announcement or None).
+    ingredients: the items the craft used [(item, qty)], given back by Second Chance on an explosion."""
     p = db.get_player(conn, user_id)
     exp = craft.exp()
     old_rank = rank_of(p["alchemy_exp"])
@@ -557,8 +560,13 @@ def finish_craft(conn, user_id, craft, now=None):
     db.update_player(conn, user_id, alchemy_exp=new_exp)
     lines, news = [], None
     if craft.result == 0:
-        lines.append("💥 **The cauldron explodes!** The herbs are lost." if not craft.core_lost
-                     else "💥 **The craft fails.** The herbs and the Beast Core are lost.")
+        if ingredients and second_chance(conn, user_id, p, now):
+            loot.store(conn, user_id, [dict(item, qty=q) for item, q in ingredients])
+            lines.append("💥 **The cauldron explodes!** 🍀 **Second Chance:** your artifact catches the herbs. "
+                         "Nothing is lost.")
+        else:
+            lines.append("💥 **The cauldron explodes!** The herbs are lost." if not craft.core_lost
+                         else "💥 **The craft fails.** The herbs and the Beast Core are lost.")
     else:
         pill = crafted_pill(craft.kind, craft.grade, craft.result)
         stored, _ = loot.store(conn, user_id, [pill])
@@ -583,6 +591,19 @@ def finish_craft(conn, user_id, craft, now=None):
 
 # ── using crafted pills (called from loot.use_item) ───────────────────
 
+def second_chance(conn, user_id, player, now=None):
+    """Second Chance (a forged artifact passive): once a day, a failed craft or forge keeps its materials.
+    Spends today's use and returns True when it saves them."""
+    from . import passives
+    if not passives.has_artifact_passive(player, "second_chance"):
+        return False
+    if db.daily_count(conn, user_id, "second_chance", now) >= passives.artifact_passive(player, "second_chance",
+                                                                                         "uses_per_day"):
+        return False
+    db.bump_daily(conn, user_id, "second_chance", now)
+    return True
+
+
 def pill_info(item):
     """(kind, grade, patterns or None). Shop and merchant Qi pills have no patterns."""
     d = item.get("data") or {}
@@ -600,7 +621,7 @@ def use_pill(conn, user_id, item, now=None):
     now = time.time() if now is None else now
     p = db.get_player(conn, user_id)
     kind, grade, patterns = pill_info(item)
-    effect = alchemy.pattern_effect(patterns) if patterns else 1.0
+    effect = (alchemy.pattern_effect(patterns) if patterns else 1.0) * (1 + gear.artifact_bonus(p, "pill_effect"))
     added = toxicity_for(patterns) if patterns else 1
     if kind == "breakthrough":
         return ("🏔️ Breakthrough pills are used by **/breakthrough** at a realm gate: the best one in your bag "
@@ -611,7 +632,7 @@ def use_pill(conn, user_id, item, now=None):
         db.remove_item(conn, item["id"])
         db.update_player(conn, user_id, toxicity=max(0, tox_now - removed), toxicity_at=now)
         return f"💧 The **{item['name']}** washes through your meridians. Toxicity {tox_now} → {max(0, tox_now - removed)}."
-    tox = tox_now + added
+    tox = rules.add_toxicity(p, tox_now, added)                 # Dao Heart caps it
     strength = rules.pill_effect_mult(tox) * effect
     half = kind in ("qi", "burst") and below_realm(p, grade)
     if half:
@@ -712,8 +733,16 @@ class CraftView(OwnedView):
         return rank_of(self.player["alchemy_exp"])
 
     def furnace(self):
-        """Extra safe-zone degrees from a worn Furnace artifact (炉)."""
-        return gear.artifact_bonus(self.player, "craft_zone_degrees")
+        """Extra safe-zone degrees from a worn Furnace artifact (炉) and the Steady Hand passive."""
+        p = self.player
+        return gear.artifact_bonus(p, "craft_zone_degrees") + passives.artifact_passive(p, "steady_hand",
+                                                                                        "safe_zone_degrees")
+
+    def new_craft(self, kind, grade, age, rng):
+        p = self.player
+        return Craft(kind, grade, self.rank(), age, rng, self.furnace(),
+                     passives.artifact_passive(p, "swift_hands", "decision_seconds"),
+                     passives.artifact_passive(p, "alchemy_sage", "extra_patterns"))
 
     # ── screens ──────────────────────────────────────────────────────
 
@@ -763,7 +792,7 @@ class CraftView(OwnedView):
         recipe = " + ".join(f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in KINDS[kind][3])
         if kind == "breakthrough":
             recipe += f" + 1 {loot.CORE_NAMES[spec['core']]}"
-        c = Craft(kind, grade, self.rank(), pl["age"], random.Random(0), self.furnace())
+        c = self.new_craft(kind, grade, pl["age"], random.Random(0))
         lines = [f"**Recipe:** {recipe}",
                  f"**Herbs:** {age_word(spec['min_age'])} · **Difficulty:** {c.diff['name']} "
                  f"({len(c.stages)} stages, {c.seconds:g}s per decision)"]
@@ -868,8 +897,9 @@ class CraftView(OwnedView):
             self.notice = "Your herbs changed in the meantime. Check the recipe again."
             await self.redraw(interaction)
             return
-        self.craft = Craft(kind, grade, self.rank(), pl["age"], self.rng, self.furnace())
+        self.craft = self.new_craft(kind, grade, pl["age"], self.rng)
         self.herbs = craft_card.herb_rows(pl["uses"], pl["core"])
+        self.used = list(pl["uses"]) + ([(pl["core"], 1)] if pl["core"] else [])
         self.result_lines, self.outcome = None, None
         await self.show_step(interaction)
 
@@ -901,7 +931,8 @@ class CraftView(OwnedView):
     async def finish_and_store(self, c):
         async with self.bot.db_lock:
             old_rank = self.rank()
-            self.result_lines, news = finish_craft(self.bot.conn, self.owner_id, c)
+            self.result_lines, news = finish_craft(self.bot.conn, self.owner_id, c,
+                                                   ingredients=getattr(self, "used", None))
             new_rank = self.rank()
         self.outcome = {"exp": c.exp(), "rank_up": rank_label(new_rank) if new_rank > old_rank else None,
                         "stored": not any("bag is full" in line.lower() for line in self.result_lines)}
@@ -1053,7 +1084,8 @@ def swallow_in_fight(conn, user_id, pill, now=None):
     p = db.get_player(conn, user_id)
     added = toxicity_for(pill["patterns"]) if pill.get("patterns") else 1
     db.remove_item(conn, pill["id"])
-    db.update_player(conn, user_id, toxicity=rules.current_toxicity(p, now) + added, toxicity_at=now)
+    db.update_player(conn, user_id, toxicity=rules.add_toxicity(p, rules.current_toxicity(p, now), added),
+                     toxicity_at=now)
 
 
 def bank_fight_pills(conn, fighter):

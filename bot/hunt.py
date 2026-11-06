@@ -220,7 +220,7 @@ def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
             if core:
                 stored, _ = loot.store(conn, uid, [core])
                 bits.append(f"🔮 {loot.describe(core)}" if stored else "bag full, core lost")
-            mats = materials.roll_beast(tier, lair["realm"], beast_name, rng)
+            mats = materials.roll_beast(tier, lair["realm"], beast_name, rng, bonus=materials.prospector(p))
             if mats:
                 loot.store(conn, uid, mats)
                 bits.append(", ".join(materials.lines(mats)))

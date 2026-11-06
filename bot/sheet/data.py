@@ -12,7 +12,7 @@ import economy
 import equipments
 import technique
 
-from .. import combat, db, gear
+from .. import combat, db, gear, passives
 from .. import player as rules
 from . import attributes, items
 from cards.technique_icons import tech_kind
@@ -69,7 +69,8 @@ def weapon_view(weapon):
     return {"id": weapon["id"], "name": weapon["name"], "tier": weapon["grade"],
             "type": (weapon.get("data") or {}).get("type") or weapon["key"],
             "buffs": [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%")
-                      for k, v in rules.weapon_buffs(weapon).items()]}
+                      for k, v in rules.weapon_buffs(weapon).items()],
+            "passives": passives.slot_views(weapon, "weapon")}
 
 
 def armor_view(armor):
@@ -79,7 +80,8 @@ def armor_view(armor):
             "type_label": gear.armor_label(armor), "seal": gear.armor_seal(armor), "icon": gear.icon_kind(armor),
             "requires": equipments.TIER_REALM_REQUIREMENT[armor["grade"]],
             "buffs": [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%")
-                      for k, v in rules.weapon_buffs(armor).items()]}
+                      for k, v in rules.weapon_buffs(armor).items()],
+            "passives": passives.slot_views(armor, "armor")}
 
 
 def artifact_view(a):
@@ -89,7 +91,8 @@ def artifact_view(a):
     return {"id": a["id"], "name": a["name"], "tier": a["grade"], "family": gear.family(a), "seal": spec["seal"],
             "icon": gear.icon_kind(a), "group": spec["group"], "group_label": gear.GROUP_LABEL[spec["group"]],
             "requires": equipments.TIER_REALM_REQUIREMENT[a["grade"]], "slot": a["equipped"],
-            "effect": gear.effect_text(a), "effect_short": gear.effect_text(a, tiny=True), "text": spec["text"]}
+            "effect": gear.effect_text(a), "effect_short": gear.effect_text(a, tiny=True), "text": spec["text"],
+            "passives": passives.slot_views(a, "artifact")}
 
 
 GEAR_EMPTY = {"weapon": "Weapons drop from chests", "armor": "Armor drops from chests",
@@ -248,6 +251,12 @@ def equipment_data(conn, user_id):
                 "duel": f"{equipments.DUEL_COMBAT_ARTIFACT_STRENGTH:.0%} in Fair Duels" if v["group"] == "combat"
                 else None}
                for v in (artifact_view(a) for a in artifacts) if v]
+    import forge
+    for key in p.get("artifact_passives", {}):                      # forged artifact passives (docs/forge.md)
+        spec = forge.PASSIVES["artifact"][key]
+        effects.append({"icon": f"passive:{spec['rarity']}", "color": forge.RARITY_COLORS[spec["rarity"]],
+                        "tier": None, "name": f"{spec['name']} ({spec['rarity']} passive)", "effect": spec["text"],
+                        "group": "passive", "duel": None})
     return dict(header(p), weapon=w, armor=armor_view(armor), artifacts=[artifact_view(a) for a in artifacts],
                 attributes=attributes.attribute_values(p, equipped, weapon, armor), effects=effects,
                 spare=[weapon_view(x) for x in spare[:4]], spare_count=len(spare), spare_counts=spare_counts)
