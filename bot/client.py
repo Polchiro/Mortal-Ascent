@@ -1,7 +1,8 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
-/meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
-/shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py,
+/seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
+/shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown, /settings.
+Passive Qi is banked by a background task every minute and before every command (passive.py). /tutorial and /index are in guide.py,
 /gather in gathering.py, /craft in crafting.py, /duel in duel_view.py. Admin testing commands are in admin.py.
 Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
@@ -21,8 +22,8 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, prefix, qi,
-               trainer)
+from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, passive,
+               prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
@@ -68,13 +69,44 @@ class MortalAscent(discord.Client):
         duel_view.register(self)
 
     async def before_command(self, interaction):
-        """Runs before every slash command: bank the passive Qi gathered since last time."""
+        """Runs before every slash command: remember the channel (for the "Qi is full" ping) and bank
+        the passive Qi gathered since last time."""
+        ping = None
         try:
             async with self.db_lock:
-                sync_passive_qi(self.conn, interaction.user.id)
+                channel = getattr(interaction, "channel", None)
+                passive.remember_channel(self.conn, interaction.user.id, getattr(channel, "id", None))
+                _, _, ping = passive.bank(self.conn, interaction.user.id)
         except Exception:
             log.exception("Passive Qi sync failed")
+        if ping:
+            await self.send_qi_ping(interaction.user.id, *ping)
         return True
+
+    async def passive_qi_loop(self):
+        """Bank every player's passive Qi once a minute, in batches, so profiles and the rank stay
+        current without any command. Players in seclusion are paid when it ends."""
+        await self.wait_until_ready()
+        while not self.is_closed():
+            try:
+                pings = []
+                for ids in passive.batches(passive.player_ids(self.conn)):
+                    async with self.db_lock:
+                        pings += passive.bank_batch(self.conn, ids)
+                    await asyncio.sleep(0)          # let commands run between batches
+                for uid, channel_id, text in pings:
+                    await self.send_qi_ping(uid, channel_id, text)
+            except Exception:
+                log.exception("Background passive Qi banking failed")
+            await asyncio.sleep(passive.BANK_EVERY_SECONDS)
+
+    async def send_qi_ping(self, user_id, channel_id, text):
+        """Post "@player, your Qi is full" where they last used the bot. A missing channel is skipped."""
+        try:
+            channel = self.get_channel(channel_id) or await self.fetch_channel(channel_id)
+            await channel.send(text, allowed_mentions=discord.AllowedMentions(users=True, everyone=False, roles=False))
+        except Exception:
+            log.warning("Could not send the Qi-full ping to %s in channel %s", user_id, channel_id, exc_info=True)
 
     async def on_app_command_error(self, interaction, error):
         """Log any command failure and always answer, so Discord never hangs on "thinking..."."""
@@ -91,6 +123,8 @@ class MortalAscent(discord.Client):
     async def setup_hook(self):
         # Upload the fight button icons in the background; until then (or if it fails) buttons use normal emojis.
         asyncio.create_task(self.emojis_ma.setup(self))
+        # Bank everyone's passive Qi every minute.
+        self.passive_task = asyncio.create_task(self.passive_qi_loop())
         # Commands are always synced globally: per-server commands never show up in DMs.
         synced = await self.tree.sync()
         for line in sync_report([c.name for c in self.tree.get_commands()], [c.name for c in synced],
@@ -118,17 +152,8 @@ class MortalAscent(discord.Client):
 
 
 def sync_passive_qi(conn, user_id, now=None):
-    """Add the passive Qi gathered since the last collection (training.md: it gathers at your
-    Qi Rate and stores up to 12 hours). Called before every command, so Qi rises on its own.
-    Returns (qi_added, events)."""
-    now = time.time() if now is None else now
-    p = db.get_player(conn, user_id)
-    if not p or rules.in_seclusion(p):
-        return 0.0, []
-    techs = db.get_techniques(conn, user_id)
-    qi, _ = rules.passive_qi(p, techs, now)
-    p, events = rules.add_qi(p, qi, techs, now=now)
-    db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], qi_collected_at=now)
+    """Bank the passive Qi gathered since it was last banked (passive.bank). Returns (qi_added, events)."""
+    qi, events, _ = passive.bank(conn, user_id, now)
     return qi, events
 
 
@@ -313,35 +338,13 @@ def register_commands(bot):
         return discord.Embed(title=title, description=text, color=economy.BALANCE_EMBED_COLOR)
 
     def qi_line(p):
+        extra = rules.overflow(p)
         return (f"**{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / "
-                f"{rules.qi_needed(p['realm'], p['layer']):,}")
+                f"{rules.qi_needed(p['realm'], p['layer']):,}"
+                + (f" · +{extra:,.0f} Qi waiting behind the bottleneck" if extra >= 0.5 else ""))
 
     def save_progress(uid, p, **extra):
-        db.update_player(bot.conn, uid, qi=p["qi"], realm=p["realm"], layer=p["layer"],
-                         breakthroughs=p["breakthroughs"], failed_breakthroughs=p["failed_breakthroughs"],
-                         injured_until=p.get("injured_until"), **extra)
-
-    @tree.command(name="meditate", description="See your passive Qi: how fast it gathers and when your next layer comes")
-    async def meditate(interaction: discord.Interaction):
-        uid = interaction.user.id
-        p = db.get_player(bot.conn, uid)     # passive Qi was already banked by before_command
-        if not p:
-            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
-            return
-        if rules.in_seclusion(p):
-            await interaction.response.send_message(
-                "🧘 You are in seclusion; your Qi gathers there at ×2. Check it with **/seclusion**.", ephemeral=True)
-            return
-        rate, mult = rules.qi_rate(p, techniques=db.get_techniques(bot.conn, uid))
-        need = rules.qi_needed(p["realm"], p["layer"])
-        left = max(0.0, need - p["qi"])
-        eta = (f"Your bar fills in about **{rules.fmt_duration(left / rate * 3600)}**." if left and rate
-               else "Your bar is full!" + (" Use **/breakthrough**." if rules.next_gate(p)[0] in ("phase", "realm") else ""))
-        text = ["*You sit cross-legged and feel Qi flowing in...*",
-                f"Your Qi gathers **on its own** at **{rate:,.2f} Qi/hour** (×{mult:.2f}). It is added every time you "
-                f"use a command, and up to {training.PASSIVE_MAX_STORED_HOURS} hours of it is kept while you are away.",
-                qi_line(p), eta]
-        await interaction.response.send_message(embed=embed("🧘 Meditation", "\n".join(text)))
+        db.update_player(bot.conn, uid, **rules.progress_fields(p), **extra)
 
     async def end_seclusion(uid):
         async with bot.db_lock:
@@ -395,7 +398,7 @@ def register_commands(bot):
             else:
                 taken = False
                 techs = db.get_techniques(bot.conn, uid)
-                qi, _ = rules.passive_qi(p, techs, now)          # bank passive Qi before the doors close
+                qi, _ = rules.passive_qi(p, techs, now)          # bank the last passive Qi before the doors close
                 p, events = rules.add_qi(p, qi, techs, now=now)
                 end = now + hours * 3600
                 save_progress(uid, p, qi_collected_at=now, seclusion_start=now, seclusion_end=end)
@@ -721,3 +724,24 @@ def register_commands(bot):
         if kills:
             e.set_footer(text="Beast Kings slain in: " + ", ".join(kills))
         await interaction.response.send_message(embed=e)
+
+    @tree.command(name="settings", description="Your bot settings, like the \"your Qi is full\" ping")
+    @app_commands.describe(qi_pings="Ping you in the channel you last used when your Qi bar is full at a gate")
+    @app_commands.choices(qi_pings=[app_commands.Choice(name="on", value="on"),
+                                    app_commands.Choice(name="off", value="off")])
+    async def settings(interaction: discord.Interaction, qi_pings: app_commands.Choice[str] | None = None):
+        uid = interaction.user.id
+        p = db.get_player(bot.conn, uid)
+        if not p:
+            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
+            return
+        if qi_pings is not None:
+            p["qi_pings"] = int(qi_pings.value == "on")
+            db.update_player(bot.conn, uid, qi_pings=p["qi_pings"])
+        on = bool(p["qi_pings"])
+        e = embed("⚙️ Settings", "\n".join([
+            f"**Qi-full pings:** {'🔔 On' if on else '🔕 Off'}",
+            "When passive Qi fills your bar at a bottleneck or realm gate, I mention you once in the channel "
+            "where you last used me: *\"your Qi is full: use /breakthrough!\"*",
+            f"Turn them {'off' if on else 'on'} with **/settings qi_pings:{'off' if on else 'on'}**."]))
+        await interaction.response.send_message(embed=e, ephemeral=True)

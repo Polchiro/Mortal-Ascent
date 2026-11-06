@@ -36,9 +36,8 @@ TALENT_QI_BONUS = {
 TRAIN_REWARD_HOURS = 4          # reward = Final Qi Rate × this × score
 TRAIN_COOLDOWN_MINUTES = 60
 
-# ── Passive Qi & /meditate ────────────────────────────────────────────
-
-PASSIVE_MAX_STORED_HOURS = 12
+# Passive Qi gathers at the Final Qi Rate with no storage limit; the bot banks it every minute
+# (bot/passive.py), so there is nothing to collect.
 
 # ── Seclusion ─────────────────────────────────────────────────────────
 

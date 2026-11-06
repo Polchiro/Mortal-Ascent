@@ -285,9 +285,7 @@ def finish(conn, user_id, session, score, event_mult=1.0, rng=random, now=None):
     techs = db.get_techniques(conn, user_id)
     qi = qi_reward(p, techs, score, session["conditions"], event_mult, now)
     p, events = rules.add_qi(p, qi, techs, rng, now)
-    db.update_player(conn, user_id, qi=p["qi"], realm=p["realm"], layer=p["layer"],
-                     breakthroughs=p["breakthroughs"], failed_breakthroughs=p["failed_breakthroughs"],
-                     injured_until=p.get("injured_until"), last_challenge=session["challenge"])
+    db.update_player(conn, user_id, **rules.progress_fields(p), last_challenge=session["challenge"])
     db.set_cooldown(conn, user_id, "train", cooldown_seconds(p, now), now)
     return qi, events, p
 

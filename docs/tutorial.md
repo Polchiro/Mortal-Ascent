@@ -30,7 +30,7 @@ A guided path through the Mortal realm. The Old Master gives one lesson at a tim
 | 1 | Know Yourself | Use **/profile** | 20 Lotus Coins |
 | 2 | First Training | Use **/train** and finish a challenge (Mortal → 2nd Layer) | 20 Lotus Coins |
 | 3 | Sharpen Your Fist | Use **/practice** on Iron Fist | 20 Lotus Coins |
-| 4 | Breathe | Use **/meditate** to collect passive Qi (the Old Master fills your storage once) | 1 Mortal Qi Pill |
+| 4 | Breathe | Open **/internal qi** to see Qi gathering on its own (no collecting needed) | 1 Mortal Qi Pill |
 | 5 | Into the Wild | Use **/explore** — the first expedition always meets a Wild Boar | — |
 | 6 | First Battle | Defeat the Wild Boar. The Old Master explains Strike / Guard / Break and techniques during the fight | — |
 | 7 | Spoils | Open the guaranteed Wooden Chest from the boar | Chest contents |

@@ -58,10 +58,12 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 - Challenge conditions add +15% each to that session
 - Cooldown: 60 minutes
 
-### 2. Passive Qi — /meditate
-- Qi gathers automatically at your Final Qi Rate
-- Stores up to **12 hours**, then stops until collected
-- **/meditate** collects the stored Qi (no cooldown)
+### 2. Passive Qi
+- Qi gathers on its own at your Final Qi Rate, for as long as you are away, with **no limit**
+- Nothing to collect: the bot adds it to your bar every minute (and before every command),
+  so your profile and rank are always current
+- **/internal qi** shows how fast it flows and when your bar fills
+- Not during seclusion: that Qi is paid (×2 if completed) when the seclusion ends
 
 ### 3. Closed-Door Seclusion (闭关) — /seclusion
 - Enter seclusion for 8–24 hours: **Qi Rate ×2** during that time
@@ -123,7 +125,16 @@ Phase multipliers on Qi needed: Early ×1, Middle ×1.2, Late ×1.5, Peak ×2.
 | Phase → phase (3rd→4th, 6th→7th, 9th→10th) | 90% success |
 | Realm → realm (Peak → next realm) | 70% base success |
 
-- Failed realm breakthrough: lose 20% of current Qi + 6-hour injury (no exploring or fighting)
+- **No Qi is ever lost at a gate.** When the bar is full at a bottleneck or realm gate it stays
+  exactly full, and every extra point of Qi (passive, /train, pills, anything) waits behind the
+  gate. Profile and /internal qi show it: "Qi bar full · +180 Qi waiting behind the bottleneck"
+- After a **successful** breakthrough all the waiting Qi flows into the new layer. It can fill
+  several layers and stops again at the next gate, where any new extra waits again
+- When your bar becomes full at a gate, the bot mentions you once in the channel you last used it in
+  ("your Qi is full: use /breakthrough!"). Turn this off with **/settings qi_pings:off**
+- Failed phase breakthrough: lose 20% of the bar; the Qi waiting behind the gate is kept
+- Failed realm breakthrough: lose 20% of the bar + 6-hour injury (no exploring or fighting); the Qi
+  waiting behind the gate is kept
 - Breakthrough Pills: +5% / +7% / +10% / +12% / +15% success (Mortal → Heaven, see alchemy.md)
 
 ### Realm requirements (besides Qi)
