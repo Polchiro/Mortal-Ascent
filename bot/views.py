@@ -116,12 +116,19 @@ class OwnedView(discord.ui.View):
 
 
 async def announce(interaction, message, line):
-    """Post a public line after the interaction (or, when a timer ended the fight, in the message's channel)."""
+    """Post a public line after the interaction (or, when a timer ended the fight, in the message's channel).
+    A rare find (loot.Announcement) is posted with its drawn emblem."""
     try:
+        extra = {}
+        if getattr(line, "icon", None):
+            from cards.emblems import icon_png
+            from . import render as card_render
+            png = await card_render.render(icon_png, line.icon)
+            extra["file"] = discord.File(io.BytesIO(png), filename="emblem.png")
         if interaction is not None:
-            await interaction.followup.send(line)
+            await interaction.followup.send(str(line), **extra)
         elif message is not None:
-            await message.channel.send(line)
+            await message.channel.send(str(line), **extra)
     except discord.HTTPException:
         log.warning("Could not post an announcement", exc_info=True)
 
@@ -362,14 +369,14 @@ class TrainView(OwnedView):
         return {"palette": "Courtyard", "backdrop": "courtyard", "header": clean(self.title)[0],
                 "turn": 0, "turn_label": turn_label, "seconds": seconds or 0,
                 "seconds_label": f"{seconds:.2g}s to answer" if seconds else "No time limit", "result": None,
-                "enemy": {"name": enemy, "seal": "师" if "Master" in enemy else "徒", "tags":
+                "enemy": {"name": enemy, "seal": "school:Body", "tags":
                           [name, f"Tier {s['tier']}", "Practice" if s["mode"] == "practice" else "Training"],
                           "hp": max(0.0, min(1.0, progress)), "max_hp": 1, "bar_label": bar_label,
-                          "element_seal": "院", "statuses": chips, "body": "master", "slug": None},
+                          "element_seal": "lotus", "statuses": chips, "body": "master", "slug": None},
                 "party_title": "You",
                 "party": [{"name": p["name"], "realm": p["realm"], "layer": p["layer"], "hp": max(0.0, min(1.0, you)),
                            "max_hp": 1, "bar_label": you_label, "bar_color": (84, 186, 130), "move": "", "arrow": True}],
-                "loadout": [{"name": k, "seal": "练", "color": (84, 186, 130), "ready": True, "state": str(v)}
+                "loadout": [{"name": k, "seal": "fist", "color": (84, 186, 130), "ready": True, "state": str(v)}
                             for k, v in stats[:3]],
                 "log": log_ or [("star", "Breathe in. Wait for his first move.")], "log_title": "Last move",
                 "warning": (clean(prompt)[0], clean(hint)[0])}
@@ -803,7 +810,7 @@ class SparView(FightMixin, OwnedView):
     def fight_card(self):
         """Data for cards.battle.render_battle."""
         from cards.activity import clean
-        from cards.theme import SCHOOL_CHAR
+        from cards.technique_icons import tech_kind
         from .fight_view import SCHOOL_COLOR, _school, describe
         sp = self.spar
         tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
@@ -814,11 +821,11 @@ class SparView(FightMixin, OwnedView):
                 continue
             left = sp.cooldowns[key]
             school = _school(t)
-            loadout.append({"name": t["name"], "seal": SCHOOL_CHAR.get(school, "武"), "color": SCHOOL_COLOR.get(school),
+            loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
                             "desc": describe(t)})
         timed = sum(sp.timed.values())
-        loadout.append({"name": "Timed uses", "seal": "时", "color": (240, 200, 100), "ready": bool(timed),
+        loadout.append({"name": "Timed uses", "seal": "hourglass", "color": (240, 200, 100), "ready": bool(timed),
                         "state": str(timed), "desc": "Only these give mastery EXP"})
         hint, _ = clean(sp.hint())
         if sp.turn == 1 and not self.last:
@@ -827,8 +834,8 @@ class SparView(FightMixin, OwnedView):
             warning = (hint, "Read his stance and counter it. Your technique right after a blocked Strike is perfect timing.")
         return {"palette": "Master", "header": self.title_plain, "turn": min(sp.turn, MAX_TURNS_SPAR()),
                 "seconds": battle_data.TURN_SECONDS, "result": None,
-                "enemy": {"name": "The Master", "seal": "师", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
-                          "element_seal": "武", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
+                "enemy": {"name": "The Master", "seal": "school:Body", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
+                          "element_seal": "school:Palm", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
                           "body": "master", "slug": None},
                 "party_title": "You",
                 "party": [{"name": self.player["name"], "realm": self.player["realm"], "layer": self.player["layer"],
@@ -855,8 +862,8 @@ class SparView(FightMixin, OwnedView):
             em = SPAR_EMOJI[key]
             if key.endswith("_tech"):
                 t = self.spar.atk_t if key == "attack_tech" else self.spar.def_t
-                from .fight_view import _school
-                em = _school(t).lower()
+                from cards.battle_icons import tech_emoji_key
+                em = tech_emoji_key(t["name"])
             from .fight_view import emoji as fight_emoji
             b = self.button(label[:80], cb, emoji=fight_emoji(self.bot, em), style=style,
                             row=0 if not key.endswith("_tech") else 1, disabled=bool(left))

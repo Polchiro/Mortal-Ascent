@@ -26,7 +26,7 @@ import technique
 import training
 
 from cards import theme as T
-from cards.battle import seal_char
+from cards.technique_icons import tech_kind
 
 from . import gear, loot
 from . import player as rules
@@ -53,10 +53,11 @@ def odds_text(odds, label=str):
 TIER_LABEL = {"normal": "Normal", "elite": "Elite", "beast_king": "Beast King"}
 ROLE_TRAIT = {"brute": "tough, slower", "hunter": "fragile, deadly", "swift": "15% dodge",
               "armored": "double DEF"}
-GRADE_SEAL = {"Mortal": "凡", "Yellow": "黄", "Mystic": "玄", "Earth": "地", "Heaven": "天"}
-TIER_SEAL = {"ordinary": "凡", "refined": "精", "spirit": "灵", "treasure": "宝", "divine": "神"}
+# Drawn emblems (cards/emblems.py) instead of seal characters; the tiles, strip and header draw these kinds
+GRADE_SEAL = {g: f"emblem:grade:{g}" for g in ("Mortal", "Yellow", "Mystic", "Earth", "Heaven")}
+TIER_SEAL = {t: f"emblem:rarity:{t}" for t in ("ordinary", "refined", "spirit", "treasure", "divine")}
+OVERVIEW_SEAL = "emblem:book"
 CHEST_SEAL = {"wooden": "木", "bronze": "铜", "silver": "银", "jade": "玉"}
-SCHOOL_SEAL = {"Fist": "拳", "Palm": "掌", "Finger": "指", "Leg": "腿", "Body": "体"}
 
 REALM_SHORT = {"Mortal": "Mortal", "Martial Apprentice": "Apprentice", "Martial Warrior": "Warrior",
                "Martial Expert": "Expert", "Martial Master": "Master", "Grand Martial Master": "Grand Master",
@@ -70,14 +71,15 @@ ROLE_ICON = {"brute": "fist", "hunter": "sword", "swift": "gear:feather", "armor
 
 # Pill kinds are the tiers of the Pills section
 PILL_KINDS = {
-    "qi":           ("Qi", "气", (110, 170, 240)),
-    "burst":        ("Qi Burst", "爆", T.LOTUS),
-    "mending":      ("Mending", "愈", T.JADE),
-    "cleansing":    ("Cleansing", "净", (196, 214, 226)),
-    "breakthrough": ("Breakthrough", "破", T.GLOW),
+    "qi":           ("Qi", "emblem:pill:qi:Mystic", (110, 170, 240)),
+    "burst":        ("Qi Burst", "emblem:pill:burst:Yellow", T.LOTUS),
+    "mending":      ("Mending", "emblem:pill:mending:Earth", T.JADE),
+    "cleansing":    ("Cleansing", "emblem:pill:cleansing:Mortal", (196, 214, 226)),
+    "breakthrough": ("Breakthrough", "emblem:pill:breakthrough:Heaven", T.GLOW),
 }
 HERB_ICON_COLOR = {"qi": (110, 170, 240), "healing": T.JADE, "purity": (196, 214, 226), "breakthrough": T.GLOW}
 DECOY_COLOR = (150, 200, 70)
+HEAVEN_DEFYING = "emblem:pill:breakthrough:Heaven"
 
 
 def tile(glyph, color, name, lines, cjk=True, badge=None, group=None):
@@ -103,7 +105,7 @@ def realm_list(realms):
 
 
 def chest_list(chests):
-    return " · ".join(f"{CHEST_SEAL[c]} {loot.CHEST_NAMES[c]}" + (f" {pct(p)}" if p is not None else "")
+    return " · ".join(f"{loot.CHEST_NAMES[c]}" + (f" {pct(p)}" if p is not None else "")
                       for c, p in chests)
 
 
@@ -124,7 +126,7 @@ def beast_rank_text(tier):
 
 
 def beasts_strip():
-    return [(r, T.REALM_CHAR[r], REALM_SHORT[r], REALM_COLOR[r]) for r in rules.REALM_ORDER]
+    return [(r, f"emblem:realm:{r}", REALM_SHORT[r], REALM_COLOR[r]) for r in rules.REALM_ORDER]
 
 
 def beasts_page(realm):
@@ -132,7 +134,7 @@ def beasts_page(realm):
     for name, tier, role in beast_rules.BEASTS[realm]:
         hp, atk, dfn = beast_multipliers(tier, role)
         element = beast_rules.element_of(name)
-        tiles.append(tile(seal_char(name, beast_rules.body_of(name)), T.ELEMENT_ACCENTS[element].rim, name, [
+        tiles.append(tile(f"emblem:beast:{realm}:{element}", T.ELEMENT_ACCENTS[element].rim, name, [
             f"{role.title()} ({ROLE_TRAIT[role]}) · {element}",
             f"HP ×{hp:.2g}  ATK ×{atk:.2g}  DEF ×{dfn:.2g}",
             f"{beast_rank_text(tier)} · chest {pct(explore.BEAST_CHEST[tier]['chance'])}",
@@ -150,7 +152,7 @@ def beasts_overview():
     tiles = []
     for tier, spec in explore.BEAST_CHEST.items():
         t = beast_rules.BEAST_TIERS[tier]
-        tiles.append(tile("王" if tier == "beast_king" else "精" if tier == "elite" else "兽", RANK_COLOR[tier],
+        tiles.append(tile(f"emblem:beast_tier:{tier}", RANK_COLOR[tier],
                           TIER_LABEL[tier] + ("" if tier == "beast_king" else " beasts"), [
                               f"HP ×{t['hp']:g} · ATK ×{t['attack']:g}",
                               beast_rank_text(tier),
@@ -179,10 +181,10 @@ def techniques_page(grade):
         if t["grade"] != grade:
             continue
         kind = "Attack" if t["type"] == "attack" else "Defense"
-        tiles.append(tile(SCHOOL_SEAL.get(t["school"], GRADE_SEAL[grade]), T.RARITY[grade], t["name"], [
+        tiles.append(tile(tech_kind(t["name"], t["school"]), T.RARITY[grade], t["name"], [
             f"{kind} · {t['school']}",
             technique_effect(t["effect"]) if t.get("effect") else "No special effect",
-        ]))
+        ], cjk=False))
     skill, atk_passive = technique.ATTACK_TECHNIQUE[grade]
     block, def_passive = technique.DEFENSE_TECHNIQUE[grade]
     start = [s["name"] for s in rules.starting_techniques()] if grade == "Mortal" else []
@@ -205,7 +207,7 @@ def techniques_overview():
             f"Learn from {realm}",
             f"Attack ×{skill:g} · +{pct(atk_passive)} ATK",
             f"Defense blocks {pct(block)} · +{pct(def_passive)} DEF",
-        ]))
+        ], cjk=False))
     return dict(subtitle="Manuals by grade",
                 intro="Attack and Defense manuals. Higher grades hit harder and need more mastery EXP.",
                 tiles=tiles, footer="Manuals drop from chests: open them in /inventory.")
@@ -270,7 +272,7 @@ def gear_overview(kind):
     tiles = []
     for tier in equipments.TIERS:
         chests = gear_chests(chance, equipments.CHEST_TIER_ODDS, tier)
-        tiles.append(tile(TIER_SEAL[tier], T.RARITY[tier], gear_tier_label(tier), [
+        tiles.append(tile(TIER_SEAL[tier], T.RARITY[tier], gear_tier_label(tier), cjk=False, lines=[
             f"From {equipments.TIER_REALM_REQUIREMENT[tier]}",
             f"e.g. {next(iter(names[tier].values()))}",
             "Chests: " + ", ".join(loot.CHEST_NAMES[c].split()[0] for c, _ in chests),
@@ -313,7 +315,7 @@ def artifacts_overview():
 # ── Chests ────────────────────────────────────────────────────────────
 
 def chests_strip():
-    return [(c, CHEST_SEAL[c], loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
+    return [(c, "chest", loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
 
 
 def chest_sources(tier):
@@ -342,9 +344,9 @@ def chests_page(chest):
              cjk=False),
     ]
     if chest == "jade":
-        tiles.append(tile("天", T.RARITY["Heaven"], "Heaven-Defying Pill",
+        tiles.append(tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill",
                           [f"{pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} chance",
-                           "Raises your talent one rank"]))
+                           "Raises your talent one rank"], cjk=False))
     return dict(tier_label=loot.CHEST_NAMES[chest], tier_word=False, subtitle="Open it from /inventory",
                 intro="Every roll is separate, so one chest can hold several things.",
                 tiles=tiles, footer="From " + chest_sources(chest))
@@ -435,11 +437,11 @@ def pills_page(kind):
     tiles = []
     for grade, spec in table.items():
         core = spec.get(core_key) if core_key else None
-        tiles.append(tile(GRADE_SEAL[grade], T.RARITY[grade], name(grade, spec), [
+        tiles.append(tile(f"emblem:pill:{kind}:{grade}", T.RARITY[grade], name(grade, spec), [
             effect(grade, spec),
             recipe_text(grade, recipe, core),
             f"{age_text(spec['min_age'])} herbs · {rank_name(spec['rank'])} Alchemist",
-        ]))
+        ], cjk=False))
     footer = "Craft them in /craft from herbs of the pill's grade."
     if sources:
         shop = [g for g in table if "/shop" in sources(g)]
@@ -460,14 +462,15 @@ def pills_overview():
     tiles = [
         tile("skull", T.GLOW, "Pill toxicity", [f"Toxicity {tox}",
                                                 f"Drops by 1 every {training.TOXICITY_DECAY_HOURS} hours"], cjk=False),
-        tile("纹", T.GOLD, "Pill patterns", [f"1–9 from the craft score: {patterns}",
+        tile("emblem:pill:qi:Earth:9", T.GOLD, "Pill patterns", cjk=False, lines=[f"1–9 from the craft score: {patterns}",
                                              f"Below {pct(alchemy.EXPLODE_BELOW)} the cauldron explodes",
                                              f"Effect ×{alchemy.pattern_effect(1):.2f} … ×{alchemy.pattern_effect(9):.2f};"
                                              " 8+ patterns add no toxicity"]),
-        tile("品", T.GOLD, "Alchemist rank", ["Everyone starts at 1st Grade", f"Total EXP: {ranks}"]),
-        tile("核", T.MOON, "Beast Cores", ["Breakthrough pills need one of their grade",
+        tile("gear:furnace", T.GOLD, "Alchemist rank", ["Everyone starts at 1st Grade", f"Total EXP: {ranks}"],
+             cjk=False),
+        tile("gear:qi", T.MOON, "Beast Cores", cjk=False, lines=["Breakthrough pills need one of their grade",
                                            f"Drops: {cores}", "Elite and King cores from team hunts"]),
-        tile("天", T.RARITY["Heaven"], "Heaven-Defying Pill", [
+        tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill", cjk=False, lines=[
             f"Raises talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']})",
             f"Jade Chests {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} · cannot be traded"]),
     ]
@@ -516,7 +519,7 @@ def herbs_overview():
         tile("skull", DECOY_COLOR, "Old herbs fight back", [
             f"{alchemy.OLD_HERB_FROM_AGE}-year+: {alchemy.OLD_HERB_CHOICES} choices, "
             f"{alchemy.OLD_HERB_SECONDS_LESS}s less", "Miss and it escapes"], cjk=False),
-        tile("灵", T.MOON, "Wandering Spirit", [
+        tile("gear:focus", T.MOON, "Wandering Spirit", cjk=False, lines=[
             f"Every {alchemy.SPIRIT_CHECK_EVERY[0]}–{alchemy.SPIRIT_CHECK_EVERY[1]} gathers it asks a question",
             f"Miss {alchemy.SPIRIT_CHECK_FAILS_TO_PAUSE} in a row: pause {alchemy.SPIRIT_CHECK_PAUSE_MINUTES} min"]),
         tile("herb", T.ASH, "Herb types", [" · ".join(f"{loot.TYPE_LABEL[t]} {pct(c)}"
@@ -529,7 +532,7 @@ def herbs_overview():
     return dict(subtitle="How to /gather",
                 intro="Use /gather as long as you like. Poisonous look-alikes differ in one detail.",
                 tiles=tiles,
-                footer="Herb tier by realm: " + " · ".join(f"{GRADE_SEAL[t]} {t} {REALM_SHORT[r[0]]}+"
+                footer="Herb tier by realm: " + " · ".join(f"{t} {REALM_SHORT[r[0]]}+"
                                                            for t, r in tiers.items())
                        + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower.")
 
@@ -592,7 +595,7 @@ def tier_page(section, tier=OVERVIEW, page=0, found=None):
     strip = tiers(section)
     data = build(section, tier)
     if tier == OVERVIEW:
-        seal, short, color = "录", "Overview", T.GOLD
+        seal, short, color = OVERVIEW_SEAL, "Overview", T.GOLD
     else:
         _, seal, short, color = next(s for s in strip if s[0] == tier)
     chunks = paginate(data["tiles"])

@@ -269,7 +269,7 @@ The craft is one message with one picture card and round icon buttons, edited af
 every decision (like the fight screen). The card shows a chamber with a bronze ding
 cauldron over a glowing eight-trigram circle:
 
-- **Top:** the pill's grade seal, name and effect; the round (or herb, move, strike),
+- **Top:** the pill's type emblem in its grade colour, name and effect; the round (or herb, move, strike),
   seconds to choose and the difficulty.
 - **Right:** the stages as a path. Done stages are green with ✓, the current one is lit.
 - **Middle, per stage:** the fire and a 0°–100° heat gauge (Ignite), the herbs still to

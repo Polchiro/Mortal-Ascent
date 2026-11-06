@@ -24,6 +24,9 @@ class Emojis:
 
     def get(self, key):
         """The custom emoji for a button, or the plain fallback emoji."""
+        if key not in self.custom and key in battle_icons.TECH_SCHOOL:     # a technique icon that didn't upload
+            key2 = battle_icons.TECH_SCHOOL[key]
+            return self.custom.get(key2) or battle_icons.FALLBACK.get(key2)
         return self.custom.get(key) or battle_icons.FALLBACK.get(key) or alchemy_icons.FALLBACK.get(key)
 
     async def setup(self, client):
@@ -33,7 +36,7 @@ class Emojis:
             log.warning("Could not list application emojis; fight buttons use normal emojis", exc_info=True)
             return
         for icons, key in ((m, k) for m in ICON_SETS for k in m.ICONS):
-            name = PREFIX + key
+            name = PREFIX + getattr(icons, "EMOJI_NAME", {}).get(key, key)
             if name in existing:
                 self.custom[key] = existing[name]
                 continue

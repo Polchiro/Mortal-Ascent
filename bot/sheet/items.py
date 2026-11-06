@@ -35,8 +35,8 @@ CATEGORIES = {
     "chests": Category("chests", "Chests", "chest", "Open"),
     "manuals": Category("manuals", "Manuals", "scroll", "Learn"),
     "weapons": Category("weapons", "Weapons", "sword", "Equip"),
-    "armor": Category("armor", "Armor", "seal:甲", "Equip"),
-    "artifacts": Category("artifacts", "Artifacts", "seal:宝", "Equip"),
+    "armor": Category("armor", "Armor", "gear:robe", "Equip"),
+    "artifacts": Category("artifacts", "Artifacts", "pearl", "Equip"),
     "pills": Category("pills", "Pills", "pill", "Take"),
     "herbs": Category("herbs", "Herbs", "herb", ""),
     "materials": Category("materials", "Materials", "herb", ""),
@@ -69,7 +69,18 @@ def item_icon(item):
         return (item.get("data") or {}).get("type") or item["key"]
     if item["category"] in ("armor", "artifacts"):
         return gear.icon_kind(item)
+    if item["category"] == "manuals" and item.get("grade"):
+        return f"emblem:manual:{item['key']}:{item['grade']}"
+    if item["category"] == "pills" and item.get("grade"):
+        return pill_icon(item)
     return CATEGORIES[item["category"]].icon
+
+
+def pill_icon(item):
+    """cards.theme.icon kind for a pill: its type emblem tinted by grade, with the earned pattern rings."""
+    data = item.get("data") or {}
+    kind = data.get("kind") or ("breakthrough" if item["key"] == "heaven_defying" else "qi")
+    return f"emblem:pill:{kind}:{data.get('grade') or item['grade']}:{int(data.get('patterns') or 0)}"
 
 
 def actions(item):

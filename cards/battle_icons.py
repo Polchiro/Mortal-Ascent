@@ -8,7 +8,10 @@ import io
 
 from PIL import Image
 
+import technique
+
 from . import theme as T
+from .technique_icons import tech_key
 
 SIZE = 128
 # key: (drawn icon or CJK character, colour, is_character)
@@ -20,15 +23,31 @@ ICONS = {
     "flee": ("flee", (180, 182, 196), False),
     "attack_tech": ("star", (240, 200, 100), False),
     "defense_tech": ("lotus", (96, 196, 160), False),
-    # technique schools
-    "fist": ("拳", (226, 84, 72), True),
-    "palm": ("掌", (110, 150, 232), True),
-    "finger": ("指", (196, 110, 228), True),
-    "leg": ("腿", (232, 160, 62), True),
-    "body": ("体", (96, 196, 160), True),
+    # technique schools: the drawn base shapes (cards/technique_icons.py)
+    "fist": ("school:Fist", (226, 84, 72), False),
+    "palm": ("school:Palm", (110, 150, 232), False),
+    "finger": ("school:Finger", (196, 110, 228), False),
+    "leg": ("school:Leg", (232, 160, 62), False),
+    "body": ("school:Body", (96, 196, 160), False),
 }
 FALLBACK = {"strike": "⚔️", "guard": "🛡️", "break": "💥", "pill": "❤️", "flee": "🏃", "attack_tech": "✨",
             "defense_tech": "🔰", "fist": "👊", "palm": "🖐️", "finger": "☝️", "leg": "🦵", "body": "🧘"}
+
+# every technique has its own button icon, "t_<technique key>", in its grade colour
+TECH_SCHOOL = {}
+for _key, _t in technique.TECHNIQUES.items():
+    ICONS["t_" + _key] = ("tech:" + _key, T.RARITY[_t["grade"]], False)
+    TECH_SCHOOL["t_" + _key] = _t["school"].lower()
+    FALLBACK["t_" + _key] = FALLBACK[_t["school"].lower()]
+
+# Emoji names already uploaded with the old seal-character pictures get a new name, so the bot uploads the
+# drawn version instead of reusing the old one. Names are at most 32 characters ("ma_" + this).
+EMOJI_NAME = {k: k + "_v2" for k in ("fist", "palm", "finger", "leg", "body")}
+
+
+def tech_emoji_key(name):
+    """Button icon key for a technique by name ('Iron Fist' → 't_iron_fist')."""
+    return "t_" + tech_key(name)
 
 
 def _flee(img, center, size, color):

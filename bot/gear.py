@@ -95,8 +95,8 @@ def seal(item):
 
 
 def icon_kind(item):
-    """cards.theme.icon kind: 'seal:甲' draws that character."""
-    return "seal:" + seal(item)
+    """cards.theme.icon kind: the drawn armor type or artifact family (cards/gear_icons.py), e.g. 'gear:robe'."""
+    return "gear:" + (armor_type(item) if item["category"] == ARMOR else family(item))
 
 
 # ── Effects ───────────────────────────────────────────────────────────

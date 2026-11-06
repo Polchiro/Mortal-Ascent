@@ -70,7 +70,7 @@ def render_compendium(p):
 
 def _header(img, p):
     color = p["color"]
-    T.medallion(img, (PAD + 62, 70), 50, p["seal"], color)
+    seal(img, (PAD + 62, 70), 50, p["seal"], color)
     T.gold_text(img, (PAD + 132, 26), p["section_label"].upper(), font("Cinzel.ttf", 46, "Black"), glow=T.EMBER)
     d = ImageDraw.Draw(img)
     f = font("Cinzel.ttf", 24, "Bold")
@@ -121,15 +121,38 @@ def _strip(img, p):
         seal_c = mix(color, (255, 255, 255), 0.25) if active else mix(color, (0, 0, 0), 0.35)
         lab_c = T.GOLD_HI if active else alpha(T.ASH, 255)
         if compact and not active:
-            T.text(d, (x + w / 2, cy + 1), seal, seal_f, seal_c, "mm")
+            _strip_seal(img, d, (x + w / 2, cy + 1), seal, seal_f, seal_c, active)
         else:
             lw = T.width(d, label.upper(), lf)
             gx = x + (w - (30 + 10 + lw)) / 2
-            T.text(d, (gx + 15, cy + 1), seal, seal_f, seal_c, "mm")
+            _strip_seal(img, d, (gx + 15, cy + 1), seal, seal_f, seal_c, active)
+            d = ImageDraw.Draw(img)
             T.text(d, (gx + 40, cy), label.upper(), lf, lab_c, "lm")
+        d = ImageDraw.Draw(img)
         if i:
             T.stud(d, x, cy, 3.5)
         x += w
+
+
+def seal(img, center, r, glyph, color, cjk_char=None):
+    """A tile / header seal: a drawn emblem ('emblem:...', no medallion around it), a drawn icon in a
+    medallion, or (old data) a character in a medallion."""
+    if glyph.startswith("emblem:"):
+        T.icon(img, glyph, center, r * 2 + 4, color)
+    else:
+        T.medallion(img, center, r, glyph, color, cjk_char=len(glyph) == 1 if cjk_char is None else cjk_char)
+
+
+def _strip_seal(img, d, center, glyph, f, color, active):
+    if len(glyph) == 1:
+        T.text(d, center, glyph, f, color, "mm")
+    elif glyph.startswith("emblem:"):
+        T.icon(img, glyph, center, 34 if active else 30, color)
+        if not active:      # dim the tiers that aren't picked
+            x, y = center
+            T.soft_glow(img, (x - 16, y - 16, x + 16, y + 16), (0, 0, 0, 130), 1)
+    else:
+        T.icon(img, glyph, center, 26, color)
 
 
 # ── tiles ─────────────────────────────────────────────────────────────
@@ -158,7 +181,7 @@ def _tile(img, box, t, lay):
         d.rectangle(P(x0 - 1, y0 - 1, x1 + 1, y1 + 1), outline=T.GOLD_HI, width=round(3 * T.S))
     T.soft_glow(img, (x0 + 6, y0 + 6, x1 - 6, y0 + 40), alpha(color, 34), 8, "rect")
     mx, my = x0 + 16 + MED_R, y0 + 18 + MED_R
-    T.medallion(img, (mx, my), MED_R, t["glyph"], color, cjk_char=t.get("cjk", True))
+    seal(img, (mx, my), MED_R, t["glyph"], color, t.get("cjk", True))
     d = ImageDraw.Draw(img)
     tx = mx + MED_R + 14
     block = len(lay["name"]) * NAME_H + (36 if t.get("badge") else 0)

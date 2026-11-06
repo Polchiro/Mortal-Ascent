@@ -198,17 +198,18 @@ def test_get_player_carries_the_worn_artifacts_effects(conn):
 
 # ── bag and /index ────────────────────────────────────────────────────
 
-def test_bag_has_armor_and_artifact_tabs_with_seals(conn):
+def test_bag_has_armor_and_artifact_tabs_with_drawn_icons(conn):
     new_player(conn)
     give(conn, 1, loot.roll_armor("ordinary", random.Random(1)))
     give(conn, 1, loot.artifact("lotus", "ordinary"))
     assert {"armor", "artifacts"} <= set(items.CATEGORIES)
     d, *_ = sheet.bag_data(conn, 1, "artifacts")
-    assert d["tiles"][0]["icon"] == "seal:" + eq.ARTIFACT_FAMILIES["lotus"]["seal"]
+    assert d["tiles"][0]["icon"] == "gear:lotus"
     assert d["tiles"][0]["rarity_key"] == "ordinary"
     assert d["inspect"]["effects"][0] == gear.effect_text(loot.artifact("lotus", "ordinary"))
     d, *_ = sheet.bag_data(conn, 1, "armor")
-    assert d["tiles"][0]["icon"][5:] in {s for s, _ in eq.ARMOR_TYPE_DISPLAY.values()}
+    assert d["tiles"][0]["icon"][5:] in eq.ARMOR_TYPE_DISPLAY
+    assert items.CATEGORIES["armor"].icon == "gear:robe" and items.CATEGORIES["artifacts"].icon == "pearl"
     for cat in ("armor", "artifacts"):
         RENDERERS["inventory"](sheet.bag_data(conn, 1, cat)[0])
 
@@ -561,7 +562,7 @@ def test_profile_gear_row_has_four_sockets(conn):
     loot.use_item(conn, 1, a["id"])
     d = sheet.profile_data(conn, 1)
     s = d["gear"][2]
-    assert s["icon"] == "seal:镜" and s["tier"] == "ordinary" and s["name"] == a["name"]
+    assert s["icon"] == "gear:mirror" and s["tier"] == "ordinary" and s["name"] == a["name"]
     assert s["line"] == gear.effect_text(a, tiny=True)
     RENDERERS["profile"](d)
 

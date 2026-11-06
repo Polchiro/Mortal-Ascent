@@ -1037,7 +1037,7 @@ def fight_pills(conn, user_id):
         if kind != "mending":
             continue
         effect = alchemy.pattern_effect(patterns) if patterns else 1.0
-        out.append({"id": it["id"], "name": pill_name(kind, grade), "qty": it.get("qty", 1),
+        out.append({"id": it["id"], "name": pill_name(kind, grade), "qty": it.get("qty", 1), "grade": grade,
                     "heal": alchemy.MENDING_PILLS[grade]["heal"] * effect * mult, "patterns": patterns})
     return sorted(out, key=lambda x: -x["heal"])
 

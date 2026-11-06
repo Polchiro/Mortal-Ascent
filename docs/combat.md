@@ -17,9 +17,9 @@ large type, and the details sit in the text panel, which Discord shows at normal
 | Part | What it shows |
 |---|---|
 | Scene window | The beast under a moon, mist and mountains, in its element's colours. Beast art from `art/beasts/<beast_slug>.png` if the file exists, otherwise a silhouette for its body type |
-| Over the scene | Beast seal, name, tier · role · element · realm, a big HP bar with the numbers, element seal |
+| Over the scene | Beast emblem (its realm's beast with the element badge in the corner), name, tier · role · element · realm, a big HP bar with the numbers, element badge |
 | Top right | Turn number, seconds to choose, status chips (Staggered, Hidden, Charged…) |
-| Middle | **You**: your seal, name, realm, a big HP bar, then your techniques and Mending pills and whether each is ready. Team hunts show the **Hunting Party** instead: each member's seal, name and HP bar (up to six); the arrow marks the fighter the beast is going for; names turn red below 25% HP |
+| Middle | **You**: your realm emblem, name, realm, a big HP bar, then your techniques and Mending pills and whether each is ready. Team hunts show the **Hunting Party** instead: each member's seal, name and HP bar (up to six); the arrow marks the fighter the beast is going for; names turn red below 25% HP |
 | Warning bar | The beast's next move: a tell, or its telegraphed element move |
 | Text panel | Everyone's HP, each member's last move (team hunts), **Last turn** with small icons, the full warning, and **Your moves**: what each technique and pill does and how many turns it still rests |
 

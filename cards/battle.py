@@ -458,7 +458,7 @@ def _enemy_plate(img, data, acc):
     e = data["enemy"]
     x0, y0, x1, y1 = SCENE
     d = ImageDraw.Draw(img)
-    T.medallion(img, (x0 + 72, y1 - 72), 50, e["seal"], acc.rim)
+    T.seal(img, (x0 + 72, y1 - 72), 50, e["seal"], acc.rim)
     name, nf = _shrink(d, e["name"].upper(), "Cinzel.ttf", "Black", (54, 48, 42, 36), x1 - x0 - 170)
     T.gold_text(img, (x0 + 140, y1 - 108), name, nf, "ls", glow=alpha(acc.rim, 120))
     d = ImageDraw.Draw(img)
@@ -469,7 +469,7 @@ def _enemy_plate(img, data, acc):
     T.bar(img, (x0 + 142, y1 - 66, x1 - 96, y1 - 14), frac, acc.hp,
           e.get("bar_label") or f"{e['hp']:,} / {e['max_hp']:,} HP")
     # element seal at the end of the bar, status chips under the timer at the top right
-    T.medallion(img, (x1 - 50, y1 - 40), 34, e["element_seal"], acc.rim)
+    T.seal(img, (x1 - 50, y1 - 40), 34, e["element_seal"], acc.rim)
     cx = x1 - 24
     for label in e["statuses"][:3]:
         cx -= _chip(img, cx, y0 + 148, label, acc.rim, "r") + 10
@@ -514,7 +514,7 @@ def _solo(img, data, acc):
     m = data["party"][0]
     low, color = _bar_color(m)
     y = y0 + 96
-    T.medallion(img, (x0 + 58, y), 36, T.REALM_CHAR.get(m["realm"], "武"), MEMBER_COLORS[0])
+    T.seal(img, (x0 + 58, y), 36, "emblem:realm:" + m["realm"], MEMBER_COLORS[0])
     d = ImageDraw.Draw(img)
     nf, rf = font("Inter.ttf", 34, "Bold"), font("Inter.ttf", 26, "Medium")
     T.text(d, (x0 + 108, y - 18), T.fit(d, m["name"], nf, 250), nf, (240, 90, 76) if low or m.get("ko") else
@@ -533,7 +533,7 @@ def _solo(img, data, acc):
     for i, item in enumerate(items):
         cx0 = x0 + 12 + i * cw
         cy = y0 + 198
-        T.medallion(img, (cx0 + 36, cy), 24, item["seal"], item["color"] or T.GOLD)
+        T.seal(img, (cx0 + 36, cy), 24, item["seal"], item["color"] or T.GOLD)
         d = ImageDraw.Draw(img)
         state = item["state"]
         sw = T.width(d, state, sf)
@@ -558,7 +558,7 @@ def _team(img, data, acc):
         if m.get("arrow"):
             _arrow(img, cx0, cx1, yc, rh / 2 - 3, acc)
         low, color = _bar_color(m)
-        T.medallion(img, (cx0 + 50, yc), 24, T.REALM_CHAR.get(m["realm"], "武"), MEMBER_COLORS[i % len(MEMBER_COLORS)])
+        T.seal(img, (cx0 + 50, yc), 24, "emblem:realm:" + m["realm"], MEMBER_COLORS[i % len(MEMBER_COLORS)])
         d = ImageDraw.Draw(img)
         name_w = 210 if cols == 2 else 300
         T.text(d, (cx0 + 84, yc), T.fit(d, m["name"], nf, name_w), nf,

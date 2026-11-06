@@ -179,15 +179,30 @@ HEAVEN_DEFYING = {"category": "pills", "key": "heaven_defying", "name": "Heaven-
 ANNOUNCE_GEAR = {"weapons": "a Divine weapon", "armor": "Divine armor", "artifacts": "a Divine artifact"}
 
 
+class Announcement(str):
+    """Announcement text that also names the drawn emblem posted with it (cards.theme.icon kind)."""
+    icon = None
+
+
+def _announced(text, icon):
+    a = Announcement(text)
+    a.icon = icon
+    return a
+
+
 def announcement(player_name, item):
-    """Server-wide announcement text for a rare find, or None (equipment.md / explore.md)."""
+    """Server-wide announcement text for a rare find, or None (equipment.md / explore.md).
+    The result's .icon is the emblem shown with it: the Divine crest, the Heaven manual, the Heaven pill."""
     if item["category"] in ANNOUNCE_GEAR and item["grade"] in equipments.ANNOUNCE_TIERS:
         what = ANNOUNCE_GEAR[item["category"]]
-        return f"📢 **{player_name}** has found {what}: **{item['name']}**! The heavens take notice."
+        return _announced(f"📢 **{player_name}** has found {what}: **{item['name']}**! The heavens take notice.",
+                          f"emblem:rarity:{item['grade']}")
     if item["category"] == "manuals" and item["grade"] in explore.ANNOUNCE_MANUAL_GRADES:
-        return f"📢 **{player_name}** has found a Heaven-grade manual: **{item['name']}**!"
+        return _announced(f"📢 **{player_name}** has found a Heaven-grade manual: **{item['name']}**!",
+                          f"emblem:manual:{item['key']}:{item['grade']}")
     if item.get("key") == "heaven_defying":
-        return f"📢 **{player_name}** has found a **Heaven-Defying Pill**!"
+        return _announced(f"📢 **{player_name}** has found a **Heaven-Defying Pill**!",
+                          "emblem:pill:breakthrough:Heaven")
     return None
 
 
