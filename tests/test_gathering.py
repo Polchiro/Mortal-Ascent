@@ -4,7 +4,7 @@ import random
 import pytest
 
 import alchemy
-from bot import db, gathering, guide, loot
+from bot import compendium, db, gathering, loot
 from bot import player as rules
 from bot.expedition import Expedition
 from bot.sheet import data as sheet
@@ -185,9 +185,11 @@ def test_inhumanly_fast_picks_are_flagged(conn):
 # ── /index ────────────────────────────────────────────────────────────
 
 def test_index_lists_every_herb_decoy_and_pill():
-    text = "\n".join(f"{f.name}\n{f.value}" for key in ("herbs", "pills")
-                     for page in range(len(guide.SECTIONS[key][2]()))
-                     for f in guide.index_embed(key, page)[0].fields)
+    text = "\n".join(f"{t['name']}\n" + "\n".join(t["lines"])
+                     for key in ("herbs", "pills")
+                     for tier in [compendium.OVERVIEW] + [t[0] for t in compendium.tiers(key)]
+                     for n in range(compendium.tier_page(key, tier)["pages"])
+                     for t in compendium.tier_page(key, tier, n)["tiles"])
     for tier in alchemy.GRADES:
         for name, _ in alchemy.HERBS[tier].values():
             assert name in text

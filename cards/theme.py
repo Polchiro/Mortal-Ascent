@@ -556,6 +556,10 @@ def icon(img, kind, center, size, color):
     if kind.startswith("seal:"):            # armor / artifact seal: the character itself (gear.icon_kind)
         text(d, (cx, cy + size * 0.03), kind[5:], cjk(max(8, round(size * 0.82))), color, "mm")
         return
+    if kind.startswith("gear:"):            # armor type / artifact family drawing (cards/gear_icons.py)
+        from .gear_icons import GEAR_ICON
+        GEAR_ICON[kind[5:]](d, cx, cy, s, color, dark)
+        return
     if kind == "heart":
         r = s * 0.55
         d.ellipse(P(cx - s, cy - s * 0.75, cx - s + 2 * r, cy - s * 0.75 + 2 * r), fill=color)

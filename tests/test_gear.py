@@ -10,7 +10,7 @@ import equipments as eq
 import explore
 import pvp
 import training
-from bot import combat, db, fight, gear, guide, loot
+from bot import combat, compendium, db, fight, gear, loot
 from bot import duel as D
 from bot import player as rules
 from bot.crafting import Craft
@@ -214,9 +214,11 @@ def test_bag_has_armor_and_artifact_tabs_with_seals(conn):
 
 
 def test_index_lists_every_armor_and_artifact():
-    text = "\n".join(f"{f.name}\n{f.value}" for key in ("armor", "artifacts")
-                     for page in range(len(guide.SECTIONS[key][2]()))
-                     for f in guide.index_embed(key, page)[0].fields)
+    text = "\n".join(f"{t['name']}\n" + "\n".join(t["lines"])
+                     for key in ("armor", "artifacts")
+                     for tier in [compendium.OVERVIEW] + [t[0] for t in compendium.tiers(key)]
+                     for n in range(compendium.tier_page(key, tier)["pages"])
+                     for t in compendium.tier_page(key, tier, n)["tiles"])
     for names in eq.ARMOR_NAMES.values():
         for name in names.values():
             assert name in text
