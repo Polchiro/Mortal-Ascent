@@ -44,7 +44,7 @@ def orb_panel(img, data, frac, box):
     cx = (x0 + x1) / 2
     t.orb(img, (cx, y0 + 150), 104, frac, f"{frac * 100:.1f}%".replace(".0%", "%"))
     d = ImageDraw.Draw(img)
-    t.text(d, (cx, y0 + 288), "丹田", t.cjk(30), t.EMBER, "mm")
+    t.spaced(d, (cx, y0 + 288), "DANTIAN", font("Cinzel.ttf", 20, "Bold"), t.EMBER, 3, "m")
     color = TONES.get(data["status_tone"], t.JADE)
     f = font("Inter.ttf", 13, "Bold")
     status = t.fit(d, data["status"], f, x1 - x0 - 60)
@@ -144,7 +144,7 @@ def sources_panel(img, data, box):
         y = y0 + 64 + k * step + step / 2 - 6
         warn = r.get("warn")
         color = t.GLOW if warn else (t.EMBER if r["active"] else t.ASH_DK)
-        t.medallion(img, (x + 20, y), 18, r["seal"], color)
+        t.seal(img, (x + 20, y), 18, r["seal"], color)
         d = ImageDraw.Draw(img)
         name_c = t.PARCHMENT if r["active"] else t.ASH
         t.text(d, (x + 50, y - 9), r["label"], font("Inter.ttf", 15, "Bold"), name_c, "lm")

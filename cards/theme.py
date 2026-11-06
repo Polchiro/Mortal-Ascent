@@ -51,8 +51,6 @@ RARITY = {
     "wooden": (168, 122, 76), "bronze": (196, 132, 70), "silver": (186, 196, 210), "jade": (82, 196, 150),
     None: (150, 176, 120),
 }
-TALENT_CHAR = {"Ordinary": "凡", "Gifted": "秀", "Genius": "才", "Prodigy": "奇", "Heavenly": "天", "Saint": "圣",
-               "Divine": "神"}
 TALENT = {
     "Ordinary": (170, 160, 150), "Gifted": (96, 196, 110), "Genius": (90, 160, 240),
     "Prodigy": (178, 110, 228), "Heavenly": (232, 196, 80), "Saint": (246, 150, 50),
@@ -63,7 +61,6 @@ REALM_CHAR = {
     "Martial Master": "宗", "Grand Martial Master": "宗", "Martial Grandmaster": "尊",
     "Martial King": "王", "Martial Emperor": "帝", "Martial Ancestor": "祖", "Martial Saint": "圣",
 }
-SCHOOL_CHAR = {"Fist": "拳", "Palm": "掌", "Finger": "指", "Leg": "腿", "Body": "体"}
 
 # ── Accents: the same frame in another colour for each activity ──────
 # deep: background glow · lacquer: banner gradient (top, bottom) · main/bright: bars, glows, seals · ink: faded marks
@@ -573,6 +570,11 @@ def icon(img, kind, center, size, color):
         from .emblems import draw_kind
         draw_kind(img, kind, center, size)
         return
+    if kind.startswith("misc:"):            # Qi sources, herbs, /craft stages and buttons (cards/misc_icons.py)
+        from .misc_icons import MISC_ICON
+        if kind[5:] in MISC_ICON:
+            MISC_ICON[kind[5:]](d, cx, cy, s, color, dark)
+            return
     if kind.startswith("tech:") or kind.startswith("school:"):   # techniques (cards/technique_icons.py)
         from .technique_icons import SCHOOL_ICON, TECH_ICON
         group, key = kind.split(":", 1)

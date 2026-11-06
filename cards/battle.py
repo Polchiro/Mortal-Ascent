@@ -761,7 +761,7 @@ def _duel_side(img, box, side, i, acc):
     right = i == 1
     color = DUEL_SIDE_COLORS[i]
     seal_x = x1 - 62 if right else x0 + 62
-    T.medallion(img, (seal_x, y0 + 64), 42, T.TALENT_CHAR.get(side["talent"], "凡"), T.TALENT.get(side["talent"], color))
+    T.seal(img, (seal_x, y0 + 64), 42, "emblem:talent:" + side["talent"], T.TALENT.get(side["talent"], color))
     d = ImageDraw.Draw(img)
     nf, rf = font("Inter.ttf", 38, "Bold"), font("Inter.ttf", 27, "SemiBold")
     low = side["max_hp"] and side["hp"] / side["max_hp"] <= LOW_HP

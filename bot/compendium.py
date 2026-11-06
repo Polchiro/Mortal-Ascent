@@ -57,7 +57,6 @@ ROLE_TRAIT = {"brute": "tough, slower", "hunter": "fragile, deadly", "swift": "1
 GRADE_SEAL = {g: f"emblem:grade:{g}" for g in ("Mortal", "Yellow", "Mystic", "Earth", "Heaven")}
 TIER_SEAL = {t: f"emblem:rarity:{t}" for t in ("ordinary", "refined", "spirit", "treasure", "divine")}
 OVERVIEW_SEAL = "emblem:book"
-CHEST_SEAL = {"wooden": "木", "bronze": "铜", "silver": "银", "jade": "玉"}
 
 REALM_SHORT = {"Mortal": "Mortal", "Martial Apprentice": "Apprentice", "Martial Warrior": "Warrior",
                "Martial Expert": "Expert", "Martial Master": "Master", "Grand Martial Master": "Grand Master",

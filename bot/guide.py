@@ -110,7 +110,7 @@ LESSONS = [
      [("/gather", "Gather herbs as long as you like. I name a herb and describe it; pick the plant that matches "
                   "before time runs out. **Read carefully:** poisonous look-alikes differ in one detail and cost you "
                   f"{alchemy.DECOY_HP_LOSS:.0%} HP."),
-      ("Tiers and types", "You find herbs of your own realm's tier (凡 黄 玄 地 天). 🌀 Qi herbs make Qi pills, "
+      ("Tiers and types", "You find herbs of your own realm's tier (Mortal, Yellow, Mystic, Earth, Heaven). 🌀 Qi herbs make Qi pills, "
                           "❤️ Healing herbs make Mending pills, 💧 Purity herbs go into every recipe, and 🏔️ "
                           "Breakthrough herbs make Breakthrough pills."),
       ("Old herbs", "Every herb has an age, from 🌱 10-year to 🏵️ 1000-year. Older herbs make better pills, but "
