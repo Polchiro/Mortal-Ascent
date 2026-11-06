@@ -560,6 +560,13 @@ def icon(img, kind, center, size, color):
         from .gear_icons import GEAR_ICON
         GEAR_ICON[kind[5:]](d, cx, cy, s, color, dark)
         return
+    if kind.startswith("tech:") or kind.startswith("school:"):   # techniques (cards/technique_icons.py)
+        from .technique_icons import SCHOOL_ICON, TECH_ICON
+        group, key = kind.split(":", 1)
+        fn = (TECH_ICON if group == "tech" else SCHOOL_ICON).get(key)
+        if fn:
+            fn(d, cx, cy, s, color, dark)
+            return
     if kind == "heart":
         r = s * 0.55
         d.ellipse(P(cx - s, cy - s * 0.75, cx - s + 2 * r, cy - s * 0.75 + 2 * r), fill=color)
