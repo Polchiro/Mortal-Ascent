@@ -1270,6 +1270,7 @@ SHOP_ITEMS = {
                                f"×{training.QI_PILLS['Mystic']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h"),
     "inventory_expansion_20": ("🎒 Inventory expansion", "+20 bag slots"),
     "name_change":            ("✏️ Name change", "Change the name on your cards"),
+    "seal_stone":             ("🔏 Seal Stone", "Locks one passive slot when you Replace in /forge"),
 }
 SHOP_PILLS = {"mortal_qi_pill_x3": ("Mortal", 3), "yellow_qi_pill_x3": ("Yellow", 3), "mystic_qi_pill_x1": ("Mystic", 1)}
 
@@ -1292,6 +1293,10 @@ def buy_shop_item(conn, user_id, key, new_name=None, rng=random):
             db.change_currency(conn, user_id, "moon_pearls", price, "Refund: bag full")
             return "Your bag is full.", None
         msg = f"💊 {qty}× **{alchemy.QI_PILLS[grade]['name']}** added to your bag."
+    elif key == "seal_stone":
+        from . import materials
+        loot.store(conn, user_id, [materials.material("seal")])
+        msg = "🔏 A **Seal Stone** goes into your materials pouch."
     elif key == "inventory_expansion_20":
         db.update_player(conn, user_id, bag_capacity=p["bag_capacity"] + 20)
         msg = f"🎒 Your bag now holds **{p['bag_capacity'] + 20}** slots."

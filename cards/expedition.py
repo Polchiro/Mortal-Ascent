@@ -49,6 +49,7 @@ MOOD = {
     "wild_beast":         ((236, 84, 62), "the dark pines", "skull"),
     "treasure_chest":     ((246, 196, 86), "the golden hollow", "chest"),
     "herb_patch":         ((110, 214, 120), "the flower meadow", "herb"),
+    "ore_vein":           ((214, 150, 96), "the glittering cliff", "mat:base:weapon:1"),
     "peaceful_clearing":  ((150, 196, 236), "the misty lake", "lotus"),
     "hazard":             ((196, 214, 82), "the crumbling slope", "skull"),
     "bandits":            ((240, 140, 60), "the smoky camp", "sword"),
@@ -109,6 +110,18 @@ def _m_herbs(img, w, h, r):
             d.polygon([P(x, HORIZON + 6), P(x + side * 22, HORIZON - 30), P(x + side * 6, HORIZON - 6)],
                       fill=(36, 96, 44, 255))
     Wd.motes(d, w, HORIZON, (220, 255, 230), int(w / 30), r.random(), y0=HORIZON - 60)
+
+
+def _m_ore(img, w, h, r):
+    Wd.glow(img, w / 2, HORIZON - 20, w * 0.45, h * 0.25, (150, 90, 50), 120, 30)
+    d = ImageDraw.Draw(img)
+    Wd.ridge(d, w, HORIZON - 20, 120, int(r.random() * 999), (40, 32, 30, 255), peaks=3)
+    for _ in range(int(w / 7)):                 # glittering ore flecks in the rock
+        x, y = r.uniform(0, w), HORIZON - r.uniform(-10, 90)
+        col = r.choice([(236, 196, 120), (200, 210, 226), (226, 120, 70)])
+        rad = r.uniform(1.5, 3.5)
+        d.polygon([P(x, y - rad * 2), P(x + rad, y), P(x, y + rad * 2), P(x - rad, y)], fill=alpha(col, 230))
+    Wd.motes(d, w, HORIZON, (255, 220, 170), int(w / 40), r.random(), y0=HORIZON - 80)
 
 
 def _m_calm(img, w, h, r):
@@ -291,7 +304,7 @@ def _m_king(img, w, h, r):
     Wd.eyes(img, w / 2, HORIZON - 150, 11, (255, 50, 30))
 
 
-MOOD_FN = {"wild_beast": _m_beast, "treasure_chest": _m_treasure, "herb_patch": _m_herbs,
+MOOD_FN = {"wild_beast": _m_beast, "treasure_chest": _m_treasure, "herb_patch": _m_herbs, "ore_vein": _m_ore,
            "peaceful_clearing": _m_calm, "hazard": _m_hazard, "bandits": _m_bandits,
            "wandering_merchant": _m_merchant, "injured_stranger": _m_stranger, "stone_tablet": _m_tablet,
            "elite_lair": _m_lair, "blessed_land": _m_blessed, "wandering_hermit": _m_hermit,
@@ -425,6 +438,17 @@ def _encounter_subject(img, kind, sub):
                 d.ellipse(P(ex - 9, ey - 5, ex + 9, ey + 5), fill=(70, 170, 80, 255))
             fx, fy = x + r.uniform(-8, 8), base - 44
             d.ellipse(P(fx - 7, fy - 7, fx + 7, fy + 7), fill=r.choice([(250, 220, 120, 255), (240, 150, 190, 255)]))
+    elif kind == "ore_vein":
+        r = random.Random(5)
+        d.polygon([P(cx - 190, HORIZON + 96), P(cx - 120, HORIZON - 60), P(cx - 20, HORIZON - 110), P(cx + 110, HORIZON - 70),
+                   P(cx + 190, HORIZON + 96)], fill=(54, 44, 40, 255), outline=(26, 20, 18, 255))
+        for k in range(5):                      # the vein: a jagged bright seam through the rock
+            x0, y0 = cx - 140 + k * 60, HORIZON + 40 - k * 24 + r.uniform(-6, 6)
+            d.line(P(x0, y0, x0 + 60, y0 - 24 + r.uniform(-8, 8)), fill=(232, 176, 96, 255), width=round(5 * S))
+        Wd.glow(img, cx, HORIZON - 10, 120, 50, (255, 190, 110), 120, 16)
+        d = ImageDraw.Draw(img)
+        d.line(P(cx + 90, HORIZON + 90, cx + 150, HORIZON + 10), fill=(110, 76, 44, 255), width=round(5 * S))   # pickaxe
+        d.arc(P(cx + 110, HORIZON - 12, cx + 190, HORIZON + 34), 190, 330, fill=(170, 176, 186, 255), width=round(6 * S))
     elif kind == "blessed_land":
         Wd.glow(img, cx, HORIZON + 30, 140, 40, (255, 250, 220), 200, 16)
 

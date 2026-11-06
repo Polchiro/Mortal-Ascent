@@ -27,7 +27,7 @@ import discord
 import alchemy
 import training
 
-from . import craft_card, db, gear, loot
+from . import craft_card, db, gear, loot, materials
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
@@ -566,6 +566,10 @@ def finish_craft(conn, user_id, craft, now=None):
         lines.append(f"✨ You craft a **{pill['name']}**! Effect ×{e:.2f} · toxicity +{toxicity_for(craft.result)}")
         if not stored:
             lines.append("⚠️ Your bag is full, so the pill rolls away and is lost.")
+        ash = materials.craft_ash(craft.result)
+        if ash:
+            loot.store(conn, user_id, ash)
+            lines.append("✨ You scrape " + ", ".join(materials.lines(ash)) + " from the cauldron.")
         if craft.result == 9:
             news = f"📢 Thunder fades over the Jianghu: **{p['name']}** has crafted a nine-pattern **{pill['name']}**!"
     lines.append(f"Final score **{craft.score():.0%}**" + (f" (+{craft.score_bonus:.0%} from {craft.age}-year herbs)"

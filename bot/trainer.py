@@ -18,7 +18,7 @@ import challenges
 import technique
 import training
 
-from . import db, mastery
+from . import db, loot, mastery, materials
 from . import player as rules
 
 STANCES = ["strike", "guard", "break"]
@@ -286,6 +286,10 @@ def finish(conn, user_id, session, score, event_mult=1.0, rng=random, now=None):
     qi = qi_reward(p, techs, score, session["conditions"], event_mult, now)
     p, events = rules.add_qi(p, qi, techs, rng, now)
     db.update_player(conn, user_id, **rules.progress_fields(p), last_challenge=session["challenge"])
+    dew = materials.roll_training_dew(rng)
+    if dew:
+        loot.store(conn, user_id, dew)
+        events = list(events) + ["✨ Spirit dew gathers on your skin: " + ", ".join(materials.lines(dew))]
     db.set_cooldown(conn, user_id, "train", cooldown_seconds(p, now), now)
     return qi, events, p
 
@@ -297,7 +301,7 @@ def practice_exp(score, conditions, event_mult=1.0, daily=1.0):
     return exp
 
 
-def finish_practice(conn, user_id, session, score, event_mult=1.0, now=None):
+def finish_practice(conn, user_id, session, score, event_mult=1.0, now=None, rng=random):
     """Grant mastery EXP for /practice. Returns (exp_gained, daily_rate, note, technique)."""
     now = time.time() if now is None else now
     p = db.get_player(conn, user_id)
@@ -307,4 +311,9 @@ def finish_practice(conn, user_id, session, score, event_mult=1.0, now=None):
     db.bump_daily(conn, user_id, "practice", now)
     db.update_player(conn, user_id, last_challenge=session["challenge"])
     db.set_cooldown(conn, user_id, "practice", cooldown_seconds(p, now, "practice"), now)
+    ink = materials.roll_practice_ink(rng)
+    if ink:
+        loot.store(conn, user_id, ink)
+        found = "✨ Your notes leave a drop of insight: " + ", ".join(materials.lines(ink))
+        note = f"{note}\n{found}" if note else found
     return gained, daily, note, tech

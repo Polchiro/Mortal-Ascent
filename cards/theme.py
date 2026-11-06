@@ -566,6 +566,14 @@ def icon(img, kind, center, size, color):
         from .gear_icons import GEAR_ICON
         GEAR_ICON[kind[5:]](d, cx, cy, s, color, dark)
         return
+    if kind.startswith("mat:"):             # forging materials (cards/material_icons.py), e.g. "mat:base:weapon:3"
+        from .material_icons import draw
+        draw(img, kind[4:], center, size)
+        return
+    if kind.startswith("passive:"):         # passive rarity emblems, e.g. "passive:Epic"
+        from .material_icons import passive_emblem
+        passive_emblem(img, kind[8:], center, size)
+        return
     if kind.startswith("emblem:"):           # tiers, beasts, elements, pills (cards/emblems.py)
         from .emblems import draw_kind
         draw_kind(img, kind, center, size)

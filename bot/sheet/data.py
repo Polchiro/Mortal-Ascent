@@ -183,7 +183,12 @@ def ago(seconds):
 
 
 def bag_items(conn, user_id, category):
-    return db.get_items(conn, user_id, category)
+    """Items in a bag tab. 'materials:<group>' shows one Materials group (items.MATERIAL_GROUPS)."""
+    cat, _, group = category.partition(":")
+    found = db.get_items(conn, user_id, cat)
+    if cat == "materials":
+        found = sorted((i for i in found if not group or items.material_group(i) == group), key=items.material_order)
+    return found
 
 
 def bag_data(conn, user_id, category, page=1, selected_id=None):
@@ -202,7 +207,12 @@ def bag_data(conn, user_id, category, page=1, selected_id=None):
                       "rarity": label, "rarity_key": key, "equipped": bool(it["equipped"]),
                       "learned": it["category"] == "manuals" and technique.TECHNIQUES[it["key"]]["name"] in learned,
                       "selected": selected is not None and it["id"] == selected["id"]})
-    data = dict(header(p), category=category, categories=[(c.key, c.label, c.icon) for c in items.CATEGORIES.values()],
+    groups = None
+    if category.startswith("materials"):
+        mats = db.get_items(conn, user_id, "materials")
+        groups = [(g, label, sum(1 for i in mats if items.material_group(i) == g)) for g, label in items.MATERIAL_GROUPS]
+    data = dict(header(p), category=category.partition(":")[0], group=category.partition(":")[2] or None,
+                groups=groups, categories=[(c.key, c.label, c.icon) for c in items.CATEGORIES.values()],
                 counts=db.category_counts(conn, user_id), used=db.slots_used(conn, user_id),
                 capacity=p["bag_capacity"], page=page, pages=pages, tiles=tiles,
                 inspect=items.details(selected, p, learned) if selected else None)

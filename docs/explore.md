@@ -57,10 +57,11 @@ One message is edited at every step (cards/expedition.py, data in bot/explore_ca
 
 | Encounter | Chance | What happens |
 |---|---|---|
-| 🐾 Wild Beast | 35% | Fight a Normal beast of your realm (see beast.md) |
+| 🐾 Wild Beast | 32% | Fight a Normal beast of your realm (see beast.md) |
 | 📦 Treasure Chest | 15% | Wooden 60% · Bronze 30% · Silver 10% |
-| 🌿 Herb Patch | 12% | 1–3 alchemy herbs of your tier, ages rolled normally (see alchemy.md) |
-| 🏕️ Peaceful Clearing | 10% | Rest: heal 25% max HP |
+| 🌿 Herb Patch | 10% | 1–3 alchemy herbs of your tier, ages rolled normally (see alchemy.md) |
+| ⛏️ Ore Vein | 6% | 2–4 weapon metal of your tier, 30% a fuel, 10% a Metal Shard (see forge.md) |
+| 🏕️ Peaceful Clearing | 9% | Rest: heal 25% max HP |
 | ⚠️ Hazard | 7% | Poison mist or landslide: quick dodge challenge, fail = lose 15% HP |
 | 🗡️ Bandits | 6% | Human enemies; lose the fight = lose 10% of your Lotus Coins |
 | 🧳 Wandering Merchant | 4% | Sells a Qi pill and a 10-year herb of your tier for Lotus Coins (never buys herbs) |

@@ -19,7 +19,7 @@ import discord
 
 import alchemy
 
-from . import db, gather_card, gear, loot
+from . import db, gather_card, gear, loot, materials
 from . import player as rules
 from .views import COLOR, OwnedView
 
@@ -150,6 +150,10 @@ class Gathering:
                 text = f"✅ You gather **{loot.describe(r.herb)}**."
                 if r.old:
                     text = f"✨ You pull it free before it escapes: **{loot.describe(r.herb)}**!"
+                extra = materials.roll_gather(p["realm"], self.rng)
+                if extra:
+                    loot.store(self.conn, self.user_id, extra)
+                    text += " Nearby you also find " + ", ".join(materials.lines(extra)) + "."
             else:
                 text = f"✅ You find **{loot.describe(r.herb)}**, but your bag is full. You leave it behind."
         elif not slow and key in r.decoys:

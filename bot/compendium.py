@@ -21,6 +21,7 @@ import alchemy
 import beasts as beast_rules
 import equipments
 import explore
+import forge
 import talent as talent_rules
 import technique
 import training
@@ -538,6 +539,163 @@ def herbs_overview():
 
 # ── sections ──────────────────────────────────────────────────────────
 
+# ── Forging materials and passives (forge.py, docs/forge.md) ──────────
+
+GEAR_WORD = {"weapon": "Weapon", "armor": "Armor", "artifact": "Artifact"}
+ESSENCES = "essences"
+MAT_COLOR = {"seal": T.GOLD}
+
+
+def realms_for_tier(n):
+    """Realms whose material tier is n (same mapping as Beast Cores)."""
+    return [r for r in rules.REALM_ORDER if forge.tier_for_realm(r) == n]
+
+
+def material_sources(kind, n=None):
+    """Where a material kind drops (short text)."""
+    beast = f"{pct(forge.BEAST_DROPS['normal']['binding'][0])} Normal beasts, more from Elites and Kings"
+    return {
+        "weapon": f"Ore Vein in /explore ({forge.ORE_VEIN['metal'][0]}–{forge.ORE_VEIN['metal'][1]})",
+        "armor": f"Beasts: {beast}",
+        "artifact": "Chests (" + ", ".join(f"{loot.CHEST_NAMES[c].split()[0]} {pct(p)}"
+                                           for c, (p, _) in forge.CHEST_JADE.items()) + ")",
+        "binding": f"Beasts: {beast}",
+        "fuel": f"Ore Vein in /explore ({pct(forge.ORE_VEIN['fuel_chance'])})",
+        "liquid": f"Springs while you /gather ({pct(forge.GATHER_SPRING_CHANCE)} per herb)",
+        "seal": "Chests (" + ", ".join(f"{loot.CHEST_NAMES[c].split()[0]} {pct(p)}"
+                                       for c, p in forge.CHEST_SEAL_STONE.items() if p)
+                + f") · Shop {forge.SEAL_STONE_PEARLS} Moon Pearls",
+    }[kind]
+
+
+ESSENCE_SOURCES = {
+    "metal": "Ore Veins in /explore",
+    "spirit_dew": "/train and breakthroughs",
+    "fortune": "Chests",
+    "cauldron_ash": "/craft (more from higher patterns)",
+    "insight": "/practice and duplicate manuals",
+}
+
+
+def essence_source(family):
+    elem = forge.FAMILIES[family]["element"]
+    if elem:
+        extra = " · Jade Shards from /gather" if family == "jade" else ""
+        return f"{elem} beasts{extra}"
+    return ESSENCE_SOURCES[family]
+
+
+def materials_strip():
+    return gear_strip() + [(ESSENCES, "mat:essence:metal:crystal", "Essences", T.GOLD)]
+
+
+def materials_page(tier):
+    if tier == ESSENCES:
+        return essences_page()
+    n = equipments.TIERS.index(tier) + 1
+    recipe = forge.RECIPE[tier]
+    tiles = []
+    for gear_kind in forge.GEAR_KINDS:
+        key = forge.material_key("base", n, gear=gear_kind)
+        tiles.append(tile("mat:" + key, T.RARITY[tier], forge.BASE_MATERIALS[gear_kind][n - 1],
+                          [f"{GEAR_WORD[gear_kind]} base · {recipe['base']} per forge", material_sources(gear_kind)],
+                          cjk=False))
+    tiles.append(tile(f"mat:binding:{n}", T.RARITY[tier], forge.BINDINGS[n - 1],
+                      [f"Binding · {recipe['binding']} per forge", material_sources("binding")], cjk=False))
+    tiles.append(tile(f"mat:fuel:{n}", T.RARITY[tier], forge.FUELS[n - 1],
+                      [f"Fuel (optional) · Ignite zone +{forge.FUEL_ZONE_BONUS[n - 1]}°", material_sources("fuel")],
+                      cjk=False))
+    tiles.append(tile(f"mat:liquid:{n}", T.RARITY[tier], forge.QUENCH_LIQUIDS[n - 1],
+                      [f"Quench liquid (optional) · window +{forge.LIQUID_WINDOW_BONUS[n - 1]}°",
+                       material_sources("liquid")], cjk=False))
+    return dict(subtitle=f"Tier {n}: forges {gear_tier_label(tier)} gear",
+                intro=f"Drops for realms {realm_list(realms_for_tier(n))}. Chests roll the tier like gear.",
+                tiles=tiles, footer=f"Blacksmith rank {rank_name(forge.RANK_NEEDED[tier])} needed to forge "
+                                    f"{gear_tier_label(tier)} gear.")
+
+
+def essences_page():
+    tiles = []
+    for fam, spec in forge.FAMILIES.items():
+        gear_list = " & ".join(GEAR_WORD[g] for g in spec["gear"])
+        tiles.append(tile(f"mat:essence:{fam}:crystal", T.GOLD, f"{spec['name']} essence",
+                          [f"{gear_list} passives", essence_source(fam)], cjk=False,
+                          group=GEAR_WORD[spec["gear"][0]]))
+    caps = " · ".join(f"{g['name']} up to {g['max_rarity']}" for g in forge.ESSENCE_GRADES.values())
+    return dict(tier_label="Essences", tier_word=False, subtitle="13 families × Shard / Crystal / Heart",
+                intro="An essence makes the forge pick a passive of its family. " + caps + ".",
+                tiles=tiles, footer="Without an essence the passive comes from every family of that gear.")
+
+
+def materials_overview():
+    tiles = [
+        tile("mat:base:weapon:3", T.GOLD, "Weapon metal", ["Iron Ore → Heavenly Gold", material_sources("weapon")],
+             cjk=False),
+        tile("mat:base:armor:3", T.GOLD, "Armor material", ["Rough Hide → Qilin Hide", material_sources("armor")],
+             cjk=False),
+        tile("mat:base:artifact:3", T.GOLD, "Artifact jade", ["Green Jade → Primordial Jade",
+                                                            material_sources("artifact")], cjk=False),
+        tile("mat:binding:3", T.GOLD, "Bindings", ["Beast Bone → Chaos Crystal", material_sources("binding")],
+             cjk=False),
+        tile("mat:fuel:3", T.GOLD, "Fuel", ["Optional: widens the Ignite zone", material_sources("fuel")], cjk=False),
+        tile("mat:liquid:3", T.GOLD, "Quench liquids", ["Optional: widens the Quench window",
+                                                        material_sources("liquid")], cjk=False),
+        tile("mat:essence:fortune:crystal", T.GOLD, "Essences", ["Optional: picks the passive's family",
+                                                                 "Beasts, chests, craft, practice, train"], cjk=False),
+        tile("mat:seal", T.GOLD, "Seal Stone", ["Locks a slot for Replace", material_sources("seal")], cjk=False),
+    ]
+    return dict(subtitle="What goes into /forge", tiles=tiles,
+                intro="Tier 1–5 materials forge Ordinary → Divine gear. They don't use bag slots.",
+                footer="Recipe: " + " · ".join(f"{gear_tier_label(t)} {r['base']}+{r['binding']}"
+                                               for t, r in forge.RECIPE.items()) + " (base + binding)")
+
+
+def passives_strip():
+    return [(r, "passive:" + r, r, forge.RARITY_COLORS[r]) for r in forge.RARITIES]
+
+
+def passive_tiles(gear_kind, rarity):
+    return [tile("passive:" + rarity, forge.RARITY_COLORS[rarity], p["name"],
+                 [p["text"], f"{forge.FAMILIES[p['family']]['name']} family"], cjk=False)
+            for p in forge.PASSIVES[gear_kind].values() if p["rarity"] == rarity]
+
+
+def passives_section(gear_kind):
+    def page(rarity):
+        tiers_ok = [gear_tier_label(t) for t in equipments.TIERS
+                    if forge.RARITIES.index(forge.PASSIVE_SLOTS[t]["max_rarity"]) >= forge.RARITIES.index(rarity)]
+        extra = " Announced to the server." if rarity in forge.ANNOUNCE_RARITIES else ""
+        score = next(s for s, r in forge.SCORE_TO_RARITY if r == rarity)
+        grade = next(g for g, s in forge.ESSENCE_GRADES.items()
+                     if forge.RARITIES.index(s["max_rarity"]) >= forge.RARITIES.index(rarity))
+        how = tile("mat:essence:metal:" + grade, T.GOLD, "How to forge one", [
+            f"Score {score}+ in /forge" + (f", inscription {forge.INSCRIBE_NEEDED[rarity]}+/20"
+                                         if rarity in forge.INSCRIBE_NEEDED else ""),
+            f"Essence: a {forge.ESSENCE_GRADES[grade]['name']} or better, or none"], cjk=False)
+        return dict(tier_word=False, subtitle=f"{GEAR_WORD[gear_kind]} passives",
+                    intro=f"On {', '.join(tiers_ok)} gear.{extra}",
+                    tiles=passive_tiles(gear_kind, rarity) + [how],
+                    footer=f"Forge score {next(s for s, r in forge.SCORE_TO_RARITY if r == rarity)}+ "
+                           "· capped by gear tier and essence grade")
+
+    def overview():
+        tiles = [tile("passive:" + r, forge.RARITY_COLORS[r], r,
+                      [", ".join(p["name"] for p in forge.PASSIVES[gear_kind].values() if p["rarity"] == r)],
+                      cjk=False) for r in forge.RARITIES]
+        slots = " · ".join(f"{gear_tier_label(t)} {s['slots']} (max {s['max_rarity']})"
+                           for t, s in forge.PASSIVE_SLOTS.items())
+        extra = " They stack on the artifact's own effect." if gear_kind == "artifact" else ""
+        return dict(subtitle=f"{GEAR_WORD[gear_kind]} passives by rarity", tiles=tiles,
+                    intro=f"Forged with /forge. Half strength in Fair Duels; no duplicates.{extra}",
+                    footer="Slots: " + slots)
+    return page, overview
+
+
+WEAPON_PASSIVES = passives_section("weapon")
+ARMOR_PASSIVES = passives_section("armor")
+ARTIFACT_PASSIVES = passives_section("artifact")
+
+
 # key → (menu label, emoji, menu description, strip builder, tier page builder, overview builder)
 SECTIONS = {
     "beasts":     ("Beasts", "🐾", "Every beast, realm by realm", beasts_strip, beasts_page, beasts_overview),
@@ -552,6 +710,13 @@ SECTIONS = {
                    pills_overview),
     "herbs":      ("Herbs", "🌿", "How to /gather, and every herb and look-alike", grade_strip, herbs_page,
                    herbs_overview),
+    "materials":  ("Materials", "⛏️", "Forging materials by tier, essences, where they drop", materials_strip,
+                   materials_page, materials_overview),
+    "passives_weapon":   ("Passives · Weapon", "🗡️", "Weapon passives by rarity", passives_strip,
+                          *WEAPON_PASSIVES),
+    "passives_armor":    ("Passives · Armor", "🛡️", "Armor passives by rarity", passives_strip, *ARMOR_PASSIVES),
+    "passives_artifact": ("Passives · Artifact", "✨", "Artifact passives by rarity", passives_strip,
+                          *ARTIFACT_PASSIVES),
 }
 
 

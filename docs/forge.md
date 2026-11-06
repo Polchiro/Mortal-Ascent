@@ -5,8 +5,13 @@ artifacts → raise your blacksmith rank → forge better gear.**
 
 All numbers are in `forge.py`. Numbers marked DEFAULT there were not in the design and were picked by the bot.
 
-> **Status:** Part 1 of 4 (this page and the data). **Not built yet:** materials in the game (Part 2), the /forge
-> command (Part 3), passives in fights and on cards (Part 4).
+> **Built:** this page and the data (Part 1); materials in the game (Part 2): every drop source, the Materials tab
+> in /inventory (groups Base · Bindings · Essences · Fuel & Liquids · Beast Cores), drawn material icons
+> (cards/material_icons.py), and the Index sections Materials and Passives (weapon, armor, artifact).
+> **Not built yet:** the /forge command (Part 3), passives in fights and on cards (Part 4).
+
+Forging materials sit in a materials pouch: they stack by type and **don't use bag slots** (DEFAULT,
+`forge.MATERIALS_USE_BAG_SLOTS`). Beast Cores still do.
 
 ---
 
