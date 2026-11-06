@@ -51,6 +51,8 @@ RARITY = {
     "wooden": (168, 122, 76), "bronze": (196, 132, 70), "silver": (186, 196, 210), "jade": (82, 196, 150),
     None: (150, 176, 120),
 }
+TALENT_CHAR = {"Ordinary": "凡", "Gifted": "秀", "Genius": "才", "Prodigy": "奇", "Heavenly": "天", "Saint": "圣",
+               "Divine": "神"}
 TALENT = {
     "Ordinary": (170, 160, 150), "Gifted": (96, 196, 110), "Genius": (90, 160, 240),
     "Prodigy": (178, 110, 228), "Heavenly": (232, 196, 80), "Saint": (246, 150, 50),
@@ -131,6 +133,9 @@ ELEMENT_ACCENTS = {
                            (236, 226, 190), (122, 152, 204), (14, 18, 30), (70, 90, 132)),
     "Courtyard": SceneAccent("Courtyard", ((8, 22, 16), (30, 70, 52)), (232, 242, 222), (90, 160, 120),
                              (130, 220, 170), (190, 255, 220), (84, 186, 130), (8, 26, 18), (40, 120, 84)),
+    # PvP duels: a mountain ledge at dusk (cards/battle.render_duel)
+    "Duel":    SceneAccent("Duel", ((22, 10, 26), (92, 40, 34)), (252, 226, 186), (150, 92, 96), (246, 162, 92),
+                           (255, 214, 150), (226, 120, 80), (28, 12, 16), (134, 58, 40)),
 }
 ACCENTS.update({k.lower(): v for k, v in ELEMENT_ACCENTS.items()})
 

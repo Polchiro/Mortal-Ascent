@@ -2,7 +2,7 @@
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
 /meditate, /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown. /tutorial and /index are in guide.py,
-/gather in gathering.py, /craft in crafting.py. Admin testing commands are in admin.py.
+/gather in gathering.py, /craft in crafting.py, /duel in duel_view.py. Admin testing commands are in admin.py.
 Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
 import asyncio
@@ -21,7 +21,7 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import admin, combat, cooldowns, crafting, db, gathering, guide, hunt, loot, prefix, qi, trainer
+from . import admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, loot, prefix, qi, trainer
 from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
@@ -56,7 +56,7 @@ class MortalAscent(discord.Client):
         self.conn = db.connect(db_path)
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
-        self.busy = set()          # (user_id, "explore" | "train" | "spar") while a session is running
+        self.busy = set()          # (user_id, "explore" | "train" | "spar" | "hunt" | "duel" ...) while a session runs
         self.emojis_ma = Emojis()  # fight button icons (uploaded as application emojis in setup_hook)
         self.tree.on_error = self.on_app_command_error
         register_commands(self)
@@ -64,6 +64,7 @@ class MortalAscent(discord.Client):
         guide.register(self)
         gathering.register(self)
         crafting.register(self)
+        duel_view.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: bank the passive Qi gathered since last time."""

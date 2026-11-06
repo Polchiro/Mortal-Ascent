@@ -77,6 +77,35 @@ CREATE TABLE IF NOT EXISTS ledger (
 );
 CREATE INDEX IF NOT EXISTS ledger_user ON ledger(user_id, id);
 
+CREATE TABLE IF NOT EXISTS duels (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at    REAL    NOT NULL,
+    ended_at      REAL    NOT NULL,
+    channel_id    INTEGER,
+    p1_id         INTEGER NOT NULL,   -- the challenger
+    p2_id         INTEGER NOT NULL,
+    p1_realm      TEXT    NOT NULL,   -- "Martial Warrior 3" (realm and layer before the fair-duel levelling)
+    p2_realm      TEXT    NOT NULL,
+    fair_realm    TEXT    NOT NULL,   -- the lower realm and layer both fought at
+    p1_techniques TEXT    NOT NULL,   -- JSON list of equipped technique names
+    p2_techniques TEXT    NOT NULL,
+    winner_id     INTEGER,            -- NULL for a draw
+    reason        TEXT    NOT NULL,   -- ko, time (turn limit), forfeit (fled), timeouts
+    turns         INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS duel_moves (
+    duel_id     INTEGER NOT NULL REFERENCES duels(id) ON DELETE CASCADE,
+    turn        INTEGER NOT NULL,
+    user_id     INTEGER NOT NULL,
+    move        TEXT    NOT NULL,     -- strike, guard, break, attack_tech, defense_tech
+    technique   TEXT,                 -- the technique's name for attack_tech / defense_tech
+    timed_out   INTEGER NOT NULL DEFAULT 0,
+    damage      INTEGER NOT NULL DEFAULT 0,   -- damage this player dealt that turn
+    hp_after    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS duel_moves_duel ON duel_moves(duel_id);
+
 CREATE TABLE IF NOT EXISTS cooldowns (
     user_id     INTEGER NOT NULL,
     name        TEXT    NOT NULL,
@@ -111,6 +140,9 @@ PLAYER_COLUMNS = {
     "gather_paused_until":  "REAL",
     "gather_flag":          "TEXT",                          # why gathering was flagged for review (no ban)
     "alchemy_exp":          "INTEGER NOT NULL DEFAULT 0",    # alchemist rank comes from this (alchemy.py)
+    # /duel (docs/pvp.md)
+    "duels_won":            "INTEGER NOT NULL DEFAULT 0",
+    "duels_lost":           "INTEGER NOT NULL DEFAULT 0",
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
@@ -458,3 +490,46 @@ def bump_daily(conn, user_id, name, now=None):
         conn.execute("INSERT INTO daily_counts (user_id, name, day, count) VALUES (?, ?, ?, 1) "
                      "ON CONFLICT(user_id, name, day) DO UPDATE SET count = count + 1",
                      (user_id, name, _day(now)))
+
+
+# ── Duels (docs/pvp.md) ───────────────────────────────────────────────
+
+def save_duel(conn, duel, channel_id=None, started_at=None, now=None):
+    """Log a finished duel and every move, and count the win / loss. Returns the duel's id."""
+    now = time.time() if now is None else now
+    a, b = duel.sides
+    fair = f"{duel.fair[0]} {duel.fair[1]}" if duel.fair else ""
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO duels (started_at, ended_at, channel_id, p1_id, p2_id, p1_realm, p2_realm, fair_realm, "
+            "p1_techniques, p2_techniques, winner_id, reason, turns) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (started_at or now, now, channel_id, a.uid, b.uid, f"{a.realm} {a.layer}", f"{b.realm} {b.layer}", fair,
+             json.dumps([t["name"] for t in a.techs]), json.dumps([t["name"] for t in b.techs]),
+             duel.winner.uid if duel.winner else None, duel.reason, len(duel.history)))
+        duel_id = cur.lastrowid
+        conn.executemany(
+            "INSERT INTO duel_moves (duel_id, turn, user_id, move, technique, timed_out, damage, hp_after) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [(duel_id, t["turn"], m["user_id"], m["move"], m["technique"], int(m["timed_out"]), m["damage"], m["hp_after"])
+             for t in duel.history for m in t["moves"]])
+        if duel.winner:
+            conn.execute("UPDATE players SET duels_won = duels_won + 1 WHERE user_id = ?", (duel.winner.uid,))
+            conn.execute("UPDATE players SET duels_lost = duels_lost + 1 WHERE user_id = ?", (duel.loser().uid,))
+    return duel_id
+
+
+def duel_stats(conn):
+    """For balancing: every move and technique picked in duels.
+    Returns ({"duels", "draws", "avg_turns"}, [{"name", "kind", "picks", "duels", "wins"}, ...] most picked first).
+    picks = turns it was played; duels = duels where a player played it at least once; wins = how many of those
+    that player won."""
+    row = conn.execute("SELECT COUNT(*) AS n, SUM(winner_id IS NULL) AS draws, AVG(turns) AS turns FROM duels").fetchone()
+    summary = {"duels": row["n"], "draws": row["draws"] or 0, "avg_turns": row["turns"] or 0}
+    rows = conn.execute("""
+        SELECT COALESCE(m.technique, m.move) AS name, m.move AS kind, COUNT(*) AS picks,
+               COUNT(DISTINCT m.duel_id || ':' || m.user_id) AS duels,
+               COUNT(DISTINCT CASE WHEN d.winner_id = m.user_id THEN m.duel_id END) AS wins
+        FROM duel_moves m JOIN duels d ON d.id = m.duel_id
+        WHERE m.timed_out = 0
+        GROUP BY name, kind ORDER BY picks DESC, name""").fetchall()
+    return summary, [dict(r) for r in rows]

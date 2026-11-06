@@ -92,7 +92,9 @@ LESSONS = [
      [("/bestiary", "A realm's six beasts with their strength measured against you."),
       ("Elite Lairs and Beast King Dens", "Finding one in /explore calls the whole channel to a hunt. "
                                           "Join, then the finder starts the fight. Every winner rolls their own chest."),
-      ("Why hunt Kings", "Jade Chests, and a Beast King kill is needed to reach Martial King and Martial Saint.")]),
+      ("Why hunt Kings", "Jade Chests, and a Beast King kill is needed to reach Martial King and Martial Saint."),
+      ("/duel @player", "A friendly duel on the fight screen. Both fight at the lower player's realm and layer and "
+                        "pick moves in secret each turn. Nothing to win or lose; wins and losses show on your Profile.")]),
 
     ("Spoils of the Road",
      "\"Treasure means nothing if it rots in your bag.\"",

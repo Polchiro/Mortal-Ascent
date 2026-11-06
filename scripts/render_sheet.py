@@ -26,7 +26,7 @@ def demo_player(conn, uid=1):
     db.create_player(conn, uid, "Shoaib", "Genius", rules.STARTING_LOTUS_COINS, rules.starting_techniques())
     now = time.time()
     db.update_player(conn, uid, realm="Martial King", layer=8, qi=18240, beasts_slain=1284, breakthroughs=74,
-                     failed_breakthroughs=9, herbs_gathered=3120, qi_collected_at=now - 3 * 3600, pill_grade="Mystic", pill_mult=1.7,
+                     failed_breakthroughs=9, herbs_gathered=3120, duels_won=27, duels_lost=11, qi_collected_at=now - 3 * 3600, pill_grade="Mystic", pill_mult=1.7,
                      pill_expires=now + 7200)
     for key in ("rolling_thunder_palm", "golden_bell_cover", "viper_fang_finger", "crescent_sweep"):
         t = loot.technique.TECHNIQUES[key]

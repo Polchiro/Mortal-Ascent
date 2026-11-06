@@ -177,11 +177,12 @@ def footer(img, data, box):
         t.text(d, (t.W / 2, y0 - 16), t.fit(d, data["status"], font("Inter.ttf", 13, "SemiBold"), 900),
                font("Inter.ttf", 13, "SemiBold"), t.GLOW, "mm")
     deeds = [("skull", "Beasts", f"{data['beasts']:,}"), ("herb", "Herbs", f"{data.get('herbs', 0):,}"),
-             ("flame", "Breakthroughs", f"{data['breakthroughs']:,}"), ("star", "Rank", f"#{data['rank']}")]
+             ("flame", "Breakthroughs", f"{data['breakthroughs']:,}"), ("star", "Rank", f"#{data['rank']}"),
+             ("sword", "Duels", f"{data.get('duels_won', 0):,}W · {data.get('duels_lost', 0):,}L")]
     f_k = font("Cinzel.ttf", 11, "Bold")
     f_v = font("Inter.ttf", 20, "Bold")
-    for i, (ic, k, v) in enumerate(deeds):
-        x = x0 + 24 + (0, 112, 224, 392)[i]
+    for i, (ic, k, v) in enumerate(deeds):      # four left of the orb, duels (/duel, docs/pvp.md) right of it
+        x = (x0 + 24 + (0, 112, 224, 392)[i]) if i < 4 else t.W / 2 + 72
         t.icon(img, ic, (x + 10, cy - 12), 16, t.BRONZE)
         d = ImageDraw.Draw(img)
         t.spaced(d, (x + 26, cy - 12), k.upper(), f_k, t.ASH, 1.2)
