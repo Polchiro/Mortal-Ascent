@@ -10,13 +10,14 @@ import alchemy
 import discord
 
 import explore
+import forge
 import technique
 import training
 import talent as talent_rules
 
 from cards.compendium import render_compendium
 
-from . import compendium
+from . import compendium, crafting
 from . import player as rules
 from . import render as card_render
 from .views import COLOR, OwnedView, png
@@ -24,6 +25,26 @@ from .views import COLOR, OwnedView, png
 GUIDE_TIMEOUT = 600   # seconds the page buttons keep working
 
 # ── /tutorial ─────────────────────────────────────────────────────────
+
+def _recipe(kind, grade):
+    """'2 Spirit Grass and 1 Dew Leaf' for a pill recipe."""
+    parts = [f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in crafting.KINDS[kind][3]]
+    return " and ".join(parts)
+
+
+def _forge_recipe():
+    lines = []
+    for i, tier in enumerate(forge.TIERS):
+        r = forge.RECIPE[tier]
+        lines.append(f"• {tier.title()}: {r['base']} {forge.BASE_MATERIALS['weapon'][i]} / "
+                     f"{forge.BASE_MATERIALS['armor'][i]} / {forge.BASE_MATERIALS['artifact'][i]} "
+                     f"+ {r['binding']} {forge.BINDINGS[i]}")
+    return "\n".join(lines)
+
+
+def _forge_rarities():
+    return " · ".join(f"{need}+ {forge.RARITY_EMOJI[r]} {r}" for need, r in reversed(forge.SCORE_TO_RARITY))
+
 
 # (scroll title, Old Master's words, [(field name, field text)])
 LESSONS = [
@@ -125,42 +146,137 @@ LESSONS = [
                 "Cleansing pills clear toxicity and Breakthrough pills help at a realm gate. **/index** → Pills "
                 "lists every recipe.")]),
 
-    ("The Cauldron",
-     "*The Old Master taps the cauldron and it rings like a bell.*\n"
-     "\"Fire, order, balance, timing. Fail any of them and the cauldron will tell the whole mountain.\"",
-     [("/craft", "Pick a pill whose herbs you have, then refine it. Every decision has a timer. No cooldown: "
-                 "your herbs are the limit, and they are used up when you begin."),
-      ("The stages", "🔥 **Ignite**: Stoke, Fan or Hold to keep the heat in a hidden safe zone; the hints say if it "
-                     "is cold or hot and warn of spikes.\n🌿 **Add the Herbs**: follow the clues for the order. A "
-                     "wrong herb causes a backlash.\n☯️ **Fuse**: bring Yin and Yang to 50.\n💊 **Condense**: press "
-                     "at *the light trembles*. Too early is weak, too late it cracks.\n🔒 **Seal the Core**: "
-                     "Breakthrough pills only. Fail and the Beast Core shatters."),
-      ("Pill patterns 丹纹", "Your score becomes **1 to 9 patterns**. More patterns make a stronger pill with "
-                            "less toxicity. Below 40% the cauldron explodes. Older herbs raise the cap (10-year "
-                            "herbs reach 5 patterns, 1000-year herbs 9), and a 9-pattern pill must survive the "
-                            "⚡ **Pill Tribulation**."),
-      ("Harder pills", "Mortal pills are 🟢 Normal (2 stages); Heaven pills are 💀 Super Hard (4 stages, 3 "
-                       "seconds a decision, misleading hints, wild herbs). Breakthrough pills are one level harder."),
-      ("Alchemist rank", "You start as a 1st Grade Alchemist. Every craft gives alchemy EXP (an explosion gives a "
-                         "little). New ranks unlock higher grades; being above a recipe's rank makes it easier, "
-                         "but easy pills give less EXP.")]),
+    ("The Cauldron I · Your First Pill",
+     "*The Old Master pushes a small cauldron toward you.*\n"
+     "\"Do not be afraid of it. Follow these steps, one at a time, and your first pill will be born.\"",
+     [("Step 1 · Get the herbs", f"Use **/gather** to pick herbs. Your first pill, the **{alchemy.QI_PILLS['Mortal']['name']}**, "
+                                 f"needs {_recipe('qi', 'Mortal')}. Check them in **/inventory** → Herbs."),
+      ("Step 2 · Open the cauldron", "Type **/craft**. Open the menu **Choose a pill to craft**. Pills marked "
+                                     "*Ready* are the ones you have every herb for. New pills appear as your "
+                                     "alchemist rank grows."),
+      ("Step 3 · Read the recipe", "The screen shows the **Recipe**, the **Difficulty** (stages and seconds per "
+                                   "decision) and either ✅ **Will use** or ❌ **Missing**. The button **Use oldest "
+                                   "herbs / Use youngest herbs** picks which herbs go in: older herbs make better "
+                                   "pills, younger ones save your rare herbs."),
+      ("Step 4 · Press 🔥 Begin", "The herbs are used up now, so be ready. From here every decision has a timer "
+                                 "(shown at the bottom). If time runs out it counts as a wrong move."),
+      ("Step 5 · Play the stages", "Read the text above the buttons and press the right one. The next lesson "
+                                   "explains every stage and which button to press."),
+      ("Step 6 · Your pill", "The result shows your **patterns** (1 to 9, more is better). The pill goes to "
+                             "**/inventory** → Pills; pick it there to **take** it. Press **Craft Again** for another "
+                             "or **Close**.")]),
 
-    ("The Forge",
+    ("The Cauldron II · What to Press",
+     "*The Old Master taps the cauldron and it rings like a bell.*\n"
+     "\"Fire, order, balance, timing. Read what the cauldron tells you, then act.\"",
+     [("🔥 Ignite the Cauldron", f"Keep the heat inside a hidden safe zone for every round.\n"
+                                f"• *The herbs lie dull and cold* → **Stoke** (+{crafting.HEAT_STEP}°)\n"
+                                f"• *The cauldron hisses and smokes* → **Fan** (−{crafting.HEAT_STEP}°)\n"
+                                "• *A soft golden glow* → **Hold**\n"
+                                "Watch the last line: *flames lick hungrily* means the heat is about to jump up "
+                                "(Fan or Hold), *a cold draught* means it will drop (Stoke)."),
+      ("🌿 Add the Herbs", "The clues say where each herb goes, e.g. *The Spirit Grass wants to go in first and "
+                          "third*. The question asks which herb goes in next: press that herb's button. A wrong "
+                          "herb causes a backlash."),
+      ("☯️ Fuse the Essences", "Bring **Yin** and **Yang** both to 50 (within 5 is perfect).\n"
+                             "• **Cool**: Yin +12 · **Ignite**: Yang +12\n"
+                             "• **Compress**: both −10 · **Circulate**: pulls them toward each other\n"
+                             "Both too high? Compress. One too low? Raise it. Far apart? Circulate."),
+      ("💊 Condense the Pill", f"Press **Wait** while the light grows. When it says *{crafting.PULSES[4]}*, press "
+                              "**Condense**. Earlier gives a weaker pill; waiting past it cracks the pill. This "
+                              "stage counts double."),
+      ("🔒 Seal the Core", "Breakthrough pills only. The same Yin and Yang balance, but in just "
+                          f"**{alchemy.SEAL_CORE_MOVES} moves**. Miss and the Beast Core shatters and the craft fails."),
+      ("⚡ Pill Tribulation", "Only for a nearly perfect craft. Lightning gathers from the left, above or the right: "
+                             "press the matching **Shield** button each time. Block all "
+                             f"{crafting.TRIBULATION_STRIKES} for a 9-pattern pill."),
+      ("Which stages you get", "Mortal pills: Ignite and Condense. Yellow adds the Herbs. Mystic and higher add "
+                               "Fuse. Breakthrough pills are one level harder and add Seal the Core.")]),
+
+    ("The Cauldron III · Patterns and Rank",
+     "\"Every pill teaches the hand. Even the ones that explode.\"",
+     [("Pill patterns 丹纹", f"Your score becomes **1 to 9 patterns**. More patterns make a stronger pill with less "
+                            f"toxicity. Below {alchemy.EXPLODE_BELOW:.0%} the cauldron explodes. Herb age sets the "
+                            "highest you can reach: 10-year herbs up to 5 patterns, 1000-year herbs up to 9."),
+      ("Alchemist rank", "Every craft gives alchemy EXP (an explosion gives a little). Each new rank unlocks "
+                         "harder pills. Being above a pill's rank gives more time, a wider safe zone, herb hints "
+                         "and, at 2 ranks above, one forgiven mistake."),
+      ("Hints that lie", "From Mystic pills on, some hints can be false. If the heat number and the text disagree, "
+                         "trust the number you know you just moved."),
+      ("Tips for beginners", "• Craft many cheap Mortal pills first to raise your rank.\n"
+                             "• Keep your 100-year and older herbs for pills that matter.\n"
+                             "• Every craft leaves 丹 **Cauldron Ash**, an essence used at the forge.\n"
+                             "• **/index** → Pills lists every recipe and what it does.")]),
+
+    ("The Forge I · Materials",
      "*Sparks leap from the anvil. The Old Master does not flinch.*\n"
-     "\"A blade remembers every blow. Strike it well and it will carry your will.\"",
-     [("/forge", "Pick a weapon, armor or artifact and **Enchant** an empty slot, **Reroll** every slot, or "
-                 "**Replace** one (Treasure and Divine gear: lock the other with a 🔏 Seal Stone). Base materials and "
-                 "bindings of the gear's tier are always needed; they drop in /explore (⛏️ Ore Veins), from beasts, "
-                 "chests and more. **/inventory** → Materials shows yours."),
-      ("The stages", "🔥 **Ignite**: Pump, Hold or Vent to keep the heat in a hidden safe zone.\n🌡️ **Heat**: pull "
-                     "the metal out at the colour the gear needs.\n🔨 **Hammer**: read each strike's hint.\n💧 "
-                     "**Quench**: Water or Oil, then plunge at the right temperature.\n✨ **Inscribe**: carve the "
-                     "rune's strokes in order."),
-      ("Passives", "Each stage is worth 20 points. 50+ gives a passive, and a higher score a rarer one, up to the "
-                   "gear's cap. Epic and above need a fine inscription. An essence chooses the passive's family. "
-                   "Below 50 the materials are lost, but the gear and its passives are safe."),
-      ("Blacksmith rank", "Every forge gives blacksmith EXP. Higher tiers need a higher rank; being above it makes "
-                          "the forge easier. Fuel and quench liquids widen the safe zones.")]),
+     "\"A blade remembers every blow. But first you need metal to strike.\"",
+     [("What forging does", "Forging puts a **passive** (a hidden power, like *Lifesteal* or *+3% Attack*) into a "
+                            "free slot of your weapon, armor or artifact. Ordinary, Refined and Spirit gear have 1 "
+                            "slot; Treasure and Divine gear have 2."),
+      ("What every forge needs", "Base material (weapon / armor / artifact) and a binding, **the same tier as the gear**:\n" + _forge_recipe()),
+      ("Where materials drop", "⛏️ **Ore Veins** in /explore: weapon metal and fuel · 🐾 **Beasts**: bindings and "
+                               "armor materials · 📦 **Chests**: artifact jade and Seal Stones · 🌿 **/gather**: "
+                               "quench liquids · ⚗️ **/craft**, 📜 **/practice**, 🏋️ **/train**: essences. The "
+                               "tier follows your realm."),
+      ("Optional extras", "• **Essence**: chooses the passive's family. Shard reaches Uncommon, Crystal Epic, "
+                          "Heart Mythical.\n• **Fuel**: widens the Ignite safe zone.\n• **Quench liquid**: widens "
+                          "the Quench window."),
+      ("Check your pouch", "**/inventory** → Materials shows everything you have. Materials don't use bag slots.")]),
+
+    ("The Forge II · At the Anvil",
+     "\"Choose your gear, choose your aim, then strike. In that order.\"",
+     [("Step 1 · Open the forge", "Type **/forge**. Open the menu **Choose gear to forge**: it lists your weapons, "
+                                  "armor and artifacts and the passives they already have."),
+      ("Step 2 · Choose what to do", "• ✨ **Enchant**: fill an empty slot (materials only).\n"
+                                    "• 🎲 **Reroll**: forge every slot again. The old passives are replaced "
+                                    "(materials + Lotus Coins).\n"
+                                    "• 🔒 **Replace**: Treasure and Divine gear only. Lock one slot with a 🔏 Seal "
+                                    "Stone and forge the other."),
+      ("Step 3 · Add extras (optional)", "Use the menus **Essence**, **Fuel** and **Quench liquid** if you have them. "
+                                         "Leave them on *None* to forge without."),
+      ("Step 4 · Read the plan", "✅ **Will use** lists what the forge takes. ❌ **Missing** tells you what you still "
+                                 "need (materials, coins or blacksmith rank). **Best possible** is the highest "
+                                 "rarity this forge can give."),
+      ("Step 5 · Press 🔥 Begin", "The materials and coins are taken now. Then five stages follow, each with a "
+                                 "timer per decision. The next lesson explains each one.")]),
+
+    ("The Forge III · The Five Stages",
+     "*The Old Master hands you the hammer.*\n"
+     "\"Each stage is worth 20 points. Read, then strike.\"",
+     [("🔥 Ignite the Forge", f"Keep the heat in the hidden safe zone.\n"
+                             f"• *The coals glow dull and sleepy* → **Pump** (+{forge.IGNITE['pump']}°)\n"
+                             f"• *Sparks roar out of the forge mouth* → **Vent** ({forge.IGNITE['vent']}°)\n"
+                             "• *A clean orange fire hums* → **Hold**\n"
+                             "*The wind gusts* means a jump up is coming, *a cold draught* a drop."),
+      ("🌡️ Heat the Metal", "The text names the colour the gear needs (Ordinary: cherry red). Press **Keep heating** "
+                           "until the metal glows that colour, then **Pull it out**. One colour off gives half; "
+                           "heating past white burns it."),
+      ("🔨 Hammer", "Read each strike's hint:\n• *rings true* → **Strike Hard**\n• *a dull thud* → "
+                   "**Strike Light**\n• *cooling, the glow is fading* → **Reheat**"),
+      ("💧 Quench", "First choose **Water** (narrow window, up to 20 points) or **Oil** (wide window, up to 15). "
+                   "The text shows the target temperature. **Wait** cools the blade a lot, **Wait a breath** a "
+                   "little. Press **Plunge** when the blade is close to the target. Too cold and you miss."),
+      ("✨ Inscribe", "The rune's strokes are listed in order, e.g. *Hook → Dot → Sweep*. Press them one by one, "
+                     "in that order."),
+      ("Harder gear", "Higher tiers give less time and more strikes and strokes. From Spirit gear on, some "
+                      "hints can lie. In Ignite, the heat number never lies: trust it over the text.")]),
+
+    ("The Forge IV · Results and Rank",
+     "\"A poor forge costs you metal. It never costs you the blade.\"",
+     [("Score → passive", f"Your five stages add up to 100. Below **{forge.FAIL_BELOW}** the forge fails. Above "
+                          "it, a higher score gives a rarer passive:\n" + _forge_rarities()),
+      ("The caps", "The rarity can't go above the gear's cap (Ordinary: Rare · Refined and Spirit: Epic · "
+                   "Treasure: Legendary · Divine: Mythical) or the essence's grade. Epic and above also need a "
+                   "good **Inscribe**."),
+      ("If it fails", "All the materials used are lost, extras included. Your gear and its passives are safe."),
+      ("Blacksmith rank", "Every forge gives blacksmith EXP, even a failed one. Higher gear tiers need a higher "
+                          "rank. Being above the needed rank gives more time and wider zones."),
+      ("See your passive", "**/equipment** shows each slot's passive. Passives work in fights, duels (at half "
+                           "strength) and everyday actions."),
+      ("Tips for beginners", "• Start with Ordinary gear: 6 seconds per decision and honest hints.\n"
+                             "• Pick **Oil** when unsure: fewer points, but much safer.\n"
+                             "• **/index** → Passives lists every passive and its family.")]),
 
     ("Coin and Pearl",
      "\"Even immortals pay for their tea.\"",
@@ -176,13 +292,14 @@ LESSONS = [
      "*The Old Master stands and brushes off his robe.*\n"
      "\"You have taken your first step on the martial path. The rest, you must walk alone.\"",
      [("A good day's path", "**/train** → **/explore** → open chests in **/inventory** → **/practice** "
-                            "→ **/spar** → **/gather** herbs and **/craft** pills between cooldowns → **/breakthrough** when the bar is "
-                            "full. Check **/internal qi** to see how far you are."),
+                            "→ **/spar** → **/gather** herbs and **/craft** pills, **/forge** your gear between cooldowns → "
+                            "**/breakthrough** when the bar is full. Check **/internal qi** to see how far you are."),
       ("Lost?", "**/index** lists every beast, technique, weapon, armor, artifact, chest, pill and herb in the world. "
                 "**/tutorial** brings back these lessons any time.")]),
 ]
 
-SCROLL_NUMBERS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三"]
+SCROLL_NUMBERS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五",
+                  "十六", "十七", "十八", "十九", "二十"]
 
 
 def lesson_embed(i):
