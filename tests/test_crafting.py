@@ -269,10 +269,16 @@ def test_craft_view_from_pick_to_pill(conn):
         def __init__(self, values=None):
             self.edits = []
             self.data = {"values": values or []}
-            self.response = SimpleNamespace(edit_message=self.edit)
+            self.deferred = False
+            self.response = SimpleNamespace(edit_message=self.edit, defer=self.defer, is_done=lambda: self.deferred)
+
+        async def defer(self):
+            self.deferred = True
 
         async def edit(self, **kw):
             self.edits.append(kw)
+
+        edit_original_response = edit
 
     async def go():
         view = crafting.CraftView(FakeBot(conn), 1, random.Random(1))

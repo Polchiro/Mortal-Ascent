@@ -585,8 +585,8 @@ def _party(img, data, acc):
         _team(img, data, acc)
 
 
-def _warning(img, data, acc):
-    x0, y0, x1, y1 = WARN
+def _warning(img, data, acc, box=WARN):
+    x0, y0, x1, y1 = box
     head, hint = data["warning"]
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
     g = T.vgradient((round((x1 - x0) * S), round((y1 - y0) * S)), mix(acc.warn, (255, 255, 255), 0.06),
@@ -596,7 +596,7 @@ def _warning(img, data, acc):
     d = ImageDraw.Draw(img)
     d.rectangle(P(x0, y0, x1, y1), outline=mix(acc.rim, (255, 255, 255), 0.3), width=round(2 * S))
     T.soft_glow(img, (x0 + 18, y0 + 20, x0 + 70, y1 - 20), alpha(acc.eyes, 120), 6)
-    T.icon(img, "flame", (x0 + 44, (y0 + y1) / 2), 36, mix(acc.eyes, (255, 255, 255), 0.3))
+    T.icon(img, data.get("warning_icon", "flame"), (x0 + 44, (y0 + y1) / 2), 36, mix(acc.eyes, (255, 255, 255), 0.3))
     d = ImageDraw.Draw(img)
     mw = x1 - x0 - 110
     head, hf = _shrink(d, head, "Inter.ttf", "Bold", (36, 32, 28), mw)

@@ -139,6 +139,15 @@ ELEMENT_ACCENTS = {
 }
 ACCENTS.update({k.lower(): v for k, v in ELEMENT_ACCENTS.items()})
 
+# /craft: the Alchemy Chamber (cards/alchemy.py). Warm amber for the chamber, storm violet for the Pill Tribulation.
+CRAFT_ACCENTS = {
+    "alchemy":     SceneAccent("alchemy", ((22, 11, 6), (62, 32, 14)), (252, 222, 172), (176, 112, 58), (246, 170, 80),
+                               (255, 214, 130), (226, 150, 60), (34, 17, 9), (150, 84, 26)),
+    "tribulation": SceneAccent("tribulation", ((14, 10, 30), (48, 34, 84)), (228, 216, 255), (122, 98, 184),
+                               (178, 142, 250), (216, 194, 255), (160, 130, 236), (20, 14, 36), (96, 70, 160)),
+}
+ACCENTS.update(CRAFT_ACCENTS)
+
 # ── Text ──────────────────────────────────────────────────────────────
 
 def text(d, xy, s, f, fill, anchor="la", shadow=True):

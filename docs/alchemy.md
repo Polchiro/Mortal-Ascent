@@ -263,6 +263,26 @@ ideal heat, herb order, balance values and timing change each time.
 Discord has a short delay on button presses, so every stage is **turn-based with
 a timer per decision**, never a real-time moving bar.
 
+### The craft screen (Alchemy Chamber)
+
+The craft is one message with one picture card and round icon buttons, edited after
+every decision (like the fight screen). The card shows a chamber with a bronze ding
+cauldron over a glowing eight-trigram circle:
+
+- **Top:** the pill's grade seal, name and effect; the round (or herb, move, strike),
+  seconds to choose and the difficulty.
+- **Right:** the stages as a path. Done stages are green with ✓, the current one is lit.
+- **Middle, per stage:** the fire and a 0°–100° heat gauge (Ignite), the herbs still to
+  add (Add herbs), a Yin-Yang symbol and two bars (Fuse, Seal the Core), the glowing pill
+  (Condense), storm clouds and lightning (Pill Tribulation), then the finished pill or the
+  explosion.
+- **Bottom:** the herbs in the cauldron, the score so far and the pill patterns earned.
+- **Warning bar:** the stage's hint or omen.
+
+The card only shows what the text shows: the fire follows the heat text even when that
+text is misleading, the pill glows at the shown pulse, and the hidden safe zone and herb
+order are never drawn. The full text (last decision, all clues) is under the card.
+
 ### The stages
 
 **🔥 Stage 1 — Ignite the Cauldron (heat control)**
