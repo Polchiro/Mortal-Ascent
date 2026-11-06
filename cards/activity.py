@@ -22,7 +22,7 @@ from .theme import P, font, short
 
 H = 640           # spar and train; explore is taller to fit up to 8 item tiles
 H_EXPLORE = 720
-SEAL = {"spar": "比", "train": "练", "explore": "探"}
+SEAL = {"spar": "sword", "train": "school:Fist", "explore": "gear:compass"}   # drawn icons
 BANNER = {"spar": "SPARRING  ·  RESULT", "train": "TRAINING GROUND  ·  RESULT", "explore": "EXPEDITION  ·  RESULT"}
 
 
@@ -70,7 +70,7 @@ def base(kind, seed, h=H):
 
 def header(img, kind, acc, title, sub, badge=None, title_color=None):
     """Seal medallion, big gold title, a subtitle and an optional cooldown badge on the right."""
-    t.medallion(img, (84, 118), 44, SEAL[kind], acc.main)
+    t.seal(img, (84, 118), 44, SEAL[kind], acc.main)
     t.gold_text(img, (148, 76), title.upper(), font("Cinzel.ttf", 38, "Black"), glow=title_color or acc.main)
     d = ImageDraw.Draw(img)
     f = font("Inter.ttf", 16, "Medium")

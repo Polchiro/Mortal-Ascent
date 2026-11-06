@@ -50,7 +50,7 @@ def card(img, box, tech):
     d.rectangle(P(x0, y0, x1, y1), fill=(12, 7, 8, 255), outline=t.BRONZE_DK, width=max(1, t.S))
     if tech["equipped"]:
         d.rectangle(P(x0, y0, x0 + 4, y1), fill=t.GOLD)
-    t.medallion(img, (x0 + 44, y0 + 46), 30, t.SCHOOL_CHAR.get(tech["school"], "武"), color)
+    t.medallion(img, (x0 + 44, y0 + 46), 30, tech.get("icon") or "school:" + tech["school"], color, cjk_char=False)
     d = ImageDraw.Draw(img)
     tx = x0 + 88
     f_name = font("Inter.ttf", 18, "Bold")

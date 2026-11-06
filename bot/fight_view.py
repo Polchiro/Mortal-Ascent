@@ -22,8 +22,8 @@ from . import mastery
 from . import render as card_render
 from .fight import Battle
 from cards import battle_icons
-from cards.battle import render_battle, seal_char
-from cards.theme import SCHOOL_CHAR
+from cards.battle import render_battle
+from cards.technique_icons import tech_kind
 
 log = logging.getLogger("mortal-ascent")
 GRACE_SECONDS = 1.5          # Discord round-trip allowance before the timer resolves the turn
@@ -42,6 +42,16 @@ def jpg(image, filename):
 def emoji(bot, key):
     em = getattr(bot, "emojis_ma", None)
     return em.get(key) if em else battle_icons.FALLBACK.get(key)
+
+
+def enemy_seal(e, realm):
+    """The beast nameplate: its realm's emblem with its element badge in the corner (cards/emblems.py).
+    Bandits and unknown beasts use the realm of the fight."""
+    import beasts
+    if e["kind"] == "master":
+        return "school:Body"
+    beast_realm = next((r for r, rows in beasts.BEASTS.items() if any(row[0] == e["name"] for row in rows)), realm)
+    return f"emblem:beast:{beast_realm}:{e['element']}"
 
 
 def _school(tech):
@@ -98,20 +108,22 @@ def card_data(b, header):
                 continue
             left = f.cooldowns[key]
             school = _school(t)
-            loadout.append({"name": t["name"], "seal": SCHOOL_CHAR.get(school, "武"), "color": SCHOOL_COLOR.get(school),
+            loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
                             "desc": describe(t)})
         n = f.pill_count()
-        loadout.append({"name": f.pills[0]["name"] if f.pills else "Mending Pill", "seal": "丹", "color": (82, 186, 120),
+        loadout.append({"name": f.pills[0]["name"] if f.pills else "Mending Pill",
+                        "seal": f"emblem:pill:mending:{f.pills[0].get('grade', 'Mortal')}" if f.pills
+                        else "emblem:pill:mending:Mortal", "color": (82, 186, 120),
                         "ready": f.can_pill(),
                         "state": (f"×{n} in bag" if f.pills_used < rules_data.PILLS_PER_FIGHT else "used up") if n else "none",
                         "desc": (f"Heals {f.pills[0]['heal']:.0%} HP · uses your turn · max "
                                  f"{rules_data.PILLS_PER_FIGHT} per fight") if f.pills else "Craft them with /craft"})
     return {"palette": palette, "header": header, "turn": b.turn, "seconds": rules_data.TURN_SECONDS,
             "result": b.result,
-            "enemy": {"name": e["name"], "seal": seal_char(e["name"], e["body"]), "tags": [t for t in tags if t],
+            "enemy": {"name": e["name"], "seal": enemy_seal(e, b.fighters[0].realm), "tags": [t for t in tags if t],
                       "hp": round(e["hp"]), "max_hp": round(e["max_hp"]),
-                      "element_seal": "师" if e["kind"] == "master" else rules_data.ELEMENTS[e["element"]]["seal"],
+                      "element_seal": "school:Palm" if e["kind"] == "master" else "emblem:element:" + e["element"],
                       "statuses": b.status_chips(), "body": e["body"], "slug": e.get("slug")},
             "party_title": "Hunting party" if b.team else "You", "party": party, "loadout": loadout,
             "log": list(b.log), "warning": b.warning or ("", "")}
@@ -203,7 +215,7 @@ class FightMixin:
                 left = solo.cooldowns[key]
                 label = t["name"][:60] + (f" (⏳ {left})" if left else "")
                 self._fight_button(label, key, discord.ButtonStyle.secondary if left else discord.ButtonStyle.success,
-                                   1, disabled=bool(left) or stunned, icon=_school(t).lower())
+                                   1, disabled=bool(left) or stunned, icon=battle_icons.tech_emoji_key(t["name"]))
             else:
                 self._fight_button("Attack technique" if key == "attack_tech" else "Defense technique", key,
                                    discord.ButtonStyle.success, 1)

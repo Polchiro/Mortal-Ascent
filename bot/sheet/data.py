@@ -15,6 +15,7 @@ import technique
 from .. import combat, db, gear
 from .. import player as rules
 from . import attributes, items
+from cards.technique_icons import tech_kind
 
 BAG_COLS, BAG_ROWS = 4, 3
 BAG_PER_PAGE = BAG_COLS * BAG_ROWS
@@ -36,6 +37,7 @@ def technique_view(t):
     return {
         "id": t["id"], "name": t["name"], "type": t["type"], "grade": t["grade"],
         "school": info.get("school", "Body"),
+        "icon": tech_kind(t["name"], info.get("school", "Body")),
         "stage": stage, "stage_name": technique.MASTERY_STAGES[stage]["name"],
         "exp": t["mastery_exp"], "cap": cap, "trial_ready": rules.bar_full(t),
         "effect": items.technique_effect(info["effect"]) if info.get("effect") else "No special effect",
@@ -232,7 +234,7 @@ def equipment_data(conn, user_id):
         w["requires"] = equipments.TIER_REALM_REQUIREMENT[weapon["grade"]]
     spare_counts = {c: sum(1 for i in db.get_items(conn, user_id, c) if not i["equipped"])
                     for c in ("weapons", "armor", "artifacts")}
-    effects = [{"seal": v["seal"], "tier": v["tier"], "name": v["name"], "effect": v["effect"], "group": v["group"],
+    effects = [{"seal": v["seal"], "icon": v["icon"], "tier": v["tier"], "name": v["name"], "effect": v["effect"], "group": v["group"],
                 "duel": f"{equipments.DUEL_COMBAT_ARTIFACT_STRENGTH:.0%} in Fair Duels" if v["group"] == "combat"
                 else None}
                for v in (artifact_view(a) for a in artifacts) if v]

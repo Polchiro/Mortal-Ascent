@@ -56,8 +56,8 @@ def test_tier_menus_follow_the_sections():
     assert [t[0] for t in compendium.tiers("techniques")] == list(technique.GRADES)
     for key in ("weapons", "armor", "artifacts"):
         assert [t[0] for t in compendium.tiers(key)] == equipments.TIERS
-        assert [t[1] for t in compendium.tiers(key)] == list("凡精灵宝神")
-    assert [t[1] for t in compendium.tiers("herbs")] == list("凡黄玄地天")
+        assert [t[1] for t in compendium.tiers(key)] == ["emblem:rarity:" + t for t in equipments.TIERS]
+    assert [t[1] for t in compendium.tiers("herbs")] == ["emblem:grade:" + g for g in technique.GRADES]
     assert [t[0] for t in compendium.tiers("chests")] == ["wooden", "bronze", "silver", "jade"]
     assert [t[2] for t in compendium.tiers("pills")] == ["Qi", "Qi Burst", "Mending", "Cleansing", "Breakthrough"]
 

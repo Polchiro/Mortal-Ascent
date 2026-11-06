@@ -36,7 +36,6 @@ ARC_C, ARC_R = (600, 424), 214      # the heat gauge
 ARC_A0, ARC_SPAN = 195, 150         # 0° at 195°, 100° at 345° (Pillow angles, clockwise from 3 o'clock)
 
 CN = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
-GRADE_CHAR = {"Mortal": "凡", "Yellow": "黄", "Mystic": "玄", "Earth": "地", "Heaven": "天"}
 STAGE_CHAR = {1: "火", 2: "药", 3: "合", 4: "凝", 5: "封", 6: "劫"}
 STAGE_LABEL = {1: "Ignite", 2: "Add herbs", 3: "Fuse", 4: "Condense", 5: "Seal", 6: "Tribulation"}
 HERB_CHAR = {"qi": "气", "healing": "愈", "purity": "净", "breakthrough": "破", "core": "核"}
@@ -654,7 +653,8 @@ MIDDLE = {"ignite": _mid_ignite, "herbs": _mid_herbs, "fuse": _mid_balance, "sea
 def _title(img, data, acc):
     pill = data["pill"]
     x0, y0 = SCENE[0], SCENE[1]
-    T.medallion(img, (x0 + 66, y0 + 68), 46, GRADE_CHAR.get(pill["grade"], "丹"), T.RARITY.get(pill["grade"], T.GOLD))
+    T.seal(img, (x0 + 66, y0 + 68), 46, f"emblem:pill:{pill.get('kind', 'qi')}:{pill['grade']}",
+           T.RARITY.get(pill["grade"], T.GOLD))
     d = ImageDraw.Draw(img)
     name, nf = _shrink(d, pill["name"].upper(), "Cinzel.ttf", "Black", (48, 44, 40, 36), 700)
     T.gold_text(img, (x0 + 128, y0 + 76), name, nf, "ls", glow=alpha(acc.rim, 110))

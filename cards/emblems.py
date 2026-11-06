@@ -681,3 +681,37 @@ def empty_slot(img, kind, center, size, color=T.ASH_DK):
         from .technique_icons import SCHOOL_ICON
         fn = SCHOOL_ICON[kind.split(":", 1)[1]]
     outline_of(img, fn, center, size, color, thickness=max(1.2, size * 0.035))
+
+
+def draw_kind(img, kind, center, size):
+    """Draw an 'emblem:...' icon kind (what theme.icon passes on):
+    emblem:<kind>:<key> · emblem:pill:<type>:<grade>[:<patterns>] · emblem:manual:<technique key>:<grade>
+    (the technique's icon in its grade colour with the small grade emblem in the corner) ·
+    emblem:beast:<realm>:<element>."""
+    parts = kind.split(":")
+    what = parts[1]
+    if what == "pill":
+        emblem(img, "pill", parts[2], center, size, grade=parts[3] if len(parts) > 3 else "Mortal",
+               patterns=int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else 0)
+    elif what == "manual":
+        grade = parts[3] if len(parts) > 3 else "Mortal"
+        c = T.RARITY.get(grade, T.GOLD)
+        T.icon(img, "tech:" + parts[2], (center[0], center[1]), size * 0.9, tint(c, 0.2))
+        es = max(14.0, size * 0.4)
+        emblem(img, "grade", grade, (center[0] + size / 2 - es * 0.35, center[1] + size / 2 - es * 0.35), es)
+    elif what == "beast":
+        emblem(img, "beast", (parts[2], parts[3]), center, size)
+    else:
+        emblem(img, what, parts[2] if len(parts) > 2 else None, center, size)
+
+
+def icon_png(kind, size=112):
+    """One emblem or icon kind as a PNG with a transparent background (drop announcements)."""
+    import io
+
+    from PIL import Image
+    img = Image.new("RGBA", T.P(size, size), (0, 0, 0, 0))
+    T.icon(img, kind, (size / 2, size / 2), size * 0.82, T.GOLD)
+    buf = io.BytesIO()
+    img.resize((size, size), Image.LANCZOS).save(buf, format="PNG")
+    return buf.getvalue()

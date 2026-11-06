@@ -130,7 +130,7 @@ def card_data(c, herbs=(), outcome=None, pill_name=None, seed=None):
     data = {
         "accent": "tribulation" if c.tribulation == "pending" else "alchemy",
         "seed": seed if seed is not None else c.decisions + 1,
-        "pill": {"name": name, "grade": c.grade, "sub": effect_line(c.kind, c.grade)},
+        "pill": {"name": name, "grade": c.grade, "kind": c.kind, "sub": effect_line(c.kind, c.grade)},
         "stages": _stages(c),
         "herbs": _herb_states(c, list(herbs)),
         "refining": {"score": score, "bonus": c.score_bonus, "forgive": c.forgive, "explode": c.explode_below},

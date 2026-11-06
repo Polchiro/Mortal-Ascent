@@ -493,3 +493,14 @@ TECH_ICON = {
     "immortal_lotus_body": immortal_lotus_body, "cloud_walking_shadow": cloud_walking_shadow,
 }
 SCHOOL_ICON = {name: school(name) for name in BASE}
+
+
+def tech_key(name):
+    """'Mountain-Shattering Fist' → 'mountain_shattering_fist' (the keys of technique.TECHNIQUES)."""
+    return "".join(ch if ch.isalnum() else "_" for ch in (name or "").lower()).strip("_")
+
+
+def tech_kind(name, school="Body"):
+    """theme.icon kind for a technique by name: its own icon, or its school's base shape if unknown."""
+    key = tech_key(name)
+    return "tech:" + key if key in TECH_ICON else "school:" + (school if school in SCHOOL_ICON else "Body")

@@ -267,7 +267,7 @@ class IndexView(OwnedView):
         for key, seal, label, _ in compendium.tiers(self.section):
             data = compendium.build(self.section, key)
             options.append(discord.SelectOption(
-                label=f"{seal} {data.get('tier_label', label)}"[:100], value=key,
+                label=data.get("tier_label", label)[:100], value=key,
                 description=data["subtitle"][:100], default=key == self.tier))
         tiers = discord.ui.Select(placeholder="Choose a tier", row=1, options=options[:25])
         tiers.callback = self.pick_tier

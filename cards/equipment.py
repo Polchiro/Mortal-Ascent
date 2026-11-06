@@ -9,6 +9,7 @@ their own list.
 from PIL import ImageDraw
 
 from . import theme as t
+from .emblems import empty_slot
 from .theme import P, font
 
 H = 780
@@ -64,6 +65,8 @@ def slot_row(img, box, kind, label, item):
     if item:
         icon = item.get("icon") or item.get("type")
         t.icon(img, icon, center, size * 0.6, t.mix(color, (255, 255, 255), 0.2))
+    elif kind in ("armor", "artifact"):
+        empty_slot(img, kind, center, size * 0.6)
     else:
         t.icon(img, EMPTY[kind][0], center, size * 0.45, t.ASH_DK)
     d = ImageDraw.Draw(img)
@@ -129,7 +132,7 @@ def effects_panel(img, data, box):
     y = y0 + 72
     for e in effects:
         color = t.RARITY.get(e["tier"], t.ASH)
-        t.medallion(img, (x0 + 40, y), 22, e["seal"], color)
+        t.medallion(img, (x0 + 40, y), 22, e.get("icon") or "seal:" + e["seal"], color, cjk_char=False)
         d = ImageDraw.Draw(img)
         t.text(d, (x0 + 74, y - 12), t.fit(d, e["effect"], font("Inter.ttf", 17, "Bold"), x1 - x0 - 100),
                font("Inter.ttf", 17, "Bold"), t.GOLD_HI, "lm")

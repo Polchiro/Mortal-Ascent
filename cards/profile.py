@@ -9,6 +9,7 @@ deeds, the dantian orb and the purse.
 from PIL import ImageDraw
 
 from . import theme as t
+from .emblems import emblem, empty_slot
 from .theme import P, font, short
 
 H = 800
@@ -47,7 +48,7 @@ def header(img, data):
                         outline=color, width=max(1, t.S))
     t.text(d, (x + bw / 2, 131.5), badge, f_b, t.mix(color, (255, 255, 255), 0.3), "mm")
 
-    t.medallion(img, (600, 108), 42, t.REALM_CHAR.get(data["realm"], "武"), t.EMBER)
+    emblem(img, "realm", data["realm"], (600, 108), 92)
 
     f_realm = font("Cinzel.ttf", 32, "Black")
     realm = data["realm"].upper()
@@ -132,7 +133,8 @@ def technique_row(img, box, slot):
     f_slot = font("Cinzel.ttf", 11, "Bold")
     t.spaced(d, (tx, y0 + 10), f"{slot['slot'].upper()} SLOT", f_slot, t.BRONZE, 1.6)
     if tech:
-        t.text(d, (cx, cy + 1), t.SCHOOL_CHAR.get(tech["school"], "武"), t.cjk(30), t.mix(color, (255, 255, 255), 0.2), "mm")
+        t.icon(img, tech.get("icon") or "school:" + tech["school"], (cx, cy), size * 0.7, t.mix(color, (255, 255, 255), 0.2))
+        d = ImageDraw.Draw(img)
         f_name = font("Inter.ttf", 17, "Bold")
         t.text(d, (tx, y0 + 30), t.fit(d, tech["name"], f_name, x1 - tx), f_name, t.PARCHMENT, "lm")
         sub = f"{tech['grade']} · {tech['school']} · {tech['type'].title()}"
@@ -141,6 +143,9 @@ def technique_row(img, box, slot):
         t.text(d, (tx + 72, y0 + 68), t.fit(d, tech["stage_name"], font("Inter.ttf", 12, "Medium"), x1 - tx - 72),
                font("Inter.ttf", 12, "Medium"), t.ASH, "lm")
     else:
+        if not slot["locked"]:
+            empty_slot(img, "school:" + EMPTY_SCHOOL.get(slot["slot"], "Palm"), (cx, cy), size * 0.62)
+            d = ImageDraw.Draw(img)
         msg = slot.get("note") if slot["locked"] else "Empty"
         t.text(d, (tx, y0 + 38), msg, font("Inter.ttf", 15, "Medium"), t.ASH_DK if slot["locked"] else t.ASH, "lm")
 
@@ -162,7 +167,9 @@ def gear_row(img, box, sockets):
         color = t.ASH_DK if empty else t.RARITY.get(s["tier"], t.ASH)
         t.socket(img, (cx - size / 2, sy, cx + size / 2, sy + size), color, filled=not empty)
         center = (cx, sy + size / 2)
-        if empty:
+        if empty and s["slot"][:8] in ("armor", "artifact"):
+            empty_slot(img, s["slot"][:8], center, size * 0.62)
+        elif empty:
             t.icon(img, EMPTY_ICON.get(s["slot"][:8], "star"), center, size * 0.42, t.ASH_DK)
         else:
             t.icon(img, s["icon"], center, size * 0.62, t.mix(color, (255, 255, 255), 0.2))
@@ -183,6 +190,7 @@ def gear_row(img, box, sockets):
 
 
 EMPTY_ICON = {"weapon": "fist", "armor": "shield", "artifact": "star"}
+EMPTY_SCHOOL = {"Attack": "Fist", "Defense": "Body", "Flex": "Palm"}   # faint outline in an empty technique socket
 
 
 def weapon_row(img, box, weapon):

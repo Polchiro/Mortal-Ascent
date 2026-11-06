@@ -5,7 +5,7 @@ card switch tabs in place, so players never have to type another command.
 
 | Tab | Command | Shows |
 |---|---|---|
-| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, the **Gear** row (4 sockets: weapon, armor, artifact 1, artifact 2, each with its icon or seal in its tier colour, name and a short effect line; empty sockets say what fills them), deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
+| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, the **Gear** row (4 sockets: weapon, armor, artifact 1, artifact 2, each with its drawn icon in its tier colour; empty armor / artifact sockets show a faint robe / pearl outline, name and a short effect line; empty sockets say what fills them), deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
 | 📜 Techniques | /techniques | Attack, Defense and Flex sockets, then every learned technique |
 | ⚔️ Equipment | /equipment | All four gear slots with full details, base → final stats (weapon + armor + techniques) with every buff's source, and the worn artifacts' effects in their own list |
 | 🎒 Inventory | /inventory | Category tabs, a 4 × 3 item grid with pages, and an Inspect panel |
@@ -46,7 +46,7 @@ text embed is sent instead.
 | HP | Max HP, and an injury timer in the status line | Current HP: fights start at full HP; losing gives an injury instead |
 | Techniques | Sockets: 1 attack + 1 defense, Flex from Martial Warrior (technique.md) | More slots |
 | Equipment | One weapon, one armor and two artifact slots (equipment.md) | Accessories, more artifact slots at high realms |
-| Bag | Chests, Manuals, Weapons, Armor, Artifacts (tiles show their seal in the tier colour), Pills, Herbs (by kind and age), Materials | Elixirs, rare treasures |
+| Bag | Chests, Manuals, Weapons, Armor, Artifacts (tiles show their drawn icon in the tier colour; manuals show the technique icon with a small grade emblem, pills their type emblem tinted by grade with pattern rings), Pills, Herbs (by kind and age), Materials | Elixirs, rare treasures |
 | Title | — | Character titles |
 
 ## Item actions
@@ -103,3 +103,15 @@ text embed is sent instead.
 | scripts/render_sheet.py | Saves every card for a made-up player into previews/ |
 | cards/activity.py, bot/result_cards.py | /spar, /train and /explore result cards and their data |
 | scripts/render_results.py | Saves every result card with made-up data into previews/ |
+
+## Icons and emblems
+
+Cards draw pictures, not seal characters (Pillow only, no image files):
+
+- **Techniques** (`cards/technique_icons.py`, `theme.icon(img, "tech:<key>")`): each of the 30 techniques has its own icon,
+  its school's base shape (Fist, Palm, Finger, Leg, Body) plus a motif from its name, in its grade colour. Empty technique
+  sockets show a faint outline of a school shape.
+- **Emblems** (`cards/emblems.py`, `emblem(img, kind, key, center, size)` or `theme.icon(img, "emblem:<kind>:<key>")`):
+  manual grades (scrolls and tablets), gear rarities (forged crests), realms (each realm's signature beast), beast tiers,
+  elements and pill types. Each step looks more precious than the one before. Fine details are drawn only when large.
+- Chinese characters stay only as decoration (the 万物录 title, scroll titles, realm calligraphy behind the portrait).
