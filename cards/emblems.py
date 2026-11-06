@@ -626,6 +626,43 @@ def _pill(img, key, center, size, grade="Mortal", patterns=0, corner=True):
         _grade(img, grade, (cx + rr - es * 0.42, cy + rr - es * 0.42), es)
 
 
+# ── talents: the Aptitude Stone's verdict ─────────────────────────────
+
+TALENTS = ["Ordinary", "Gifted", "Genius", "Prodigy", "Heavenly", "Saint", "Divine"]
+TALENT_FRAME = [
+    dict(shape="circle", mat="iron"),
+    dict(shape="hex", mat="bronze", studs=6, glow_strength=50),
+    dict(shape="oct", mat="jadeblue", glow_strength=90),
+    dict(shape="oct", mat="jadeblue", double=True, studs=8, glow_strength=120),
+    dict(shape="star8", mat="gold", glow_strength=160),
+    dict(shape="star8", mat="radiant", double=True, rays=12, glow_strength=190),
+    dict(shape="star8", mat="radiant", double=True, rays=16, halo=True, glow_strength=230),
+]
+
+
+def _talent(img, key, center, size):
+    i = TALENTS.index(key) if key in TALENTS else 0
+    c = T.TALENT.get(key, T.ASH)
+    cfg = dict(TALENT_FRAME[i])
+    if size < 48:
+        cfg.pop("rays", None)
+    gs = cfg.pop("glow_strength", 0)
+    r = frame(img, center, size, field=tint(c, -0.75), glow_color=c, glow_strength=gs, **cfg)
+    p = _pen(img, center, r * 0.92)
+    # a crystal shard from the Aptitude Stone; more shards and sparkles as the talent rises
+    shards = [(0.0, 0.0, 1.0)] + [(-0.5, 0.25, 0.55), (0.5, 0.25, 0.55)][: (1 if i >= 2 else 0) + (1 if i >= 3 else 0)]
+    for x, y, k in sorted(shards, key=lambda s: s[2]):
+        p.poly([(x, y - 0.85 * k), (x + 0.32 * k, y - 0.45 * k), (x + 0.32 * k, y + 0.55 * k), (x, y + 0.8 * k),
+                (x - 0.32 * k, y + 0.55 * k), (x - 0.32 * k, y - 0.45 * k)], c)
+        p.poly([(x, y - 0.85 * k), (x + 0.32 * k, y - 0.45 * k), (x, y - 0.25 * k), (x - 0.32 * k, y - 0.45 * k)],
+               tint(c, 0.55))
+        p.poly([(x, y - 0.25 * k), (x + 0.32 * k, y - 0.45 * k), (x + 0.32 * k, y + 0.55 * k), (x, y + 0.8 * k)],
+               tint(c, -0.3))
+    if size >= 48 and i >= 4:
+        for x, y in ((-0.62, -0.55), (0.6, -0.62), (0.0, 0.92))[: i - 3]:
+            p.sparkle(x, y, 0.16, WHITE)
+
+
 # ── combined: beast tile (realm emblem + element corner) ──────────────
 
 def _beast(img, key, center, size):
@@ -646,7 +683,7 @@ def _book(img, key, center, size):
 def emblem(img, kind, key, center, size, **kw):
     """Draw one emblem. Unknown keys fall back to the first step of the set."""
     fn = {"grade": _grade, "rarity": _rarity, "realm": _realm, "beast_tier": _beast_tier, "element": _element,
-          "pill": _pill, "beast": _beast, "book": _book}[kind]
+          "pill": _pill, "beast": _beast, "book": _book, "talent": _talent}[kind]
     if kind == "rarity" and isinstance(key, str):
         key = key.lower()
     return fn(img, key, center, size, **kw)
@@ -655,7 +692,7 @@ def emblem(img, kind, key, center, size, **kw):
 def has_emblem(kind, key):
     """True when `key` is one of the drawn steps of `kind` (used by the tests)."""
     sets = {"grade": GRADES, "rarity": RARITIES, "realm": REALMS, "beast_tier": BEAST_TIERS, "element": ELEMENTS,
-            "pill": PILLS}
+            "pill": PILLS, "talent": TALENTS}
     if kind == "pill":
         key = PILL_ALIASES.get(key, key)
     if kind == "rarity" and isinstance(key, str):

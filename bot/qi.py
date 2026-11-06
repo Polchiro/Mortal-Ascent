@@ -10,6 +10,8 @@ import economy
 import technique
 import training
 
+from cards.technique_icons import tech_kind
+
 from . import player as rules
 
 LAND_NAMES = {k: k.replace("_", " ").title() for k in training.BLESSED_LANDS}
@@ -36,61 +38,62 @@ def sources(player, techniques, now):
     """Every Qi Rate source, active or not: dicts with seal, label, detail, value, active."""
     rows = []
     base = training.BASE_QI_RATE[player["realm"]]
-    rows.append({"seal": "根", "label": "Realm base", "detail": player["realm"],
+    rows.append({"seal": f"emblem:realm:{player['realm']}", "label": "Realm base", "detail": player["realm"],
                  "value": f"{base:g} Qi/h", "active": True})
 
     tb = training.TALENT_QI_BONUS[player["talent"]]
-    rows.append({"seal": "才", "label": "Talent", "detail": player["talent"],
+    rows.append({"seal": f"emblem:talent:{player['talent']}", "label": "Talent", "detail": player["talent"],
                  "value": f"+{tb:.0%}", "active": tb > 0})
 
     t = best_technique(techniques)
     bonus = rules.technique_qi_bonus(techniques)
     if t:
         stage = technique.MASTERY_STAGES[rules.stage_of(t)]["name"]
-        rows.append({"seal": "功", "label": "Technique", "detail": f"{t['name']} · {stage}",
+        rows.append({"seal": tech_kind(t["name"], rules.TECH_BY_NAME.get(t["name"], {}).get("school", "Body")),
+                     "label": "Technique", "detail": f"{t['name']} · {stage}",
                      "value": f"+{bonus:.1%}".replace(".0%", "%"), "active": True})
     else:
-        rows.append({"seal": "功", "label": "Technique", "detail": "None equipped · /techniques",
+        rows.append({"seal": "school:Palm", "label": "Technique", "detail": "None equipped · /techniques",
                      "value": "+0%", "active": False})
 
     b = rules.active_blessing(player, now)
     if b:
-        rows.append({"seal": "福", "label": "Heavenly Blessing", "detail": f"{b[0]} · {b[1]}d left",
+        rows.append({"seal": "misc:blessing", "label": "Heavenly Blessing", "detail": f"{b[0]} · {b[1]}d left",
                      "value": f"+{economy.BLESSING_TIERS[b[0]]['qi_rate']:.0%}", "active": True})
     else:
-        rows.append({"seal": "福", "label": "Heavenly Blessing", "detail": "None · /blessing",
+        rows.append({"seal": "misc:blessing", "label": "Heavenly Blessing", "detail": "None · /blessing",
                      "value": "+0%", "active": False})
 
     pill = rules.active_pill(player, now)
     if pill:
-        rows.append({"seal": "丹", "label": "Qi Pill", "detail": f"{alchemy.QI_PILLS[pill[0]]['name']} · {fmt_long(pill[2])} left",
+        rows.append({"seal": f"emblem:pill:qi:{pill[0]}", "label": "Qi Pill", "detail": f"{alchemy.QI_PILLS[pill[0]]['name']} · {fmt_long(pill[2])} left",
                      "value": f"×{pill[1]:.2f}", "active": True})
     else:
-        rows.append({"seal": "丹", "label": "Qi Pill", "detail": "None · use one from /inventory",
+        rows.append({"seal": "pill", "label": "Qi Pill", "detail": "None · use one from /inventory",
                      "value": "×1", "active": False})
 
     land = rules.active_blessed_land(player, now)
     if land:
         mult = training.BLESSED_LANDS[land[0]]["qi_multiplier"]
-        rows.append({"seal": "地", "label": "Blessed Land", "detail": f"{LAND_NAMES[land[0]]} · {fmt_long(land[1])} left",
+        rows.append({"seal": "misc:land", "label": "Blessed Land", "detail": f"{LAND_NAMES[land[0]]} · {fmt_long(land[1])} left",
                      "value": f"×{mult:g}", "active": True})
     else:
-        rows.append({"seal": "地", "label": "Blessed Land", "detail": "None · found in /explore",
+        rows.append({"seal": "misc:land", "label": "Blessed Land", "detail": "None · found in /explore",
                      "value": "×1", "active": False})
 
     if rules.in_seclusion(player):
         left = player["seclusion_end"] - now
         detail = f"emerge in {fmt_long(left)}" if left > 0 else "complete · /seclusion"
-        rows.append({"seal": "关", "label": "Seclusion", "detail": detail,
+        rows.append({"seal": "misc:seclusion", "label": "Seclusion", "detail": detail,
                      "value": f"×{training.SECLUSION_QI_MULTIPLIER:g}", "active": True})
     else:
-        rows.append({"seal": "关", "label": "Seclusion", "detail": "Not secluded · /seclusion",
+        rows.append({"seal": "misc:seclusion", "label": "Seclusion", "detail": "Not secluded · /seclusion",
                      "value": "×1", "active": False})
 
     tox = rules.current_toxicity(player, now)
     eff = rules.pill_effect_mult(tox)
     detail = "Pills at full strength" if eff >= 1 else f"Next pill at {eff:.0%} strength"
-    rows.append({"seal": "毒", "label": "Pill toxicity", "detail": f"{tox} · {detail}",
+    rows.append({"seal": "misc:toxicity", "label": "Pill toxicity", "detail": f"{tox} · {detail}",
                  "value": "OK" if eff >= 1 else f"{eff:.0%}", "active": eff < 1, "warn": eff < 1})
     return rows
 

@@ -7,6 +7,7 @@ from PIL import Image, ImageChops
 
 import beasts
 import equipments
+import talent as talent_rules
 import technique
 from bot import compendium, crafting, loot
 from bot import player as rules
@@ -68,6 +69,7 @@ SETS = {
     "beast_tier": list(beasts.BEAST_TIERS),
     "element": list(beasts.ELEMENTS),
     "pill": list(crafting.KINDS),
+    "talent": list(talent_rules.TALENTS),
 }
 
 
@@ -151,3 +153,37 @@ def test_fight_buttons_have_a_drawn_icon_per_technique_with_short_emoji_names():
     assert len(set(names)) == len(names)
     assert battle_icons.tech_emoji_key("Nine Dragons Ascending Fist") == "t_nine_dragons_ascending_fist"
     assert battle_icons.icon_png("t_iron_fist")[:4] == b"\x89PNG"
+
+
+# ── /internal qi, talents, herbs and /craft ───────────────────────────
+
+def test_every_talent_has_an_emblem():
+    assert set(E.TALENTS) == set(T.TALENT)
+
+
+def test_qi_sources_use_drawn_icons():
+    import time
+
+    from bot import db, qi
+    conn = db.connect(":memory:")
+    db.create_player(conn, 1, "Ana", "Genius", 0, rules.starting_techniques())
+    p = db.get_player(conn, 1)
+    rows = qi.sources(p, db.get_techniques(conn, 1), time.time())
+    assert rows and not any(is_cjk(r["seal"]) for r in rows)
+    assert rows[0]["seal"] == "emblem:realm:Mortal" and rows[1]["seal"] == "emblem:talent:Genius"
+    for r in rows:
+        assert ink(drawn(lambda img, c, s: T.seal(img, c, s / 2, r["seal"], T.EMBER), 40)) > 100
+
+
+def test_herbs_craft_stages_and_craft_buttons_are_drawn():
+    import alchemy
+    from cards import alchemy_icons
+    from cards.misc_icons import HERB_ICON, MISC_ICON, STAGE_ICON
+    assert set(alchemy.HERB_TYPE_CHANCE) <= set(HERB_ICON)
+    assert set(STAGE_ICON) == {1, 2, 3, 4, 5, 6}
+    for kind in list(HERB_ICON.values()) + list(STAGE_ICON.values()):
+        assert ink(drawn(lambda img, c, s: T.icon(img, kind, c, s, T.GOLD), 40)) > 100
+    assert_distinct([drawn(lambda img, c, s, k=k: T.icon(img, "misc:" + k, c, s, T.GOLD), 40) for k in MISC_ICON])
+    assert not any(v[2] for v in alchemy_icons.ICONS.values())
+    names = ["ma_" + alchemy_icons.EMOJI_NAME.get(k, k) for k in alchemy_icons.ICONS]
+    assert len(set(names)) == len(names) and all(len(n) <= 32 for n in names)

@@ -114,4 +114,7 @@ Cards draw pictures, not seal characters (Pillow only, no image files):
 - **Emblems** (`cards/emblems.py`, `emblem(img, kind, key, center, size)` or `theme.icon(img, "emblem:<kind>:<key>")`):
   manual grades (scrolls and tablets), gear rarities (forged crests), realms (each realm's signature beast), beast tiers,
   elements and pill types. Each step looks more precious than the one before. Fine details are drawn only when large.
+- **Other icons** (`cards/misc_icons.py`, `theme.icon(img, "misc:<name>")`): the /internal qi sources (realm emblem,
+  talent crystal, technique, blessing cloud, Qi pill, blessed land, seclusion cave, toxicity flask), herb types, /craft stages
+  and /craft buttons. Talents have their own emblem set (`emblem:talent:<name>`).
 - Chinese characters stay only as decoration (the 万物录 title, scroll titles, realm calligraphy behind the portrait).

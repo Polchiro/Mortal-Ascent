@@ -22,6 +22,7 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from . import theme as T
 from .battle import _check, _chip, _heading, _shrink, _warning
+from .misc_icons import HERB_ICON, STAGE_ICON
 from .theme import P, S, alpha, cjk, font, mix
 
 W, H = 1200, 880
@@ -36,9 +37,7 @@ ARC_C, ARC_R = (600, 424), 214      # the heat gauge
 ARC_A0, ARC_SPAN = 195, 150         # 0° at 195°, 100° at 345° (Pillow angles, clockwise from 3 o'clock)
 
 CN = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
-STAGE_CHAR = {1: "火", 2: "药", 3: "合", 4: "凝", 5: "封", 6: "劫"}
 STAGE_LABEL = {1: "Ignite", 2: "Add herbs", 3: "Fuse", 4: "Condense", 5: "Seal", 6: "Tribulation"}
-HERB_CHAR = {"qi": "气", "healing": "愈", "purity": "净", "breakthrough": "破", "core": "核"}
 HERB_COLOR = {"qi": (110, 170, 240), "healing": (232, 96, 96), "purity": (100, 206, 196),
               "breakthrough": (204, 150, 92), "core": (236, 120, 60)}
 AGE_COLOR = {10: (170, 160, 150), 50: (120, 206, 130), 100: (92, 214, 188), 500: (120, 170, 250),
@@ -360,7 +359,7 @@ def _heat_gauge(img, heat):
 
 
 def _seal_label(img, center, r, char, color, label, size=24):
-    T.medallion(img, center, r, char, color)
+    T.seal(img, center, r, char, color)
     d = ImageDraw.Draw(img)
     f = font("Inter.ttf", size, "Bold")
     T.text(d, (center[0], center[1] + r + 22), T.fit(d, label, f, 220), f, WHITE, "mm")
@@ -377,7 +376,7 @@ def _floating_herbs(img, herbs):
         col = HERB_COLOR.get(h["type"], T.GOLD)
         T.soft_glow(img, (x - 60, y - 60, x + 60, y + 60), alpha(col, 120), 14)
         label = h["name"] + (f" ×{h['count']}" if h.get("count", 1) > 1 else "")
-        _seal_label(img, (x, y), 40, HERB_CHAR.get(h["type"], "草"), col, label, 26)
+        _seal_label(img, (x, y), 40, HERB_ICON.get(h["type"], "herb"), col, label, 26)
 
 
 def _yin_yang(img, center, r, yin, yang):
@@ -632,7 +631,7 @@ def _mid_exploded(img, data, acc, seed):
     for i, h in enumerate(data["herbs"][:4]):             # herbs flung across the floor
         x = CX + (-330, 300, -220, 370)[i]
         y = (452, 470, 482, 440)[i]
-        T.medallion(img, (x, y), 22, HERB_CHAR.get(h["type"], "草"), mix(HERB_COLOR.get(h["type"], T.GOLD), (60, 50, 40), 0.4))
+        T.seal(img, (x, y), 22, HERB_ICON.get(h["type"], "herb"), mix(HERB_COLOR.get(h["type"], T.GOLD), (60, 50, 40), 0.4))
     T.banner(img, (CX - 262, 214, CX + 262, 290))
     title = "The core shattered" if data.get("core_lost") else "Cauldron exploded"
     d = ImageDraw.Draw(img)
@@ -692,11 +691,11 @@ def _stage_path(img, data, acc):
         state = st["state"]
         if state == "current":
             T.soft_glow(img, (sx - 40, y - 40, sx + 220, y + 40), alpha(acc.rim, 90), 14)
-            T.medallion(img, (sx, y), 27, STAGE_CHAR[st["key"]], acc.bright)
+            T.seal(img, (sx, y), 27, STAGE_ICON[st["key"]], acc.bright)
             color, f = T.GOLD_HI, font("Inter.ttf", 28, "Bold")
         else:
             col = {"done": GREEN, "failed": (226, 72, 56)}.get(state, T.ASH_DK)
-            T.medallion(img, (sx, y), 21, STAGE_CHAR[st["key"]], col)
+            T.seal(img, (sx, y), 21, STAGE_ICON[st["key"]], col)
             color = {"done": GREEN, "failed": (240, 110, 96)}.get(state, T.ASH)
             f = font("Inter.ttf", 26, "SemiBold")
         d = ImageDraw.Draw(img)
@@ -730,7 +729,7 @@ def _herbs_panel(img, data, acc):
         y = y0 + 66 + rh * i + rh / 2
         live = h["state"] == "in"
         col = HERB_COLOR.get(h["type"], T.GOLD)
-        T.medallion(img, (x0 + 40, y), 19, HERB_CHAR.get(h["type"], "草"), col if h["state"] != "lost" else T.ASH_DK)
+        T.seal(img, (x0 + 40, y), 19, HERB_ICON.get(h["type"], "herb"), col if h["state"] != "lost" else T.ASH_DK)
         d = ImageDraw.Draw(img)
         age = f"{h['age']}-yr" if h.get("age") else ""
         aw = T.width(d, age, af)
