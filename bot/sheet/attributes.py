@@ -57,6 +57,7 @@ def qi_resource(player, techniques=(), now=None):
     time to a full bar and the next gate (reuses the /internal qi numbers)."""
     d = qi_rules.qi_data(player, techniques, now)
     return {"qi": d["qi"], "capacity": d["qi_needed"], "pending": d["pending"], "pending_label": d["pending_label"],
+            "overflow": d["overflow"], "overflow_text": d["overflow_text"],
             "rate": d["rate"], "mult": d["mult"], "eta": d["eta"], "gate": d["gate"], "gate_note": d["gate_note"],
             "status": d["status"], "status_tone": d["status_tone"]}
 

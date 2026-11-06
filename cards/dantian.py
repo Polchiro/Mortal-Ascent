@@ -99,7 +99,9 @@ def qi_bar(img, data, frac, box):
         qx = x0 + (x1 - x0) * q
         d.line(P(qx, by1 + 3, qx, by1 + 8), fill=t.BRONZE, width=max(1, t.S))
     f = font("Inter.ttf", 13, "Medium")
-    if data["pending"] >= 0.05:
+    if data.get("overflow_text"):     # Qi kept behind a bottleneck (flows on after /breakthrough)
+        t.text(d, (x0, by1 + 18), data["overflow_text"], f, t.GOLD_HI, "lm")
+    elif data["pending"] >= 0.05:
         t.text(d, (x0, by1 + 18), f"+{fmt_qi(data['pending'])} Qi {data['pending_label']}", f, t.GLOW, "lm")
     t.text(d, (x1, by1 + 18), f"A perfect /train gives about {fmt_qi(data['train_qi'])} Qi", f, t.ASH, "rm")
 

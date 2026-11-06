@@ -16,9 +16,8 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Armor, Artifacts, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
-| `/meditate` | Shows how fast your Qi gathers on its own and when your bar fills. Passive Qi is added automatically before every command (up to 12 hours is kept while you are away) |
 | `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
-| `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting to be collected), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
+| `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting behind a bottleneck), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
@@ -30,6 +29,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
 | `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/settings [qi_pings]` | Your settings. `qi_pings:off` stops the "your Qi is full: use /breakthrough!" mention (on by default) |
 | `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, seclusion, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
 | `/admin give [member] [lotus_coins] [moon_pearls] [qi]` | **Owner/admins only.** Adds coins, pearls or Qi for testing |
@@ -119,8 +119,10 @@ The design docs leave some things open. Until they are decided, the bot uses the
   Winning an exchange lands a hit; ties hurt both a little. +30 EXP per well-timed use, +100 to each
   well-timed technique on a win. 15 exchanges; if time runs out, whoever is in better shape wins.
   60 seconds per move, then you forfeit. Not while injured or secluded.
-- **Seclusion and passive Qi** use the Qi Rate at the moment you collect. Passive Qi does not gather
-  during seclusion; entering seclusion banks your passive Qi first.
+- **Passive Qi** has no storage limit and is banked every minute by a background task (bot/passive.py)
+  and before every command. It does not gather during seclusion; entering seclusion banks it first.
+- **Qi at a gate is never lost**: above a full bar it goes to `qi_overflow` and flows into the next
+  layers after a successful breakthrough. A failed breakthrough keeps it.
 - **Qi Rate** now includes the best equipped technique, an active Qi pill and a Blessed Land.
 
 ## Run it

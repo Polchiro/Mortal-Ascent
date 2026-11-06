@@ -1,6 +1,6 @@
 """
 /qi: everything about a player's Internal Qi in one place. Builds the data dict that
-cards.dantian.render_dantian expects, using the same formulas as /meditate, /seclusion and /train
+cards.dantian.render_dantian expects, using the same formulas as passive Qi, /seclusion and /train
 (bot/player.py, training.py).
 """
 import alchemy
@@ -25,6 +25,10 @@ def fmt_long(seconds):
         h = rest // 3600
         return f"{days}d {h}h" if h else f"{days}d"
     return rules.fmt_duration(rest)
+
+
+def fmt_qi(value):
+    return f"{value:,.0f}" if value >= 10 else f"{value:,.1f}".rstrip("0").rstrip(".")
 
 
 def best_technique(techniques):
@@ -144,11 +148,19 @@ def qi_data(player, techniques, now=None):
         pending, hours, done = rules.seclusion_qi(player, techniques, now)
     else:
         pending, hours = rules.passive_qi(player, techniques, now)
-    pending = min(pending, max(0.0, need - qi))
+    room = max(0.0, need - qi)
+    # Qi above a full bar at a gate is kept (qi_overflow) and flows on after /breakthrough
+    extra = rules.overflow(player) + (max(0.0, pending - room) if kind != "layer" and not secluded else 0.0)
+    pending = min(pending, room)
+    full = qi >= need and kind != "layer"
+    overflow_text = ""
+    if extra >= 0.5:
+        overflow_text = (("Qi bar full · " if full else "") + f"+{fmt_qi(extra)} Qi waiting behind the "
+                         + ("bottleneck" if kind == "phase" else "gate"))
 
     # cultivation status line
     injured = rules.injured_for(player, now)
-    if qi >= need and kind != "layer":
+    if full:
         status, tone = ("At the peak" if kind == "peak" else "Bar full · use /breakthrough"), "gold"
     elif secluded:
         left = player["seclusion_end"] - now
@@ -180,6 +192,8 @@ def qi_data(player, techniques, now=None):
         "qi": qi,
         "qi_needed": need,
         "pending": pending,
+        "overflow": extra,
+        "overflow_text": overflow_text,
         "pending_label": ("from seclusion (×2 when complete)" if secluded else "gathered, not yet banked"),
         "rate": rate,
         "mult": mult,

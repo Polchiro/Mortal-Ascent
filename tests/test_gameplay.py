@@ -40,6 +40,7 @@ def test_old_database_gets_new_columns(tmp_path):
     conn = db.connect(str(path))
     p = db.get_player(conn, 7)
     assert p["bag_capacity"] == 60 and p["toxicity"] == 0 and p["injured_until"] is None
+    assert p["qi_overflow"] == 0 and p["qi_pings"] == 1 and p["qi_ping_gate"] is None
 
 
 def test_bag_stacks_and_capacity(conn):
@@ -145,9 +146,10 @@ def test_layers_fill_then_mortal_breakthrough_always_succeeds(conn):
     p = new_player(conn)
     p, events = rules.add_qi(p, 8 + 8 + 8 + 3, rng=random.Random(0))
     assert (p["realm"], p["layer"], p["qi"]) == ("Mortal", 3, 8)     # stops at a full bar
+    assert p["qi_overflow"] == 3                                      # the extra waits behind the gate
     assert "/breakthrough" in events[-1]
     ok, msg = rules.attempt_breakthrough(p, rng=random.Random(0))
-    assert ok and (p["realm"], p["layer"], p["qi"]) == ("Martial Apprentice", 1, 0)
+    assert ok and (p["realm"], p["layer"], p["qi"], p["qi_overflow"]) == ("Martial Apprentice", 1, 3, 0)
 
 
 def test_breakthrough_needs_full_bar():
@@ -331,15 +333,15 @@ def test_views_build_without_discord_connection(conn):
     asyncio.run(go())
 
 
-# ── /meditate and /seclusion ──────────────────────────────────────────
+# ── passive Qi and /seclusion ─────────────────────────────────────────
 
-def test_passive_qi_caps_at_12_hours(conn):
+def test_passive_qi_has_no_cap(conn):
     p = new_player(conn, talent="Ordinary")
     techs = db.get_techniques(conn, 1)
     p["qi_collected_at"] = 0
     qi, hours = rules.passive_qi(p, techs, now=3 * 3600)
     assert hours == 3 and qi == pytest.approx(2.5 * 1.05 * 3)
-    assert rules.passive_qi(p, techs, now=100 * 3600)[1] == 12
+    assert rules.passive_qi(p, techs, now=100 * 3600)[1] == 100
 
 
 def test_seclusion_doubles_only_when_completed(conn):
@@ -504,9 +506,9 @@ def test_all_commands_register():
         for c in bot.tree.get_commands():
             c.to_dict(bot.tree)
         return names
-    assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train", "meditate",
+    assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train",
                                  "seclusion", "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
-                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "admin",
+                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "settings", "admin",
                                  "tutorial", "index", "gather", "craft", "duel"}
 
 

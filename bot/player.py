@@ -187,11 +187,51 @@ def breakthrough_chance(player):
     return None
 
 
+def overflow(player):
+    """Qi gathered while the bar was full at a gate: kept here, never lost (it flows on after a breakthrough)."""
+    return player.get("qi_overflow") or 0.0
+
+
+def waiting_text(player):
+    """", 180 Qi is waiting" style suffix for full-bar messages, or "" when nothing waits."""
+    extra = overflow(player)
+    return f": **{extra:,.0f} Qi** is waiting" if extra >= 0.5 else ""
+
+
+def at_full_gate(player):
+    """True when the bar is full and only /breakthrough (or nothing, at the peak) moves it on."""
+    return (next_gate(player)[0] != "layer"
+            and player["qi"] >= qi_needed(player["realm"], player["layer"]))
+
+
+def ready_to_break(player, techniques=()):
+    """Bar full at a phase bottleneck or realm gate whose other requirements are met."""
+    kind, target = next_gate(player)
+    if kind not in ("phase", "realm") or not at_full_gate(player):
+        return False
+    return kind == "phase" or not realm_requirement_missing(player, techniques, target)
+
+
+def gate_key(player):
+    """Names the gate the player stands at, so the full-bar ping is sent once per gate."""
+    return f"{player['realm']}:{player['layer']}"
+
+
+def progress_fields(player):
+    """The columns add_qi / attempt_breakthrough change, ready for db.update_player."""
+    return {"qi": player["qi"], "qi_overflow": overflow(player), "realm": player["realm"], "layer": player["layer"],
+            "breakthroughs": player.get("breakthroughs", 0),
+            "failed_breakthroughs": player.get("failed_breakthroughs", 0),
+            "injured_until": player.get("injured_until")}
+
+
 def add_qi(player, amount, techniques=(), rng=random, now=None):
     """Add Qi. Layer → layer within a phase is automatic (training.md); at a phase bottleneck or
-    realm gate the Qi stops at a full bar and the player uses /breakthrough.
+    realm gate the bar stays exactly full and every extra point goes to player["qi_overflow"],
+    which flows into the next layers after a successful /breakthrough. No Qi is ever thrown away.
     Mutates and returns `player`, plus a list of event strings."""
     events = []
+    player["qi_overflow"] = overflow(player)
     player["qi"] += amount
     while player["qi"] >= qi_needed(player["realm"], player["layer"]):
         need = qi_needed(player["realm"], player["layer"])
@@ -201,24 +241,30 @@ def add_qi(player, amount, techniques=(), rng=random, now=None):
             player["layer"] += 1
             events.append(f"⬆️ You reached the **{ordinal(player['layer'])} Layer**!")
             continue
+        player["qi_overflow"] += player["qi"] - need
         player["qi"] = need
+        waiting = waiting_text(player)
         if kind == "peak":
             events.append("You stand at the peak of the martial world. The Heavenly Tribulation awaits...")
         elif kind == "phase":
-            events.append(f"⛰️ Your Qi is full and presses against the **{target}** bottleneck. Use **/breakthrough**!")
+            events.append(f"⛰️ Your Qi is full and presses against the **{target}** bottleneck. "
+                          f"Use **/breakthrough**{waiting}!")
         else:
             missing = realm_requirement_missing(player, techniques, target)
             if missing:
-                events.append(f"🔒 Your Qi is full, but reaching **{target}** also needs {missing}.")
+                events.append(f"🔒 Your Qi is full, but reaching **{target}** also needs {missing}."
+                              + (f" {waiting[2:]} behind the gate." if waiting else ""))
             else:
-                events.append(f"🌟 Your Qi is full! Use **/breakthrough** to reach **{target}**.")
+                events.append(f"🌟 Your Qi is full! Use **/breakthrough**{waiting} to reach **{target}**.")
         break
     return player, events
 
 
 def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0):
     """Try the phase or realm breakthrough. Mutates player. Returns (success or None if not possible, message).
-    bonus: added chance from a Breakthrough pill (realm gates only)."""
+    bonus: added chance from a Breakthrough pill (realm gates only).
+    Success: the Qi waiting in qi_overflow flows into the new layer through add_qi (it can fill several
+    layers and stops at the next gate again). Failure: lose 20% of the bar only; qi_overflow is kept."""
     now = time.time() if now is None else now
     need = qi_needed(player["realm"], player["layer"])
     kind, target = next_gate(player)
@@ -232,21 +278,28 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
             return None, f"🔒 To reach **{target}** you also need {missing}."
     chance = breakthrough_chance(player) + (bonus if kind == "realm" else 0)
     if rng.random() < chance:
-        player["qi"] -= need
+        carry = player["qi"] - need + overflow(player)
+        player["qi"], player["qi_overflow"] = 0.0, 0.0
         player["breakthroughs"] += 1
         if kind == "realm":
             player["realm"], player["layer"] = target, 1
-            return True, f"🌟 **Realm breakthrough!** Heaven and earth tremble. You are now **{target}**, 1st Layer!"
-        player["layer"] += 1
-        return True, f"⛰️ **Bottleneck broken!** You enter the **{target}**, {ordinal(player['layer'])} Layer."
+            msg = f"🌟 **Realm breakthrough!** Heaven and earth tremble. You are now **{target}**, 1st Layer!"
+        else:
+            player["layer"] += 1
+            msg = f"⛰️ **Bottleneck broken!** You enter the **{target}**, {ordinal(player['layer'])} Layer."
+        if carry > 0:
+            player, events = add_qi(player, carry, techniques, rng, now)
+            msg = "\n".join([msg, f"🌊 The **{carry:,.1f} Qi** that waited behind the gate floods in."] + events)
+        return True, msg
     lost = player["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
     player["qi"] -= lost
     player["failed_breakthroughs"] += 1
+    kept = (f" The {overflow(player):,.0f} Qi waiting behind the gate is safe." if overflow(player) >= 0.5 else "")
     if kind == "realm":
         player["injured_until"] = now + training.INJURY_HOURS * 3600
         return False, (f"💥 **Breakthrough failed!** Your meridians recoil. You lose {lost:,.1f} Qi and are injured "
-                       f"for {training.INJURY_HOURS} hours (no exploring or sparring).")
-    return False, f"💢 **The bottleneck holds.** You lose {lost:,.1f} Qi. Gather it again and retry."
+                       f"for {training.INJURY_HOURS} hours (no exploring or sparring).{kept}")
+    return False, f"💢 **The bottleneck holds.** You lose {lost:,.1f} Qi. Gather it again and retry.{kept}"
 
 
 # ── Passive Qi and seclusion ──────────────────────────────────────────
@@ -256,14 +309,16 @@ def in_seclusion(player):
 
 
 def passive_qi(player, techniques=(), now=None):
-    """(Qi stored by passive gathering, hours counted). Stops at 12 hours; nothing gathers in seclusion."""
+    """(Qi gathered by passive gathering since it was last banked, hours counted). It always gathers at
+    the full Qi Rate, with no limit on how long the player is away; nothing gathers in seclusion
+    (seclusion pays its own way when it ends)."""
     now = time.time() if now is None else now
     if in_seclusion(player):
         return 0.0, 0.0
     since = player.get("qi_collected_at")
     if since is None:
         since = player["created_at"]
-    hours = min(training.PASSIVE_MAX_STORED_HOURS, max(0.0, now - since) / 3600)
+    hours = max(0.0, now - since) / 3600
     return qi_rate(player, now, techniques)[0] * hours, hours
 
 

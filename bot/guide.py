@@ -42,15 +42,15 @@ LESSONS = [
      "\"A cultivator who does not know their own body walks blind.\"",
      [("/profile", "Your scroll: realm, layer, Qi, HP / Attack / Defense, equipped techniques and weapon. "
                    "Add a member to look at someone else's."),
-      ("/internal qi", "Your dantian: the Qi bar, Qi waiting to be collected, your Qi Rate, how long until the "
+      ("/internal qi", "Your dantian: the Qi bar, Qi waiting behind a bottleneck, your Qi Rate, how long until the "
                        "bar fills, and every bonus that feeds it."),
       ("/balance", "Your purse: 🪷 Lotus Coins (earned by playing) and 🌙 Moon Pearls (the rare currency).")]),
 
     ("Gathering Qi",
      "\"Qi is the root of everything. Fill your dantian and the layers open on their own.\"",
      [("/train", "A timed challenge with the master. Your score becomes Internal Qi. Every 60 minutes."),
-      ("/meditate", "Qi also gathers by itself at your Qi Rate, even while you are away (up to 12 hours is kept). "
-                    "It is collected for you before every command; /meditate shows how fast it flows."),
+      ("Passive Qi", "Qi also gathers by itself at your full Qi Rate, for as long as you are away. There is "
+                     "nothing to collect: it is added to your bar every minute. **/internal qi** shows how fast it flows."),
       ("/seclusion", f"Shut yourself away for {training.SECLUSION_MIN_HOURS}–{training.SECLUSION_MAX_HOURS} hours at "
                      f"×{training.SECLUSION_QI_MULTIPLIER:g} Qi Rate. No exploring or sparring meanwhile, and leaving "
                      "early loses the bonus.")]),
@@ -58,10 +58,12 @@ LESSONS = [
     ("The Gates Within",
      "\"Layers inside a phase open by themselves. Between phases and realms stands a wall.\"",
      [("Bottlenecks", "When your Qi bar is full at the end of a phase (3rd, 6th, 9th layer) or at the 10th "
-                      "layer, the Qi stops. Use **/breakthrough** and the bot shows the chance first."),
+                      "layer, the bar stops, but no Qi is lost: the extra waits behind the gate and flows into "
+                      "your next layers when you break through. Use **/breakthrough** and the bot shows the chance "
+                      "first. I mention you once when your bar fills; **/settings** turns that off."),
       ("The odds", f"Phase bottleneck: {training.PHASE_BOTTLENECK_SUCCESS:.0%}. New realm: "
                    f"{training.REALM_BREAKTHROUGH_SUCCESS:.0%} (Mortal → Martial Apprentice always succeeds). "
-                   f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your Qi."),
+                   f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your bar; the Qi waiting behind the gate is kept."),
       ("Higher gates", "Martial Master, Martial King and Martial Saint also ask for technique mastery, "
                        "and the last two for a slain Beast King.")]),
 

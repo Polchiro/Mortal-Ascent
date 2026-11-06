@@ -128,7 +128,7 @@ PLAYER_COLUMNS = {
     "blessed_land_expires": "REAL",
     "last_challenge":       "TEXT",
     "bag_capacity":         "INTEGER NOT NULL DEFAULT 60",
-    "qi_collected_at":      "REAL",      # last /meditate (passive Qi gathers from here)
+    "qi_collected_at":      "REAL",      # passive Qi was last banked here (it gathers from this time on)
     "seclusion_start":      "REAL",
     "seclusion_end":        "REAL",
     "fate_rerolls":         "INTEGER NOT NULL DEFAULT 0",    # Lotus Coin rerolls used (cost ×1.5 each)
@@ -144,6 +144,12 @@ PLAYER_COLUMNS = {
     # /duel (docs/pvp.md)
     "duels_won":            "INTEGER NOT NULL DEFAULT 0",
     "duels_lost":           "INTEGER NOT NULL DEFAULT 0",
+    # Qi kept while the bar is full at a gate (bot/player.py add_qi); flows on after a breakthrough
+    "qi_overflow":          "REAL NOT NULL DEFAULT 0",
+    # "Your Qi is full" ping (bot/passive.py, /settings)
+    "qi_pings":             "INTEGER NOT NULL DEFAULT 1",    # 0 = the player turned the pings off
+    "qi_ping_gate":         "TEXT",                          # the gate ("Mortal:3") already pinged about
+    "last_channel_id":      "INTEGER",                       # where the player last used the bot
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
@@ -226,9 +232,9 @@ def get_techniques(conn, user_id, equipped_only=True):
 def server_rank(conn, user_id, realm_order):
     """1-based rank by realm, then layer, then Qi. realm_order: list of realm names, lowest first."""
     me = get_player(conn, user_id)
-    key = lambda p: (realm_order.index(p["realm"]), p["layer"], p["qi"])
+    key = lambda p: (realm_order.index(p["realm"]), p["layer"], p["qi"] + (p["qi_overflow"] or 0))
     mine = key(me)
-    ahead = sum(1 for r in conn.execute("SELECT realm, layer, qi FROM players") if key(r) > mine)
+    ahead = sum(1 for r in conn.execute("SELECT realm, layer, qi, qi_overflow FROM players") if key(r) > mine)
     return ahead + 1
 
 

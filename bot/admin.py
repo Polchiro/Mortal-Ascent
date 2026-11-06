@@ -57,7 +57,7 @@ def give(conn, user_id, lotus_coins=0, moon_pearls=0, qi=0.0, now=None):
     if qi:
         techs = db.get_techniques(conn, user_id)
         p, events = rules.add_qi(p, qi, techs, now=now)
-        fields.update(qi=p["qi"], layer=p["layer"])
+        fields.update(qi=p["qi"], qi_overflow=p["qi_overflow"], layer=p["layer"])
     db.update_player(conn, user_id, **fields)
     return events
 

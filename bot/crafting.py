@@ -634,7 +634,8 @@ def use_pill(conn, user_id, item, now=None):
         qi = rate * pill_spec(kind, grade)["hours"] * strength
         db.remove_item(conn, item["id"])
         p, events = rules.add_qi(p, qi, techs, now=now)
-        db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], toxicity=tox, toxicity_at=now)
+        db.update_player(conn, user_id, qi=p["qi"], qi_overflow=p["qi_overflow"], layer=p["layer"], toxicity=tox,
+                         toxicity_at=now)
         return "\n".join([f"⚡ The **{item['name']}** bursts in your dantian: **+{qi:,.1f} Qi**. Toxicity: {tox}." + note]
                          + events)
     # mending

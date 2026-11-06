@@ -88,13 +88,18 @@ def attributes_panel(img, data, box):
     d = ImageDraw.Draw(img)
     y += 24
     frac = qi["qi"] / qi["capacity"] if qi["capacity"] else 0
-    t.bar(img, (x0 + 20, y, x1 - 20, y + 20), frac, t.EMBER, f"{short(qi['qi'])} / {short(qi['capacity'])}")
+    label = f"{short(qi['qi'])} / {short(qi['capacity'])}"
+    if qi.get("overflow_text", "").startswith("Qi bar full"):
+        label = qi["overflow_text"]        # "Qi bar full · +180 Qi waiting behind the bottleneck"
+    t.bar(img, (x0 + 20, y, x1 - 20, y + 20), frac, t.EMBER, label)
     d = ImageDraw.Draw(img)
     y += 36
     rows = [("flame", "Qi Rate", f"{qi['rate']:,.1f}/h  ×{qi['mult']:.2f}".replace(".0/h", "/h")),
             ("hourglass", "Bar full in", qi["eta"]),
             ("star", "Next", f"{qi['gate']}  ·  {qi['gate_note']}")]
-    if qi["pending"] >= 0.05:
+    if qi.get("overflow_text") and not qi["overflow_text"].startswith("Qi bar full"):
+        rows.insert(1, ("pill", "Waiting", f"+{short(qi['overflow'])} Qi behind the gate"))   # refilling after a fail
+    elif qi["pending"] >= 0.05:
         rows.insert(1, ("pill", "Waiting", f"+{short(qi['pending'])} {qi['pending_label']}"))
     f_k = font("Inter.ttf", 13, "SemiBold")
     f_v = font("Inter.ttf", 13, "Medium")
