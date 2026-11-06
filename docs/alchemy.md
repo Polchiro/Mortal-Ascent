@@ -113,12 +113,26 @@ Every herb has an age. Older herbs are rarer and make crafting easier.
 1. `/gather` opens **one gathering message** that updates in place
 2. The bot names the herb you are looking for and its description:
    > 🌿 *You search the misty slope for **Silver Moss**. It glows faintly and grows only on north-facing stones...*
-3. **4 plant buttons** appear — one real herb, the rest decoys and other plants
+3. **4 numbered choices** appear — one real herb, the rest decoys and other plants
 4. Pick before time runs out:
    - ✅ **Correct:** you get the herb (age is rolled)
    - ☠️ **Decoy:** poisoned — lose 5% HP (never below 1), nothing gathered
    - ⏳ **Too slow:** nothing gathered
-5. Press **🌿 Gather Again** to continue in the same message
+5. Press **🌿 Gather Again** to continue in the same message. **Stop** ends gathering; pressing it during a round
+   counts that round as missed (like a timeout).
+
+### The herb field card
+The message is one image card, edited every round (cards/herbfield.py, data in bot/gather_card.py):
+
+- **Top:** the place being searched, the *You are looking for* plate (herb icon, name, tier, type, what it is used
+  for, the description), a countdown ring and the Herbal Insight streak with its bonus
+- **Choice cards (4, or 6 for old herbs):** a number, a small drawn plant and a short **look** text. Every herb and
+  decoy has its own look in `alchemy.LOOKS`: what you *see*, worded differently from the description, so a pick
+  means reading the description, not matching the same words. A decoy's picture and look differ from its herb in
+  the same one detail as its description (grey tips, a south-facing stone, cold instead of warm, near bones ...).
+- **This session** (herbs gathered with ages, best find) and **Careful** (what a decoy costs, your HP)
+- After a pick the same card rings the real herb in green and a wrong pick in red
+- Buttons **1–4** (or **1–6**) with drawn number icons, and **Stop**. The Wandering Spirit check has its own small card.
 
 | Herb tier | Time to pick |
 |---|---|

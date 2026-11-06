@@ -111,8 +111,21 @@ def test_a_round_has_the_herb_and_a_decoy(conn):
         labels = [label for _, label, _ in r.options]
         assert len(set(labels)) == len(labels)
         right = dict((k, label) for k, label, _ in r.options)[r.answer]
-        assert right == alchemy.HERBS[r.herb["grade"]][r.herb["data"]["type"]][1]
+        name, desc = alchemy.HERBS[r.herb["grade"]][r.herb["data"]["type"]]
+        assert right == alchemy.LOOKS[name] and right != desc       # the look, never the description's words
+        assert r.names[r.answer] == name and r.place
         assert r.decoys and r.answer not in r.decoys
+
+
+def test_every_herb_and_decoy_has_its_own_look():
+    plants = [p for t in alchemy.HERBS.values() for p in t.values()] + [p for d in alchemy.DECOYS.values() for p in d]
+    assert set(alchemy.LOOKS) == {name for name, _ in plants}
+    for name, desc in plants:
+        look = alchemy.LOOKS[name]
+        assert look.lower() != desc.lower() and look not in desc and desc not in look
+    for tier in alchemy.HERBS:                 # within a tier no two plants look alike
+        looks = [alchemy.LOOKS[n] for n, _ in alchemy.HERBS[tier].values()] + [alchemy.LOOKS[n] for n, _ in alchemy.DECOYS[tier]]
+        assert len(set(looks)) == len(looks)
 
 
 def test_right_pick_gathers_and_builds_the_streak(conn):
@@ -204,7 +217,6 @@ def test_index_lists_every_herb_decoy_and_pill():
 
 def test_gather_view_plays_rounds_and_times_out(conn):
     import asyncio
-    from types import SimpleNamespace
 
     new_player(conn)
 
@@ -212,13 +224,30 @@ def test_gather_view_plays_rounds_and_times_out(conn):
         def __init__(self, c):
             self.conn, self.db_lock, self.busy = c, asyncio.Lock(), {(1, "gather")}
 
+    class Response:
+        def __init__(self, it):
+            self.it, self.done = it, False
+
+        def is_done(self):
+            return self.done
+
+        async def defer(self, **kw):
+            self.done = True
+
+        async def edit_message(self, **kw):
+            self.done = True
+            self.it.edits.append(kw)
+
     class FakeInteraction:
         def __init__(self):
             self.edits = []
-            self.response = SimpleNamespace(edit_message=self.edit)
+            self.response = Response(self)
 
-        async def edit(self, **kw):
+        async def edit_original_response(self, **kw):
             self.edits.append(kw)
+
+        async def original_response(self):
+            return FakeMessage()
 
     class FakeMessage:
         def __init__(self):
@@ -230,28 +259,70 @@ def test_gather_view_plays_rounds_and_times_out(conn):
     async def go():
         bot = FakeBot(conn)
         view = gathering.GatherView(bot, 1, random.Random(5))
-        view.message = FakeMessage()
         r = view.g.round
-        assert len([c for c in view.children if c.emoji and c.emoji.name == "🌿"]) == len(r.options)
+        n = len(r.options)
+        assert [c.label for c in view.children] == [str(i + 1) for i in range(n)] + ["Stop"]
+        it = FakeInteraction()
+        await view.send(it)
+        view.timer.cancel()
+        kw = it.edits[-1]
+        assert kw["attachments"][0].filename == "gather.jpg" and r.herb["name"] in kw["content"]
+        assert r.options[0][1] in kw["content"]                    # the looks are readable in the text too
         it = FakeInteraction()
         await view.resolve(r.answer, 1.0, it)
         assert "Gather Again" in [c.label for c in view.children]
-        assert "✅" in it.edits[-1]["embed"].description
+        assert "✅" in it.edits[-1]["content"] and it.edits[-1]["attachments"]
         it = FakeInteraction()
         await view.on_again(it)
         r2 = view.g.round
         assert r2 is not None
+        view.message = FakeMessage()
         r2.seconds = 0.01                                   # let the round run out
         view.timer.cancel()
         gathering.TIMER_GRACE_SECONDS, grace = 0.0, gathering.TIMER_GRACE_SECONDS
         try:
             view.start_timer()
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(1.5)
         finally:
             gathering.TIMER_GRACE_SECONDS = grace
-        assert view.g.round is None and "Too slow" in view.message.edits[-1]["embed"].description
+        assert view.g.round is None and "Too slow" in view.message.edits[-1]["content"]
         await view.on_stop(FakeInteraction())
         assert (1, "gather") not in bot.busy
         view.timer.cancel()
 
+    asyncio.run(go())
+
+
+def test_stop_during_a_round_counts_it_as_missed(conn):
+    import asyncio
+
+    new_player(conn)
+    db.update_player(conn, 1, herb_streak=7, spirit_check_in=99)
+
+    class FakeBot:
+        def __init__(self, c):
+            self.conn, self.db_lock, self.busy = c, asyncio.Lock(), {(1, "gather")}
+
+    class Response:
+        done = False
+
+        def is_done(self):
+            return self.done
+
+        async def defer(self, **kw):
+            self.done = True
+
+    class FakeInteraction:
+        def __init__(self):
+            self.response, self.edits = Response(), []
+
+        async def edit_original_response(self, **kw):
+            self.edits.append(kw)
+
+    async def go():
+        view = gathering.GatherView(FakeBot(conn), 1, random.Random(5))
+        it = FakeInteraction()
+        await view.on_stop(it)
+        assert view.g.over and db.get_player(conn, 1)["herb_streak"] == 0
+        assert "head home" in it.edits[-1]["content"] and it.edits[-1]["view"] is None
     asyncio.run(go())

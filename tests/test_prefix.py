@@ -115,7 +115,7 @@ def test_commands_run_from_a_message(bot):
     handled, sent = run(bot, "m index pills")
     assert sent[0].kw["view"] is not None
     handled, sent = run(bot, "m gather")
-    assert "Gathering Herbs" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
+    assert sent[0].kw["files"][0].filename == "gather.jpg" and sent[0].kw["view"] is not None
     handled, sent = run(bot, "m craft")
     assert "Alchemy Cauldron" in sent[0].kw["embed"].title and sent[0].kw["view"] is not None
     handled, sent = run(bot, "m herbs")
