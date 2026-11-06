@@ -1,21 +1,21 @@
 """
-Fight and craft button icons as the bot's application emojis (docs/combat.md, docs/alchemy.md).
+Fight, craft, explore and gather button icons as the bot's application emojis (docs/combat.md, docs/alchemy.md).
 
-At startup the medallion icons from cards/battle_icons.py and cards/alchemy_icons.py are uploaded once as
-application emojis named ma_<key>. If that fails (no permission, rate limit, offline tests), buttons use
-normal emojis.
+At startup the medallion icons from cards/battle_icons.py, cards/alchemy_icons.py and cards/wild_icons.py are
+uploaded once as application emojis named ma_<key>. If that fails (no permission, rate limit, offline tests),
+buttons use normal emojis.
 """
 import logging
 
 import discord
 
-from cards import alchemy_icons, battle_icons
+from cards import alchemy_icons, battle_icons, wild_icons
 
 from . import render as card_render
 
 log = logging.getLogger("mortal-ascent")
 PREFIX = "ma_"
-ICON_SETS = (battle_icons, alchemy_icons)
+ICON_SETS = (battle_icons, alchemy_icons, wild_icons)
 
 
 class Emojis:
@@ -27,7 +27,7 @@ class Emojis:
         if key not in self.custom and key in battle_icons.TECH_SCHOOL:     # a technique icon that didn't upload
             key2 = battle_icons.TECH_SCHOOL[key]
             return self.custom.get(key2) or battle_icons.FALLBACK.get(key2)
-        return self.custom.get(key) or battle_icons.FALLBACK.get(key) or alchemy_icons.FALLBACK.get(key)
+        return self.custom.get(key) or next((m.FALLBACK[key] for m in ICON_SETS if key in m.FALLBACK), None)
 
     async def setup(self, client):
         try:

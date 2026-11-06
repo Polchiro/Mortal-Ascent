@@ -112,8 +112,9 @@ class MessageInteraction:
         return self._original
 
     async def edit_original_response(self, **kwargs):
-        if self._original is None:
-            return await self._send(**{k: v for k, v in kwargs.items() if k != "attachments"})
+        if self._original is None:          # after defer(): the first reply carries the new files
+            files = kwargs.pop("attachments", None)
+            return await self._send(**kwargs, files=files or None)
         return await self._original.edit(**kwargs)
 
     async def delete_original_response(self):

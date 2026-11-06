@@ -268,9 +268,8 @@ def register_commands(bot):
         sent = False
         try:
             view = ExploreView(bot, uid)
-            await interaction.response.send_message(embed=view.embed(), view=view)
+            await view.send(interaction)
             sent = True
-            view.message = await interaction.original_response()
         except Exception:
             if not sent:      # never shown: give the cooldown back (once shown, the view's timeout ends it)
                 release_session(bot, uid, "explore", "explore")

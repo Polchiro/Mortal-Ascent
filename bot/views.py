@@ -26,9 +26,12 @@ from . import player as rules
 from . import result_cards
 from cards.activity import render_explore, render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
-from .fight_view import FightMixin
+from . import explore_card
+from .fight_view import FightMixin, jpg
 from . import render as card_render
 from cards.battle import render_battle
+from cards.expedition import render_crossroads, render_encounter
+from cards import wild_icons
 import battle as battle_data
 
 log = logging.getLogger("mortal-ascent")
@@ -133,6 +136,12 @@ async def announce(interaction, message, line):
         log.warning("Could not post an announcement", exc_info=True)
 
 
+def wild_emoji(bot, key):
+    """An /explore or /gather button icon: the uploaded application emoji, or a plain emoji."""
+    em = getattr(bot, "emojis_ma", None)
+    return (em.get(key) if em else None) or wild_icons.FALLBACK.get(key)
+
+
 def hp_bar(hp, max_hp, width=12):
     filled = round(width * hp / max_hp) if max_hp else 0
     return "▰" * filled + "▱" * (width - filled) + f"  {hp:,}/{max_hp:,}"
@@ -189,11 +198,14 @@ class ExploreView(FightMixin, OwnedView):
             return
         if self.choosing:
             for path in explore.PATHS:
-                self.button(path.title(), self.make_path(path), emoji=PATH_EMOJI[path], style=discord.ButtonStyle.primary)
+                self.button(path.title(), self.make_path(path), emoji=wild_emoji(self.bot, f"path_{path}"))
+            self.button("Return safely", self.on_return, emoji=wild_emoji(self.bot, "explore_return"),
+                        style=discord.ButtonStyle.success)
             return
         if e.pending == "hazard":
             for path in explore.PATHS:
-                self.button(path.title(), self.make_dodge(path), emoji=PATH_EMOJI[path], style=discord.ButtonStyle.danger)
+                self.button(path.title(), self.make_dodge(path), emoji=wild_emoji(self.bot, f"path_{path}"),
+                            style=discord.ButtonStyle.danger)
             return
         if e.pending == "stranger":
             self.button(f"Give 🪷 {e.stranger_cost}", self.make_help("coins"), emoji="🪷")
@@ -207,33 +219,63 @@ class ExploreView(FightMixin, OwnedView):
             self.button(f"{m['herb']} · 🪷 {m['herb_price']}", self.make_buy("herb"), emoji="🌿", row=0,
                         disabled="herb" in m["bought"])
         if e.step < explore.MAX_STEPS:
-            self.button("Go deeper", self.on_deeper, emoji="🔦", style=discord.ButtonStyle.primary, row=1)
-        self.button("Return safely", self.on_return, emoji="🏮", style=discord.ButtonStyle.success, row=1)
+            self.button("Go deeper", self.on_deeper, emoji=wild_emoji(self.bot, "explore_deeper"),
+                        style=discord.ButtonStyle.primary, row=1)
+        self.button("Return safely", self.on_return, emoji=wild_emoji(self.bot, "explore_return"),
+                    style=discord.ButtonStyle.success, row=1)
 
     merchant_step = None
 
     lair_posted = False
     news_sent = False
 
-    async def update(self, interaction, fight_file=None):
+    def content(self):
+        """The readable line(s) above the card: Discord shows the card small on a computer."""
+        e = self.exp
+        if self.choosing:
+            text = f"**Step {e.step} of {explore.MAX_STEPS}** · three paths ahead. Which way?"
+        else:
+            text = "\n".join(e.story) or f"**Step {e.step} of {explore.MAX_STEPS}**"
+        if self.notice:
+            text += f"\n*{self.notice}*"
+        return text[:1900]
+
+    async def card_file(self):
+        """The crossroads or the encounter as a JPEG (rendered on the card thread), or None if it can't be drawn."""
+        try:
+            if self.choosing:
+                img = await card_render.render(render_crossroads, explore_card.crossroads_data(self.exp))
+            else:
+                img = await card_render.render(render_encounter, explore_card.encounter_data(self.exp, self.notice))
+        except Exception:
+            log.exception("Could not render the explore card")
+            return None
+        return jpg(img, "explore.jpg")
+
+    async def message_kwargs(self):
+        file = await self.card_file()
+        if file:
+            return dict(content=self.content(), embed=None, attachments=[file], view=self)
+        return dict(content=None, embed=self.embed(), attachments=[], view=self)
+
+    async def send(self, interaction):
+        """The first message of the expedition: answer Discord at once, then put the card in."""
+        await interaction.response.defer()
+        await interaction.edit_original_response(**await self.message_kwargs())
+        self.message = await interaction.original_response()
+
+    async def update(self, interaction):
         """Show the expedition step. `interaction` may be fresh, already deferred, or None (a timer)."""
         self.build()
+        if interaction and not interaction.response.is_done():
+            await interaction.response.defer()            # rendering takes a moment: answer Discord first
         if self.exp.over:
-            if interaction and not interaction.response.is_done():
-                await interaction.response.defer()
             file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
             kw = (dict(content=None, embed=None, attachments=[file], view=None) if file
                   else dict(content=None, embed=self.embed(), attachments=[], view=None))
         else:
-            emb = self.embed()
-            kw = dict(content=None, embed=emb, view=self, attachments=[])
-            if fight_file:
-                emb.set_image(url=f"attachment://{fight_file.filename}")
-                kw["attachments"] = [fight_file]
-        if interaction and not interaction.response.is_done():
-            await interaction.response.edit_message(**kw)
-        else:
-            await self.edit_fight_message(interaction, **kw)
+            kw = await self.message_kwargs()
+        await self.edit_fight_message(interaction, **kw)
         self.notice = None
         if self.exp.lair and not self.lair_posted and interaction:
             self.lair_posted = True
@@ -259,12 +301,11 @@ class ExploreView(FightMixin, OwnedView):
         return True
 
     async def on_fight_end(self, interaction):
-        file = await self.fight_card_file()       # the final card, shown above the story
         async with self.bot.db_lock:
             self.exp.end_fight()
         self.fight = None
         self.choosing = False
-        await self.update(interaction, fight_file=file)
+        await self.update(interaction)              # the result, drawn over the beast's own scene
 
     def make_path(self, path):
         async def cb(interaction):
