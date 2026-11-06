@@ -33,6 +33,21 @@ def test_tutorial_pages_fit_discord_limits():
         assert fits_discord(guide.lesson_embed(i))
 
 
+def test_tutorial_teaches_craft_and_forge_step_by_step():
+    """The /craft and /forge lessons name the real buttons, so a new player can follow them."""
+    text = "\n".join(f"{t}\n{w}\n" + "\n".join(f"{n}\n{v}" for n, v in fields) for t, w, fields in guide.LESSONS)
+    for button in ["Begin", "Stoke", "Fan", "Hold", "Condense", "Circulate", "Compress", "Use oldest herbs",
+                   "Choose a pill to craft", "Choose gear to forge", "Enchant", "Reroll", "Replace", "Pump", "Vent",
+                   "Keep heating", "Pull it out", "Strike Hard", "Strike Light", "Reheat", "Water", "Oil",
+                   "Wait a breath", "Plunge"]:
+        assert button in text, button
+    import alchemy
+    from bot import crafting
+    assert crafting.PULSES[4] in text   # the moment to press Condense
+    assert alchemy.QI_PILLS["Mortal"]["name"] in text
+    assert sum("Step 1" in n for _, _, fields in guide.LESSONS for n, _ in fields) == 2
+
+
 def test_every_section_and_tier_renders():
     from cards.compendium import render_compendium
     seen = set()
