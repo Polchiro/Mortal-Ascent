@@ -1,9 +1,10 @@
 """
 /gather — collecting herbs for alchemy (docs/alchemy.md, section 2).
 
-One gathering message updates in place. Each round names the herb you are looking for and
-describes it; the buttons describe the plants in front of you. Pick the one that matches the
-description before time runs out. Decoys look almost the same with one detail wrong.
+One gathering message updates in place: the herb field card (cards/herbfield.py). Each round names the
+herb you are looking for and describes it; the numbered choice cards show the plants in front of you,
+each drawn and described by its LOOK (alchemy.LOOKS), worded differently from the description. Pick the
+one that matches before time runs out. Decoys look almost the same with one detail wrong.
 
 Gathering holds all state and has no Discord code, so it can be tested directly.
 GatherView drives it with buttons.
@@ -18,7 +19,7 @@ import discord
 
 import alchemy
 
-from . import db, gear, loot
+from . import db, gather_card, gear, loot
 from . import player as rules
 from .views import COLOR, OwnedView
 
@@ -53,6 +54,9 @@ class Round:
     herb: dict = None           # the herb gathered on a right pick
     old: bool = False           # a 100-year+ herb that fights back
     decoys: set = field(default_factory=set)
+    names: dict = field(default_factory=dict)   # option key → the plant's name (for its drawing on the card)
+    place: str = ""
+    shown: str = ""             # the sign the Wandering Spirit asks for (spirit rounds)
 
 
 class Gathering:
@@ -92,15 +96,16 @@ class Gathering:
         name, desc = alchemy.HERBS[tier][type_]
         old = age >= alchemy.OLD_HERB_FROM_AGE
         n = alchemy.OLD_HERB_CHOICES if old else alchemy.GATHER_CHOICES
-        others = [("decoy", d) for _, d in alchemy.DECOYS[tier]]
-        others += [("plant", alchemy.HERBS[tier][t][1]) for t in alchemy.HERBS[tier] if t != type_]
+        # the choices show each plant's LOOK (alchemy.LOOKS), never the description you are given
+        others = [("decoy", d) for d, _ in alchemy.DECOYS[tier]]
+        others += [("plant", alchemy.HERBS[tier][t][0]) for t in alchemy.HERBS[tier] if t != type_]
         self.rng.shuffle(others)
         # always at least one decoy, so every round has a trap to read past
         picked = [o for o in others if o[0] == "decoy"][:1]
         picked += [o for o in others if o not in picked][:n - 1 - len(picked)]
-        options = [("herb", desc)] + picked
+        options = [("herb", name)] + picked
         self.rng.shuffle(options)
-        keyed = [(f"o{i}", kind, text) for i, (kind, text) in enumerate(options)]
+        keyed = [(f"o{i}", kind, plant) for i, (kind, plant) in enumerate(options)]
         answer = next(k for k, kind, _ in keyed if kind == "herb")
         seconds = alchemy.GATHER_SECONDS[tier]
         place = self.rng.choice(PLACES)
@@ -109,16 +114,18 @@ class Gathering:
             seconds = max(alchemy.OLD_HERB_MIN_SECONDS, seconds - alchemy.OLD_HERB_SECONDS_LESS)
             prompt = (f"✨ *A **{age}-year {name}**! It senses you and begins to sink into the earth...*\n"
                       f"> *{desc}*")
-        return Round("herb", prompt, [(k, text, "🌿") for k, _, text in keyed], answer, seconds,
+        return Round("herb", prompt, [(k, alchemy.LOOKS[plant], "🌿") for k, _, plant in keyed], answer, seconds,
                      herb=loot.herb(tier, type_, age), old=old,
-                     decoys={k for k, kind, _ in keyed if kind == "decoy"})
+                     decoys={k for k, kind, _ in keyed if kind == "decoy"},
+                     names={k: plant for k, _, plant in keyed}, place=place)
 
     def _spirit_round(self):
         signs = self.rng.sample(SPIRIT_SIGNS, 4)
         want = self.rng.choice(signs)
         prompt = (f"👻 A **Wandering Spirit** drifts out of the mist and blocks your path.\n"
                   f"*\"Press the button showing {want[2]},\"* it whispers.")
-        return Round("spirit", prompt, [(k, "", e) for k, e, _ in signs], want[0], SPIRIT_CHECK_SECONDS)
+        return Round("spirit", prompt, [(k, "", e) for k, e, _ in signs], want[0], SPIRIT_CHECK_SECONDS,
+                     shown=want[2])
 
     # ── answers ──────────────────────────────────────────────────────
 
@@ -221,6 +228,8 @@ def gather_blocked(p, now=None):
 # ── Discord ───────────────────────────────────────────────────────────
 
 class GatherView(OwnedView):
+    """One message, edited every round: the herb field card (cards/herbfield.py) with numbered buttons."""
+
     def __init__(self, bot, owner_id, rng=None):
         super().__init__(owner_id, timeout=IDLE_TIMEOUT)
         self.bot = bot
@@ -228,10 +237,13 @@ class GatherView(OwnedView):
         self.result = None
         self.shown_at = None
         self.timer = None
+        self.last = None            # (round, picked key) of the round just answered, for the result card
+        self.place = None
         self.g.next_round()
         self.build()
 
     def embed(self):
+        """Text fallback when the card can't be drawn."""
         p = self.g.player
         r = self.g.round
         e = discord.Embed(title="🌿 Gathering Herbs", color=COLOR)
@@ -241,6 +253,8 @@ class GatherView(OwnedView):
         if r:
             lines.append(r.prompt)
             if r.kind == "herb":
+                lines.append("")
+                lines += [f"**{i + 1}** · {label}" for i, (_, label, _) in enumerate(r.options)]
                 lines.append("\nPick the plant that matches the description. Read carefully: "
                              "poisonous look-alikes differ in one detail.")
             e.set_footer(text=f"⏳ {r.seconds:g} seconds to choose")
@@ -253,6 +267,24 @@ class GatherView(OwnedView):
             e.set_footer(text="Gather as long as you like. The NPC merchant does not buy herbs.")
         return e
 
+    def content(self, deadline=None):
+        """The readable text above the card (Discord shows the card small on a computer)."""
+        r = self.g.round
+        if r and r.kind == "herb":
+            text = f"Find the **{r.herb['name']}** before it slips away."
+            text += "\n" + "\n".join(f"**{i + 1}** · {label}" for i, (_, label, _) in enumerate(r.options))
+        elif r:
+            text = "👻 A Wandering Spirit blocks your path. Press the sign it asks for."
+        else:
+            text = self.result or ""
+            if self.g.over:
+                text += "\n" + self.summary()
+            else:
+                text += f"\n{streak_text(self.g.player['herb_streak'])}"
+        if r and deadline:
+            text += f"\n⏳ Time runs out <t:{int(deadline)}:R>"
+        return text.strip()[:1900]
+
     def summary(self):
         if not self.g.gathered:
             return "You leave the wilds empty-handed."
@@ -264,13 +296,75 @@ class GatherView(OwnedView):
     def build(self):
         self.clear_items()
         r = self.g.round
-        if r:
-            for i, (key, label, emoji) in enumerate(r.options):
-                self.button(label[:80] or None, self.make_pick(key), emoji=emoji,
-                            style=discord.ButtonStyle.secondary, row=i // (2 if r.kind == "herb" else 4))
+        if r and r.kind == "herb":
+            n = len(r.options)
+            for i, (key, _, _) in enumerate(r.options):
+                self.button(str(i + 1), self.make_pick(key), emoji=_emoji(self.bot, f"gather_{i + 1}"),
+                            row=0 if n <= 4 else i // 3)
+            self.button("Stop", self.on_stop, emoji=_emoji(self.bot, "gather_stop"), row=0 if n <= 4 else 1)
+        elif r:
+            for key, _, emoji in r.options:
+                self.button(None, self.make_pick(key), emoji=emoji, style=discord.ButtonStyle.secondary, row=0)
         elif not self.g.over:
-            self.button("Gather Again", self.on_again, emoji="🌿", style=discord.ButtonStyle.success)
-            self.button("Stop", self.on_stop, emoji="🏮")
+            self.button("Gather Again", self.on_again, emoji=_emoji(self.bot, "gather_again"),
+                        style=discord.ButtonStyle.success)
+            self.button("Stop", self.on_stop, emoji=_emoji(self.bot, "gather_stop"))
+
+    # ── the card ─────────────────────────────────────────────────────
+
+    async def card_file(self):
+        """The herb field (or the spirit) as a JPEG rendered on the card thread, or None if it can't be drawn."""
+        from cards.herbfield import render_field, render_spirit
+        from .fight_view import jpg
+        from . import render as card_render
+        r, result, picked = self.g.round, None, None
+        if r is None and self.last:
+            (r, picked), result = self.last, self.result
+        if r is None:
+            return None
+        try:
+            p = self.g.player
+            if r.kind == "spirit":
+                data = gather_card.spirit_data(self.g, p, r, result)
+                data["place"] = self.place or data["place"]
+                img = await card_render.render(render_spirit, data)
+            else:
+                img = await card_render.render(render_field, gather_card.field_data(self.g, p, r, result, picked))
+        except Exception:
+            log.exception("Could not render the gather card")
+            return None
+        return jpg(img, "gather.jpg")
+
+    async def show(self, interaction=None, view=True):
+        """Render the card and edit the one gathering message (through the interaction when there is one)."""
+        r = self.g.round
+        if r and r.kind == "herb":
+            self.place = r.place
+        if interaction is not None and not interaction.response.is_done():
+            await interaction.response.defer()
+        file = await self.card_file()
+        deadline = time.time() + r.seconds if r else None
+        if file:
+            kw = dict(content=self.content(deadline), embed=None, attachments=[file], view=self if view else None)
+        else:
+            kw = dict(content=None, embed=self.embed(), attachments=[], view=self if view else None)
+        try:
+            if interaction is not None:
+                await interaction.edit_original_response(**kw)
+                return
+        except discord.HTTPException:
+            log.warning("Editing the gathering through the interaction failed", exc_info=True)
+        if self.message is not None:
+            await self.message.edit(**kw)
+
+    async def send(self, interaction):
+        """The first message: answer Discord at once, put the card in, then start the round's timer."""
+        await interaction.response.defer()
+        await self.show(interaction)
+        self.message = await interaction.original_response()
+        self.start_timer()
+
+    # ── rounds ───────────────────────────────────────────────────────
 
     def make_pick(self, key):
         async def cb(interaction):
@@ -279,28 +373,29 @@ class GatherView(OwnedView):
 
     async def resolve(self, key, elapsed, interaction=None):
         """Answer the current round (key None = time ran out) and show the result."""
-        if not self.g.round:
+        r = self.g.round
+        if not r:
             return
         if self.timer and interaction is not None:
             self.timer.cancel()
         async with self.bot.db_lock:
             self.result = self.g.answer(key, elapsed)
+        self.last = (r, key)
         self.build()
         if self.g.over:
             self.finish()
-        if interaction is not None:
-            await interaction.response.edit_message(embed=self.embed(), view=self)
-        elif self.message:
-            await self.message.edit(embed=self.embed(), view=self)
+        await self.show(interaction, view=not self.g.over)
 
     async def show_round(self, interaction):
-        await interaction.response.edit_message(embed=self.embed(), view=self)
+        await self.show(interaction)
         self.start_timer()
 
     def start_timer(self):
         """Call right after the round is on screen: time it, and end it as 'too slow' if nobody picks."""
         self.shown_at = time.monotonic()
         r = self.g.round
+        if r is None:
+            return
 
         async def expire():
             await asyncio.sleep(r.seconds + TIMER_GRACE_SECONDS)
@@ -320,9 +415,11 @@ class GatherView(OwnedView):
         if why:
             self.g.over = True
             self.result = why
+            self.last = None
             self.build()
             self.finish()
-            await interaction.response.edit_message(embed=self.embed(), view=self)
+            await interaction.response.edit_message(content=why + "\n" + self.summary(), embed=None,
+                                                    attachments=[], view=None)
             return
         self.result = None
         self.g.next_round()
@@ -330,11 +427,20 @@ class GatherView(OwnedView):
         await self.show_round(interaction)
 
     async def on_stop(self, interaction):
+        r = self.g.round
+        if r is not None:                 # stopping mid-round counts that round as missed, like a timeout
+            if self.timer:
+                self.timer.cancel()
+            async with self.bot.db_lock:
+                missed = self.g.answer(None, r.seconds + TIMER_GRACE_SECONDS)
+            self.last = (r, None)
+            self.result = f"{missed}\n🏮 You shoulder your basket and head home."
+        else:
+            self.result = (self.result + "\n" if self.result else "") + "🏮 You shoulder your basket and head home."
         self.g.over = True
-        self.result = "🏮 You shoulder your basket and head home."
         self.build()
         self.finish()
-        await interaction.response.edit_message(embed=self.embed(), view=self)
+        await self.show(interaction, view=False)
 
     def finish(self):
         self.stop()
@@ -342,18 +448,27 @@ class GatherView(OwnedView):
 
     async def on_timeout(self):
         try:
-            if self.g.round:
+            r = self.g.round
+            if r:
                 async with self.bot.db_lock:
                     self.g.answer(None, IDLE_TIMEOUT)
+                self.last = (r, None)
             self.g.over = True
             self.result = "🌙 Dusk falls and you head home."
             self.clear_items()
             if self.message:
-                await self.message.edit(embed=self.embed(), view=None)
+                await self.show(None, view=False)
         except Exception:
             log.exception("Gather timeout handling failed")
         finally:
             self.bot.busy.discard((self.owner_id, "gather"))
+
+
+def _emoji(bot, key):
+    """A gather button icon: the uploaded application emoji, or a plain emoji."""
+    from cards import wild_icons
+    em = getattr(bot, "emojis_ma", None)
+    return (em.get(key) if em else None) or wild_icons.FALLBACK.get(key)
 
 
 def hp_line(hp, max_hp):
@@ -381,9 +496,7 @@ def register(bot):
         bot.busy.add((uid, "gather"))
         try:
             view = GatherView(bot, uid)
-            await interaction.response.send_message(embed=view.embed(), view=view)
-            view.message = await interaction.original_response()
-            view.start_timer()
+            await view.send(interaction)
         except Exception:
             bot.busy.discard((uid, "gather"))
             raise

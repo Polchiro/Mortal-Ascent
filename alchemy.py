@@ -75,6 +75,47 @@ DECOYS = {
                ("Void Fruit", "Glowing fruit that casts no shadow")],
 }
 
+# herb or decoy name → its "look": what you SEE when it grows in front of you (the /gather choice cards).
+# Written differently from the description on purpose, so finding the herb means reading, not matching words.
+# A decoy's look differs from its herb's look in the same one detail as its description.
+LOOKS = {
+    # Mortal
+    "Spirit Grass":    "Slender green blades swaying in still air",
+    "Red Berry":       "A cluster of little red berries, sweetly scented",
+    "Dew Leaf":        "A wide leaf cupping one round dewdrop",
+    "Iron Root":       "A dull grey-black root, sunk deep and heavy",
+    "Ghost Grass":     "Slender green blades swaying, their tips gone grey",
+    "Bitter Nettle":   "Little red berries tucked under spiky leaves",
+    # Yellow
+    "Sun Ginseng":     "A golden root giving off warmth",
+    "Blood Flower":    "A deep red bloom with dark lines on its petals",
+    "Silver Moss":     "Faintly glowing moss on a stone facing north",
+    "Stone Root":      "A grey root splitting a solid rock",
+    "Fool's Ginseng":  "A golden root with frost creeping over it",
+    "Snake Moss":      "Faintly glowing moss on a stone facing south",
+    # Mystic
+    "Moon Mushroom":   "A pale blue cap spread wide under the moon",
+    "Heart Lotus":     "A pink lotus whose centre forms a heart",
+    "Jade Lily":       "A green-white lily with a cool jade sheen",
+    "Thunder Root":    "A black root in scorched, split earth",
+    "Shadow Mushroom": "A pale blue cap spread wide under the sun",
+    "Weeping Lily":    "A green-white lily with dark drops running down",
+    # Earth
+    "Golden Ginseng":  "A glowing golden root shaped like a seated man",
+    "Phoenix Flower":  "Ember-orange petals throwing off sparks",
+    "Snow Lily":       "A white lily open in the snow",
+    "Mountain Root":   "A huge root clawing out under a cliff",
+    "Grave Ginseng":   "A seated-man root among scattered bones",
+    "Fire Thorn":      "Ember-orange petals over a nest of thorns",
+    # Heaven
+    "Heaven Lotus":    "A nine-leaf lotus hovering over still water",
+    "Immortal Peach":  "A glowing peach, its shadow on the ground",
+    "Star Dew":        "Dewdrops twinkling like stars in daylight",
+    "Chaos Root":      "A root shimmering through every colour",
+    "Demon Lotus":     "A nine-leaf lotus with a blood-red underside",
+    "Void Fruit":      "A glowing fruit with no shadow beneath it",
+}
+
 # ── Herb age ──────────────────────────────────────────────────────────
 # age: chance, craft score bonus, max pill patterns, extras
 
