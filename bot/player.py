@@ -181,7 +181,9 @@ def next_gate(player):
 def breakthrough_chance(player):
     kind, _ = next_gate(player)
     if kind == "realm":
-        return 1.0 if player["realm"] == "Mortal" else training.REALM_BREAKTHROUGH_SUCCESS
+        if player["realm"] == "Mortal":
+            return 1.0
+        return min(1.0, training.REALM_BREAKTHROUGH_SUCCESS + gear.artifact_bonus(player, "breakthrough_chance"))
     if kind == "phase":
         return training.PHASE_BOTTLENECK_SUCCESS
     return None
@@ -406,11 +408,14 @@ def buff_text(buffs):
 
 def stat_buffs(techniques=(), weapon=None, armor=None):
     """Every % buff by stat, with where it comes from: {"hp": [(source, pct), ...], ...}.
-    Armor buffs add in exactly like weapon buffs (equipment.md)."""
+    Armor buffs add in exactly like weapon buffs (equipment.md), and so do forged stat passives (Keen Edge...)."""
+    from . import passives
     out = {"hp": [], "attack": [], "defense": []}
     for item in (weapon, armor):
         for k, v in weapon_buffs(item).items():
             out[k].append((item["name"], v))
+    for name, k, v in passives.stat_passives([i for i in (weapon, armor) if i]):     # forged passives (forge.py)
+        out[k].append((name, v))
     for t in techniques:
         table = technique.ATTACK_TECHNIQUE if t["type"] == "attack" else technique.DEFENSE_TECHNIQUE
         out["attack" if t["type"] == "attack" else "defense"].append((t["name"], table[t["grade"]][1] * mastery_mult(t)))
@@ -445,7 +450,18 @@ def current_toxicity(player, now=None):
     if not tox or player.get("toxicity_at") is None:
         return tox
     decayed = int((now - player["toxicity_at"]) // (toxicity_decay_hours(player) * 3600))
-    return max(0, tox - decayed)
+    return min(toxicity_cap(player), max(0, tox - decayed))
+
+
+def toxicity_cap(player):
+    """The most toxicity this player can carry: Dao Heart (a forged artifact passive) caps it, else no cap."""
+    from . import passives
+    cap = passives.artifact_passive(player, "dao_heart", "max_toxicity")
+    return cap if cap else float("inf")
+
+
+def add_toxicity(player, tox_now, added):
+    return min(toxicity_cap(player), tox_now + added)
 
 
 def toxicity_decay_hours(player=None):

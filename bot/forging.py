@@ -504,9 +504,8 @@ def finish_forge(conn, user_id, plan, game, rng=random, now=None):
     if capped is None:
         out["title"] = failure_line(plan, rng)
         out["lines"].append(f"💥 **{out['title']}** Score {game.score()} / 100 (below {forge.FAIL_BELOW}).")
-        if passives.has_artifact_passive(p, "second_chance") and db.daily_count(conn, user_id, "second_chance", now) < \
-                passives.artifact_passive(p, "second_chance", "uses_per_day"):
-            db.bump_daily(conn, user_id, "second_chance", now)
+        from .crafting import second_chance
+        if second_chance(conn, user_id, p, now):
             refund_materials(conn, user_id, plan)
             out["refunded"] = True
             out["lines"].append("🍀 **Second Chance:** your artifact catches the pieces. The materials are saved.")

@@ -11,16 +11,18 @@ Each turn:
      Strike beats Break, Guard beats Strike, Break beats Guard; the same move on both sides clashes.
 Fair duel: both use the base stats of the lower player's realm and layer, and weapon / armor / technique
 % buffs count at half strength (pvp.BUFF_SHARE). Combat artifacts work at half strength
-(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH). Technique effects and mastery count fully.
+(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH), and so do forged weapon / armor passives (forge.DUEL_PASSIVE_STRENGTH,
+bot/passives.Kit). Technique effects and mastery count fully.
 """
 import random
 
 import equipments
+import forge
 import pvp
 import stats
 import technique
 
-from . import combat, gear
+from . import combat, gear, passives
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
@@ -52,7 +54,7 @@ def fair_stats(player, techniques, weapon, realm, layer, armor=None):
 class Duelist:
     """One side of the duel."""
 
-    def __init__(self, player, techniques, hp, attack, defense, weapon=None, fx=None):
+    def __init__(self, player, techniques, hp, attack, defense, weapon=None, fx=None, kit=None):
         self.player = player
         self.uid = player["user_id"]
         self.name = player["name"]
@@ -75,11 +77,15 @@ class Duelist:
         self.healed = 0.0                # HP healed by Recover so far (capped per duel)
         self.evaded_turn = -99           # last turn Evade triggered
         self.dealt = 0.0
+        self.kit = kit if kit is not None else passives.kit_for(player)    # forged weapon / armor passives
+        self.no_guard = False            # Thunder Edge: can't Guard this turn
 
     def tech(self, key):
         return self.atk_t if key == "attack_tech" else self.def_t
 
     def ready(self, choice):
+        if self.no_guard and BASE_MOVE.get(choice) == "guard":
+            return False
         if choice in ("attack_tech", "defense_tech"):
             return self.tech(choice) is not None and self.cooldowns[choice] == 0
         return choice in MOVES
@@ -98,7 +104,8 @@ def make_duelist(player, techniques, weapon, realm, layer, armor=None):
     """Fair Duel side: armor counts at half like the weapon, combat artifacts at half strength."""
     hp, atk, dfn = fair_stats(player, techniques, weapon, realm, layer, armor)
     return Duelist(player, techniques, hp, atk, dfn, weapon,
-                   fx=gear.combat_fx(player, equipments.DUEL_COMBAT_ARTIFACT_STRENGTH))
+                   fx=gear.combat_fx(player, equipments.DUEL_COMBAT_ARTIFACT_STRENGTH),
+                   kit=passives.kit_for(player, forge.DUEL_PASSIVE_STRENGTH))
 
 
 def start(p1, techs1, weapon1, p2, techs2, weapon2, rng=None, armor1=None, armor2=None):
@@ -119,6 +126,9 @@ class Duel:
         self.reason = None               # "ko", "forfeit", "timeouts", "time" (turn limit)
         self.log = [("star", f"{a.name} and {b.name} bow to each other. Begin!")]
         self.history = []                # one entry per turn, for the duel log table
+        self.kit_lines = []              # passive lines of the turn being played
+        for d in self.sides:
+            d.kit.rng = self.rng
 
     # ── state ─────────────────────────────────────────────────────────
 
@@ -158,6 +168,8 @@ class Duel:
         if d.pick is not None:
             return f"You already locked in **{d.move_label(d.pick)}** this turn."
         if not d.ready(choice):
+            if d.no_guard and BASE_MOVE.get(choice) == "guard":
+                return "You are stunned (Thunder Edge): you can't Guard this turn."
             if d.tech(choice) is None:
                 return "You have no technique of that kind equipped."
             left = d.cooldowns[choice]
@@ -215,6 +227,7 @@ class Duel:
         if mine == "guard":
             return 0, 0, None
         skill, pierce, hits, stagger = self._skill(att, a_choice)
+        combo = a_choice == "attack_tech" and (tech_effect(att.atk_t) or ("",))[0] == "combo"
         def_tech = d_choice == "defense_tech"
         eff = tech_effect(dfn.def_t) if def_tech else None
         share, note = 1.0, ""
@@ -229,7 +242,10 @@ class Duel:
             else:                                       # Guard beats Strike
                 if dfn.guard_weak > 0:
                     share, note = dfn.guard_weak, "slips through the weakened guard"
+                elif att.kit.can_pierce_guard():
+                    note = "Heaven-Splitting: no guard can stop it!"
                 else:
+                    dfn.kit.guarded()                                           # Riposte
                     blocked = self._hit(att, dfn, skill, pierce, hits)
                     line = f"{att.name} — {label}: blocked by {dfn.name}"
                     back = 0
@@ -267,7 +283,18 @@ class Duel:
         dodge = dfn.fx.get("dodge_chance")
         if dodge and self.rng.random() < dodge:                                 # Feather artifact
             return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} sidesteps it (Feather)")
-        dmg = self._hit(att, dfn, skill, pierce, hits, share)
+        mult, more_pierce, more_hits, lines = att.kit.attack_mods(
+            mine, self.turn, duel=True, target_staggered=dfn.staggered, target_hp_frac=dfn.hp_frac,
+            own_hp_frac=att.hp_frac, combo=combo)
+        dmg = self._hit(att, dfn, skill, min(0.95, pierce + more_pierce), hits + more_hits, share * mult)
+        dmg, back, taken_lines = dfn.kit.taken(dfn, dmg, self.turn, from_break=mine == "break", duel=True)
+        back = min(back, att.max_hp * stats.MAX_HIT_PERCENT)
+        stun, dealt_lines = att.kit.dealt(att, dmg, mine, dfn)
+        if stun:
+            notes.append(("noguard", dfn, 0))
+        self.kit_lines += lines + taken_lines + dealt_lines
+        if dmg <= 0:
+            return 0, back, None
         if stagger and dmg > 0:
             notes.append(("weaken", dfn, stagger))
         jolt = att.fx.get("break_stagger_chance")
@@ -275,7 +302,7 @@ class Duel:
             notes.append(("stagger", dfn, 0))                                   # Thunder artifact
             note = (note + ", " if note else "") + "Thunder: staggered!"
         icon = "sword" if mine == "strike" else "fist"
-        return dmg, 0, (icon, f"{att.name} — {label}: {dmg:,.0f} dmg" + (f", {note}" if note else ""))
+        return dmg, back, (icon, f"{att.name} — {label}: {dmg:,.0f} dmg" + (f", {note}" if note else ""))
 
     def resolve(self):
         """Reveal both picks and play the turn. A player who has not picked Guards (a timeout)."""
@@ -318,14 +345,21 @@ class Duel:
                     d.cooldowns[picks[d]] = 0
                     log.append(("star", f"{d.name} — Focus: {d.tech(picks[d])['name']} is ready again at once!"))
         notes = []
+        self.kit_lines = []
+        for d in self.sides:
+            d.no_guard = False
         dmg_ab, back_a, line_a = self._attack(a, picks[a], b, picks[b], notes)
         dmg_ba, back_b, line_b = self._attack(b, picks[b], a, picks[a], notes)
-        log += [line for line in (line_a, line_b) if line]
+        log += [line for line in (line_a, line_b) if line] + self.kit_lines
+        for d in self.sides:
+            d.kit.moved(BASE_MOVE[picks[d]])
         if BASE_MOVE[picks[a]] == BASE_MOVE[picks[b]] == "guard":
             log.append(("shield", "Both hold their guard. Nothing happens."))
         to_a = round(dmg_ba + back_a)                   # counters (and Mirror) land on the attacker
         to_b = round(dmg_ab + back_b)
         a.hp, b.hp = max(0, a.hp - to_a), max(0, b.hp - to_b)
+        for d in self.sides:
+            log += d.kit.after_taken(d)                 # Second Wind, Undying Blade, Phoenix Rebirth
         a.last_dealt, b.last_dealt = to_b, to_a
         a.dealt += to_b
         b.dealt += to_a
@@ -338,7 +372,12 @@ class Duel:
                 d.hp = min(d.max_hp, d.hp + val)
                 d.healed += val
             elif kind == "stagger":
-                d.staggered = True
+                if d.kit.resists_stun():
+                    log.append(("shield", f"{d.name} stands firm: no stagger"))
+                else:
+                    d.staggered = True
+            elif kind == "noguard":
+                d.no_guard = True
             elif kind == "weaken":
                 d.guard_weak = max(d.guard_weak, min(1.0, val))
         for d in self.sides:
@@ -347,6 +386,16 @@ class Duel:
                 heal = min(d.max_hp - d.hp, max(1, round(d.max_hp * lotus)))
                 d.hp += heal
                 log.append(("herb", f"{d.name} — Lotus: +{heal:,}"))
+        if a.hp > 0 and b.hp > 0:
+            for d in self.sides:
+                log += d.kit.end_turn(d, self.turn, d.cooldowns)
+                bleed = d.kit.bleed_tick(self.other(d).max_hp)
+                if bleed:
+                    o = self.other(d)
+                    o.hp = max(0, o.hp - bleed)
+                    d.dealt += bleed
+                    log.append(("flame", f"{d.name} — Bleeding Cut: {o.name} bleeds −{bleed:,}"))
+                    log += o.kit.after_taken(o)
         self._record(picks, timed, {a: to_b, b: to_a})
         for d in self.sides:
             d.pick = None

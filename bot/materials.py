@@ -6,7 +6,7 @@ Materials are bag items of category "materials" (like Beast Cores) keyed by thei
 They don't use bag slots (forge.MATERIALS_USE_BAG_SLOTS). Every number comes from forge.py.
 
 Every roll_* function returns a list of material items (possibly empty). `bonus` is the Prospector
-artifact passive: every chance is raised by that share (Part 4 passes it in).
+artifact passive: every chance is raised by that share (prospector(player)).
 """
 import random
 
@@ -42,6 +42,12 @@ def material(key, qty=1):
 def icon_kind(key):
     """cards.theme.icon kind of a material."""
     return "mat:" + key
+
+
+def prospector(player):
+    """The Prospector artifact passive: every forging material chance is raised by this share."""
+    from . import gear
+    return gear.artifact_bonus(player, "forge_material_drops")
 
 
 def _chance(p, bonus):

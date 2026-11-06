@@ -77,7 +77,7 @@ def slot_row(img, box, kind, label, item):
         t.text(d, (tx, y0 + 64), EMPTY[kind][2], font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
         return
     f_name = font("Inter.ttf", 19, "Bold")
-    t.text(d, (tx, y0 + 34), t.fit(d, item["name"], f_name, x1 - tx), f_name, t.GOLD_HI, "lm")
+    t.text(d, (tx, y0 + 28), t.fit(d, item["name"], f_name, x1 - tx), f_name, t.GOLD_HI, "lm")
     if kind == "weapon":
         what = f"{item['type'].title()}"
         line = "  ·  ".join(item["buffs"]) or "No buffs"
@@ -89,9 +89,31 @@ def slot_row(img, box, kind, label, item):
         line = item["effect"]
     sub = f"{item['tier'].title()} {what}  ·  needs {item['requires']}"
     f_sub = font("Inter.ttf", 13, "SemiBold")
-    t.text(d, (tx, y0 + 58), t.fit(d, sub, f_sub, x1 - tx), f_sub, color, "lm")
+    t.text(d, (tx, y0 + 50), t.fit(d, sub, f_sub, x1 - tx), f_sub, color, "lm")
     f_line = font("Inter.ttf", 15, "Bold")
-    t.text(d, (tx, y0 + 84), t.fit(d, line, f_line, x1 - tx), f_line, t.PARCHMENT, "lm")
+    t.text(d, (tx, y0 + 72), t.fit(d, line, f_line, x1 - tx), f_line, t.PARCHMENT, "lm")
+    passive_line(img, item.get("passives") or [], tx, y0 + 96, x1)
+
+
+def passive_line(img, slots, x, y, x_end):
+    """Forged passives in their rarity colours (a rarity emblem, then the name); 'Empty slot' in grey."""
+    import forge
+    f = font("Inter.ttf", 13, "Bold")
+    for p in slots:
+        if x > x_end - 40:
+            break
+        if p:
+            color = forge.RARITY_COLORS[p["rarity"]]
+            t.icon(img, f"passive:{p['rarity']}", (x + 8, y), 16, color)
+            d = ImageDraw.Draw(img)
+            name = t.fit(d, p["name"], f, x_end - x - 22)
+            t.text(d, (x + 20, y), name, f, color, "lm")
+            x += 20 + t.width(d, name, f) + 16
+        else:
+            d = ImageDraw.Draw(img)
+            d.ellipse(P(x + 2, y - 6, x + 14, y + 6), outline=t.ASH_DK, width=max(1, round(1.5 * t.S)))
+            t.text(d, (x + 20, y), "Empty slot", font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
+            x += 20 + t.width(d, "Empty slot", f) + 16
 
 
 def stats_panel(img, data, box):
@@ -130,8 +152,17 @@ def effects_panel(img, data, box):
                font("Inter.ttf", 14, "Medium"), t.ASH, "mm")
         return
     y = y0 + 72
-    for e in effects:
-        color = t.RARITY.get(e["tier"], t.ASH)
+    own = [e for e in effects if e.get("group") != "passive"]
+    forged = [e for e in effects if e.get("group") == "passive"]
+    step = 64 if len(own) + len(forged) <= 3 else 52
+    for e in own + forged:
+        if y > y1 - 46:
+            d = ImageDraw.Draw(img)
+            left = len(own + forged) - (own + forged).index(e)
+            t.text(d, (x0 + 74, y - 18), f"+ {left} more forged passive{'s' if left > 1 else ''} (see Gear Slots)",
+                   font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
+            break
+        color = e.get("color") or t.RARITY.get(e["tier"], t.ASH)
         t.medallion(img, (x0 + 40, y), 22, e.get("icon") or "seal:" + e["seal"], color, cjk_char=False)
         d = ImageDraw.Draw(img)
         t.text(d, (x0 + 74, y - 12), t.fit(d, e["effect"], font("Inter.ttf", 17, "Bold"), x1 - x0 - 100),
@@ -139,6 +170,6 @@ def effects_panel(img, data, box):
         sub = e["name"] + (f"  ·  {e['duel']}" if e.get("duel") else "")
         t.text(d, (x0 + 74, y + 12), t.fit(d, sub, font("Inter.ttf", 13, "Medium"), x1 - x0 - 100),
                font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
-        y += 64
+        y += step
     t.text(d, ((x0 + x1) / 2, y1 - 18), "Two of the same family can't be worn together",
            font("Inter.ttf", 12, "Medium"), t.ASH_DK, "mm")

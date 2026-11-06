@@ -212,10 +212,26 @@ def talent_announcement(player_name, talent_name):
     return None
 
 
-def open_chest(player, tier, rng=random):
+def open_chest(player, tier, rng=random, notes=None):
     """Roll a chest's contents. Returns (coins, [items]).
-    Weapon, armor and artifact are each rolled separately (equipment.md)."""
+    Weapon, armor and artifact are each rolled separately (equipment.md).
+    Deep Pockets (a forged artifact passive) sometimes rolls the items a second time; notes gets a line then."""
     coins = roll_coins(player, CHEST_COINS[tier], rng, fortune=True)
+    items = _chest_items(player, tier, rng)
+    if rng.random() < gear.artifact_bonus(player, "extra_chest_roll"):
+        items += _chest_items(player, tier, rng)
+        if notes is not None:
+            notes.append("👝 **Deep Pockets:** you find a second layer of treasure!")
+    return coins, items
+
+
+def chest_value(coins, items):
+    """How good a chest roll is, to compare two (Fate Weaver): items by tier, then coins."""
+    order = {t: i + 1 for i, t in enumerate(equipments.TIERS)}
+    return sum(10 ** order.get(i.get("grade"), 1) for i in items) * 1000 + coins
+
+
+def _chest_items(player, tier, rng):
     items = []
     if rng.random() < explore.CHEST_MANUAL_CHANCE[tier]:
         items.append(roll_manual(pick(explore.CHEST_MANUAL_GRADE_ODDS[tier], rng), rng))
@@ -228,8 +244,22 @@ def open_chest(player, tier, rng=random):
     if rng.random() < equipments.CHEST_ARTIFACT_CHANCE[tier]:
         items.append(roll_artifact(pick(equipments.CHEST_ARTIFACT_TIER_ODDS[tier], rng), rng))
     from . import materials
-    items += materials.roll_chest(tier, rng)
-    return coins, items
+    items += materials.roll_chest(tier, rng, materials.prospector(player))
+    return items
+
+
+def week_start(now=None):
+    """Monday 00:00 UTC of this week, as a timestamp (weekly passive uses are counted per week)."""
+    now = time.time() if now is None else now
+    day = 86400
+    return now - ((now // day + 3) % 7) * day - now % day
+
+
+def fate_weaver_ready(conn, user_id, player, now=None):
+    """Fate Weaver (a forged artifact passive): its weekly chest reroll is unused."""
+    from . import passives
+    uses = passives.artifact_passive(player, "fate_weaver", "uses_per_week")
+    return bool(uses) and db.daily_count(conn, user_id, "fate_weaver", week_start(now)) < uses
 
 
 def beast_chest(player, beast_tier, rng=random, luck=0.0):
@@ -239,16 +269,17 @@ def beast_chest(player, beast_tier, rng=random, luck=0.0):
     b = rules.active_blessing(player)
     bonus = economy.BLESSING_TIERS[b[0]]["chest_drop"] if b else 0
     if rng.random() < spec["chance"] + bonus:
-        return chest(pick(chest_odds(spec["tiers"], luck), rng))
+        return chest(pick(chest_odds(spec["tiers"], luck, gear.artifact_bonus(player, "jade_chest_chance")), rng))
     return None
 
 
-def chest_odds(tiers, luck=0.0):
-    """Chest tier weights with every tier above the lowest raised by `luck` (Compass artifact)."""
-    if not luck:
+def chest_odds(tiers, luck=0.0, jade=0.0):
+    """Chest tier weights with every tier above the lowest raised by `luck` (Compass artifact), and Jade Chests
+    raised by `jade` more (the Treasure Sense passive)."""
+    if not luck and not jade:
         return tiers
     lowest = min(tiers, key=CHEST_ORDER.index)
-    return {t: w * (1 if t == lowest else 1 + luck) for t, w in tiers.items()}
+    return {t: w * (1 if t == lowest else 1 + luck) * (1 + jade if t == "jade" else 1) for t, w in tiers.items()}
 
 
 def describe(item):
@@ -281,7 +312,16 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
     cat = item["category"]
 
     if cat == "chests":
-        coins, found = open_chest(p, item["key"], rng)
+        notes = []
+        coins, found = open_chest(p, item["key"], rng, notes)
+        if fate_weaver_ready(conn, user_id, p, now):                     # forged artifact passive, once a week
+            coins2, found2 = open_chest(p, item["key"], rng, notes)
+            db.bump_daily(conn, user_id, "fate_weaver", week_start(now))
+            if chest_value(coins2, found2) > chest_value(coins, found):
+                coins, found = coins2, found2
+                notes.append("🧵 **Fate Weaver:** fate is rewoven, and the chest holds something better.")
+            else:
+                notes.append("🧵 **Fate Weaver:** fate is rewoven... but the first threads were the best.")
         db.remove_item(conn, item_id)
         db.add_coins(conn, user_id, coins, f"Opened {item['name']}")
         stored, lost = store(conn, user_id, found)
@@ -292,6 +332,7 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
         lines += [f"⚠️ Your bag is full, so you left **{describe(i)}** behind." for i in lost]
         if len(lines) == 2:
             lines.append("*Nothing else inside.*")
+        lines += notes
         return "\n".join(lines)
 
     if cat == "weapons":

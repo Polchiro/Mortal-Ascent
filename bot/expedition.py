@@ -97,8 +97,10 @@ class Expedition:
     def next_step(self):
         self.step += 1
         self.story, self.pending = [], None
-        odds = encounter_odds(self.step, gear.artifact_bonus(self.player, "explore_luck"))
-        mislead = explore.MISLEADING_CLUE_CHANCE[self.tier]
+        odds = encounter_odds(self.step, gear.artifact_bonus(self.player, "explore_luck")
+                              + gear.artifact_bonus(self.player, "rare_encounters"))           # Fortune's Favor
+        mislead = explore.MISLEADING_CLUE_CHANCE[self.tier] * (1 - gear.artifact_bonus(self.player,
+                                                                                         "misleading_clue_less"))
         self.paths = {}
         for path in explore.PATHS:
             enc = loot.pick(odds, self.rng)
@@ -182,7 +184,8 @@ class Expedition:
         if core:
             self.items.append(core)
             self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
-        mats = materials.roll_beast("normal", self.player["realm"], name, self.rng)
+        mats = materials.roll_beast("normal", self.player["realm"], name, self.rng,
+                                    bonus=materials.prospector(self.player))
         if mats:
             self.items += mats
             self.story.append("🦴 You salvage " + ", ".join(materials.lines(mats)) + ".")
@@ -236,7 +239,7 @@ class Expedition:
                           + ". (**/gather** finds more.)")
 
     def _ore_vein(self):
-        found = materials.roll_ore_vein(self.player["realm"], self.rng)
+        found = materials.roll_ore_vein(self.player["realm"], self.rng, materials.prospector(self.player))
         self.items += found
         self.story.append("⛏️ An ore vein in the cliff! You chip out " + ", ".join(materials.lines(found))
                           + ". (Forging metal, see **/index materials**.)")

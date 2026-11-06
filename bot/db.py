@@ -207,6 +207,8 @@ def get_player(conn, user_id):
     worn = equipped_artifacts(conn, user_id)
     p["artifact_fx"] = gear.artifact_effects(worn)
     p["artifact_passives"] = passives.artifact_passives(worn)    # forged artifact passives (docs/forge.md)
+    p["gear_passives"] = passives.worn_passives([i for i in (equipped_weapon(conn, user_id),
+                                                             equipped_armor(conn, user_id)) if i])
     return p
 
 
