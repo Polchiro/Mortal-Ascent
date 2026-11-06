@@ -27,7 +27,7 @@ import discord
 import alchemy
 import training
 
-from . import craft_card, db, loot
+from . import craft_card, db, gear, loot
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
@@ -189,7 +189,7 @@ DIRECTIONS = [("left", "⬅️", "the LEFT"), ("above", "⬆️", "ABOVE"), ("ri
 
 
 class Craft:
-    def __init__(self, kind, grade, rank, age, rng=None):
+    def __init__(self, kind, grade, rank, age, rng=None, zone_bonus=0):
         self.rng = rng or random.Random()
         self.kind, self.grade, self.age = kind, grade, age
         spec = pill_spec(kind, grade)
@@ -201,7 +201,8 @@ class Craft:
             i = alchemy.GRADES.index(grade) + alchemy.BREAKTHROUGH_DIFFICULTY_STEP
             dgrade = alchemy.GRADES[min(i, len(alchemy.GRADES) - 1)]
         self.diff = alchemy.DIFFICULTY[dgrade]
-        self.zone_width = round(self.diff["zone"] * (1 + alchemy.RANK_RELIEF["zone_bonus"] * relief))
+        self.zone_width = round(self.diff["zone"] * (1 + alchemy.RANK_RELIEF["zone_bonus"] * relief)) + round(zone_bonus)
+        self.zone_bonus = round(zone_bonus)       # degrees from the Furnace artifact (炉)
         self.seconds = self.diff["seconds"] + alchemy.RANK_RELIEF["seconds_bonus"] * relief
         self.hints = alchemy.RANK_RELIEF["hints_per_rank"] * relief
         a = alchemy.HERB_AGES[age]
@@ -705,6 +706,10 @@ class CraftView(OwnedView):
     def rank(self):
         return rank_of(self.player["alchemy_exp"])
 
+    def furnace(self):
+        """Extra safe-zone degrees from a worn Furnace artifact (炉)."""
+        return gear.artifact_bonus(self.player, "craft_zone_degrees")
+
     # ── screens ──────────────────────────────────────────────────────
 
     def embed(self):
@@ -753,7 +758,7 @@ class CraftView(OwnedView):
         recipe = " + ".join(f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in KINDS[kind][3])
         if kind == "breakthrough":
             recipe += f" + 1 {loot.CORE_NAMES[spec['core']]}"
-        c = Craft(kind, grade, self.rank(), pl["age"], random.Random(0))
+        c = Craft(kind, grade, self.rank(), pl["age"], random.Random(0), self.furnace())
         lines = [f"**Recipe:** {recipe}",
                  f"**Herbs:** {age_word(spec['min_age'])} · **Difficulty:** {c.diff['name']} "
                  f"({len(c.stages)} stages, {c.seconds:g}s per decision)"]
@@ -771,6 +776,8 @@ class CraftView(OwnedView):
                           + (", herb hints" if 2 in c.stages else ""))
         if c.forgive:
             relief.append(f"{c.forgive} mistake(s) forgiven")
+        if c.zone_bonus:
+            relief.append(f"🔮 Furnace artifact: +{c.zone_bonus}° heat zone")
         if relief:
             lines.append("🍀 " + " · ".join(relief))
         lines.append("\n**Stages:** " + " → ".join(STAGE_NAMES[s] for s in c.stages))
@@ -856,7 +863,7 @@ class CraftView(OwnedView):
             self.notice = "Your herbs changed in the meantime. Check the recipe again."
             await self.redraw(interaction)
             return
-        self.craft = Craft(kind, grade, self.rank(), pl["age"], self.rng)
+        self.craft = Craft(kind, grade, self.rank(), pl["age"], self.rng, self.furnace())
         self.herbs = craft_card.herb_rows(pl["uses"], pl["core"])
         self.result_lines, self.outcome = None, None
         await self.show_step(interaction)

@@ -9,16 +9,18 @@ Each turn:
      No pick in time = Guard; three timeouts in a row = that player forfeits.
   2. resolve() reveals both moves and plays them against each other with the beast-fight counters:
      Strike beats Break, Guard beats Strike, Break beats Guard; the same move on both sides clashes.
-Fair duel: both use the base stats of the lower player's realm and layer, and weapon / technique
-% buffs count at half strength (pvp.BUFF_SHARE). Technique effects and mastery count fully.
+Fair duel: both use the base stats of the lower player's realm and layer, and weapon / armor / technique
+% buffs count at half strength (pvp.BUFF_SHARE). Combat artifacts work at half strength
+(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH). Technique effects and mastery count fully.
 """
 import random
 
+import equipments
 import pvp
 import stats
 import technique
 
-from . import combat
+from . import combat, gear
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
@@ -38,18 +40,19 @@ def lower_of(p1, p2):
     return low["realm"], low["layer"]
 
 
-def fair_stats(player, techniques, weapon, realm, layer):
+def fair_stats(player, techniques, weapon, realm, layer, armor=None):
     """(hp, attack, defense) for a fair duel: the base stats of (realm, layer), plus this player's
-    weapon and technique % buffs at pvp.BUFF_SHARE strength."""
+    weapon, armor and technique % buffs at pvp.BUFF_SHARE strength."""
     hp, attack, defense = rules.base_stats(realm, layer)
-    pct = {k: sum(v for _, v in src) * pvp.BUFF_SHARE for k, src in rules.stat_buffs(techniques, weapon).items()}
+    pct = {k: sum(v for _, v in src) * pvp.BUFF_SHARE
+           for k, src in rules.stat_buffs(techniques, weapon, armor).items()}
     return (round(hp * (1 + pct["hp"])), round(attack * (1 + pct["attack"])), round(defense * (1 + pct["defense"])))
 
 
 class Duelist:
     """One side of the duel."""
 
-    def __init__(self, player, techniques, hp, attack, defense, weapon=None):
+    def __init__(self, player, techniques, hp, attack, defense, weapon=None, fx=None):
         self.player = player
         self.uid = player["user_id"]
         self.name = player["name"]
@@ -59,6 +62,7 @@ class Duelist:
         self.attack, self.defense = attack, defense
         self.techs = techniques
         self.weapon = weapon
+        self.fx = fx if fx is not None else gear.combat_fx(player)   # combat artifact effects (bot/gear.py)
         self.atk_t = next((t for t in techniques if t["type"] == "attack"), None)
         self.def_t = next((t for t in techniques if t["type"] == "defense"), None)
         self.cooldowns = {"attack_tech": 0, "defense_tech": 0}
@@ -90,16 +94,18 @@ class Duelist:
         return self.hp / self.max_hp if self.max_hp else 0
 
 
-def make_duelist(player, techniques, weapon, realm, layer):
-    hp, atk, dfn = fair_stats(player, techniques, weapon, realm, layer)
-    return Duelist(player, techniques, hp, atk, dfn, weapon)
+def make_duelist(player, techniques, weapon, realm, layer, armor=None):
+    """Fair Duel side: armor counts at half like the weapon, combat artifacts at half strength."""
+    hp, atk, dfn = fair_stats(player, techniques, weapon, realm, layer, armor)
+    return Duelist(player, techniques, hp, atk, dfn, weapon,
+                   fx=gear.combat_fx(player, equipments.DUEL_COMBAT_ARTIFACT_STRENGTH))
 
 
-def start(p1, techs1, weapon1, p2, techs2, weapon2, rng=None):
+def start(p1, techs1, weapon1, p2, techs2, weapon2, rng=None, armor1=None, armor2=None):
     """A fair duel between two players (p1 is the challenger)."""
     realm, layer = lower_of(p1, p2)
-    return Duel(make_duelist(p1, techs1, weapon1, realm, layer), make_duelist(p2, techs2, weapon2, realm, layer),
-                rng, fair=(realm, layer))
+    return Duel(make_duelist(p1, techs1, weapon1, realm, layer, armor1),
+                make_duelist(p2, techs2, weapon2, realm, layer, armor2), rng, fair=(realm, layer))
 
 
 class Duel:
@@ -217,6 +223,9 @@ class Duel:
                 share, note = pvp.CLASH_DAMAGE, "blows clash"
             elif theirs == "break":
                 note = "beats the Break"
+                if att.fx.get("strike_vs_break_damage"):                       # Fang artifact
+                    share = 1 + att.fx["strike_vs_break_damage"]
+                    note += f" (Fang +{att.fx['strike_vs_break_damage']:.0%})"
             else:                                       # Guard beats Strike
                 if dfn.guard_weak > 0:
                     share, note = dfn.guard_weak, "slips through the weakened guard"
@@ -227,6 +236,11 @@ class Duel:
                     if eff and eff[0] == "counter":
                         back = min(blocked * eff[1], att.max_hp * stats.MAX_HIT_PERCENT)
                         line += f", countered for {back:,.0f}"
+                    mirror = dfn.fx.get("guard_reflect")
+                    if mirror:                                                  # Mirror artifact
+                        reflected = blocked * mirror
+                        back = min(back + reflected, att.max_hp * stats.MAX_HIT_PERCENT)
+                        line += f", Mirror reflects {reflected:,.0f}"
                     elif eff and eff[0] == "recover":
                         room = dfn.max_hp * pvp.RECOVER_MAX_PER_DUEL - dfn.healed
                         heal = round(max(0.0, min(dfn.max_hp * eff[1], room)))
@@ -250,9 +264,16 @@ class Duel:
                 if eff and eff[0] == "unbreakable":
                     share, note = 0.5, "the guard holds half (Unbreakable)"
                 notes.append(("stagger", dfn, 0))
+        dodge = dfn.fx.get("dodge_chance")
+        if dodge and self.rng.random() < dodge:                                 # Feather artifact
+            return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} sidesteps it (Feather)")
         dmg = self._hit(att, dfn, skill, pierce, hits, share)
         if stagger and dmg > 0:
             notes.append(("weaken", dfn, stagger))
+        jolt = att.fx.get("break_stagger_chance")
+        if mine == "break" and theirs != "guard" and dmg > 0 and jolt and self.rng.random() < jolt:
+            notes.append(("stagger", dfn, 0))                                   # Thunder artifact
+            note = (note + ", " if note else "") + "Thunder: staggered!"
         icon = "sword" if mine == "strike" else "fist"
         return dmg, 0, (icon, f"{att.name} — {label}: {dmg:,.0f} dmg" + (f", {note}" if note else ""))
 
@@ -292,14 +313,18 @@ class Duel:
                 d.cooldowns[k] = max(0, d.cooldowns[k] - 1)
             if picks[d].endswith("_tech"):
                 d.cooldowns[picks[d]] = combat.cooldown_turns(d.tech(picks[d]))
+                reset = d.fx.get("cooldown_reset_chance")
+                if reset and self.rng.random() < reset:                         # Focus artifact
+                    d.cooldowns[picks[d]] = 0
+                    log.append(("star", f"{d.name} — Focus: {d.tech(picks[d])['name']} is ready again at once!"))
         notes = []
         dmg_ab, back_a, line_a = self._attack(a, picks[a], b, picks[b], notes)
         dmg_ba, back_b, line_b = self._attack(b, picks[b], a, picks[a], notes)
         log += [line for line in (line_a, line_b) if line]
         if BASE_MOVE[picks[a]] == BASE_MOVE[picks[b]] == "guard":
             log.append(("shield", "Both hold their guard. Nothing happens."))
-        to_a = round(dmg_ba + back_b)                   # counters land on the attacker
-        to_b = round(dmg_ab + back_a)
+        to_a = round(dmg_ba + back_a)                   # counters (and Mirror) land on the attacker
+        to_b = round(dmg_ab + back_b)
         a.hp, b.hp = max(0, a.hp - to_a), max(0, b.hp - to_b)
         a.last_dealt, b.last_dealt = to_b, to_a
         a.dealt += to_b
@@ -316,6 +341,12 @@ class Duel:
                 d.staggered = True
             elif kind == "weaken":
                 d.guard_weak = max(d.guard_weak, min(1.0, val))
+        for d in self.sides:
+            lotus = d.fx.get("heal_per_turn")
+            if lotus and 0 < d.hp < d.max_hp and a.hp > 0 and b.hp > 0:        # Lotus artifact
+                heal = min(d.max_hp - d.hp, max(1, round(d.max_hp * lotus)))
+                d.hp += heal
+                log.append(("herb", f"{d.name} — Lotus: +{heal:,}"))
         self._record(picks, timed, {a: to_b, b: to_a})
         for d in self.sides:
             d.pick = None

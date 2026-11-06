@@ -84,7 +84,7 @@ Then it may also contain:
 - Heaven manual: ~1 in 4,000 Beast King kills (announced to the whole server)
 
 ### Weapon
-Weapon chance and tier odds: see equipment.md.
+Weapon, armor and artifact chances and tier odds: see equipment.md.
 
 ## Not decided yet (ideas)
 

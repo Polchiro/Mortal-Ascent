@@ -3,7 +3,7 @@ Character Sheet · Profile tab (Crimson Hall theme).
 
 render_profile(data) draws cards built by bot.sheet.data.profile_data:
 header (name, talent, realm, phase, layer pips), attributes, Internal Qi,
-the portrait, equipped technique sockets, the weapon, and a footer with
+the portrait, equipped technique sockets, the Gear row (weapon, armor, two artifacts), and a footer with
 deeds, the dantian orb and the purse.
 """
 from PIL import ImageDraw
@@ -108,15 +108,15 @@ def attributes_panel(img, data, box):
 def techniques_panel(img, data, box):
     x0, y0, x1, y1 = box
     t.panel(img, box, "Equipped Techniques")
-    y = y0 + 50
+    y = y0 + 46
     for slot in data["slots"]:
         technique_row(img, (x0 + 16, y, x1 - 16, y + 80), slot)
-        y += 90
-    t.heading(img, (x0 + 18, y + 6), "Weapon", x1 - 18)
-    weapon_row(img, (x0 + 16, y + 26, x1 - 16, y + 98), data["weapon"])
+        y += 84
+    t.heading(img, (x0 + 18, y + 2), "Gear", x1 - 18)
+    gear_row(img, (x0 + 12, y + 20, x1 - 12, y1 - 22), data.get("gear") or [])
     d = ImageDraw.Draw(img)
-    t.text(d, ((x0 + x1) / 2, y1 - 16), f"{data['learned_count']} techniques learned  ·  see the Techniques tab",
-           font("Inter.ttf", 12, "Medium"), t.ASH, "mm")
+    t.text(d, ((x0 + x1) / 2, y1 - 12), f"{data['learned_count']} techniques learned  ·  see the Techniques tab",
+           font("Inter.ttf", 11, "Medium"), t.ASH, "mm")
 
 
 def technique_row(img, box, slot):
@@ -143,6 +143,46 @@ def technique_row(img, box, slot):
     else:
         msg = slot.get("note") if slot["locked"] else "Empty"
         t.text(d, (tx, y0 + 38), msg, font("Inter.ttf", 15, "Medium"), t.ASH_DK if slot["locked"] else t.ASH, "lm")
+
+
+def gear_row(img, box, sockets):
+    """Four sockets side by side: weapon, armor, artifact 1, artifact 2. Each shows its icon or seal in
+    the tier colour, with the name and a short effect line underneath; empty ones say what fills them."""
+    x0, y0, x1, y1 = box
+    n = max(1, len(sockets))
+    cw = (x1 - x0) / n
+    size = 46
+    f_name = font("Inter.ttf", 11, "Bold")
+    f_line = font("Inter.ttf", 10, "SemiBold")
+    f_lab = font("Cinzel.ttf", 9, "Bold")
+    for i, s in enumerate(sockets):
+        cx = x0 + cw * i + cw / 2
+        sy = y0 + 2
+        empty = "empty" in s
+        color = t.ASH_DK if empty else t.RARITY.get(s["tier"], t.ASH)
+        t.socket(img, (cx - size / 2, sy, cx + size / 2, sy + size), color, filled=not empty)
+        center = (cx, sy + size / 2)
+        if empty:
+            t.icon(img, EMPTY_ICON.get(s["slot"][:8], "star"), center, size * 0.42, t.ASH_DK)
+        else:
+            t.icon(img, s["icon"], center, size * 0.62, t.mix(color, (255, 255, 255), 0.2))
+        d = ImageDraw.Draw(img)
+        y = sy + size + 10
+        w = cw - 6
+        if empty:
+            t.spaced(d, (cx, y), s["label"].upper(), f_lab, t.ASH, 1.2, "m")
+            for j, line in enumerate(t.wrap(d, s["empty"], f_line, w, lines=2)):
+                t.text(d, (cx, y + 15 + j * 13), line, f_line, t.ASH_DK, "mm")
+        else:
+            lines = t.wrap(d, s["name"], f_name, w, lines=2)
+            for j, line in enumerate(lines):
+                t.text(d, (cx, y + j * 14), line, f_name, t.PARCHMENT, "mm")
+            ly = y + len(lines) * 14 + 1
+            for j, line in enumerate(t.wrap(d, s["line"], f_line, w, lines=2)):
+                t.text(d, (cx, ly + j * 13), line, f_line, t.GOLD_HI if j == 0 else t.GOLD, "mm")
+
+
+EMPTY_ICON = {"weapon": "fist", "armor": "shield", "artifact": "star"}
 
 
 def weapon_row(img, box, weapon):

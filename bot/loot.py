@@ -1,5 +1,5 @@
 """
-Loot: rolling chests, manuals, weapons and herbs (alchemy.py), and using items from the bag.
+Loot: rolling chests, manuals, weapons, armor, artifacts and herbs (alchemy.py), and using items from the bag.
 
 Odds come from explore.py and equipments.py. Numbers the design docs leave
 open (chest coin amounts, merchant prices) are marked DEFAULT.
@@ -14,10 +14,11 @@ import explore
 import talent
 import technique
 
-from . import db
+from . import db, gear
 from . import player as rules
 
 CHEST_NAMES = {"wooden": "Wooden Chest", "bronze": "Bronze Chest", "silver": "Silver Chest", "jade": "Jade Chest"}
+CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
 CHEST_EMOJI = {"wooden": "🪵", "bronze": "🥉", "silver": "🥈", "jade": "💚"}
 TIER_ORDER = equipments.TIERS
 GRADE_ORDER = list(technique.GRADES)
@@ -38,9 +39,11 @@ def coin_bonus(player, now=None):
     return 1 + (economy.BLESSING_TIERS[b[0]]["lotus_coins"] if b else 0)
 
 
-def roll_coins(player, lo_hi, rng=random):
+def roll_coins(player, lo_hi, rng=random, fortune=False):
+    """fortune=True for coins from fights and chests: the Fortune artifact (财) adds its share."""
     lo, hi = lo_hi
-    return round(rng.randint(lo, hi) * rules.realm_scale(player["realm"]) * coin_bonus(player))
+    mult = coin_bonus(player) + (gear.artifact_bonus(player, "lotus_coins") if fortune else 0)
+    return round(rng.randint(lo, hi) * rules.realm_scale(player["realm"]) * mult)
 
 
 # ── Item makers (dicts ready for db.add_item(**item)) ────────────────
@@ -55,15 +58,34 @@ def roll_manual(grade, rng=random):
     return manual(rng.choice(keys))
 
 
-def roll_weapon(tier, rng=random):
-    wtype = rng.choice(equipments.WEAPON_TYPES)
-    ranges = equipments.WEAPON_BUFFS[wtype][tier]
+def _rolled(category, kind, tier, ranges, base, rng):
     pos = rng.random()           # one roll position for all stats, so the quality prefix is honest
     buffs = {k: round(lo + (hi - lo) * pos, 3) for k, (lo, hi) in ranges.items()}
     prefix = next(name for threshold, name in equipments.QUALITY_PREFIXES if pos >= threshold)
-    base = equipments.WEAPON_NAMES[tier][wtype]
-    return {"category": "weapons", "key": wtype, "name": f"{prefix} {base}".strip(), "grade": tier,
-            "data": {"buffs": buffs, "type": wtype}}
+    return {"category": category, "key": kind, "name": f"{prefix} {base}".strip(), "grade": tier,
+            "data": {"buffs": buffs, "type": kind}}
+
+
+def roll_weapon(tier, rng=random):
+    wtype = rng.choice(equipments.WEAPON_TYPES)
+    return _rolled("weapons", wtype, tier, equipments.WEAPON_BUFFS[wtype][tier], equipments.WEAPON_NAMES[tier][wtype],
+                   rng)
+
+
+def roll_armor(tier, rng=random):
+    """Armor: same quality prefixes as weapons (equipment.md "Armor")."""
+    atype = rng.choice(equipments.ARMOR_TYPES)
+    return _rolled("armor", atype, tier, equipments.ARMOR_BUFFS[atype][tier], equipments.ARMOR_NAMES[tier][atype], rng)
+
+
+def artifact(family, tier):
+    """An artifact of this family and tier: its own name, a fixed value (no quality roll)."""
+    return {"category": "artifacts", "key": family, "name": equipments.artifact_name(family, tier), "grade": tier,
+            "data": {"family": family}}
+
+
+def roll_artifact(tier, rng=random):
+    return artifact(rng.choice(list(equipments.ARTIFACT_FAMILIES)), tier)
 
 
 def chest(tier):
@@ -86,10 +108,10 @@ def herb_tier(realm, rng=random):
     return tier
 
 
-def age_odds(streak=0):
-    """{age: chance}. The Herbal Insight streak multiplies the 50-year-and-older chances;
-    the 10-year chance takes whatever is left."""
-    mult = next(m for min_streak, m in alchemy.STREAK_BONUS if streak >= min_streak)
+def age_odds(streak=0, bonus=0.0):
+    """{age: chance}. The Herbal Insight streak multiplies the 50-year-and-older chances, and the
+    Gourd artifact (葫, `bonus`) raises them by its share; the 10-year chance takes whatever is left."""
+    mult = next(m for min_streak, m in alchemy.STREAK_BONUS if streak >= min_streak) * (1 + bonus)
     odds = {age: a["chance"] * (mult if age > 10 else 1) for age, a in alchemy.HERB_AGES.items()}
     odds[10] = max(0.0, 1 - sum(v for age, v in odds.items() if age > 10))
     return odds
@@ -99,8 +121,8 @@ def roll_herb_type(rng=random):
     return pick(alchemy.HERB_TYPE_CHANCE, rng)
 
 
-def roll_age(rng=random, streak=0):
-    return pick(age_odds(streak), rng)
+def roll_age(rng=random, streak=0, bonus=0.0):
+    return pick(age_odds(streak, bonus), rng)
 
 
 def herb(tier="Mortal", type_=None, age=10, rng=random):
@@ -134,9 +156,10 @@ def beast_core(beast_tier, realm):
             "grade": grade, "data": {"core": beast_tier, "grade": grade}}
 
 
-def roll_beast_core(beast_tier, realm, rng=random):
-    """A Beast Core dropped by a beaten beast, or None."""
-    if rng.random() < alchemy.BEAST_CORE_DROP[beast_tier]:
+def roll_beast_core(beast_tier, realm, rng=random, bonus=0.0):
+    """A Beast Core dropped by a beaten beast, or None. bonus: the Hunter artifact (兽) raises the
+    chance by that share of the normal chance."""
+    if rng.random() < alchemy.BEAST_CORE_DROP[beast_tier] * (1 + bonus):
         return beast_core(beast_tier, realm)
     return None
 
@@ -153,10 +176,14 @@ def pill(grade):
 HEAVEN_DEFYING = {"category": "pills", "key": "heaven_defying", "name": "Heaven-Defying Pill", "grade": "Heaven"}
 
 
+ANNOUNCE_GEAR = {"weapons": "a Divine weapon", "armor": "Divine armor", "artifacts": "a Divine artifact"}
+
+
 def announcement(player_name, item):
     """Server-wide announcement text for a rare find, or None (equipment.md / explore.md)."""
-    if item["category"] == "weapons" and item["grade"] in equipments.ANNOUNCE_TIERS:
-        return f"📢 **{player_name}** has found a Divine weapon: **{item['name']}**! The heavens take notice."
+    if item["category"] in ANNOUNCE_GEAR and item["grade"] in equipments.ANNOUNCE_TIERS:
+        what = ANNOUNCE_GEAR[item["category"]]
+        return f"📢 **{player_name}** has found {what}: **{item['name']}**! The heavens take notice."
     if item["category"] == "manuals" and item["grade"] in explore.ANNOUNCE_MANUAL_GRADES:
         return f"📢 **{player_name}** has found a Heaven-grade manual: **{item['name']}**!"
     if item.get("key") == "heaven_defying":
@@ -171,8 +198,9 @@ def talent_announcement(player_name, talent_name):
 
 
 def open_chest(player, tier, rng=random):
-    """Roll a chest's contents. Returns (coins, [items])."""
-    coins = roll_coins(player, CHEST_COINS[tier], rng)
+    """Roll a chest's contents. Returns (coins, [items]).
+    Weapon, armor and artifact are each rolled separately (equipment.md)."""
+    coins = roll_coins(player, CHEST_COINS[tier], rng, fortune=True)
     items = []
     if rng.random() < explore.CHEST_MANUAL_CHANCE[tier]:
         items.append(roll_manual(pick(explore.CHEST_MANUAL_GRADE_ODDS[tier], rng), rng))
@@ -180,17 +208,30 @@ def open_chest(player, tier, rng=random):
         items.append(roll_weapon(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
     if tier == "jade" and rng.random() < talent.HEAVEN_DEFYING_PILL["jade_chest_chance"]:
         items.append(dict(HEAVEN_DEFYING))
+    if rng.random() < equipments.CHEST_ARMOR_CHANCE[tier]:
+        items.append(roll_armor(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
+    if rng.random() < equipments.CHEST_ARTIFACT_CHANCE[tier]:
+        items.append(roll_artifact(pick(equipments.CHEST_ARTIFACT_TIER_ODDS[tier], rng), rng))
     return coins, items
 
 
-def beast_chest(player, beast_tier, rng=random):
-    """Chest dropped by a beast, or None. Blessing 'chest_drop' raises the chance (economy.md)."""
+def beast_chest(player, beast_tier, rng=random, luck=0.0):
+    """Chest dropped by a beast, or None. Blessing 'chest_drop' raises the chance (economy.md).
+    luck: the Compass artifact (罗) in /explore makes the better chest tiers that much likelier."""
     spec = explore.BEAST_CHEST[beast_tier]
     b = rules.active_blessing(player)
     bonus = economy.BLESSING_TIERS[b[0]]["chest_drop"] if b else 0
     if rng.random() < spec["chance"] + bonus:
-        return chest(pick(spec["tiers"], rng))
+        return chest(pick(chest_odds(spec["tiers"], luck), rng))
     return None
+
+
+def chest_odds(tiers, luck=0.0):
+    """Chest tier weights with every tier above the lowest raised by `luck` (Compass artifact)."""
+    if not luck:
+        return tiers
+    lowest = min(tiers, key=CHEST_ORDER.index)
+    return {t: w * (1 if t == lowest else 1 + luck) for t, w in tiers.items()}
 
 
 def describe(item):
@@ -244,6 +285,18 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
             return f"**{item['name']}** is already equipped."
         db.equip_weapon(conn, user_id, item_id)
         return f"⚔️ You equip **{item['name']}** ({rules.buff_text(rules.weapon_buffs(item))})."
+
+    if cat in ("armor", "artifacts"):
+        worn = db.equipped_artifacts(conn, user_id)
+        problem = gear.equip_problem(p, item, worn)
+        if problem:
+            return problem
+        if cat == "armor":
+            db.equip_single(conn, user_id, "armor", item_id)
+            return f"🥋 You put on **{item['name']}** ({rules.buff_text(rules.weapon_buffs(item))})."
+        slot = gear.free_artifact_slot(worn)
+        db.equip_artifact(conn, user_id, item_id, slot)
+        return f"🔮 You wear **{item['name']}** in artifact slot {slot}: {gear.effect_text(item)}."
 
     if cat == "manuals":
         t = technique.TECHNIQUES[item["key"]]

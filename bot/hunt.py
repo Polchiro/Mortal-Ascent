@@ -22,7 +22,7 @@ import explore
 import stats
 import technique
 
-from . import combat, db, loot, mastery
+from . import combat, db, gear, loot, mastery
 from . import player as rules
 
 MAX_TEAM = 8                     # DEFAULT hard cap on a hunt party
@@ -60,7 +60,8 @@ def team_beast(lair, team):
 
 def _fighter(conn, p):
     techs = db.get_techniques(conn, p["user_id"])
-    hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, p["user_id"]))
+    hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, p["user_id"]),
+                                     db.equipped_armor(conn, p["user_id"]))
     atk_t = next((t for t in techs if t["type"] == "attack"), None)
     def_t = next((t for t in techs if t["type"] == "defense"), None)
     return {"p": p, "techs": techs, "hp": hp, "max_hp": hp, "attack": atk, "defense": dfn,
@@ -155,7 +156,8 @@ def start_battle(conn, lair, user_ids, rng=None):
     fighters = []
     for p in team:
         techs = db.get_techniques(conn, p["user_id"])
-        hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, p["user_id"]))
+        hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, p["user_id"]),
+                                     db.equipped_armor(conn, p["user_id"]))
         fighters.append(fight.Fighter(p, techs, hp, hp, atk, dfn, pills=crafting.fight_pills(conn, p["user_id"])))
     stats_ = team_beast(lair, team)
     enemy = fight.enemy_from_beast(stats_, stats_["name"])
@@ -203,7 +205,7 @@ def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
             bits.append("fled the hunt")
         elif won:
             winners.append(p)
-            coins = loot.roll_coins(p, HUNT_COINS[tier], rng)
+            coins = loot.roll_coins(p, HUNT_COINS[tier], rng, fortune=True)
             db.add_coins(conn, uid, coins, "Team hunt reward")
             bits.append(f"🪷 {coins:,}")
             fields = {"beasts_slain": p["beasts_slain"] + 1}
@@ -214,7 +216,7 @@ def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
             if c:
                 stored, _ = loot.store(conn, uid, [c])
                 bits.append(f"{loot.CHEST_EMOJI[c['key']]} {c['name']}" if stored else "bag full, chest lost")
-            core = loot.roll_beast_core(tier, lair["realm"], rng)
+            core = loot.roll_beast_core(tier, lair["realm"], rng, bonus=gear.artifact_bonus(p, "beast_core_chance"))
             if core:
                 stored, _ = loot.store(conn, uid, [core])
                 bits.append(f"🔮 {loot.describe(core)}" if stored else "bag full, core lost")

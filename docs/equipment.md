@@ -280,6 +280,33 @@ special effect. Every rarity has its **own name** and a fixed effect value (no q
 
 Divine artifacts are announced to the whole server, like Divine weapons.
 
+### How artifact effects work in the game
+
+All values come from `equipments.ARTIFACT_FAMILIES`; the code is `bot/gear.py`.
+
+| Family | Where it applies | Details |
+|---|---|---|
+| 牙 Fang | Fights, team hunts, /spar, duels | Your Strike that beats an enemy Break deals that much more (the 30% cap still applies) |
+| 钟 Bell | Elite and Beast King charged attacks | Charged hits on you are that much smaller. /spar and duels have no charged attacks |
+| 镜 Mirror | Fights, team hunts, /spar, duels | When your Guard stops a Strike, that share of the blocked damage hits the attacker |
+| 雷 Thunder | Fights, team hunts, /spar, duels | A Break that lands and doesn't already stagger (a guard shatter does) has that chance to stagger. In /spar a staggered master takes +25% from your next hit |
+| 莲 Lotus | Fights, team hunts, /spar, duels | Heals that share of max HP at the end of every turn while you stand |
+| 羽 Feather | Fights, team hunts, /spar, duels | Each enemy hit that would land has that chance to miss |
+| 心 Focus | Fights, team hunts, /spar, duels | Each time you use a technique, that chance its cooldown is skipped |
+| 聚 Qi | Internal Qi Rate | Adds to the other % Qi buffs (talent, technique, blessing) |
+| 玉 Purity | Pill toxicity | 1 toxicity fades every `TOXICITY_DECAY_HOURS ÷ (1 + value)` hours |
+| 炉 Furnace | /craft | The hidden heat safe zone is that many degrees wider |
+| 葫 Gourd | /gather | 50-year-and-older herbs are that much likelier (on top of Herbal Insight) |
+| 书 Insight | Technique mastery EXP | Adds to the Blessing's mastery bonus |
+| 罗 Compass | /explore | Rare encounters are that much likelier, and when a beast drops a chest the tiers above its lowest are that much likelier |
+| 财 Fortune | Lotus Coins | Coins from beasts, bandits, team hunts and chests |
+| 兽 Hunter | Beast Cores | Core drop chance × (1 + value), in /explore and team hunts |
+
+- Fair Duels: combat artifacts at `DUEL_COMBAT_ARTIFACT_STRENGTH` (half), armor buffs at `pvp.BUFF_SHARE` (half) like weapons.
+- Equipping an artifact fills the first free slot. With both full you unequip one first; with one of the
+  same family worn, Equip is refused.
+- Gear can't be changed during a fight, a hunt, /spar or a duel.
+
 ## Open decisions
 - [ ] Pity progress for Divine drops (each Jade Chest without one slightly raises the next chance)
 - [ ] Beast King trophy artifacts (a unique artifact per Beast King with an extra twist)

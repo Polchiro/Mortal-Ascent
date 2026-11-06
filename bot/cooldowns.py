@@ -108,7 +108,7 @@ def timer_sections(conn, player, now=None):
         body.append("🩹 **Injury** — meridians whole")
     tox = rules.current_toxicity(player, now)
     if tox and player.get("toxicity_at") is not None:
-        clears = player["toxicity_at"] + (player.get("toxicity") or 0) * training.TOXICITY_DECAY_HOURS * 3600
+        clears = player["toxicity_at"] + (player.get("toxicity") or 0) * rules.toxicity_decay_hours(player) * 3600
         body.append(f"☠️ **Pill toxicity {tox}** — fully cleansed {stamp(clears)}")
 
     # ── Heavenly boons ───────────────────────────────────────────────

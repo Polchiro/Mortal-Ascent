@@ -16,13 +16,18 @@ Mastery EXP comes only from techniques used at the right moment:
   • defense technique against the master's Strike
 +30 per well-timed use, +100 to each well-timed technique for winning.
 A trial is the same fight against a stronger master; winning raises the stage.
+
+Combat artifacts (bot/gear.py) work here too: Fang, Mirror, Thunder (a staggered master takes
+battle.STAGGER_DAMAGE_BONUS from your next hit), Lotus, Feather and Focus. The master never charges,
+so the Bell has nothing to soften.
 """
 import random
 
+import battle
 import challenges
 import technique
 
-from . import combat
+from . import combat, gear
 from . import player as rules
 from .trainer import STANCES, TELLS
 
@@ -34,9 +39,9 @@ CLASH_DAMAGE = 0.5         # share of a normal hit both sides take on a tie
 
 
 class Spar:
-    def __init__(self, player, techniques, weapon=None, strength=1.0, rng=None):
+    def __init__(self, player, techniques, weapon=None, strength=1.0, rng=None, armor=None):
         self.rng = rng or random.Random()
-        hp, self.attack, self.defense = rules.final_stats(player, techniques, weapon)
+        hp, self.attack, self.defense = rules.final_stats(player, techniques, weapon, armor)
         self.hp = self.max_hp = hp
         mhp, matk, mdef = rules.base_stats(player["realm"], player["layer"])
         self.m_hp = self.m_max = round(mhp * strength)
@@ -49,6 +54,9 @@ class Spar:
         self.blocked_strike = False      # last turn you Guarded the master's Strike
         self.timed = {}                  # technique id → well-timed uses
         self.cooldowns = {"attack_tech": 0, "defense_tech": 0}   # exchanges until ready
+        self.fx = gear.combat_fx(player)     # combat artifact effects
+        self.m_staggered = False             # Thunder artifact: the master takes more from the next hit
+        self.fx_notes = []                   # artifact lines for this exchange
         self.log = []
         self._next()
 
@@ -90,16 +98,33 @@ class Spar:
         if used in self.cooldowns:
             tech = self.atk_t if used == "attack_tech" else self.def_t
             self.cooldowns[used] = combat.cooldown_turns(tech)
+            reset = self.fx.get("cooldown_reset_chance")
+            if reset and self.rng.random() < reset:                             # Focus artifact
+                self.cooldowns[used] = 0
+                self.fx_notes.append(f"🔮 Focus: **{tech['name']}** is ready again at once!")
 
     def _hit_master(self, skill=1.0, pierce=0.0):
         dmg = combat.damage(self.attack, self.m_defense, self.m_max, skill, pierce, self.rng)
+        if self.m_staggered:
+            dmg *= battle.STAGGER_DAMAGE_BONUS
+            self.m_staggered = False
         self.m_hp = max(0, self.m_hp - dmg)
         return dmg
 
     def _hit_me(self, scale=1.0):
+        dodge = self.fx.get("dodge_chance")
+        if dodge and self.rng.random() < dodge:                                 # Feather artifact
+            self.fx_notes.append("🪶 Feather: you sidestep his blow!")
+            return 0
         dmg = combat.damage(self.m_attack, self.defense, self.max_hp, rng=self.rng) * scale
         self.hp = max(0, self.hp - dmg)
         return dmg
+
+    def _thunder(self, me):
+        jolt = self.fx.get("break_stagger_chance")
+        if me == "break" and jolt and self.m_hp > 0 and self.rng.random() < jolt:   # Thunder artifact
+            self.m_staggered = True
+            self.fx_notes.append("⚡ Thunder: the master staggers! Your next hit lands harder.")
 
     def _timed(self, tech):
         self.timed[tech["id"]] = self.timed.get(tech["id"], 0) + 1
@@ -115,6 +140,7 @@ class Spar:
         was_blocked = self.blocked_strike
         self.blocked_strike = False
         notes = []
+        self.fx_notes = []
 
         if use_atk and was_blocked:
             self._timed(self.atk_t)
@@ -137,12 +163,19 @@ class Spar:
         if me == m:
             mine = self._hit_master(skill * CLASH_DAMAGE, pierce) if me != "guard" else 0
             theirs = self._hit_me(CLASH_DAMAGE) if m != "guard" else 0
+            if mine:
+                self._thunder(me)
             line = (f"Both of you {m.title()}! "
                     + (f"You trade blows ({mine:.0f} / {theirs:.0f})." if mine or theirs else "Neither gives ground."))
         elif challenges.COUNTERS[m] == me:          # you win the exchange
             if me == "guard":
                 self.blocked_strike = True
                 line = "🛡️ You Guard his Strike. An opening!"
+                mirror = self.fx.get("guard_reflect")
+                if mirror:                                                      # Mirror artifact
+                    back = combat.damage(self.m_attack, self.defense, self.max_hp, rng=self.rng) * mirror
+                    self.m_hp = max(0, self.m_hp - back)
+                    line += f" Your Mirror reflects {back:.0f}."
                 if use_def:
                     eff = rules.TECH_BY_NAME.get(self.def_t["name"], {}).get("effect")
                     if eff and eff[0] == "counter":
@@ -152,7 +185,9 @@ class Spar:
                         self.hp = min(self.max_hp, self.hp + self.max_hp * eff[1])
                         line += " You recover a little."
             else:
-                total = sum(self._hit_master(skill, pierce) for _ in range(hits))
+                fang = self.fx.get("strike_vs_break_damage", 0) if me == "strike" else 0    # Fang artifact
+                total = sum(self._hit_master(skill * (1 + fang), pierce) for _ in range(hits))
+                self._thunder(me)
                 verb = "Break through his Guard" if me == "break" else "Strike before his Break lands"
                 line = f"⚔️ You {verb}! (−{total:.0f})"
         else:                                       # he wins
@@ -166,8 +201,14 @@ class Spar:
             else:
                 dmg = self._hit_me(scale)
                 line = f"💥 His {m.title()} beats your {me.title()}! (−{dmg:.0f})"
-        self.log.append(line)
         self._tick_cooldowns(choice)
+        lotus = self.fx.get("heal_per_turn")
+        if lotus and 0 < self.hp < self.max_hp and self.m_hp > 0:               # Lotus artifact
+            heal = min(self.max_hp - self.hp, self.max_hp * lotus)
+            self.hp += heal
+            self.fx_notes.append(f"🪷 Lotus: +{heal:.0f} HP")
+        line = " ".join([line] + self.fx_notes)
+        self.log.append(line)
         self._next()
         return " ".join(notes + [line])
 

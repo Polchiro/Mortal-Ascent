@@ -34,10 +34,19 @@ def render_bag(data):
 def category_tabs(img, data, box):
     x0, y0, x1, y1 = box
     n = len(data["categories"])
-    w = (x1 - x0 - (n - 1) * 10) / n
-    f = font("Cinzel.ttf", 14, "Bold")
+    gap = 10 if n <= 6 else 6
+    w = (x1 - x0 - (n - 1) * gap) / n
+    tight = n > 6                       # 8 tabs since armor and artifacts: smaller icon, label shrinks to fit
+    ix, lx, isz = (16, 28, 14) if tight else (26, 44, 18)
+    d = ImageDraw.Draw(img)
+    room = w - lx - 26
+    size = 14
+    while size > 9 and max(t.width(d, label.upper(), font("Cinzel.ttf", size, "Bold"))
+                           for _, label, _ in data["categories"]) > room:
+        size -= 1
+    f = font("Cinzel.ttf", size, "Bold")
     for i, (key, label, icon) in enumerate(data["categories"]):
-        bx = x0 + i * (w + 10)
+        bx = x0 + i * (w + gap)
         active = key == data["category"]
         d = ImageDraw.Draw(img)
         if active:
@@ -47,10 +56,10 @@ def category_tabs(img, data, box):
             d.rectangle(P(bx, y0, bx + w, y1), fill=t.alpha(t.PANEL, 230), outline=t.BRONZE_DK, width=max(1, t.S))
         count = data["counts"].get(key, 0)
         color = t.GOLD_HI if active else t.ASH
-        t.icon(img, icon, (bx + 26, (y0 + y1) / 2), 18, t.GOLD if active else t.ASH_DK)
+        t.icon(img, icon, (bx + ix, (y0 + y1) / 2), isz, t.GOLD if active else t.ASH_DK)
         d = ImageDraw.Draw(img)
-        t.text(d, (bx + 44, (y0 + y1) / 2), label.upper(), f, color, "lm")
-        t.text(d, (bx + w - 14, (y0 + y1) / 2), str(count), font("Inter.ttf", 13, "Bold"),
+        t.text(d, (bx + lx, (y0 + y1) / 2), label.upper(), f, color, "lm")
+        t.text(d, (bx + w - 10, (y0 + y1) / 2), str(count), font("Inter.ttf", 13, "Bold"),
                t.PARCHMENT if count else t.ASH_DK, "rm")
 
 
@@ -93,9 +102,9 @@ def tile(img, box, it):
     d = ImageDraw.Draw(img)
     f_name = font("Inter.ttf", 13, "Bold")
     lines = t.wrap(d, it["name"], f_name, x1 - x0 - 16)
-    ny = y1 - 30 - (len(lines) - 1) * 8
+    ny = y1 - 32 - (len(lines) - 1) * 15
     for j, line in enumerate(lines):
-        t.text(d, (cx, ny + j * 16), line, f_name, t.PARCHMENT, "mm")
+        t.text(d, (cx, ny + j * 15), line, f_name, t.PARCHMENT, "mm")
     t.text(d, (cx, y1 - 12), it["rarity"], font("Inter.ttf", 11, "SemiBold"), color, "mm")
     if it["qty"] > 1:
         q = f"×{it['qty']}"

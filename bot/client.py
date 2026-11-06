@@ -227,7 +227,7 @@ def register_commands(bot):
             return
         await open_sheet(bot, interaction, "purse")
 
-    @tree.command(name="inventory", description="Open your bag: chests, manuals, weapons, pills, herbs and materials")
+    @tree.command(name="inventory", description="Open your bag: chests, manuals, weapons, armor, artifacts, pills, herbs and materials")
     @app_commands.describe(category="Which tab to open first")
     @app_commands.choices(category=[app_commands.Choice(name=c.label, value=c.key)
                                     for c in sheet_items.CATEGORIES.values()])
@@ -584,7 +584,7 @@ def register_commands(bot):
             return
         await open_sheet(bot, interaction, "techniques")
 
-    @tree.command(name="equipment", description="See your weapon and final stats, and change your weapon")
+    @tree.command(name="equipment", description="See your weapon, armor, artifacts and final stats, and change your gear")
     async def equipment(interaction: discord.Interaction):
         if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
