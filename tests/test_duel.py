@@ -422,3 +422,11 @@ def test_accept_starts_the_duel_and_decline_frees_the_challenger():
             if task is not asyncio.current_task():
                 task.cancel()
     asyncio.run(go())
+
+
+def test_startup_lists_the_synced_commands_and_flags_missing_ones():
+    from bot.client import sync_report
+    ok = sync_report(["duel", "spar"], ["spar", "duel"], "abc123")
+    assert ok[0] == "Bot code version: abc123" and "duel, spar" in ok[1] and "All commands reached" in ok[2]
+    bad = sync_report(["duel", "spar"], ["spar"])
+    assert bad[-1] == "WARNING: these commands did not reach Discord: duel"

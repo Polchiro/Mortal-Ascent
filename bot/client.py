@@ -21,7 +21,8 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, loot, prefix, qi, trainer
+from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, prefix, qi,
+               trainer)
 from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
@@ -91,8 +92,10 @@ class MortalAscent(discord.Client):
         # Upload the fight button icons in the background; until then (or if it fails) buttons use normal emojis.
         asyncio.create_task(self.emojis_ma.setup(self))
         # Commands are always synced globally: per-server commands never show up in DMs.
-        await self.tree.sync()
-        log.info("Synced commands globally (new or changed commands can take up to an hour to appear)")
+        synced = await self.tree.sync()
+        for line in sync_report([c.name for c in self.tree.get_commands()], [c.name for c in synced],
+                                instance.code_version()):
+            log.info(line)
         if self.guild_id:
             # Older versions synced a copy of every command to DISCORD_GUILD_ID. Remove that copy,
             # otherwise each command would be listed twice in that server.
@@ -127,6 +130,19 @@ def sync_passive_qi(conn, user_id, now=None):
     p, events = rules.add_qi(p, qi, techs, now=now)
     db.update_player(conn, user_id, qi=p["qi"], layer=p["layer"], qi_collected_at=now)
     return qi, events
+
+
+def sync_report(local_names, synced_names, version="unknown"):
+    """Startup lines that show which slash commands Discord now has, so a missing one is easy to spot."""
+    lines = [f"Bot code version: {version}",
+             f"Discord now has {len(synced_names)} slash commands: " + ", ".join(sorted(synced_names))]
+    missing = sorted(set(local_names) - set(synced_names))
+    if missing:
+        lines.append("WARNING: these commands did not reach Discord: " + ", ".join(missing))
+    else:
+        lines.append("All commands reached Discord (a new one can take a few minutes to show; press Ctrl+R in "
+                     "Discord to refresh). Text commands like \"m duel @player\" work right away.")
+    return lines
 
 
 def next_gate_is_realm(player):
