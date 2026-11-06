@@ -3,7 +3,7 @@ Discord client and slash commands: /start, /profile, /balance, /inventory, /expl
 /seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown, /settings.
 Passive Qi is banked by a background task every minute and before every command (passive.py). /tutorial and /index are in guide.py,
-/gather in gathering.py, /craft in crafting.py, /duel in duel_view.py. Admin testing commands are in admin.py.
+/gather in gathering.py, /craft in crafting.py, /forge in forge_view.py, /duel in duel_view.py. Admin testing commands are in admin.py.
 Every command also works as a text message with the "m" prefix ("m internal qi"); see prefix.py.
 """
 import asyncio
@@ -22,8 +22,8 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, materials,
-               passive, prefix, qi, trainer)
+from . import (admin, combat, cooldowns, crafting, db, duel_view, forge_view, gathering, guide, hunt, instance, loot,
+               materials, passive, prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
@@ -66,6 +66,7 @@ class MortalAscent(discord.Client):
         guide.register(self)
         gathering.register(self)
         crafting.register(self)
+        forge_view.register(self)
         duel_view.register(self)
 
     async def before_command(self, interaction):

@@ -145,6 +145,23 @@ LESSONS = [
                          "little). New ranks unlock higher grades; being above a recipe's rank makes it easier, "
                          "but easy pills give less EXP.")]),
 
+    ("The Forge",
+     "*Sparks leap from the anvil. The Old Master does not flinch.*\n"
+     "\"A blade remembers every blow. Strike it well and it will carry your will.\"",
+     [("/forge", "Pick a weapon, armor or artifact and **Enchant** an empty slot, **Reroll** every slot, or "
+                 "**Replace** one (Treasure and Divine gear: lock the other with a 🔏 Seal Stone). Base materials and "
+                 "bindings of the gear's tier are always needed; they drop in /explore (⛏️ Ore Veins), from beasts, "
+                 "chests and more. **/inventory** → Materials shows yours."),
+      ("The stages", "🔥 **Ignite**: Pump, Hold or Vent to keep the heat in a hidden safe zone.\n🌡️ **Heat**: pull "
+                     "the metal out at the colour the gear needs.\n🔨 **Hammer**: read each strike's hint.\n💧 "
+                     "**Quench**: Water or Oil, then plunge at the right temperature.\n✨ **Inscribe**: carve the "
+                     "rune's strokes in order."),
+      ("Passives", "Each stage is worth 20 points. 50+ gives a passive, and a higher score a rarer one, up to the "
+                   "gear's cap. Epic and above need a fine inscription. An essence chooses the passive's family. "
+                   "Below 50 the materials are lost, but the gear and its passives are safe."),
+      ("Blacksmith rank", "Every forge gives blacksmith EXP. Higher tiers need a higher rank; being above it makes "
+                          "the forge easier. Fuel and quench liquids widen the safe zones.")]),
+
     ("Coin and Pearl",
      "\"Even immortals pay for their tea.\"",
      [("🪷 Lotus Coins", "Earned from chests, beasts and bandits. Spent at merchants, on **/physician**, "
@@ -165,7 +182,7 @@ LESSONS = [
                 "**/tutorial** brings back these lessons any time.")]),
 ]
 
-SCROLL_NUMBERS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"]
+SCROLL_NUMBERS = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三"]
 
 
 def lesson_embed(i):
