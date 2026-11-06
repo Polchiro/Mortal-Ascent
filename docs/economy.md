@@ -88,6 +88,7 @@ What Moon Pearls can buy — **speed and style, never power**.
 | 💊 Jade Marrow Pill ×1 | 120 | Mystic grade; highest grade sold |
 | 🎒 Inventory expansion (+20 slots) | 300 | |
 | ✏️ Name change | 200 | |
+| 🔏 Seal Stone | 30 | Locks one passive slot for a /forge Replace (docs/forge.md) |
 | 🖼️ Profile card themes | 400–800 | Cosmetic only (e.g. Night Scroll, Autumn Maple) |
 
 ### Never sold for real money

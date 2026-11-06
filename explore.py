@@ -1,6 +1,7 @@
 """
 Exploration data. Design rules are explained in docs/explore.md.
 """
+import forge
 
 EXPLORE_COOLDOWN_MINUTES = 30
 MAX_STEPS = 5
@@ -21,10 +22,11 @@ DEFEAT_INJURY_HOURS = 1
 # ── Encounters (base chances, sum to 1.0) ─────────────────────────────
 
 ENCOUNTERS = {
-    "wild_beast":        {"chance": 0.350, "rare": False},
+    "wild_beast":        {"chance": 0.320, "rare": False},
     "treasure_chest":    {"chance": 0.150, "rare": False},
-    "herb_patch":        {"chance": 0.120, "rare": False},
-    "peaceful_clearing": {"chance": 0.100, "rare": False},
+    "herb_patch":        {"chance": 0.100, "rare": False},
+    "peaceful_clearing": {"chance": 0.090, "rare": False},
+    "ore_vein":          {"chance": forge.ORE_VEIN_ENCOUNTER_CHANCE, "rare": False},   # forging metal (docs/forge.md)
     "hazard":            {"chance": 0.070, "rare": True},
     "bandits":           {"chance": 0.060, "rare": True},
     "wandering_merchant":{"chance": 0.040, "rare": True},

@@ -268,6 +268,7 @@ BINDINGS = ["Beast Bone", "Tough Sinew", "Spirit Fang", "Dragon Tendon", "Chaos 
 FUELS = ["Charcoal", "Black Coal", "Spirit Coal", "Fire Beast Core", "Sunflame Stone"]
 QUENCH_LIQUIDS = ["Spring Water", "Beast Oil", "Spirit Spring Water", "Dragon Blood", "Heavenly Dew"]
 SEAL_STONE = "Seal Stone"
+MATERIALS_USE_BAG_SLOTS = False     # DEFAULT: forging materials sit in a pouch and don't fill bag slots
 
 # Recipe per forge, by gear tier: base material and binding of the SAME tier as the gear
 RECIPE = {

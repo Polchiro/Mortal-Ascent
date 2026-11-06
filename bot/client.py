@@ -22,8 +22,8 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, passive,
-               prefix, qi, trainer)
+from . import (admin, combat, cooldowns, crafting, db, duel_view, gathering, guide, hunt, instance, loot, materials,
+               passive, prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
@@ -467,10 +467,15 @@ def register_commands(bot):
                     use = crafting.best_breakthrough_pill(bot.conn, uid, fresh)
                     if use and rules.breakthrough_chance(fresh) >= 1:
                         use = None
+                realm_before = fresh["realm"]
                 ok, msg = rules.attempt_breakthrough(fresh, db.get_techniques(bot.conn, uid),
                                                      bonus=use[1] if use else 0)
                 if ok is not None:
                     save_progress(uid, fresh)
+                if ok:
+                    dew = materials.breakthrough_dew("realm" if fresh["realm"] != realm_before else "phase")
+                    loot.store(bot.conn, uid, dew)
+                    msg += "\n✨ Heaven's dew settles on you: " + ", ".join(materials.lines(dew))
                     if use:
                         db.remove_item(bot.conn, use[0]["id"])
                         msg += f"\n🏔️ The **{use[0]['name']}** dissolves into your meridians."

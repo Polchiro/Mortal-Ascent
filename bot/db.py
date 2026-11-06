@@ -11,6 +11,8 @@ import json
 import sqlite3
 import time
 
+import forge
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS players (
     user_id           INTEGER PRIMARY KEY,
@@ -388,8 +390,17 @@ def get_item(conn, user_id, item_id):
     return _item(row) if row else None
 
 
+# Forging materials (forge.py) live in the materials pouch and use no bag slot; Beast Cores still do.
+FREE_SLOT_SQL = "category = 'materials' AND key NOT LIKE 'core:%'"
+
+
+def uses_slot(category, key):
+    return forge.MATERIALS_USE_BAG_SLOTS or not (category == "materials" and not key.startswith("core:"))
+
+
 def slots_used(conn, user_id):
-    return conn.execute("SELECT COUNT(*) FROM items WHERE user_id = ?", (user_id,)).fetchone()[0]
+    free = "" if forge.MATERIALS_USE_BAG_SLOTS else f" AND NOT ({FREE_SLOT_SQL})"
+    return conn.execute("SELECT COUNT(*) FROM items WHERE user_id = ?" + free, (user_id,)).fetchone()[0]
 
 
 def category_counts(conn, user_id):
@@ -408,7 +419,7 @@ def add_item(conn, user_id, category, key, name, grade=None, qty=1, data=None):
                 conn.execute("UPDATE items SET qty = qty + ? WHERE id = ?", (qty, row[0]))
             return True
     cap = conn.execute("SELECT bag_capacity FROM players WHERE user_id = ?", (user_id,)).fetchone()[0]
-    if slots_used(conn, user_id) >= cap:
+    if uses_slot(category, key) and slots_used(conn, user_id) >= cap:
         return False
     with conn:
         conn.execute(

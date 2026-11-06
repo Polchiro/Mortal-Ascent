@@ -227,6 +227,8 @@ def open_chest(player, tier, rng=random):
         items.append(roll_armor(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
     if rng.random() < equipments.CHEST_ARTIFACT_CHANCE[tier]:
         items.append(roll_artifact(pick(equipments.CHEST_ARTIFACT_TIER_ODDS[tier], rng), rng))
+    from . import materials
+    items += materials.roll_chest(tier, rng)
     return coins, items
 
 
@@ -325,6 +327,10 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
             exp, note = mastery.gain(conn, p, learned[0], INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]],
                                      bonus=False)
             msg = f"📜 You already know **{t['name']}**. Rereading it gives you insight: **+{exp} mastery EXP**."
+            from . import materials
+            ink = materials.duplicate_manual_ink(t["grade"])
+            store(conn, user_id, ink)
+            msg += "\n✨ The ink lifts off the pages: " + ", ".join(materials.lines(ink))
             return msg + (f"\n{note}" if note else "")
         db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"], rules.technique_slots(p["realm"]))
         return (f"📜 You comprehend **{t['name']}** ({t['grade']} {t['type']}) and equip it "

@@ -26,7 +26,11 @@ def render_bag(data):
     t.spaced(d, (1160, 80), "BAG SLOTS", font("Cinzel.ttf", 12, "Bold"), t.GOLD, 1.6, "r")
     t.bar(img, (900, 98, 1160, 114), used / cap if cap else 1, t.EMBER if used < cap else t.GLOW, f"{used} / {cap}")
     category_tabs(img, data, (30, 140, 1170, 184))
-    grid(img, data, (30, 200, 760, 726))
+    if data.get("groups"):
+        group_chips(img, data, (30, 194, 760, 226))
+        grid(img, data, (30, 234, 760, 726))
+    else:
+        grid(img, data, (30, 200, 760, 726))
     inspect_panel(img, data["inspect"], (776, 200, 1170, 726))
     return t.finish(img)
 
@@ -61,6 +65,24 @@ def category_tabs(img, data, box):
         t.text(d, (bx + lx, (y0 + y1) / 2), label.upper(), f, color, "lm")
         t.text(d, (bx + w - 10, (y0 + y1) / 2), str(count), font("Inter.ttf", 13, "Bold"),
                t.PARCHMENT if count else t.ASH_DK, "rm")
+
+
+def group_chips(img, data, box):
+    """Materials groups (Base · Bindings · Essences · Fuel & Liquids · Beast Cores); the shown one is lit."""
+    x0, y0, x1, y1 = box
+    n = len(data["groups"])
+    gap = 6
+    w = (x1 - x0 - (n - 1) * gap) / n
+    f = font("Cinzel.ttf", 11, "Bold")
+    for i, (key, label, count) in enumerate(data["groups"]):
+        bx = x0 + i * (w + gap)
+        active = data.get("group") == key
+        d = ImageDraw.Draw(img)
+        d.rounded_rectangle(P(bx, y0, bx + w, y1), radius=round(6 * t.S),
+                            fill=t.alpha(t.CRIMSON if active else t.PANEL, 235),
+                            outline=t.GOLD if active else t.BRONZE_DK, width=max(1, t.S))
+        t.text(d, (bx + w / 2, (y0 + y1) / 2), f"{label.upper()} {count}", f,
+               t.GOLD_HI if active else (t.PARCHMENT if count else t.ASH_DK), "mm")
 
 
 def grid(img, data, box):

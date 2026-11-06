@@ -16,10 +16,11 @@ from dataclasses import dataclass
 import alchemy
 import equipments
 import explore
+import forge
 import technique
 import training
 
-from .. import combat, db, gear, loot
+from .. import combat, db, gear, loot, materials
 from .. import player as rules
 
 
@@ -39,8 +40,12 @@ CATEGORIES = {
     "artifacts": Category("artifacts", "Artifacts", "pearl", "Equip"),
     "pills": Category("pills", "Pills", "pill", "Take"),
     "herbs": Category("herbs", "Herbs", "herb", ""),
-    "materials": Category("materials", "Materials", "herb", ""),
+    "materials": Category("materials", "Materials", "mat:base:weapon:3", ""),
 }
+# The Materials tab is split into groups (docs/forge.md): forging materials, then Beast Cores
+MATERIAL_GROUPS = [("base", "Base"), ("binding", "Bindings"), ("essence", "Essences"),
+                   ("fuel_liquid", "Fuel & Liquids"), ("core", "Beast Cores")]
+ESSENCE_RARITY_KEY = {"shard": "refined", "crystal": "treasure", "heart": "divine"}
 ORDER = list(CATEGORIES)
 GEAR = ("weapons", "armor", "artifacts")      # items you wear: Equip / Unequip
 
@@ -57,6 +62,13 @@ def rarity(item):
         return TIER_LABEL.get(item["key"], item["key"].title()), item["key"]
     if cat in ("manuals", "pills"):
         return f"{grade} Grade", grade
+    if cat == "materials" and item["key"] in materials.MATERIALS:
+        m = materials.MATERIALS[item["key"]]
+        if m["kind"] == "essence":
+            return forge.ESSENCE_GRADES[m["grade"]]["name"], ESSENCE_RARITY_KEY[m["grade"]]
+        if m["kind"] == "seal":
+            return "Seal", "treasure"
+        return f"Tier {m['tier']}", forge.TIERS[m["tier"] - 1]
     if cat == "materials" and grade:
         return f"{grade} Grade", grade
     if cat == "herbs":
@@ -73,6 +85,8 @@ def item_icon(item):
         return f"emblem:manual:{item['key']}:{item['grade']}"
     if item["category"] == "pills" and item.get("grade"):
         return pill_icon(item)
+    if item["category"] == "materials" and item["key"] in materials.MATERIALS:
+        return materials.icon_kind(item["key"])
     return CATEGORIES[item["category"]].icon
 
 
@@ -211,6 +225,9 @@ def details(item, player, learned_names=()):
                        + f"up to {a['max_patterns']} pill patterns")
         notes.append(("Refine it with /craft", "jade"))
         notes.append(("The merchant does not buy herbs", "red"))
+    elif cat == "materials" and item["key"] in materials.MATERIALS:
+        kind, lines, effects = material_details(item["key"])
+        notes.append(("Forged into gear passives with /forge", "jade"))
     elif item["key"].startswith("core:"):
         kind = "Beast Core"
         lines.append("The crystallised essence of a slain beast. Breakthrough pills need a core of their grade.")
@@ -221,6 +238,49 @@ def details(item, player, learned_names=()):
     return {"name": item["name"], "qty": item["qty"], "rarity": label, "rarity_key": key, "icon": item_icon(item),
             "kind": kind, "lines": lines, "effects": effects, "notes": notes,
             "equipped": bool(item["equipped"])}
+
+
+def material_group(item):
+    """Which Materials group an item sits in (MATERIAL_GROUPS)."""
+    return materials.group_of(item["key"]) if item["key"] in materials.MATERIALS else "core"
+
+
+def material_order(item):
+    keys = list(materials.MATERIALS)
+    group = [g for g, _ in MATERIAL_GROUPS].index(material_group(item))
+    return group, keys.index(item["key"]) if item["key"] in materials.MATERIALS else 0, item["id"]
+
+
+GEAR_WORD = {"weapon": "weapons", "armor": "armor", "artifact": "artifacts"}
+
+
+def material_details(key):
+    """(kind, lines, effects) for a forging material's Inspect panel."""
+    m = materials.MATERIALS[key]
+    k = m["kind"]
+    if k == "base":
+        tier = forge.TIERS[m["tier"] - 1]
+        need = forge.RECIPE[tier]["base"]
+        return ("Base material", [f"The body of every {tier.title()} {m['gear']} forge."],
+                [f"{need} per forge of {tier.title()} {GEAR_WORD[m['gear']]}"])
+    if k == "binding":
+        tier = forge.TIERS[m["tier"] - 1]
+        return ("Binding", ["Holds the passive to the gear while it cools."],
+                [f"{forge.RECIPE[tier]['binding']} per forge of {tier.title()} gear (any type)"])
+    if k == "essence":
+        fam = forge.FAMILIES[m["family"]]
+        cap = forge.ESSENCE_GRADES[m["grade"]]["max_rarity"]
+        gear_list = " and ".join(GEAR_WORD[g] for g in fam["gear"])
+        return ("Essence", [f"Makes the forge pick a {fam['name']} passive for {gear_list}."],
+                [f"Passives up to {cap}", "Optional, 1 per forge"])
+    if k == "fuel":
+        return ("Forge fuel", ["Burns steady in the forge."],
+                [f"Ignite safe zone +{forge.FUEL_ZONE_BONUS[m['tier'] - 1]}°", "Optional, 1 per forge"])
+    if k == "liquid":
+        return ("Quench liquid", ["Cools the hot metal evenly."],
+                [f"Quench safe window +{forge.LIQUID_WINDOW_BONUS[m['tier'] - 1]}°", "Optional, 1 per forge"])
+    return ("Seal Stone", ["Locks one passive slot while the other is reforged."],
+            [f"{forge.REPLACE_SEAL_STONES} per Replace (Treasure and Divine gear)"])
 
 
 PILL_KINDS = [("Qi pills", alchemy.QI_PILL_RECIPE), ("Qi Burst pills", alchemy.QI_BURST_RECIPE),

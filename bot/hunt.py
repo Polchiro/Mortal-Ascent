@@ -22,7 +22,7 @@ import explore
 import stats
 import technique
 
-from . import combat, db, gear, loot, mastery
+from . import combat, db, gear, loot, mastery, materials
 from . import player as rules
 
 MAX_TEAM = 8                     # DEFAULT hard cap on a hunt party
@@ -220,6 +220,10 @@ def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
             if core:
                 stored, _ = loot.store(conn, uid, [core])
                 bits.append(f"🔮 {loot.describe(core)}" if stored else "bag full, core lost")
+            mats = materials.roll_beast(tier, lair["realm"], beast_name, rng)
+            if mats:
+                loot.store(conn, uid, mats)
+                bits.append(", ".join(materials.lines(mats)))
         else:
             db.update_player(conn, uid, injured_until=now + LOSS_INJURY_HOURS * 3600)
             bits.append(f"injured {LOSS_INJURY_HOURS}h")

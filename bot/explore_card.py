@@ -23,6 +23,8 @@ CLUE_LABEL = {
     "An old cart lies overturned.": "An old cart",
     "A sweet, earthy smell drifts by.": "A sweet smell", "Dew sparkles on thick green leaves.": "Thick leaves",
     "Bees hum over wild flowers.": "Humming bees",
+    "Rock glitters along a cliff face.": "Glittering rock", "The clink of loose stones rings like metal.": "Ringing stones",
+    "Rust-red streaks run down the rocks.": "Rust-red streaks",
     "Complete silence.": "Too quiet", "Soft sunlight through the leaves.": "Soft sunlight",
     "Birds sing calmly.": "Birdsong",
     "The air smells sour.": "Sour air", "Loose stones trickle down the slope.": "Loose stones",
@@ -151,7 +153,7 @@ def encounter_data(exp, notice=None):
 
 
 TITLE = {
-    "wild_beast": "Wild Beast", "treasure_chest": "Treasure Chest", "herb_patch": "Herb Patch",
+    "wild_beast": "Wild Beast", "treasure_chest": "Treasure Chest", "herb_patch": "Herb Patch", "ore_vein": "Ore Vein",
     "peaceful_clearing": "Peaceful Clearing", "hazard": "Hazard", "bandits": "Bandits",
     "wandering_merchant": "Wandering Merchant", "injured_stranger": "Injured Stranger",
     "stone_tablet": "Ancient Stone Tablet", "elite_lair": "Elite Beast Lair", "blessed_land": "Blessed Land",

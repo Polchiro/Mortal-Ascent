@@ -230,9 +230,15 @@ class CharacterSheet(OwnedView):
     # Inventory
     def build_inventory(self):
         counts = db.category_counts(self.bot.conn, self.owner_id)
-        self.select("Category", [
-            discord.SelectOption(label=f"{c.label} ({counts.get(c.key, 0)})", value=c.key, default=c.key == self.category)
-            for c in items.CATEGORIES.values()], self.on_category, 1)
+        options = []
+        for c in items.CATEGORIES.values():
+            options.append(discord.SelectOption(label=f"{c.label} ({counts.get(c.key, 0)})", value=c.key,
+                                                default=c.key == self.category))
+            if c.key == "materials":      # one option per Materials group
+                options += [discord.SelectOption(label=f"Materials · {label}", value=f"materials:{g}",
+                                                 default=self.category == f"materials:{g}")
+                            for g, label in items.MATERIAL_GROUPS]
+        self.select("Category", options, self.on_category, 1)
         page_items = getattr(self, "page_items", [])
         if page_items:
             self.select("Inspect an item...", [

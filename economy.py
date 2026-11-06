@@ -1,6 +1,8 @@
 """
 Economy data. Design rules are explained in docs/economy.md.
 """
+import forge
+
 
 CURRENCIES = {
     "lotus_coins": {"name": "Lotus Coins", "emoji": "🪷", "tradeable": True},
@@ -48,6 +50,7 @@ PEARL_SHOP = {
     "mystic_qi_pill_x1": 120,
     "inventory_expansion_20": 300,
     "name_change": 200,
+    "seal_stone": forge.SEAL_STONE_PEARLS,      # forging (docs/forge.md)
     "profile_theme": (400, 800),
 }
 

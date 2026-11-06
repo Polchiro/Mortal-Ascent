@@ -14,12 +14,14 @@ import explore
 import technique
 import training
 
-from . import combat, db, fight, gear, hunt, loot, mastery
+from . import combat, db, fight, gear, hunt, loot, mastery, materials
 from . import player as rules
 
 CLUES = {
     "wild_beast":         ["You hear low growling...", "Fresh claw marks scar the trees.", "Something heavy breathes in the brush."],
     "treasure_chest":     ["Something glints between the roots.", "A faint golden glow...", "An old cart lies overturned."],
+    "ore_vein":           ["Rock glitters along a cliff face.", "The clink of loose stones rings like metal.",
+                           "Rust-red streaks run down the rocks."],
     "herb_patch":         ["A sweet, earthy smell drifts by.", "Dew sparkles on thick green leaves.", "Bees hum over wild flowers."],
     "peaceful_clearing":  ["Complete silence.", "Soft sunlight through the leaves.", "Birds sing calmly."],
     "hazard":             ["The air smells sour.", "Loose stones trickle down the slope.", "A thin mist clings to the ground."],
@@ -180,6 +182,10 @@ class Expedition:
         if core:
             self.items.append(core)
             self.story.append(f"🔮 You cut a **{loot.describe(core)}** from its body!")
+        mats = materials.roll_beast("normal", self.player["realm"], name, self.rng)
+        if mats:
+            self.items += mats
+            self.story.append("🦴 You salvage " + ", ".join(materials.lines(mats)) + ".")
 
     def _bandit_result(self, b, name):
         if b.result in ("fled", "escaped"):
@@ -228,6 +234,12 @@ class Expedition:
         self.items += found
         self.story.append("🌿 A patch of wild herbs! You gather " + ", ".join(f"**{loot.describe(h)}**" for h in found)
                           + ". (**/gather** finds more.)")
+
+    def _ore_vein(self):
+        found = materials.roll_ore_vein(self.player["realm"], self.rng)
+        self.items += found
+        self.story.append("⛏️ An ore vein in the cliff! You chip out " + ", ".join(materials.lines(found))
+                          + ". (Forging metal, see **/index materials**.)")
 
     def _peaceful_clearing(self):
         heal = round(self.max_hp * explore.PEACEFUL_CLEARING_HEAL)
