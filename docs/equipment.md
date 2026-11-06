@@ -1,7 +1,7 @@
-# Equipment — Weapons
+# Equipment — Weapons, Armor and Artifacts
 
-Weapons only give stat buffs. They do not affect which techniques can be used.
-One weapon equipped at a time. Armor and artifacts come later.
+Weapons and armor only give stat buffs; artifacts each add one special effect. Gear never changes which techniques can be used.
+One weapon, one armor and two artifacts equipped at a time.
 
 ## Tiers
 
@@ -127,6 +127,160 @@ Weapons drop from chests (chests drop after defeating beasts).
 
 - A Divine weapon drop is announced to the whole server
 
+## Armor
+
+One armor slot. Armor uses the **same tiers, realm requirements, quality prefixes
+(Cracked / Fine / Flawless) and drop odds as weapons**.
+
+| Type | Seal | Buffs | Split | Suits |
+|---|---|---|---|---|
+| Martial Robe | 袍 | HP + Defense | 50 / 50 | Balanced |
+| Iron Plate | 甲 | Defense | 100% | Tank vs. hard hitters |
+| Beast Hide | 皮 | HP | 100% | Long fights, team hunts |
+| Silk Vest | 衣 | Defense + Attack | 60 / 40 | Aggressive players |
+
+### Names
+
+| Tier | Martial Robe | Iron Plate | Beast Hide | Silk Vest |
+|---|---|---|---|---|
+| Ordinary | Hemp Training Robe | Iron Scale Vest | Wolf Hide Coat | Cotton Wrap |
+| Refined | Disciple's Cloud Robe | Tempered Lamellar | Bear Pelt Mantle | Black Silk Vest |
+| Spirit | Moonweave Robe | Azure Dragon-Scale Armor | Thunder Hawk Feather Cloak | Spider Silk Vest |
+| Treasure | Robe of Drifting Clouds | Golden Turtle Shell Armor | Qilin Hide Robe | Vermilion Phoenix Vest |
+| Divine | Robe of the Nine Heavens | Armor of the Black Tortoise | Mantle of Kun-Peng | Heavenly Silk of the Weaver |
+
+### Stat buffs (rolled within the range on drop)
+
+| Tier | Martial Robe | Iron Plate | Beast Hide | Silk Vest |
+|---|---|---|---|---|
+| Ordinary | +2–3% HP · +2–3% Def | +3–5% Def | +3–5% HP | +2–3% Def · +1–2% Atk |
+| Refined | +4–5% HP · +4–5% Def | +7–10% Def | +7–10% HP | +4–6% Def · +3–4% Atk |
+| Spirit | +6–8% HP · +6–8% Def | +12–16% Def | +12–16% HP | +7–10% Def · +5–6% Atk |
+| Treasure | +9–12% HP · +9–12% Def | +18–24% Def | +18–24% HP | +11–14% Def · +7–10% Atk |
+| Divine | +14–18% HP · +14–18% Def | +28–35% Def | +28–35% HP | +17–21% Def · +11–14% Atk |
+
+- Armor buffs add to all other % buffs (see stats.md); the 30% per-hit cap still applies
+- Drop: same chance per chest as a weapon (rolled separately), same tier odds
+
+## Artifacts
+
+**Two artifact slots, open from the start.** Each artifact belongs to a **family** with one
+special effect. Every rarity has its **own name** and a fixed effect value (no quality roll).
+
+- Same realm requirements per tier as weapons
+- You can't equip two artifacts of the same family
+- Fair Duels: combat artifacts work at **half strength**; armor counts at half, like weapons
+- About **twice as rare** as weapons; Treasure and Divine only from Jade Chests (Beast Kings)
+- Never sold for Moon Pearls
+
+### ⚔️ Combat
+
+**牙 Fang family:** Extra damage when your Strike beats a Break (5% / 10% / 15% / 20% / 25%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Wolf Fang Charm | Tiger Fang Talisman | Thunder Hawk Talon | Flood Dragon Fang | Fang of the White Tiger |
+
+**钟 Bell family:** Less damage from charged attacks (5% / 10% / 17% / 24% / 30%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Bronze Temple Bell | Copper Warding Bell | Moonsilver Chime | Bell of Ten Thousand Wards | Chaos Bell of the Eastern Sovereign |
+
+**镜 Mirror family:** Reflects part of the damage you Guard (3% / 6% / 9% / 12% / 15%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Polished Bronze Mirror | Jade Mirror | Moonlit Mirror | Bagua Mirror | Kunlun Mirror |
+
+**雷 Thunder family:** Chance your Break also staggers (5% / 8% / 12% / 16% / 20%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Flint Bead | Thunderstone Bead | Storm Pearl | Nine-Bolt Thunder Orb | Drum of the Thunder Lord |
+
+**莲 Lotus family:** Heals a share of max HP every turn (1% / 1.5% / 2% / 3% / 4%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Wooden Lotus Charm | Lotus Heart Pendant | Spring Dew Jade | Phoenix Feather Pendant | Lotus of Rebirth |
+
+**羽 Feather family:** Chance to dodge a hit (3% / 5% / 7% / 10% / 12%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Sparrow Feather | Swallow Wing Charm | Crane Feather Fan | Cloud-Stepping Ribbon | Wind-and-Fire Wheels |
+
+**心 Focus family:** Chance a technique's cooldown resets instantly (5% / 8% / 12% / 16% / 20%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Meditation Beads | Sandalwood Prayer Beads | Seal of Clear Mind | Sutra of Endless Breath | Lamp of Eternal Insight |
+
+### 🌀 Cultivation and crafting
+
+**聚 Qi family:** Internal Qi Rate (3% / 5% / 8% / 12% / 15%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Qi-Gathering Pebble | Spirit-Gathering Bead | Cloud Jade Disc | Dragon Vein Pearl | Pearl of the Primordial Sea |
+
+**玉 Purity family:** Pill toxicity fades faster (5% / 10% / 15% / 20% / 25%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Smooth River Stone | Calm Heart Jade | Ice Soul Jade | Purifying Lotus Seal | Jade of Ten Thousand Purities |
+
+**炉 Furnace family:** Wider heat safe zone in /craft (degrees) (+2° / +3° / +5° / +6° / +8°)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Ember Stone | Alchemist's Fire Crystal | Earth Fire Core | Samadhi Flame Lamp | Ember of the Eight Trigrams Furnace |
+
+**葫 Gourd family:** Higher chance of old herbs in /gather (5% / 10% / 15% / 20% / 25%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Woven Herb Pouch | Herb Spirit Gourd | Dew-Collecting Vase | Purple Gold Gourd | Jade Purity Vase |
+
+**书 Insight family:** Technique mastery EXP (3% / 6% / 9% / 12% / 15%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Torn Manual Page | Old Master's Notes | Scroll of Silent Insight | Jade Slip of a Fallen Grandmaster | Heavenly Book of the Dao |
+
+### 🧭 Exploration and wealth
+
+**罗 Compass family:** Better chests and rare encounters in /explore (3% / 6% / 9% / 12% / 15%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Traveler's Compass | Wanderer's Compass | Star-Reading Disc | Luopan of Mountains and Rivers | Map of Heaven and Earth |
+
+**财 Fortune family:** More Lotus Coins from fights and chests (5% / 10% / 15% / 20% / 25%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Copper Coin Pouch | Merchant's Abacus | Golden Toad Charm | Treasure Bowl of Plenty | Tree of Endless Wealth |
+
+**兽 Hunter family:** More Beast Cores from fights (share of the normal chance) (10% / 20% / 30% / 40% / 50%)
+
+| Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|
+| Hunter's Bone Whistle | Beast-Tracking Totem | Blood Moon Lure | Beastmaster's Seal | Banner of Ten Thousand Beasts |
+
+### Artifact drop rates
+
+| Chest | Artifact chance | Tier odds |
+|---|---|---|
+| Wooden | 1% | Ordinary 99%, Refined 1% |
+| Bronze | 2% | Ordinary 90%, Refined 9.5%, Spirit 0.5% |
+| Silver | 4% | Refined 85%, Spirit 15% |
+| Jade | 6% | Spirit 88%, Treasure 11.9%, Divine 0.1% |
+
+Divine artifacts are announced to the whole server, like Divine weapons.
+
 ## Open decisions
 - [ ] Pity progress for Divine drops (each Jade Chest without one slightly raises the next chance)
-- [ ] Armor and artifacts
+- [ ] Beast King trophy artifacts (a unique artifact per Beast King with an extra twist)
+- [ ] More artifact slots at high realms
