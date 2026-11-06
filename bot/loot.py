@@ -59,7 +59,12 @@ def roll_manual(grade, rng=random):
 
 
 def _rolled(category, kind, tier, ranges, base, rng):
-    pos = rng.random()           # one roll position for all stats, so the quality prefix is honest
+    # one roll position for all stats, so the quality prefix is honest
+    return _gear(category, kind, tier, ranges, base, rng.random())
+
+
+def _gear(category, kind, tier, ranges, base, pos):
+    """Gear whose stats sit at `pos` (0 = worst, 1 = best) of each range."""
     buffs = {k: round(lo + (hi - lo) * pos, 3) for k, (lo, hi) in ranges.items()}
     prefix = next(name for threshold, name in equipments.QUALITY_PREFIXES if pos >= threshold)
     return {"category": category, "key": kind, "name": f"{prefix} {base}".strip(), "grade": tier,
@@ -76,6 +81,17 @@ def roll_armor(tier, rng=random):
     """Armor: same quality prefixes as weapons (equipment.md "Armor")."""
     atype = rng.choice(equipments.ARMOR_TYPES)
     return _rolled("armor", atype, tier, equipments.ARMOR_BUFFS[atype][tier], equipments.ARMOR_NAMES[tier][atype], rng)
+
+
+def weapon(wtype, tier, pos):
+    """A weapon of this type and tier with its stats at `pos` (0–1) of each range (admin gifts)."""
+    return _gear("weapons", wtype, tier, equipments.WEAPON_BUFFS[wtype][tier], equipments.WEAPON_NAMES[tier][wtype],
+                 pos)
+
+
+def armor(atype, tier, pos):
+    """Armor of this type and tier with its stats at `pos` (0–1) of each range (admin gifts)."""
+    return _gear("armor", atype, tier, equipments.ARMOR_BUFFS[atype][tier], equipments.ARMOR_NAMES[tier][atype], pos)
 
 
 def artifact(family, tier):
