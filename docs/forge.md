@@ -8,7 +8,10 @@ All numbers are in `forge.py`. Numbers marked DEFAULT there were not in the desi
 > **Built:** this page and the data (Part 1); materials in the game (Part 2): every drop source, the Materials tab
 > in /inventory (groups Base · Bindings · Essences · Fuel & Liquids · Beast Cores), drawn material icons
 > (cards/material_icons.py), and the Index sections Materials and Passives (weapon, armor, artifact).
-> **Not built yet:** the /forge command (Part 3), passives in fights and on cards (Part 4).
+> Part 3: the **/forge** command (and `m forge`) with the Forge Hall card (cards/forge.py), round button icons
+> (cards/forge_icons.py), blacksmith ranks, and the Swift Hands, Steady Hand and Second Chance artifact passives.
+> **Not built yet:** passives in fights and on cards (Part 4). Until then forged passives are saved on the gear and
+> shown in /forge, but don't change fights yet.
 
 Forging materials sit in a materials pouch: they stack by type and **don't use bag slots** (DEFAULT,
 `forge.MATERIALS_USE_BAG_SLOTS`). Beast Cores still do.
@@ -247,8 +250,24 @@ score back one rarity at a time until the inscription is good enough (DEFAULT nu
 | Treasure | Extreme | 3.5s | 15° | 25% | 6 | 4 | yellow |
 | Divine | Super Hard | 3s | 12° | 35% | 7 | 5 | white |
 
-The Quench window starts at 40° (Ordinary) and narrows by 6° per tier to 16° (Divine). The exact stage rules are
-built in Part 3 and may be tuned there.
+The Quench window starts at 40° (Ordinary) and narrows by 6° per tier to 16° (Divine).
+
+### How each stage plays (DEFAULT numbers in `forge.py`, "Stage rules")
+- **🔥 Ignite** (3–7 rounds by tier): Pump (+12°), Hold, or Vent (−12°). After each move the fire drifts ±5°, or
+  a gust/draught moves it 12–18° (30% of rounds); the omen line warns which way. The hidden safe zone sits
+  between 20° and 85°. Points = rounds ending in the zone ÷ rounds.
+- **🌡️ Heat:** the metal starts dull red and gets one colour hotter each time you keep heating. 20 points at the
+  right colour, 10 at one colour off, 0 further; heating past white burns it (0).
+- **🔨 Hammer:** each strike the metal *rings true* (Strike Hard), gives a *dull thud* (Strike Light) or is
+  *cooling* (Reheat). Points = right strikes ÷ strikes.
+- **💧 Quench:** choose Water (window ×0.7, up to 20) or Oil (window ×1.3, up to 15). The blade starts at
+  820–900° and the target is 420–620°. **Wait** cools it 30–60°, **Wait a breath** 6–12°. Plunging in the middle
+  half of the window gives full points, elsewhere in the window half, outside it 2. Too cold misses (2).
+- **✨ Inscribe:** the rune's strokes are shown in order; each pick offers 4 strokes. Points = right strokes ÷ strokes.
+- A lying hint (by tier) shows the wrong heat text, colour, hammer hint, temperature or one wrong stroke in the
+  sequence. A decision not made in time counts as a wrong one (Ignite: Hold; Heat: keep heating; Quench: oil,
+  then wait). Every forge is random: the zone, target colour order, metal states, temperatures and rune change.
+- The materials and coins are taken when you press **Begin**. Walking away lets every decision time out.
 
 ---
 

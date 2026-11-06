@@ -143,6 +143,7 @@ PLAYER_COLUMNS = {
     "gather_paused_until":  "REAL",
     "gather_flag":          "TEXT",                          # why gathering was flagged for review (no ban)
     "alchemy_exp":          "INTEGER NOT NULL DEFAULT 0",    # alchemist rank comes from this (alchemy.py)
+    "blacksmith_exp":       "INTEGER NOT NULL DEFAULT 0",    # blacksmith rank for /forge (forge.py)
     # /duel (docs/pvp.md)
     "duels_won":            "INTEGER NOT NULL DEFAULT 0",
     "duels_lost":           "INTEGER NOT NULL DEFAULT 0",
@@ -201,9 +202,11 @@ def get_player(conn, user_id):
     row = conn.execute("SELECT * FROM players WHERE user_id = ?", (user_id,)).fetchone()
     if not row:
         return None
-    from . import gear
+    from . import gear, passives
     p = dict(row)
-    p["artifact_fx"] = gear.artifact_effects(equipped_artifacts(conn, user_id))
+    worn = equipped_artifacts(conn, user_id)
+    p["artifact_fx"] = gear.artifact_effects(worn)
+    p["artifact_passives"] = passives.artifact_passives(worn)    # forged artifact passives (docs/forge.md)
     return p
 
 
@@ -438,6 +441,12 @@ def discard_item(conn, user_id, item_id, qty=1):
                             "AND qty >= ?", (qty, item_id, user_id, qty)).rowcount
         conn.execute("DELETE FROM items WHERE id = ? AND qty <= 0", (item_id,))
     return bool(done)
+
+
+def set_item_data(conn, item_id, data):
+    """Replace an item's JSON extras (forged passives live here)."""
+    with conn:
+        conn.execute("UPDATE items SET data = ? WHERE id = ?", (json.dumps(data) if data else None, item_id))
 
 
 def remove_item(conn, item_id, qty=1):

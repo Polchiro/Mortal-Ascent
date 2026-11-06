@@ -412,6 +412,34 @@ QUENCH = {
     "oil":   {"max_points": 15, "window_mult": 1.3},
 }
 
+# ── Stage rules (bot/forging.py plays them). DEFAULT numbers, tune freely ──
+TIMER_GRACE_SECONDS = 1.0           # Discord round-trip allowance per decision, as in /craft
+IDLE_TIMEOUT_SECONDS = 300
+
+# 1 Ignite: heat 0–100, keep it inside a hidden safe zone of DIFFICULTY["zone"] degrees (+ fuel, rank, Steady Hand)
+IGNITE = {"pump": 12, "vent": -12, "calm_drift": 5, "spike": (12, 18), "spike_chance": 0.30,
+          "zone_from": 20, "zone_to": 85}
+
+# 2 Heat: the metal starts dull red; each "keep heating" moves it one colour (past white it burns: 0 points)
+
+# 3 Hammer: each strike the metal is in one state; the right answer for each
+HAMMER_STATES = {
+    "true":    {"hint": "The metal rings true under the hammer.", "answer": "hard"},
+    "dull":    {"hint": "A dull thud: the metal is soft and spreading.", "answer": "light"},
+    "cooling": {"hint": "It's cooling, the glow is fading.", "answer": "reheat"},
+}
+
+# 4 Quench: the blade cools from START each decision, by STEP (Wait) or SMALL_STEP (Wait a breath);
+# plunge near the target temperature
+QUENCH_TEMPS = {"start": (820, 900), "step": (30, 60), "small_step": (6, 12), "target": (420, 620)}
+QUENCH_HALF_POINTS = 0.5            # inside the window but not its middle half: half the points
+QUENCH_MISS_POINTS = 2              # outside the window
+
+# 5 Inscribe: carve the rune stroke by stroke (DIFFICULTY["strokes"]); each pick shows 4 strokes
+STROKES = ["horizontal", "vertical", "sweep", "press", "dot", "hook"]
+STROKE_CHOICES = 4
+RUNES = ["Sharpness", "Endurance", "Fortune", "Vitality", "Storms", "Shadows", "Rebirth", "Heaven"]
+
 # ══ Blacksmith rank ═══════════════════════════════════════════════════
 
 BLACKSMITH_RANK_EXP = dict(alchemy.ALCHEMIST_RANK_EXP)   # same curve as alchemist ranks

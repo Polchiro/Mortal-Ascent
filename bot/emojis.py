@@ -1,7 +1,8 @@
 """
-Fight, craft, explore and gather button icons as the bot's application emojis (docs/combat.md, docs/alchemy.md).
+Fight, craft, forge, explore and gather button icons as the bot's application emojis (docs/combat.md, docs/alchemy.md).
 
-At startup the medallion icons from cards/battle_icons.py, cards/alchemy_icons.py and cards/wild_icons.py are
+At startup the medallion icons from cards/battle_icons.py, cards/alchemy_icons.py, cards/wild_icons.py and
+cards/forge_icons.py are
 uploaded once as application emojis named ma_<key>. If that fails (no permission, rate limit, offline tests),
 buttons use normal emojis.
 """
@@ -9,13 +10,13 @@ import logging
 
 import discord
 
-from cards import alchemy_icons, battle_icons, wild_icons
+from cards import alchemy_icons, battle_icons, forge_icons, wild_icons
 
 from . import render as card_render
 
 log = logging.getLogger("mortal-ascent")
 PREFIX = "ma_"
-ICON_SETS = (battle_icons, alchemy_icons, wild_icons)
+ICON_SETS = (battle_icons, alchemy_icons, wild_icons, forge_icons)
 
 
 class Emojis:

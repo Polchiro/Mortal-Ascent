@@ -145,6 +145,11 @@ CRAFT_ACCENTS = {
 }
 ACCENTS.update(CRAFT_ACCENTS)
 
+# /forge: the Forge Hall (cards/forge.py). Molten orange fire against cold steel.
+FORGE_ACCENT = SceneAccent("forge", ((14, 12, 14), (52, 30, 18)), (246, 226, 200), (128, 118, 120), (252, 140, 52),
+                           (255, 196, 110), (240, 118, 40), (24, 20, 22), (168, 82, 28))
+ACCENTS["forge"] = FORGE_ACCENT
+
 # ── Text ──────────────────────────────────────────────────────────────
 
 def text(d, xy, s, f, fill, anchor="la", shadow=True):
@@ -578,6 +583,11 @@ def icon(img, kind, center, size, color):
         from .emblems import draw_kind
         draw_kind(img, kind, center, size)
         return
+    if kind.startswith("forge:"):           # /forge stages, buttons and chisel strokes (cards/forge_icons.py)
+        from .forge_icons import FORGE_ICON
+        if kind[6:] in FORGE_ICON:
+            FORGE_ICON[kind[6:]](d, cx, cy, s, color, dark)
+            return
     if kind.startswith("misc:"):            # Qi sources, herbs, /craft stages and buttons (cards/misc_icons.py)
         from .misc_icons import MISC_ICON
         if kind[5:] in MISC_ICON:
