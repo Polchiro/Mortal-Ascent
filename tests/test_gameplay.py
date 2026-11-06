@@ -325,7 +325,7 @@ def test_views_build_without_discord_connection(conn):
     async def go():
         bot = FakeBot(conn)
         ev = ExploreView(bot, 1, random.Random(0))
-        assert len(ev.children) == 3 and ev.embed().title.startswith("🌲")
+        assert len(ev.children) == 4 and ev.embed().title.startswith("🌲")
         tv = TrainView(bot, 1, trainer.roll_session(db.get_player(conn, 1), random.Random(0)))
         assert tv.intro().description
     asyncio.run(go())

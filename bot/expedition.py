@@ -88,6 +88,7 @@ class Expedition:
         self.battle = None        # the fight in progress (pending == "fight"), see bot/fight.py
         self.last_battle = None   # the fight that just ended (its final card is shown with the story)
         self.enemy_kind = None    # "beast" or "bandit"
+        self.encounter = None     # the encounter on the chosen path (for the step's card, bot/explore_card.py)
 
     # ── steps ────────────────────────────────────────────────────────
 
@@ -107,6 +108,7 @@ class Expedition:
     def choose(self, path):
         enc, _ = self.paths[path]
         self.story = []
+        self.encounter = enc
         getattr(self, f"_{enc}")()
         if self.hp <= 0:
             self._defeat()
@@ -261,6 +263,7 @@ class Expedition:
 
     def _bandits(self, ambush=False):
         enemy = combat.bandit_stats(self.player, self.rng)
+        self.encounter = "bandits"
         self.story.append(f"🗡️ {'Ambush! ' if ambush else ''}**{enemy['name']}** block the path!")
         self._start_fight(enemy, "bandit")
 

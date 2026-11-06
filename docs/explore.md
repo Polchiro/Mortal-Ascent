@@ -17,6 +17,22 @@ Players venture into the wild, choose paths, and decide how far to push their lu
    > ⬅️ *You hear low growling...* · ⬆️ *A faint golden glow...* · ➡️ *Complete silence.*
 3. The chosen path triggers an encounter
 4. After the encounter: **go deeper** or **return safely** with the loot
+   (**Return safely** is also on the crossroads, before you pick a path: same as returning after the last encounter)
+
+### The expedition card
+
+One message is edited at every step (cards/expedition.py, data in bot/explore_card.py):
+
+- **Crossroads:** three paths fan out from the bottom centre. Each path is drawn in the mood of its clue
+  (dark pines and red eyes for growling, a golden glow, a misty lake for silence, a smoky camp, a stone circle ...).
+  A misleading clue is drawn as what it *says*, never as what is really there. Over the scene: a region name
+  (only a name for now, regions are not designed yet), your realm, Step X / 5 with dots, and an arrow badge with
+  a short label on each path. Below: the three clues in full, **Found so far** (what a defeat would cost) and
+  **You** (HP, a danger meter for the step, the deeper-step bonuses).
+- **Encounters** get their own scene (chest, merchant's cart, hermit's pavilion, the bone cave ...). Fights hand over
+  to the fight screen (combat.md); the result is then drawn over that beast's own scene.
+- Buttons: Left · Middle · Right · Return safely, with drawn arrow and lantern icons (application emojis).
+- The card is a JPEG rendered off the event loop; the mood pieces and encounter scenes are cached.
 
 ### Misleading clues (by realm tier, see challenges.md)
 
