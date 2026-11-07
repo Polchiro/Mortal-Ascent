@@ -132,3 +132,54 @@ def test_admin_give_also_gives_items(monkeypatch):
     assert "5 Lotus Coins" in sent[-1].content
     cmd = bot.tree.get_command("admin").get_command("give")
     assert {"item", "amount", "quality", "age", "patterns"} <= {p.name for p in cmd.parameters}
+
+
+def test_empty_search_shows_every_kind():
+    kinds = {item_catalog.CATALOG[i]["kind"] for i, _ in item_catalog.search("")}
+    assert {"weapon", "armor", "artifact", "material", "herb", "pill"} <= kinds
+
+
+def test_pick_lists_fit_discord():
+    for pairs in (item_catalog.material_groups(), item_catalog.herb_types(), item_catalog.pill_kinds(),
+                  item_catalog.artifact_families()):
+        assert 1 < len(pairs) <= 25 and all(len(label) <= 100 for _, label in pairs)
+    for value, _ in item_catalog.material_groups():          # every material type holds at most 25 materials
+        assert 1 <= len(item_catalog.search("", limit=100, prefix="material:" + value)) <= 25
+
+
+def test_one_command_per_kind(monkeypatch):
+    from bot.client import MortalAscent
+    bot = asyncio.run(_make(MortalAscent))
+    user = FakeUser()
+
+    async def app_info():
+        return SimpleNamespace(team=None, owner=user)
+    monkeypatch.setattr(bot, "application_info", app_info)
+    run(bot, "m start", author=user)
+    checks = [("m admin give_armor robe divine amount:2 quality:flawless", "Flawless"),
+              ("m admin give_artifact fang treasure", "Flood Dragon Fang"),
+              ("m admin give_herb qi Earth amount:5 age:500", "500-year"),
+              ("m admin give_pill mending Yellow amount:3", "Yellow Mending Pill"),
+              ("m admin give_pill heaven_defying", "Heaven-Defying Pill"),
+              ("m admin give_weapon spear spirit", "Spear"),
+              ("m admin give_material seal amount:4", "Seal Stone ×4"),
+              ("m admin give_material material_type:essence:blood: material:Blood Heart amount:2", "Blood Heart ×2")]
+    for text, expect in checks:
+        _, sent = run(bot, text, author=user)
+        assert expect in sent[-1].content, (text, sent[-1].content)
+    _, sent = run(bot, "m admin give_material binding:", author=user)
+    assert "Pick a **material**" in sent[-1].content
+    cats = {i["category"] for i in db.get_items(bot.conn, user.id)}
+    assert {"armor", "artifacts", "herbs", "pills", "weapons", "materials"} <= cats
+
+
+def test_material_list_follows_the_picked_type():
+    from bot.client import MortalAscent
+    bot = asyncio.run(_make(MortalAscent))
+    cmd = bot.tree.get_command("admin").get_command("give_material")
+    ac = cmd._params["material"].autocomplete
+    inter = SimpleNamespace(namespace=SimpleNamespace(material_type="fuel:"))
+    got = asyncio.run(ac(inter, ""))
+    assert len(got) == 5 and all(c.value.startswith("material:fuel:") for c in got)
+    inter = SimpleNamespace(namespace=SimpleNamespace())
+    assert all(c.value.startswith("material:") for c in asyncio.run(ac(inter, "")))

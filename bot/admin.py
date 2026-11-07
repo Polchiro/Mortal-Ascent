@@ -15,6 +15,7 @@ import discord
 from discord import app_commands
 
 import alchemy
+import equipments
 
 from . import db, item_catalog, loot
 from . import player as rules
@@ -243,6 +244,100 @@ def register(bot):
     @item_cmd.autocomplete("item")
     async def item_autocomplete(interaction: discord.Interaction, current: str):
         return [app_commands.Choice(name=label, value=i) for i, label in item_catalog.search(current)]
+
+    # ── one command per kind of item, with pick lists (nothing to type) ──
+    def picks(pairs):
+        return [app_commands.Choice(name=label[:100], value=value) for value, label in pairs]
+
+    tier_choices = picks([(t, equipments.TIER_DISPLAY[t]) for t in equipments.TIERS])
+    grade_choices = picks([(g, g) for g in alchemy.GRADES])
+    amount_help = "How many (default 1)"
+    member_help = "Who gets it (defaults to you)"
+
+    async def give_picked(interaction, member, entry_id, amount, quality=None, age=None, patterns=None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        line, problem = await give_item_lines(uid, entry_id, amount, quality, age, patterns, member)
+        await interaction.response.send_message(problem or line, ephemeral=True)
+
+    @group.command(name="give_weapon", description="Give a weapon: pick the type and tier")
+    @app_commands.describe(weapon="Weapon type", tier="Tier", amount=amount_help, member=member_help,
+                           quality="How good the stats are (default: random, like a drop)")
+    @app_commands.choices(weapon=picks([(w, w.title()) for w in equipments.WEAPON_TYPES]), tier=tier_choices,
+                          quality=quality_choices)
+    async def give_weapon(interaction: discord.Interaction, weapon: app_commands.Choice[str],
+                          tier: app_commands.Choice[str], amount: app_commands.Range[int, 1, 25] = 1,
+                          quality: app_commands.Choice[str] | None = None, member: discord.User | None = None):
+        await give_picked(interaction, member, f"weapon:{tier.value}:{weapon.value}", amount, quality)
+
+    @group.command(name="give_armor", description="Give armor: pick the type and tier")
+    @app_commands.describe(armor="Armor type", tier="Tier", amount=amount_help, member=member_help,
+                           quality="How good the stats are (default: random, like a drop)")
+    @app_commands.choices(armor=picks([(a, equipments.ARMOR_TYPE_DISPLAY[a][1]) for a in equipments.ARMOR_TYPES]),
+                          tier=tier_choices, quality=quality_choices)
+    async def give_armor(interaction: discord.Interaction, armor: app_commands.Choice[str],
+                         tier: app_commands.Choice[str], amount: app_commands.Range[int, 1, 25] = 1,
+                         quality: app_commands.Choice[str] | None = None, member: discord.User | None = None):
+        await give_picked(interaction, member, f"armor:{tier.value}:{armor.value}", amount, quality)
+
+    @group.command(name="give_artifact", description="Give an artifact: pick what it does and its tier")
+    @app_commands.describe(artifact="Which artifact (what it does)", tier="Tier", amount=amount_help,
+                           member=member_help)
+    @app_commands.choices(artifact=picks(item_catalog.artifact_families()), tier=tier_choices)
+    async def give_artifact(interaction: discord.Interaction, artifact: app_commands.Choice[str],
+                            tier: app_commands.Choice[str], amount: app_commands.Range[int, 1, 25] = 1,
+                            member: discord.User | None = None):
+        await give_picked(interaction, member, f"artifact:{tier.value}:{artifact.value}", amount)
+
+    @group.command(name="give_herb", description="Give herbs: pick the kind, grade and age")
+    @app_commands.describe(herb="Kind of herb", grade="Grade (Mortal is the lowest)", amount=amount_help,
+                           age="How old (default 10-year)", member=member_help)
+    @app_commands.choices(herb=picks(item_catalog.herb_types()), grade=grade_choices, age=age_choices)
+    async def give_herb(interaction: discord.Interaction, herb: app_commands.Choice[str],
+                        grade: app_commands.Choice[str], amount: app_commands.Range[int, 1, 100_000] = 1,
+                        age: app_commands.Choice[int] | None = None, member: discord.User | None = None):
+        await give_picked(interaction, member, f"herb:{grade.value}:{herb.value}", amount, age=age)
+
+    @group.command(name="give_pill", description="Give pills: pick the kind and grade")
+    @app_commands.describe(pill="Kind of pill", grade="Grade (Mortal is the lowest)", amount=amount_help,
+                           patterns="Pill patterns 1-9 (default: shop Qi pill, other pills 5)", member=member_help)
+    @app_commands.choices(pill=picks(item_catalog.pill_kinds()), grade=grade_choices)
+    async def give_pill(interaction: discord.Interaction, pill: app_commands.Choice[str],
+                        grade: app_commands.Choice[str] | None = None,
+                        amount: app_commands.Range[int, 1, 100_000] = 1,
+                        patterns: app_commands.Range[int, 1, 9] | None = None, member: discord.User | None = None):
+        entry_id = "pill:heaven_defying" if pill.value == "heaven_defying" else \
+            f"pill:{pill.value}:{grade.value if grade else alchemy.GRADES[0]}"
+        await give_picked(interaction, member, entry_id, amount, patterns=patterns)
+
+    @group.command(name="give_material", description="Give forging materials: pick the type, then the material")
+    @app_commands.describe(material_type="Type of material", material="Which one (pick from the list)",
+                           amount=amount_help, member=member_help)
+    @app_commands.choices(material_type=picks(item_catalog.material_groups()))
+    async def give_material(interaction: discord.Interaction, material_type: app_commands.Choice[str],
+                            material: str | None = None, amount: app_commands.Range[int, 1, 100_000] = 1,
+                            member: discord.User | None = None):
+        options = item_catalog.search("", limit=100, prefix="material:" + material_type.value)
+        if material:
+            entry_id = material if material in item_catalog.CATALOG else None
+            if entry_id is None:
+                found = item_catalog.search(material, limit=100, prefix="material:" + material_type.value)
+                entry_id = found[0][0] if len(found) == 1 else None
+        else:
+            entry_id = options[0][0] if len(options) == 1 else None
+        if entry_id is None:
+            names = ", ".join(f"**{item_catalog.CATALOG[i]['name']}**" for i, _ in options)
+            await interaction.response.send_message(f"Pick a **material** from the list: {names}", ephemeral=True)
+            return
+        await give_picked(interaction, member, entry_id, amount)
+
+    @give_material.autocomplete("material")
+    async def material_autocomplete(interaction: discord.Interaction, current: str):
+        group_value = getattr(interaction.namespace, "material_type", None)
+        prefix = "material:" + group_value if group_value else None
+        return [app_commands.Choice(name=label, value=i)
+                for i, label in item_catalog.search(current, prefix=prefix, kind="material")]
 
     @group.command(name="duelstats", description="Duel balance: each technique's pick count and win rate")
     async def duelstats(interaction: discord.Interaction):
