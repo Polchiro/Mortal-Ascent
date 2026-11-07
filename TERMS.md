@@ -25,4 +25,5 @@ The Bot is provided "as is" and "as available", without guarantees. It may go of
 I may update these terms, change features, or shut down the Bot at any time. Continuing to use the Bot after changes means you accept the updated terms.
 
 ## 7. Contact
-Questions or concerns: [YOUR EMAIL OR DISCORD SERVER LINK HERE]
+Questions or concerns: [ polchiro123@gmail.com
+
