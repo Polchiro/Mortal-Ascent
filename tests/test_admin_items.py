@@ -113,3 +113,22 @@ def test_admin_item_as_a_text_command(monkeypatch):
 
 async def _make(cls):
     return cls(":memory:")
+
+
+def test_admin_give_also_gives_items(monkeypatch):
+    from bot.client import MortalAscent
+    bot = asyncio.run(_make(MortalAscent))
+    user = FakeUser()
+
+    async def app_info():
+        return SimpleNamespace(team=None, owner=user)
+    monkeypatch.setattr(bot, "application_info", app_info)
+    run(bot, "m start", author=user)
+    _, sent = run(bot, "m admin give item:Wolf Fang Charm amount:2", author=user)
+    assert "Wolf Fang Charm** ×2" in sent[-1].content
+    _, sent = run(bot, "m admin give item:Spirit Grass age:500 lotus_coins:10", author=user)
+    assert "500-year Spirit Grass" in sent[-1].content and "10 Lotus Coins" in sent[-1].content
+    _, sent = run(bot, "m admin give lotus_coins:5", author=user)                   # old form still works
+    assert "5 Lotus Coins" in sent[-1].content
+    cmd = bot.tree.get_command("admin").get_command("give")
+    assert {"item", "amount", "quality", "age", "patterns"} <= {p.name for p in cmd.parameters}

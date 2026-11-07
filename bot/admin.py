@@ -152,31 +152,72 @@ def register(bot):
         text = "\n".join(f"• {d}" for d in done) if done else "Nothing was on cooldown."
         await interaction.response.send_message(f"🔄 **{who}: everything is ready again.**\n{text}", ephemeral=True)
 
-    @group.command(name="give", description="Give Lotus Coins, Moon Pearls or Internal Qi (yours or a player's)")
-    @app_commands.describe(member="Who gets it (defaults to you)", lotus_coins="Lotus Coins to add",
-                           moon_pearls="Moon Pearls to add", qi="Internal Qi to add (levels up like normal Qi)")
+    quality_choices = [app_commands.Choice(name=q.title(), value=q) for q in item_catalog.QUALITY_POS]
+    age_choices = [app_commands.Choice(name=f"{a}-year", value=a) for a in sorted(alchemy.HERB_AGES)]
+
+    async def give_item_lines(uid, item, amount, quality, age, patterns, member):
+        """Give a catalog item. Returns (reply line, None) or (None, why not)."""
+        entry_id, problem = item_catalog.resolve(item)
+        if problem:
+            return None, problem
+        if item_catalog.CATALOG[entry_id]["kind"] in item_catalog.GEAR_KINDS + ("artifact",):
+            amount = min(amount, item_catalog.MAX_GEAR)
+        async with bot.db_lock:
+            stored, lost = give_item(bot.conn, uid, entry_id, amount, quality and quality.value,
+                                     age and age.value, patterns)
+        who, whose = (member.mention, f"{member.mention}'s") if member else ("you", "Your")
+        return item_reply(entry_id, stored, lost, who, whose), None
+
+    @group.command(name="give", description="Give any item (weapon, armor, artifact, material, herb, pill...), "
+                                            "coins, pearls or Qi")
+    @app_commands.describe(
+        item="An item: start typing a name (weapon, armor, artifact, material, herb, pill, manual, chest)",
+        amount="How many of the item (weapons, armor and artifacts: up to 25)",
+        member="Who gets it (defaults to you)", lotus_coins="Lotus Coins to add",
+        moon_pearls="Moon Pearls to add", qi="Internal Qi to add (levels up like normal Qi)",
+        quality="Weapons and armor: how good the stats are (default: random, like a drop)",
+        age="Herbs: how old (default 10-year)",
+        patterns="Pills: pill patterns 1-9 (default: shop Qi pill, other pills 5)")
+    @app_commands.choices(quality=quality_choices, age=age_choices)
     async def give_cmd(interaction: discord.Interaction, member: discord.User | None = None,
+                       item: str | None = None,
+                       amount: app_commands.Range[int, 1, 100_000] = 1,
                        lotus_coins: app_commands.Range[int, 0, 10_000_000] = 0,
                        moon_pearls: app_commands.Range[int, 0, 1_000_000] = 0,
-                       qi: app_commands.Range[int, 0, 100_000_000] = 0):
+                       qi: app_commands.Range[int, 0, 100_000_000] = 0,
+                       quality: app_commands.Choice[str] | None = None,
+                       age: app_commands.Choice[int] | None = None,
+                       patterns: app_commands.Range[int, 1, 9] | None = None):
         uid = await check(interaction, member)
         if uid is None:
             return
-        if not (lotus_coins or moon_pearls or qi):
-            await interaction.response.send_message("Pick an amount: lotus_coins, moon_pearls or qi.", ephemeral=True)
+        if not (item or lotus_coins or moon_pearls or qi):
+            await interaction.response.send_message(
+                "Pick something to give: an **item** (start typing its name), lotus_coins, moon_pearls or qi.",
+                ephemeral=True)
             return
-        async with bot.db_lock:
-            events = give(bot.conn, uid, lotus_coins, moon_pearls, qi)
-            p = db.get_player(bot.conn, uid)
-        got = [s for n, s in ((lotus_coins, f"🪷 {lotus_coins:,} Lotus Coins"),
-                              (moon_pearls, f"🌙 {moon_pearls:,} Moon Pearls"), (qi, f"✨ {qi:,} Qi")) if n]
-        lines = [f"🎁 Gave {', '.join(got)} to {member.mention if member else 'you'}.",
-                 f"Now: **{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / "
-                 f"{rules.qi_needed(p['realm'], p['layer']):,} · 🪷 {p['lotus_coins']:,} · 🌙 {p['moon_pearls']:,}"]
-        await interaction.response.send_message("\n".join(lines + events), ephemeral=True)
+        lines = []
+        if item:
+            line, problem = await give_item_lines(uid, item, amount, quality, age, patterns, member)
+            if problem:
+                await interaction.response.send_message(problem, ephemeral=True)
+                return
+            lines.append(line)
+        if lotus_coins or moon_pearls or qi:
+            async with bot.db_lock:
+                events = give(bot.conn, uid, lotus_coins, moon_pearls, qi)
+                p = db.get_player(bot.conn, uid)
+            got = [s for n, s in ((lotus_coins, f"🪷 {lotus_coins:,} Lotus Coins"),
+                                  (moon_pearls, f"🌙 {moon_pearls:,} Moon Pearls"), (qi, f"✨ {qi:,} Qi")) if n]
+            lines += [f"🎁 Gave {', '.join(got)} to {member.mention if member else 'you'}.",
+                      f"Now: **{p['realm']}, {rules.ordinal(p['layer'])} Layer** · Qi {p['qi']:,.1f} / "
+                      f"{rules.qi_needed(p['realm'], p['layer']):,} · 🪷 {p['lotus_coins']:,} · "
+                      f"🌙 {p['moon_pearls']:,}"] + events
+        await interaction.response.send_message("\n".join(lines), ephemeral=True)
 
-    quality_choices = [app_commands.Choice(name=q.title(), value=q) for q in item_catalog.QUALITY_POS]
-    age_choices = [app_commands.Choice(name=f"{a}-year", value=a) for a in sorted(alchemy.HERB_AGES)]
+    @give_cmd.autocomplete("item")
+    async def give_autocomplete(interaction: discord.Interaction, current: str):
+        return [app_commands.Choice(name=label, value=i) for i, label in item_catalog.search(current)]
 
     @group.command(name="item", description="Give any item: weapon, armor, artifact, material, herb, pill, manual, chest")
     @app_commands.describe(
@@ -196,17 +237,8 @@ def register(bot):
         uid = await check(interaction, member)
         if uid is None:
             return
-        entry_id, problem = item_catalog.resolve(item)
-        if problem:
-            await interaction.response.send_message(problem, ephemeral=True)
-            return
-        if item_catalog.CATALOG[entry_id]["kind"] in item_catalog.GEAR_KINDS + ("artifact",):
-            amount = min(amount, item_catalog.MAX_GEAR)
-        async with bot.db_lock:
-            stored, lost = give_item(bot.conn, uid, entry_id, amount, quality and quality.value,
-                                     age and age.value, patterns)
-        who, whose = (member.mention, f"{member.mention}'s") if member else ("you", "Your")
-        await interaction.response.send_message(item_reply(entry_id, stored, lost, who, whose), ephemeral=True)
+        line, problem = await give_item_lines(uid, item, amount, quality, age, patterns, member)
+        await interaction.response.send_message(problem or line, ephemeral=True)
 
     @item_cmd.autocomplete("item")
     async def item_autocomplete(interaction: discord.Interaction, current: str):
