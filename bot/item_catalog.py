@@ -13,6 +13,7 @@ import random
 
 import alchemy
 import equipments
+import forge
 import technique
 
 from . import crafting, loot, materials
@@ -71,10 +72,18 @@ def build():
 CATALOG = build()
 
 
-def search(text, limit=25):
-    """[(id, label)] whose label holds every typed word, best first (names that start with the text)."""
+def search(text, limit=25, kind=None, prefix=None):
+    """[(id, label)] whose label holds every typed word, best first (names that start with the text).
+    kind / prefix limit it to one kind of item or ids that start with prefix. With nothing typed and no
+    kind, a few of every kind are shown (Discord shows at most 25, which would otherwise all be weapons)."""
     words = (text or "").lower().split()
-    hits = [(i, e["label"]) for i, e in CATALOG.items() if all(w in e["label"].lower() for w in words)]
+    hits = [(i, e["label"]) for i, e in CATALOG.items() if all(w in e["label"].lower() for w in words)
+            and (kind is None or e["kind"] == kind) and (prefix is None or i.startswith(prefix))]
+    if not words and kind is None and prefix is None:
+        per_kind = {}
+        for h in hits:
+            per_kind.setdefault(CATALOG[h[0]]["kind"], []).append(h)
+        hits = [h for group in zip(*[g[:3] for g in per_kind.values()]) for h in group]
     said = " ".join(words)
     hits.sort(key=lambda h: not CATALOG[h[0]]["name"].lower().startswith(said))   # stable: keeps catalog order
     return hits[:limit]
@@ -139,3 +148,42 @@ def make(entry_id, qty=1, quality=None, age=None, patterns=None, rng=random):
     else:
         raise KeyError(entry_id)
     return [dict(item, qty=qty)]
+
+
+# ── one pick list per kind (/admin give_armor, give_herb, ...) ───────
+
+def material_groups():
+    """[(value, label)] for the material type pick list: the base materials, bindings, fuels, liquids,
+    the Seal Stone and one entry per essence family (each holds a few materials, so all fit in a list)."""
+    out, seen = [], set()
+    for key, m in materials.MATERIALS.items():
+        if m["kind"] == "base":
+            value, label = f"base:{m['gear']}:", f"{m['gear'].title()} base material"
+        elif m["kind"] == "essence":
+            fam = m["family"]
+            value, label = f"essence:{fam}:", f"{forge.FAMILIES[fam]['name']} essence"
+        elif m["kind"] == "seal":
+            value, label = "seal", m["name"]
+        else:
+            value, label = f"{m['kind']}:", {"binding": "Binding", "fuel": "Fuel",
+                                             "liquid": "Quench liquid"}.get(m["kind"], m["kind"].title())
+        if value not in seen:
+            seen.add(value)
+            out.append((value, label))
+    return out
+
+
+def herb_types():
+    """[(type, label)], e.g. ('qi', 'Qi herb (Spirit Grass, ...)')."""
+    first = alchemy.GRADES[0]
+    return [(t, f"{loot.TYPE_LABEL.get(t, t.title())} herb ({name}, ...)") for t, (name, _) in alchemy.HERBS[first].items()]
+
+
+def pill_kinds():
+    """[(kind, label)] for the pill pick list, plus the Heaven-Defying Pill."""
+    return [(k, v[0]) for k, v in crafting.KINDS.items()] + [("heaven_defying", loot.HEAVEN_DEFYING["name"])]
+
+
+def artifact_families():
+    """[(family, label)], e.g. ('fang', 'Fang: Extra damage when your Strike beats a Break')."""
+    return [(f, f"{f.title()}: {v['text']}"[:100]) for f, v in equipments.ARTIFACT_FAMILIES.items()]
