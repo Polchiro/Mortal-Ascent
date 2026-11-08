@@ -382,7 +382,7 @@ def place_subject(img, sub, height, base=0.96, glow=(255, 214, 150)):
     sub = sub.copy()
     sc = height * S / sub.size[1]
     sub = sub.resize((max(1, round(sub.size[0] * sc)), max(1, round(sub.size[1] * sc))), Image.LANCZOS)
-    x = round(SW * S / 2 - sub.size[0] / 2)
+    x = round(SW * S * 0.62 - sub.size[0] / 2)          # right of centre: the title sits on the left
     y = round(SH * S * base - sub.size[1])
     sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ImageDraw.Draw(sh).ellipse((x + sub.size[0] * 0.1, y + sub.size[1] * 0.9, x + sub.size[0] * 0.9,

@@ -30,7 +30,7 @@ from . import explore_card
 from .fight_view import FightMixin, jpg
 from . import render as card_render
 from cards.beast_fight import render_beast_fight as render_battle   # the encounter screen (cards/beast_fight.py)
-from cards.expedition import render_crossroads, render_encounter
+from cards.explore_v2 import render_crossroads, render_encounter   # painted, box-free explore cards
 from cards import wild_icons
 import battle as battle_data
 
