@@ -852,8 +852,10 @@ class SparView(FightMixin, OwnedView):
         """Data for cards.battle.render_battle."""
         from cards.activity import clean
         from cards.technique_icons import tech_kind
-        from .fight_view import SCHOOL_COLOR, _school, describe
+        from .fight_view import SCHOOL_COLOR, _school, describe, short_effect
         sp = self.spar
+        prev = getattr(self, "_spar_prev", None)           # HP at the last card: the damage numbers
+        self._spar_prev = (round(sp.hp), round(sp.m_hp))
         tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
         loadout = []
         for key in ("attack_tech", "defense_tech"):
@@ -864,10 +866,10 @@ class SparView(FightMixin, OwnedView):
             school = _school(t)
             loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
-                            "desc": describe(t)})
+                            "desc": describe(t), "short": short_effect(t)})
         timed = sum(sp.timed.values())
         loadout.append({"name": "Timed uses", "seal": "hourglass", "color": (240, 200, 100), "ready": bool(timed),
-                        "state": str(timed), "desc": "Only these give mastery EXP"})
+                        "state": str(timed), "desc": "Only these give mastery EXP", "short": "Give mastery EXP"})
         hint, _ = clean(sp.hint())
         if sp.turn == 1 and not self.last:
             warning = (hint, "Guard beats Strike · Break beats Guard · Strike beats Break. Timed techniques earn mastery.")
@@ -877,11 +879,11 @@ class SparView(FightMixin, OwnedView):
                 "seconds": battle_data.TURN_SECONDS, "result": None,
                 "enemy": {"name": "The Master", "seal": "school:Body", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
                           "element_seal": "school:Palm", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
-                          "body": "master", "slug": None},
+                          "body": "master", "slug": None, "delta": round(sp.m_hp) - prev[1] if prev else 0},
                 "party_title": "You",
                 "party": [{"name": self.player["name"], "realm": self.player["realm"], "layer": self.player["layer"],
                            "hp": round(sp.hp), "max_hp": round(sp.max_hp), "move": self.last_move or "Waiting...",
-                           "arrow": True}],
+                           "arrow": True, "delta": round(sp.hp) - prev[0] if prev else 0}],
                 "loadout": loadout, "log": spar_log(self.last) if self.last else [("star", "The master bows. Begin.")],
                 "warning": warning}
 

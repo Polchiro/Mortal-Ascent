@@ -10,18 +10,18 @@ the buttons `bot/fight_view.py`.
 
 ## The fight screen
 
-One image card, a short text panel under it, and buttons, in a **single message that is edited every turn**.
-Discord shows the image well under half size on a computer, so the card keeps only the big things in
-large type, and the details sit in the text panel, which Discord shows at normal reading size.
+One image card and buttons in a **single message that is edited every turn**, with only the timer above it.
+The card carries the whole turn in large type (nothing under 24px), so there is no text panel under it.
 
 | Part | What it shows |
 |---|---|
 | Scene window | The beast under a moon, mist and mountains, in its element's colours. Beast art from `art/beasts/<beast_slug>.png` if the file exists, otherwise a silhouette for its body type |
-| Over the scene | Beast emblem (its realm's beast with the element badge in the corner), name, tier · role · element · realm, a big HP bar with the numbers, element badge |
+| Over the scene | Name, a **tier ribbon** (Normal grey, Elite violet with a gem, Beast King gold with a gem, Bandits red), role · element · realm, and an ornate **HP bar** with its element badge. A large **damage number** shows what it lost last turn (bigger when it is 20%+ of its HP) |
 | Top right | Turn number, seconds to choose, status chips (Staggered, Hidden, Charged…) |
-| Middle | **You**: your realm emblem, name, realm, a big HP bar, then your techniques and Mending pills and whether each is ready. Team hunts show the **Hunting Party** instead: each member's seal, name and HP bar (up to six); the arrow marks the fighter the beast is going for; names turn red below 25% HP |
-| Warning bar | The beast's next move: a tell, or its telegraphed element move |
-| Text panel | Everyone's HP, each member's last move (team hunts), **Last turn** with small icons, the full warning, and **Your moves**: what each technique and pill does and how many turns it still rests |
+| Last turn | The turn's events, a line each with an icon, the numbers drawn large and coloured: gold your hits, red its hits, blue blocks and dodges, green heals (up to 4 lines; "+N more" if longer) |
+| You | Realm emblem, name, realm, an ornate HP bar with the damage you took, then your techniques (with their power, e.g. ×1.32 damage / +20% block) and Mending pills and whether each is ready. Team hunts show the **Hunting Party**: each member's seal, name, HP bar and damage taken; the arrow marks the fighter the beast is going for |
+| Warning bar | The beast's next move. A **charged attack** turns the bar red with a **POWERFUL ATTACK** label; a signature move gets **SIGNATURE MOVE** |
+| At the end | **VICTORY** (gold, with rays), **DEFEAT** (red), **ESCAPED** or **IT GOT AWAY** across the scene; a slain Elite or Beast King adds **ELITE SLAIN** / **BEAST KING SLAIN**. The bottom bar shows the **final blow** |
 
 Buttons, each with a round medallion icon (uploaded as the bot's application emojis at start-up;
 normal emojis if that fails):
@@ -134,7 +134,7 @@ pillars, lanterns) with the green Courtyard accent, and the buttons use the same
 | Top right | Move / Wave / Round / Try number and the seconds to answer |
 | Bars | Challenge progress (moves, points, rounds survived, tries) and yours (correct answers, stamina, HP) |
 | Chips | The session's conditions (Heavy Rain, Night Training…) |
-| Last move (text under the card) | The result of your last answer (Find the Weakness: your earlier guesses) |
+| Last move | The result of your last answer (Find the Weakness: your earlier guesses), in the log panel |
 | Warning bar | The master's tell, or what the disciples are doing |
 
 Each card is drawn **before** its timer starts, so drawing never eats into your answer time.

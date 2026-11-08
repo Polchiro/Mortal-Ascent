@@ -80,8 +80,22 @@ def describe(tech):
     return base + (f" · {extra()}" if extra else "")
 
 
-def card_data(b, header):
-    """Plain data for cards.battle.render_battle."""
+def snapshot(b):
+    """HP now, to show next turn how much each side lost or gained (the card's damage numbers)."""
+    return {"enemy": round(b.enemy["hp"]), "party": {f.uid: round(f.hp) for f in b.fighters}}
+
+
+def short_effect(tech):
+    """A technique's power in a few characters, under its name on the card."""
+    from . import player as rules
+    if tech["type"] == "attack":
+        return f"×{technique.ATTACK_TECHNIQUE[tech['grade']][0] * rules.mastery_mult(tech):.2f} damage"
+    block = technique.DEFENSE_TECHNIQUE[tech["grade"]][0] * rules.mastery_mult(tech)
+    return f"+{block:.0%} block"
+
+
+def card_data(b, header, prev=None):
+    """Plain data for cards.battle.render_battle. `prev` (snapshot() of the turn before) adds damage numbers."""
     e = b.enemy
     tags = [TIER_LABEL[e["tier"]]]
     if e["kind"] == "beast":
@@ -98,7 +112,8 @@ def card_data(b, header):
         else:
             move = f.last_move or "Waiting..."
         party.append({"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
-                      "move": move, "arrow": f is target and not b.over, "ko": f.hp <= 0})
+                      "move": move, "arrow": f is target and not b.over, "ko": f.hp <= 0,
+                      "delta": round(f.hp) - prev["party"][f.uid] if prev and f.uid in prev["party"] else 0})
     loadout = []
     if not b.team:
         f = b.fighters[0]
@@ -110,7 +125,7 @@ def card_data(b, header):
             school = _school(t)
             loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
-                            "desc": describe(t)})
+                            "desc": describe(t), "short": short_effect(t)})
         n = f.pill_count()
         loadout.append({"name": f.pills[0]["name"] if f.pills else "Mending Pill",
                         "seal": f"emblem:pill:mending:{f.pills[0].get('grade', 'Mortal')}" if f.pills
@@ -118,13 +133,18 @@ def card_data(b, header):
                         "ready": f.can_pill(),
                         "state": (f"×{n} in bag" if f.pills_used < rules_data.PILLS_PER_FIGHT else "used up") if n else "none",
                         "desc": (f"Heals {f.pills[0]['heal']:.0%} HP · uses your turn · max "
-                                 f"{rules_data.PILLS_PER_FIGHT} per fight") if f.pills else "Craft them with /craft"})
+                                 f"{rules_data.PILLS_PER_FIGHT} per fight") if f.pills else "Craft them with /craft",
+                        "short": f"Heals {f.pills[0]['heal']:.0%} HP" if f.pills else "Craft with /craft"})
+    intent = getattr(b, "intent", None) or {}
+    danger = intent.get("kind") if intent.get("kind") in ("charged", "signature") and not b.over else None
     return {"palette": palette, "header": header, "turn": b.turn, "seconds": rules_data.TURN_SECONDS,
             "result": b.result,
             "enemy": {"name": e["name"], "seal": enemy_seal(e, b.fighters[0].realm), "tags": [t for t in tags if t],
                       "hp": round(e["hp"]), "max_hp": round(e["max_hp"]),
                       "element_seal": "school:Palm" if e["kind"] == "master" else "emblem:element:" + e["element"],
-                      "statuses": b.status_chips(), "body": e["body"], "slug": e.get("slug")},
+                      "statuses": b.status_chips(), "body": e["body"], "slug": e.get("slug"),
+                      "delta": round(e["hp"]) - prev["enemy"] if prev else 0},
+            "danger": danger,
             "party_title": "Hunting party" if b.team else "You", "party": party, "loadout": loadout,
             "log": list(b.log), "warning": b.warning or ("", "")}
 
@@ -138,8 +158,14 @@ def _hp(x):
 
 
 def card_embed(data):
-    """The readable text under the card: Discord shows the image small on a computer, but text at full size.
-    HP, the last turn, the warning in full and what each technique does. Takes render_battle's data."""
+    """No text box under the fight card any more: the card carries HP, damage, the log, the techniques and the
+    warning in large type. Kept so callers can pass embed=card_embed(data) (None removes the old embed);
+    details_embed() still builds the long text for the text-only fallback."""
+    return None
+
+
+def details_embed(data):
+    """The long text version of a turn (HP, the last turn, the warning, each technique). Takes render_battle's data."""
     from cards.theme import ELEMENT_ACCENTS
     e, party = data["enemy"], data["party"]
     team = len(party) > 1
@@ -237,9 +263,18 @@ class FightMixin:
 
     # ── turns ─────────────────────────────────────────────────────────
 
+    _prev_hp = None
+
+    def turn_data(self):
+        """The card's data for the current turn, with the damage since the last card; then remember this turn."""
+        data = card_data(self.fight, self.fight_header, self._prev_hp)
+        self._prev_hp = snapshot(self.fight)
+        return data
+
     async def start_fight(self, interaction, battle, header):
         """Show the fight in this view's message. `interaction` may already be deferred, or None."""
         self.fight, self.fight_header = battle, header
+        self._prev_hp = snapshot(battle)
         self._turn_lock = asyncio.Lock()
         if interaction and not interaction.response.is_done():
             await interaction.response.defer()
@@ -294,7 +329,7 @@ class FightMixin:
     async def fight_card_file(self, filename="fight.jpg", data=None):
         """The current card as a JPEG: about a third of the PNG size, so the turn-by-turn edits upload faster."""
         try:
-            img = await card_render.render(render_battle, data or card_data(self.fight, self.fight_header))
+            img = await card_render.render(render_battle, data or self.turn_data())
         except Exception:
             log.exception("Could not render the fight card")
             return None
@@ -304,7 +339,7 @@ class FightMixin:
         self._deadline = time.time() + rules_data.TURN_SECONDS
         self.clear_items()
         self.fight_buttons()
-        data = card_data(self.fight, self.fight_header)
+        data = self.turn_data()
         file = await self.fight_card_file(data=data)
         self._deadline = time.time() + rules_data.TURN_SECONDS     # the timer starts when the card is shown
         kw = {"content": self.waiting_text(), "view": self}

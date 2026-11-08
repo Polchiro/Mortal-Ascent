@@ -69,7 +69,7 @@ the card `render_duel` in `cards/battle.py`.
 ## The card
 
 Same frame as beast fights, in the **Duel palette** (a mountain ledge at dusk over a sea of clouds).
-Big type only; the details are in the text under the card, which Discord shows at reading size.
+Big type only. Under the card, one short text line says who has locked in, the last turn's events and the rising intensity.
 
 | Part | What it shows |
 |---|---|
@@ -77,7 +77,7 @@ Big type only; the details are in the text under the card, which Discord shows a
 | Top | "Friendly duel", the fair realm and layer, the **turn number** and seconds to choose |
 | Under each fighter | **LOCKED IN** once that player has picked, otherwise "Choosing..." |
 | Middle | **Rising intensity +X%** chip from turn 10 |
-| Panel | Each side: talent seal, name, realm and layer, a big **HP bar**, the last move and its damage |
+| Panel | Each side: talent seal, name, realm and layer, an ornate **HP bar**, a large **damage number** for what it lost last turn, the last move and its damage |
 | Bottom bar | **Last turn**: both moves and the damage |
 | At the end | A result banner: the winner (or Draw), turns, HP left; the loser's portrait greys out |
 
