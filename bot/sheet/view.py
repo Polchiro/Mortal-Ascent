@@ -12,7 +12,7 @@ import logging
 
 import discord
 
-from cards import RENDERERS
+from cards import RENDERERS, sheet_icons
 
 from .. import db, gear, loot
 from .. import player as rules
@@ -23,8 +23,8 @@ from . import items
 
 log = logging.getLogger("mortal-ascent")
 
-TABS = [("profile", "Profile", "👤"), ("techniques", "Techniques", "📜"), ("equipment", "Equipment", "⚔️"),
-        ("inventory", "Inventory", "🎒"), ("purse", "Purse", "🪷")]
+TABS = [("profile", "Profile"), ("techniques", "Techniques"), ("equipment", "Equipment"),
+        ("inventory", "Inventory"), ("purse", "Purse")]
 FIGHT_SESSIONS = ("explore", "spar", "hunt", "duel")    # technique.md: techniques are swapped outside of fights
 AVATAR_TIMEOUT_SECONDS = 5
 
@@ -39,6 +39,12 @@ async def fetch_avatar(user):
 
 
 GEAR_EMOJI = {"weapons": "🤜", "armor": "🥋", "artifacts": "🔮"}
+
+
+def sheet_emoji(bot, key):
+    """A sheet button icon (cards/sheet_icons.py): the uploaded application emoji, or a plain emoji."""
+    em = getattr(bot, "emojis_ma", None)
+    return (em.get(key) if em else None) or sheet_icons.FALLBACK.get(key)
 
 
 def gear_line(item):
@@ -105,10 +111,10 @@ class CharacterSheet(OwnedView):
 
     def build(self):
         self.clear_items()
-        for key, label, emoji in TABS:
+        for key, label in TABS:
             active = key == self.tab
-            self.button(label, self.tab_callback(key), emoji=emoji, row=0, disabled=active,
-                        style=discord.ButtonStyle.danger if active else discord.ButtonStyle.secondary)
+            self.button(label, self.tab_callback(key), emoji=sheet_emoji(self.bot, f"sheet_tab_{key}"), row=0,
+                        disabled=active, style=discord.ButtonStyle.primary if active else discord.ButtonStyle.secondary)
         getattr(self, f"build_{self.tab}", lambda: None)()
 
     def tab_callback(self, key):
@@ -140,8 +146,10 @@ class CharacterSheet(OwnedView):
                 self.on_unequip_technique, 2)
         pages = max(1, -(-len(learned) // sheet.TECH_PER_PAGE))
         if pages > 1:
-            self.button("Prev", self.on_tech_prev, emoji="◀️", row=3, disabled=self.tech_page <= 1)
-            self.button("Next", self.on_tech_next, emoji="▶️", row=3, disabled=self.tech_page >= pages)
+            self.button("Prev", self.on_tech_prev, emoji=sheet_emoji(self.bot, "sheet_prev"), row=3,
+                        disabled=self.tech_page <= 1)
+            self.button("Next", self.on_tech_next, emoji=sheet_emoji(self.bot, "sheet_next"), row=3,
+                        disabled=self.tech_page >= pages)
 
     def in_fight(self):
         return any((self.owner_id, k) in self.bot.busy for k in FIGHT_SESSIONS)
@@ -196,7 +204,7 @@ class CharacterSheet(OwnedView):
         for item in worn[:5]:
             label = {"weapons": "Unequip weapon", "armor": "Take off armor"}.get(
                 item["category"], f"Remove {item['name']}"[:80])
-            self.button(label, self.unequip_callback(item["id"]), emoji=GEAR_EMOJI[item["category"]], row=4)
+            self.button(label, self.unequip_callback(item["id"]), emoji=sheet_emoji(self.bot, "sheet_unequip"), row=4)
 
     async def on_equip_gear(self, interaction):
         if self.in_fight():
@@ -248,24 +256,28 @@ class CharacterSheet(OwnedView):
                 for i in page_items], self.on_pick, 2)
         sel = getattr(self, "selected_item", None)
         if self.confirm_discard and sel:
+            trash = sheet_emoji(self.bot, "sheet_discard")
             self.button(f"Discard {sel['name'][:40]}" + (" ×1" if sel["qty"] > 1 else ""), self.discard_callback(1),
-                        emoji="🗑️", style=discord.ButtonStyle.danger, row=3)
+                        emoji=trash, style=discord.ButtonStyle.danger, row=3)
             if sel["qty"] > 1:
-                self.button(f"Discard all ×{sel['qty']}", self.discard_callback(sel["qty"]), emoji="🗑️",
+                self.button(f"Discard all ×{sel['qty']}", self.discard_callback(sel["qty"]), emoji=trash,
                             style=discord.ButtonStyle.danger, row=3)
-            self.button("Cancel", self.on_cancel_discard, row=3)
+            self.button("Cancel", self.on_cancel_discard, emoji=sheet_emoji(self.bot, "sheet_cancel"), row=3)
             return
         if getattr(self, "pages", 1) > 1:
-            self.button("Prev", self.on_prev, emoji="◀️", row=3, disabled=self.page <= 1)
-            self.button("Next", self.on_next, emoji="▶️", row=3, disabled=self.page >= self.pages)
+            self.button("Prev", self.on_prev, emoji=sheet_emoji(self.bot, "sheet_prev"), row=3, disabled=self.page <= 1)
+            self.button("Next", self.on_next, emoji=sheet_emoji(self.bot, "sheet_next"), row=3,
+                        disabled=self.page >= self.pages)
         if sel:
             acts = items.actions(sel)
             if "use" in acts:
-                self.button(items.use_label(sel), self.on_use, emoji="✨", style=discord.ButtonStyle.success, row=3)
+                verb = items.use_label(sel)
+                self.button(verb, self.on_use, emoji=sheet_emoji(self.bot, sheet_icons.USE_KEY.get(verb, "sheet_open")),
+                            style=discord.ButtonStyle.success, row=3)
             if "unequip" in acts:
-                self.button("Unequip", self.on_unequip_selected, emoji="🤜", row=3)
+                self.button("Unequip", self.on_unequip_selected, emoji=sheet_emoji(self.bot, "sheet_unequip"), row=3)
             if "discard" in acts:
-                self.button("Discard", self.on_ask_discard, emoji="🗑️", row=3)
+                self.button("Discard", self.on_ask_discard, emoji=sheet_emoji(self.bot, "sheet_discard"), row=3)
 
     async def on_category(self, interaction):
         self.category, self.page, self.selected, self.confirm_discard = interaction.data["values"][0], 1, None, False

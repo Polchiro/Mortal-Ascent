@@ -171,10 +171,23 @@ def purse_data(conn, user_id, now=None):
     return dict(
         header(p),
         currencies=currencies,
-        blessing={"tier": b[0], "days_left": b[1], "perks": rules.blessing_perks(b[0])} if b else None,
+        blessing={"tier": b[0], "days_left": b[1], "perks": rules.blessing_perks(b[0]),
+                  "total_days": economy.BLESSING_DURATION_DAYS} if b else None,
+        valuables=valuables(conn, user_id),
         ledger=[{"currency": r["currency"], "delta": r["delta"], "balance": r["balance"], "reason": r["reason"],
                  "ago": ago(now - r["at"])} for r in db.ledger(conn, user_id, 8)],
     )
+
+
+def valuables(conn, user_id):
+    """The Purse's Treasure Vault: chests (by tier), Seal Stones and Heaven-Defying Pills the player holds.
+    Display only; they are opened, used or forged from the Inventory as before."""
+    found = sorted(db.get_items(conn, user_id, "chests"),
+                   key=lambda i: items.CHEST_ORDER.index(i["key"]) if i["key"] in items.CHEST_ORDER else 99)
+    found += [i for i in db.get_items(conn, user_id, "materials") if i["key"] == "seal"]
+    found += [i for i in db.get_items(conn, user_id, "pills") if i["key"] == "heaven_defying"]
+    return [{"name": i["name"], "qty": i["qty"], "icon": items.item_icon(i), "rarity_key": items.rarity(i)[1]}
+            for i in found]
 
 
 def ago(seconds):
@@ -218,8 +231,14 @@ def bag_data(conn, user_id, category, page=1, selected_id=None):
                 groups=groups, categories=[(c.key, c.label, c.icon) for c in items.CATEGORIES.values()],
                 counts=db.category_counts(conn, user_id), used=db.slots_used(conn, user_id),
                 capacity=p["bag_capacity"], page=page, pages=pages, tiles=tiles,
-                inspect=items.details(selected, p, learned) if selected else None)
+                inspect=dict(items.details(selected, p, learned), actions=action_labels(selected)) if selected else None)
     return data, page_items, pages, selected
+
+
+def action_labels(item):
+    """The buttons under the Inventory card for this item, in the order the view adds them."""
+    names = {"use": items.use_label(item), "unequip": "Unequip", "discard": "Discard"}
+    return [names[a] for a in items.actions(item) if names[a]]
 
 
 def techniques_data(conn, user_id, page=1):
