@@ -21,7 +21,6 @@ from functools import lru_cache
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 from . import theme as T
-from .glass import glass
 from .scenes import photo, subject
 from .battle import _check, _chip, _heading, _shrink, _warning
 from .misc_icons import HERB_ICON, STAGE_ICON
@@ -566,15 +565,15 @@ LX = 46
 
 def _caption(img, y, s, color=T.GOLD):
     d = ImageDraw.Draw(img)
-    f = font("Cinzel.ttf", 24, "Bold")
-    T.spaced(d, (LX, y), T.fit(d, s.upper(), f, 300), f, color, 1.8)
+    f = font("Cinzel.ttf", 28, "Bold")
+    T.spaced(d, (LX, y), T.fit(d, s.upper(), f, 330), f, color, 1.8)
 
 
-def _note(img, y, s, color=T.ASH, lines=2, size=26):
+def _note(img, y, s, color=(214, 206, 194), lines=2, size=30):
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", size, "Medium")
-    for i, line in enumerate(T.wrap(d, s, f, 290, lines)):
-        T.text(d, (LX, y + i * 31), line, f, color, "lm")
+    f = font("Inter.ttf", size, "SemiBold")
+    for i, line in enumerate(T.wrap(d, s, f, 330, lines)):
+        T.text(d, (LX, y + i * (size + 6)), line, f, color, "lm")
 
 
 def _big(img, y, s, glow=None, size=96):
@@ -591,14 +590,14 @@ def _left_ignite(img, data, acc):
     _caption(img, 318, "Cauldron heat")
     label, col = HEAT_CHIP[data["heat_state"]]
     _chip(img, LX, 374, label, col)
-    _note(img, 428, f"Safe zone {data['zone_width']}° wide, hidden. Read the fire.")
+    _note(img, 432, f"Safe zone {data['zone_width']}°")
 
 
 def _left_herbs(img, data, acc):
     _big(img, 286, data["next_pos"], glow=alpha(acc.rim, 90))
     _caption(img, 318, "Herb to add")
-    _note(img, 368, f"{data['placed']} of {data['total']} in the cauldron", T.PARCHMENT)
-    _note(img, 410, "Read the clues below. A wrong herb causes a backlash.")
+    _note(img, 372, f"{data['placed']} / {data['total']} added", WHITE)
+    _note(img, 416, "Wrong herb: backlash")
 
 
 def _balance_bar(img, y, label, value, color):
@@ -617,8 +616,8 @@ def _left_balance(img, data, acc):
     _caption(img, 196, "Seal the core" if data["mode"] == "seal" else "Balance at 50")
     _balance_bar(img, 268, "Yin", data["yin"], YIN)
     _balance_bar(img, 356, "Yang", data["yang"], YANG)
-    _note(img, 410, f"Move {data['move']} of {data['moves']}" + (" · wild herbs push the bars" if data.get("wild")
-                                                                 else ""), T.PARCHMENT)
+    if data.get("wild"):
+        _note(img, 420, "Wild herbs push the bars", WHITE)
 
 
 def _left_condense(img, data, acc):
@@ -626,14 +625,13 @@ def _left_condense(img, data, acc):
     _caption(img, 318, "Pill pulse")
     d = ImageDraw.Draw(img)
     T.diamonds(d, LX + 12, 360, data["pulse"] + 1, total=5, size=12, color=acc.rim)
-    _note(img, 408, data["pulse_text"], T.PARCHMENT, size=26)
+    _note(img, 412, data["pulse_text"], WHITE)
 
 
 def _left_tribulation(img, data, acc):
     _big_cjk(img, 290, "九纹", (244, 236, 255))
-    _caption(img, 318, "Nine patterns await", mix(acc.rim, (255, 255, 255), 0.3))
-    _note(img, 366, f"Strike {data['strike']} of {data['strikes']}", WHITE, size=26)
-    _note(img, 404, f"{data['blocked']} blocked so far. Block all {data['strikes']} for the ninth ring.")
+    _caption(img, 318, "Nine patterns", mix(acc.rim, (255, 255, 255), 0.3))
+    _note(img, 376, f"Blocked {data['blocked']} / {data['strikes']}", WHITE)
 
 
 def _left_success(img, data, acc):
@@ -647,7 +645,7 @@ def _left_success(img, data, acc):
 def _left_exploded(img, data, acc):
     _caption(img, 196, "Final score")
     _big(img, 290, f"{data['score']:.0%}", glow=alpha((236, 72, 52), 120))
-    _note(img, 330, data["why"], T.PARCHMENT)
+    _note(img, 336, data["why"], WHITE)
 
 
 # ── middles ───────────────────────────────────────────────────────────
@@ -676,7 +674,7 @@ def _mid_herbs(img, data, acc, seed):
 
 def _mid_balance(img, data, acc, seed):
     _steady(img, seed)
-    _yin_yang(img, (CX, ABOVE_Y) if _painted() else (CX, 214), 60 if _painted() else 66, data["yin"], data["yang"])
+    _yin_yang(img, (CX, 192) if _painted() else (CX, 214), 54 if _painted() else 66, data["yin"], data["yang"])
 
 
 def _mid_condense(img, data, acc, seed):
@@ -780,12 +778,13 @@ def _corner(img, data, acc):
     x1, y0 = SCENE[2], SCENE[1]
     T.gold_text(img, (x1 - 26, y0 + 46), c["label"], font("Cinzel.ttf", 44, "Black"), "rm")
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 28, "SemiBold")
+    f = font("Inter.ttf", 32, "Bold")
     if c.get("seconds"):
-        tw = T.width(d, c["seconds"], f)
-        T.icon(img, "hourglass", (x1 - 46 - tw, y0 + 96), 26, T.GOLD)
+        sec = c["seconds"].replace(" to choose", "")
+        tw = T.width(d, sec, f)
+        T.icon(img, "hourglass", (x1 - 48 - tw, y0 + 98), 30, T.GOLD)
         d = ImageDraw.Draw(img)
-        T.text(d, (x1 - 26, y0 + 96), c["seconds"], f, T.PARCHMENT, "rm")
+        T.text(d, (x1 - 26, y0 + 98), sec, f, WHITE, "rm")
     if c.get("difficulty"):
         _chip(img, x1 - 26, y0 + 146, c["difficulty"], DIFFICULTY_COLOR.get(c["difficulty"], T.GOLD), "r")
 
@@ -796,7 +795,7 @@ def _stage_path(img, data, acc):
     top, bottom = 214, 472
     gap = min(66, (bottom - top) / max(1, n - 1))
     y0 = top + ((bottom - top) - gap * (n - 1)) / 2
-    sx = 968
+    sx = 960
     d = ImageDraw.Draw(img)
     d.line(P(sx, y0, sx, y0 + gap * (n - 1)), fill=alpha(T.BRONZE, 220), width=round(2.5 * S))
     for i, st in enumerate(stages):
@@ -805,15 +804,15 @@ def _stage_path(img, data, acc):
         if state == "current":
             T.soft_glow(img, (sx - 40, y - 40, sx + 220, y + 40), alpha(acc.rim, 90), 14)
             T.seal(img, (sx, y), 27, STAGE_ICON[st["key"]], acc.bright)
-            color, f = T.GOLD_HI, font("Inter.ttf", 28, "Bold")
+            color, f = T.GOLD_HI, font("Inter.ttf", 32, "Bold")
         else:
             col = {"done": GREEN, "failed": (226, 72, 56)}.get(state, T.ASH_DK)
             T.seal(img, (sx, y), 21, STAGE_ICON[st["key"]], col)
             color = {"done": GREEN, "failed": (240, 110, 96)}.get(state, T.ASH)
-            f = font("Inter.ttf", 26, "SemiBold")
+            f = font("Inter.ttf", 29, "SemiBold")
         d = ImageDraw.Draw(img)
         label, f = _shrink(d, STAGE_LABEL[st["key"]], "Inter.ttf", "Bold" if state == "current" else "SemiBold",
-                           (f.size // S, 24), 168)
+                           (f.size // S, 27, 25), 172)
         T.text(d, (sx + 38, y), label, f, color, "lm")
         lw = T.width(d, label, f)
         if state == "done":
@@ -828,9 +827,8 @@ def _stage_path(img, data, acc):
 
 def _panel(img, box, title, acc):
     if _painted():
-        glass(img, box)
         d = ImageDraw.Draw(img)
-        T.spaced(d, (box[0] + 24, box[1] + 34), title.upper(), font("Cinzel.ttf", 25, "Bold"), (236, 210, 150), 2.4)
+        T.spaced(d, (box[0] + 24, box[1] + 30), title.upper(), font("Cinzel.ttf", 26, "Bold"), (236, 210, 150), 2.4)
     else:
         T.panel(img, box, None, fill=mix(acc.panel, (0, 0, 0), 0.2), glow=True, accent=acc)
         _heading(img, box, title)
@@ -841,17 +839,17 @@ def _herbs_panel(img, data, acc):
     _panel(img, box, "Herbs", acc)
     x0, y0, x1, y1 = box
     rows = data["herbs"][:4]
-    rh = min(50, (y1 - y0 - 70) / max(1, len(rows)))
-    af = font("Inter.ttf", 27, "SemiBold")
+    rh = min(54, (y1 - y0 - 66) / max(1, len(rows)))
+    af = font("Inter.ttf", 29, "SemiBold")
     for i, h in enumerate(rows):
-        y = y0 + 70 + rh * i + rh / 2
+        y = y0 + 66 + rh * i + rh / 2
         live = h["state"] == "in"
         col = HERB_COLOR.get(h["type"], T.GOLD)
         T.seal(img, (x0 + 40, y), 21, HERB_ICON.get(h["type"], "herb"), col if h["state"] != "lost" else T.ASH_DK)
         d = ImageDraw.Draw(img)
         age = f"{h['age']}-yr" if h.get("age") else ""
         aw = T.width(d, age, af)
-        name, f = _shrink(d, h["name"], "Inter.ttf", "Bold", (30, 28, 26), x1 - x0 - 104 - aw)
+        name, f = _shrink(d, h["name"], "Inter.ttf", "Bold", (32, 30, 28, 26), x1 - x0 - 104 - aw)
         T.text(d, (x0 + 68, y), name, f, WHITE if live else (T.ASH if h["state"] != "lost" else (226, 96, 84)), "lm")
         if age:
             T.text(d, (x1 - 20, y), age, af, AGE_COLOR.get(h["age"], T.ASH), "rm")
@@ -865,8 +863,8 @@ def _herbs_panel(img, data, acc):
 
 def _row(d, box, y, label, value, vcol=WHITE):
     x0, _, x1, _ = box
-    T.text(d, (x0 + 24, y), label, font("Inter.ttf", 28, "Medium"), (214, 206, 194), "lm")
-    T.text(d, (x1 - 24, y), value, font("Inter.ttf", 30, "Bold"), vcol, "rm")
+    T.text(d, (x0 + 24, y), label, font("Inter.ttf", 30, "Medium"), (214, 206, 194), "lm")
+    T.text(d, (x1 - 24, y), value, font("Inter.ttf", 32, "Bold"), vcol, "rm")
 
 
 def _refining_panel(img, data, acc, box=None):
@@ -876,10 +874,10 @@ def _refining_panel(img, data, acc, box=None):
     x0, y0, x1, y1 = box
     d = ImageDraw.Draw(img)
     score = r["score"]
-    _row(d, box, y0 + 72, "Score", f"{score:.0%}" if score is not None else "—", T.GOLD_HI)
-    _row(d, box, y0 + 108, "Age bonus", f"+{r['bonus']:.0%}" if r["bonus"] else "—")
-    _row(d, box, y0 + 144, "Forgiven", f"{r['forgive']} left" if r["forgive"] else "—")
-    _row(d, box, y0 + 180, "Bursts below", f"{r['explode']:.0%}", (240, 130, 110))
+    _row(d, box, y0 + 68, "Score", f"{score:.0%}" if score is not None else "—", T.GOLD_HI)
+    _row(d, box, y0 + 104, "Age bonus", f"+{r['bonus']:.0%}" if r["bonus"] else "—")
+    _row(d, box, y0 + 140, "Forgiven", f"{r['forgive']} left" if r["forgive"] else "—")
+    _row(d, box, y0 + 176, "Bursts below", f"{r['explode']:.0%}", (240, 130, 110))
     bx0, bx1 = x0 + 24, x1 - 24
     frac = score or 0
     T.bar(img, (bx0, y1 - 30, bx1, y1 - 12), frac, (226, 72, 56) if score is not None and score < r["explode"]
@@ -905,13 +903,13 @@ def _patterns_panel(img, data, acc):
     tx = x0 + 206
     if earned:
         T.text(d, (tx, y0 + 94), CN[earned] + "纹", cjk(44), T.GOLD_HI, "lm")
-        T.text(d, (tx, y0 + 140), f"{earned} pattern{'s' if earned > 1 else ''}", font("Inter.ttf", 30, "Bold"), WHITE,
+        T.text(d, (tx, y0 + 142), f"{earned} pattern{'s' if earned > 1 else ''}", font("Inter.ttf", 32, "Bold"), WHITE,
                "lm")
-        T.text(d, (tx, y0 + 176), f"×{p['effect']:.2f} effect", font("Inter.ttf", 27, "Medium"), (214, 206, 194), "lm")
+        T.text(d, (tx, y0 + 180), f"×{p['effect']:.2f} effect", font("Inter.ttf", 29, "Medium"), (214, 206, 194), "lm")
     else:
         T.text(d, (tx, y0 + 94), "未成", cjk(44), T.ASH, "lm")
-        T.text(d, (tx, y0 + 140), "None yet", font("Inter.ttf", 30, "Bold"), (190, 182, 170), "lm")
-    T.text(d, (tx, y0 + 206), f"Max {cap}", font("Inter.ttf", 27, "Medium"), (190, 182, 170), "lm")
+        T.text(d, (tx, y0 + 142), "None yet", font("Inter.ttf", 32, "Bold"), (200, 192, 180), "lm")
+    T.text(d, (tx, y0 + 218), f"Max {cap}", font("Inter.ttf", 29, "Medium"), (200, 192, 180), "lm")
 
 
 def _tribulation_panel(img, data, acc):
@@ -919,22 +917,19 @@ def _tribulation_panel(img, data, acc):
     _panel(img, box, "The tribulation", acc)
     x0, y0, x1, y1 = box
     d = ImageDraw.Draw(img)
-    f, sf = font("Inter.ttf", 26, "SemiBold"), font("Inter.ttf", 24, "Medium")
+    f, sf = font("Inter.ttf", 31, "SemiBold"), font("Inter.ttf", 29, "Medium")
     t = data["tribulation"]
-    lines = T.wrap(d, f"Survive all {data['strikes']} strikes: a nine-pattern pill, ×{t['effect9']:.2f} effect, "
-                      f"no toxicity, and the whole server hears of it.", f, x1 - x0 - 48, 2)
-    for i, line in enumerate(lines):
-        T.text(d, (x0 + 24, y0 + 76 + i * 36), line, f, WHITE, "lm")
-    T.text(d, (x0 + 24, y0 + 158), f"Fail: the pill still forms, with {t['fail']} patterns.", sf, T.ASH, "lm")
+    T.text(d, (x0 + 24, y0 + 74), T.fit(d, f"Block all {data['strikes']}: nine patterns, ×{t['effect9']:.2f}, no toxicity",
+                                       f, x1 - x0 - 48), f, WHITE, "lm")
+    T.text(d, (x0 + 24, y0 + 120), f"Fail: still {t['fail']} patterns", sf, (200, 192, 180), "lm")
     # one shield pip per strike: blocked, missed, still to come
     for k in range(data["strikes"]):
         cx, cy = x0 + 40 + k * 56, y0 + 200
         state = t["marks"][k]
         col = {"blocked": GREEN, "hit": (226, 72, 56)}.get(state, T.ASH_DK)
-        T.icon(img, "shield", (cx, cy), 30, col)
+        T.icon(img, "shield", (cx, cy), 36, col)
     d = ImageDraw.Draw(img)
-    T.text(d, (x0 + 40 + data["strikes"] * 56, y0 + 200), f"{data['blocked']} of {data['strikes']} blocked", sf,
-           T.PARCHMENT, "lm")
+    T.text(d, (x0 + 40 + data["strikes"] * 56, y0 + 200), "your shields", sf, (200, 192, 180), "lm")
 
 
 # ── the card ──────────────────────────────────────────────────────────
@@ -955,6 +950,8 @@ def render_alchemy(data):
     _corner(img, data, acc)
     LEFT[mode](img, data, acc)
     _stage_path(img, data, acc)
+    if _painted():
+        _open_bottom(img, mode == "tribulation")
     if mode == "tribulation":
         _tribulation_panel(img, data, acc)
     else:
@@ -970,22 +967,37 @@ def render_alchemy(data):
     return T.finish(img)
 
 
+def _open_bottom(img, wide_first):
+    """Below the scene: no boxes, the blurred room under a dark fade, thin dividers between the columns."""
+    y0 = SCENE[3] + 4
+    fade = Image.new("L", (1, 256))
+    fade.putdata([min(255, round(120 + v * 0.55)) for v in range(256)])
+    fade = fade.resize((W * S, (H - y0) * S))
+    layer = Image.new("RGBA", fade.size, (6, 5, 7, 0))
+    layer.putalpha(fade)
+    img.alpha_composite(layer, P(0, y0))
+    d = ImageDraw.Draw(img)
+    xs = [PANELS[1][2] + 6] if wide_first else [PANELS[0][2] + 6, PANELS[1][2] + 6]
+    for x in xs:
+        d.line(P(x, PANELS[0][1] + 14, x, PANELS[0][3] - 6), fill=(255, 236, 200, 46), width=max(1, round(1.2 * S)))
+    d.line(P(36, WARN[1] - 4, W - 36, WARN[1] - 4), fill=(255, 236, 200, 40), width=max(1, round(1.2 * S)))
+
+
 def _hint(img, data):
     """The stage's hint or omen on a glass strip: a big first line, a smaller second."""
     exploded = data["mode"] == "exploded"
     tone = (226, 72, 56) if exploded else (240, 170, 80)
-    glass(img, WARN, tint=mix(tone, (10, 8, 8), 0.82), a=130, edge=alpha(tone, 150))
     x0, y0, x1, y1 = WARN
-    T.soft_glow(img, (x0 + 16, y0 + 18, x0 + 78, y1 - 18), alpha(tone, 120), 10)
+    T.soft_glow(img, (x0 + 10, y0 + 10, x0 + 86, y1 - 10), alpha(tone, 110), 12)
     T.icon(img, data.get("warning_icon", "flame"), (x0 + 48, (y0 + y1) / 2), 38, mix(tone, (255, 255, 255), 0.35))
     d = ImageDraw.Draw(img)
     head, hint = data["warning"]
     tx, mw = x0 + 92, x1 - x0 - 112
     if hint:
-        head, hf = _shrink(d, head, "Inter.ttf", "Bold", (34, 31, 28), mw)
-        T.text(d, (tx, y0 + 38), head, hf, (255, 248, 232), "lm")
-        sf = font("Inter.ttf", 26, "Medium")
-        T.text(d, (tx, y1 - 32), T.fit(d, hint, sf, mw), sf, (226, 216, 200), "lm")
+        head, hf = _shrink(d, head, "Inter.ttf", "Bold", (36, 33, 30), mw)
+        T.text(d, (tx, y0 + 36), head, hf, (255, 248, 232), "lm")
+        hint, sf = _shrink(d, hint, "Inter.ttf", "Medium", (29, 27, 25, 23), mw)
+        T.text(d, (tx, y1 - 30), hint, sf, (226, 216, 200), "lm")
     else:
         head, hf = _shrink(d, head, "Inter.ttf", "Bold", (36, 32, 28), mw)
         T.text(d, (tx, (y0 + y1) / 2), head, hf, (255, 248, 232), "lm")
