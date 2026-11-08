@@ -612,7 +612,8 @@ def test_team_hunt_elite_and_king(conn):
     p = db.get_player(conn, 1)
     lair = hunt.roll_lair(p, "elite", random.Random(0))
     beast = hunt.team_beast(lair, [db.get_player(conn, u) for u in (1, 2, 3, 4) if db.get_player(conn, u)])
-    assert beast["max_hp"] >= rules.base_stats("Mortal", 1)[0] * 5 * 0.85 - 1
+    ease = __import__("beasts").realm_ease("Mortal", "elite")["hp"]     # low-realm easing
+    assert beast["max_hp"] >= rules.base_stats("Mortal", 1)[0] * 5 * 0.85 * ease - 1
     won, lines, _ = hunt.resolve(conn, lair, [1, 2, 3], random.Random(3))
     assert len(lines) >= 4
     if won:
@@ -654,3 +655,32 @@ def test_passive_qi_rises_before_every_command(conn):
     assert sync_passive_qi(conn, 1, now=2 * 3600)[0] == 0          # nothing twice
     db.update_player(conn, 1, seclusion_start=0, seclusion_end=8 * 3600)
     assert sync_passive_qi(conn, 1, now=5 * 3600)[0] == 0          # seclusion gathers its own way
+
+
+def test_low_realm_beasts_are_eased(conn):
+    import beasts
+    from bot import hunt
+    p = new_player(conn)
+    boar = combat.beast_stats(p, ("Wild Boar", "normal", "brute"))
+    full = rules.base_stats("Mortal", 1)[0] * 1.2
+    assert boar["max_hp"] == round(full * 0.55) and boar["hit_cap"] == 0.40
+    late = dict(p, realm="Grand Martial Master")
+    assert "hit_cap" not in combat.beast_stats(late, ("Stone-Shell Tortoise", "normal", "armored"))
+    wolf = hunt.team_beast({"beast": ("Grey Wolf", "elite", "hunter")}, [p])
+    assert wolf["max_hp"] == round(rules.base_stats("Mortal", 1)[0] * 5 * 0.85 * 0.35)
+    assert beasts.realm_ease("Martial Saint", "elite") == {"hp": 1.0, "attack": 1.0}
+
+
+def test_normal_beast_dies_in_three_turns_at_low_realm(conn):
+    p = new_player(conn)
+    techs = db.get_techniques(conn, 1)
+    hp, atk, dfn = rules.final_stats(p, techs)
+    hero = {"hp": hp, "max_hp": hp, "attack": atk * 10, "defense": dfn}
+    res = combat.fight(hero, combat.beast_stats(p, ("Wild Boar", "normal", "brute")), techs, random.Random(0))
+    assert res["won"] and res["rounds"] == 3
+
+
+def test_practice_timers_are_longer_and_tighten_by_tier():
+    secs = trainer.challenges.READ_THE_MASTER["seconds_per_step"]
+    assert 6 <= secs[1] <= 8 and secs[1] > secs[3] > secs[5]
+    assert 6 <= trainer.wave_seconds(1, 1, []) <= 8

@@ -107,7 +107,7 @@ def test_the_30_percent_cap_holds_after_every_passive():
         force(b, "break")                     # Strike beats Break: a clean hit, no stagger bonus on top
         b.choose(1, "strike")
         b.resolve()
-        assert start - b.enemy["hp"] <= b.enemy["max_hp"] * stats.MAX_HIT_PERCENT + 1e-9
+        assert start - b.enemy["hp"] <= b.enemy["max_hp"] * combat.hit_cap(b.enemy) + 1e-9
 
 
 def test_phoenix_rebirth_once_per_fight():

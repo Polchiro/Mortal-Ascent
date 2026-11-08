@@ -111,11 +111,13 @@ def chest_list(chests):
 
 # ── Beasts ────────────────────────────────────────────────────────────
 
-def beast_multipliers(tier, role):
-    """(hp, attack, defense) as multiples of a player at the same realm and layer (beast.md)."""
+def beast_multipliers(tier, role, realm=None):
+    """(hp, attack, defense) as multiples of a player at the same realm and layer (beast.md).
+    realm: apply the low-realm easing (beasts.LOW_REALM_EASE) for beasts met there."""
     t, r = beast_rules.BEAST_TIERS[tier], beast_rules.ROLES[role]
-    hp = t["hp"] * r.get("hp", 1.0)
-    atk = t["attack"] * r.get("attack", 1.0)
+    ease = beast_rules.realm_ease(realm, tier)
+    hp = t["hp"] * r.get("hp", 1.0) * ease["hp"]
+    atk = t["attack"] * r.get("attack", 1.0) * ease["attack"]
     dfn = atk * beast_rules.BEAST_DEFENSE_RATIO * r.get("defense", 1.0)
     return hp, atk, dfn
 
@@ -132,7 +134,7 @@ def beasts_strip():
 def beasts_page(realm):
     tiles = []
     for name, tier, role in beast_rules.BEASTS[realm]:
-        hp, atk, dfn = beast_multipliers(tier, role)
+        hp, atk, dfn = beast_multipliers(tier, role, realm)
         element = beast_rules.element_of(name)
         tiles.append(tile(f"emblem:beast:{realm}:{element}", T.ELEMENT_ACCENTS[element].rim, name, [
             f"{role.title()} ({ROLE_TRAIT[role]}) · {element}",

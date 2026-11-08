@@ -53,9 +53,9 @@ HIDDEN_SIGNS = {"strike": "...yet his rear fist is clenched tight.",
                 "break": "...yet his front heel lifts off the ground."}
 
 # DEFAULTS for Endless Waves timing (challenges.md says only "each wave faster")
-WAVE_FIRST_SECONDS = {1: 3.0, 2: 2.75, 3: 2.5, 4: 2.25, 5: 2.0}
+WAVE_FIRST_SECONDS = {1: 7.0, 2: 6.5, 3: 6.0, 4: 5.0, 5: 4.5}   # was 3.0 → 2.0s; too short to react
 WAVE_SPEEDUP = 0.92
-WAVE_MIN_SECONDS = 1.25
+WAVE_MIN_SECONDS = 2.5
 TIMER_GRACE_SECONDS = 1.0          # Discord round-trip allowance
 RIVAL_STEPS, RIVAL_WINS_NEEDED = 3, 2
 
