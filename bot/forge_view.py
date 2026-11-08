@@ -17,7 +17,7 @@ import forge
 from . import db, forge_card, forging, materials, passives
 from . import render as card_render
 from .fight_view import jpg
-from .views import OwnedView
+from .views import PANEL_IDLE_SECONDS, OwnedView, free_old_panel
 from cards.forge import render_forge
 
 log = logging.getLogger("mortal-ascent")
@@ -60,7 +60,7 @@ class ForgeView(OwnedView):
     """Picker → plan (action, extras, cost) → stages → result, all in one message."""
 
     def __init__(self, bot, owner_id, rng=None):
-        super().__init__(owner_id, timeout=forge.IDLE_TIMEOUT_SECONDS)
+        super().__init__(owner_id, timeout=PANEL_IDLE_SECONDS)
         self.bot, self.rng = bot, rng or random.Random()
         self.item_id = None
         self.action = None
@@ -412,6 +412,9 @@ class ForgeView(OwnedView):
         self.stop()
         self.bot.busy.discard((self.owner_id, "forge"))
 
+    def in_progress(self):
+        return self.game is not None and not self.game.done
+
     async def on_timeout(self):
         try:
             g = self.game
@@ -443,13 +446,12 @@ def register(bot):
                 "You have not begun your journey yet. Use **/start** to step through the gates of the Jianghu.",
                 ephemeral=True)
             return
-        if (uid, "forge") in bot.busy:
-            await interaction.response.send_message("Your forge is already lit. Finish that forge first.",
-                                                    ephemeral=True)
+        if (uid, "forge") in bot.busy and not await free_old_panel(
+                bot, interaction, "forge", "Your forge is already lit. Finish that forge first."):
             return
         bot.busy.add((uid, "forge"))
         try:
-            view = ForgeView(bot, uid)
+            view = ForgeView(bot, uid).track(bot, "forge")
             await interaction.response.send_message(embed=view.embed(), view=view)
             view.message = await interaction.original_response()
         except Exception:
