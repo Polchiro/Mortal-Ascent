@@ -31,9 +31,10 @@ def _fill(img, mask, color, a=255):
     img.alpha_composite(layer)
 
 
-def _canvas(scene, fallback=(18, 14, 14)):
-    img = Image.new("RGBA", (W * S, H * S), fallback + (255,))
-    sc = photo(scene, W * S, H * S)
+def _canvas(scene, fallback=(18, 14, 14), h=None):
+    h = h or H
+    img = Image.new("RGBA", (W * S, h * S), fallback + (255,))
+    sc = photo(scene, W * S, h * S)
     if sc is not None:
         img.alpha_composite(sc)
     w, h = img.size
@@ -232,7 +233,12 @@ def render_train(data):
 def render_explore(data):
     """data: name, realm, layer, region, defeated, step, max_steps, hp, max_hp, coins, items, lost, beasts,
     story [str], notes [str], cooldown (str)."""
-    img = _canvas(REGION.get(data.get("region"), ""), (16, 14, 12))
+    tiles = ([{"name": "Lotus Coins", "label": f"+{data['coins']:,} coins", "icon": "lotus", "color": (240, 196, 110)}]
+             if data["coins"] else [])
+    tiles += list(data["items"]) + [dict(it, lost=True) for it in data["lost"]]
+    cloth_h = V.spoils_height(len(tiles))
+    h = H + max(0, cloth_h - 236)
+    img = _canvas(REGION.get(data.get("region"), ""), (16, 14, 12), h)
     defeated = data["defeated"]
     if defeated:
         veil = Image.new("RGBA", img.size, (40, 4, 4, 90))
@@ -285,17 +291,15 @@ def render_explore(data):
            (220, 200, 180) if beasts else DIM)
     d = ImageDraw.Draw(img)
     T.text(d, (W - 48, y), slain, font("Inter.ttf", 24, "SemiBold"), WARM if beasts else DIM, "rm")
-    tiles = ([{"name": "Lotus Coins", "label": f"+{data['coins']:,} coins", "icon": "lotus", "color": (240, 196, 110)}]
-             if data["coins"] else [])
-    tiles += list(data["items"]) + [dict(it, lost=True) for it in data["lost"]]
-    extra = max(0, len(tiles) - 6)
-    V.spoils(img, (70, 416, 1130, 652), tiles[:6] if not extra else tiles[:5], max_n=6)
+    rows, i = [], 0
+    for n in V.spoils_layout(len(tiles)):
+        rows.append(tiles[i:i + n])
+        i += n
+    V.spoils_rows(img, (70, 416, 1130, 416 + cloth_h), rows)
     d = ImageDraw.Draw(img)
-    if extra:
-        T.text(d, (1040, 506), f"+{len(tiles) - 5} more", font("Inter.ttf", 24, "Bold"), (250, 220, 150), "mm")
     # the last step, in a line or two
     lines = note_lines(data["story"])[-1:] + note_lines(data["notes"])[:1]
-    y = 680
+    y = 416 + cloth_h + 44
     if lines:
         d.line(P(48, y - 14, 48, y + 34 * min(2, len(lines)) - 20), fill=color + (255,), width=round(4 * S))
         f = font("Inter.ttf", 24, "Medium")
