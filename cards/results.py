@@ -12,7 +12,7 @@ from . import theme as T
 from . import victory as V
 from .activity import clean, fmt_num, note_lines
 from .battle import _art
-from .scenes import photo, subject
+from .scenes import REGION, photo, subject
 from .theme import P, S, alpha, font, mix
 
 W, H = 1200, 760
@@ -31,9 +31,10 @@ def _fill(img, mask, color, a=255):
     img.alpha_composite(layer)
 
 
-def _canvas(scene, fallback=(18, 14, 14)):
-    img = Image.new("RGBA", (W * S, H * S), fallback + (255,))
-    sc = photo(scene, W * S, H * S)
+def _canvas(scene, fallback=(18, 14, 14), h=None):
+    h = h or H
+    img = Image.new("RGBA", (W * S, h * S), fallback + (255,))
+    sc = photo(scene, W * S, h * S)
     if sc is not None:
         img.alpha_composite(sc)
     w, h = img.size
@@ -224,4 +225,85 @@ def render_train(data):
     # the session, in a line or two
     lines = note_lines(data["notes"]) or [("A quiet session. The master nods and walks away.", True)]
     _notes(img, lines, 672, H - 20, 600, 23)
+    return T.finish(img)
+
+
+# ── /explore: the expedition's end ────────────────────────────────────
+
+def render_explore(data):
+    """data: name, realm, layer, region, defeated, step, max_steps, hp, max_hp, coins, items, lost, beasts,
+    story [str], notes [str], cooldown (str)."""
+    tiles = ([{"name": "Lotus Coins", "label": f"+{data['coins']:,} coins", "icon": "lotus", "color": (240, 196, 110)}]
+             if data["coins"] else [])
+    tiles += list(data["items"]) + [dict(it, lost=True) for it in data["lost"]]
+    cloth_h = V.spoils_height(len(tiles))
+    h = H + max(0, cloth_h - 236)
+    img = _canvas(REGION.get(data.get("region"), ""), (16, 14, 12), h)
+    defeated = data["defeated"]
+    if defeated:
+        veil = Image.new("RGBA", img.size, (40, 4, 4, 90))
+        img.alpha_composite(veil)
+    color = EMBER if defeated else GOLD
+    _cooldown(img, data.get("cooldown") or "")
+    V.crest(img, (124, 150), 180, "lost" if defeated else "won")
+    d = ImageDraw.Draw(img)
+    tx = 236
+    region = data.get("region") or "The Wilds"
+    _spaced(d, (tx + 2, 86), f"EXPEDITION  ·  {region.upper()}", 20, mix(color, WARM, 0.4))
+    T.gold_text(img, (tx, 150), "Expedition Failed" if defeated else "You Return Safely",
+                font("Cinzel.ttf", 62, "Bold"), "lm",
+                top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.25))
+    d = ImageDraw.Draw(img)
+    T.text(d, (tx + 2, 212), f"{data['name']}  ·  {data['realm']}, {T.ordinal(data['layer'])} Layer",
+           font("Inter.ttf", 26, "Medium"), MUTED, "lm")
+    # the trail: how deep you went
+    n, reached = data["max_steps"], data["step"]
+    y = 304
+    x0, x1 = 70, 600
+    seg = (x1 - x0) / max(1, n - 1)
+    d.line(P(x0, y, x1, y), fill=(70, 60, 52, 255), width=round(4 * S))
+    if reached > 1:
+        d.line(P(x0, y, x0 + seg * (min(reached, n) - 1), y), fill=color + (255,), width=round(4 * S))
+    for i in range(n):
+        cx = x0 + seg * i
+        on, last = i < reached, i == reached - 1
+        if last:
+            T.soft_glow(img, (cx - 34, y - 34, cx + 34, y + 34), alpha(color, 170), 12)
+            d = ImageDraw.Draw(img)
+        r = 15 if last else 11
+        d.ellipse(P(cx - r, y - r, cx + r, y + r), fill=(color if on else (24, 20, 18)) + (255,),
+                  outline=(255, 226, 170, 255) if on else (90, 80, 70, 255), width=round(2 * S))
+        T.text(d, (cx, y + 38), f"Step {i + 1}", font("Inter.ttf", 21, "Bold" if last else "SemiBold"),
+               WARM if on else DIM, "mm")
+    # HP, on the right
+    _spaced(d, (680, y - 46), "HEALTH", 20, MUTED, tracking=3)
+    frac = max(0, data["hp"]) / data["max_hp"] if data["max_hp"] else 0
+    K.ornate_bar(img, (698, y - 20, 1036, y + 20), frac, (214, 64, 52) if frac <= 0.25 else (196, 70, 58), "heart",
+                 f"{max(0, round(data['hp'])):,} / {data['max_hp']:,}")
+    d = ImageDraw.Draw(img)
+    T.text(d, (1152, y), f"{frac:.0%}", font("Inter.ttf", 32, "Black"), WARM, "rm")
+    # the spoils on the silk cloth
+    y = 392
+    _spaced(d, (48, y), "SPOILS", 20, MUTED, tracking=3)
+    beasts = data["beasts"]
+    slain = f"{beasts} beast{'s' if beasts != 1 else ''} slain"
+    T.icon(img, "skull", (W - 48 - T.width(d, slain, font("Inter.ttf", 24, "SemiBold")) - 24, y), 24,
+           (220, 200, 180) if beasts else DIM)
+    d = ImageDraw.Draw(img)
+    T.text(d, (W - 48, y), slain, font("Inter.ttf", 24, "SemiBold"), WARM if beasts else DIM, "rm")
+    rows, i = [], 0
+    for n in V.spoils_layout(len(tiles)):
+        rows.append(tiles[i:i + n])
+        i += n
+    V.spoils_rows(img, (70, 416, 1130, 416 + cloth_h), rows)
+    d = ImageDraw.Draw(img)
+    # the last step, in a line or two
+    lines = note_lines(data["story"])[-1:] + note_lines(data["notes"])[:1]
+    y = 416 + cloth_h + 44
+    if lines:
+        d.line(P(48, y - 14, 48, y + 34 * min(2, len(lines)) - 20), fill=color + (255,), width=round(4 * S))
+        f = font("Inter.ttf", 24, "Medium")
+        for text, muted in lines[:2]:
+            T.text(d, (66, y), T.fit(d, text, f, W - 120), f, DIM if muted else WARM, "lm")
+            y += 34
     return T.finish(img)

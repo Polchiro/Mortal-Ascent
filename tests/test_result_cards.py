@@ -102,7 +102,7 @@ def test_explore_card_from_a_real_expedition(conn):
     exp.finish()
     data = result_cards.explore_data(exp)
     assert data["coins"] == exp.banked["coins"] and len(data["items"]) == len(exp.banked["stored"])
-    assert activity.render_explore(data).size == (1200, activity.H_EXPLORE)
+    assert results.render_explore(data).size == (1200, results.H)
 
 
 def test_explore_card_with_a_full_spoils_list(conn):
@@ -112,7 +112,7 @@ def test_explore_card_with_a_full_spoils_list(conn):
     from bot import loot
     exp.items = [loot.chest("jade"), loot.herb("Mortal", "qi", 10), loot.pill("Yellow")] * 4
     exp.finish()
-    activity.render_explore(result_cards.explore_data(exp))
+    results.render_explore(result_cards.explore_data(exp))
 
 
 def test_result_cards_need_only_pillow(conn, monkeypatch):
@@ -148,3 +148,18 @@ def test_spar_end_sends_the_card(conn):
             await view.play(Interaction(), view.spar.choices()[0][0])
     asyncio.run(go())
     assert sent["embed"] is None and sent["attachments"][0].filename == "spar.png"
+
+
+def test_expedition_card_and_button_show_every_item():
+    """No '+N more': the cloth grows a row for every 7 spoils, and the button lists them all."""
+    import sys as _sys, os as _os
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "scripts"))
+    import render_results as R
+    from bot.views import spoils_text
+    many = dict(R.EXPLORE, items=R.EXPLORE["items"] * 4)          # 16 items + coins + 1 lost = 18 spoils
+    assert results.render_explore(R.EXPLORE).size == (1200, results.H)
+    assert results.render_explore(many).size[1] > results.H
+    text = spoils_text(many)
+    for it in many["items"] + many["lost"]:
+        assert it["name"] in text
+    assert "312" in text and "Left behind" in text

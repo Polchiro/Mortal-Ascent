@@ -24,7 +24,7 @@ import training
 from . import db, hunt, loot, mastery, trainer
 from . import player as rules
 from . import result_cards
-from cards.activity import render_explore
+from cards.results import render_explore
 from cards.results import render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
 from . import explore_card
@@ -150,6 +150,49 @@ def hp_bar(hp, max_hp, width=12):
 
 # ── /explore ──────────────────────────────────────────────────────────
 
+def spoils_text(data):
+    """Every coin and item an expedition brought home (and what a full bag left behind), as a list."""
+    lines = []
+    if data["coins"]:
+        lines.append(f"🪷 **{data['coins']:,}** Lotus Coins")
+    for it in data["items"]:
+        qty = f" ×{it['qty']}" if it.get("qty", 1) > 1 else ""
+        label = f" · {it['label']}" if it.get("label") else ""
+        lines.append(f"• **{it['name']}**{qty}{label}")
+    if data["lost"]:
+        lines.append("")
+        lines.append("**Left behind (bag full)**")
+        for it in data["lost"]:
+            qty = f" ×{it['qty']}" if it.get("qty", 1) > 1 else ""
+            lines.append(f"• ~~{it['name']}~~{qty}")
+    if data["beasts"]:
+        lines.append("")
+        lines.append(f"💀 {data['beasts']} beast{'s' if data['beasts'] != 1 else ''} slain")
+    return "\n".join(lines) or "You came back empty-handed."
+
+
+class SpoilsView(discord.ui.View):
+    """Under the expedition result: a button that lists everything brought home, for whoever clicks it."""
+
+    def __init__(self, data):
+        super().__init__(timeout=1800)
+        self.data = data
+        n = len(data["items"]) + len(data["lost"]) + (1 if data["coins"] else 0)
+        self.show.label = f"View all spoils ({n})"
+
+    @discord.ui.button(label="View all spoils", emoji="🎒", style=discord.ButtonStyle.secondary)
+    async def show(self, interaction, button):
+        text = spoils_text(self.data)
+        if len(text) > 4000:
+            text = text[:3990] + "\n…"
+        embed = discord.Embed(title=f"Spoils · {self.data['name']}", description=text, color=0xC9A24A)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+def spoils_view(data):
+    return SpoilsView(data) if data["coins"] or data["items"] or data["lost"] else None
+
+
 class ExploreView(FightMixin, OwnedView):
     def __init__(self, bot, owner_id, rng=None):
         super().__init__(owner_id, timeout=300)
@@ -271,9 +314,10 @@ class ExploreView(FightMixin, OwnedView):
         if interaction and not interaction.response.is_done():
             await interaction.response.defer()            # rendering takes a moment: answer Discord first
         if self.exp.over:
-            file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
-            kw = (dict(content=None, embed=None, attachments=[file], view=None) if file
-                  else dict(content=None, embed=self.embed(), attachments=[], view=None))
+            data = result_cards.explore_data(self.exp)
+            file = await result_cards.card_file(render_explore, data, "explore.png")
+            kw = (dict(content=None, embed=None, attachments=[file], view=spoils_view(data)) if file
+                  else dict(content=None, embed=self.embed(), attachments=[], view=spoils_view(data)))
         else:
             kw = await self.message_kwargs()
         await self.edit_fight_message(interaction, **kw)
@@ -367,11 +411,12 @@ class ExploreView(FightMixin, OwnedView):
                     self.exp.finish()
             self.build()
             if self.message:
-                file = await result_cards.card_file(render_explore, result_cards.explore_data(self.exp), "explore.png")
+                data = result_cards.explore_data(self.exp)
+                file = await result_cards.card_file(render_explore, data, "explore.png")
                 if file:
-                    await self.message.edit(embed=None, attachments=[file], view=None)
+                    await self.message.edit(embed=None, attachments=[file], view=spoils_view(data))
                 else:
-                    await self.message.edit(embed=self.embed(), view=None)
+                    await self.message.edit(embed=self.embed(), view=spoils_view(data))
         except Exception:
             log.exception("Explore timeout handling failed")
         finally:

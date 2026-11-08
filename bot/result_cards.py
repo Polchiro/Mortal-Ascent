@@ -56,7 +56,9 @@ def _tile(item):
 
 def explore_data(exp):
     b = exp.banked or {"coins": 0, "stored": [], "lost": []}
+    from .explore_card import REGION_BY_TIER
     return dict(_who(exp.player), defeated=exp.defeated, step=exp.step, max_steps=explore.MAX_STEPS,
+                region=REGION_BY_TIER.get(getattr(exp, "tier", None), ""),
                 hp=exp.hp, max_hp=exp.max_hp, coins=b["coins"], beasts=exp.beasts_slain,
                 items=[_tile(i) for i in b["stored"]], lost=[_tile(i) for i in b["lost"]],
                 story=list(exp.story), notes=list(exp.notes),

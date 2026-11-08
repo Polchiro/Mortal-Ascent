@@ -77,7 +77,29 @@ def crest(img, center, height, result, tier=None):
 
 
 def spoils(img, box, tiles, max_n=5):
-    """The silk cloth across `box` with up to max_n spoils (seal, ×qty, name) laid on it."""
+    """The silk cloth across `box` with up to max_n spoils in one row."""
+    spoils_rows(img, box, [tiles[:max_n]])
+
+
+ROW_H = 150      # one row of spoils on the cloth: seal, ×qty, a two-line name, "left behind"
+CLOTH_PAD = 40   # the embroidered border above and below the rows
+
+
+def spoils_layout(n, per_row=7):
+    """Split n spoils into rows (as even as possible). Returns the number in each row."""
+    if n <= 0:
+        return []
+    rows = -(-n // per_row)
+    base, extra = divmod(n, rows)
+    return [base + (1 if i < extra else 0) for i in range(rows)]
+
+
+def spoils_height(n, per_row=7):
+    return 2 * CLOTH_PAD + max(1, len(spoils_layout(n, per_row))) * ROW_H
+
+
+def spoils_rows(img, box, rows):
+    """The silk cloth across `box`, stretched to fit, with every row of spoils laid on it."""
     x0, y0, x1, y1 = box
     cloth = subject("spoils_cloth")
     if cloth is not None:
@@ -85,22 +107,35 @@ def spoils(img, box, tiles, max_n=5):
         img.alpha_composite(cloth, (round(x0 * S), round(y0 * S)))
     else:
         T.soft_glow(img, box, (90, 14, 18, 200), 18, "rect")
-    tiles = tiles[:max_n]
-    if not tiles:
+    rows = [r for r in rows if r]
+    if not rows:
         d = ImageDraw.Draw(img)
         T.text(d, ((x0 + x1) / 2, (y0 + y1) / 2), "Nothing to carry home", font("Inter.ttf", 26, "SemiBold"),
                (230, 206, 170), "mm")
         return
-    step = min(150, (x1 - x0 - 80) / len(tiles))
-    cy = y0 + (y1 - y0) * 0.40
-    first = (x0 + x1) / 2 - step * (len(tiles) - 1) / 2
-    for i, it in enumerate(tiles):
-        cx = first + i * step
-        col = it.get("color") or T.RARITY.get(it.get("color_key"), T.RARITY[None])
-        T.seal(img, (cx, cy), 32, it["icon"], col)
-        d = ImageDraw.Draw(img)
-        qty = it.get("qty", 1)
-        if qty > 1:
-            T.text(d, (cx + 34, cy - 26), f"×{qty}", font("Inter.ttf", 22, "Black"), (250, 220, 150), "mm")
-        f = font("Inter.ttf", 21, "Bold")
-        T.text(d, (cx, cy + 54), T.fit(d, it["label"] if it.get("name") == "Lotus Coins" else it["name"], f, step - 8), f, WARM, "mm")
+    row_h = (y1 - y0 - 2 * CLOTH_PAD) / len(rows)
+    for r, tiles in enumerate(rows):
+        step = min(150, (x1 - x0 - 80) / len(tiles))
+        cy = y0 + CLOTH_PAD + r * row_h + row_h * 0.30
+        first = (x0 + x1) / 2 - step * (len(tiles) - 1) / 2
+        for i, it in enumerate(tiles):
+            _spoil(img, first + i * step, cy, step, it)
+
+
+def _spoil(img, cx, cy, step, it):
+    col = it.get("color") or T.RARITY.get(it.get("color_key"), T.RARITY[None])
+    if it.get("lost"):
+        col = (110, 100, 96)
+    T.seal(img, (cx, cy), 32, it["icon"], col)
+    d = ImageDraw.Draw(img)
+    qty = it.get("qty", 1)
+    if qty > 1:
+        T.text(d, (cx + 34, cy - 26), f"×{qty}", font("Inter.ttf", 22, "Black"), (250, 220, 150), "mm")
+    f = font("Inter.ttf", 20, "Bold")
+    name = it["label"] if it.get("name") == "Lotus Coins" else it["name"]
+    lines = T.wrap(d, name, f, step - 10, lines=2)
+    for j, line in enumerate(lines):
+        T.text(d, (cx, cy + 52 + j * 24), line, f, (176, 150, 140) if it.get("lost") else WARM, "mm")
+    if it.get("lost"):
+        T.text(d, (cx, cy + 54 + len(lines) * 24), "left behind", font("Inter.ttf", 17, "SemiBold"),
+               (240, 130, 110), "mm")
