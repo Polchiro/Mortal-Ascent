@@ -12,7 +12,7 @@ from . import theme as T
 from . import victory as V
 from .activity import clean, fmt_num, note_lines
 from .battle import _art
-from .scenes import photo
+from .scenes import photo, subject
 from .theme import P, S, alpha, font, mix
 
 W, H = 1200, 760
@@ -78,8 +78,9 @@ def _notes(img, lines, y, y_max, width=640, size=23):
     return y
 
 
-def _person(img, slug, height, cx, bottom, dim=0.0):
-    art = _art(slug)
+def _person(img, name, height, cx, bottom, dim=0.0):
+    """A painted figure (art/scenes/<name>.png, else art/beasts/<name>.png) standing on the card's floor."""
+    art = subject(name) or _art(name)
     if art is None:
         return
     h = round(height * S)
@@ -106,7 +107,7 @@ def render_spar(data):
     img = _canvas("spar_hall_dawn")
     outcome = data["outcome"]
     word, color = OUTCOME.get(outcome, (outcome.title(), GOLD))
-    _person(img, "the_master", 600, 920, H - 6, dim=0.35 if outcome == "victory" else 0.0)
+    _person(img, "master_approve" if outcome == "victory" else "master_stern", 700, 930, H + 4)
     _cooldown(img, data.get("cooldown") or "")
     # crest and word
     has_crest = V.crest(img, (140, 168), 200, outcome)
@@ -161,14 +162,14 @@ def _ring(img, center, r, score, color):
     T.soft_glow(img, (cx - r - 50, cy - r - 50, cx + r + 50, cy + r + 50), alpha(color, round(40 + 110 * score)), 40)
     d = ImageDraw.Draw(img)
     d.ellipse(P(cx - r - 14, cy - r - 14, cx + r + 14, cy + r + 14), fill=(10, 8, 9, 225))
-    d.arc(P(cx - r, cy - r, cx + r, cy + r), 0, 360, fill=(52, 44, 40, 255), width=round(16 * S))
+    d.arc(P(cx - r, cy - r, cx + r, cy + r), 0, 360, fill=(52, 44, 40, 255), width=round(r * 0.11 * S))
     if score > 0:
-        d.arc(P(cx - r, cy - r, cx + r, cy + r), -90, -90 + 360 * score, fill=color + (255,), width=round(16 * S))
-    d.ellipse(P(cx - r + 20, cy - r + 20, cx + r - 20, cy + r - 20), outline=(200, 160, 90, 150), width=max(1, S))
-    T.gold_text(img, (cx, cy - 10), f"{score:.0%}", font("Cinzel.ttf", 64, "Bold"), "mm",
+        d.arc(P(cx - r, cy - r, cx + r, cy + r), -90, -90 + 360 * score, fill=color + (255,), width=round(r * 0.11 * S))
+    d.ellipse(P(cx - r * 0.86, cy - r * 0.86, cx + r * 0.86, cy + r * 0.86), outline=(200, 160, 90, 150), width=max(1, S))
+    T.gold_text(img, (cx, cy - r * 0.08), f"{score:.0%}", font("Cinzel.ttf", round(r * 0.5), "Bold"), "mm",
                 top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.2))
     d = ImageDraw.Draw(img)
-    _spaced(d, (cx, cy + 50), "SCORE", 20, MUTED, "m", tracking=4)
+    _spaced(d, (cx, cy + r * 0.4), "SCORE", max(14, round(r * 0.16)), MUTED, "m", tracking=3)
 
 
 def render_train(data):
@@ -179,6 +180,8 @@ def render_train(data):
     practice = data["mode"] == "practice"
     score = max(0.0, min(1.0, data["score"]))
     low = score < 0.5
+    pose = "master_stern" if low else ("master_teach" if practice else "master_approve")
+    _person(img, pose, 660, 940 if practice else 950, H + 4)
     ring_col = EMBER if low else (GOLD if not practice else JADE)
     _cooldown(img, data.get("cooldown") or "")
     d = ImageDraw.Draw(img)
@@ -208,20 +211,17 @@ def render_train(data):
            MUTED, "lm")
     K.ornate_bar(img, (66, 380, 600, 422), max(0.0, min(1.0, frac)), bar_col, icon, value)
     d = ImageDraw.Draw(img)
-    T.text(d, (48, 458), caption, font("Inter.ttf", 22, "Medium"), DIM, "lm")
-    # the session
-    lines = note_lines(data["notes"])
-    if not lines:
-        lines = [("A quiet session. The master nods and walks away.", True)]
-    _spaced(d, (48, 520), "THE SESSION", 20, MUTED, tracking=3)
-    _notes(img, lines, 562, H - 30, 640, 24)
-    # the score
-    _ring(img, (930, 340), 140, score, ring_col)
+    T.text(d, (48, 452), caption, font("Inter.ttf", 22, "Medium"), DIM, "lm")
+    # the score: a ring and what it earned
+    _ring(img, (118, 566), 64, score, ring_col)
     d = ImageDraw.Draw(img)
     msg = "Below 50%: only 10% reward" if low else ("A flawless session" if score >= 1 else "Full reward earned")
-    T.text(d, (930, 548), msg, font("Inter.ttf", 28, "Bold"), (255, 150, 120) if low else WARM, "mm")
+    T.text(d, (214, 548), msg, font("Inter.ttf", 30, "Bold"), (255, 150, 120) if low else WARM, "lm")
     if data["conditions"]:
         n = len(data["conditions"])
-        T.text(d, (930, 588), f"+15% from {n} condition{'s' if n > 1 else ''}", font("Inter.ttf", 23, "Medium"),
-               MUTED, "mm")
+        T.text(d, (214, 588), f"+15% from {n} condition{'s' if n > 1 else ''}", font("Inter.ttf", 24, "Medium"),
+               MUTED, "lm")
+    # the session, in a line or two
+    lines = note_lines(data["notes"]) or [("A quiet session. The master nods and walks away.", True)]
+    _notes(img, lines, 672, H - 20, 600, 23)
     return T.finish(img)
