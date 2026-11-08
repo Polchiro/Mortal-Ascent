@@ -92,15 +92,22 @@ def spoils(img, box, tiles, max_n=5):
                (230, 206, 170), "mm")
         return
     step = min(150, (x1 - x0 - 80) / len(tiles))
-    cy = y0 + (y1 - y0) * 0.40
+    cy = y0 + (y1 - y0) * 0.36
     first = (x0 + x1) / 2 - step * (len(tiles) - 1) / 2
     for i, it in enumerate(tiles):
         cx = first + i * step
         col = it.get("color") or T.RARITY.get(it.get("color_key"), T.RARITY[None])
+        if it.get("lost"):
+            col = (110, 100, 96)
         T.seal(img, (cx, cy), 32, it["icon"], col)
         d = ImageDraw.Draw(img)
         qty = it.get("qty", 1)
         if qty > 1:
             T.text(d, (cx + 34, cy - 26), f"×{qty}", font("Inter.ttf", 22, "Black"), (250, 220, 150), "mm")
-        f = font("Inter.ttf", 21, "Bold")
-        T.text(d, (cx, cy + 54), T.fit(d, it["label"] if it.get("name") == "Lotus Coins" else it["name"], f, step - 8), f, WARM, "mm")
+        f = font("Inter.ttf", 20, "Bold")
+        name = it["label"] if it.get("name") == "Lotus Coins" else it["name"]
+        lines = T.wrap(d, name, f, step - 10, lines=2)
+        for j, line in enumerate(lines):
+            T.text(d, (cx, cy + 52 + j * 24), line, f, (176, 150, 140) if it.get("lost") else WARM, "mm")
+        if it.get("lost"):
+            T.text(d, (cx, cy + 54 + len(lines) * 24), "left behind", font("Inter.ttf", 17, "SemiBold"), (240, 130, 110), "mm")

@@ -102,7 +102,7 @@ def test_explore_card_from_a_real_expedition(conn):
     exp.finish()
     data = result_cards.explore_data(exp)
     assert data["coins"] == exp.banked["coins"] and len(data["items"]) == len(exp.banked["stored"])
-    assert activity.render_explore(data).size == (1200, activity.H_EXPLORE)
+    assert results.render_explore(data).size == (1200, results.H)
 
 
 def test_explore_card_with_a_full_spoils_list(conn):
@@ -112,7 +112,7 @@ def test_explore_card_with_a_full_spoils_list(conn):
     from bot import loot
     exp.items = [loot.chest("jade"), loot.herb("Mortal", "qi", 10), loot.pill("Yellow")] * 4
     exp.finish()
-    activity.render_explore(result_cards.explore_data(exp))
+    results.render_explore(result_cards.explore_data(exp))
 
 
 def test_result_cards_need_only_pillow(conn, monkeypatch):

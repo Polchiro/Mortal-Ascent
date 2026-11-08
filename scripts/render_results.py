@@ -12,8 +12,8 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from cards.activity import render_explore   # noqa: E402
-from cards.results import render_spar, render_train   # noqa: E402
+
+from cards.results import render_explore, render_spar, render_train   # noqa: E402
 
 WHO = {"name": "Shoaib", "realm": "Martial King", "layer": 8}
 
@@ -35,7 +35,7 @@ TRAIN = dict(WHO, mode="train", challenge="Read the Master", conditions=["Heavy 
 PRACTICE = dict(WHO, mode="practice", challenge="Endless Waves", conditions=[], score=0.42,
                 reward={"technique": "Viper Fang Finger", "exp": 18, "total": 918, "cap": 2000},
                 notes=["You scored **5** of 12 points."], cooldown="Practise again in 30 min")
-EXPLORE = dict(WHO, defeated=False, step=4, max_steps=5, hp=2210, max_hp=3200, coins=312, beasts=3,
+EXPLORE = dict(WHO, region="Misty Pine Valley", defeated=False, step=4, max_steps=5, hp=2210, max_hp=3200, coins=312, beasts=3,
                items=[{"name": "Silver Chest", "qty": 1, "icon": "chest", "color_key": "silver", "label": "Silver"},
                       {"name": "Red Ginseng Root", "qty": 3, "icon": "herb", "color_key": None, "label": "Common"},
                       {"name": "Fine Spirit Saber", "qty": 1, "icon": "saber", "color_key": "spirit", "label": "Spirit"},
