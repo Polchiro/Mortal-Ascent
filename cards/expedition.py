@@ -662,16 +662,12 @@ def render_crossroads(data):
     img.alpha_composite(sc, P(SCENE[0], SCENE[1]))
     T.frame(img, SCENE, 0.8)
     header(img, data, data["region"], f"{data['realm']}  ·  Choose your path")
-    d = ImageDraw.Draw(img)
-    T.text(d, (SCENE[2] - 34, SCENE[1] + 152), "Deeper = rarer finds, stronger beasts", font("Inter.ttf", 24, "Medium"),
-           mix(T.PARCHMENT, (0, 0, 0), 0.1), "rm")
-    for key in ("left", "middle", "right"):
+    for key in ("left", "middle", "right"):          # one big arrow per path; its clue is read in the panel below
         p = paths[key]
         color = MOOD[p["kind"]][0]
         cx = SCENE[0] + PATH_X[key]
         cy = SCENE[1] + BADGE_Y[key]
-        badge(img, (cx, cy), 40, key, color)
-        label_chip(img, (cx, cy + 70), p["label"], color)
+        badge(img, (cx, cy + 20), 48, key, color)
 
     for box, key in zip(CLUES, ("left", "middle", "right")):
         p = paths[key]
@@ -683,15 +679,12 @@ def render_crossroads(data):
         d.ellipse(P(cx - 20, cy - 20, cx + 20, cy + 20), fill=(12, 8, 6, 255), outline=alpha(color, 255), width=round(3 * S))
         arrow(d, cx, cy, 10, key, mix(color, WHITE, 0.5))
         room = x1 - cx - 46
-        title = f"{SIDE[key]} · {p['place']}"
-        if T.width(d, title, font("Inter.ttf", 24, "Bold")) > room:
-            title = f"{SIDE[key]} · {p['place'].removeprefix('the ')}"
-        title, tf = _shrink(d, title, "Inter.ttf", "Bold", (27, 26, 25, 24), room)
-        T.text(d, (cx + 32, cy), title, tf, mix(color, WHITE, 0.2), "lm")
-        f = font("Inter.ttf", 25, "Medium")
+        title, tf = _shrink(d, p["label"], "Inter.ttf", "Black", (30, 28, 26, 24), room)
+        T.text(d, (cx + 32, cy), title, tf, mix(color, WHITE, 0.25), "lm")
+        f = font("Inter.ttf", 26, "Medium")
         lines = T.wrap(d, p["clue"], f, x1 - x0 - 48, lines=2)
         for i, line in enumerate(lines):
-            T.text(d, (x0 + 24, y0 + 90 + i * 33), line, f, T.PARCHMENT, "lm")
+            T.text(d, (x0 + 24, y0 + 88 + i * 34), line, f, T.PARCHMENT, "lm")
     if data.get("lie_note"):
         d = ImageDraw.Draw(img)
         T.text(d, (SCENE[0] + 30, SCENE[3] - 28), data["lie_note"], font("Inter.ttf", 24, "SemiBold"),

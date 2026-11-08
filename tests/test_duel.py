@@ -379,7 +379,7 @@ def test_who_can_duel():
 
 def test_duel_card_renders_every_stage():
     d = make()
-    assert render_duel(duel_view.duel_card_data(d)).size == (1200, 780)
+    assert render_duel(duel_view.duel_card_data(d)).size == (1200, 860)
     d.choose(1, "guard")
     d.turn = 12
     data = duel_view.duel_card_data(d)

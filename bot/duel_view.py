@@ -223,6 +223,15 @@ def _last_text(d):
     return f"{d.last_move} · {d.last_dealt:,} dmg" if d.last_dealt else d.last_move
 
 
+def hp_change(duel, i):
+    """HP side i gained or lost on the last turn (the card's damage number); 0 before the first turn."""
+    if not duel.history:
+        return 0
+    now = duel.history[-1]["moves"][i]["hp_after"]
+    before = duel.history[-2]["moves"][i]["hp_after"] if len(duel.history) > 1 else duel.sides[i].max_hp
+    return round(now) - round(before)
+
+
 def duel_card_data(duel, avatars=(None, None)):
     """Plain data for cards.battle.render_duel. Never contains what a player picked this turn."""
     sides = []
@@ -232,7 +241,7 @@ def duel_card_data(duel, avatars=(None, None)):
                       "talent": d.talent, "hp": round(d.hp), "max_hp": round(d.max_hp), "locked": duel.locked(d),
                       "last": _last_text(d), "avatar_bytes": avatars[i] if i < len(avatars) else None,
                       "winner": duel.over and duel.winner is d, "loser": duel.over and duel.winner is not None
-                      and duel.winner is not d})
+                      and duel.winner is not d, "delta": hp_change(duel, i)})
     data = {"palette": "Duel", "turn": duel.turn, "seconds": pvp.TURN_SECONDS, "intensity": duel.intensity(),
             "fair_label": f"{sides[0]['realm']} · {sides[0]['layer_label'].split()[0]}", "sides": sides}
     reveal = next((t for k, t in duel.log if k == "star"), "")
@@ -257,35 +266,18 @@ def duel_card_data(duel, avatars=(None, None)):
 
 
 def duel_embed(duel):
-    """The readable text under the card (Discord shows the image small on a computer)."""
+    """A short line under the card: who has locked in (it changes before the card is redrawn), the last turn's
+    events and the rising intensity. HP, damage, last moves and techniques are on the card and the buttons."""
     lines = []
-    for d in duel.sides:
-        mark = "" if duel.over else (" · ✅ locked in" if duel.locked(d) else " · 🤔 choosing")
-        lines.append(f"**{d.name}** · {round(d.hp):,} / {round(d.max_hp):,} HP ({d.hp_frac:.0%}){mark}")
-    if duel.log:
-        lines += ["", "**Last turn**" if duel.history else "**The duel**"]
-        lines += [f"{LOG_EMOJI.get(k, '•')} {t}" for k, t in duel.log[-8:]]
     if not duel.over:
-        notes = []
+        lines.append("  ·  ".join(f"**{d.name}** " + ("✅ locked in" if duel.locked(d) else "🤔 choosing")
+                                  for d in duel.sides))
+    if duel.log and duel.history:
+        lines += [""] + [f"{LOG_EMOJI.get(k, '•')} {t}" for k, t in duel.log[-4:]]
+    if not duel.over:
         inten = duel.intensity()
         if inten:
-            notes.append(f"🔥 **Rising intensity:** all damage +{inten:.0%} this turn.")
-        elif duel.turn >= pvp.INTENSITY_START_TURN - 3:
-            notes.append(f"🔥 Rising intensity starts on turn {pvp.INTENSITY_START_TURN}: +"
-                         f"{pvp.INTENSITY_PER_TURN:.0%} damage per turn.")
-        notes.append(f"⏳ Turn {duel.turn} of {pvp.MAX_TURNS}. At the limit, the higher % HP wins.")
-        lines += [""] + notes
-        lines += ["", "**Techniques**"]
-        for d in duel.sides:
-            parts = []
-            for key in ("attack_tech", "defense_tech"):
-                t = d.tech(key)
-                if not t:
-                    continue
-                left = d.cooldowns[key]
-                state = "✅" if not left else f"⏳ {left}"
-                parts.append(f"{state} {t['name']} ({tech_text(t)})")
-            lines.append(f"**{d.name}:** " + (" · ".join(parts) if parts else "no techniques"))
+            lines += ["", f"🔥 **Rising intensity:** all damage +{inten:.0%} this turn."]
     return discord.Embed(description="\n".join(lines)[:4000], color=COLOR)
 
 

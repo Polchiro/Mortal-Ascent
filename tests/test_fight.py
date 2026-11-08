@@ -461,22 +461,64 @@ def test_training_steps_show_courtyard_cards(conn, challenge, tier):
         await run()
         bot.cancel()
     asyncio.run(go())
-    assert shown and all(kw["embed"] is not None and kw["attachments"][0].filename == "train_step.jpg" for kw in shown)
+    assert shown and all(kw["embed"] is None and kw["attachments"][0].filename == "train_step.jpg" for kw in shown)
 
 
-def test_card_embed_has_the_readable_details():
-    from bot.fight_view import card_embed
+def test_card_carries_the_turn_so_no_text_box_is_needed():
+    from bot.fight_view import card_embed, details_embed, snapshot
     b = make_battle()
+    prev = snapshot(b)
     force(b, "guard")
     b.choose(b.fighters[0].uid, "strike")
     b.resolve()
-    data_ = card_data(b, "Wild beast · Step 1 of 5")
-    text = card_embed(data_).description
-    assert "Wild Boar" in text and f"{round(b.fighters[0].hp):,} / " in text
-    assert "**Last turn**" in text and "Iron Fist" in text and "Strike ×" in text
-    t = make_battle(n=3)
-    for f in t.fighters:
-        t.choose(f.uid, "guard")
-    t.resolve()
-    text = card_embed(card_data(t, "Elite lair")).description
-    assert all(f.name in text for f in t.fighters) and "Guard" in text
+    data_ = card_data(b, "Wild beast · Step 1 of 5", prev)
+    assert card_embed(data_) is None                       # nothing repeated under the card
+    assert data_["party"][0]["delta"] == round(b.fighters[0].hp) - prev["party"][b.fighters[0].uid]
+    assert all(i.get("short") for i in data_["loadout"])
+    text = details_embed(data_).description                 # the long text still exists for the fallback
+    assert "Wild Boar" in text and "**Last turn**" in text and "Iron Fist" in text
+    assert render_battle(data_).size == (1200, battle_card_height())
+
+
+def test_damage_numbers_and_danger_flag():
+    from bot.fight_view import snapshot
+    b = make_battle(("Mountain Tiger", "elite", "hunter"))
+    prev = snapshot(b)
+    force(b, "break")
+    b.choose(b.fighters[0].uid, "strike")
+    b.resolve()
+    data_ = card_data(b, "x", prev)
+    assert data_["enemy"]["delta"] < 0                      # the Strike landed
+    b.intent = {"move": "strike", "kind": "charged", "target": b.fighters[0], "name": "x"}
+    assert card_data(b, "x")["danger"] == "charged" and card_data(b, "x")["enemy"]["delta"] == 0
+    b.enemy["hp"] = 0
+    b.result = "won"
+    assert render_battle(card_data(b, "x", prev)).size == (1200, battle_card_height())
+
+# ── The encounter screen (cards/beast_fight.py) and the beast art ────
+
+def test_every_beast_has_art_and_the_master_too():
+    import os
+    from cards.battle import ART_DIR
+    names = [n for rows in beasts.BEASTS.values() for n, _, _ in rows] + ["The Master"]
+    missing = [n for n in names if not os.path.exists(os.path.join(ART_DIR, beasts.slug(n) + ".png"))]
+    assert missing == []
+
+
+@pytest.mark.parametrize("beast,n", [(("Mountain Tiger", "beast_king", "hunter"), 1), (("Wild Boar", "normal", "brute"), 4),
+                                     (("Shadow Panther", "normal", "swift"), 1)])
+def test_encounter_screen_renders_fights_hunts_and_results(beast, n):
+    from bot.fight_view import snapshot
+    from cards.beast_fight import H as EH, W as EW, render_beast_fight
+    b = make_battle(beast, n=n)
+    b.enemy["slug"] = beasts.slug(beast[0])
+    prev = snapshot(b)
+    force(b, "break")
+    for f in b.fighters:
+        b.choose(f.uid, "strike")
+    b.resolve()
+    assert render_beast_fight(card_data(b, "x", prev)).size == (EW, EH)
+    b.enemy["hp"], b.result = 0, "won"
+    assert render_beast_fight(card_data(b, "x", prev)).size == (EW, EH)
+    b.enemy["slug"] = None                                   # no art file: the drawn creature
+    assert render_beast_fight(card_data(b, "x")).size == (EW, EH)

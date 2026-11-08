@@ -10,18 +10,26 @@ the buttons `bot/fight_view.py`.
 
 ## The fight screen
 
-One image card, a short text panel under it, and buttons, in a **single message that is edited every turn**.
-Discord shows the image well under half size on a computer, so the card keeps only the big things in
-large type, and the details sit in the text panel, which Discord shows at normal reading size.
+One image card and buttons in a **single message that is edited every turn** (cards/beast_fight.py). Beast
+fights, /spar and /train-/practice all use it.
+
+**Look:** a cinematic encounter. The beast's painting (art/beasts/<slug>.png, one per beast and the_master.png)
+stands in a misty landscape of its element, lit from behind by a rim of the element's colour, with drifting
+particles (embers, snow, wisps, sparks, spores, dust...). No boxes: text sits on soft shade. Two typefaces: Cinzel
+for the name and the result, Inter for the rest. The sky, the beast and the lighting are drawn once per fight
+(about 1s) and reused, so each turn renders in about 0.1s.
 
 | Part | What it shows |
 |---|---|
-| Scene window | The beast under a moon, mist and mountains, in its element's colours. Beast art from `art/beasts/<beast_slug>.png` if the file exists, otherwise a silhouette for its body type |
-| Over the scene | Beast emblem (its realm's beast with the element badge in the corner), name, tier · role · element · realm, a big HP bar with the numbers, element badge |
-| Top right | Turn number, seconds to choose, status chips (Staggered, Hidden, Charged…) |
-| Middle | **You**: your realm emblem, name, realm, a big HP bar, then your techniques and Mending pills and whether each is ready. Team hunts show the **Hunting Party** instead: each member's seal, name and HP bar (up to six); the arrow marks the fighter the beast is going for; names turn red below 25% HP |
-| Warning bar | The beast's next move: a tell, or its telegraphed element move |
-| Text panel | Everyone's HP, each member's last move (team hunts), **Last turn** with small icons, the full warning, and **Your moves**: what each technique and pill does and how many turns it still rests |
+| Top left | Tier · realm (Elite underlined in silver, Beast King in gold), the name (gold leaf for a Beast King), role · element, ATK / DEF, the Profile's HP bar with the HP lost last turn and the HP % |
+| Top right | Turn, seconds to act, status (Charged, Staggered, Hidden…) |
+| Lower left | **Next move**: the beast's tell; red with **POWERFUL ATTACK** or **SIGNATURE MOVE** when it is charging |
+| Bottom | You: name, realm, HP bar with %, the last turn in two lines; your techniques and pills as medallions (dark with the turns left while resting). Team hunts list every hunter's HP |
+| Staging | Predators close and low, dragons and serpents rising, giants filling the lower half, winged beasts high, Shadow beasts veiled in fog, Beast Kings with a column of light |
+| Result | The scene dims: Victory / Defeat / Escaped, the tier (Elite, Beast King), and turns, damage dealt, damage taken and HP left |
+
+Beast art: a transparent PNG named after the beast (`White-Browed Tiger King` → `white_browed_tiger_king.png`);
+prompts for every beast are in art/beasts/PROMPTS.md. Without a file, a drawn creature is used.
 
 Buttons, each with a round medallion icon (uploaded as the bot's application emojis at start-up;
 normal emojis if that fails):
@@ -30,8 +38,6 @@ normal emojis if that fails):
 2. Your equipped **techniques**, greyed out with the turns left while they rest
 3. **Mending pill** (from your bag) · **Flee**
 
-Beast art: name the file after the beast, lower case, spaces and punctuation as `_`
-(`White-Browed Tiger King` → `art/beasts/white_browed_tiger_king.png`). A transparent PNG works best.
 
 ## Turns
 
@@ -134,7 +140,7 @@ pillars, lanterns) with the green Courtyard accent, and the buttons use the same
 | Top right | Move / Wave / Round / Try number and the seconds to answer |
 | Bars | Challenge progress (moves, points, rounds survived, tries) and yours (correct answers, stamina, HP) |
 | Chips | The session's conditions (Heavy Rain, Night Training…) |
-| Last move (text under the card) | The result of your last answer (Find the Weakness: your earlier guesses) |
+| Last move | The result of your last answer (Find the Weakness: your earlier guesses), in the log panel |
 | Warning bar | The master's tell, or what the disciples are doing |
 
 Each card is drawn **before** its timer starts, so drawing never eats into your answer time.

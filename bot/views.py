@@ -29,7 +29,7 @@ from .expedition import PATH_EMOJI, Expedition
 from . import explore_card
 from .fight_view import FightMixin, jpg
 from . import render as card_render
-from cards.battle import render_battle
+from cards.beast_fight import render_beast_fight as render_battle   # the encounter screen (cards/beast_fight.py)
 from cards.expedition import render_crossroads, render_encounter
 from cards import wild_icons
 import battle as battle_data
@@ -413,7 +413,7 @@ class TrainView(OwnedView):
                 "enemy": {"name": enemy, "seal": "school:Body", "tags":
                           [name, f"Tier {s['tier']}", "Practice" if s["mode"] == "practice" else "Training"],
                           "hp": max(0.0, min(1.0, progress)), "max_hp": 1, "bar_label": bar_label,
-                          "element_seal": "lotus", "statuses": chips, "body": "master", "slug": None},
+                          "element_seal": "lotus", "statuses": chips, "body": "master", "slug": "the_master"},
                 "party_title": "You",
                 "party": [{"name": p["name"], "realm": p["realm"], "layer": p["layer"], "hp": max(0.0, min(1.0, you)),
                            "max_hp": 1, "bar_label": you_label, "bar_color": (84, 186, 130), "move": "", "arrow": True}],
@@ -852,8 +852,10 @@ class SparView(FightMixin, OwnedView):
         """Data for cards.battle.render_battle."""
         from cards.activity import clean
         from cards.technique_icons import tech_kind
-        from .fight_view import SCHOOL_COLOR, _school, describe
+        from .fight_view import SCHOOL_COLOR, _school, describe, short_effect
         sp = self.spar
+        prev = getattr(self, "_spar_prev", None)           # HP at the last card: the damage numbers
+        self._spar_prev = (round(sp.hp), round(sp.m_hp))
         tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
         loadout = []
         for key in ("attack_tech", "defense_tech"):
@@ -864,10 +866,10 @@ class SparView(FightMixin, OwnedView):
             school = _school(t)
             loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
                             "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
-                            "desc": describe(t)})
+                            "desc": describe(t), "short": short_effect(t)})
         timed = sum(sp.timed.values())
         loadout.append({"name": "Timed uses", "seal": "hourglass", "color": (240, 200, 100), "ready": bool(timed),
-                        "state": str(timed), "desc": "Only these give mastery EXP"})
+                        "state": str(timed), "desc": "Only these give mastery EXP", "short": "Give mastery EXP"})
         hint, _ = clean(sp.hint())
         if sp.turn == 1 and not self.last:
             warning = (hint, "Guard beats Strike · Break beats Guard · Strike beats Break. Timed techniques earn mastery.")
@@ -877,11 +879,11 @@ class SparView(FightMixin, OwnedView):
                 "seconds": battle_data.TURN_SECONDS, "result": None,
                 "enemy": {"name": "The Master", "seal": "school:Body", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
                           "element_seal": "school:Palm", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
-                          "body": "master", "slug": None},
+                          "body": "master", "slug": "the_master", "delta": round(sp.m_hp) - prev[1] if prev else 0},
                 "party_title": "You",
                 "party": [{"name": self.player["name"], "realm": self.player["realm"], "layer": self.player["layer"],
                            "hp": round(sp.hp), "max_hp": round(sp.max_hp), "move": self.last_move or "Waiting...",
-                           "arrow": True}],
+                           "arrow": True, "delta": round(sp.hp) - prev[0] if prev else 0}],
                 "loadout": loadout, "log": spar_log(self.last) if self.last else [("star", "The master bows. Begin.")],
                 "warning": warning}
 
