@@ -1,5 +1,6 @@
 """
-Admin-only testing commands: /admin reset, /admin give, /admin item, /admin duelstats.
+Admin-only testing commands: /admin reset, /admin give, /admin item, /admin duelstats, and the /admin set_*
+commands that set a player's realm, technique mastery, alchemist rank, blacksmith rank and Herbal Insight.
 
 /admin item gives any item in the game (weapons, armor, artifacts, forging materials, Beast Cores,
 herbs, pills, manuals, chests). The item list comes from bot/item_catalog.py, which reads the data modules.
@@ -16,8 +17,10 @@ from discord import app_commands
 
 import alchemy
 import equipments
+import forge
+import technique as tech_data
 
-from . import db, item_catalog, loot
+from . import crafting, db, forging, item_catalog, loot
 from . import player as rules
 
 
@@ -88,6 +91,77 @@ def item_reply(entry_id, stored, lost, who="you", whose="Your"):
     if lost:
         text += f"\n🎒 The bag filled up: {len(lost)} more could not fit."
     return text
+
+
+# ── /admin set_* (pure helpers, so the tests can call them) ──
+
+def set_realm(conn, user_id, realm, layer):
+    """Put the player at `realm`, `layer` (clamped to the realm's layers) with an empty Qi bar.
+    Returns the layer actually set."""
+    layer = max(1, min(layer, rules.max_layer(realm)))
+    db.update_player(conn, user_id, realm=realm, layer=layer, qi=0.0, qi_overflow=0.0, qi_ping_gate=None)
+    return layer
+
+
+def find_techniques(techs, text):
+    """The techniques `text` names: "all" (or nothing), a technique id, or (part of) a name.
+    Returns a list (empty if nothing matches)."""
+    text = (text or "").strip().lower()
+    if text in ("", "all", "all techniques"):
+        return list(techs)
+    if text.isdigit():
+        hit = [t for t in techs if t["id"] == int(text)]
+        if hit:
+            return hit
+    exact = [t for t in techs if t["name"].lower() == text]
+    return exact or [t for t in techs if text in t["name"].lower()]
+
+
+def stage_exp(tech, stage):
+    """Mastery EXP at the start of `stage` for this technique's grade."""
+    return round(tech_data.MASTERY_STAGES[stage]["exp_to_reach"] * tech_data.GRADE_EXP_MULTIPLIER[tech["grade"]])
+
+
+def set_mastery(conn, techs, stage, full_bar=False):
+    """Set each technique's mastery stage. EXP goes to the start of that stage, or to a full bar (ready for
+    the trial to the next stage) when `full_bar`. Returns one line per technique."""
+    lines = []
+    last = len(tech_data.MASTERY_STAGES) - 1
+    for t in techs:
+        exp = stage_exp(t, stage)
+        ready = full_bar and stage < last
+        if ready:
+            exp = stage_exp(t, stage + 1)
+        db.set_mastery(conn, t["id"], exp=exp, stage=stage)
+        line = f"📜 **{t['name']}** → **{tech_data.MASTERY_STAGES[stage]['name']}** ({exp:,} EXP)"
+        if ready:
+            line += f" · bar full, ready for the trial to **{tech_data.MASTERY_STAGES[stage + 1]['name']}**"
+        lines.append(line)
+    return lines
+
+
+def set_alchemy_rank(conn, user_id, rank):
+    db.update_player(conn, user_id, alchemy_exp=alchemy.ALCHEMIST_RANK_EXP[rank])
+    return f"⚗️ Alchemist rank set to **{crafting.rank_label(rank)}** ({alchemy.ALCHEMIST_RANK_EXP[rank]:,} EXP)"
+
+
+def set_blacksmith_rank(conn, user_id, rank):
+    db.update_player(conn, user_id, blacksmith_exp=forge.BLACKSMITH_RANK_EXP[rank])
+    return f"🔨 Blacksmith rank set to **{forging.rank_label(rank)}** ({forge.BLACKSMITH_RANK_EXP[rank]:,} EXP)"
+
+
+def set_foraging(conn, user_id, insight=None, herbs_gathered=None):
+    """/gather progress: the Herbal Insight streak (raises old-herb chances) and the herbs-gathered count."""
+    fields, lines = {}, []
+    if insight is not None:
+        fields["herb_streak"] = insight
+        mult = next(m for min_streak, m in alchemy.STREAK_BONUS if insight >= min_streak)
+        lines.append(f"🔥 Herbal Insight set to **{insight}** (old herbs ×{mult:g})")
+    if herbs_gathered is not None:
+        fields["herbs_gathered"] = herbs_gathered
+        lines.append(f"🌿 Herbs gathered set to **{herbs_gathered:,}**")
+    db.update_player(conn, user_id, **fields)
+    return lines
 
 
 def duelstats_text(conn):
@@ -338,6 +412,110 @@ def register(bot):
         prefix = "material:" + group_value if group_value else None
         return [app_commands.Choice(name=label, value=i)
                 for i, label in item_catalog.search(current, prefix=prefix, kind="material")]
+
+    # ── /admin set_*: realm, technique mastery, alchemy, forging, foraging ──
+    def whose_text(member):
+        return f"{member.mention}'s" if member else "Your"
+
+    realm_choices = picks([(r, r) for r in rules.REALM_ORDER])
+
+    @group.command(name="set_realm", description="Set a martial art realm and layer (the Qi bar starts empty)")
+    @app_commands.describe(realm="Realm (pick from the list)",
+                           layer="Layer 1-10 (Mortal has 3; default 1)", member=member_help)
+    @app_commands.choices(realm=realm_choices)
+    async def set_realm_cmd(interaction: discord.Interaction, realm: app_commands.Choice[str],
+                            layer: app_commands.Range[int, 1, 10] = 1, member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        async with bot.db_lock:
+            got = set_realm(bot.conn, uid, realm.value, layer)
+        text = f"🏔️ {whose_text(member)} realm is now **{realm.value}, {rules.ordinal(got)} Layer** " \
+               f"(Qi 0 / {rules.qi_needed(realm.value, got):,})."
+        if got != layer:
+            text += f"\n{realm.value} has only {rules.max_layer(realm.value)} layers."
+        await interaction.response.send_message(text, ephemeral=True)
+
+    stage_choices = picks([(i, s["name"]) for i, s in enumerate(tech_data.MASTERY_STAGES)])
+
+    @group.command(name="set_mastery", description="Set a technique's mastery stage (or all of them)")
+    @app_commands.describe(stage="Mastery stage (Glimpsing the Gate is the lowest)", technique="Which technique (pick from the list; "
+                                                                 "default: all of them)",
+                           full_bar="Fill the EXP bar so the trial to the next stage is ready (default: no)",
+                           member=member_help)
+    @app_commands.choices(stage=stage_choices)
+    async def set_mastery_cmd(interaction: discord.Interaction, stage: app_commands.Choice[int],
+                              technique: str | None = None, full_bar: bool = False,
+                              member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        async with bot.db_lock:
+            techs = db.get_techniques(bot.conn, uid, equipped_only=False)
+            hit = find_techniques(techs, technique)
+            if hit:
+                lines = set_mastery(bot.conn, hit, stage.value, full_bar)
+        if not hit:
+            names = ", ".join(f"**{t['name']}**" for t in techs) or "none"
+            await interaction.response.send_message(
+                f"No technique matches that. {whose_text(member)} techniques: {names}", ephemeral=True)
+            return
+        await interaction.response.send_message("\n".join(lines)[:2000], ephemeral=True)
+
+    @set_mastery_cmd.autocomplete("technique")
+    async def technique_autocomplete(interaction: discord.Interaction, current: str):
+        target = getattr(interaction.namespace, "member", None) or interaction.user
+        techs = db.get_techniques(bot.conn, target.id, equipped_only=False)
+        shown = find_techniques(techs, current) if current else techs
+        out = [app_commands.Choice(name="All techniques", value="all")] if not current else []
+        for t in shown:
+            label = f"{t['name']} · {t['grade']} {t['type']} · {tech_data.MASTERY_STAGES[rules.stage_of(t)]['name']}"
+            out.append(app_commands.Choice(name=label[:100], value=str(t["id"])))
+        return out[:25]
+
+    rank_choices = picks([(r, crafting.rank_label(r)) for r in sorted(alchemy.ALCHEMIST_RANK_EXP)])
+
+    @group.command(name="set_alchemy", description="Set the alchemist rank (for /craft)")
+    @app_commands.describe(rank="Alchemist rank (1st Grade is the lowest)", member=member_help)
+    @app_commands.choices(rank=rank_choices)
+    async def set_alchemy_cmd(interaction: discord.Interaction, rank: app_commands.Choice[int],
+                              member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        async with bot.db_lock:
+            line = set_alchemy_rank(bot.conn, uid, rank.value)
+        await interaction.response.send_message(line, ephemeral=True)
+
+    @group.command(name="set_blacksmith", description="Set the blacksmith rank (for /forge)")
+    @app_commands.describe(rank="Blacksmith rank (1st Grade is the lowest)", member=member_help)
+    @app_commands.choices(rank=rank_choices)
+    async def set_blacksmith_cmd(interaction: discord.Interaction, rank: app_commands.Choice[int],
+                                 member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        async with bot.db_lock:
+            line = set_blacksmith_rank(bot.conn, uid, rank.value)
+        await interaction.response.send_message(line, ephemeral=True)
+
+    @group.command(name="set_foraging", description="Set /gather progress: Herbal Insight streak and herbs gathered")
+    @app_commands.describe(insight="Herbal Insight streak (10 = old herbs ×1.5, 25 = ×2, 50 = ×3)",
+                           herbs_gathered="Herbs gathered (shown on the profile)", member=member_help)
+    async def set_foraging_cmd(interaction: discord.Interaction,
+                               insight: app_commands.Range[int, 0, 100_000] | None = None,
+                               herbs_gathered: app_commands.Range[int, 0, 10_000_000] | None = None,
+                               member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        if insight is None and herbs_gathered is None:
+            await interaction.response.send_message("Pick **insight** and/or **herbs_gathered** to set.",
+                                                    ephemeral=True)
+            return
+        async with bot.db_lock:
+            lines = set_foraging(bot.conn, uid, insight, herbs_gathered)
+        await interaction.response.send_message("\n".join(lines), ephemeral=True)
 
     @group.command(name="duelstats", description="Duel balance: each technique's pick count and win rate")
     async def duelstats(interaction: discord.Interaction):
