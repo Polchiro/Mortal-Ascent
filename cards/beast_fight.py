@@ -37,7 +37,7 @@ from . import scenes
 from .beast_art import painted
 from .theme import P, S, alpha, font, mix
 
-W, H = 1200, 820
+W, H = 1200, 880
 SCENE_H = 620
 WARM = (244, 236, 222)
 MUTED = (176, 166, 156)
@@ -259,7 +259,7 @@ def _hp(img, x0, x1, y, h, hp, mx, color, icon, label=None, delta=0):
     T.text(d, (x1 + 46, y + 1), f"{frac:.0%}" if label is None else "", font("Inter.ttf", round(h * 0.95), "Black"),
            WARM, "lm")
     if delta:
-        T.text(d, (x1 - 6, y - h / 2 - 22), f"−{-delta:,}" if delta < 0 else f"+{delta:,}", font("Inter.ttf", 28, "Black"),
+        T.text(d, (x1 - 6, y - h / 2 - 22), f"−{-delta:,}" if delta < 0 else f"+{delta:,}", font("Inter.ttf", 34, "Black"),
                (255, 120, 96) if delta < 0 else (130, 230, 170), "rm")
 
 
@@ -271,42 +271,42 @@ def _identity(img, data, acc, tier):
     is_tier = bool(e["tags"]) and e["tags"][0] in TIER_LABEL_COLOR
     line = (f"{tier.upper()}   ·   {realm.upper()}" if realm else tier.upper()) if is_tier else \
         "   ·   ".join(t.upper() for t in e["tags"])          # training: the challenge, its tier, the mode
-    _spaced(d, (48, 56), line, 18, label_col, weight="Bold", tracking=3.2)
+    _spaced(d, (48, 56), line, 22, label_col, weight="Bold", tracking=3.2)
     if tier in ("Elite", "Beast King"):
-        tw = T.width(d, tier.upper(), font("Inter.ttf", 18, "Bold")) + 3.2 * len(tier)
-        d.line(P(48, 72, 48 + tw, 72), fill=label_col + (200,), width=round(1.5 * S))
-    name, nf = B._shrink(d, e["name"], "Cinzel.ttf", "Bold", (62, 54, 46, 40), 640)
+        tw = T.width(d, tier.upper(), font("Inter.ttf", 22, "Bold")) + 3.2 * len(tier)
+        d.line(P(48, 76, 48 + tw, 76), fill=label_col + (200,), width=round(1.5 * S))
+    name, nf = B._shrink(d, e["name"], "Cinzel.ttf", "Bold", (72, 64, 56, 48), 700)
     if tier == "Beast King":
-        T.gold_text(img, (46, 124), name, nf, "lm", top=(255, 236, 190), bottom=(196, 146, 70))
+        T.gold_text(img, (46, 132), name, nf, "lm", top=(255, 236, 190), bottom=(196, 146, 70))
     else:
-        T.text(d, (46, 124), name, nf, WARM, "lm")
+        T.text(d, (46, 132), name, nf, WARM, "lm")
     d = ImageDraw.Draw(img)
     traits = " · ".join(e["tags"][1:-1]) if is_tier else ""
     x = 48
-    f = font("Inter.ttf", 22, "Medium")
+    f = font("Inter.ttf", 27, "Medium")
     if traits:
-        T.text(d, (x, 178), traits, f, MUTED, "lm")
-        x += T.width(d, traits, f) + 30
+        T.text(d, (x, 192), traits, f, MUTED, "lm")
+        x += T.width(d, traits, f) + 34
     if e.get("atk"):
         for icon, val, col in (("sword", e["atk"], (236, 170, 110)), ("shield", e["def"], (150, 186, 236))):
-            T.icon(img, icon, (x + 10, 178), 22, col)
+            T.icon(img, icon, (x + 12, 192), 28, col)
             d = ImageDraw.Draw(img)
-            T.text(d, (x + 28, 178), f"{val:,}", font("Inter.ttf", 22, "Bold"), WARM, "lm")
-            x += 28 + T.width(d, f"{val:,}", font("Inter.ttf", 22, "Bold")) + 26
-    _hp(img, 48, 600, 232, 34, e["hp"], e["max_hp"], acc.hp, e["element_seal"], e.get("bar_label"), e.get("delta", 0))
+            T.text(d, (x + 34, 192), f"{val:,}", font("Inter.ttf", 27, "Bold"), WARM, "lm")
+            x += 34 + T.width(d, f"{val:,}", font("Inter.ttf", 27, "Bold")) + 30
+    _hp(img, 48, 640, 256, 44, e["hp"], e["max_hp"], acc.hp, e["element_seal"], e.get("bar_label"), e.get("delta", 0))
 
 
 def _corner(img, data):
     if data.get("result"):
         return
     d = ImageDraw.Draw(img)
-    T.text(d, (W - 48, 62), data.get("turn_label") or f"Turn {data['turn']}", font("Inter.ttf", 30, "Black"), WARM, "rm")
+    T.text(d, (W - 48, 64), data.get("turn_label") or f"Turn {data['turn']}", font("Inter.ttf", 38, "Black"), WARM, "rm")
     sec = data.get("seconds_label") or f"{data['seconds']}s to act"
-    T.text(d, (W - 48, 98), sec, font("Inter.ttf", 20, "SemiBold"), MUTED, "rm")
-    y = 140
+    T.text(d, (W - 48, 108), sec, font("Inter.ttf", 26, "SemiBold"), MUTED, "rm")
+    y = 156
     for label in data["enemy"]["statuses"][:3]:
-        _spaced(d, (W - 48, y), label.upper(), 16, (255, 196, 160), "r", "Bold", 2.4)
-        y += 28
+        _spaced(d, (W - 48, y), label.upper(), 21, (255, 196, 160), "r", "Bold", 2.4)
+        y += 36
 
 
 def _intent(img, data, acc):
@@ -315,17 +315,17 @@ def _intent(img, data, acc):
         return
     danger = data.get("danger")
     d = ImageDraw.Draw(img)
-    y = 420
+    y = 418
     col = DANGER if danger else mix(acc.rim, (255, 255, 255), 0.35)
     if danger:
-        T.soft_glow(img, (20, y - 30, 560, y + 90), (160, 20, 10, 120), 30)
+        T.soft_glow(img, (20, y - 30, 660, y + 120), (160, 20, 10, 120), 30)
         d = ImageDraw.Draw(img)
-    d.line(P(48, y - 12, 48, y + 70), fill=col, width=round(4 * S))
+    d.line(P(48, y - 14, 48, y + 104), fill=col, width=round(5 * S))
     label = {"charged": "POWERFUL ATTACK", "signature": "SIGNATURE MOVE"}.get(danger, "NEXT MOVE")
-    _spaced(d, (66, y - 2), label, 16, col, weight="Black", tracking=3)
-    f = font("Inter.ttf", 26, "Bold")
-    for i, line in enumerate(T.wrap(d, head, f, 500, lines=2)):
-        T.text(d, (66, y + 30 + i * 32), line, f, WARM, "lm")
+    _spaced(d, (68, y), label, 21, col, weight="Black", tracking=3)
+    f = font("Inter.ttf", 33, "Bold")
+    for i, line in enumerate(T.wrap(d, head, f, 620, lines=2)):
+        T.text(d, (68, y + 40 + i * 40), line, f, WARM, "lm")
 
 
 # ── You ───────────────────────────────────────────────────────────────
@@ -337,14 +337,14 @@ def _you(img, data, acc):
         return _party(img, data)
     m = members[0]
     low, color = B._bar_color(m)
-    T.text(d, (48, 664), m["name"], font("Inter.ttf", 30, "Black"), (246, 110, 92) if low else WARM, "lm")
-    nw = T.width(d, m["name"], font("Inter.ttf", 30, "Black"))
-    T.text(d, (62 + nw, 666), f"{m['realm']} {m['layer']}", font("Inter.ttf", 20, "Medium"), MUTED, "lm")
-    _hp(img, 48, 560, 716, 32, m["hp"], m["max_hp"], color, "star" if m.get("bar_label") else "heart",
+    T.text(d, (48, 670), m["name"], font("Inter.ttf", 36, "Black"), (246, 110, 92) if low else WARM, "lm")
+    nw = T.width(d, m["name"], font("Inter.ttf", 36, "Black"))
+    T.text(d, (64 + nw, 672), f"{m['realm']} {m['layer']}", font("Inter.ttf", 25, "Medium"), MUTED, "lm")
+    _hp(img, 48, 560, 730, 42, m["hp"], m["max_hp"], color, "star" if m.get("bar_label") else "heart",
         m.get("bar_label"), m.get("delta", 0))
     events = list(data.get("log") or [])[-2:]
     for i, (kind, text) in enumerate(events):
-        B._log_line(img, 44, 766 + i * 30, kind, text, 640, 20)
+        B._log_line(img, 44, 798 + i * 38, kind, text, 680, 25)
     _moves(img, data.get("loadout", [])[:3])
 
 
@@ -352,12 +352,12 @@ def _moves(img, items):
     """Techniques and pills as medallions: lit when ready, dark with the turns left; names in full (2 lines)."""
     if not items:
         return
-    xs = [790, 920, 1050][:len(items)] if len(items) == 3 else [860, 1010, 1130][:len(items)]
-    cy = 702
+    xs = [780, 920, 1060][:len(items)] if len(items) == 3 else [850, 1010, 1130][:len(items)]
+    cy = 712
     for x, it in zip(xs, items):
         col = it["color"] or K.GOLD
         ready = it["ready"]
-        r = 40
+        r = 46
         d = ImageDraw.Draw(img)
         d.ellipse(P(x - r, cy - r, x + r, cy + r), fill=(12, 10, 12, 255),
                   outline=mix(col, (255, 255, 255), 0.3) if ready else (70, 64, 60), width=round(2.5 * S))
@@ -369,17 +369,17 @@ def _moves(img, items):
             ImageDraw.Draw(cm).ellipse((0, 0, core.size[0] - 1, core.size[1] - 1), fill=255)
             ci.putalpha(cm)
             img.alpha_composite(ci, P(x - r + 5, cy - r + 5))
-        T.icon(img, it["seal"], (x, cy), 50, (250, 246, 236) if ready else (96, 90, 86))
+        T.icon(img, it["seal"], (x, cy), 58, (250, 246, 236) if ready else (96, 90, 86))
         d = ImageDraw.Draw(img)
         if not ready:
             num = "".join(ch for ch in it["state"] if ch.isdigit())
-            T.text(d, (x, cy), num or "—", font("Inter.ttf", 34, "Black"), (236, 206, 160), "mm")
-        f = font("Inter.ttf", 17, "SemiBold")
-        lines = T.wrap(d, it["name"], f, 124, lines=2)
+            T.text(d, (x, cy), num or "—", font("Inter.ttf", 40, "Black"), (236, 206, 160), "mm")
+        f = font("Inter.ttf", 22, "SemiBold")
+        lines = T.wrap(d, it["name"], f, 136, lines=2)
         for j, line in enumerate(lines):
-            T.text(d, (x, cy + r + 18 + j * 20), line, f, WARM if ready else DIM, "mm")
+            T.text(d, (x, cy + r + 22 + j * 26), line, f, WARM if ready else DIM, "mm")
         if ready and it["state"] not in ("Ready", ""):     # pill count, or a training counter
-            T.text(d, (x + r - 2, cy - r + 6), it["state"], font("Inter.ttf", 16, "Black"), (246, 214, 150), "mm")
+            T.text(d, (x + r - 2, cy - r + 6), it["state"], font("Inter.ttf", 21, "Black"), (246, 214, 150), "mm")
 
 
 def _party(img, data):
@@ -388,13 +388,13 @@ def _party(img, data):
     rows = math.ceil(len(members) / cols)
     for i, m in enumerate(members):
         c, r = i // rows, i % rows
-        x, y = 48 + c * 570, 662 + r * 46
+        x, y = 48 + c * 570, 664 + r * 56
         low, color = B._bar_color(m)
         d = ImageDraw.Draw(img)
-        T.text(d, (x, y), T.fit(d, ("› " if m.get("arrow") else "") + m["name"], font("Inter.ttf", 22, "Bold"), 170),
-               font("Inter.ttf", 22, "Bold"), (246, 110, 92) if low or m.get("ko") else WARM, "lm")
+        T.text(d, (x, y), T.fit(d, ("› " if m.get("arrow") else "") + m["name"], font("Inter.ttf", 27, "Bold"), 180),
+               font("Inter.ttf", 27, "Bold"), (246, 110, 92) if low or m.get("ko") else WARM, "lm")
         frac = m["hp"] / m["max_hp"] if m["max_hp"] else 0
-        T.bar(img, (x + 190, y - 14, x + 520, y + 14), frac, color, "KO" if m.get("ko") else f"{m['hp']:,} / {m['max_hp']:,}")
+        T.bar(img, (x + 196, y - 18, x + 530, y + 18), frac, color, "KO" if m.get("ko") else f"{m['hp']:,} / {m['max_hp']:,}")
 
 
 # ── Result ────────────────────────────────────────────────────────────
@@ -416,7 +416,7 @@ def _result(img, data, acc, tier):
     T.gold_text(img, (W / 2, 290), label, font("Cinzel.ttf", 92, "Bold"), "mm",
                 top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.2))
     d = ImageDraw.Draw(img)
-    T.text(d, (W / 2, 370), sub, font("Inter.ttf", 26, "Medium"), MUTED, "mm")
+    T.text(d, (W / 2, 374), sub, font("Inter.ttf", 32, "Medium"), MUTED, "mm")
     dealt = max(0, e["max_hp"] - e["hp"])
     taken = max(0, m["max_hp"] - m["hp"])
     stats = [("Turns", f"{data['turn']}"), ("Damage dealt", f"{dealt:,}"), ("Damage taken", f"{taken:,}"),
@@ -425,8 +425,8 @@ def _result(img, data, acc, tier):
     x0 = W / 2 - cw * len(stats) / 2
     for i, (k, v) in enumerate(stats):
         cx = x0 + cw * (i + 0.5)
-        T.text(d, (cx, 450), v, font("Inter.ttf", 40, "Black"), WARM, "mm")
-        _spaced(d, (cx, 492), k.upper(), 15, MUTED, "m", "Bold", 2.4)
+        T.text(d, (cx, 456), v, font("Inter.ttf", 50, "Black"), WARM, "mm")
+        _spaced(d, (cx, 504), k.upper(), 19, MUTED, "m", "Bold", 2.4)
         if i:
             d.line(P(x0 + cw * i, 430, x0 + cw * i, 500), fill=(255, 255, 255, 40), width=max(1, S))
 

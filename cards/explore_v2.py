@@ -14,7 +14,7 @@ from . import theme as T
 from .scenes import REGION, photo
 from .theme import P, S, alpha, font, mix
 
-W, H = 1200, 840
+W, H = 1200, 866
 SCENE_H = 610
 WARM = (244, 236, 222)
 MUTED = (176, 166, 156)
@@ -60,19 +60,19 @@ def _spaced(d, xy, s, size, color, anchor="l", weight="Bold", tracking=3.0):
 
 def _head(img, data, title, kicker, accent, sub=None):
     d = ImageDraw.Draw(img)
-    _spaced(d, (48, 56), kicker.upper(), 18, mix(accent, WARM, 0.35))
-    name, nf = X._shrink(d, title, "Cinzel.ttf", "Bold", (60, 52, 44), 760)
-    T.text(d, (46, 122), name, nf, WARM, "lm")
+    _spaced(d, (48, 58), kicker.upper(), 22, mix(accent, WARM, 0.35))
+    name, nf = X._shrink(d, title, "Cinzel.ttf", "Bold", (70, 62, 52, 46), 780)
+    T.text(d, (46, 130), name, nf, WARM, "lm")
     if sub:
-        T.text(d, (48, 176), sub, font("Inter.ttf", 22, "Medium"), MUTED, "lm")
+        T.text(d, (48, 192), T.fit(d, sub, font("Inter.ttf", 27, "Medium"), 1100), font("Inter.ttf", 27, "Medium"), MUTED, "lm")
     # depth: the step and five marks, top right
-    T.text(d, (W - 48, 62), f"Step {data['step']} / {data['max_steps']}", font("Inter.ttf", 30, "Black"), WARM, "rm")
+    T.text(d, (W - 48, 62), f"Step {data['step']} / {data['max_steps']}", font("Inter.ttf", 38, "Black"), WARM, "rm")
     n = data["max_steps"]
     for i in range(n):
-        x1 = W - 48 - (n - 1 - i) * 30
+        x1 = W - 48 - (n - 1 - i) * 36
         on = i < data["step"]
         col = mix((240, 170, 60), (232, 70, 50), i / max(1, n - 1)) if on else (60, 54, 50)
-        d.rounded_rectangle(P(x1 - 22, 94, x1, 100), radius=round(3 * S), fill=col + (255,))
+        d.rounded_rectangle(P(x1 - 28, 98, x1, 106), radius=round(4 * S), fill=col + (255,))
 
 
 # ── Crossroads ────────────────────────────────────────────────────────
@@ -92,14 +92,14 @@ def render_crossroads(data):
         p = paths[key]
         color = X.MOOD[p["kind"]][0]
         x0 = 48 + i * cw
-        X.badge(img, (x0 + 34, 470), 30, key, color)
+        X.badge(img, (x0 + 36, 452), 34, key, color)
         d = ImageDraw.Draw(img)
-        _spaced(d, (x0 + 78, 456), SIDE[key].upper(), 15, mix(color, WARM, 0.4), tracking=2.6)
-        label, lf = X._shrink(d, p["label"].title(), "Inter.ttf", "Black", (27, 25, 23), cw - 96)
-        T.text(d, (x0 + 78, 484), label, lf, mix(color, WARM, 0.55), "lm")
-        f = font("Inter.ttf", 21, "Medium")
-        for j, line in enumerate(T.wrap(d, p["clue"], f, cw - 30, lines=2)):
-            T.text(d, (x0 + 4, 530 + j * 28), line, f, WARM, "lm")
+        _spaced(d, (x0 + 84, 434), SIDE[key].upper(), 19, mix(color, WARM, 0.4), tracking=2.6)
+        label, lf = X._shrink(d, p["label"].title(), "Inter.ttf", "Black", (33, 30, 27, 24), cw - 96)
+        T.text(d, (x0 + 84, 468), label, lf, mix(color, WARM, 0.55), "lm")
+        f = font("Inter.ttf", 26, "Medium")
+        for j, line in enumerate(T.wrap(d, p["clue"], f, cw - 26, lines=3)):
+            T.text(d, (x0 + 4, 522 + j * 33), line, f, WARM, "lm")
     _band(img, data)
     return T.finish(img)
 
@@ -124,16 +124,20 @@ def render_encounter(data):
     d = ImageDraw.Draw(img)
     if data.get("hazard"):
         h = data["hazard"]
-        _spaced(d, (48, 236), f"{h['kind'].upper()}!   IT COMES FROM THE {h['danger'].upper()}", 20, (255, 120, 96),
+        _spaced(d, (48, 246), f"{h['kind'].upper()}!   IT COMES FROM THE {h['danger'].upper()}", 24, (255, 120, 96),
                 tracking=3)
     story = [s for s in data["story"] if s][:4]
     if story:
-        y = 610 - 36 * len(story) - 22
-        d.line(P(48, y - 6, 48, y + 36 * len(story) - 20), fill=tone, width=round(4 * S))
-        f = font("Inter.ttf", 23, "Medium")
-        for line in story:
-            T.text(d, (66, y + 8), T.fit(d, line, f, 760), f, WARM, "lm")
-            y += 36
+        f = font("Inter.ttf", 28, "Medium")
+        lines = []
+        for s_ in story:
+            lines += T.wrap(d, s_, f, 640, lines=3)
+        lines = lines[:5]
+        y = 612 - 42 * len(lines) - 20
+        d.line(P(48, y - 8, 48, y + 42 * len(lines) - 22), fill=tone, width=round(5 * S))
+        for line in lines:
+            T.text(d, (68, y + 8), line, f, WARM, "lm")
+            y += 42
     _band(img, data)
     return T.finish(img)
 
@@ -142,42 +146,42 @@ def render_encounter(data):
 
 def _band(img, data):
     d = ImageDraw.Draw(img)
-    y = 660
-    _spaced(d, (48, y), "YOU", 15, MUTED, tracking=3)
+    y = 662
+    _spaced(d, (48, y), "YOU", 20, MUTED, tracking=3)
     frac = data["hp"] / data["max_hp"] if data["max_hp"] else 0
     low = frac <= 0.25
-    K.ornate_bar(img, (66, y + 26, 470, y + 58), frac, (214, 64, 52) if low else (196, 70, 58), "heart",
+    K.ornate_bar(img, (66, y + 30, 470, y + 72), frac, (214, 64, 52) if low else (196, 70, 58), "heart",
                  f"{max(0, round(data['hp'])):,} / {data['max_hp']:,}")
     d = ImageDraw.Draw(img)
-    T.text(d, (514, y + 43), f"{frac:.0%}", font("Inter.ttf", 30, "Black"), WARM, "lm")
-    T.text(d, (48, y + 98), data["bonus"], font("Inter.ttf", 20, "SemiBold"), T.LOTUS, "lm")
-    T.text(d, (48, y + 132), data["defeat_note"], font("Inter.ttf", 17, "Medium"), DIM, "lm")
+    T.text(d, (512, y + 51), f"{frac:.0%}", font("Inter.ttf", 36, "Black"), WARM, "lm")
+    T.text(d, (48, y + 120), T.fit(d, data["bonus"], font("Inter.ttf", 25, "SemiBold"), 580), font("Inter.ttf", 25, "SemiBold"), T.LOTUS, "lm")
+    T.text(d, (48, y + 160), T.fit(d, data["defeat_note"], font("Inter.ttf", 21, "Medium"), 580), font("Inter.ttf", 21, "Medium"), DIM, "lm")
     # found so far
-    x0 = 660
-    _spaced(d, (x0, y), "FOUND SO FAR", 15, MUTED, tracking=3)
+    x0 = 650
+    _spaced(d, (x0, y), "FOUND SO FAR", 20, MUTED, tracking=3)
     finds = []
     if data["coins"]:
         finds.append({"name": "Lotus Coins", "label": f"{data['coins']:,}", "icon": "lotus", "color": T.LOTUS})
     finds += data["items"]
     if not finds:
-        T.text(d, (x0, y + 52), "Nothing yet", font("Inter.ttf", 24, "Medium"), DIM, "lm")
+        T.text(d, (x0, y + 52), "Nothing yet", font("Inter.ttf", 30, "Medium"), DIM, "lm")
         return
-    shown = finds[:5]
+    shown = finds[:4]
     for i, it in enumerate(shown):
-        cx = x0 + 36 + i * 102
+        cx = x0 + 52 + i * 128
         col = it.get("color") or T.RARITY.get(it.get("color_key"), T.RARITY[None])
-        T.seal(img, (cx, y + 58), 30, it["icon"], col)
+        T.seal(img, (cx, y + 70), 38, it["icon"], col)
         d = ImageDraw.Draw(img)
         qty = it.get("qty", 1)
         if qty > 1:
-            T.text(d, (cx + 30, y + 34), f"×{qty}", font("Inter.ttf", 18, "Black"), (246, 214, 150), "mm")
+            T.text(d, (cx + 38, y + 40), f"×{qty}", font("Inter.ttf", 23, "Black"), (246, 214, 150), "mm")
         label = it.get("label") if it.get("name") == "Lotus Coins" else it["name"]
-        f = font("Inter.ttf", 15, "SemiBold")
-        for j, line in enumerate(T.wrap(d, label, f, 96, lines=2)):
-            T.text(d, (cx, y + 104 + j * 18), line, f, WARM, "mm")
+        f = font("Inter.ttf", 20, "SemiBold")
+        for j, line in enumerate(T.wrap(d, label, f, 122, lines=2)):
+            T.text(d, (cx, y + 128 + j * 24), line, f, WARM, "mm")
     if len(finds) > len(shown):
-        T.text(d, (x0 + 36 + len(shown) * 102 - 40, y + 58), f"+{len(finds) - len(shown)}",
-               font("Inter.ttf", 24, "Black"), MUTED, "lm")
+        T.text(d, (x0 + 52 + len(shown) * 128 - 56, y + 70), f"+{len(finds) - len(shown)}",
+               font("Inter.ttf", 30, "Black"), MUTED, "lm")
 
 
 __all__ = ["render_crossroads", "render_encounter", "W", "H", "alpha"]
