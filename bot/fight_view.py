@@ -143,7 +143,8 @@ def card_data(b, header, prev=None):
                       "hp": round(e["hp"]), "max_hp": round(e["max_hp"]),
                       "element_seal": "school:Palm" if e["kind"] == "master" else "emblem:element:" + e["element"],
                       "statuses": b.status_chips(), "body": e["body"], "slug": e.get("slug"),
-                      "delta": round(e["hp"]) - prev["enemy"] if prev else 0},
+                      "delta": round(e["hp"]) - prev["enemy"] if prev else 0,
+                      "atk": round(e.get("attack", 0)), "def": round(e.get("defense", 0))},
             "danger": danger,
             "party_title": "Hunting party" if b.team else "You", "party": party, "loadout": loadout,
             "log": list(b.log), "warning": b.warning or ("", "")}
