@@ -536,7 +536,8 @@ def herbs_overview():
                 tiles=tiles,
                 footer="Herb tier by realm: " + " · ".join(f"{t} {REALM_SHORT[r[0]]}+"
                                                            for t, r in tiers.items())
-                       + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower.")
+                       + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower. Until your alchemist rank can"
+                       f" refine your realm's grade, {pct(alchemy.LEARNING_TIER_CHANCE)} are the grade you can.")
 
 
 # ── sections ──────────────────────────────────────────────────────────

@@ -90,7 +90,7 @@ class Gathering:
         return self.round
 
     def _herb_round(self, p):
-        tier = loot.herb_tier(p["realm"], self.rng)
+        tier = loot.herb_tier(p["realm"], self.rng, p["alchemy_exp"])
         type_ = loot.roll_herb_type(self.rng)
         age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]

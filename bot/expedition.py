@@ -237,7 +237,7 @@ class Expedition:
         self.story.append(f"📦 Hidden under the roots: a **{c['name']}**! (Open it from /inventory.)")
 
     def _herb_patch(self):
-        found = [loot.roll_herb(self.player["realm"], self.rng)
+        found = [loot.roll_herb(self.player["realm"], self.rng, alchemy_exp=self.player["alchemy_exp"])
                  for _ in range(self.rng.randint(*alchemy.HERB_PATCH_HERBS))]
         self.items += found
         self.story.append("🌿 A patch of wild herbs! You gather " + ", ".join(f"**{loot.describe(h)}**" for h in found)
@@ -340,7 +340,7 @@ class Expedition:
         if self.rng.random() < explore.INJURED_STRANGER_GRATEFUL:
             coins = loot.roll_coins(self.player, STRANGER_REWARD_COINS, self.rng)
             self.coins += coins
-            h = loot.roll_herb(self.player["realm"], self.rng)
+            h = loot.roll_herb(self.player["realm"], self.rng, alchemy_exp=self.player["alchemy_exp"])
             self.items.append(h)
             self.story.append(f"🙏 *\"I won't forget this!\"* They press a reward into your hands: "
                               f"🪷 {coins} and **{loot.describe(h)}**.")

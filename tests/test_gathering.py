@@ -326,3 +326,27 @@ def test_stop_during_a_round_counts_it_as_missed(conn):
         assert view.g.over and db.get_player(conn, 1)["herb_streak"] == 0
         assert "head home" in it.edits[-1]["content"] and it.edits[-1]["view"] is None
     asyncio.run(go())
+
+
+def test_learning_grade_follows_qi_pill_ranks():
+    assert [alchemy.learning_grade(r) for r in range(1, 10)] == [
+        "Mortal", "Mortal", "Yellow", "Yellow", "Mystic", "Mystic", "Earth", "Earth", "Heaven"]
+
+
+def test_low_rank_alchemist_finds_herbs_they_can_refine():
+    rng = random.Random(7)
+    exp_rank2 = alchemy.ALCHEMIST_RANK_EXP[2]
+    tiers = [loot.herb_tier("Martial Apprentice", rng, exp_rank2) for _ in range(2000)]
+    share = tiers.count("Mortal") / len(tiers)
+    assert 0.5 < share < 0.65          # 50% learning grade + 15% of the rest one tier lower
+    # a Mystic-realm 2nd Grade alchemist learns on Mortal herbs, not Yellow ones
+    tiers = {loot.herb_tier("Martial Expert", rng, exp_rank2) for _ in range(500)}
+    assert "Mortal" in tiers
+
+
+def test_enough_rank_keeps_normal_odds():
+    rng = random.Random(7)
+    exp_rank3 = alchemy.ALCHEMIST_RANK_EXP[3]
+    tiers = [loot.herb_tier("Martial Apprentice", rng, exp_rank3) for _ in range(2000)]
+    assert tiers.count("Mortal") / len(tiers) < 0.2
+    assert {loot.herb_tier("Mortal", rng, 0) for _ in range(50)} == {"Mortal"}
