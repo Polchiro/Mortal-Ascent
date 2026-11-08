@@ -175,6 +175,8 @@ def _light(art, acc, real, dark):
         lit.alpha_composite(bright)
         art = lit
     k = max(3, round(min(art.size) * 0.012))
+    if real:      # light only the solid body: faint dust and smoke in painted art would get pale streaks
+        mask = mask.point(lambda v: 255 if v > 200 else 0).filter(ImageFilter.MinFilter(3))
     rim = ImageChops.subtract(mask, ImageChops.offset(mask, -k, k // 2))         # light from behind, upper right
     rim = rim.filter(ImageFilter.GaussianBlur(k * 0.6))
     out = Image.new("RGBA", art.size, (0, 0, 0, 0))
@@ -183,7 +185,7 @@ def _light(art, acc, real, dark):
     out.alpha_composite(halo)
     out.alpha_composite(art)
     edge = Image.new("RGBA", art.size, mix(acc.rim, (255, 255, 255), 0.45) + (0,))
-    edge.putalpha(rim.point(lambda v: min(255, round(v * 2.2))))
+    edge.putalpha(rim.point(lambda v: min(255, round(v * (1.2 if real else 2.2)))))
     out.alpha_composite(edge)
     return out
 
