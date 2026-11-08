@@ -196,3 +196,21 @@ def test_trade_panels_build(conn):
         window.trade.set_item(conn, 1, h["id"], 3)
         assert trade_view.RemovePanel(window, 1).has_lines
     asyncio.run(go())
+
+
+def test_picker_screens_render(conn):
+    from cards.trade import W, render_picker
+    player(conn, 1)
+    h = herb(conn, 1, 45, tier="Heaven")
+    player(conn, 2)
+    t = Trade(1, 2)
+    t.set_item(conn, 1, h["id"], 10)
+    assert render_picker({"mode": "categories", "categories": trading.picker_categories(conn, 1)}).size[0] == W
+    d = trading.picker_items(conn, 1, "herbs", "Heaven", t.offers[1])
+    assert d["items"][0]["offering"] == 10
+    assert render_picker(dict(d, mode="items", category="Herbs", grade="Heaven")).size[0] == W
+    item = db.get_item(conn, 1, h["id"])
+    assert render_picker({"mode": "quantity", "item": trading.picker_row(item, 10), "qty": 10,
+                          "category": "Herbs"}).size[0] == W
+    assert render_picker({"mode": "currency", "currencies": [
+        {"key": "lotus_coins", "label": "Lotus Coins", "balance": 10, "offering": 0}]}).size[0] == W

@@ -365,3 +365,22 @@ def card_data(conn, trade, names, view=None, note=None):
         status = ("open", "Add items, then Review Trade to confirm")
     return {"sides": sides, "status": status, "note": note}
 
+
+
+# ── plain data for the picker screens ─────────────────────────────────
+
+def picker_categories(conn, user_id):
+    counts = category_counts(conn, user_id)
+    return [{"key": k, "label": label, "count": counts[k]} for k, label, _ in T.CATEGORIES]
+
+
+def picker_row(item, offering=0):
+    label, key = bag.rarity(item)
+    return {"icon": bag.item_icon(item), "name": item_label(item), "grade": grade_label(item), "color_key": key,
+            "owned": item["qty"], "offering": offering}
+
+
+def picker_items(conn, user_id, category, grade, offer):
+    items = tradeable_items(conn, user_id, category, grade) if grade else []
+    return {"grades": [g for g, _ in grades_in(conn, user_id, category)],
+            "items": [picker_row(it, offer.qty_of(it["id"])) for it in items]}
