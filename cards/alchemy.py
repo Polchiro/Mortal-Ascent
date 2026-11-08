@@ -539,7 +539,7 @@ def _left_success(img, data, acc):
     _big_cjk(img, 290, CN[n] + "纹", T.GOLD_HI)
     _caption(img, 318, f"{PATTERN_WORD[n]}-pattern pill")
     _note(img, 366, f"Effect ×{data['effect']:.2f}", WHITE, size=26)
-    _note(img, 402, f"Toxicity +{data['toxicity']}", T.PARCHMENT, size=26)
+    _note(img, 402, data['toxicity'], T.PARCHMENT, size=26)
 
 
 def _left_exploded(img, data, acc):

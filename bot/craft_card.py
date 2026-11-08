@@ -199,7 +199,7 @@ def _result(c, data, name, outcome):
         tail += f" · You are now a {outcome['rank_up']} Alchemist!"
     if n:
         data["mode"] = "success"
-        data.update(result=n, effect=alchemy.pattern_effect(n), toxicity=crafting.toxicity_for(n))
+        data.update(result=n, effect=alchemy.pattern_effect(n), toxicity=crafting.toxicity_text(c.kind, c.grade, n))
         data["corner"]["label"] = "REFINED"
         head = (f"Nine patterns! The heavens bow to your {name}!" if n == 9
                 else f"You craft a {name} with {n} pattern{'s' if n > 1 else ''}!")
