@@ -63,7 +63,7 @@ text embed is sent instead.
 
 | Item | Actions |
 |---|---|
-| Chest | Open, Discard |
+| Chest | Open (with the reward reveal below), Discard |
 | Manual | Learn (or reread for mastery EXP if already learned), Discard |
 | Weapon, armor, artifact | Equip / Unequip, Discard (only when not equipped). Artifacts fill the first free slot; with both full, or with one of the same family worn, Equip says why and nothing changes |
 | Qi pill, Heaven-Defying Pill | Take, Discard |
@@ -74,6 +74,31 @@ text embed is sent instead.
 - **Discard** asks for a confirm, and offers "×1" or "all" for stacks. No refund
 - Techniques and weapons can't be swapped while exploring or sparring (technique.md: swaps happen
   outside of fights)
+
+## Opening a chest (the reward reveal)
+
+Opening a chest from the Inventory posts its own message under the sheet (bot/chest_reveal.py,
+cards/chest.py):
+
+1. **Sealed:** the chest, bound by a 封印 talisman over a glowing formation. Button: **Break the Seal**
+2. **Opening:** the lid flies open and a pillar of light rises. Its colour (and line) hints at the best
+   reward: green Uncommon, blue Rare, violet Epic, gold Legendary, crimson with sparkles Mythical
+3. **Rewards:** Lotus Coins, then every item best first, styled by rarity. An Epic or better reward gets
+   its own highlight panel with a line of flavour; Epic, Legendary and Mythical finds get a line in the
+   message too. Button: **Collect Rewards**
+4. **Collected:** the same card with a 收 stamp, and any item left behind because the bag was full
+
+Rarity on these cards (display only): gear Ordinary → Divine = Common → Legendary; manual and pill
+grades Mortal → Heaven = Common → Legendary; essences Shard / Crystal / Heart = Uncommon / Epic /
+Legendary; Seal Stones Epic; the Heaven-Defying Pill Mythical.
+
+**Rewards are rolled once and granted once.** Open rolls the chest with the same tables and odds as before
+(loot.open_chest, Deep Pockets and Fate Weaver included) and, in one database step, takes the chest out of
+the bag and stores the roll in `pending_chests`. The cards only show that stored roll. Collect marks it
+collected and grants it in the same step, so a double click, an old button or a second message can't grant
+it twice, and letting it expire can't reroll it. If the reveal times out (10 minutes) the rewards are
+collected for the player; if the bot restarts mid-reveal, they are collected the next time the sheet opens.
+Server announcements for rare finds are posted when the rewards are collected.
 
 ## Privacy
 
@@ -113,6 +138,7 @@ text embed is sent instead.
 | cards/profile.py, techniques.py, equipment.py, bag.py, purse.py | One card per tab |
 | cards/dantian.py | The /internal qi card |
 | cards/sheet_icons.py | Sheet button icons (application emojis) |
+| bot/chest_reveal.py, cards/chest.py | The chest reward reveal and its cards |
 | scripts/render_sheet.py | Saves every card for a made-up player into previews/ |
 | cards/activity.py, bot/result_cards.py | /spar, /train and /explore result cards and their data |
 | scripts/render_results.py | Saves every result card with made-up data into previews/ |

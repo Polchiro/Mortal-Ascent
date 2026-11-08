@@ -32,11 +32,14 @@ ICONS = {
     "sheet_prev": ("misc:arrow_left", k.GOLD),
     "sheet_next": ("misc:arrow_right", k.GOLD),
     "sheet_cancel": ("misc:hold", k.ASH),
+    "sheet_break_seal": ("misc:seal", k.VERMILION),
+    "sheet_collect": ("chest", k.accent("purse")),
 }
 FALLBACK = {"sheet_tab_profile": "👤", "sheet_tab_techniques": "📜", "sheet_tab_equipment": "⚔️",
             "sheet_tab_inventory": "🎒", "sheet_tab_purse": "🪷", "sheet_open": "✨", "sheet_learn": "✨",
             "sheet_equip": "✨", "sheet_take": "✨", "sheet_unequip": "🤜", "sheet_discard": "🗑️",
-            "sheet_prev": "◀️", "sheet_next": "▶️", "sheet_cancel": "✖️"}
+            "sheet_prev": "◀️", "sheet_next": "▶️", "sheet_cancel": "✖️",
+            "sheet_break_seal": "🔓", "sheet_collect": "📥"}
 USE_KEY = {"Open": "sheet_open", "Learn": "sheet_learn", "Equip": "sheet_equip", "Take": "sheet_take"}
 
 
