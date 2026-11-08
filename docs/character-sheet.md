@@ -5,22 +5,32 @@ card switch tabs in place, so players never have to type another command.
 
 | Tab | Command | Shows |
 |---|---|---|
-| 👤 Profile | /profile | Name, @username, talent, realm, phase, layer pips, attributes, Internal Qi, the portrait, equipped techniques, the **Gear** row (4 sockets: weapon, armor, artifact 1, artifact 2, each with its drawn icon in its tier colour; empty armor / artifact sockets show a faint robe / pearl outline, name and a short effect line; empty sockets say what fills them), deeds (beasts slain, herbs gathered, breakthroughs, server rank, duels won / lost from /duel, see pvp.md), the dantian orb, purse |
-| 📜 Techniques | /techniques | Attack, Defense and Flex sockets, then every learned technique |
-| ⚔️ Equipment | /equipment | All four gear slots with full details, base → final stats (weapon + armor + techniques) with every buff's source, and the worn artifacts' effects in their own list |
-| 🎒 Inventory | /inventory | Category tabs, a 4 × 3 item grid with pages, and an Inspect panel |
-| 🪷 Purse | /balance | Lotus Coins, Moon Pearls, Heavenly Blessing, recent transactions |
+| 👤 Profile | /profile | The avatar in a moon-gate ring (beads = the realm's layers), name, @username, talent, HP and Internal Qi bars, realm emblem with phase and layer, attributes with their buff %, the meridian figure (its dantian fills with Qi) with the four gear slots around it, equipped techniques with mastery arcs, the Deeds rail (beasts, herbs, breakthroughs, duels from /duel, server rank) and, for the owner, the purse |
+| 📜 Techniques | /techniques | Attack, Defense and Flex stances (equipped, empty, or locked with what opens it), then every learned technique as a scroll: grade seal, power, passive, rest turns, effect and mastery. Equipped scrolls carry a ribbon; the rest say Ready to equip |
+| ⚔️ Equipment | /equipment | Four display cases (weapon, armor, artifact I and II): tier seal, name, realm needed, buffs or effect, forged passive sockets; base → final stats with the bonus on each bar and its sources; the worn artifacts' effects; spare gear in the bag |
+| 🎒 Inventory | /inventory | A category rail with counts, Materials groups, a 4 × 3 item grid with page beads, and an Inspect panel that also shows the buttons the item offers |
+| 🪷 Purse | /balance | Lotus Coins and Moon Pearls only (short and exact amounts); the blessing is shown by /blessing |
 
 ## Look
 
-Crimson Hall theme (cards/theme.py): black stone and deep crimson backgrounds, bronze and gold
-frames, Cinzel headings, a glowing tab strip across the top, and icons drawn in code.
+Night Ink theme (cards/ink.py, on top of cards/theme.py): indigo ink backgrounds, gold frames with cut
+corners, cloud curls (祥云) and diamond gems, Cinzel headings and icons drawn in code. Each card adds its
+own accent so they feel related but distinct:
 
-- **Portrait:** the player's Discord avatar in an arched gold frame, over an aura in their talent's
-  colour, with their realm's character behind it
-- **Dantian orb:** a glass orb at the bottom of the Profile card that fills with red Qi as the layer
-  bar fills
+| Card | Accent | Identity |
+|---|---|---|
+| Profile | Indigo | Moon gate, meridian figure, Deeds rail |
+| Techniques | Violet | Scripture pavilion: stances and unrolled scrolls with vermilion grade seals (凡 黄 玄 地 天) |
+| Equipment | Steel | Armory: display cases on lit pedestals with tier seals (凡 精 灵 宝 神) |
+| Inventory | Jade | Collection: category rail, rarity-glow tiles, Inspect panel |
+| Purse | Gold | Treasury: a square-holed Lotus coin and a pearl on a crescent moon |
+| /internal qi | Sea teal | Spirit Sea (灵海): the dantian vortex in a bagua ring, a meridian stream bar, jade tablets and the Flow of Qi |
+
+- **Buttons:** the tabs, item actions and paging use octagon seal icons (cards/sheet_icons.py), uploaded
+  as application emojis like the fight buttons; the open tab is the blurple button
 - **Rarity colours** are shared by technique grades, weapon / armor / artifact tiers and chest tiers
+- The ledger is still written for every coin change (economy.md) but the Purse card no longer lists it, and the
+  Heavenly Blessing is shown by /blessing rather than the Purse
 
 ### Activity result cards
 
@@ -87,7 +97,7 @@ text embed is sent instead.
 | A new resource (e.g. Spirit Qi) | Add a function next to `qi_resource()` in bot/sheet/attributes.py and a panel in cards/profile.py |
 | A new currency | Add its column to `CURRENCY_COLUMNS` in bot/db.py and a style in `CURRENCY_STYLE` (bot/sheet/data.py) |
 | A new bag category | One entry in `CATEGORIES` and its details in `details()` (bot/sheet/items.py) |
-| More gear slots | `worn()` / `gear_sockets()` / `equipment_data()` in bot/sheet/data.py, sockets in cards/profile.py `gear_row` and cards/equipment.py |
+| More gear slots | `worn()` / `gear_sockets()` / `equipment_data()` in bot/sheet/data.py, slots in cards/profile.py `armory` and cases in cards/equipment.py |
 | Profile themes (shop) | Another set of renderers next to cards/; the ink-wash cards at the repo root are the first one |
 
 ## Files
@@ -99,7 +109,10 @@ text embed is sent instead.
 | bot/sheet/attributes.py | Attributes and resources (the expandable part) |
 | bot/sheet/items.py | Bag categories, Inspect details, allowed actions, discard |
 | cards/theme.py | Shared drawing: background, frames, panels, bars, sockets, medallions, orb, portrait, icons |
+| cards/ink.py | Night Ink palette, tab strip, plaques, ornate bars, gems, chips, ribbons, page beads |
 | cards/profile.py, techniques.py, equipment.py, bag.py, purse.py | One card per tab |
+| cards/dantian.py | The /internal qi card |
+| cards/sheet_icons.py | Sheet button icons (application emojis) |
 | scripts/render_sheet.py | Saves every card for a made-up player into previews/ |
 | cards/activity.py, bot/result_cards.py | /spar, /train and /explore result cards and their data |
 | scripts/render_results.py | Saves every result card with made-up data into previews/ |

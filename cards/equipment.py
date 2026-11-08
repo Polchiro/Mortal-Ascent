@@ -1,175 +1,199 @@
 """
-Character Sheet · Equipment tab (Crimson Hall theme).
+Character Sheet · Equipment tab ("Armory", Night Ink theme with a steel accent: cards/ink.py).
 
-render_equipment(data) draws bot.sheet.data.equipment_data: the four gear slots equipment.md defines
-(one weapon, one armor, two artifacts) with full details, how every attribute goes from base to final
-(weapon + armor + technique buffs) and where each buff comes from, and the worn artifacts' effects in
-their own list.
+render_equipment(data) draws bot.sheet.data.equipment_data:
+- four display cases for the slots equipment.md defines (weapon, armor, two artifacts): the piece on a lit
+  pedestal, its tier seal (凡精灵宝神), name, kind and realm needed, its buffs or effect, and its forged passive
+  sockets; an empty case shows a faint outline and where that gear comes from;
+- Attributes: base → final for HP, Attack and Defense, with the bonus drawn on the bar and its sources;
+- Artifact effects: what the worn artifacts (and forged artifact passives) do.
 """
 from PIL import ImageDraw
 
+from . import ink as k
 from . import theme as t
 from .emblems import empty_slot
-from .theme import P, font
+from .theme import P, S, alpha, font, mix
 
-H = 780
-EMPTY = {"weapon": ("fist", "BARE HANDS", "Weapons drop from chests found in /explore"),
-         "armor": ("shield", "NO ARMOR", "Armor drops from chests found in /explore"),
-         "artifact": ("star", "EMPTY ARTIFACT SLOT", "Artifacts drop from chests found in /explore")}
+W, H = 1200, 660
+STEEL = k.accent("equipment")
+EMPTY = {"weapon": ("fist", "Bare hands", "Weapons drop from chests"),
+         "armor": ("shield", "No armor", "Armor drops from chests"),
+         "artifact": ("star", "Empty", "Artifacts drop from chests")}
 
 
 def render_equipment(data):
-    img = t.canvas(t.W, H, seed=13)
-    t.tab_strip(img, "equipment")
-    t.frame(img, (6, 52, t.W - 6, H - 6))
-    t.gold_text(img, (40, 66), f"{data['name'].upper()}'S ARMS", font("Cinzel.ttf", 32, "Black"), glow=t.EMBER)
-    d = ImageDraw.Draw(img)
-    t.text(d, (42, 122), "Weapons and armor give stat buffs; each artifact adds one effect. "
-                         "Gear never limits which techniques you can use.", font("Inter.ttf", 14, "Medium"), t.ASH)
-    t.divider(d, 30, 1170, 146)
-    slots_panel(img, data, (30, 162, 560, H - 26))
-    stats_panel(img, data, (576, 162, 1170, 482))
-    effects_panel(img, data, (576, 496, 1170, H - 26))
+    img = k.canvas(W, H, "equipment", seed=13)
+    k.sheet_frame(img, "equipment")
+    k.title(img, (40, 66), f"{data['name']}'s Armory", STEEL)
+    spare_chips(img, data, (1160, 90))
+    cases = [("weapon", "Weapon", data.get("weapon")), ("armor", "Armor", data.get("armor"))]
+    cases += [("artifact", f"Artifact {'I' * i}", a) for i, a in enumerate(data.get("artifacts") or [None, None], 1)]
+    cw, ch, gap = 362, 238, 16
+    for i, (kind, label, item) in enumerate(cases):
+        r, c = divmod(i, 2)
+        x, y = 30 + c * (cw + gap), 136 + r * (ch + gap)
+        case(img, (x, y, x + cw, y + ch), kind, label, item)
+    stats_panel(img, data, (786, 136, 1170, 462))
+    effects_panel(img, data, (786, 484, 1170, 628))
     return t.finish(img)
 
 
-def slots_panel(img, data, box):
-    x0, y0, x1, y1 = box
-    t.panel(img, box, "Gear Slots")
-    rows = [("weapon", "Weapon", data.get("weapon")), ("armor", "Armor", data.get("armor"))]
-    rows += [("artifact", f"Artifact {i}", a) for i, a in enumerate(data.get("artifacts") or [None, None], 1)]
-    y = y0 + 46
-    rh = 122
-    for kind, label, item in rows:
-        slot_row(img, (x0 + 16, y, x1 - 16, y + rh - 10), kind, label, item)
-        y += rh
-    d = ImageDraw.Draw(img)
+def spare_chips(img, data, anchor):
+    """What else is in the bag to swap in (the menus under the card list them)."""
+    x, y = anchor
     counts = data.get("spare_counts") or {"weapons": data.get("spare_count", 0)}
-    spare = [f"{n} {name if n == 1 else plural}" for key, name, plural in
-             (("weapons", "weapon", "weapons"), ("armor", "armor", "armor"), ("artifacts", "artifact", "artifacts"))
-             if (n := counts.get(key, 0))]
-    line = ("In your bag: " + ", ".join(spare) + ". Use the menus below to swap.") if spare else \
-        "No spare gear in your bag."
-    t.text(d, ((x0 + x1) / 2, y1 - 18), t.fit(d, line, font("Inter.ttf", 13, "Medium"), x1 - x0 - 30),
-           font("Inter.ttf", 13, "Medium"), t.ASH, "mm")
-
-
-def slot_row(img, box, kind, label, item):
-    x0, y0, x1, y1 = box
-    size = y1 - y0 - 8
-    color = t.RARITY.get(item["tier"]) if item else t.ASH_DK
-    sy = y0 + 4
-    t.soft_glow(img, (x0 - 4, sy - 4, x0 + size + 4, sy + size + 4), t.alpha(color, 70 if item else 20), 10, "rect")
-    t.socket(img, (x0, sy, x0 + size, sy + size), color, filled=bool(item), tint=False)
-    center = (x0 + size / 2, sy + size / 2)
-    if item:
-        icon = item.get("icon") or item.get("type")
-        t.icon(img, icon, center, size * 0.6, t.mix(color, (255, 255, 255), 0.2))
-    elif kind in ("armor", "artifact"):
-        empty_slot(img, kind, center, size * 0.6)
-    else:
-        t.icon(img, EMPTY[kind][0], center, size * 0.45, t.ASH_DK)
     d = ImageDraw.Draw(img)
-    tx = x0 + size + 18
-    t.spaced(d, (tx, y0 + 10), f"{label.upper()} SLOT", font("Cinzel.ttf", 11, "Bold"), t.BRONZE, 1.6)
-    if not item:
-        t.text(d, (tx, y0 + 38), EMPTY[kind][1], font("Cinzel.ttf", 18, "Bold"), t.PARCHMENT, "lm")
-        t.text(d, (tx, y0 + 64), EMPTY[kind][2], font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
+    parts = [(icon, f"{n} {one if n == 1 else many}")
+             for key, icon, one, many in (("artifacts", "pearl", "artifact", "artifacts"), ("armor", "shield", "armor", "armor"),
+                                          ("weapons", "sword", "weapon", "weapons"))
+             if (n := counts.get(key, 0))]
+    if not parts:
+        t.text(d, (x, y), "No spare gear in your bag", font("Inter.ttf", 13, "Medium"), k.ASH_DK, "rm")
         return
-    f_name = font("Inter.ttf", 19, "Bold")
-    t.text(d, (tx, y0 + 28), t.fit(d, item["name"], f_name, x1 - tx), f_name, t.GOLD_HI, "lm")
+    for icon, label in parts:
+        w = k.chip(img, (x, y), label, STEEL, size=12, anchor="r")
+        t.icon(img, icon, (x - w - 12, y), 16, STEEL)
+        x -= w + 34
+    d = ImageDraw.Draw(img)
+    t.spaced(d, (x + 4, y), "IN YOUR BAG", font("Cinzel.ttf", 10, "Bold"), k.ASH, 2, "r")
+
+
+def case(img, box, kind, label, item):
+    x0, y0, x1, y1 = box
+    color = t.RARITY.get(item["tier"], k.ASH) if item else k.ASH_DK
+    k.plaque(img, box, fill=mix(color, k.PANEL, 0.9 if item else 0.97), cut=14)
+    cx = (x0 + x1) / 2
+    d = ImageDraw.Draw(img)
+    t.spaced(d, (x0 + 20, y0 + 24), label.upper(), font("Cinzel.ttf", 11, "Bold"), k.BRONZE if item else k.ASH_DK, 2)
+    # pedestal
+    py = y0 + 84
+    if item:
+        t.soft_glow(img, (cx - 70, py - 52, cx + 70, py + 52), alpha(color, 120), 16)
+        d = ImageDraw.Draw(img)
+        d.ellipse(P(cx - 70, py + 34, cx + 70, py + 50), fill=alpha(mix(color, (0, 0, 0), 0.6), 200))
+    for rr, col, wd in ((46, k.BRONZE_DK, 5), (49, k.GOLD if item else k.BRONZE_DK, 1.2),
+                        (41, alpha(color, 200 if item else 80), 1)):
+        d.ellipse(P(cx - rr, py - rr, cx + rr, py + rr), outline=col, width=round(wd * S))
+    d.ellipse(P(cx - 40, py - 40, cx + 40, py + 40), fill=alpha(mix(color, (0, 0, 0), 0.8 if item else 0.92), 255))
+    if item:
+        t.icon(img, item.get("icon") or item.get("type"), (cx, py), 58, mix(color, (255, 255, 255), 0.2))
+        # tier seal, top right
+        t.medallion(img, (x1 - 32, y0 + 32), 18, k.TIER_CHAR.get(item["tier"], "凡"), color)
+    elif kind in ("armor", "artifact"):
+        empty_slot(img, kind, (cx, py), 46)
+    else:
+        t.icon(img, EMPTY[kind][0], (cx, py), 34, k.ASH_DK)
+    d = ImageDraw.Draw(img)
+    if not item:
+        t.text(d, (cx, y0 + 156), EMPTY[kind][1], font("Cinzel.ttf", 18, "Bold"), k.ASH, "mm")
+        t.text(d, (cx, y0 + 180), EMPTY[kind][2], font("Inter.ttf", 12, "Medium"), k.ASH_DK, "mm")
+        return
+    f_name = font("Inter.ttf", 17, "Bold")
+    t.text(d, (cx, y0 + 150), t.fit(d, item["name"], f_name, x1 - x0 - 30), f_name, k.GOLD_HI, "mm")
     if kind == "weapon":
-        what = f"{item['type'].title()}"
-        line = "  ·  ".join(item["buffs"]) or "No buffs"
+        what = item["type"].title()
     elif kind == "armor":
         what = item["type_label"]
-        line = "  ·  ".join(item["buffs"]) or "No buffs"
     else:
-        what = f"{item['family'].title()} · {item['group_label']}"
-        line = item["effect"]
-    sub = f"{item['tier'].title()} {what}  ·  needs {item['requires']}"
-    f_sub = font("Inter.ttf", 13, "SemiBold")
-    t.text(d, (tx, y0 + 50), t.fit(d, sub, f_sub, x1 - tx), f_sub, color, "lm")
-    f_line = font("Inter.ttf", 15, "Bold")
-    t.text(d, (tx, y0 + 72), t.fit(d, line, f_line, x1 - tx), f_line, t.PARCHMENT, "lm")
-    passive_line(img, item.get("passives") or [], tx, y0 + 96, x1)
+        what = item["group_label"]
+    sub = f"{item['tier'].title()} {what}" + (f"  ·  needs {item['requires']}" if item.get("requires") else "")
+    t.text(d, (cx, y0 + 170), t.fit(d, sub, font("Inter.ttf", 11, "SemiBold"), x1 - x0 - 30),
+           font("Inter.ttf", 11, "SemiBold"), mix(color, (255, 255, 255), 0.3), "mm")
+    # buffs or the artifact's effect
+    bits = item["buffs"] if kind in ("weapon", "armor") else [item.get("effect_short") or item["effect"]]
+    bits = bits or ["No buffs"]
+    f_c = font("Inter.ttf", 12, "Bold")
+    widths = [t.width(d, b, f_c) + 14 for b in bits]
+    x = cx - (sum(widths) + 6 * (len(bits) - 1)) / 2
+    for b, w in zip(bits, widths):
+        k.chip(img, (x, y0 + 194), b, k.GOLD, size=12)
+        x += w + 6
+    passive_sockets(img, item.get("passives") or [], (x0 + 16, y0 + 220, x1 - 16))
 
 
-def passive_line(img, slots, x, y, x_end):
-    """Forged passives in their rarity colours (a rarity emblem, then the name); 'Empty slot' in grey."""
+def passive_sockets(img, slots, box):
+    """Forged passive slots (docs/forge.md): a rarity emblem and name each, or a hollow socket."""
     import forge
-    f = font("Inter.ttf", 13, "Bold")
-    for p in slots:
-        if x > x_end - 40:
-            break
+    x0, y, x1 = box
+    if not slots:
+        return
+    d = ImageDraw.Draw(img)
+    f = font("Inter.ttf", 11, "Bold")
+    w = (x1 - x0) / len(slots)
+    for i, p in enumerate(slots):
+        cx = x0 + w * i + w / 2
         if p:
             color = forge.RARITY_COLORS[p["rarity"]]
-            t.icon(img, f"passive:{p['rarity']}", (x + 8, y), 16, color)
+            name = t.fit(d, p["name"], f, w - 26)
+            tw = t.width(d, name, f) + 20
+            t.icon(img, f"passive:{p['rarity']}", (cx - tw / 2 + 7, y), 15, color)
             d = ImageDraw.Draw(img)
-            name = t.fit(d, p["name"], f, x_end - x - 22)
-            t.text(d, (x + 20, y), name, f, color, "lm")
-            x += 20 + t.width(d, name, f) + 16
+            t.text(d, (cx - tw / 2 + 18, y), name, f, color, "lm")
         else:
-            d = ImageDraw.Draw(img)
-            d.ellipse(P(x + 2, y - 6, x + 14, y + 6), outline=t.ASH_DK, width=max(1, round(1.5 * t.S)))
-            t.text(d, (x + 20, y), "Empty slot", font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
-            x += 20 + t.width(d, "Empty slot", f) + 16
+            d.ellipse(P(cx - 34, y - 5, cx - 24, y + 5), outline=k.ASH_DK, width=max(1, round(1.4 * S)))
+            t.text(d, (cx - 18, y), "Empty socket", font("Inter.ttf", 11, "Medium"), k.ASH_DK, "lm")
 
 
 def stats_panel(img, data, box):
     x0, y0, x1, y1 = box
-    t.panel(img, box, "Attributes: base to final")
-    y = y0 + 70
-    f_lab = font("Cinzel.ttf", 16, "Bold")
-    f_num = font("Inter.ttf", 24, "Bold")
-    f_src = font("Inter.ttf", 12, "Medium")
+    k.plaque(img, box, "Attributes", color=STEEL)
+    y = y0 + 48
+    step = (y1 - y0 - 56) / max(1, len(data["attributes"]))
     for a in data["attributes"]:
-        t.medallion(img, (x0 + 40, y), 21, a["icon"], a["color"], cjk_char=False)
+        col = a["color"]
+        t.medallion(img, (x0 + 38, y + 8), 19, a["icon"], col, cjk_char=False)
         d = ImageDraw.Draw(img)
-        t.text(d, (x0 + 72, y - 18), a["label"].upper(), f_lab, t.PARCHMENT, "lm")
-        src = "  ·  ".join(f"{name} +{pct:.1%}".replace(".0%", "%") for name, pct in a["sources"]) or "No buffs"
-        for j, line in enumerate(t.wrap(d, src, f_src, x1 - x0 - 318, lines=3)):
-            t.text(d, (x0 + 72, y + 2 + j * 14), line, f_src, t.ASH, "lm")
-        t.text(d, (x1 - 172, y), f"{a['base']:,}", font("Inter.ttf", 18, "SemiBold"), t.ASH, "rm")
-        ax = x1 - 146
-        d.line(P(ax - 9, y, ax + 5, y), fill=t.BRONZE, width=round(2 * t.S))
-        d.polygon([P(ax + 10, y), P(ax + 3, y - 6), P(ax + 3, y + 6)], fill=t.GOLD)
-        t.text(d, (x1 - 22, y), f"{a['final']:,}", f_num, t.GOLD_HI, "rm")
-        d.line(P(x0 + 20, y + 38, x1 - 20, y + 38), fill=t.BRONZE_DK, width=max(1, t.S))
-        y += 82
-    d = ImageDraw.Draw(img)
-    t.text(d, ((x0 + x1) / 2, y1 - 18), "Weapon, armor and technique % buffs of a stat add together, then apply once",
-           font("Inter.ttf", 12, "Medium"), t.ASH_DK, "mm")
+        t.spaced(d, (x0 + 66, y - 2), a["label"].upper(), font("Cinzel.ttf", 13, "Bold"), k.PARCHMENT, 1.6)
+        t.text(d, (x0 + 66, y + 18), f"{a['base']:,}", font("Inter.ttf", 13, "SemiBold"), k.ASH, "lm")
+        bw = t.width(d, f"{a['base']:,}", font("Inter.ttf", 13, "SemiBold"))
+        d.line(P(x0 + 72 + bw, y + 18, x0 + 84 + bw, y + 18), fill=k.BRONZE, width=round(1.6 * S))
+        d.polygon([P(x0 + 90 + bw, y + 18), P(x0 + 84 + bw, y + 13), P(x0 + 84 + bw, y + 23)], fill=k.GOLD)
+        t.gold_text(img, (x1 - 22, y + 8), f"{a['final']:,}", font("Cinzel.ttf", 26, "Black"), anchor="rm")
+        # bar: base part dim, bonus part bright
+        bx0, bx1, by = x0 + 22, x1 - 22, y + 40
+        total = max(1, a["final"])
+        d = ImageDraw.Draw(img)
+        d.rounded_rectangle(P(bx0, by - 3, bx1, by + 3), radius=round(3 * S), fill=(3, 5, 10, 255),
+                            outline=alpha(k.BRONZE_DK, 255), width=max(1, S))
+        bm = bx0 + (bx1 - bx0) * a["base"] / total
+        d.rounded_rectangle(P(bx0, by - 3, bm, by + 3), radius=round(3 * S), fill=mix(col, (0, 0, 0), 0.45))
+        if a["final"] > a["base"]:
+            d.rounded_rectangle(P(bm, by - 3, bx1, by + 3), radius=round(3 * S), fill=col)
+        src = "  ·  ".join(f"{n} +{p:.1%}".replace(".0%", "%") for n, p in a["sources"]) or "No buffs"
+        t.text(d, (bx0, by + 15), t.fit(d, src, font("Inter.ttf", 11, "Medium"), bx1 - bx0 - 60),
+               font("Inter.ttf", 11, "Medium"), k.ASH, "lm")
+        if a["bonus"]:
+            t.text(d, (bx1, by + 15), f"+{a['bonus']:.1%}".replace(".0%", "%"), font("Inter.ttf", 12, "Bold"),
+                   mix(col, (255, 255, 255), 0.3), "rm")
+        y += step
 
 
 def effects_panel(img, data, box):
     x0, y0, x1, y1 = box
-    t.panel(img, box, "Artifact effects")
+    k.plaque(img, box, "Artifact Effects", color=STEEL)
     effects = data.get("effects") or []
     d = ImageDraw.Draw(img)
     if not effects:
-        t.text(d, ((x0 + x1) / 2, (y0 + y1) / 2 + 10), "No artifacts worn. Two slots are open from the start.",
-               font("Inter.ttf", 14, "Medium"), t.ASH, "mm")
+        t.text(d, ((x0 + x1) / 2, (y0 + y1) / 2 + 6), "No artifacts worn", font("Cinzel.ttf", 16, "Bold"), k.ASH, "mm")
+        t.text(d, ((x0 + x1) / 2, (y0 + y1) / 2 + 30), "Two artifact slots are open from the start",
+               font("Inter.ttf", 12, "Medium"), k.ASH_DK, "mm")
         return
-    y = y0 + 72
-    own = [e for e in effects if e.get("group") != "passive"]
-    forged = [e for e in effects if e.get("group") == "passive"]
-    step = 64 if len(own) + len(forged) <= 3 else 52
-    for e in own + forged:
-        if y > y1 - 46:
-            d = ImageDraw.Draw(img)
-            left = len(own + forged) - (own + forged).index(e)
-            t.text(d, (x0 + 74, y - 18), f"+ {left} more forged passive{'s' if left > 1 else ''} (see Gear Slots)",
-                   font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
-            break
-        color = e.get("color") or t.RARITY.get(e["tier"], t.ASH)
-        t.medallion(img, (x0 + 40, y), 22, e.get("icon") or "seal:" + e["seal"], color, cjk_char=False)
+    y = y0 + 46
+    room = max(1, int((y1 - y0 - 40) // 44))
+    shown = effects if len(effects) <= room else effects[:room - 1]
+    for e in shown:
+        color = e.get("color") or t.RARITY.get(e["tier"], k.ASH)
+        t.medallion(img, (x0 + 34, y + 6), 17, e.get("icon") or "seal:" + e["seal"], color, cjk_char=False)
         d = ImageDraw.Draw(img)
-        t.text(d, (x0 + 74, y - 12), t.fit(d, e["effect"], font("Inter.ttf", 17, "Bold"), x1 - x0 - 100),
-               font("Inter.ttf", 17, "Bold"), t.GOLD_HI, "lm")
+        t.text(d, (x0 + 60, y - 3), t.fit(d, e["effect"], font("Inter.ttf", 14, "Bold"), x1 - x0 - 80),
+               font("Inter.ttf", 14, "Bold"), k.GOLD_HI, "lm")
         sub = e["name"] + (f"  ·  {e['duel']}" if e.get("duel") else "")
-        t.text(d, (x0 + 74, y + 12), t.fit(d, sub, font("Inter.ttf", 13, "Medium"), x1 - x0 - 100),
-               font("Inter.ttf", 13, "Medium"), t.ASH, "lm")
-        y += step
-    t.text(d, ((x0 + x1) / 2, y1 - 18), "Two of the same family can't be worn together",
-           font("Inter.ttf", 12, "Medium"), t.ASH_DK, "mm")
+        t.text(d, (x0 + 60, y + 16), t.fit(d, sub, font("Inter.ttf", 11, "Medium"), x1 - x0 - 80),
+               font("Inter.ttf", 11, "Medium"), k.ASH, "lm")
+        y += 44
+    if len(shown) < len(effects):
+        d = ImageDraw.Draw(img)
+        left = len(effects) - len(shown)
+        t.text(d, (x0 + 60, y), f"+ {left} more forged passive{'s' if left > 1 else ''}", font("Inter.ttf", 12, "Medium"),
+               k.ASH, "lm")

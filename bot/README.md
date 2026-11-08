@@ -12,7 +12,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 |---|---|
 | `/start` | Creates your character: rolls a talent, Mortal 1st Layer, Iron Fist + Horse Stance Guard, 50 Lotus Coins |
 | `/profile [member]` | Opens your **Character Sheet** on the Profile tab: realm, phase and layer, HP / Attack / Defense, Internal Qi, equipped techniques, the Gear row (weapon, armor, two artifacts), your avatar as the portrait. Buttons under it switch to the Techniques, Equipment, Inventory and Purse tabs. With a member it shows only their Profile card, with their purse hidden |
-| `/balance` | Opens the sheet on the Purse tab: Lotus Coins, Moon Pearls, active Heavenly Blessing and your last 8 transactions |
+| `/balance` | Opens the sheet on the Purse tab: Lotus Coins and Moon Pearls |
 | `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Armor, Artifacts, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
@@ -81,7 +81,7 @@ The design docs leave some things open. Until they are decided, the bot uses the
   monetization (economy.md), which needs setting up in the Discord Developer Portal first.
 - **Physician** costs 1 Lotus Coin per minute of injury left (× realm scale).
 - **Discard** removes items for good, with no refund. It asks first and refuses equipped items.
-- **Transactions:** every Lotus Coin and Moon Pearl change is written to a ledger (last 100 kept per player); the Purse tab shows the newest 8.
+- **Transactions:** every Lotus Coin and Moon Pearl change is written to a ledger (last 100 kept per player).
 - **Not built because the docs leave them undesigned:** player trading / market, character titles, a numeric level,
   Divine pity, profile card themes, Contribution Points and Spirit Stones, regions and weather.
 - **Defeat** keeps chests as well as manuals and gear; half the coins and herbs found are lost.

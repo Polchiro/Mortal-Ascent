@@ -246,7 +246,7 @@ def register_commands(bot):
             return
         await open_sheet(bot, interaction, "profile")
 
-    @tree.command(name="balance", description="Open your purse: Lotus Coins, Moon Pearls, blessing and recent transactions")
+    @tree.command(name="balance", description="Open your purse: Lotus Coins and Moon Pearls")
     async def balance(interaction: discord.Interaction):
         if not db.get_player(bot.conn, interaction.user.id):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)

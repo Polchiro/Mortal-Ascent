@@ -218,8 +218,14 @@ def bag_data(conn, user_id, category, page=1, selected_id=None):
                 groups=groups, categories=[(c.key, c.label, c.icon) for c in items.CATEGORIES.values()],
                 counts=db.category_counts(conn, user_id), used=db.slots_used(conn, user_id),
                 capacity=p["bag_capacity"], page=page, pages=pages, tiles=tiles,
-                inspect=items.details(selected, p, learned) if selected else None)
+                inspect=dict(items.details(selected, p, learned), actions=action_labels(selected)) if selected else None)
     return data, page_items, pages, selected
+
+
+def action_labels(item):
+    """The buttons under the Inventory card for this item, in the order the view adds them."""
+    names = {"use": items.use_label(item), "unequip": "Unequip", "discard": "Discard"}
+    return [names[a] for a in items.actions(item) if names[a]]
 
 
 def techniques_data(conn, user_id, page=1):

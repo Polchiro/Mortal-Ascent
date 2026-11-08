@@ -111,7 +111,7 @@ Alchemy (alchemy.md) adds a grind that must not print money:
 | The Wandering Merchant sells Qi pills: Mortal 🪷 40, Yellow 🪷 120, Mystic 🪷 400 (× realm scale) | Coin sink; crafted pills can be stronger (pill patterns) |
 | The Moon Pearl shop sells only Mortal to Mystic Qi pills | Earth and Heaven pills, and every Breakthrough pill, must be crafted |
 
-Herb and pill purchases show in the Purse tab's transaction list like every other coin change.
+Herb and pill purchases are written to the ledger like every other coin change.
 
 ## Trading Moon Pearls
 

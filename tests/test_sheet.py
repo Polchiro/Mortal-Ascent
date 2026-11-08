@@ -198,7 +198,7 @@ def test_cards_render_with_a_full_bag_and_an_avatar(conn):
     for cat in items.ORDER:
         assert RENDERERS["inventory"](sheet.bag_data(c, 1, cat)[0]).size[0] == 1200
     public = sheet.profile_data(c, 1, private=False)
-    assert RENDERERS["profile"](public).size == (1200, 800)
+    assert RENDERERS["profile"](public).size == (1200, 830)
 
 
 # ── The tabbed view ───────────────────────────────────────────────────
@@ -310,3 +310,65 @@ def test_cards_need_only_pillow(conn, monkeypatch):
     for tab, data in all_card_data(conn).items():
         assert RENDERERS[tab](data).size[0] == 1200, tab
     theme._background.cache_clear()
+
+
+# ── Night Ink redesign: purse vault, inspect actions, button icons, Qi card ──
+
+def test_purse_shows_only_the_currencies(conn):
+    new_player(conn)
+    d = sheet.purse_data(conn, 1)
+    assert [c["key"] for c in d["currencies"]] == list(db.CURRENCY_COLUMNS)
+    assert RENDERERS["purse"](d).size == (1200, 370)
+
+
+def test_inspect_shows_the_buttons_the_item_offers(conn):
+    new_player(conn)
+    db.add_item(conn, 1, **loot.chest("bronze"))
+    d, page_items, _, sel = sheet.bag_data(conn, 1, "chests")
+    assert d["inspect"]["actions"] == ["Open", "Discard"]
+    w = loot.roll_weapon("ordinary", random.Random(1))
+    db.add_item(conn, 1, **w)
+    wid = db.get_items(conn, 1, "weapons")[0]["id"]
+    db.equip_weapon(conn, 1, wid)
+    d, *_ = sheet.bag_data(conn, 1, "weapons", selected_id=wid)
+    assert d["inspect"]["actions"] == ["Unequip"]        # worn gear can't be discarded
+
+
+def test_sheet_icons_render_and_have_fallbacks():
+    from cards import sheet_icons
+    for key in sheet_icons.ICONS:
+        assert sheet_icons.render_icon(key).getbbox()
+        assert sheet_icons.FALLBACK[key]
+        assert len("ma_" + key) <= 32
+    from bot.sheet.view import TABS
+    assert all(f"sheet_tab_{k}" in sheet_icons.ICONS for k, _ in TABS)
+    assert set(sheet_icons.USE_KEY) == {c.use_verb for c in items.CATEGORIES.values() if c.use_verb}
+
+
+def test_sheet_buttons_use_plain_emojis_without_uploaded_icons(conn):
+    from bot.sheet.view import CharacterSheet
+    new_player(conn)
+    db.add_item(conn, 1, **loot.chest("wooden"))
+
+    async def go():
+        view = CharacterSheet(FakeBot(conn), fake_user(), "inventory")
+        await view.render()
+        tabs = [c for c in view.children if getattr(c, "row", None) == 0]
+        assert all(b.emoji is not None for b in tabs)
+        active = [b for b in tabs if b.disabled]
+        assert len(active) == 1 and active[0].label == "Inventory"
+        assert active[0].style.name == "primary"
+    asyncio.run(go())
+
+
+def test_qi_card_renders_new_full_and_toxic_players(conn):
+    import time
+    from bot import qi
+    from cards.dantian import render_dantian, W, H
+    new_player(conn)
+    assert render_dantian(qi.qi_data(db.get_player(conn, 1), db.get_techniques(conn, 1))).size == (W, H)
+    db.update_player(conn, 1, realm="Martial Expert", layer=3, qi=10 ** 7, qi_overflow=5000, toxicity=7,
+                     toxicity_at=time.time())
+    data = qi.qi_data(db.get_player(conn, 1), db.get_techniques(conn, 1))
+    assert data["overflow_text"]
+    assert render_dantian(data).size == (W, H)
