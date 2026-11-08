@@ -31,7 +31,7 @@ def _gear(plan):
     else:
         where = "all slots" if len(slots) > 1 else ""
     sub = " · ".join(x for x in (f"{item['grade'].title()} {plan.gear}", ACTION_WORD[plan.action], where) if x)
-    return {"name": item["name"], "tier": item["grade"], "icon": gear_icon(item), "sub": sub}
+    return {"name": item["name"], "tier": item["grade"], "icon": gear_icon(item), "sub": sub, "kind": plan.gear}
 
 
 def _materials(plan):

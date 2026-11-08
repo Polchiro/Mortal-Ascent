@@ -983,9 +983,9 @@ def _open_bottom(img, wide_first):
     d.line(P(36, WARN[1] - 4, W - 36, WARN[1] - 4), fill=(255, 236, 200, 40), width=max(1, round(1.2 * S)))
 
 
-def _hint(img, data):
-    """The stage's hint or omen on a glass strip: a big first line, a smaller second."""
-    exploded = data["mode"] == "exploded"
+def _hint(img, data, bad=None):
+    """The stage's hint or omen under the panels: a big first line, a smaller second."""
+    exploded = data["mode"] == "exploded" if bad is None else bad
     tone = (226, 72, 56) if exploded else (240, 170, 80)
     x0, y0, x1, y1 = WARN
     T.soft_glow(img, (x0 + 10, y0 + 10, x0 + 86, y1 - 10), alpha(tone, 110), 12)
