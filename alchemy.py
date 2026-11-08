@@ -24,6 +24,9 @@ HERB_TIER_BY_REALM = {
     "Martial Saint": "Heaven",
 }
 LOWER_TIER_CHANCE = 0.15
+# While your alchemist rank is too low to refine pills of your realm's herb grade, this share of
+# your herbs are of the highest grade you CAN refine (the "learning grade"), so you can level up.
+LEARNING_TIER_CHANCE = 0.50
 
 HERB_TYPE_CHANCE = {"qi": 0.30, "healing": 0.20, "purity": 0.35, "breakthrough": 0.15}
 
@@ -268,6 +271,11 @@ BREAKTHROUGH_EXP_MULTIPLIER = 2
 EXPLOSION_EXP = 0.20
 # (minimum ranks above the pill's required rank, EXP multiplier)
 RANK_EXP_PENALTY = [(3, 0.1), (1, 0.5), (0, 1.0)]
+
+def learning_grade(rank):
+    """The highest herb grade an alchemist of this rank can refine into pills (Qi Pill rank)."""
+    return max((g for g in GRADES if QI_PILLS[g]["rank"] <= rank), key=GRADES.index)
+
 
 def craft_exp(grade, patterns, breakthrough=False, ranks_above=0):
     base = CRAFT_BASE_EXP[grade]
