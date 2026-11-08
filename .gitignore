@@ -19,3 +19,4 @@ __pycache__/
 # font files (download them yourself, see fonts/README.md)
 fonts/*.ttf
 fonts/*.otf
+art/.painted/
