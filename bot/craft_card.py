@@ -215,8 +215,8 @@ def _result(c, data, name, outcome):
     else:
         data["mode"] = "exploded"
         data.update(score=c.score(), core_lost=c.core_lost)
-        data["why"] = ("The Beast Core fought free of the pill and shattered." if c.core_lost else
-                       f"Below {c.explode_below:.0%} the cauldron bursts.")
+        data["why"] = ("The Beast Core broke free and shattered." if c.core_lost else
+                       f"Bursts below {c.explode_below:.0%}")
         data["corner"]["label"] = "FAILED"
         data["warning"] = ("The craft fails. The herbs and the Beast Core are lost." if c.core_lost
                            else "The cauldron explodes! The herbs are lost.", f"Final score {c.score():.0%} · {tail}")
