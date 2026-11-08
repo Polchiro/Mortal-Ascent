@@ -10,18 +10,26 @@ the buttons `bot/fight_view.py`.
 
 ## The fight screen
 
-One image card and buttons in a **single message that is edited every turn**, with only the timer above it.
-The card carries the whole turn in large type (nothing under 24px), so there is no text panel under it.
+One image card and buttons in a **single message that is edited every turn** (cards/beast_fight.py). Beast
+fights, /spar and /train-/practice all use it.
+
+**Look:** a cinematic encounter. The beast's painting (art/beasts/<slug>.png, one per beast and the_master.png)
+stands in a misty landscape of its element, lit from behind by a rim of the element's colour, with drifting
+particles (embers, snow, wisps, sparks, spores, dust...). No boxes: text sits on soft shade. Two typefaces: Cinzel
+for the name and the result, Inter for the rest. The sky, the beast and the lighting are drawn once per fight
+(about 1s) and reused, so each turn renders in about 0.1s.
 
 | Part | What it shows |
 |---|---|
-| Scene window | The beast under a moon, mist and mountains, in its element's colours. Beast art from `art/beasts/<beast_slug>.png` if the file exists, otherwise a silhouette for its body type |
-| Over the scene | Name, a **tier ribbon** (Normal grey, Elite violet with a gem, Beast King gold with a gem, Bandits red), role · element · realm, and an ornate **HP bar** with its element badge. A large **damage number** shows what it lost last turn (bigger when it is 20%+ of its HP) |
-| Top right | Turn number, seconds to choose, status chips (Staggered, Hidden, Charged…) |
-| Last turn | The turn's events, a line each with an icon, the numbers drawn large and coloured: gold your hits, red its hits, blue blocks and dodges, green heals (up to 4 lines; "+N more" if longer) |
-| You | Realm emblem, name, realm, an ornate HP bar with the damage you took, then your techniques (with their power, e.g. ×1.32 damage / +20% block) and Mending pills and whether each is ready. Team hunts show the **Hunting Party**: each member's seal, name, HP bar and damage taken; the arrow marks the fighter the beast is going for |
-| Warning bar | The beast's next move. A **charged attack** turns the bar red with a **POWERFUL ATTACK** label; a signature move gets **SIGNATURE MOVE** |
-| At the end | **VICTORY** (gold, with rays), **DEFEAT** (red), **ESCAPED** or **IT GOT AWAY** across the scene; a slain Elite or Beast King adds **ELITE SLAIN** / **BEAST KING SLAIN**. The bottom bar shows the **final blow** |
+| Top left | Tier · realm (Elite underlined in silver, Beast King in gold), the name (gold leaf for a Beast King), role · element, ATK / DEF, the Profile's HP bar with the HP lost last turn and the HP % |
+| Top right | Turn, seconds to act, status (Charged, Staggered, Hidden…) |
+| Lower left | **Next move**: the beast's tell; red with **POWERFUL ATTACK** or **SIGNATURE MOVE** when it is charging |
+| Bottom | You: name, realm, HP bar with %, the last turn in two lines; your techniques and pills as medallions (dark with the turns left while resting). Team hunts list every hunter's HP |
+| Staging | Predators close and low, dragons and serpents rising, giants filling the lower half, winged beasts high, Shadow beasts veiled in fog, Beast Kings with a column of light |
+| Result | The scene dims: Victory / Defeat / Escaped, the tier (Elite, Beast King), and turns, damage dealt, damage taken and HP left |
+
+Beast art: a transparent PNG named after the beast (`White-Browed Tiger King` → `white_browed_tiger_king.png`);
+prompts for every beast are in art/beasts/PROMPTS.md. Without a file, a drawn creature is used.
 
 Buttons, each with a round medallion icon (uploaded as the bot's application emojis at start-up;
 normal emojis if that fails):
@@ -30,8 +38,6 @@ normal emojis if that fails):
 2. Your equipped **techniques**, greyed out with the turns left while they rest
 3. **Mending pill** (from your bag) · **Flee**
 
-Beast art: name the file after the beast, lower case, spaces and punctuation as `_`
-(`White-Browed Tiger King` → `art/beasts/white_browed_tiger_king.png`). A transparent PNG works best.
 
 ## Turns
 

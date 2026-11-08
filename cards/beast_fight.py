@@ -26,6 +26,7 @@ Layout
 """
 import math
 import random
+from functools import lru_cache
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
@@ -256,8 +257,10 @@ def _identity(img, data, acc, tier):
     d = ImageDraw.Draw(img)
     realm = e["tags"][-1] if len(e["tags"]) > 1 else ""
     label_col = TIER_LABEL_COLOR.get(tier, MUTED)
-    _spaced(d, (48, 56), f"{tier.upper()}   ·   {realm.upper()}" if realm else tier.upper(), 18, label_col,
-            weight="Bold", tracking=3.2)
+    is_tier = bool(e["tags"]) and e["tags"][0] in TIER_LABEL_COLOR
+    line = (f"{tier.upper()}   ·   {realm.upper()}" if realm else tier.upper()) if is_tier else \
+        "   ·   ".join(t.upper() for t in e["tags"])          # training: the challenge, its tier, the mode
+    _spaced(d, (48, 56), line, 18, label_col, weight="Bold", tracking=3.2)
     if tier in ("Elite", "Beast King"):
         tw = T.width(d, tier.upper(), font("Inter.ttf", 18, "Bold")) + 3.2 * len(tier)
         d.line(P(48, 72, 48 + tw, 72), fill=label_col + (200,), width=round(1.5 * S))
@@ -267,7 +270,7 @@ def _identity(img, data, acc, tier):
     else:
         T.text(d, (46, 124), name, nf, WARM, "lm")
     d = ImageDraw.Draw(img)
-    traits = " · ".join(e["tags"][1:-1])
+    traits = " · ".join(e["tags"][1:-1]) if is_tier else ""
     x = 48
     f = font("Inter.ttf", 22, "Medium")
     if traits:
@@ -364,6 +367,8 @@ def _moves(img, items):
         lines = T.wrap(d, it["name"], f, 124, lines=2)
         for j, line in enumerate(lines):
             T.text(d, (x, cy + r + 18 + j * 20), line, f, WARM if ready else DIM, "mm")
+        if ready and it["state"] not in ("Ready", ""):     # pill count, or a training counter
+            T.text(d, (x + r - 2, cy - r + 6), it["state"], font("Inter.ttf", 16, "Black"), (246, 214, 150), "mm")
 
 
 def _party(img, data):
@@ -415,14 +420,23 @@ def _result(img, data, acc, tier):
             d.line(P(x0 + cw * i, 430, x0 + cw * i, 500), fill=(255, 255, 255, 40), width=max(1, S))
 
 
+@lru_cache(maxsize=32)
+def _backdrop(palette, body, slug, tier):
+    """Sky, beast and shading: the same every turn of a fight, so drawn once (about 1s) and reused."""
+    acc = T.ELEMENT_ACCENTS[palette]
+    data = {"palette": palette, "enemy": {"body": body, "slug": slug}}
+    img = _world(data, acc, STAGING.get(body, STAGING["cat"])[0])
+    _particles(img, ATMOS.get(palette, "motes"), acc.rim)
+    _beast(img, data, acc, tier)
+    _shade_left(img)
+    return img
+
+
 def render_beast_fight(data):
     acc = T.ELEMENT_ACCENTS[data["palette"]]
     tier = _tier(data)
-    kind = STAGING.get(data["enemy"]["body"], STAGING["cat"])[0]
-    img = _world(data, acc, kind)
-    _particles(img, ATMOS.get(data["palette"], "motes"), acc.rim)
-    _beast(img, data, acc, tier)
-    _shade_left(img)
+    e = data["enemy"]
+    img = _backdrop(data["palette"], e["body"], e.get("slug"), tier).copy()
     if data.get("result"):
         _result(img, data, acc, tier)
     else:

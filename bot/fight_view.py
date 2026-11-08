@@ -22,7 +22,7 @@ from . import mastery
 from . import render as card_render
 from .fight import Battle
 from cards import battle_icons
-from cards.battle import render_battle
+from cards.beast_fight import render_beast_fight as render_battle   # the encounter screen (cards/beast_fight.py)
 from cards.technique_icons import tech_kind
 
 log = logging.getLogger("mortal-ascent")

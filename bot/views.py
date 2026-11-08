@@ -29,7 +29,7 @@ from .expedition import PATH_EMOJI, Expedition
 from . import explore_card
 from .fight_view import FightMixin, jpg
 from . import render as card_render
-from cards.battle import render_battle
+from cards.beast_fight import render_beast_fight as render_battle   # the encounter screen (cards/beast_fight.py)
 from cards.expedition import render_crossroads, render_encounter
 from cards import wild_icons
 import battle as battle_data
@@ -413,7 +413,7 @@ class TrainView(OwnedView):
                 "enemy": {"name": enemy, "seal": "school:Body", "tags":
                           [name, f"Tier {s['tier']}", "Practice" if s["mode"] == "practice" else "Training"],
                           "hp": max(0.0, min(1.0, progress)), "max_hp": 1, "bar_label": bar_label,
-                          "element_seal": "lotus", "statuses": chips, "body": "master", "slug": None},
+                          "element_seal": "lotus", "statuses": chips, "body": "master", "slug": "the_master"},
                 "party_title": "You",
                 "party": [{"name": p["name"], "realm": p["realm"], "layer": p["layer"], "hp": max(0.0, min(1.0, you)),
                            "max_hp": 1, "bar_label": you_label, "bar_color": (84, 186, 130), "move": "", "arrow": True}],

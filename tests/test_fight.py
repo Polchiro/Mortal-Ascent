@@ -494,3 +494,31 @@ def test_damage_numbers_and_danger_flag():
     b.enemy["hp"] = 0
     b.result = "won"
     assert render_battle(card_data(b, "x", prev)).size == (1200, battle_card_height())
+
+# ── The encounter screen (cards/beast_fight.py) and the beast art ────
+
+def test_every_beast_has_art_and_the_master_too():
+    import os
+    from cards.battle import ART_DIR
+    names = [n for rows in beasts.BEASTS.values() for n, _, _ in rows] + ["The Master"]
+    missing = [n for n in names if not os.path.exists(os.path.join(ART_DIR, beasts.slug(n) + ".png"))]
+    assert missing == []
+
+
+@pytest.mark.parametrize("beast,n", [(("Mountain Tiger", "beast_king", "hunter"), 1), (("Wild Boar", "normal", "brute"), 4),
+                                     (("Shadow Panther", "normal", "swift"), 1)])
+def test_encounter_screen_renders_fights_hunts_and_results(beast, n):
+    from bot.fight_view import snapshot
+    from cards.beast_fight import H as EH, W as EW, render_beast_fight
+    b = make_battle(beast, n=n)
+    b.enemy["slug"] = beasts.slug(beast[0])
+    prev = snapshot(b)
+    force(b, "break")
+    for f in b.fighters:
+        b.choose(f.uid, "strike")
+    b.resolve()
+    assert render_beast_fight(card_data(b, "x", prev)).size == (EW, EH)
+    b.enemy["hp"], b.result = 0, "won"
+    assert render_beast_fight(card_data(b, "x", prev)).size == (EW, EH)
+    b.enemy["slug"] = None                                   # no art file: the drawn creature
+    assert render_beast_fight(card_data(b, "x")).size == (EW, EH)
