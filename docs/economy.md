@@ -116,9 +116,9 @@ Herb and pill purchases are written to the ledger like every other coin change.
 ## Trading Moon Pearls
 
 - Players can sell items to each other for Moon Pearls or Lotus Coins
-  (via the player market / trade command)
+  with `/trade @player` (docs/trading.md)
 - This lets free players earn Moon Pearls by farming rare drops
-- Every market trade has a **5% tax** (removes coins and pearls from the game)
+- Trades have **no tax**: what one player offers is exactly what the other receives
 - Selling items or pearls for real money **outside** the game is not allowed
 
 ## Lotus Coin uses
@@ -132,7 +132,6 @@ Herb and pill purchases are written to the ledger like every other coin change.
 | ⚒️ Forging | Repair or upgrade weapons |
 | 🎲 Fate Reroll | Talent reroll (see talent.md) |
 | 🏛️ Entry fees | PvP tournaments, special events |
-| 🏪 Market tax | 5% of every trade |
 
 Prices: set later when balancing.
 
