@@ -1,19 +1,28 @@
 """
-Beast Fight v3 — the encounter as a page of an ancient bestiary (prototype for review; same data as
-cards.battle.render_battle).
+Beast Fight v4 — a cinematic encounter (prototype for review; same data as cards.battle.render_battle).
 
-No boxes. The scene fills the card; text sits on ink-wash shading, laid out asymmetrically:
-  left        the beast's character in large dry-brush calligraphy behind its name, its tier and realm, danger
-              marks, an ink-brush HP stroke, and its next move written on the scene (a red brush swipe behind it
-              for a charged attack)
-  right       the beast, lit in its element's colour, in an atmosphere of its own (embers, snow, wisps,
-              lightning, spores, dust, leaves, petals)
-  top right   the turn as a round vermilion chop
-  bottom      your name and brush HP stroke, your techniques as seal stamps, the last turn in two lines
-Tiers are composed differently, not recoloured:
-  Normal      plain ink, no ornament
-  Elite       silver-gold cloud ornaments in two opposite corners, a silver name
-  Beast King  a gold-leaf name and calligraphy, a fine gold border with cloud corners, a halo behind the beast
+Art direction
+  Low-key lighting. The beast stands mostly in shadow, lit by a strong rim of its element's colour from behind;
+  only its eyes, fangs and flames keep their full light. Misty ridges drawn from soft noise (no geometric
+  mountains, no moon), drifting particles of its element, ground fog over its feet.
+  Two typefaces only: Cinzel for the beast's name and the result word, Inter for everything else.
+  No boxes, no corner ornaments: the scene runs edge to edge and text sits on soft shade.
+
+Composition by kind of beast (cards.beast_fight.STAGING)
+  predators (cats, wolves)  close and low, leaning out of the right edge
+  dragons and serpents      large and rising, mist streaming past
+  giants (apes, turtles)    filling the lower half, seen from below
+  winged (birds, insects)   high in the frame, wings wide
+  dark beasts (Shadow)      deep fog, almost only the eyes and the rim
+  Beast Kings               a column of light behind them, a gold-leaf name
+
+Layout
+  top left     tier · realm, the name, role · element, ATK / DEF
+  under it     the HP bar of the Profile card with the HP % beside it
+  top right    the turn and the seconds left
+  lower left   the beast's next move (red, with POWERFUL ATTACK, when it is charging)
+  bottom       you: name, HP bar with %, the last turn; your techniques as medallions with full names
+  result       the scene dims; the outcome, then the fight in numbers (turns, damage dealt, damage taken, HP left)
 """
 import math
 import random
@@ -23,39 +32,33 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from . import battle as B
 from . import ink as K
 from . import theme as T
-from .beast_art import painted, spline, taper
+from .beast_art import painted
 from .theme import P, S, alpha, font, mix
 
-W, H = 1200, 860
-VERMILION = (198, 52, 38)
-INK = (14, 10, 10)
-PAPER = (240, 230, 210)
-TIER_KEY = {"Normal": 1, "Elite": 2, "Beast King": 3, "Bandits": 1, "Master": 2}
-ATMOS = {"Flame": "embers", "Frost": "snow", "Shadow": "wisps", "Thunder": "lightning", "Venom": "spores",
-         "Earth": "dust", "Jade": "leaves", "Blood": "petals", "Master": "leaves", "Courtyard": "leaves"}
+W, H = 1200, 820
+SCENE_H = 620
+WARM = (244, 236, 222)
+MUTED = (176, 166, 156)
+DIM = (120, 112, 106)
+DANGER = (226, 70, 52)
+TIER_LABEL_COLOR = {"Normal": (176, 166, 156), "Elite": (206, 212, 232), "Beast King": (236, 198, 120),
+                    "Bandits": (214, 120, 96), "Master": (186, 206, 236)}
+ATMOS = {"Flame": "embers", "Frost": "snow", "Shadow": "wisps", "Thunder": "sparks", "Venom": "spores",
+         "Earth": "dust", "Jade": "motes", "Blood": "ash", "Master": "motes"}
+
+# body -> (kind, width, height, centre x, feet y): where and how big the beast stands
+STAGING = {
+    "cat": ("predator", 760, 560, 800, 690), "wolf": ("predator", 720, 540, 810, 680),
+    "dragon": ("dragon", 760, 500, 850, 690), "serpent": ("dragon", 680, 500, 850, 680),
+    "ape": ("giant", 820, 620, 790, 700), "turtle": ("giant", 900, 560, 780, 700),
+    "bird": ("winged", 820, 520, 790, 560), "insect": ("winged", 720, 520, 800, 640),
+    "human": ("predator", 560, 600, 820, 660), "master": ("master", 640, 560, 800, 650),
+}
 
 
 def _tier(data):
     tags = data["enemy"]["tags"]
-    return tags[0] if tags and tags[0] in TIER_KEY else "Normal"
-
-
-# ── Brush tools ───────────────────────────────────────────────────────
-
-def _rough(poly, amount, seed):
-    rng = random.Random(seed)
-    return [(x + rng.uniform(-amount, amount), y + rng.uniform(-amount, amount)) for x, y in poly]
-
-
-def brush_mask(size, pts, w0, w1, mid, rough=1.5, seed=3):
-    """A ragged ink stroke along `pts` (card pixels) as an L mask at S×."""
-    m = Image.new("L", size, 0)
-    path = spline([(x * S, y * S) for x, y in pts], closed=False, n=24)
-    poly = _rough(taper(path, w0 * S, w1 * S, mid * S), rough * S, seed)
-    ImageDraw.Draw(m).polygon(poly, fill=255)
-    grain = Image.effect_noise((size[0] // 4 + 1, size[1] // 4 + 1), 60).resize(size, Image.BILINEAR)
-    streak = grain.point(lambda v: 255 if v > 70 else 150)          # dry-brush streaks
-    return ImageChops.multiply(m.filter(ImageFilter.GaussianBlur(0.8 * S)), streak)
+    return tags[0] if tags and tags[0] in TIER_LABEL_COLOR else "Normal"
 
 
 def _fill(img, mask, color, a=255):
@@ -64,373 +67,365 @@ def _fill(img, mask, color, a=255):
     img.alpha_composite(layer)
 
 
-def ink_bar(img, x0, x1, y, h, frac, color, lost=0.0, seed=5):
-    """An HP bar painted as a brush stroke: dark ink behind, the colour laid over up to `frac`, the HP just lost
-    as a pale stretch after it."""
-    pts = [(x0, y + 2), ((x0 + x1) / 2, y - 3), (x1, y + 1)]
-    back = brush_mask(img.size, pts, h * 0.9, h * 0.55, h * 1.05, rough=1.8, seed=seed)
-    _fill(img, back, INK, 235)
-    front = brush_mask(img.size, pts, h * 0.72, h * 0.42, h * 0.86, rough=1.2, seed=seed + 1)
-    fx = x0 + (x1 - x0) * max(0.0, min(1.0, frac))
-    cut = Image.new("L", img.size, 0)
-    ImageDraw.Draw(cut).rectangle(P(x0 - 20, y - h, fx, y + h), fill=255)
-    if lost > 0:
-        lx = min(x1 + 20, fx + (x1 - x0) * lost)
-        pale = Image.new("L", img.size, 0)
-        ImageDraw.Draw(pale).rectangle(P(fx, y - h, lx, y + h), fill=255)
-        _fill(img, ImageChops.multiply(front, pale), (250, 236, 206), 220)
-    g = T.vgradient(img.size, mix(color, (255, 250, 230), 0.35), mix(color, (0, 0, 0), 0.35),
-                    round((y - h / 2) * S), round((y + h / 2) * S))
-    g.putalpha(ImageChops.multiply(front, cut))
-    img.alpha_composite(g)
+# ── The world behind the beast ────────────────────────────────────────
+
+def _ridge(w, base, amp, seed, rough=1.0):
+    """A soft mountain line from summed waves (organic, never triangular)."""
+    rng = random.Random(seed)
+    waves = [(rng.uniform(0.6, 1.4) / f, rng.uniform(0, 6.3), f) for f in (380, 170, 70, 28)]
+    pts = []
+    for x in range(0, w + 8, 8):
+        y = base
+        for amp_k, ph, f in waves:
+            y -= amp * amp_k * math.sin(x / f + ph) * (0.6 if f < 60 else 1) * (rough if f < 60 else 1) * 0.6
+        pts.append((x, y))
+    return pts
 
 
-def calligraphy(img, center, glyph, size, color, a=90, seed=9):
-    """A large dry-brush character."""
-    layer = Image.new("L", img.size, 0)
-    ImageDraw.Draw(layer).text(P(*center), glyph, font=T.cjk(size).font_variant(size=round(size * S)), fill=255,
-                               anchor="mm")
-    grain = Image.effect_noise((img.size[0] // 3 + 1, img.size[1] // 3 + 1), 70).resize(img.size, Image.BILINEAR)
-    m = ImageChops.multiply(layer, grain.point(lambda v: 255 if v > 60 else 110))
-    _fill(img, m.filter(ImageFilter.GaussianBlur(0.6 * S)), color, a)
+def _world(data, acc, kind, seed=7):
+    w, h = W * S, H * S
+    sky = acc.sky if hasattr(acc, "sky") else ((10, 8, 12), (40, 30, 30))
+    img = T.vgradient((w, h), mix(sky[0], (0, 0, 0), 0.25), mix(sky[1], (0, 0, 0), 0.15), 0, SCENE_H * S)
+    # a large soft light low in the sky, behind where the beast stands (the backlight)
+    _, bw, bh, cx, feet = STAGING.get(data["enemy"]["body"], STAGING["cat"])
+    T.soft_glow(img, (cx - 380, feet - bh - 40, cx + 380, feet + 40), alpha(mix(acc.rim, acc.moon, 0.4), 120), 90)
+    # misty ridges, far to near: each darker and sharper
+    for i, (base, amp, a, blur) in enumerate(((330, 70, 90, 6), (410, 60, 150, 4), (500, 45, 210, 2.5))):
+        m = Image.new("L", (w, h), 0)
+        pts = [(x * S, y * S) for x, y in _ridge(W, base, amp, seed + i)] + [(w, h), (0, h)]
+        ImageDraw.Draw(m).polygon(pts, fill=255)
+        col = mix(sky[1], (0, 0, 0), 0.35 + 0.18 * i)
+        _fill(img, m.filter(ImageFilter.GaussianBlur(blur * S)), col, a)
+        # mist pooled in the valley below each ridge
+        mist = Image.new("L", (w, h), 0)
+        ImageDraw.Draw(mist).rectangle((0, round((base + 30) * S), w, round((base + 90) * S)), fill=255)
+        _fill(img, mist.filter(ImageFilter.GaussianBlur(40 * S)), mix(acc.mist, (255, 255, 255), 0.1), 34 - 8 * i)
+    if data.get("palette") == "Master":       # the training hall: warm lantern lights far off
+        rng = random.Random(3)
+        for _ in range(12):
+            x, y = rng.uniform(40, 700), rng.uniform(300, 520)
+            T.soft_glow(img, (x - 10, y - 10, x + 10, y + 10), (255, 170, 80, 120), 6)
+    return img
 
 
-def chop(img, center, r, lines, color=VERMILION, rot=-6):
-    """A round seal stamp with white carved text, slightly tilted and worn."""
-    cx, cy = center
-    size = round(2 * r * S + 8 * S)
-    st = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(st)
-    c = size / 2
-    d.ellipse((c - r * S, c - r * S, c + r * S, c + r * S), fill=color + (235,))
-    d.ellipse((c - (r - 5) * S, c - (r - 5) * S, c + (r - 5) * S, c + (r - 5) * S), outline=PAPER + (230,),
-              width=round(2 * S))
-    y = c - (len(lines) - 1) * 14 * S
-    for text, fsize in lines:
-        d.text((c, y), text, font=font("Cinzel.ttf", fsize, "Black").font_variant(size=round(fsize * S)),
-               fill=PAPER + (255,), anchor="mm")
-        y += 28 * S
-    wear = Image.effect_noise((size, size), 80).point(lambda v: 0 if v < 40 else 255)
-    st.putalpha(ImageChops.multiply(st.getchannel("A"), wear))
-    st = st.rotate(rot, resample=Image.BICUBIC)
-    img.alpha_composite(st, (round(cx * S - size / 2), round(cy * S - size / 2)))
-
-
-def square_seal(img, center, s, icon, ready, label):
-    """A technique as a square vermilion seal with its icon carved in; faded with the turns left while resting."""
-    cx, cy = center
-    col = VERMILION if ready else (96, 70, 64)
-    size = round(s * S)
-    st = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(st)
-    d.rounded_rectangle((0, 0, size - 1, size - 1), radius=round(5 * S), fill=col + (240,))
-    d.rounded_rectangle((round(5 * S), round(5 * S), size - round(5 * S), size - round(5 * S)), radius=round(3 * S),
-                        outline=PAPER + (220,), width=round(2 * S))
-    wear = Image.effect_noise((size, size), 70).point(lambda v: 0 if v < 34 else 255)
-    st.putalpha(ImageChops.multiply(st.getchannel("A"), wear))
-    st = st.rotate(3 if ready else -2, resample=Image.BICUBIC, expand=False)
-    img.alpha_composite(st, (round((cx - s / 2) * S), round((cy - s / 2) * S)))
-    T.icon(img, icon, (cx, cy), s * 0.62, PAPER if ready else (170, 150, 140))
-    d = ImageDraw.Draw(img)
-    if not ready:
-        num = "".join(ch for ch in label[1] if ch.isdigit())
-        if num:
-            T.text(d, (cx + s / 2 - 4, cy - s / 2 + 4), num, font("Cinzel.ttf", 26, "Black"), (255, 214, 160), "mm")
-    T.text(d, (cx, cy + s / 2 + 20), T.fit(d, label[0], font("Inter.ttf", 19, "SemiBold"), 150),
-           font("Inter.ttf", 19, "SemiBold"), PAPER if ready else (150, 136, 126), "mm")
-
-
-# ── Atmosphere ────────────────────────────────────────────────────────
-
-def atmosphere(img, kind, color, box, seed=4):
-    x0, y0, x1, y1 = box
+def _particles(img, kind, color, seed=4):
     rng = random.Random(seed)
     layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
-    if kind == "lightning":
-        for _ in range(2):
-            x, y = rng.uniform(x0 + 200, x1 - 100), y0
-            pts = [(x, y)]
-            while y < y0 + 260:
-                x += rng.uniform(-30, 30)
-                y += rng.uniform(20, 40)
-                pts.append((x, y))
-            d.line([P(*q) for q in pts], fill=mix(color, (255, 255, 255), 0.6) + (230,), width=round(3 * S),
-                   joint="curve")
-        img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(4 * S)))
-        img.alpha_composite(layer)
-        return
-    for _ in range(70):
-        x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
-        r = rng.uniform(1.5, 4.5)
-        a = rng.randint(60, 200)
+    for _ in range(90):
+        x, y = rng.uniform(0, W), rng.uniform(0, SCENE_H)
+        r = rng.uniform(1, 3.2)
+        a = rng.randint(50, 190)
         if kind == "embers":
-            d.ellipse(P(x - r * 0.6, y - r, x + r * 0.6, y + r), fill=(255, rng.randint(120, 200), 60, a))
+            c = (255, rng.randint(110, 190), 60)
         elif kind == "snow":
-            d.ellipse(P(x - r, y - r, x + r, y + r), fill=(240, 248, 255, a))
+            c = (236, 244, 255)
+        elif kind == "ash":
+            c = (200, 120, 110)
+        elif kind == "sparks":
+            c = mix(color, (255, 255, 255), 0.5)
+            d.line(P(x, y, x + rng.uniform(-6, 6), y + rng.uniform(4, 10)), fill=c + (a,), width=round(1.4 * S))
+            continue
         elif kind == "wisps":
-            d.ellipse(P(x - r * 6, y - r * 2, x + r * 6, y + r * 2), fill=color + (a // 4,))
-        elif kind == "spores":
-            d.ellipse(P(x - r, y - r, x + r, y + r), fill=mix(color, (230, 255, 160), 0.4) + (a,))
-        elif kind == "dust":
-            d.ellipse(P(x - r * 0.7, y - r * 0.7, x + r * 0.7, y + r * 0.7), fill=(200, 170, 120, a // 2))
-        elif kind == "leaves":
-            ang = rng.uniform(0, math.pi)
-            dx, dy = math.cos(ang) * r * 2.4, math.sin(ang) * r * 2.4
-            d.line(P(x - dx, y - dy, x + dx, y + dy), fill=mix(color, (200, 240, 200), 0.3) + (a,), width=round(r * S))
-        else:   # petals
-            d.ellipse(P(x - r * 1.6, y - r * 0.8, x + r * 1.6, y + r * 0.8), fill=(220, 60, 60, a))
-    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(0.8 * S)))
+            d.ellipse(P(x - r * 8, y - r * 2, x + r * 8, y + r * 2), fill=color + (a // 5,))
+            continue
+        else:
+            c = mix(color, (255, 255, 255), 0.35)
+        d.ellipse(P(x - r, y - r, x + r, y + r), fill=c + (a,))
+    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(0.7 * S)))
 
 
-# ── Composition ───────────────────────────────────────────────────────
+# ── The beast, lit from behind ────────────────────────────────────────
 
-def _scene(data, acc):
-    size = (W * S, H * S)
-    img = B._sky(acc, size, 7)
-    B._moon(img, acc, size[0] * 0.66, size[1] * 0.2, size[1] * 0.09)
-    (B._courtyard if data.get("backdrop") == "courtyard" else B._landscape)(img, acc, 7)
-    return img
+def _art_for(e, palette, bw, bh):
+    """(image at S×, is_real_art). Real art (art/beasts/<slug>.png) keeps more of its own light."""
+    art = B._art(e.get("slug"))
+    real = art is not None
+    if art is None:
+        art = painted("master" if e["body"] == "master" else e["body"], palette, bw * S, bh * S)
+    if art is None:
+        art = Image.new("RGBA", (bw * S, bh * S), (0, 0, 0, 0))
+        B._creature(art, T.ELEMENT_ACCENTS[palette], e["body"], None)
+        bbox = art.getchannel("A").getbbox()
+        if bbox:
+            art = art.crop(bbox)
+    sc = min(bw * S / art.size[0], bh * S / art.size[1])
+    art = art.resize((max(1, round(art.size[0] * sc)), max(1, round(art.size[1] * sc))), Image.LANCZOS)
+    return art, real
+
+
+def _light(art, acc, real, dark):
+    """Low-key lighting: shadow over the body, the brightest bits (eyes, fangs, flame) kept, a rim of light."""
+    mask = art.getchannel("A")
+    lum = art.convert("L")
+    if not real:
+        shade = Image.new("RGBA", art.size, mix(acc.panel, (0, 0, 0), 0.4) + (0,))
+        shade.putalpha(mask.point(lambda v: round(v * dark)))
+        lit = art.copy()
+        lit.alpha_composite(shade)
+        # light falls from the top: the upper body keeps more of its colour
+        grad = Image.linear_gradient("L").resize(art.size).point(lambda v: round(v * 0.55))
+        under = Image.new("RGBA", art.size, (0, 0, 0, 0))
+        under.putalpha(ImageChops.multiply(grad, mask))
+        lit.alpha_composite(under)
+        keep = lum.point(lambda v: 255 if v > 205 else 0).filter(ImageFilter.GaussianBlur(1))
+        keep = ImageChops.multiply(keep, mask)
+        bright = art.copy()
+        bright.putalpha(keep)
+        lit.alpha_composite(bright)
+        art = lit
+    k = max(3, round(min(art.size) * 0.012))
+    rim = ImageChops.subtract(mask, ImageChops.offset(mask, -k, k // 2))         # light from behind, upper right
+    rim = rim.filter(ImageFilter.GaussianBlur(k * 0.6))
+    out = Image.new("RGBA", art.size, (0, 0, 0, 0))
+    halo = Image.new("RGBA", art.size, acc.rim + (0,))
+    halo.putalpha(mask.filter(ImageFilter.GaussianBlur(k * 3)).point(lambda v: round(v * 0.5)))
+    out.alpha_composite(halo)
+    out.alpha_composite(art)
+    edge = Image.new("RGBA", art.size, mix(acc.rim, (255, 255, 255), 0.45) + (0,))
+    edge.putalpha(rim.point(lambda v: min(255, round(v * 2.2))))
+    out.alpha_composite(edge)
+    return out
 
 
 def _beast(img, data, acc, tier):
     e = data["enemy"]
-    body = "master" if e["body"] == "master" else e["body"]
-    bw, bh = 660, 540
-    x0, y0 = 500, 640 - bh
-    if tier == "Beast King":          # a halo of light behind a Beast King
-        T.soft_glow(img, (x0 + 60, y0 - 40, x0 + bw - 60, y0 + bh - 40), alpha((255, 196, 90), 120), 50)
-        d = ImageDraw.Draw(img)
-        cx, cy = x0 + bw / 2, y0 + bh * 0.42
-        for i in range(36):
-            a = math.radians(i * 10)
-            d.line(P(cx + 150 * math.cos(a), cy + 150 * math.sin(a), cx + 300 * math.cos(a), cy + 300 * math.sin(a)),
-                   fill=(255, 220, 140, 40), width=round(3 * S))
-    art = B._art(e.get("slug")) or painted(body, data["palette"], bw * S, bh * S)
-    if art is None:
-        art = Image.new("RGBA", (bw * S, bh * S), (0, 0, 0, 0))
-        B._creature(art, acc, body, None)
-    elif art.size != (bw * S, bh * S):
-        sc = min(bw * S / art.size[0], bh * S / art.size[1])
-        art = art.resize((round(art.size[0] * sc), round(art.size[1] * sc)), Image.LANCZOS)
-    mask = art.getchannel("A")
-    rim = Image.new("RGBA", art.size, acc.rim + (0,))
-    rim.putalpha(mask.filter(ImageFilter.GaussianBlur(10 * S)).point(lambda v: min(255, round(v * 1.2))))
-    ox, oy = round(x0 * S + (bw * S - art.size[0]) / 2), round(y0 * S + (bh * S - art.size[1]))
-    img.alpha_composite(rim, (ox, oy))
-    img.alpha_composite(art, (ox, oy))
-
-
-def _wash(img):
-    """Ink-wash shading where the text sits: from the left edge, and up from the bottom."""
-    w, h = img.size
-    left = Image.linear_gradient("L").rotate(90, expand=True).resize((w, h))     # 255 at left → 0 at right
-    left = left.point(lambda v: round(max(0, v - 90) * 1.35))
-    bottom = Image.linear_gradient("L").resize((w, h))                              # 0 top → 255 bottom
-    bottom = bottom.point(lambda v: round(min(255, max(0, v - 128) * 2.6)))
-    m = ImageChops.lighter(left, bottom)
-    _fill(img, m.filter(ImageFilter.GaussianBlur(20 * S)), (8, 6, 8), 235)
-
-
-def _ornaments(img, tier, color):
-    d = ImageDraw.Draw(img)
-    gold = (226, 196, 120)
+    kind, bw, bh, cx, feet = STAGING.get(e["body"], STAGING["cat"])
+    if e["body"] != "master" and data["palette"] == "Shadow":
+        kind = "dark"
     if tier == "Beast King":
-        for inset, wdt, a in ((14, 2.2, 230), (20, 1, 150)):
-            d.rectangle(P(inset, inset, W - inset, H - inset), outline=gold + (a,), width=round(wdt * S))
-        corners = ((14, 14, 1, 1), (W - 14, 14, -1, 1), (14, H - 14, 1, -1), (W - 14, H - 14, -1, -1))
-    elif tier == "Elite":
-        corners = ((14, 14, 1, 1), (W - 14, H - 14, -1, -1))
-        silver = (206, 210, 226)
-        for cx, cy, fx, fy in corners:
-            d.line(P(cx, cy, cx + fx * 120, cy), fill=silver + (200,), width=round(2 * S))
-            d.line(P(cx, cy, cx, cy + fy * 120), fill=silver + (200,), width=round(2 * S))
-        gold = silver
-    else:
-        return
-    for cx, cy, fx, fy in corners:
-        K.cloud_curl(d, cx + fx * 26, cy + fy * 26, 16, gold + (255,), flip=fx, width=2.6)
-        K.cloud_curl(d, cx + fx * 54, cy + fy * 14, 9, gold + (220,), flip=fx, width=2)
-        K.cloud_curl(d, cx + fx * 14, cy + fy * 54, 9, gold + (220,), flip=fx, width=2)
+        bw, bh = round(bw * 1.06), round(bh * 1.06)
+        col = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        ImageDraw.Draw(col).polygon(P(cx - 90, 0, cx + 90, 0, cx + 260, feet, cx - 260, feet), fill=(255, 220, 150, 60))
+        img.alpha_composite(col.filter(ImageFilter.GaussianBlur(30 * S)))
+    art, real = _art_for(e, data["palette"], bw, bh)
+    dark = {"dark": 0.82, "giant": 0.62, "dragon": 0.52, "predator": 0.58, "winged": 0.55, "master": 0.3}.get(kind, 0.55)
+    art = _light(art, acc, real, dark)
+    x = round(cx * S - art.size[0] / 2)
+    y = round(feet * S - art.size[1])
+    img.alpha_composite(art, (x, y))
+    # ground fog over the feet
+    fog = Image.new("L", img.size, 0)
+    ImageDraw.Draw(fog).ellipse(P(cx - bw * 0.7, feet - 60, cx + bw * 0.7, feet + 70), fill=255)
+    _fill(img, fog.filter(ImageFilter.GaussianBlur(26 * S)), mix(acc.mist, (20, 18, 20), 0.55), 200)
+    if kind == "dark":
+        veil = Image.new("L", img.size, 0)
+        ImageDraw.Draw(veil).ellipse(P(cx - bw * 0.6, feet - bh * 0.7, cx + bw * 0.6, feet + 40), fill=255)
+        _fill(img, veil.filter(ImageFilter.GaussianBlur(60 * S)), (6, 4, 10), 110)
+    if kind == "dragon":
+        streak = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        sd = ImageDraw.Draw(streak)
+        rng = random.Random(8)
+        for _ in range(7):
+            y0 = rng.uniform(120, 520)
+            sd.line(P(cx - 520, y0, cx + 420, y0 - 60), fill=acc.mist + (40,), width=round(rng.uniform(8, 22) * S))
+        img.alpha_composite(streak.filter(ImageFilter.GaussianBlur(14 * S)))
+    return cx, feet - bh * 0.6
 
 
-def _title(img, data, acc, tier):
+# ── Type and bars ─────────────────────────────────────────────────────
+
+def _shade_left(img):
+    """Soft darkness behind the text on the left and along the bottom (no boxes)."""
+    w, h = img.size
+    left = Image.linear_gradient("L").rotate(90, expand=True).resize((w, h)).point(lambda v: round(max(0, v - 110) * 1.7))
+    bottom = Image.linear_gradient("L").resize((w, h)).point(lambda v: round(min(255, max(0, v - 150) * 3)))
+    _fill(img, ImageChops.lighter(left, bottom).filter(ImageFilter.GaussianBlur(24 * S)), (6, 5, 7), 230)
+
+
+def _spaced(d, xy, s, size, color, anchor="l", weight="SemiBold", tracking=2.0):
+    T.spaced(d, xy, s, font("Inter.ttf", size, weight), color, tracking, anchor)
+
+
+def _hp(img, x0, x1, y, h, hp, mx, color, icon, label=None, delta=0):
+    """The Profile's ornate bar, with the HP % in large type after it."""
+    frac = hp / mx if mx else 0
+    K.ornate_bar(img, (x0 + 18, y - h / 2, x1, y + h / 2), frac, color, icon, label or f"{hp:,} / {mx:,}")
+    d = ImageDraw.Draw(img)
+    T.text(d, (x1 + 46, y + 1), f"{frac:.0%}" if label is None else "", font("Inter.ttf", round(h * 0.95), "Black"),
+           WARM, "lm")
+    if delta:
+        T.text(d, (x1 - 6, y - h / 2 - 22), f"−{-delta:,}" if delta < 0 else f"+{delta:,}", font("Inter.ttf", 28, "Black"),
+               (255, 120, 96) if delta < 0 else (130, 230, 170), "rm")
+
+
+def _identity(img, data, acc, tier):
     e = data["enemy"]
-    king = tier == "Beast King"
-    gold = (236, 200, 120)
-    ch = B.seal_char(e["name"], e["body"]) if e["body"] != "master" else "师"
-    calligraphy(img, (190, 210), ch, 330, gold if king else mix(acc.rim, (255, 255, 255), 0.2), 70 if king else 55)
-    # the name, up to two lines, left aligned
-    words = e["name"].upper().split()
     d = ImageDraw.Draw(img)
-    f = font("Cinzel.ttf", 64, "Black")
-    lines, cur = [], ""
-    for wd in words:
-        trial = (cur + " " + wd).strip()
-        if T.width(d, trial, f) > 520 and cur:
-            lines.append(cur)
-            cur = wd
-        else:
-            cur = trial
-    lines.append(cur)
-    if len(lines) > 2:
-        lines = [lines[0], " ".join(lines[1:])]
-    y = 96
-    for line in lines:
-        line, lf = B._shrink(d, line, "Cinzel.ttf", "Black", (64, 56, 48), 540)
-        if king:
-            T.gold_text(img, (50, y), line, lf, "lm", glow=(255, 150, 60))
-        elif tier == "Elite":
-            T.gold_text(img, (50, y), line, lf, "lm", top=(244, 246, 255), bottom=(150, 156, 180), glow=None)
-        else:
-            T.text(ImageDraw.Draw(img), (50, y), line, lf, PAPER, "lm")
-        y += 66
-    # brush underline
-    _fill(img, brush_mask(img.size, [(46, y - 22), (260, y - 28), (430, y - 20)], 6, 1, 9, seed=11),
-          VERMILION if not king else (230, 170, 70), 230)
-    d = ImageDraw.Draw(img)
-    # tier and realm, then danger marks; role and element under
     realm = e["tags"][-1] if len(e["tags"]) > 1 else ""
-    tline = f"{tier.upper()}  ·  {realm.upper()}" if realm else tier.upper()
-    T.spaced(d, (52, y + 2), tline, font("Cinzel.ttf", 22, "Bold"), mix(PAPER, acc.rim, 0.2), 2.4)
-    tw = sum(T.width(d, c, font("Cinzel.ttf", 22, "Bold")) for c in tline) + 2.4 * len(tline)
-    for i in range(3):
-        on = i < TIER_KEY.get(tier, 1)
-        x = 52 + tw + 24 + i * 24
-        _fill(img, brush_mask(img.size, [(x - 6, y + 10), (x, y - 6), (x + 6, y - 10)], 7, 2, 9, seed=20 + i),
-              VERMILION if on else (70, 60, 56), 255 if on else 160)
+    label_col = TIER_LABEL_COLOR.get(tier, MUTED)
+    _spaced(d, (48, 56), f"{tier.upper()}   ·   {realm.upper()}" if realm else tier.upper(), 18, label_col,
+            weight="Bold", tracking=3.2)
+    if tier in ("Elite", "Beast King"):
+        tw = T.width(d, tier.upper(), font("Inter.ttf", 18, "Bold")) + 3.2 * len(tier)
+        d.line(P(48, 72, 48 + tw, 72), fill=label_col + (200,), width=round(1.5 * S))
+    name, nf = B._shrink(d, e["name"], "Cinzel.ttf", "Bold", (62, 54, 46, 40), 640)
+    if tier == "Beast King":
+        T.gold_text(img, (46, 124), name, nf, "lm", top=(255, 236, 190), bottom=(196, 146, 70))
+    else:
+        T.text(d, (46, 124), name, nf, WARM, "lm")
     d = ImageDraw.Draw(img)
-    traits = " · ".join(t for t in e["tags"][1:-1])
-    stats = f"ATK {e['atk']:,}  ·  DEF {e['def']:,}" if e.get("atk") else ""
-    T.text(d, (52, y + 38), "   ".join(s for s in (traits, stats) if s), font("Inter.ttf", 22, "SemiBold"),
-           mix(PAPER, (0, 0, 0), 0.2), "lm")
-    return y + 96
+    traits = " · ".join(e["tags"][1:-1])
+    x = 48
+    f = font("Inter.ttf", 22, "Medium")
+    if traits:
+        T.text(d, (x, 178), traits, f, MUTED, "lm")
+        x += T.width(d, traits, f) + 30
+    if e.get("atk"):
+        for icon, val, col in (("sword", e["atk"], (236, 170, 110)), ("shield", e["def"], (150, 186, 236))):
+            T.icon(img, icon, (x + 10, 178), 22, col)
+            d = ImageDraw.Draw(img)
+            T.text(d, (x + 28, 178), f"{val:,}", font("Inter.ttf", 22, "Bold"), WARM, "lm")
+            x += 28 + T.width(d, f"{val:,}", font("Inter.ttf", 22, "Bold")) + 26
+    _hp(img, 48, 600, 232, 34, e["hp"], e["max_hp"], acc.hp, e["element_seal"], e.get("bar_label"), e.get("delta", 0))
 
 
-def _hp(img, data, acc, y):
-    e = data["enemy"]
-    mx = e["max_hp"] or 1
-    ink_bar(img, 50, 520, y + 30, 30, e["hp"] / mx, acc.hp, lost=max(0, -e.get("delta", 0)) / mx)
+def _corner(img, data):
+    if data.get("result"):
+        return
     d = ImageDraw.Draw(img)
-    T.text(d, (52, y - 6), e.get("bar_label") or f"{e['hp']:,}", font("Cinzel.ttf", 40, "Black"), PAPER, "lm")
-    if not e.get("bar_label"):
-        nw = T.width(d, f"{e['hp']:,}", font("Cinzel.ttf", 40, "Black"))
-        T.text(d, (60 + nw, y + 2), f"/ {e['max_hp']:,} HP", font("Inter.ttf", 22, "SemiBold"), T.ASH, "lm")
-    if e.get("delta", 0) < 0:
-        B._damage(img, (520, y - 6), e["delta"], (255, 214, 120), anchor="rm", big=-e["delta"] >= 0.2 * mx)
-    return y + 70
+    T.text(d, (W - 48, 62), data.get("turn_label") or f"Turn {data['turn']}", font("Inter.ttf", 30, "Black"), WARM, "rm")
+    sec = data.get("seconds_label") or f"{data['seconds']}s to act"
+    T.text(d, (W - 48, 98), sec, font("Inter.ttf", 20, "SemiBold"), MUTED, "rm")
+    y = 140
+    for label in data["enemy"]["statuses"][:3]:
+        _spaced(d, (W - 48, y), label.upper(), 16, (255, 196, 160), "r", "Bold", 2.4)
+        y += 28
 
 
-def _intent(img, data, acc, y):
+def _intent(img, data, acc):
     head, hint = data["warning"]
     if not head:
         return
     danger = data.get("danger")
+    d = ImageDraw.Draw(img)
+    y = 420
+    col = DANGER if danger else mix(acc.rim, (255, 255, 255), 0.35)
     if danger:
-        _fill(img, brush_mask(img.size, [(36, y + 34), (300, y + 22), (560, y + 30)], 70, 30, 86, rough=3, seed=31),
-              (150, 24, 20), 215)
+        T.soft_glow(img, (20, y - 30, 560, y + 90), (160, 20, 10, 120), 30)
         d = ImageDraw.Draw(img)
-        T.spaced(d, (52, y - 8), "POWERFUL ATTACK" if danger == "charged" else "SIGNATURE MOVE",
-                 font("Cinzel.ttf", 20, "Black"), (255, 196, 150), 3)
-    else:
-        _fill(img, brush_mask(img.size, [(40, y + 10), (44, y + 40), (40, y + 64)], 5, 2, 6, seed=33), VERMILION, 230)
-    d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 27, "Bold")
-    lines = T.wrap(d, head, f, 480, lines=2)
-    for i, line in enumerate(lines):
-        T.text(d, (60, y + 22 + i * 32), line, f, (255, 246, 230), "lm")
-    hf = font("Inter.ttf", 20, "Medium")
-    T.text(d, (60, y + 22 + len(lines) * 32 + 4), T.fit(d, hint, hf, 480), hf, (226, 210, 190), "lm")
+    d.line(P(48, y - 12, 48, y + 70), fill=col, width=round(4 * S))
+    label = {"charged": "POWERFUL ATTACK", "signature": "SIGNATURE MOVE"}.get(danger, "NEXT MOVE")
+    _spaced(d, (66, y - 2), label, 16, col, weight="Black", tracking=3)
+    f = font("Inter.ttf", 26, "Bold")
+    for i, line in enumerate(T.wrap(d, head, f, 500, lines=2)):
+        T.text(d, (66, y + 30 + i * 32), line, f, WARM, "lm")
 
 
-def _turn(img, data):
-    if data.get("result"):
-        return
-    chop(img, (1118, 82), 52, [(data.get("turn_label") or f"TURN {data['turn']}", 17),
-                               (data.get("seconds_label") or f"{data['seconds']}s", 22)])
-    d = ImageDraw.Draw(img)
-    y = 168
-    for label in data["enemy"]["statuses"][:3]:
-        T.spaced(d, (W - 40, y), label.upper(), font("Cinzel.ttf", 18, "Black"), (255, 214, 170), 2.4, "r")
-        y += 30
+# ── You ───────────────────────────────────────────────────────────────
 
-
-def _player(img, data, acc):
+def _you(img, data, acc):
     members = data["party"]
+    d = ImageDraw.Draw(img)
     if len(members) > 1:
-        return _party(img, data, acc)
+        return _party(img, data)
     m = members[0]
     low, color = B._bar_color(m)
-    d = ImageDraw.Draw(img)
-    T.text(d, (50, 650), m["name"], font("Cinzel.ttf", 34, "Black"), (240, 96, 80) if low else PAPER, "lm")
-    nw = T.width(d, m["name"], font("Cinzel.ttf", 34, "Black"))
-    T.text(d, (66 + nw, 654), f"{m['realm']} {m['layer']}", font("Inter.ttf", 20, "SemiBold"), T.ASH, "lm")
-    ink_bar(img, 50, 560, 700, 26, m["hp"] / m["max_hp"] if m["max_hp"] else 0, color, seed=41)
-    d = ImageDraw.Draw(img)
-    T.text(d, (572, 700), m.get("bar_label") or f"{m['hp']:,} / {m['max_hp']:,}", font("Inter.ttf", 22, "Bold"),
-           PAPER, "lm")
-    if m.get("delta"):
-        B._damage(img, (560, 650), m["delta"], (236, 80, 70) if m["delta"] < 0 else (110, 230, 160), anchor="rm")
-    items = data.get("loadout", [])[:3]
-    for i, it in enumerate(items):
-        square_seal(img, (790 + i * 140, 676), 74, it["seal"], it["ready"], (it["name"], it["state"]))
+    T.text(d, (48, 664), m["name"], font("Inter.ttf", 30, "Black"), (246, 110, 92) if low else WARM, "lm")
+    nw = T.width(d, m["name"], font("Inter.ttf", 30, "Black"))
+    T.text(d, (62 + nw, 666), f"{m['realm']} {m['layer']}", font("Inter.ttf", 20, "Medium"), MUTED, "lm")
+    _hp(img, 48, 560, 716, 32, m["hp"], m["max_hp"], color, "star" if m.get("bar_label") else "heart",
+        m.get("bar_label"), m.get("delta", 0))
+    events = list(data.get("log") or [])[-2:]
+    for i, (kind, text) in enumerate(events):
+        B._log_line(img, 44, 766 + i * 30, kind, text, 640, 20)
+    _moves(img, data.get("loadout", [])[:3])
 
 
-def _party(img, data, acc):
+def _moves(img, items):
+    """Techniques and pills as medallions: lit when ready, dark with the turns left; names in full (2 lines)."""
+    if not items:
+        return
+    xs = [790, 920, 1050][:len(items)] if len(items) == 3 else [860, 1010, 1130][:len(items)]
+    cy = 702
+    for x, it in zip(xs, items):
+        col = it["color"] or K.GOLD
+        ready = it["ready"]
+        r = 40
+        d = ImageDraw.Draw(img)
+        d.ellipse(P(x - r, cy - r, x + r, cy + r), fill=(12, 10, 12, 255),
+                  outline=mix(col, (255, 255, 255), 0.3) if ready else (70, 64, 60), width=round(2.5 * S))
+        if ready:
+            core = Image.radial_gradient("L").resize(P(2 * r - 10, 2 * r - 10))
+            ci = Image.composite(Image.new("RGBA", core.size, (12, 10, 12, 255)),
+                                 Image.new("RGBA", core.size, alpha(mix(col, (0, 0, 0), 0.3), 255)), core)
+            cm = Image.new("L", core.size, 0)
+            ImageDraw.Draw(cm).ellipse((0, 0, core.size[0] - 1, core.size[1] - 1), fill=255)
+            ci.putalpha(cm)
+            img.alpha_composite(ci, P(x - r + 5, cy - r + 5))
+        T.icon(img, it["seal"], (x, cy), 50, (250, 246, 236) if ready else (96, 90, 86))
+        d = ImageDraw.Draw(img)
+        if not ready:
+            num = "".join(ch for ch in it["state"] if ch.isdigit())
+            T.text(d, (x, cy), num or "—", font("Inter.ttf", 34, "Black"), (236, 206, 160), "mm")
+        f = font("Inter.ttf", 17, "SemiBold")
+        lines = T.wrap(d, it["name"], f, 124, lines=2)
+        for j, line in enumerate(lines):
+            T.text(d, (x, cy + r + 18 + j * 20), line, f, WARM if ready else DIM, "mm")
+
+
+def _party(img, data):
     members = data["party"][:6]
     cols = 2 if len(members) > 3 else 1
     rows = math.ceil(len(members) / cols)
     for i, m in enumerate(members):
         c, r = i // rows, i % rows
-        x, y = 50 + c * 560, 640 + r * 42
+        x, y = 48 + c * 570, 662 + r * 46
         low, color = B._bar_color(m)
         d = ImageDraw.Draw(img)
-        mark = "› " if m.get("arrow") else ""
-        T.text(d, (x, y), T.fit(d, mark + m["name"], font("Inter.ttf", 22, "Bold"), 160), font("Inter.ttf", 22, "Bold"),
-               (240, 96, 80) if low or m.get("ko") else PAPER, "lm")
-        ink_bar(img, x + 180, x + 450, y + 2, 18, m["hp"] / m["max_hp"] if m["max_hp"] else 0, color, seed=50 + i)
-        d = ImageDraw.Draw(img)
-        T.text(d, (x + 462, y + 2), "KO" if m.get("ko") else f"{m['hp']:,}", font("Inter.ttf", 19, "Bold"), PAPER, "lm")
+        T.text(d, (x, y), T.fit(d, ("› " if m.get("arrow") else "") + m["name"], font("Inter.ttf", 22, "Bold"), 170),
+               font("Inter.ttf", 22, "Bold"), (246, 110, 92) if low or m.get("ko") else WARM, "lm")
+        frac = m["hp"] / m["max_hp"] if m["max_hp"] else 0
+        T.bar(img, (x + 190, y - 14, x + 520, y + 14), frac, color, "KO" if m.get("ko") else f"{m['hp']:,} / {m['max_hp']:,}")
 
 
-def _log(img, data):
-    events = list(data.get("log") or [])[-2:]
-    y = 790 if len(data["party"]) == 1 else 800
-    for i, (kind, text) in enumerate(events):
-        _fill(img, brush_mask(img.size, [(50, y + i * 34 - 4), (56, y + i * 34), (62, y + i * 34 + 4)], 6, 2, 8,
-                              seed=60 + i), VERMILION, 230)
-        B._log_line(img, 64, y + i * 34, kind, text, 1080, 23)
+# ── Result ────────────────────────────────────────────────────────────
 
-
-def _result(img, data, tier):
+def _result(img, data, acc, tier):
     label, color = B.RESULT.get(data["result"], (str(data["result"]).upper(), K.GOLD))
-    _fill(img, brush_mask(img.size, [(560, 470), (840, 452), (1150, 466)], 110, 50, 130, rough=4, seed=71),
-          (10, 8, 8), 220)
-    T.gold_text(img, (850, 446), label, font("Cinzel.ttf", 84, "Black"), "mm",
-                top=mix(color, (255, 255, 255), 0.55), bottom=mix(color, (0, 0, 0), 0.25), glow=alpha(color, 160))
-    if data["result"] == "won" and tier in ("Elite", "Beast King"):
-        d = ImageDraw.Draw(img)
-        T.spaced(d, (850, 510), "BEAST KING SLAIN" if tier == "Beast King" else "ELITE SLAIN",
-                 font("Cinzel.ttf", 24, "Black"), mix(color, (255, 255, 255), 0.4), 4, "m")
+    label = label.title() if label != "IT GOT AWAY" else "It got away"
+    veil = Image.new("RGBA", img.size, (4, 3, 5, 150))
+    img.alpha_composite(veil)
+    T.soft_glow(img, (W / 2 - 420, 160, W / 2 + 420, 460), alpha(color, 70), 70)
+    d = ImageDraw.Draw(img)
+    e, m = data["enemy"], data["party"][0]
+    won = data["result"] == "won"
+    sub = (f"{e['name']} slain" if won else f"Defeated by the {e['name']}" if data["result"] == "lost"
+           else e["name"])
+    if won and tier in ("Elite", "Beast King"):
+        _spaced(d, (W / 2, 210), ("BEAST KING" if tier == "Beast King" else "ELITE") + " · " + (e["tags"][-1] or "").upper(),
+                18, TIER_LABEL_COLOR[tier], "m", "Bold", 4)
+    T.gold_text(img, (W / 2, 290), label, font("Cinzel.ttf", 92, "Bold"), "mm",
+                top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.2))
+    d = ImageDraw.Draw(img)
+    T.text(d, (W / 2, 370), sub, font("Inter.ttf", 26, "Medium"), MUTED, "mm")
+    dealt = max(0, e["max_hp"] - e["hp"])
+    taken = max(0, m["max_hp"] - m["hp"])
+    stats = [("Turns", f"{data['turn']}"), ("Damage dealt", f"{dealt:,}"), ("Damage taken", f"{taken:,}"),
+             ("HP left", f"{m['hp'] / m['max_hp']:.0%}" if m["max_hp"] else "—")]
+    cw = 220
+    x0 = W / 2 - cw * len(stats) / 2
+    for i, (k, v) in enumerate(stats):
+        cx = x0 + cw * (i + 0.5)
+        T.text(d, (cx, 450), v, font("Inter.ttf", 40, "Black"), WARM, "mm")
+        _spaced(d, (cx, 492), k.upper(), 15, MUTED, "m", "Bold", 2.4)
+        if i:
+            d.line(P(x0 + cw * i, 430, x0 + cw * i, 500), fill=(255, 255, 255, 40), width=max(1, S))
 
 
 def render_beast_fight(data):
     acc = T.ELEMENT_ACCENTS[data["palette"]]
     tier = _tier(data)
-    img = _scene(data, acc)
-    atmosphere(img, ATMOS.get(data["palette"], "dust"), acc.rim, (0, 0, W, 600))
+    kind = STAGING.get(data["enemy"]["body"], STAGING["cat"])[0]
+    img = _world(data, acc, kind)
+    _particles(img, ATMOS.get(data["palette"], "motes"), acc.rim)
     _beast(img, data, acc, tier)
-    _wash(img)
-    y = _title(img, data, acc, tier)
-    y = _hp(img, data, acc, y)
+    _shade_left(img)
     if data.get("result"):
-        _result(img, data, tier)
+        _result(img, data, acc, tier)
     else:
-        _intent(img, data, acc, y + 6)
-        _turn(img, data)
-    _player(img, data, acc)
-    _log(img, data)
-    _ornaments(img, tier, acc.rim)
-    d = ImageDraw.Draw(img)
-    d.rectangle(P(0, 0, W - 1, H - 1), outline=(0, 0, 0, 255), width=round(3 * S))
+        _identity(img, data, acc, tier)
+        _corner(img, data)
+        _intent(img, data, acc)
+    _you(img, data, acc)
     return T.finish(img)
