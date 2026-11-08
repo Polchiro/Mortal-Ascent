@@ -662,27 +662,27 @@ def _materials_panel(img, data, acc):
     x0, y0, x1, y1 = box
     rows = data["materials"]
     shown = rows[:4] if len(rows) <= 4 else rows[:3]
-    rh = 44
+    rh = 46
     for i, m in enumerate(shown):
-        y = y0 + 78 + rh * i
-        T.icon(img, m["icon"], (x0 + 40, y), 38, T.GOLD)
+        y = y0 + 76 + rh * i
+        T.icon(img, m["icon"], (x0 + 40, y), 40, T.GOLD)
         d = ImageDraw.Draw(img)
         q = f"×{m['qty']}"
-        qf = font("Inter.ttf", 30, "Bold")
+        qf = font("Inter.ttf", 32, "Bold")
         qw = T.width(d, q, qf)
-        name, f = _shrink(d, m["name"], "Inter.ttf", "SemiBold", (30, 28, 26), x1 - x0 - 100 - qw)
+        name, f = _shrink(d, m["name"], "Inter.ttf", "SemiBold", (33, 31, 29, 27), x1 - x0 - 100 - qw)
         T.text(d, (x0 + 70, y), name, f, WHITE if not data.get("lost") else T.ASH, "lm")
         T.text(d, (x1 - 22, y), q, qf, T.GOLD_HI, "rm")
     if len(rows) > len(shown):
         d = ImageDraw.Draw(img)
-        T.text(d, (x0 + 70, y0 + 78 + rh * 3), f"+ {len(rows) - len(shown)} more", font("Inter.ttf", 28, "Medium"),
+        T.text(d, (x0 + 70, y0 + 76 + rh * 3), f"+ {len(rows) - len(shown)} more", font("Inter.ttf", 28, "Medium"),
                T.ASH, "lm")
 
 
 def _row(d, box, y, label, value, vcol=WHITE):
     x0, _, x1, _ = box
-    T.text(d, (x0 + 24, y), label, font("Inter.ttf", 30, "Medium"), (214, 206, 194), "lm")
-    T.text(d, (x1 - 24, y), value, font("Inter.ttf", 32, "Bold"), vcol, "rm")
+    T.text(d, (x0 + 24, y), label, font("Inter.ttf", 32, "Medium"), (220, 212, 200), "lm")
+    T.text(d, (x1 - 24, y), value, font("Inter.ttf", 34, "Bold"), vcol, "rm")
 
 
 def _score_panel(img, data, acc):
@@ -691,12 +691,11 @@ def _score_panel(img, data, acc):
     s = data["score"]
     x0, y0, x1, y1 = box
     d = ImageDraw.Draw(img)
-    _row(d, box, y0 + 68, "Score", f"{s['total']} / 100", T.GOLD_HI)
-    _row(d, box, y0 + 104, "Fails below", f"{s['fail_below']}", (240, 130, 110))
-    _row(d, box, y0 + 140, "Stages left", f"{s['left']}" if s["left"] else "—")
+    _row(d, box, y0 + 70, "Score", f"{s['total']} / 100", T.GOLD_HI)
+    _row(d, box, y0 + 110, "Fails below", f"{s['fail_below']}", (240, 130, 110))
     if s.get("bonus"):
-        f = font("Inter.ttf", 26, "SemiBold")
-        T.text(d, (x0 + 24, y0 + 174), T.fit(d, s["bonus"], f, x1 - x0 - 48), f, GREEN, "lm")
+        f = font("Inter.ttf", 28, "SemiBold")
+        T.text(d, (x0 + 24, y0 + 150), T.fit(d, s["bonus"], f, x1 - x0 - 48), f, GREEN, "lm")
     bx0, bx1 = x0 + 24, x1 - 24
     T.bar(img, (bx0, y1 - 30, bx1, y1 - 12), s["total"] / 100, RED if data.get("done") and s["total"] < s["fail_below"]
           else acc.hp)
@@ -724,14 +723,14 @@ def _passive_panel(img, data, acc):
     d = ImageDraw.Draw(img)
     tx = x0 + 126
     head = p.get("head") or (rarity or "None yet")
-    head, hf = _shrink(d, head, "Inter.ttf", "Bold", (32, 30, 27), x1 - tx - 18)
+    head, hf = _shrink(d, head, "Inter.ttf", "Bold", (34, 31, 28), x1 - tx - 18)
     T.text(d, (tx, y0 + 80), head, hf, col if rarity else WHITE, "lm")
-    f = font("Inter.ttf", 27, "Medium")
+    f = font("Inter.ttf", 30, "Medium")
     lines = []
     for line in p.get("lines", []):
         lines += T.wrap(d, line, f, x1 - tx - 18, 2)
-    for i, line in enumerate(lines[:4]):
-        T.text(d, (tx, y0 + 118 + i * 34), line, f, (214, 206, 194), "lm")
+    for i, line in enumerate(lines[:3]):
+        T.text(d, (tx, y0 + 124 + i * 38), line, f, (220, 212, 200), "lm")
 
 
 # ── the card ──────────────────────────────────────────────────────────

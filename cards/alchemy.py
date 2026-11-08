@@ -994,9 +994,9 @@ def _hint(img, data, bad=None):
     head, hint = data["warning"]
     tx, mw = x0 + 92, x1 - x0 - 112
     if hint:
-        head, hf = _shrink(d, head, "Inter.ttf", "Bold", (36, 33, 30), mw)
+        head, hf = _shrink(d, head, "Inter.ttf", "Bold", (38, 35, 32), mw)
         T.text(d, (tx, y0 + 36), head, hf, (255, 248, 232), "lm")
-        hint, sf = _shrink(d, hint, "Inter.ttf", "Medium", (29, 27, 25, 23), mw)
+        hint, sf = _shrink(d, hint, "Inter.ttf", "Medium", (31, 29, 27, 25), mw)
         T.text(d, (tx, y1 - 30), hint, sf, (226, 216, 200), "lm")
     else:
         head, hf = _shrink(d, head, "Inter.ttf", "Bold", (36, 32, 28), mw)
