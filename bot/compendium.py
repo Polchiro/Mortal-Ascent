@@ -477,7 +477,7 @@ def pills_overview():
             f"Jade Chests {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} · cannot be traded"]),
     ]
     return dict(subtitle="Toxicity, patterns and rare pills",
-                intro="Every pill you swallow adds toxicity; too much weakens the next ones.",
+                intro="Pills add toxicity and too much weakens the next ones. Cleansing pills wash it out.",
                 tiles=tiles, footer="Craft pills in /craft from herbs you /gather. Pick a pill kind in the menu.")
 
 
