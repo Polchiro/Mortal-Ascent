@@ -30,7 +30,7 @@ SPIRIT_CHECK_SECONDS = 10
 IDLE_TIMEOUT = PANEL_IDLE_SECONDS    # the gathering message stops after 2 idle minutes
 
 PLACES = [
-    "the misty slope", "the riverbank", "the shade of old pines", "a mossy ravine", "the foot of a waterfall",
+    "the misty slope", "the riverbank", "the shade of old pines", "the foot of a waterfall",
     "a sunlit meadow", "the ruins of a mountain shrine", "the edge of a bamboo grove",
 ]
 SEARCH_LINES = [
