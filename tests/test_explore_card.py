@@ -210,3 +210,14 @@ def test_explore_cards_use_the_painted_scenes(conn):
     for kind in ("treasure_chest", "wandering_merchant", "blessed_land", "injured_stranger"):   # last: no art yet
         exp.encounter = kind
         assert card.render_encounter(explore_card.encounter_data(exp)).size == (card.W, card.H)
+
+
+@pytest.mark.parametrize("kind", list(explore.ENCOUNTERS))
+def test_new_explore_cards_render_every_encounter(conn, kind):
+    from cards import explore_v2
+    new_player(conn)
+    exp = Expedition(conn, 1, random.Random(0))
+    exp.next_step()
+    assert explore_v2.render_crossroads(explore_card.crossroads_data(exp)).size == (explore_v2.W, explore_v2.H)
+    exp.encounter = kind
+    assert explore_v2.render_encounter(explore_card.encounter_data(exp)).size == (explore_v2.W, explore_v2.H)
