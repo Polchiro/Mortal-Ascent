@@ -68,15 +68,17 @@ def test_small_overflow_just_starts_the_next_layer():
     assert ok and (p["layer"], p["qi"], p["qi_overflow"]) == (4, 10, 0)
 
 
-def test_failed_phase_breakthrough_keeps_the_overflow():
-    p, _ = rules.add_qi(at("Martial Apprentice", 3), 200)
+def test_failed_phase_breakthrough_refills_the_bar_from_the_overflow():
+    p, _ = rules.add_qi(at("Martial Apprentice", 3), 200)   # bar 16, 184 waiting
     ok, msg = rules.attempt_breakthrough(p, rng=AlwaysFail())
     assert ok is False and p["layer"] == 3
-    assert p["qi"] == pytest.approx(16 * 0.8)                # loses 20% of the bar only
-    assert p["qi_overflow"] == pytest.approx(184)            # the waiting Qi is kept
-    assert "184 Qi waiting" in msg
-    p, _ = rules.add_qi(p, 5)                                # new Qi refills the bar first
-    assert p["qi"] == 16 and p["qi_overflow"] == pytest.approx(184 + 1.8)
+    lost = 16 * 0.2                                          # still loses 20% of the bar only
+    assert p["qi"] == 16                                     # the waiting Qi refills the bar
+    assert p["qi_overflow"] == pytest.approx(184 - lost)
+    assert p["qi"] + p["qi_overflow"] == pytest.approx(200 - lost)
+    assert "refills your bar" in plain(msg)
+    p, _ = rules.add_qi(p, 5)                                # new Qi goes behind the gate
+    assert p["qi"] == 16 and p["qi_overflow"] == pytest.approx(184 - lost + 5)
 
 
 def test_realm_gate_keeps_and_then_releases_the_overflow():
@@ -85,11 +87,12 @@ def test_realm_gate_keeps_and_then_releases_the_overflow():
     assert p["qi"] == need and p["qi_overflow"] == pytest.approx(68)
     assert "68 Qi is waiting" in plain(events[-1])
     ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail(), now=0)
-    assert ok is False and p["injured_until"] and p["qi_overflow"] == pytest.approx(68)
-    p, _ = rules.add_qi(p, need)                             # refill (extra goes to overflow again)
+    assert ok is False and p["injured_until"] and p["qi"] == need     # the waiting Qi refills the bar
+    assert p["qi_overflow"] == pytest.approx(68 - need * 0.2)
+    p, _ = rules.add_qi(p, need)                             # more Qi waits behind the gate
     ok, _ = rules.attempt_breakthrough(p, rng=AlwaysWin())
     assert ok and (p["realm"], p["layer"]) == ("Martial Warrior", 2)          # 64 for the 1st layer, then 2nd
-    total = 68 + need * 0.8          # the waiting 68 + what the refill put above the bar (32 - 6.4 = 25.6)
+    total = 68 + need * 0.8          # 68 + 32 more, minus the 6.4 the failure cost
     assert p["qi"] == pytest.approx(total - 64) and p["qi_overflow"] == 0
 
 

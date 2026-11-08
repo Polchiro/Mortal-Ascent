@@ -438,6 +438,7 @@ def register_commands(bot):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
         techs = db.get_techniques(bot.conn, uid)
+        rules.refill_bar(p)     # waiting Qi tops up a bar a failed attempt left short (saved on the attempt)
         kind, target = rules.next_gate(p)
         need = rules.qi_needed(p["realm"], p["layer"])
         blocked = None

@@ -84,7 +84,7 @@ LESSONS = [
                       "first. I mention you once when your bar fills; **/settings** turns that off."),
       ("The odds", f"Phase bottleneck: {training.PHASE_BOTTLENECK_SUCCESS:.0%}. New realm: "
                    f"{training.REALM_BREAKTHROUGH_SUCCESS:.0%} (Mortal → Martial Apprentice always succeeds). "
-                   f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your bar; the Qi waiting behind the gate is kept."),
+                   f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your bar; the Qi waiting behind the gate refills it, so you can try again."),
       ("Higher gates", "Martial Master, Martial King and Martial Saint also ask for technique mastery, "
                        "and the last two for a slain Beast King.")]),
 
