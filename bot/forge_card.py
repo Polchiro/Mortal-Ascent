@@ -31,7 +31,7 @@ def _gear(plan):
     else:
         where = "all slots" if len(slots) > 1 else ""
     sub = " · ".join(x for x in (f"{item['grade'].title()} {plan.gear}", ACTION_WORD[plan.action], where) if x)
-    return {"name": item["name"], "tier": item["grade"], "icon": gear_icon(item), "sub": sub}
+    return {"name": item["name"], "tier": item["grade"], "icon": gear_icon(item), "sub": sub, "kind": plan.gear}
 
 
 def _materials(plan):
@@ -77,20 +77,17 @@ def _cap(plan):
 
 def _passive_forecast(plan):
     lines = [plain(materials.MATERIALS[plan.essence]["name"]) if plan.essence else "Any family",
-             "Epic+ needs a fine rune"]
+             "Epic+: fine rune"]
     return {"rarity": None, "cap": _cap(plan), "head": f"Up to {_cap(plan)}", "lines": lines}
 
 
 WARNINGS = {
-    "ignite": ("Keep the fire in the hidden safe zone", "Pump to heat, Vent to cool. Read the omen: gusts and draughts "
-                                                         "move the heat after you act."),
-    "heat": ("Pull the metal out at the right colour", "Too early or too late loses points. Past white, it burns."),
-    "hammer": ("Read the metal before each strike", "Rings true: strike hard · dull thud: strike light · fading glow: "
-                                                     "reheat."),
-    "quench_choose": ("Choose the quench", "Water: narrow window, up to 20 points. Oil: wide window, up to 15."),
-    "quench": ("Plunge at the right temperature", "Wait cools it a lot, Wait a breath a little. Too cold and the "
-                                                  "quench fails."),
-    "inscribe": ("Carve the strokes in order", "Inscribe counts most: Epic and above need a near-perfect rune."),
+    "ignite": ("Keep the fire in the safe zone", "Pump: hotter · Vent: cooler · gusts move it after"),
+    "heat": ("Pull out at the right colour", "Past white, it burns"),
+    "hammer": ("Read the metal", "Rings true: hard · dull thud: light · fading: reheat"),
+    "quench_choose": ("Choose the quench", "Water: up to 20 · Oil: safer, up to 15"),
+    "quench": ("Plunge at the right heat", "Wait: cools a lot · Breath: a little"),
+    "inscribe": ("Carve the strokes in order", "Epic and above need a near-perfect rune"),
 }
 
 
@@ -178,7 +175,7 @@ def _result(plan, g, data, outcome):
         title = outcome.get("title") or "The forge failed"
         data["result"] = {"title": title.rstrip("."), "saved": "Second Chance saved the materials."
                           if outcome.get("refunded") else None}
-        data["passive"] = {"rarity": None, "head": "No passive", "lines": ["The gear and its", "passives are safe."]}
+        data["passive"] = {"rarity": None, "head": "No passive", "lines": ["Gear is safe"]}
         data["warning"] = (title, (f"+{exp:,} blacksmith EXP" if exp is not None else "") + rank)
         data["warning_icon"] = "skull"
     return data
