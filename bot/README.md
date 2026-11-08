@@ -92,7 +92,7 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **Merchant** sells one Qi pill (Mortal grade at tier 1, Yellow at tier 2, Mystic above) for
   40 / 120 / 400 coins and one herb for 10 (× realm scale).
 - **Herbs** are the alchemy herbs in `alchemy.py` (docs/alchemy.md): 4 types × 5 tiers, each with an age.
-  They come from /gather, Herb Patches in /explore (1–3 of your tier) and merchants (a 10-year herb of your tier).
+  They come from /gather, Herb Patches in /explore (1–3, any grade by rarity) and merchants (a 10-year herb of your tier).
   They stack by kind and age in the Herbs bag tab. The old herbs (Dew Lotus Petal, Tiger Bone Moss, ...) are gone:
   any left in a bag turn into the closest 10-year Mortal herb when the bot starts.
 - **/gather** isn't blocked by injuries, only by seclusion. HP isn't stored outside fights, so a look-alike's 5% HP

@@ -55,7 +55,8 @@ def field_data(g, player, r, result_text=None, picked=None):
     tier, type_ = d.get("tier", herb.get("grade")), d.get("type")
     choices = [{"key": k, "name": r.names[k], "look": label} for k, label, _ in r.options]
     data = dict(_common(g, player), place=r.place, tier=tier, name=herb["name"], type=type_, age=d.get("age", 10),
-                old=r.old, desc=alchemy.HERBS[tier][type_][1], seconds=r.seconds, choices=choices, result=None)
+                old=r.old, rarity=alchemy.HERB_RARITY[tier][0], desc=alchemy.HERBS[tier][type_][1], seconds=r.seconds,
+                choices=choices, result=None)
     if result_text is not None:
         data["result"] = {"answer": r.answer, "picked": picked, "outcome": outcome(result_text), "text": result_text}
     return data

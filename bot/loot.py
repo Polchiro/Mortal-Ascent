@@ -115,20 +115,10 @@ TYPE_EMOJI = {"qi": "🌀", "healing": "❤️", "purity": "💧", "breakthrough
 TYPE_LABEL = {"qi": "Qi", "healing": "Healing", "purity": "Purity", "breakthrough": "Breakthrough"}
 
 
-def herb_tier(realm, rng=random, alchemy_exp=None):
-    """The tier of herb a cultivator of this realm finds: their own, or 15% of the time one lower.
-    With `alchemy_exp`, a cultivator whose alchemist rank can't yet refine their realm's grade finds
-    herbs of the grade they CAN refine half the time (alchemy.LEARNING_TIER_CHANCE)."""
-    tier = alchemy.HERB_TIER_BY_REALM[realm]
-    i = alchemy.GRADES.index(tier)
-    if alchemy_exp is not None:
-        rank = max(r for r, need in alchemy.ALCHEMIST_RANK_EXP.items() if alchemy_exp >= need)
-        learn = alchemy.learning_grade(rank)
-        if alchemy.GRADES.index(learn) < i and rng.random() < alchemy.LEARNING_TIER_CHANCE:
-            return learn
-    if i > 0 and rng.random() < alchemy.LOWER_TIER_CHANCE:
-        return alchemy.GRADES[i - 1]
-    return tier
+def herb_tier(realm, rng=random):
+    """The grade of a herb found by a cultivator of this realm: any grade, by rarity
+    (alchemy.HERB_GRADE_WEIGHTS), with higher realms a little luckier (alchemy.REALM_HERB_LUCK)."""
+    return pick(alchemy.herb_grade_odds(realm), rng)
 
 
 def age_odds(streak=0, bonus=0.0):
@@ -156,9 +146,9 @@ def herb(tier="Mortal", type_=None, age=10, rng=random):
             "data": {"tier": tier, "type": type_, "age": age}}
 
 
-def roll_herb(realm, rng=random, streak=0, alchemy_exp=None):
+def roll_herb(realm, rng=random, streak=0):
     """A random herb for this realm with a rolled type and age (herb patches, rewards)."""
-    return herb(herb_tier(realm, rng, alchemy_exp), roll_herb_type(rng), roll_age(rng, streak))
+    return herb(herb_tier(realm, rng), roll_herb_type(rng), roll_age(rng, streak))
 
 
 def herb_label(item):

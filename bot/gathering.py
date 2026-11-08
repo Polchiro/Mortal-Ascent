@@ -72,6 +72,7 @@ class Gathering:
         self.gathered = []              # herbs gathered this session
         self.reactions = []             # seconds per herb pick, for the review flag
         self.over = False
+        self.announce = None            # a rare find to announce in the channel (set by answer, read by the view)
         if p["spirit_check_in"] is None:          # first gather ever (0 = a check is waiting, even after a restart)
             db.update_player(conn, user_id, spirit_check_in=self.rng.randint(*alchemy.SPIRIT_CHECK_EVERY))
 
@@ -90,7 +91,7 @@ class Gathering:
         return self.round
 
     def _herb_round(self, p):
-        tier = loot.herb_tier(p["realm"], self.rng, p["alchemy_exp"])
+        tier = loot.herb_tier(p["realm"], self.rng)
         type_ = loot.roll_herb_type(self.rng)
         age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]
@@ -114,6 +115,9 @@ class Gathering:
             seconds = max(alchemy.OLD_HERB_MIN_SECONDS, seconds - alchemy.OLD_HERB_SECONDS_LESS)
             prompt = (f"✨ *A **{age}-year {name}**! It senses you and begins to sink into the earth...*\n"
                       f"> *{desc}*")
+        appear = alchemy.HERB_RARITY[tier][2]
+        if appear:
+            prompt = f"{appear}\n{prompt}"
         return Round("herb", prompt, [(k, alchemy.LOOKS[plant], "🌿") for k, _, plant in keyed], answer, seconds,
                      herb=loot.herb(tier, type_, age), old=old,
                      decoys={k for k, kind, _ in keyed if kind == "decoy"},
@@ -150,6 +154,11 @@ class Gathering:
                 text = f"✅ You gather **{loot.describe(r.herb)}**."
                 if r.old:
                     text = f"✨ You pull it free before it escapes: **{loot.describe(r.herb)}**!"
+                tier = r.herb["grade"]
+                if alchemy.HERB_RARITY[tier][3]:
+                    text += f"\n{alchemy.HERB_RARITY[tier][3]}"
+                if alchemy.is_announced(tier):
+                    self.announce = r.herb
                 extra = materials.roll_gather(p["realm"], self.rng, materials.prospector(p))
                 if extra:
                     loot.store(self.conn, self.user_id, extra)
@@ -206,6 +215,16 @@ class Gathering:
         if now - self.started >= alchemy.FLAG_CONTINUOUS_HOURS * 3600:
             return f"{alchemy.FLAG_CONTINUOUS_HOURS}+ hours of gathering without a break"
         return None
+
+
+def rare_find_announcement(name, herb):
+    """The channel message for an Earth or Heaven grade find."""
+    tier = herb["grade"]
+    word, emoji = alchemy.HERB_RARITY[tier][:2]
+    odds = alchemy.herb_grade_odds("Mortal")[tier]
+    return (f"{emoji} **{word.upper()} DISCOVERY!** {emoji}\n**{name}** has gathered "
+            f"**{loot.describe(herb)}**, a {tier} grade herb! (Only about 1 in {round(1 / odds):,} herbs a Mortal "
+            f"finds is this rare.)")
 
 
 def streak_text(streak):
@@ -389,6 +408,23 @@ class GatherView(OwnedView):
         if self.g.over:
             self.finish()
         await self.show(interaction, view=not self.g.over)
+        await self.announce_find()
+
+    async def announce_find(self):
+        """A very rare find gets its own message in the channel, so everyone sees it."""
+        herb, self.g.announce = self.g.announce, None
+        channel = getattr(self.message, "channel", None)
+        if not herb or channel is None:
+            return
+        try:
+            user = self.bot.get_user(self.owner_id) or await self.bot.fetch_user(self.owner_id)
+            name = user.display_name if user else "A cultivator"
+        except Exception:
+            name = "A cultivator"
+        try:
+            await channel.send(rare_find_announcement(name, herb))
+        except discord.HTTPException:
+            log.warning("Could not announce a rare herb find", exc_info=True)
 
     async def show_round(self, interaction):
         await self.show(interaction)
