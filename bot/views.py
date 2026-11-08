@@ -879,7 +879,7 @@ class SparView(FightMixin, OwnedView):
                 "seconds": battle_data.TURN_SECONDS, "result": None,
                 "enemy": {"name": "The Master", "seal": "school:Body", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
                           "element_seal": "school:Palm", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],
-                          "body": "master", "slug": None, "delta": round(sp.m_hp) - prev[1] if prev else 0},
+                          "body": "master", "slug": "the_master", "delta": round(sp.m_hp) - prev[1] if prev else 0},
                 "party_title": "You",
                 "party": [{"name": self.player["name"], "realm": self.player["realm"], "layer": self.player["layer"],
                            "hp": round(sp.hp), "max_hp": round(sp.max_hp), "move": self.last_move or "Waiting...",
