@@ -483,13 +483,6 @@ def pills_overview():
 
 # ── Herbs ─────────────────────────────────────────────────────────────
 
-def herb_realms():
-    tiers = {}
-    for realm, tier in alchemy.HERB_TIER_BY_REALM.items():
-        tiers.setdefault(tier, []).append(realm)
-    return tiers
-
-
 def herbs_page(grade):
     tiles = []
     for type_, (name, desc) in alchemy.HERBS[grade].items():
@@ -500,9 +493,16 @@ def herbs_page(grade):
     for name, desc in alchemy.DECOYS[grade]:
         tiles.append(tile("skull", DECOY_COLOR, name, ["Poisonous look-alike", desc], cjk=False,
                           badge=("Poison", DECOY_COLOR)))
-    realms = herb_realms()[grade]
-    return dict(subtitle=f"Found from {realms[0]}", intro=f"Every recipe for a {grade} grade pill uses these.",
-                tiles=tiles, footer=f"Gathered in /gather by {realm_list(realms)}. Look-alikes differ in one detail.")
+    return dict(subtitle=f"{alchemy.HERB_RARITY[grade][0]} · found at every realm",
+                intro=f"Every recipe for a {grade} grade pill uses these.",
+                tiles=tiles, footer=f"{odds_pct(alchemy.herb_grade_odds('Mortal')[grade])} of a Mortal's herbs, "
+                                    "more at higher realms."
+                                    " Look-alikes differ in one detail.")
+
+
+def odds_pct(c):
+    """A small chance with enough digits to read: 80%, 3.5%, 0.4%."""
+    return f"{c * 100:.1f}".rstrip("0").rstrip(".") + "%"
 
 
 def herbs_overview():
@@ -526,18 +526,16 @@ def herbs_overview():
             f"Miss {alchemy.SPIRIT_CHECK_FAILS_TO_PAUSE} in a row: pause {alchemy.SPIRIT_CHECK_PAUSE_MINUTES} min"]),
         tile("herb", T.ASH, "Herb types", [" · ".join(f"{loot.TYPE_LABEL[t]} {pct(c)}"
                                                       for t, c in alchemy.HERB_TYPE_CHANCE.items())], cjk=False),
-        tile("chest", T.LOTUS, "Other sources", [f"Herb Patches in /explore: {lo}–{hi} herbs of your tier",
+        tile("chest", T.LOTUS, "Other sources", [f"Herb Patches in /explore: {lo}–{hi} herbs, same odds",
                                                  f"Merchants sell 10-year herbs ({MERCHANT_HERB_PRICE} coins)"],
              cjk=False),
     ]
-    tiers = herb_realms()
     return dict(subtitle="How to /gather",
                 intro="Use /gather as long as you like. Poisonous look-alikes differ in one detail.",
                 tiles=tiles,
-                footer="Herb tier by realm: " + " · ".join(f"{t} {REALM_SHORT[r[0]]}+"
-                                                           for t, r in tiers.items())
-                       + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower. Until your alchemist rank can"
-                       f" refine your realm's grade, {pct(alchemy.LEARNING_TIER_CHANCE)} are the grade you can.")
+                footer="Every grade at every realm. Mortal odds: "
+                       + " · ".join(f"{g} {odds_pct(c)}" for g, c in alchemy.herb_grade_odds("Mortal").items())
+                       + ". Higher realms are luckier.")
 
 
 # ── sections ──────────────────────────────────────────────────────────

@@ -48,6 +48,9 @@ HERB_COLOR = {"qi": (110, 170, 240), "healing": (232, 96, 96), "purity": (100, 2
               "breakthrough": (204, 150, 92)}
 HERB_ICON = {"qi": "misc:herb_qi", "healing": "misc:herb_healing", "purity": "misc:herb_purity",
              "breakthrough": "misc:herb_breakthrough"}
+# plate colour for rare grades (Common and Uncommon keep the bronze frame)
+RARITY_COLOR = {"Rare": (120, 190, 255), "Very Rare": (200, 140, 255), "Legendary": (255, 205, 90)}
+
 OUTCOME = {"gathered": ("Gathered", GREEN_OK, "check"), "full": ("Bag full", (236, 196, 90), "check"),
            "poison": ("Poisoned", RED_BAD, "skull"), "wrong": ("Wrong plant", (236, 150, 70), "cross"),
            "slow": ("Too slow", (190, 180, 160), "hourglass"), "passed": ("Passed", GREEN_OK, "check"),
@@ -322,20 +325,24 @@ def render_field(data):
     d = ImageDraw.Draw(img)
     T.spaced(d, (x0 + 30, y0 + 34), f"Herb field  ·  {PLACE_NAME.get(data['place'], data['place'])}  ·  "
              f"{data['tier']} herbs".upper(), font("Cinzel.ttf", 24, "Bold"), mix(T.GOLD, WHITE, 0.2), 2.0)
+    rarity = data.get("rarity", "Common")
+    rare_col = RARITY_COLOR.get(rarity)
 
-    # the "you are looking for" plate
+    # the "you are looking for" plate (framed in the rarity's colour for Rare and above)
     plate = (x0 + 24, y0 + 64, x0 + 790, y1 - 22)
     _scrim(img, plate, 205)
-    _frame_box(img, plate, T.BRONZE)
+    _frame_box(img, plate, rare_col or T.BRONZE)
     px0, py0, px1, py1 = plate
     col = HERB_COLOR.get(data["type"], JADE)
     T.seal(img, (px0 + 82, py0 + 140), 60, HERB_ICON.get(data["type"], "herb"), col)
     d = ImageDraw.Draw(img)
     tx = px0 + 166
-    T.spaced(d, (tx, py0 + 36), "YOU ARE LOOKING FOR", font("Cinzel.ttf", 24, "Bold"), T.GOLD, 2.2)
+    T.spaced(d, (tx, py0 + 36), f"{rarity.upper()} FIND  ·  YOU ARE LOOKING FOR" if rare_col
+             else "YOU ARE LOOKING FOR", font("Cinzel.ttf", 24, "Bold"), rare_col or T.GOLD, 2.2)
     name = (f"{data['age']}-year " if data["old"] else "") + data["name"]
     name, nf = _shrink(d, name.upper(), "Cinzel.ttf", "Black", (50, 44, 38, 32), px1 - tx - 20)
-    T.gold_text(img, (tx, py0 + 90), name, nf, "lm", glow=col if not data["old"] else (250, 220, 120))
+    T.gold_text(img, (tx, py0 + 90), name, nf, "lm",
+                glow=rare_col or (col if not data["old"] else (250, 220, 120)))
     d = ImageDraw.Draw(img)
     meta = f"{data['tier']} herb  ·  {TYPE_LABEL.get(data['type'], data['type'])}  ·  {TYPE_USE.get(data['type'], '')}"
     T.text(d, (tx, py0 + 140), T.fit(d, meta, font("Inter.ttf", 25, "SemiBold"), px1 - tx - 20),
@@ -347,6 +354,10 @@ def render_field(data):
     if data["old"]:
         T.text(d, (tx, py1 - 22), "An old herb: it fights back. Less time, more choices.",
                font("Inter.ttf", 24, "SemiBold"), (250, 214, 120), "lm")
+    elif rare_col:
+        line = f"{rarity} at every realm. Don't let it slip away!"
+        T.text(d, (tx, py1 - 22), T.fit(d, line, font("Inter.ttf", 24, "SemiBold"), px1 - tx - 20),
+               font("Inter.ttf", 24, "SemiBold"), rare_col, "lm")
 
     # countdown ring and streak
     result = data.get("result")

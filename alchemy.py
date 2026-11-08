@@ -23,10 +23,57 @@ HERB_TIER_BY_REALM = {
     "Martial Ancestor": "Heaven",
     "Martial Saint": "Heaven",
 }
-LOWER_TIER_CHANCE = 0.15
-# While your alchemist rank is too low to refine pills of your realm's herb grade, this share of
-# your herbs are of the highest grade you CAN refine (the "learning grade"), so you can level up.
-LEARNING_TIER_CHANCE = 0.50
+# HERB_TIER_BY_REALM is the herb (and beast core) grade that belongs to a realm: pill strength and
+# Beast Cores use it. It does NOT limit what /gather finds: every grade can be found at every realm.
+
+# ── Herb rarity (what /gather and /explore herb patches find) ─────────
+# Base weight of each grade. With no luck, the chance of a grade is its weight / the sum of all weights,
+# so these are percentages for a Mortal: 80% Mortal, 15% Yellow, 3.5% Mystic, 1.1% Earth, 0.4% Heaven.
+# Change these to rebalance; they don't need to add up to 100.
+HERB_GRADE_WEIGHTS = {"Mortal": 80.0, "Yellow": 15.0, "Mystic": 3.5, "Earth": 1.1, "Heaven": 0.4}
+
+# Realm luck: a grade's weight is multiplied by luck ** (how many grades above Mortal it is).
+# 1.0 = the base table. Higher realms find rare herbs more often, but Mortal herbs never disappear.
+REALM_HERB_LUCK = {
+    "Mortal": 1.0,
+    "Martial Apprentice": 1.1,
+    "Martial Warrior": 1.2,
+    "Martial Expert": 1.35,
+    "Martial Master": 1.5,
+    "Grand Martial Master": 1.7,
+    "Martial Grandmaster": 1.9,
+    "Martial King": 2.15,
+    "Martial Emperor": 2.4,
+    "Martial Ancestor": 2.7,
+    "Martial Saint": 3.0,
+}
+
+# How a find of each grade is presented: (rarity word, emoji, line when it appears, line when you gather it)
+HERB_RARITY = {
+    "Mortal": ("Common", "🌿", "", ""),
+    "Yellow": ("Uncommon", "🌾", "", ""),
+    "Mystic": ("Rare", "🌟", "🌟 *A faint glimmer: this is a rare **Mystic** grade herb!*",
+               "🌟 A rare Mystic grade herb!"),
+    "Earth":  ("Very Rare", "💫", "💫 *The ground hums. A very rare **Earth** grade herb grows here!*",
+               "💫 A very rare Earth grade herb! Few cultivators ever hold one."),
+    "Heaven": ("Legendary", "🌈", "🌈 *Heavenly light pours down. A legendary **Heaven** grade herb!*",
+               "🌈 **A LEGENDARY HEAVEN GRADE HERB!** The heavens themselves take note."),
+}
+# Finds of this grade and above are also announced in the channel
+ANNOUNCE_FROM_GRADE = "Earth"
+
+
+def herb_grade_odds(realm):
+    """{grade: chance} of finding each herb grade at this realm (adds up to 1)."""
+    luck = REALM_HERB_LUCK.get(realm, 1.0)
+    weights = {g: w * luck ** GRADES.index(g) for g, w in HERB_GRADE_WEIGHTS.items()}
+    total = sum(weights.values())
+    return {g: w / total for g, w in weights.items()}
+
+
+def is_announced(grade):
+    return GRADES.index(grade) >= GRADES.index(ANNOUNCE_FROM_GRADE)
+
 
 HERB_TYPE_CHANCE = {"qi": 0.30, "healing": 0.20, "purity": 0.35, "breakthrough": 0.15}
 
@@ -291,11 +338,6 @@ BREAKTHROUGH_EXP_MULTIPLIER = 2
 EXPLOSION_EXP = 0.20
 # (minimum ranks above the pill's required rank, EXP multiplier)
 RANK_EXP_PENALTY = [(3, 0.1), (1, 0.5), (0, 1.0)]
-
-def learning_grade(rank):
-    """The highest herb grade an alchemist of this rank can refine into pills (Qi Pill rank)."""
-    return max((g for g in GRADES if QI_PILLS[g]["rank"] <= rank), key=GRADES.index)
-
 
 def craft_exp(grade, patterns, breakthrough=False, ranks_above=0):
     base = CRAFT_BASE_EXP[grade]

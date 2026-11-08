@@ -53,14 +53,15 @@ def test_a_decoy_looks_different_from_its_herb():
         assert diff is not None                                           # ... drawn with its one difference
 
 
-@pytest.mark.parametrize("realm", ["Mortal", "Martial Apprentice", "Martial Expert", "Grand Martial Master",
-                                   "Martial King"])
-def test_field_card_renders_for_every_herb_tier(conn, realm):
-    new_player(conn, realm=realm)
+@pytest.mark.parametrize("tier", alchemy.GRADES)
+def test_field_card_renders_for_every_herb_tier(conn, tier, monkeypatch):
+    new_player(conn, realm="Mortal")
+    monkeypatch.setattr(gathering.loot, "herb_tier", lambda realm, rng=None: tier)
     g = gathering.Gathering(conn, 1, random.Random(2))
     r = g.next_round()
-    assert r.kind == "herb"
+    assert r.kind == "herb" and r.herb["grade"] == tier
     data = gather_card.field_data(g, g.player, r)
+    assert data["rarity"] == alchemy.HERB_RARITY[tier][0]
     assert [c["look"] for c in data["choices"]] == [label for _, label, _ in r.options]
     assert herbfield.render_field(data).size == (herbfield.W, herbfield.H)
 

@@ -237,11 +237,14 @@ class Expedition:
         self.story.append(f"📦 Hidden under the roots: a **{c['name']}**! (Open it from /inventory.)")
 
     def _herb_patch(self):
-        found = [loot.roll_herb(self.player["realm"], self.rng, alchemy_exp=self.player["alchemy_exp"])
+        found = [loot.roll_herb(self.player["realm"], self.rng)
                  for _ in range(self.rng.randint(*alchemy.HERB_PATCH_HERBS))]
         self.items += found
         self.story.append("🌿 A patch of wild herbs! You gather " + ", ".join(f"**{loot.describe(h)}**" for h in found)
                           + ". (**/gather** finds more.)")
+        rarest = max(found, key=lambda h: alchemy.GRADES.index(h["grade"]))
+        if alchemy.HERB_RARITY[rarest["grade"]][3]:
+            self.story.append(alchemy.HERB_RARITY[rarest["grade"]][3])
 
     def _ore_vein(self):
         found = materials.roll_ore_vein(self.player["realm"], self.rng, materials.prospector(self.player))
@@ -340,7 +343,7 @@ class Expedition:
         if self.rng.random() < explore.INJURED_STRANGER_GRATEFUL:
             coins = loot.roll_coins(self.player, STRANGER_REWARD_COINS, self.rng)
             self.coins += coins
-            h = loot.roll_herb(self.player["realm"], self.rng, alchemy_exp=self.player["alchemy_exp"])
+            h = loot.roll_herb(self.player["realm"], self.rng)
             self.items.append(h)
             self.story.append(f"🙏 *\"I won't forget this!\"* They press a reward into your hands: "
                               f"🪷 {coins} and **{loot.describe(h)}**.")

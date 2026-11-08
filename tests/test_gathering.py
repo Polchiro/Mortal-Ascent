@@ -40,11 +40,33 @@ def test_age_odds_add_up_and_streak_raises_old_herbs():
     assert loot.age_odds(9)[50] == alchemy.HERB_AGES[50]["chance"]
 
 
-def test_herb_tier_follows_realm():
+def test_every_grade_can_be_found_at_every_realm():
+    for realm in alchemy.HERB_TIER_BY_REALM:
+        odds = alchemy.herb_grade_odds(realm)
+        assert set(odds) == set(alchemy.GRADES)
+        assert abs(sum(odds.values()) - 1) < 1e-9
+        assert all(c > 0 for c in odds.values())
+        assert max(odds, key=odds.get) == "Mortal"          # Mortal herbs never become rare
+
+
+def test_mortal_odds_follow_the_weight_table():
+    odds = alchemy.herb_grade_odds("Mortal")
+    total = sum(alchemy.HERB_GRADE_WEIGHTS.values())
+    for g, w in alchemy.HERB_GRADE_WEIGHTS.items():
+        assert odds[g] == pytest.approx(w / total)
     rng = random.Random(1)
-    tiers = {loot.herb_tier("Martial Expert", rng) for _ in range(300)}
-    assert tiers == {"Mystic", "Yellow"}                      # own tier, sometimes one lower
-    assert {loot.herb_tier("Mortal", rng) for _ in range(50)} == {"Mortal"}
+    tiers = [loot.herb_tier("Mortal", rng) for _ in range(5000)]
+    assert 0.77 < tiers.count("Mortal") / len(tiers) < 0.83
+    assert "Mystic" in tiers                                  # rare grades really drop for a Mortal
+
+
+def test_higher_realms_are_luckier_for_rare_herbs():
+    order = list(alchemy.REALM_HERB_LUCK)
+    for grade in ["Mystic", "Earth", "Heaven"]:
+        chances = [alchemy.herb_grade_odds(r)[grade] for r in order]
+        assert chances == sorted(chances)
+    assert alchemy.herb_grade_odds("Martial Saint")["Mortal"] > 0.25
+    assert alchemy.herb_grade_odds("Mortal")["Heaven"] < 0.01
 
 
 def test_old_herbs_are_swapped_for_new_ones(tmp_path):
@@ -79,13 +101,13 @@ def test_herbs_show_in_their_own_bag_tab(conn):
 
 # ── /explore gives the new herbs ──────────────────────────────────────
 
-def test_herb_patch_gives_herbs_of_your_tier(conn):
+def test_herb_patch_gives_herbs_of_any_grade(conn):
     new_player(conn, realm="Martial Warrior")
     e = Expedition(conn, 1, random.Random(3))
     for _ in range(20):
         e._herb_patch()
     herbs = [i for i in e.items]
-    assert herbs and all(h["category"] == "herbs" and h["grade"] in ("Yellow", "Mortal") for h in herbs)
+    assert herbs and all(h["category"] == "herbs" and h["grade"] in alchemy.GRADES for h in herbs)
     lo, hi = alchemy.HERB_PATCH_HERBS
     assert lo * 20 <= len(herbs) <= hi * 20
 
@@ -328,25 +350,19 @@ def test_stop_during_a_round_counts_it_as_missed(conn):
     asyncio.run(go())
 
 
-def test_learning_grade_follows_qi_pill_ranks():
-    assert [alchemy.learning_grade(r) for r in range(1, 10)] == [
-        "Mortal", "Mortal", "Yellow", "Yellow", "Mystic", "Mystic", "Earth", "Earth", "Heaven"]
 
-
-def test_low_rank_alchemist_finds_herbs_they_can_refine():
-    rng = random.Random(7)
-    exp_rank2 = alchemy.ALCHEMIST_RANK_EXP[2]
-    tiers = [loot.herb_tier("Martial Apprentice", rng, exp_rank2) for _ in range(2000)]
-    share = tiers.count("Mortal") / len(tiers)
-    assert 0.5 < share < 0.65          # 50% learning grade + 15% of the rest one tier lower
-    # a Mystic-realm 2nd Grade alchemist learns on Mortal herbs, not Yellow ones
-    tiers = {loot.herb_tier("Martial Expert", rng, exp_rank2) for _ in range(500)}
-    assert "Mortal" in tiers
-
-
-def test_enough_rank_keeps_normal_odds():
-    rng = random.Random(7)
-    exp_rank3 = alchemy.ALCHEMIST_RANK_EXP[3]
-    tiers = [loot.herb_tier("Martial Apprentice", rng, exp_rank3) for _ in range(2000)]
-    assert tiers.count("Mortal") / len(tiers) < 0.2
-    assert {loot.herb_tier("Mortal", rng, 0) for _ in range(50)} == {"Mortal"}
+@pytest.mark.parametrize("tier", alchemy.GRADES)
+def test_rare_finds_get_their_own_lines_and_announcement(conn, tier, monkeypatch):
+    new_player(conn)
+    monkeypatch.setattr(gathering.loot, "herb_tier", lambda realm, rng=None: tier)
+    g = gathering.Gathering(conn, 1, random.Random(5))
+    r = g.next_round()
+    appear, gathered = alchemy.HERB_RARITY[tier][2:]
+    assert (appear in r.prompt) if appear else True
+    text = g.answer(r.answer, 1.0)
+    assert text.startswith(("✅", "✨"))
+    assert (gathered in text) if gathered else "\n" not in text
+    assert (g.announce is not None) == alchemy.is_announced(tier)
+    if g.announce:
+        msg = gathering.rare_find_announcement("Lin", g.announce)
+        assert "Lin" in msg and tier in msg and alchemy.HERB_RARITY[tier][0].upper() in msg

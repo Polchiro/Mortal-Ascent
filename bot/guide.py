@@ -103,7 +103,7 @@ LESSONS = [
      "\"The mountains hold beasts, bandits, herbs and treasure. Mostly beasts.\"",
      [("/explore", f"A {explore.MAX_STEPS}-step expedition. At each step, read the clue and pick a path. "
                    f"Go deeper for better finds, or turn back with what you have. Every {explore.EXPLORE_COOLDOWN_MINUTES} minutes."),
-      ("What waits", "Wild beasts, treasure chests, herb patches (1–3 herbs of your tier), merchants, stone tablets, hermits, "
+      ("What waits", "Wild beasts, treasure chests, herb patches (1–3 herbs of any grade), merchants, stone tablets, hermits, "
                      "Blessed Lands that multiply your Qi... and rare lairs of Elite beasts and Beast Kings."),
       ("Defeat", f"Lose a fight and you are injured for {explore.DEFEAT_INJURY_HOURS} hour and drop half the coins "
                  "and herbs you found. **/physician** heals you for Lotus Coins."),
@@ -133,7 +133,8 @@ LESSONS = [
      [("/gather", "Gather herbs as long as you like. I name a herb and describe it; pick the plant that matches "
                   "before time runs out. **Read carefully:** poisonous look-alikes differ in one detail and cost you "
                   f"{alchemy.DECOY_HP_LOSS:.0%} HP."),
-      ("Tiers and types", "You find herbs of your own realm's tier (Mortal, Yellow, Mystic, Earth, Heaven). 🌀 Qi herbs make Qi pills, "
+      ("Tiers and types", "Any grade can grow anywhere: most herbs are Mortal, rarer ones Yellow, Mystic, Earth "
+                          "and (very rarely) Heaven. Higher realms are luckier. 🌀 Qi herbs make Qi pills, "
                           "❤️ Healing herbs make Mending pills, 💧 Purity herbs go into every recipe, and 🏔️ "
                           "Breakthrough herbs make Breakthrough pills."),
       ("Old herbs", "Every herb has an age, from 🌱 10-year to 🏵️ 1000-year. Older herbs make better pills, but "

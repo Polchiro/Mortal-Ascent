@@ -12,13 +12,33 @@ alchemist rank → train faster.**
 
 ## 1. Herbs
 
-### Herb tier by realm
+### Herb grade: rarity, not realm
 
-Players find herbs of their own tier. 15% of gathers give a herb one tier lower.
+Every herb grade can be found at every realm. What you find is rolled by rarity, and your realm adds a little luck. The numbers live in `alchemy.py` (`HERB_GRADE_WEIGHTS`, `REALM_HERB_LUCK`) so they are easy to change. This applies to /gather and to Herb Patches in /explore.
 
-**Learning grade.** While your alchemist rank is too low to refine pills of your realm's herb grade, half of your herbs (from /gather and from herb patches on /explore) are of the highest grade you *can* refine instead. Ranks 1–2 learn on Mortal herbs, 3–4 on Yellow, 5–6 on Mystic, 7–8 on Earth. For example, a 2nd Grade alchemist at Martial Apprentice finds Mortal herbs half the time until they reach 3rd Grade, then goes back to mostly Yellow.
+**How it works.** Each grade has a base weight (Mortal 80, Yellow 15, Mystic 3.5, Earth 1.1, Heaven 0.4). Your realm's luck multiplies a grade's weight by `luck ^ (grades above Mortal)`, so luck helps the rarest grades most. The chance of a grade is its weight divided by the total.
 
-| Herb tier | Found at realms |
+| Realm | Luck | 凡 Mortal | 黄 Yellow | 玄 Mystic | 地 Earth | 天 Heaven |
+|---|---|---|---|---|---|---|
+| Mortal | 1.0 | 80% | 15% | 3.5% | 1.1% | 0.4% |
+| Martial Apprentice | 1.1 | 77.8% | 16.1% | 4.1% | 1.4% | 0.6% |
+| Martial Warrior | 1.2 | 75.6% | 17.0% | 4.8% | 1.8% | 0.8% |
+| Martial Expert | 1.35 | 72.3% | 18.3% | 5.8% | 2.5% | 1.2% |
+| Martial Master | 1.5 | 68.9% | 19.4% | 6.8% | 3.2% | 1.7% |
+| Grand Martial Master | 1.7 | 64.3% | 20.5% | 8.1% | 4.4% | 2.7% |
+| Martial Grandmaster | 1.9 | 59.8% | 21.3% | 9.4% | 5.6% | 3.9% |
+| Martial King | 2.15 | 54.1% | 21.8% | 10.9% | 7.4% | 5.8% |
+| Martial Emperor | 2.4 | 48.6% | 21.9% | 12.3% | 9.2% | 8.1% |
+| Martial Ancestor | 2.7 | 42.4% | 21.4% | 13.5% | 11.5% | 11.3% |
+| Martial Saint | 3.0 | 36.6% | 20.6% | 14.4% | 13.6% | 14.8% |
+
+**Why rare herbs can't be farmed.** Rarer grades are harder to pick (Heaven gives 6 seconds instead of 10, with look-alikes), a miss loses the herb, the Wandering Spirit check and the review flags still apply, and pills need an alchemist rank: a Mortal holding a Heaven herb can't refine it until 9th Grade. The NPC merchant never buys herbs.
+
+**Rare finds.** Mystic (Rare), Earth (Very Rare) and Heaven (Legendary) herbs get a special line when they appear and when you gather them, and the gather card is framed in the rarity's colour. Earth and Heaven finds are also announced in the channel (`ANNOUNCE_FROM_GRADE`).
+
+**Realm grade.** `HERB_TIER_BY_REALM` is still each realm's own grade. It sets Beast Core grades, the Wandering Merchant's herbs (a 10-year herb of your realm's grade) and the "below your realm" pill penalty. It no longer limits what you gather.
+
+| Realm grade | Realms |
 |---|---|
 | 凡 Mortal | Mortal |
 | 黄 Yellow | Martial Apprentice, Martial Warrior |
@@ -179,7 +199,7 @@ instead of ~14.
   Herbs are sold to other players on the market (5% tax).
 
 ### Other herb sources
-- 🌿 Herb Patch in /explore: 1–3 herbs of your tier, ages rolled normally
+- 🌿 Herb Patch in /explore: 1–3 herbs, grade rolled with the same rarity odds as /gather, ages rolled normally
 - Chests: occasional herbs
 
 ---
