@@ -29,7 +29,7 @@ from .emojis import Emojis
 from . import player as rules
 from .sheet import items as sheet_items
 from .sheet.view import open_sheet, send_public_profile
-from .views import (BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
+from .views import (free_old_panel, BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
                     shop_embed)
 
 log = logging.getLogger("mortal-ascent")
@@ -270,8 +270,8 @@ def register_commands(bot):
         if not p:
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        if (uid, "explore") in bot.busy:
-            await interaction.response.send_message("You are already on an expedition. Finish it first!", ephemeral=True)
+        if (uid, "explore") in bot.busy and not await free_old_panel(
+                bot, interaction, "explore", "You are already on an expedition. Finish it first!"):
             return
         if rules.in_seclusion(p):
             await interaction.response.send_message(
@@ -293,7 +293,7 @@ def register_commands(bot):
             return
         sent = False
         try:
-            view = ExploreView(bot, uid)
+            view = ExploreView(bot, uid).track(bot, "explore")
             await view.send(interaction)
             sent = True
         except Exception:
@@ -308,8 +308,8 @@ def register_commands(bot):
         if not p:
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
-        if (uid, "train") in bot.busy:
-            await interaction.response.send_message("You are already training. Finish that session first!", ephemeral=True)
+        if (uid, "train") in bot.busy and not await free_old_panel(
+                bot, interaction, "train", "You are already training. Finish that session first!"):
             return
         wait = db.cooldown_left(bot.conn, uid, "train")
         if wait:
@@ -326,7 +326,7 @@ def register_commands(bot):
             return
         sent = False
         try:
-            view = TrainView(bot, uid, trainer.roll_session(p, tech=tech))
+            view = TrainView(bot, uid, trainer.roll_session(p, tech=tech)).track(bot, "train")
             view.interaction = interaction
             await view.send_intro(interaction)
             sent = True
@@ -514,8 +514,8 @@ def register_commands(bot):
                 f"**{tech['name']}**'s mastery bar is full. Pass its trial with **/spar technique:{tech['name']}** first.",
                 ephemeral=True)
             return
-        if (uid, "train") in bot.busy:
-            await interaction.response.send_message("You are already training. Finish that session first!", ephemeral=True)
+        if (uid, "train") in bot.busy and not await free_old_panel(
+                bot, interaction, "train", "You are already training. Finish that session first!"):
             return
         wait = db.cooldown_left(bot.conn, uid, "practice")
         if wait:
@@ -541,8 +541,7 @@ def register_commands(bot):
             await interaction.response.send_message(
                 f"🩹 You are injured. Rest for **{rules.fmt_duration(hurt)}** before sparring.", ephemeral=True)
             return
-        if (uid, "spar") in bot.busy:
-            await interaction.response.send_message("You are already sparring!", ephemeral=True)
+        if (uid, "spar") in bot.busy and not await free_old_panel(bot, interaction, "spar", "You are already sparring!"):
             return
         focus, trial = None, False
         if technique:
@@ -577,7 +576,7 @@ def register_commands(bot):
             return
         sent = False
         try:
-            view = SparView(bot, uid, focus, trial)
+            view = SparView(bot, uid, focus, trial).track(bot, "spar")
             sent = True        # start() answers at once (defer), so the session is shown from here on
             await view.start(interaction)
         except Exception:

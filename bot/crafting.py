@@ -31,13 +31,13 @@ from . import craft_card, db, gear, loot, materials, passives
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
-from .views import COLOR, OwnedView
+from .views import COLOR, PANEL_IDLE_SECONDS, OwnedView, free_old_panel
 from cards.alchemy import render_alchemy
 
 log = logging.getLogger("mortal-ascent")
 
 TIMER_GRACE_SECONDS = 1.0           # Discord round-trip allowance, as in /train and /gather
-IDLE_TIMEOUT = 300
+IDLE_TIMEOUT = PANEL_IDLE_SECONDS     # the panel closes after 2 minutes without a click
 CN = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 AGES = sorted(alchemy.HERB_AGES)
 
@@ -1010,6 +1010,9 @@ class CraftView(OwnedView):
         self.stop()
         self.bot.busy.discard((self.owner_id, "craft"))
 
+    def in_progress(self):
+        return self.craft is not None and not self.craft.done
+
     async def on_timeout(self):
         try:
             c = self.craft
@@ -1046,13 +1049,12 @@ def register(bot):
                 "You have not begun your journey yet. Use **/start** to step through the gates of the Jianghu.",
                 ephemeral=True)
             return
-        if (uid, "craft") in bot.busy:
-            await interaction.response.send_message("Your cauldron is already lit. Finish that craft first.",
-                                                    ephemeral=True)
+        if (uid, "craft") in bot.busy and not await free_old_panel(
+                bot, interaction, "craft", "Your cauldron is already lit. Finish that craft first."):
             return
         bot.busy.add((uid, "craft"))
         try:
-            view = CraftView(bot, uid)
+            view = CraftView(bot, uid).track(bot, "craft")
             await interaction.response.send_message(embed=view.embed(), view=view)
             view.message = await interaction.original_response()
         except Exception:

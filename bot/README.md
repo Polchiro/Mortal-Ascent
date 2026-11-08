@@ -180,6 +180,19 @@ Run **one** copy of the bot. Two copies would both answer every `m` command, so:
 - `/seclusion` checks again under the database lock that you are not already in seclusion,
   exploring or sparring.
 
+### Idle panels
+
+- The solo panels (`/explore`, `/train`, `/practice`, `/craft`, `/forge`, `/gather`) close by themselves
+  after 2 minutes without a click (`PANEL_IDLE_SECONDS` in `bot/views.py`); every click restarts the clock.
+  Closing works exactly like the old timeout: an expedition walks home with its loot, a craft or forge
+  finishes its remaining stages as "walked away", a gathering round counts as missed.
+- Running the command again while the old panel is idle closes it and opens a fresh one, so there is
+  no need to find the old message. This applies when nothing is half-way: the `/craft`, `/forge` or
+  `/gather` menu or result screen, or a `/train` / `/practice` whose Begin was never pressed.
+- If something is under way (an expedition, a spar, a fight, a running training challenge, a timed
+  craft, forge or gathering stage), the old panel is kept and the reply links to it ("Jump to it").
+- A `/train` or `/practice` that is never begun gives its cooldown back when it closes.
+
 ### Playing in DMs
 
 Open a DM with the bot (click its name, then **Message**) and type `/`. Every command works there.
