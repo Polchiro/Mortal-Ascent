@@ -43,14 +43,14 @@ def effect_line(kind, grade):
     return f"{grade} · +{training.BREAKTHROUGH_PILLS[grade]:.0%} breakthrough chance"
 
 
-def herb_rows(herbs, core=None):
+def herb_rows(herbs, core=None, core_qty=1):
     """The planned ingredients as card rows: [{name, type, age, qty}] (+ the Beast Core)."""
     rows = []
     for item, qty in herbs:
         d = item.get("data") or {}
         rows.append({"name": item["name"], "type": d.get("type", "qi"), "age": d.get("age", 10), "qty": qty})
     if core:
-        rows.append({"name": core["name"], "type": "core", "age": None, "qty": 1})
+        rows.append({"name": core["name"], "type": "core", "age": None, "qty": core_qty})
     return rows
 
 
@@ -62,7 +62,8 @@ def _herb_states(c, rows):
     elif stage_i < c.stages.index(2):
         placed = Counter()
     elif stage_i == c.stages.index(2):
-        placed = Counter(c.order[:c.placed])
+        batch = getattr(c, "batch", 1)              # a batch puts in one herb of each set per decision
+        placed = Counter({t: n * batch for t, n in Counter(c.order[:c.placed]).items()})
     else:
         placed = None
     out = []
@@ -126,17 +127,19 @@ def card_data(c, herbs=(), outcome=None, pill_name=None, seed=None):
     """Plain data for render_alchemy. herbs: herb_rows(); outcome (after the craft): {exp, rank_up, stored}."""
     from . import crafting
     name = pill_name or crafting.pill_name(c.kind, c.grade)
+    batch = getattr(c, "batch", 1)
     score = c.score() if c.scores else None
     data = {
         "accent": "tribulation" if c.tribulation == "pending" else "alchemy",
         "seed": seed if seed is not None else c.decisions + 1,
-        "pill": {"name": name, "grade": c.grade, "kind": c.kind, "sub": effect_line(c.kind, c.grade)},
+        "pill": {"name": f"{name} ×{batch}" if batch > 1 else name, "grade": c.grade, "kind": c.kind, "sub": effect_line(c.kind, c.grade)},
         "stages": _stages(c),
         "herbs": _herb_states(c, list(herbs)),
         "refining": {"score": score, "bonus": c.score_bonus, "forgive": c.forgive, "explode": c.explode_below},
         "patterns": _patterns(c, score or 0),
         "done": c.done,
-        "corner": {"seconds": f"{c.seconds:g}s to choose", "difficulty": c.diff["name"]},
+        "corner": {"seconds": f"{c.seconds:g}s to choose",
+                   "difficulty": c.diff["name"] + (f" · Batch ×{batch}" if batch > 1 else "")},
         "warning_icon": "flame",
     }
     if c.done:
@@ -201,8 +204,10 @@ def _result(c, data, name, outcome):
         data["mode"] = "success"
         data.update(result=n, effect=alchemy.pattern_effect(n), toxicity=crafting.toxicity_text(c.kind, c.grade, n))
         data["corner"]["label"] = "REFINED"
-        head = (f"Nine patterns! The heavens bow to your {name}!" if n == 9
-                else f"You craft a {name} with {n} pattern{'s' if n > 1 else ''}!")
+        batch = getattr(c, "batch", 1)
+        made = f"{batch} {name}{'s' if name.endswith('Pill') else ''}" if batch > 1 else f"a {name}"
+        head = (f"Nine patterns! The heavens bow to your {name}{f' ×{batch}' if batch > 1 else ''}!" if n == 9
+                else f"You craft {made} with {n} pattern{'s' if n > 1 else ''}!")
         if outcome.get("stored") is False:
             tail = "Your bag is full, so the pill rolls away and is lost. " + tail
         data["warning"] = (head, f"Final score {c.score():.0%} · {tail}")

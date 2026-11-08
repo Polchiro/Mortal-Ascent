@@ -336,3 +336,117 @@ def test_craft_view_from_pick_to_pill(conn):
         view.finish()
 
     asyncio.run(go())
+
+
+def test_craft_view_batch(conn):
+    new_player(conn)
+    db.update_player(conn, 1, alchemy_exp=alchemy.ALCHEMIST_RANK_EXP[2])       # 2nd Grade: up to 2 pills
+    give(conn, "Mortal", "qi", 10, 4)
+    give(conn, "Mortal", "purity", 10, 2)
+
+    class FakeBot:
+        def __init__(self, c):
+            self.conn, self.db_lock, self.busy = c, asyncio.Lock(), {(1, "craft")}
+
+    class FakeInteraction:
+        def __init__(self):
+            self.deferred = False
+            self.response = SimpleNamespace(edit_message=self.edit, defer=self.defer, is_done=lambda: self.deferred)
+
+        async def defer(self):
+            self.deferred = True
+
+        async def edit(self, **kw):
+            pass
+
+        edit_original_response = edit
+
+    async def go():
+        view = crafting.CraftView(FakeBot(conn), 1, random.Random(1))
+        view.choice = ("qi", "Mortal")
+        await view.redraw(FakeInteraction())
+        menu = view.batch_picker
+        assert [o.value for o in menu.options] == ["1", "2"]
+        view.batch = 9                                                        # never above the rank's cap
+        await view.redraw(FakeInteraction())
+        assert view.batch == 2 and "Batch of 2" in view.embed().description
+        await view.on_begin(FakeInteraction())
+        assert db.get_items(conn, 1, "herbs") == [] and view.craft.batch == 2
+        for _ in range(50):
+            if view.craft.done:
+                break
+            view.timer.cancel()
+            await view.resolve(perfect(view.craft), 0.5, FakeInteraction())
+        pills = db.get_items(conn, 1, "pills")
+        assert view.craft.result == 0 or pills[0]["qty"] == 2
+        view.finish()
+
+    asyncio.run(go())
+
+
+# ── batch crafting (alchemy.BATCH_BY_RANK) ────────────────────────────
+
+def test_batch_cap_grows_with_rank():
+    assert [alchemy.batch_cap(r) for r in range(1, 10)] == [1, 2, 2, 3, 3, 4, 4, 5, 5]
+
+
+def test_batch_plan_needs_every_herb_that_many_times(conn):
+    new_player(conn)
+    give(conn, "Mortal", "qi", 10, 4)
+    give(conn, "Mortal", "purity", 10, 1)
+    pl = crafting.plan(conn, 1, "qi", "Mortal", batch=2)          # 2× (2 Spirit Grass + 1 Dew Leaf)
+    assert pl["missing"] == ["1 more Dew Leaf"]
+    give(conn, "Mortal", "purity", 10, 1)
+    pl = crafting.plan(conn, 1, "qi", "Mortal", batch=2)
+    assert pl["missing"] == [] and sum(q for _, q in pl["uses"]) == 6
+    assert crafting.take_ingredients(conn, 1, pl)
+    assert db.get_items(conn, 1, "herbs") == []
+
+
+def test_batch_breakthrough_needs_a_core_per_pill(conn):
+    new_player(conn)
+    give(conn, "Mortal", "breakthrough", 50, 4)
+    give(conn, "Mortal", "purity", 50, 2)
+    loot.store(conn, 1, [loot.beast_core("normal", "Mortal")])
+    pl = crafting.plan(conn, 1, "breakthrough", "Mortal", batch=2)
+    assert "1 more Mortal Normal Beast Core" in pl["missing"][0] and pl["core"] is None
+    loot.store(conn, 1, [loot.beast_core("normal", "Mortal")])
+    pl = crafting.plan(conn, 1, "breakthrough", "Mortal", batch=2)
+    assert pl["missing"] == [] and pl["core_qty"] == 2
+    assert crafting.take_ingredients(conn, 1, pl)
+    assert db.get_items(conn, 1, "materials") == []
+
+
+def test_bigger_batches_are_harder():
+    one = Craft("qi", "Yellow", 9, 10, random.Random(1))
+    three = Craft("qi", "Yellow", 9, 10, random.Random(1), batch=3)
+    five = Craft("qi", "Yellow", 9, 10, random.Random(1), batch=5)
+    assert one.seconds > three.seconds > five.seconds >= alchemy.BATCH_PENALTY["min_seconds"]
+    assert one.zone_width > three.zone_width > five.zone_width >= alchemy.BATCH_PENALTY["min_zone"]
+    assert one.balance_tolerance > three.balance_tolerance and one.seal_pass > three.seal_pass
+    tiny = Craft("qi", "Heaven", 9, 10, random.Random(1), batch=5)
+    assert tiny.zone_width == alchemy.BATCH_PENALTY["min_zone"] and tiny.seconds == alchemy.BATCH_PENALTY["min_seconds"]
+
+
+def test_batches_still_reward_good_play():
+    good = [play(Craft("qi", "Mystic", 9, 10, random.Random(s), batch=5), perfect) for s in range(40)]
+    bad = [play(Craft("qi", "Mystic", 9, 10, random.Random(s), batch=5), lambda c: None) for s in range(40)]
+    assert sum(good) > sum(bad)
+
+
+def test_batch_finish_stores_every_pill_and_exp(conn):
+    new_player(conn)
+    c = Craft("qi", "Mortal", 2, 10, random.Random(0), batch=2)
+    c.done, c.result = True, 5
+    lines, _ = crafting.finish_craft(conn, 1, c)
+    pill = db.get_items(conn, 1, "pills")[0]
+    assert pill["qty"] == 2 and "2× Ember Dantian Pill" in lines[0]
+    assert db.get_player(conn, 1)["alchemy_exp"] == round(10 * (0.5 + 0.5) * 0.5 * 2)   # 1 rank above: ×0.5
+
+
+def test_batch_explosion_loses_everything(conn):
+    new_player(conn)
+    c = Craft("qi", "Mortal", 2, 10, random.Random(0), batch=2)
+    c.done, c.result = True, 0
+    lines, _ = crafting.finish_craft(conn, 1, c)
+    assert db.get_items(conn, 1, "pills") == [] and any("All 2 pills" in line for line in lines)

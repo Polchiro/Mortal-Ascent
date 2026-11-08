@@ -127,11 +127,13 @@ def crafted_pill(kind, grade, patterns):
 
 # ── choosing herbs ────────────────────────────────────────────────────
 
-def plan(conn, user_id, kind, grade, prefer="young"):
+def plan(conn, user_id, kind, grade, prefer="young", batch=1):
     """Which herbs (and core) a craft would use. Returns a dict:
-    {uses: [(item, qty)], ages: [...], age: tier, core: item or None, missing: [text]}.
-    prefer="young" uses the youngest herbs that still meet the minimum age; "old" the oldest."""
-    spec, recipe = pill_spec(kind, grade), KINDS[kind][3]
+    {uses: [(item, qty)], ages: [...], age: tier, core: item or None, core_qty, missing: [text]}.
+    prefer="young" uses the youngest herbs that still meet the minimum age; "old" the oldest.
+    batch: how many pills at once (alchemy.BATCH_BY_RANK); every herb and the core are needed that many times."""
+    spec = pill_spec(kind, grade)
+    recipe = [(t, n * batch) for t, n in KINDS[kind][3]]
     herbs = [h for h in db.get_items(conn, user_id, "herbs") if h["grade"] == grade]
     missing, chosen = [], []          # chosen: [(item, age)] one entry per herb unit
     for type_, n in recipe:
@@ -162,17 +164,20 @@ def plan(conn, user_id, kind, grade, prefer="young"):
     if kind == "breakthrough":
         key = f"core:{spec['core']}:{grade}"
         core = next((i for i in db.get_items(conn, user_id, "materials") if i["key"] == key), None)
-        if not core:
-            missing.append(f"1 {grade} {loot.CORE_NAMES[spec['core']]}")
+        have = core["qty"] if core else 0
+        if have < batch:
+            missing.append(f"{batch - have} {'more ' if have else ''}{grade} {loot.CORE_NAMES[spec['core']]}")
+            core = None
     uses = {}
     for (item, _), _ in chosen:
         uses.setdefault(item["id"], [item, 0])[1] += 1
-    return {"uses": [tuple(v) for v in uses.values()], "ages": ages, "age": tier, "core": core, "missing": missing}
+    return {"uses": [tuple(v) for v in uses.values()], "ages": ages, "age": tier, "core": core,
+            "core_qty": batch if core else 0, "missing": missing}
 
 
 def take_ingredients(conn, user_id, plan_):
     """Use up the planned herbs and core. False (nothing taken) if any is gone in the meantime."""
-    wanted = list(plan_["uses"]) + ([(plan_["core"], 1)] if plan_["core"] else [])
+    wanted = list(plan_["uses"]) + ([(plan_["core"], plan_.get("core_qty", 1))] if plan_["core"] else [])
     for item, qty in wanted:
         fresh = db.get_item(conn, user_id, item["id"])
         if not fresh or fresh["qty"] < qty:
@@ -205,9 +210,11 @@ DIRECTIONS = [("left", "⬅️", "the LEFT"), ("above", "⬆️", "ABOVE"), ("ri
 
 
 class Craft:
-    def __init__(self, kind, grade, rank, age, rng=None, zone_bonus=0, extra_seconds=0.0, extra_patterns=0):
+    def __init__(self, kind, grade, rank, age, rng=None, zone_bonus=0, extra_seconds=0.0, extra_patterns=0, batch=1):
         """zone_bonus: Furnace artifact + Steady Hand passive. extra_seconds: Swift Hands. extra_patterns: Alchemy
-        Sage (pills may reach that many patterns beyond the herb-age cap, never above 9)."""
+        Sage (pills may reach that many patterns beyond the herb-age cap, never above 9).
+        batch: pills refined at once. Each one beyond the first shortens the timer and narrows the safe zones
+        (alchemy.BATCH_PENALTY), after every relief above."""
         self.rng = rng or random.Random()
         self.kind, self.grade, self.age = kind, grade, age
         spec = pill_spec(kind, grade)
@@ -223,6 +230,15 @@ class Craft:
         self.zone_bonus = round(zone_bonus)       # degrees from the Furnace artifact (炉)
         self.seconds = self.diff["seconds"] + alchemy.RANK_RELIEF["seconds_bonus"] * relief + extra_seconds
         self.hints = alchemy.RANK_RELIEF["hints_per_rank"] * relief
+        self.batch = max(1, int(batch))
+        extra = self.batch - 1
+        bp = alchemy.BATCH_PENALTY
+        self.balance_tolerance, self.seal_pass = BALANCE_TOLERANCE, SEAL_PASS
+        if extra:
+            self.zone_width = max(bp["min_zone"], round(self.zone_width * (1 - bp["zone"] * extra)))
+            self.seconds = max(min(self.seconds, bp["min_seconds"]), self.seconds - bp["seconds"] * extra)
+            self.balance_tolerance = max(bp["min_balance_tolerance"], BALANCE_TOLERANCE - bp["balance_tolerance"] * extra)
+            self.seal_pass = max(bp["min_seal_pass"], SEAL_PASS - bp["seal_pass"] * extra)
         a = alchemy.HERB_AGES[age]
         self.forgive = (1 if relief >= alchemy.RANK_RELIEF["forgive_from_ranks"] else 0) + a.get("mistakes_forgiven", 0)
         self.explode_below = a.get("explode_below", alchemy.EXPLODE_BELOW)
@@ -413,7 +429,7 @@ class Craft:
         return abs(self.yin - 50) + abs(self.yang - 50)
 
     def balance_score(self):
-        if abs(self.yin - 50) <= BALANCE_TOLERANCE and abs(self.yang - 50) <= BALANCE_TOLERANCE:
+        if abs(self.yin - 50) <= self.balance_tolerance and abs(self.yang - 50) <= self.balance_tolerance:
             return 1.0
         return max(0.0, 1 - self.imbalance() / 60)
 
@@ -495,7 +511,7 @@ class Craft:
     def _act_5(self, key):
         self._balance_move(key)
         if self.round >= alchemy.SEAL_CORE_MOVES:
-            if self.imbalance() <= SEAL_PASS:
+            if self.imbalance() <= self.seal_pass:
                 self.scores[5] = self.balance_score()
                 self.log.append(f"🔒 The core is sealed into the pill! **{self.scores[5]:.0%}**")
                 self._next_stage()
@@ -554,7 +570,9 @@ class Craft:
         self.done, self.result = True, 9 if won else alchemy.TRIBULATION_FAIL_PATTERNS
 
     def exp(self):
-        return round(alchemy.craft_exp(self.grade, self.result, self.kind == "breakthrough", self.ranks_above))
+        """Alchemy EXP for the whole batch: every pill counts."""
+        return round(alchemy.craft_exp(self.grade, self.result, self.kind == "breakthrough", self.ranks_above)
+                     * self.batch)
 
 
 def heat_bar(value, width=20, mark=None):
@@ -583,23 +601,30 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
         else:
             lines.append("💥 **The cauldron explodes!** The herbs are lost." if not craft.core_lost
                          else "💥 **The craft fails.** The herbs and the Beast Core are lost.")
+            if craft.batch > 1:
+                lines.append(f"All {craft.batch} pills of the batch are gone.")
     else:
-        pill = crafted_pill(craft.kind, craft.grade, craft.result)
+        pill = dict(crafted_pill(craft.kind, craft.grade, craft.result), qty=craft.batch)
         stored, _ = loot.store(conn, user_id, [pill])
         e = alchemy.pattern_effect(craft.result)
-        lines.append(f"✨ You craft a **{pill['name']}**! Effect ×{e:.2f} · "
-                     + toxicity_text(craft.kind, craft.grade, craft.result).lower())
+        what = f"**{pill['name']}**" if craft.batch == 1 else f"**{craft.batch}× {pill['name']}**"
+        lines.append(f"✨ You craft {'a ' if craft.batch == 1 else ''}{what}! Effect ×{e:.2f} · "
+                     + toxicity_text(craft.kind, craft.grade, craft.result).lower()
+                     + (" each" if craft.batch > 1 else ""))
         if not stored:
-            lines.append("⚠️ Your bag is full, so the pill rolls away and is lost.")
+            lines.append("⚠️ Your bag is full, so the pill rolls away and is lost." if craft.batch == 1
+                         else "⚠️ Your bag is full, so the pills roll away and are lost.")
         ash = materials.craft_ash(craft.result)
         if ash:
             loot.store(conn, user_id, ash)
             lines.append("✨ You scrape " + ", ".join(materials.lines(ash)) + " from the cauldron.")
         if craft.result == 9:
-            news = f"📢 Thunder fades over the Jianghu: **{p['name']}** has crafted a nine-pattern **{pill['name']}**!"
+            news = (f"📢 Thunder fades over the Jianghu: **{p['name']}** has crafted "
+                    + (f"a nine-pattern **{pill['name']}**!" if craft.batch == 1
+                       else f"**{craft.batch}** nine-pattern **{pill['name']}** in one batch!"))
     lines.append(f"Final score **{craft.score():.0%}**" + (f" (+{craft.score_bonus:.0%} from {craft.age}-year herbs)"
                                                            if craft.score_bonus else ""))
-    lines.append(f"📈 +{exp:,} alchemy EXP")
+    lines.append(f"📈 +{exp:,} alchemy EXP" + (f" ({craft.batch} pills)" if craft.batch > 1 else ""))
     new_rank = rank_of(new_exp)
     if new_rank > old_rank:
         lines.append(f"🎉 You are now a **{rank_label(new_rank)} Alchemist**!")
@@ -735,6 +760,7 @@ class CraftView(OwnedView):
         self.bot, self.rng = bot, rng or random.Random()
         self.choice = None          # (kind, grade)
         self.prefer = "young"
+        self.batch = 1              # pills per craft, up to alchemy.batch_cap(rank)
         self.craft = None
         self.result_lines = None
         self.notice = None
@@ -757,11 +783,20 @@ class CraftView(OwnedView):
         return gear.artifact_bonus(p, "craft_zone_degrees") + passives.artifact_passive(p, "steady_hand",
                                                                                         "safe_zone_degrees")
 
-    def new_craft(self, kind, grade, age, rng):
+    def new_craft(self, kind, grade, age, rng, batch=None):
         p = self.player
         return Craft(kind, grade, self.rank(), age, rng, self.furnace(),
                      passives.artifact_passive(p, "swift_hands", "decision_seconds"),
-                     passives.artifact_passive(p, "alchemy_sage", "extra_patterns"))
+                     passives.artifact_passive(p, "alchemy_sage", "extra_patterns"),
+                     batch=self.batch if batch is None else batch)
+
+    def batch_cap(self):
+        return alchemy.batch_cap(self.rank())
+
+    def batch_size(self):
+        """The chosen batch, never above what the current rank allows."""
+        self.batch = max(1, min(self.batch, self.batch_cap()))
+        return self.batch
 
     # ── screens ──────────────────────────────────────────────────────
 
@@ -807,14 +842,25 @@ class CraftView(OwnedView):
     def recipe_embed(self):
         kind, grade = self.choice
         spec = pill_spec(kind, grade)
-        pl = plan(self.bot.conn, self.owner_id, kind, grade, self.prefer)
-        recipe = " + ".join(f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in KINDS[kind][3])
+        n_batch = self.batch_size()
+        pl = plan(self.bot.conn, self.owner_id, kind, grade, self.prefer, n_batch)
+        recipe = " + ".join(f"{n * n_batch} {alchemy.HERBS[grade][t][0]}" for t, n in KINDS[kind][3])
         if kind == "breakthrough":
-            recipe += f" + 1 {loot.CORE_NAMES[spec['core']]}"
+            recipe += f" + {n_batch} {loot.CORE_NAMES[spec['core']]}"
         c = self.new_craft(kind, grade, pl["age"], random.Random(0))
-        lines = [f"**Recipe:** {recipe}",
+        lines = [f"**Recipe:** {recipe}" + (f" (for {n_batch} pills)" if n_batch > 1 else ""),
                  f"**Herbs:** {age_word(spec['min_age'])} · **Difficulty:** {c.diff['name']} "
                  f"({len(c.stages)} stages, {c.seconds:g}s per decision)"]
+        cap = self.batch_cap()
+        if n_batch > 1:
+            solo = self.new_craft(kind, grade, pl["age"], random.Random(0), batch=1)
+            lines.append(f"⚗️ **Batch of {n_batch}:** one minigame for all {n_batch} pills, every pill gets the same "
+                         f"patterns. Harder: **{c.seconds:g}s** per decision (instead of {solo.seconds:g}s), heat zone "
+                         f"**{c.zone_width}°** (instead of {solo.zone_width}°), tighter Yin/Yang balance. "
+                         f"An explosion loses every herb.")
+        elif cap > 1:
+            lines.append(f"⚗️ As a {rank_label(self.rank())} Alchemist you can refine up to **{cap} pills at once**: "
+                         "pick a batch size below. Bigger batches are harder.")
         if pl["missing"]:
             lines.append(f"❌ **Missing:** {', '.join(pl['missing'])}")
         else:
@@ -847,7 +893,8 @@ class CraftView(OwnedView):
             lines += self.craft.log + [""]
         lines += pr.lines
         stage_no = (self.craft.stages.index(pr.stage) + 1) if pr.stage in self.craft.stages else None
-        title = f"{pill_name(self.craft.kind, self.craft.grade)} · {pr.title}"
+        title = f"{pill_name(self.craft.kind, self.craft.grade)}" + (f" ×{self.craft.batch}" if self.craft.batch > 1
+                                                                     else "") + f" · {pr.title}"
         e = discord.Embed(title=title, description="\n".join(lines), color=COLOR)
         e.set_footer(text=(f"Stage {stage_no} of {len(self.craft.stages)} · " if stage_no else "")
                      + f"⏳ {pr.seconds:g}s per decision")
@@ -870,12 +917,15 @@ class CraftView(OwnedView):
             self.button("Close", self.on_close, emoji="🏮")
             return
         if self.choice:
-            pl = plan(self.bot.conn, self.owner_id, *self.choice, self.prefer)
+            n_batch = self.batch_size()
+            pl = plan(self.bot.conn, self.owner_id, *self.choice, self.prefer, n_batch)
             self.button("Begin", self.on_begin, emoji="🔥", style=discord.ButtonStyle.success,
-                        disabled=bool(pl["missing"]))
+                        disabled=bool(pl["missing"]), row=0)
             self.button("Use oldest herbs" if self.prefer == "young" else "Use youngest herbs", self.on_prefer,
-                        emoji="🏵️" if self.prefer == "young" else "🌱")
-            self.button("Back", self.on_back, emoji="◀️")
+                        emoji="🏵️" if self.prefer == "young" else "🌱", row=0)
+            self.button("Back", self.on_back, emoji="◀️", row=0)
+            if self.batch_cap() > 1:
+                self.add_batch_menu()
             return
         options = []
         for k, g in self.craftable()[:25]:
@@ -886,6 +936,20 @@ class CraftView(OwnedView):
         sel = discord.ui.Select(placeholder="Choose a pill to craft", options=options)
         sel.callback = self.on_pick
         self.picker = sel
+        self.add_item(sel)
+
+    def add_batch_menu(self):
+        """Batch size 1…cap, each option saying whether the herbs are there."""
+        options = []
+        for n in range(1, self.batch_cap() + 1):
+            pl = plan(self.bot.conn, self.owner_id, *self.choice, self.prefer, n)
+            desc = ("Normal craft" if n == 1 else f"Harder minigame, {n} pills") + (
+                " · ready" if not pl["missing"] else " · missing herbs")
+            options.append(discord.SelectOption(label=f"{n} pill{'s' if n > 1 else ''}", value=str(n), emoji="⚗️",
+                                                description=desc[:100], default=n == self.batch))
+        sel = discord.ui.Select(placeholder="Batch size", options=options, row=1)
+        sel.callback = self.on_batch
+        self.batch_picker = sel
         self.add_item(sel)
 
     async def redraw(self, interaction):
@@ -899,6 +963,10 @@ class CraftView(OwnedView):
         self.choice = (kind, grade)
         await self.redraw(interaction)
 
+    async def on_batch(self, interaction):
+        self.batch = int(self.batch_picker.values[0])
+        await self.redraw(interaction)
+
     async def on_prefer(self, interaction):
         self.prefer = "old" if self.prefer == "young" else "young"
         await self.redraw(interaction)
@@ -909,16 +977,17 @@ class CraftView(OwnedView):
 
     async def on_begin(self, interaction):
         kind, grade = self.choice
+        n_batch = self.batch_size()
         async with self.bot.db_lock:
-            pl = plan(self.bot.conn, self.owner_id, kind, grade, self.prefer)
+            pl = plan(self.bot.conn, self.owner_id, kind, grade, self.prefer, n_batch)
             ok = not pl["missing"] and take_ingredients(self.bot.conn, self.owner_id, pl)
         if not ok:
             self.notice = "Your herbs changed in the meantime. Check the recipe again."
             await self.redraw(interaction)
             return
         self.craft = self.new_craft(kind, grade, pl["age"], self.rng)
-        self.herbs = craft_card.herb_rows(pl["uses"], pl["core"])
-        self.used = list(pl["uses"]) + ([(pl["core"], 1)] if pl["core"] else [])
+        self.herbs = craft_card.herb_rows(pl["uses"], pl["core"], pl["core_qty"])
+        self.used = list(pl["uses"]) + ([(pl["core"], pl["core_qty"])] if pl["core"] else [])
         self.result_lines, self.outcome = None, None
         await self.show_step(interaction)
 
