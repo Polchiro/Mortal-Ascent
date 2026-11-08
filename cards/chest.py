@@ -183,8 +183,8 @@ def render_sealed(data):
     t.gold_text(img, (W / 2, 58), data["chest_name"].upper(), font("Cinzel.ttf", 40, "Black"), anchor="mm",
                 glow=mix(col, (0, 0, 0), 0.4))
     d = ImageDraw.Draw(img)
-    t.text(d, (W / 2, 102), "Sealed by an ancient formation", font("Inter.ttf", 16, "Medium"), k.ASH, "mm")
-    t.text(d, (W / 2, 488), "Break the seal to see what lies within", font("Cinzel.ttf", 15, "Bold"), k.GOLD, "mm")
+    t.text(d, (W / 2, 104), "Sealed by an ancient formation", font("Inter.ttf", 20, "Medium"), k.ASH, "mm")
+    t.text(d, (W / 2, 486), "Break the seal to see what lies within", font("Cinzel.ttf", 21, "Bold"), k.GOLD, "mm")
     return t.finish(img)
 
 
@@ -207,7 +207,7 @@ def render_opening(data):
                 glow=mix(col, (0, 0, 0), 0.3))
     d = ImageDraw.Draw(img)
     line = OPENING_LINE[best]
-    t.text(d, (W / 2, 476), line, font("Cinzel.ttf", 18, "Bold"), mix(col, (255, 255, 255), 0.45), "mm")
+    t.text(d, (W / 2, 476), line, font("Cinzel.ttf", 24, "Bold"), mix(col, (255, 255, 255), 0.45), "mm")
     return t.finish(img)
 
 
@@ -244,23 +244,23 @@ def reward_tile(img, box, rw, collected=False):
     lost = rw.get("lost")
     tile_frame(img, box, rw["rarity"], color, dim=lost)
     d = ImageDraw.Draw(img)
-    ix, iy = x0 + 46, (y0 + y1) / 2 - 4
-    t.soft_glow(img, (ix - 32, iy - 32, ix + 32, iy + 32), alpha(color, 90 if not lost else 30), 10)
-    t.icon(img, rw["icon"], (ix, iy), 54, mix(color, (255, 255, 255), 0.15) if not lost else k.ASH_DK)
+    ix, iy = x0 + 54, (y0 + y1) / 2
+    t.soft_glow(img, (ix - 38, iy - 38, ix + 38, iy + 38), alpha(color, 90 if not lost else 30), 10)
+    t.icon(img, rw["icon"], (ix, iy), 64, mix(color, (255, 255, 255), 0.15) if not lost else k.ASH_DK)
     d = ImageDraw.Draw(img)
-    tx = x0 + 86
-    f_n = font("Inter.ttf", 14, "Bold")
+    tx = x0 + 102
+    f_n = font("Inter.ttf", 19, "Bold")
     name = rw["name"] + (f" ×{rw['qty']:,}" if rw["qty"] > 1 else "")
-    lines = t.wrap(d, name, f_n, x1 - tx - 10, lines=2)
-    ny = y0 + 26 - (len(lines) - 1) * 8
+    lines = t.wrap(d, name, f_n, x1 - tx - 12, lines=2)
+    ny = y0 + 30 - (len(lines) - 1) * 11
     for j, line in enumerate(lines):
-        t.text(d, (tx, ny + j * 17), line, f_n, k.PARCHMENT if not lost else k.ASH_DK, "lm")
-    t.text(d, (tx, y0 + 60), rw["rarity"].upper(), font("Cinzel.ttf", 10, "Bold"),
+        t.text(d, (tx, ny + j * 22), line, f_n, k.PARCHMENT if not lost else k.ASH_DK, "lm")
+    t.text(d, (tx, y0 + 70), rw["rarity"].upper(), font("Cinzel.ttf", 14, "Bold"),
            mix(color, (255, 255, 255), 0.35) if not lost else k.ASH_DK, "lm")
-    t.text(d, (tx, y0 + 80), t.fit(d, rw["line"], font("Inter.ttf", 11, "Medium"), x1 - tx - 10),
-           font("Inter.ttf", 11, "Medium"), k.ASH if not lost else k.ASH_DK, "lm")
+    t.text(d, (tx, y0 + 96), t.fit(d, rw["line"], font("Inter.ttf", 16, "SemiBold"), x1 - tx - 12),
+           font("Inter.ttf", 16, "SemiBold"), k.GOLD_HI if not lost else k.ASH_DK, "lm")
     if lost:
-        k.chip(img, ((x0 + x1) / 2, y1 - 4), "Left behind · bag full", (220, 100, 90), size=10, anchor="m")
+        k.chip(img, ((x0 + x1) / 2, y1 - 2), "Left behind · bag full", (220, 100, 90), size=13, anchor="m")
 
 
 def highlight(img, box, rw):
@@ -287,17 +287,16 @@ def highlight(img, box, rw):
             sparkle(d, rng.uniform(x0 + 20, x1 - 20), rng.uniform(y0 + 10, y1 - 10), rng.uniform(4, 9),
                     alpha((255, 244, 230), 220))
     tx = x0 + 176
-    k.ribbon(img, (tx, y0 + 18, tx + 150, y0 + 38), BEST_TITLE.get(rw["rarity"], rw["rarity"].upper()), color)
-    f = font("Cinzel.ttf", 26, "Black")
+    k.ribbon(img, (tx, y0 + 14, tx + 200, y0 + 40), BEST_TITLE.get(rw["rarity"], rw["rarity"].upper()), color)
+    f = font("Cinzel.ttf", 30, "Black")
     name = t.fit(ImageDraw.Draw(img), rw["name"].upper(), f, x1 - tx - 20)
     t.gold_text(img, (tx, y0 + 52), name, f, glow=mix(color, (0, 0, 0), 0.3))
     d = ImageDraw.Draw(img)
-    t.text(d, (tx, y0 + 98), t.fit(d, rw["kind"] + (f"  ·  {rw['line']}" if rw["line"] else ""),
-                                   font("Inter.ttf", 14, "SemiBold"), x1 - tx - 20),
-           font("Inter.ttf", 14, "SemiBold"), mix(color, (255, 255, 255), 0.4), "lm")
+    t.text(d, (tx, y0 + 106), t.fit(d, rw["line"] or rw["kind"], font("Inter.ttf", 19, "Bold"), x1 - tx - 20),
+           font("Inter.ttf", 19, "Bold"), mix(color, (255, 255, 255), 0.45), "lm")
     if rw.get("flavor"):
-        t.text(d, (tx, y0 + 124), t.fit(d, rw["flavor"], font("Inter.ttf", 13, "Medium"), x1 - tx - 20),
-               font("Inter.ttf", 13, "Medium"), k.PARCHMENT, "lm")
+        t.text(d, (tx, y0 + 136), t.fit(d, rw["flavor"], font("Inter.ttf", 17, "Medium"), x1 - tx - 20),
+               font("Inter.ttf", 17, "Medium"), k.PARCHMENT, "lm")
 
 
 def render_rewards(data):
@@ -307,29 +306,29 @@ def render_rewards(data):
     col = data["rarity_colors"][best] if best != "Common" else k.accent("purse")
     top = rewards[0] if rewards and rank(rewards[0]["rarity"]) >= rank("Epic") else None
     rest = rewards[1:] if top else rewards
-    cols = 4
+    cols = 3
     rows = max(1, math.ceil(len(rest) / cols)) if rest else 0
-    tile_h, gap = 104, 12
+    tile_h, gap = 124, 14
     y = 142
     hl_h = 156
-    h = y + (hl_h + 18 if top else 0) + rows * (tile_h + gap) + (30 if data["notes"] else 0) + 64
+    h = y + (hl_h + 18 if top else 0) + rows * (tile_h + gap) + 28 * len(data["notes"]) + 56
     h = max(h, 340)
     img = base(h, col, 6)
     # header: opened chest, title and coins
     light_pillar(img, (104, 72), 110, 60, col, 0.6 + 0.08 * rank(best))
     draw_chest(img, (104, 80), 100, data["chest_key"], opened=True)
-    t.gold_text(img, (200, 30), data["chest_name"].upper(), font("Cinzel.ttf", 32, "Black"),
+    t.gold_text(img, (200, 26), data["chest_name"].upper(), font("Cinzel.ttf", 36, "Black"),
                 glow=mix(col, (0, 0, 0), 0.4))
     d = ImageDraw.Draw(img)
     n = len(rewards)
     found = f"{n} treasure{'s' if n != 1 else ''}" if n else "Lotus Coins"
     sub = f"{found} added to your bag" if data["collected"] else f"{found} revealed"
-    t.text(d, (202, 90), sub, font("Cinzel.ttf", 16, "Bold"), mix(col, (255, 255, 255), 0.4), "lm")
+    t.text(d, (202, 94), sub, font("Cinzel.ttf", 20, "Bold"), mix(col, (255, 255, 255), 0.4), "lm")
     # Lotus Coins
-    t.medallion(img, (W - 210, 70), 28, "lotus", k.LOTUS, cjk_char=False)
+    t.medallion(img, (W - 240, 66), 32, "lotus", k.LOTUS, cjk_char=False)
     d = ImageDraw.Draw(img)
-    t.text(d, (W - 172, 60), f"+{data['coins']:,}", font("Cinzel.ttf", 28, "Black"), k.LOTUS, "lm")
-    t.spaced(d, (W - 170, 90), "LOTUS COINS", font("Cinzel.ttf", 10, "Bold"), k.ASH, 2)
+    t.text(d, (W - 196, 56), f"+{data['coins']:,}", font("Inter.ttf", 34, "Bold"), k.LOTUS, "lm")
+    t.spaced(d, (W - 194, 92), "LOTUS COINS", font("Cinzel.ttf", 13, "Bold"), k.ASH, 2)
     t.divider(d, 30, W - 30, 128)
     if top:
         highlight(img, (30, y, W - 30, y + hl_h), top)
@@ -343,14 +342,14 @@ def render_rewards(data):
     if not rewards:
         d = ImageDraw.Draw(img)
         t.text(d, (W / 2, y + 60), "Only Lotus Coins this time. Nothing else lay inside.",
-               font("Inter.ttf", 15, "Medium"), k.ASH, "mm")
+               font("Inter.ttf", 19, "Medium"), k.ASH, "mm")
         y += 110
     d = ImageDraw.Draw(img)
     for note in data["notes"]:
         plain = note.replace("**", "")
         plain = plain.split(" ", 1)[1] if plain and not plain[0].isascii() else plain   # drop the leading emoji
-        t.text(d, (W / 2, y + 12), plain, font("Inter.ttf", 13, "SemiBold"), k.GOLD_HI, "mm")
-        y += 22
+        t.text(d, (W / 2, y + 14), plain, font("Inter.ttf", 17, "SemiBold"), k.GOLD_HI, "mm")
+        y += 28
     if data["collected"]:
         stamp(img, (W - 360, 72), "收", "COLLECTED")
     return t.finish(img)

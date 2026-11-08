@@ -28,15 +28,15 @@ def render_bag(data):
     capacity(img, data, (870, 82, 1160, 100))
     rail(img, data, (30, 140, 226, 726))
     top = 140
-    grid_box = (242, top, 790, 726)
+    grid_box = (242, top, 724, 726)
     k.plaque(img, grid_box, fill=k.PANEL)
     gy0 = top + 18
     if data.get("groups"):
-        group_chips(img, data, (258, top + 16, 774, top + 42))
+        group_chips(img, data, (256, top + 16, 710, top + 42))
         gy0 = top + 54
-    grid(img, data, (258, gy0, 774, 692))
-    k.page_dots(img, ((242 + 790) / 2, 708), data["page"], data["pages"], JADE)
-    inspect_panel(img, data["inspect"], (806, 140, 1170, 726))
+    grid(img, data, (256, gy0, 710, 692))
+    k.page_dots(img, ((242 + 724) / 2, 708), data["page"], data["pages"], JADE)
+    inspect_panel(img, data["inspect"], (740, 140, 1170, 726))
     return t.finish(img)
 
 
@@ -58,7 +58,7 @@ def rail(img, data, box):
     cats = data["categories"]
     step = min(66, (y1 - y0 - 24) / max(1, len(cats)))
     y = y0 + 12 + step / 2
-    f = font("Cinzel.ttf", 13, "Bold")
+    f = font("Cinzel.ttf", 15, "Bold")
     for key, label, icon in cats:
         active = key == data["category"]
         count = data["counts"].get(key, 0)
@@ -73,7 +73,7 @@ def rail(img, data, box):
         t.icon(img, icon, (x0 + 38, y), 22, mix(col, (255, 255, 255), 0.25) if active else col)
         d = ImageDraw.Draw(img)
         t.text(d, (x0 + 60, y), label.upper(), f, k.GOLD_HI if active else (k.PARCHMENT if count else k.ASH_DK), "lm")
-        t.text(d, (x1 - 22, y), str(count), font("Inter.ttf", 13, "Bold"), k.PARCHMENT if count else k.ASH_DK, "rm")
+        t.text(d, (x1 - 20, y), str(count), font("Inter.ttf", 16, "Bold"), k.PARCHMENT if count else k.ASH_DK, "rm")
         if not active:
             d.line(P(x0 + 22, y + step / 2, x1 - 22, y + step / 2), fill=alpha(k.BRONZE_DK, 255), width=max(1, S))
         y += step
@@ -137,19 +137,19 @@ def tile(img, box, it):
     d.line(P(x0 + 8, y1 - 30, x1 - 8, y1 - 30), fill=alpha(color, 200), width=max(1, S))
     d.line(shape + [shape[0]], fill=k.GOLD_HI if it["selected"] else alpha(mix(color, k.BRONZE_DK, 0.45), 255),
            width=round((2.2 if it["selected"] else 1.4) * S), joint="curve")
-    t.icon(img, it["icon"], (cx, iy), 56, mix(color, (255, 255, 255), 0.15))
+    t.icon(img, it["icon"], (cx, iy), 52, mix(color, (255, 255, 255), 0.15))
     d = ImageDraw.Draw(img)
     k.gem(d, x1 - 14, y0 + 14, 5, color)
-    f_name = font("Inter.ttf", 13, "Bold")
-    lines = t.wrap(d, it["name"], f_name, x1 - x0 - 14)
-    ny = y1 - 46 - (len(lines) - 1) * 15
+    f_name = font("Inter.ttf", 15, "Bold")
+    lines = t.wrap(d, it["name"], f_name, x1 - x0 - 12)
+    ny = y1 - 47 - (len(lines) - 1) * 17
     for j, line in enumerate(lines):
-        t.text(d, (cx, ny + j * 15), line, f_name, k.PARCHMENT, "mm")
-    t.text(d, (cx, y1 - 15), t.fit(d, it["rarity"], font("Inter.ttf", 11, "Bold"), x1 - x0 - 16),
-           font("Inter.ttf", 11, "Bold"), mix(color, (255, 255, 255), 0.35), "mm")
+        t.text(d, (cx, ny + j * 17), line, f_name, k.PARCHMENT, "mm")
+    t.text(d, (cx, y1 - 15), t.fit(d, it["rarity"], font("Inter.ttf", 13, "Bold"), x1 - x0 - 14),
+           font("Inter.ttf", 13, "Bold"), mix(color, (255, 255, 255), 0.35), "mm")
     tag = "EQUIPPED" if it["equipped"] else ("LEARNED" if it.get("learned") else None)
     if it["qty"] > 1:
-        k.chip(img, (x0 + 8, y0 + (40 if tag else 16)), f"×{it['qty']:,}", k.GOLD, size=11, fill=(8, 8, 6))
+        k.chip(img, (x0 + 8, y0 + (40 if tag else 17)), f"×{it['qty']:,}", k.GOLD, size=13, fill=(8, 8, 6))
     if tag:
         f_t = font("Cinzel.ttf", 9, "Bold")
         tw = t.width(ImageDraw.Draw(img), tag, f_t) + 22
@@ -161,7 +161,7 @@ def inspect_panel(img, it, box):
     k.plaque(img, box, "Inspect", color=JADE)
     d = ImageDraw.Draw(img)
     if not it:
-        t.text(d, ((x0 + x1) / 2, (y0 + y1) / 2), "Pick an item to inspect it", font("Inter.ttf", 14, "Medium"),
+        t.text(d, ((x0 + x1) / 2, (y0 + y1) / 2), "Pick an item to inspect it", font("Inter.ttf", 17, "Medium"),
                k.ASH, "mm")
         return
     color = t.RARITY.get(it["rarity_key"], k.ASH)
@@ -174,52 +174,77 @@ def inspect_panel(img, it, box):
     d.ellipse(P(cx - 52, y0 + 52, cx + 52, y0 + 156), fill=alpha(mix(color, (0, 0, 0), 0.78), 255))
     t.icon(img, it["icon"], (cx, y0 + 104), 72, mix(color, (255, 255, 255), 0.18))
     d = ImageDraw.Draw(img)
-    f_name = font("Cinzel.ttf", 19, "Bold")
-    y = y0 + 190
+    f_name = font("Cinzel.ttf", 23, "Bold")
+    y = y0 + 194
     for line in t.wrap(d, it["name"].upper(), f_name, x1 - x0 - 30):
         t.text(d, (cx, y), line, f_name, k.GOLD_HI, "mm")
-        y += 24
+        y += 28
     rar = it["rarity"] + (f"  ·  ×{it['qty']:,}" if it["qty"] > 1 else "")
-    k.chip(img, (cx, y + 4), rar, color, size=11, anchor="m")
+    k.chip(img, (cx, y + 6), rar, color, size=14, anchor="m")
     d = ImageDraw.Draw(img)
-    t.text(d, (cx, y + 28), t.fit(d, it["kind"], font("Inter.ttf", 12, "Medium"), x1 - x0 - 30),
-           font("Inter.ttf", 12, "Medium"), k.ASH, "mm")
-    y += 48
+    f_kind = font("Inter.ttf", 15, "Medium")
+    t.text(d, (cx, y + 36), t.fit(d, it["kind"], f_kind, x1 - x0 - 30), f_kind, k.ASH, "mm")
+    y += 58
     t.divider(d, x0 + 20, x1 - 20, y)
-    y += 18
-    f_body = font("Inter.ttf", 13, "Medium")
-    for para in it["lines"]:
-        for line in t.wrap(d, para, f_body, x1 - x0 - 40, lines=3):
-            t.text(d, (x0 + 20, y), line, f_body, k.PARCHMENT, "lm")
-            y += 19
+    y += 24
+    # a one-line summary, then the effects as short lines
+    summary = first_sentence(it["lines"][0]) if it["lines"] else ""
+    f_body = font("Inter.ttf", 16, "Medium")
+    for line in t.wrap(d, summary, f_body, x1 - x0 - 40, lines=2):
+        t.text(d, (x0 + 20, y), line, f_body, k.PARCHMENT, "lm")
+        y += 22
     if it["effects"]:
-        y += 8
-        for eff in it["effects"]:
-            k.gem(d, x0 + 26, y, 4, JADE)
-            for j, line in enumerate(t.wrap(d, eff, f_body, x1 - x0 - 60, lines=2)):
-                t.text(d, (x0 + 38, y + j * 17), line, f_body, k.GOLD_HI, "lm")
-            y += 21 + 17 * (len(t.wrap(d, eff, f_body, x1 - x0 - 60, lines=2)) - 1)
+        y += 10
+        f_eff = font("Inter.ttf", 18, "SemiBold")
+        for eff in it["effects"][:MAX_EFFECTS]:
+            eff = short_effect(eff)
+            lines = t.wrap(d, eff, f_eff, x1 - x0 - 62, lines=2)
+            k.gem(d, x0 + 28, y, 5, JADE)
+            for j, line in enumerate(lines):
+                t.text(d, (x0 + 42, y + j * 22), line, f_eff, k.GOLD_HI, "lm")
+            y += 30 + 22 * (len(lines) - 1)
     acts = it.get("actions") or []
-    bottom = y1 - 22 - (36 if acts else 0)
-    ny = max(y + 10, bottom - 24 * len(it["notes"]) + 12)
-    for note, tone in it["notes"]:
+    bottom = y1 - 26 - (44 if acts else 0)
+    ny = max(y + 12, bottom - 30 * len(it["notes"]) + 14)
+    for note, tone in it["notes"][:2]:
         col = NOTE_COLORS.get(tone, k.ASH)
-        k.chip(img, (cx, ny), t.fit(d, note, font("Inter.ttf", 11, "Bold"), x1 - x0 - 60), col, size=11, anchor="m")
-        ny += 24
+        k.chip(img, (cx, ny), t.fit(d, note, font("Inter.ttf", 14, "Bold"), x1 - x0 - 60), col, size=14, anchor="m")
+        ny += 30
     if acts:
         # which buttons below the card work on this item
         d = ImageDraw.Draw(img)
-        ay = y1 - 30
-        d.line(P(x0 + 20, ay - 22, x1 - 20, ay - 22), fill=alpha(k.BRONZE_DK, 255), width=max(1, S))
-        f_a = font("Inter.ttf", 12, "Bold")
-        widths = [t.width(d, a, f_a) + 40 for a in acts]
-        x = cx - (sum(widths) + 8 * (len(acts) - 1)) / 2
+        ay = y1 - 34
+        d.line(P(x0 + 20, ay - 26, x1 - 20, ay - 26), fill=alpha(k.BRONZE_DK, 255), width=max(1, S))
+        f_a = font("Inter.ttf", 16, "Bold")
+        widths = [t.width(d, a, f_a) + 50 for a in acts]
+        x = cx - (sum(widths) + 10 * (len(acts) - 1)) / 2
         for a, w in zip(acts, widths):
             danger = a == "Discard"
             col = (220, 100, 90) if danger else JADE
-            d.rounded_rectangle(P(x, ay - 13, x + w, ay + 13), radius=round(6 * S),
+            d.rounded_rectangle(P(x, ay - 16, x + w, ay + 16), radius=round(7 * S),
                                 fill=alpha(mix(col, (0, 0, 0), 0.72), 255), outline=alpha(col, 220), width=max(1, S))
-            t.icon(img, ACTION_ICON.get(a, "star"), (x + 15, ay), 14, mix(col, (255, 255, 255), 0.3))
+            t.icon(img, ACTION_ICON.get(a, "star"), (x + 18, ay), 18, mix(col, (255, 255, 255), 0.3))
             d = ImageDraw.Draw(img)
-            t.text(d, (x + 26, ay + 0.5), a, f_a, k.PARCHMENT, "lm")
-            x += w + 8
+            t.text(d, (x + 32, ay + 0.5), a, f_a, k.PARCHMENT, "lm")
+            x += w + 10
+
+
+MAX_EFFECTS = 4
+# Long effect phrases cut down for the Inspect panel (the full wording stays in the data)
+SHORTER = [(" chance of a technique manual", " technique manual"), (" chance of a weapon", " weapon"),
+           (" chance of an ", " "), (" chance of a ", " "), (" when used", ""),
+           ("Goes into: ", "Used in: ")]
+
+
+def short_effect(text):
+    for a, b in SHORTER:
+        text = text.replace(a, b)
+    return text
+
+
+def first_sentence(text):
+    """The first sentence of a description (the Inspect panel shows one line, not a paragraph)."""
+    for end in (". ", "! "):
+        if end in text:
+            return text.split(end, 1)[0] + end.strip()
+    return text
