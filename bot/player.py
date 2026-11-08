@@ -464,6 +464,20 @@ def add_toxicity(player, tox_now, added):
     return min(toxicity_cap(player), tox_now + added)
 
 
+def toxicity_fields(player, new_tox, now=None):
+    """The toxicity and toxicity_at to save after a pill changes toxicity to new_tox.
+    The fading clock keeps the time already spent toward the next point, so swallowing a pill
+    (a Cleansing pill above all) never makes the next point of toxicity take longer to fade."""
+    now = time.time() if now is None else now
+    if not new_tox or not player.get("toxicity") or player.get("toxicity_at") is None:
+        return {"toxicity": new_tox, "toxicity_at": now}
+    period = toxicity_decay_hours(player) * 3600
+    faded = min(player["toxicity"], int((now - player["toxicity_at"]) // period))
+    if faded >= player["toxicity"]:                    # it had all faded: the clock starts fresh
+        return {"toxicity": new_tox, "toxicity_at": now}
+    return {"toxicity": new_tox, "toxicity_at": player["toxicity_at"] + faded * period}
+
+
 def toxicity_decay_hours(player=None):
     """Hours for 1 toxicity to fade. The Purity artifact (玉) makes it fade that much faster."""
     return training.TOXICITY_DECAY_HOURS / (1 + gear.artifact_bonus(player, "toxicity_decay_faster"))

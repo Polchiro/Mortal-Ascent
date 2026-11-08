@@ -414,7 +414,6 @@ QUENCH = {
 
 # ── Stage rules (bot/forging.py plays them). DEFAULT numbers, tune freely ──
 TIMER_GRACE_SECONDS = 1.0           # Discord round-trip allowance per decision, as in /craft
-IDLE_TIMEOUT_SECONDS = 300
 
 # 1 Ignite: heat 0–100, keep it inside a hidden safe zone of DIFFICULTY["zone"] degrees (+ fuel, rank, Steady Hand)
 IGNITE = {"pump": 12, "vent": -12, "calm_drift": 5, "spike": (12, 18), "spike_chance": 0.30,

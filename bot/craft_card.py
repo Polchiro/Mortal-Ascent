@@ -202,7 +202,7 @@ def _result(c, data, name, outcome):
         tail += f" · You are now a {outcome['rank_up']} Alchemist!"
     if n:
         data["mode"] = "success"
-        data.update(result=n, effect=alchemy.pattern_effect(n), toxicity=crafting.toxicity_for(n))
+        data.update(result=n, effect=alchemy.pattern_effect(n), toxicity=crafting.toxicity_text(c.kind, c.grade, n))
         data["corner"]["label"] = "REFINED"
         batch = getattr(c, "batch", 1)
         made = f"{batch} {name}{'s' if name.endswith('Pill') else ''}" if batch > 1 else f"a {name}"

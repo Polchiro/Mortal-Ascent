@@ -31,13 +31,13 @@ from . import craft_card, db, gear, loot, materials, passives
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
-from .views import COLOR, OwnedView
+from .views import COLOR, PANEL_IDLE_SECONDS, OwnedView, free_old_panel
 from cards.alchemy import render_alchemy
 
 log = logging.getLogger("mortal-ascent")
 
 TIMER_GRACE_SECONDS = 1.0           # Discord round-trip allowance, as in /train and /gather
-IDLE_TIMEOUT = 300
+IDLE_TIMEOUT = PANEL_IDLE_SECONDS     # the panel closes after 2 minutes without a click
 CN = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
 AGES = sorted(alchemy.HERB_AGES)
 
@@ -101,6 +101,22 @@ def toxicity_for(patterns):
         if patterns >= min_patterns:
             return tox
     return alchemy.PATTERN_TOXICITY[-1][1]
+
+
+def toxicity_change(kind, grade, patterns):
+    """How much swallowing this pill changes toxicity: negative for a Cleansing pill (it removes toxicity
+    and adds none), positive for the rest. Breakthrough pills are used at a realm gate and add none."""
+    if kind == "cleansing":
+        return -max(1, int(pill_spec(kind, grade)["toxicity_removed"] * alchemy.pattern_effect(patterns)))
+    if kind == "breakthrough":
+        return 0
+    return toxicity_for(patterns)
+
+
+def toxicity_text(kind, grade, patterns):
+    """'Toxicity +2', 'Toxicity −1' or 'No toxicity'."""
+    n = toxicity_change(kind, grade, patterns)
+    return f"Toxicity +{n}" if n > 0 else f"Toxicity −{-n}" if n < 0 else "No toxicity"
 
 
 def crafted_pill(kind, grade, patterns):
@@ -593,7 +609,8 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
         e = alchemy.pattern_effect(craft.result)
         what = f"**{pill['name']}**" if craft.batch == 1 else f"**{craft.batch}× {pill['name']}**"
         lines.append(f"✨ You craft {'a ' if craft.batch == 1 else ''}{what}! Effect ×{e:.2f} · "
-                     f"toxicity +{toxicity_for(craft.result)}" + (" each" if craft.batch > 1 else ""))
+                     + toxicity_text(craft.kind, craft.grade, craft.result).lower()
+                     + (" each" if craft.batch > 1 else ""))
         if not stored:
             lines.append("⚠️ Your bag is full, so the pill rolls away and is lost." if craft.batch == 1
                          else "⚠️ Your bag is full, so the pills roll away and are lost.")
@@ -655,8 +672,9 @@ def use_pill(conn, user_id, item, now=None):
     if kind == "cleansing":
         removed = max(1, int(pill_spec(kind, grade)["toxicity_removed"] * effect))
         db.remove_item(conn, item["id"])
-        db.update_player(conn, user_id, toxicity=max(0, tox_now - removed), toxicity_at=now)
-        return f"💧 The **{item['name']}** washes through your meridians. Toxicity {tox_now} → {max(0, tox_now - removed)}."
+        left = max(0, tox_now - removed)
+        db.update_player(conn, user_id, **rules.toxicity_fields(p, left, now))
+        return f"💧 The **{item['name']}** washes through your meridians. Toxicity {tox_now} → {left}."
     tox = rules.add_toxicity(p, tox_now, added)                 # Dao Heart caps it
     strength = rules.pill_effect_mult(tox) * effect
     half = kind in ("qi", "burst") and below_realm(p, grade)
@@ -675,7 +693,8 @@ def use_pill(conn, user_id, item, now=None):
         mult = 1 + (training.QI_PILLS[grade] - 1) * strength
         db.remove_item(conn, item["id"])
         db.update_player(conn, user_id, pill_grade=grade, pill_mult=mult,
-                         pill_expires=now + training.QI_PILL_DURATION_HOURS * 3600, toxicity=tox, toxicity_at=now)
+                         pill_expires=now + training.QI_PILL_DURATION_HOURS * 3600,
+                         **rules.toxicity_fields(p, tox, now))
         return (f"💊 You swallow the **{item['name']}**. Qi Rate ×{mult:.2f} for "
                 f"{training.QI_PILL_DURATION_HOURS} hours. Toxicity: {tox}." + note)
     if kind == "burst":
@@ -684,8 +703,8 @@ def use_pill(conn, user_id, item, now=None):
         qi = rate * pill_spec(kind, grade)["hours"] * strength
         db.remove_item(conn, item["id"])
         p, events = rules.add_qi(p, qi, techs, now=now)
-        db.update_player(conn, user_id, qi=p["qi"], qi_overflow=p["qi_overflow"], layer=p["layer"], toxicity=tox,
-                         toxicity_at=now)
+        db.update_player(conn, user_id, qi=p["qi"], qi_overflow=p["qi_overflow"], layer=p["layer"],
+                         **rules.toxicity_fields(p, tox, now))
         return "\n".join([f"⚡ The **{item['name']}** bursts in your dantian: **+{qi:,.1f} Qi**. Toxicity: {tox}." + note]
                          + events)
     # mending
@@ -698,7 +717,7 @@ def use_pill(conn, user_id, item, now=None):
         left = 0
     else:
         left = max(0, hurt - spec["injury_minutes"] * 60 * strength)
-    db.update_player(conn, user_id, injured_until=now + left if left else None, toxicity=tox, toxicity_at=now)
+    db.update_player(conn, user_id, injured_until=now + left if left else None, **rules.toxicity_fields(p, tox, now))
     return (f"❤️ The **{item['name']}** knits your wounds. "
             + (f"Injury left: {rules.fmt_duration(left)}." if left else "Your injury is healed!")
             + f" Toxicity: {tox}." + note)
@@ -1079,6 +1098,9 @@ class CraftView(OwnedView):
         self.stop()
         self.bot.busy.discard((self.owner_id, "craft"))
 
+    def in_progress(self):
+        return self.craft is not None and not self.craft.done
+
     async def on_timeout(self):
         try:
             c = self.craft
@@ -1115,13 +1137,12 @@ def register(bot):
                 "You have not begun your journey yet. Use **/start** to step through the gates of the Jianghu.",
                 ephemeral=True)
             return
-        if (uid, "craft") in bot.busy:
-            await interaction.response.send_message("Your cauldron is already lit. Finish that craft first.",
-                                                    ephemeral=True)
+        if (uid, "craft") in bot.busy and not await free_old_panel(
+                bot, interaction, "craft", "Your cauldron is already lit. Finish that craft first."):
             return
         bot.busy.add((uid, "craft"))
         try:
-            view = CraftView(bot, uid)
+            view = CraftView(bot, uid).track(bot, "craft")
             await interaction.response.send_message(embed=view.embed(), view=view)
             view.message = await interaction.original_response()
         except Exception:
@@ -1153,8 +1174,8 @@ def swallow_in_fight(conn, user_id, pill, now=None):
     p = db.get_player(conn, user_id)
     added = toxicity_for(pill["patterns"]) if pill.get("patterns") else 1
     db.remove_item(conn, pill["id"])
-    db.update_player(conn, user_id, toxicity=rules.add_toxicity(p, rules.current_toxicity(p, now), added),
-                     toxicity_at=now)
+    db.update_player(conn, user_id, **rules.toxicity_fields(
+        p, rules.add_toxicity(p, rules.current_toxicity(p, now), added), now))
 
 
 def bank_fight_pills(conn, fighter):

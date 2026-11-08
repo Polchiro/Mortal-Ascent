@@ -21,13 +21,13 @@ import alchemy
 
 from . import db, gather_card, gear, loot, materials, passives
 from . import player as rules
-from .views import COLOR, OwnedView
+from .views import COLOR, PANEL_IDLE_SECONDS, OwnedView, free_old_panel
 
 log = logging.getLogger("mortal-ascent")
 
 TIMER_GRACE_SECONDS = 1.0       # Discord round-trip allowance on timed buttons (same as /train)
 SPIRIT_CHECK_SECONDS = 10
-IDLE_TIMEOUT = 300              # the gathering message stops after 5 idle minutes
+IDLE_TIMEOUT = PANEL_IDLE_SECONDS    # the gathering message stops after 2 idle minutes
 
 PLACES = [
     "the misty slope", "the riverbank", "the shade of old pines", "a mossy ravine", "the foot of a waterfall",
@@ -90,7 +90,7 @@ class Gathering:
         return self.round
 
     def _herb_round(self, p):
-        tier = loot.herb_tier(p["realm"], self.rng)
+        tier = loot.herb_tier(p["realm"], self.rng, p["alchemy_exp"])
         type_ = loot.roll_herb_type(self.rng)
         age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]
@@ -450,6 +450,9 @@ class GatherView(OwnedView):
         self.stop()
         self.bot.busy.discard((self.owner_id, "gather"))
 
+    def in_progress(self):
+        return self.g.round is not None         # a timed round is on screen
+
     async def on_timeout(self):
         try:
             r = self.g.round
@@ -493,13 +496,12 @@ def register(bot):
         if why:
             await interaction.response.send_message(why, ephemeral=True)
             return
-        if (uid, "gather") in bot.busy:
-            await interaction.response.send_message("You are already gathering. Use that message, or press Stop.",
-                                                    ephemeral=True)
+        if (uid, "gather") in bot.busy and not await free_old_panel(
+                bot, interaction, "gather", "You are already gathering. Use that message, or press Stop."):
             return
         bot.busy.add((uid, "gather"))
         try:
-            view = GatherView(bot, uid)
+            view = GatherView(bot, uid).track(bot, "gather")
             await view.send(interaction)
         except Exception:
             bot.busy.discard((uid, "gather"))

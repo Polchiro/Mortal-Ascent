@@ -60,6 +60,43 @@ async def safe_reply(interaction, msg):
 STILL_WORKING_MSG = "⏳ Your last click is still being handled. Wait a moment."
 OLD_BUTTON_MSG = "That button is from an earlier step and no longer works. Use the newest buttons."
 
+# A solo panel (/explore, /train, /practice, /craft, /forge, /gather) closes by itself after this long
+# without a click, which frees the command for a new one. Discord restarts the clock on every click.
+PANEL_IDLE_SECONDS = 120
+
+
+def panel_registry(bot):
+    """{(user id, kind): the open panel} so a new command can find (and close) the old one."""
+    panels = getattr(bot, "panels", None)
+    if panels is None:
+        panels = bot.panels = {}
+    return panels
+
+
+async def free_old_panel(bot, interaction, kind, busy_text):
+    """For a command whose panel is still open ((user, kind) is in bot.busy).
+
+    If the old panel is just sitting there (nothing half-way through), it is closed exactly as if it had
+    timed out, and True is returned so the command can open a fresh one. Otherwise (a fight, a timed
+    stage or a click is under way) the player gets a link to the old panel and False is returned."""
+    uid = interaction.user.id
+    view = panel_registry(bot).get((uid, kind))
+    if view is not None and not view.is_finished() and not view._handling and not view.in_progress():
+        await view.expire()
+        bot.busy.discard((uid, kind))
+        return True
+    text = busy_text
+    if view is not None and view.is_finished():
+        text += " It is closing right now; try again in a moment."
+    else:
+        link = getattr(view.message, "jump_url", None) if view is not None and view.message else None
+        if link:
+            text += f" [Jump to it]({link})."
+        mins = PANEL_IDLE_SECONDS // 60
+        text += f" It closes by itself after {mins} minutes without a click."
+    await interaction.response.send_message(text, ephemeral=True)
+    return False
+
 
 class OwnedView(discord.ui.View):
     """A view only its owner can press.
@@ -78,6 +115,22 @@ class OwnedView(discord.ui.View):
     def clear_items(self):
         self._generation += 1
         return super().clear_items()
+
+    def track(self, bot, kind):
+        """Remember this as the player's open `kind` panel, so a new command can find it."""
+        panel_registry(bot)[(self.owner_id, kind)] = self
+        return self
+
+    def in_progress(self):
+        """True while something is half-way (a fight, a timed stage) and a new command must not close it."""
+        return False
+
+    async def expire(self):
+        """Close the panel now, exactly as if it had sat idle until its timeout."""
+        if self.is_finished():
+            return
+        self.stop()                 # Discord's own idle timer is cancelled, so on_timeout runs only once
+        await self.on_timeout()
 
     def add_item(self, item):
         inner, generation = item.callback, self._generation
@@ -195,7 +248,7 @@ def spoils_view(data):
 
 class ExploreView(FightMixin, OwnedView):
     def __init__(self, bot, owner_id, rng=None):
-        super().__init__(owner_id, timeout=300)
+        super().__init__(owner_id, timeout=PANEL_IDLE_SECONDS)
         self.bot = bot
         self.exp = Expedition(bot.conn, owner_id, rng)
         self.exp.next_step()
@@ -401,8 +454,13 @@ class ExploreView(FightMixin, OwnedView):
             self.exp.finish()
         await self.update(interaction)
 
+    def in_progress(self):
+        # The expedition's cooldown is already running, so a new /explore could not start one anyway:
+        # the player gets a link to this panel instead of losing the rest of the expedition.
+        return not self.exp.over
+
     async def on_timeout(self):
-        """Idle for 5 minutes: walk home with what was found."""
+        """Idle for PANEL_IDLE_SECONDS: walk home with what was found."""
         self.stop_fight()
         try:
             if not self.exp.over:
@@ -425,9 +483,11 @@ class ExploreView(FightMixin, OwnedView):
 
 # ── /train ────────────────────────────────────────────────────────────
 
+TRAIN_RUN_TIMEOUT = 900          # once Begin is pressed, the challenge runs on its own timers
+
 class TrainView(OwnedView):
     def __init__(self, bot, owner_id, session, rng=None):
-        super().__init__(owner_id, timeout=900)
+        super().__init__(owner_id, timeout=PANEL_IDLE_SECONDS)     # until Begin is pressed
         self.bot, self.session = bot, session
         self.rng = rng or random.Random()
         self.future = None
@@ -502,6 +562,10 @@ class TrainView(OwnedView):
             e.set_image(url=f"attachment://{file.filename}")
             kw["attachments"] = [file]
         await interaction.edit_original_response(**kw)
+        try:
+            self.message = await interaction.original_response()     # for the "Jump to it" link
+        except (AttributeError, discord.HTTPException):
+            pass
 
     def intro(self):
         s = self.session
@@ -542,8 +606,12 @@ class TrainView(OwnedView):
 
     async def on_begin(self, interaction):
         self.clear_items()
+        self.timeout = TRAIN_RUN_TIMEOUT
         await interaction.response.edit_message(embed=self.step_embed("*Get ready...*"), attachments=[], view=self)
         self.task = asyncio.create_task(self.run())
+
+    def in_progress(self):
+        return self.task is not None
 
     def step_embed(self, body, title=None, footer=None):
         e = discord.Embed(title=title or self.title,
@@ -804,11 +872,15 @@ class TrainView(OwnedView):
             self.bot.busy.discard((uid, "train"))
 
     async def on_timeout(self):
-        # Begin was never pressed
+        if self.task is not None:
+            return              # the running challenge ends the session itself (run() frees it)
+        # Begin was never pressed: nothing was gained, so the cooldown taken at the start is given back
         self.bot.busy.discard((self.owner_id, "train"))
-        if self.task is None and self.interaction:
+        db.clear_cooldown(self.bot.conn, self.owner_id, self.session["mode"])
+        if self.interaction:
             try:
-                await self.edit(self.step_embed("*You never stepped onto the training ground.*"), view=False)
+                await self.edit(self.step_embed("*You never stepped onto the training ground. "
+                                                "You can train again right away.*"), view=False)
             except discord.HTTPException:
                 pass
 
@@ -1037,6 +1109,9 @@ class SparView(FightMixin, OwnedView):
             await self._end(interaction)
             return
         await self.show(interaction)
+
+    def in_progress(self):
+        return True             # a spar is a fight: it ends on its own turn timer within a minute or two
 
     async def _end(self, interaction):
         self.stop()

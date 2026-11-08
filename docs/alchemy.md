@@ -16,6 +16,8 @@ alchemist rank → train faster.**
 
 Players find herbs of their own tier. 15% of gathers give a herb one tier lower.
 
+**Learning grade.** While your alchemist rank is too low to refine pills of your realm's herb grade, half of your herbs (from /gather and from herb patches on /explore) are of the highest grade you *can* refine instead. Ranks 1–2 learn on Mortal herbs, 3–4 on Yellow, 5–6 on Mystic, 7–8 on Earth. For example, a 2nd Grade alchemist at Martial Apprentice finds Mortal herbs half the time until they reach 3rd Grade, then goes back to mostly Yellow.
+
 | Herb tier | Found at realms |
 |---|---|
 | 凡 Mortal | Mortal |

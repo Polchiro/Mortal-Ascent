@@ -222,6 +222,44 @@ def test_burst_mending_and_cleansing(conn):
     assert db.get_player(conn, 1)["toxicity"] == 0                # 1 after mending, −1 (never less than 1 removed)
 
 
+def test_cleansing_pills_only_lower_toxicity(conn):
+    """Bug report: toxicity went up instead of down after eating Cleansing pills."""
+    new_player(conn)
+    hour = 3600
+    period = training.TOXICITY_DECAY_HOURS * hour
+    db.update_player(conn, 1, toxicity=5, toxicity_at=0)
+    for patterns in (1, 5, 9):
+        loot.store(conn, 1, [crafting.crafted_pill("cleansing", "Mortal", patterns)])
+    now = period - hour                                          # an hour before the next point fades
+    for expected in (4, 3, 2):
+        before = rules.current_toxicity(db.get_player(conn, 1), now)
+        msg = loot.use_item(conn, 1, db.get_items(conn, 1, "pills")[0]["id"], now=now)
+        assert rules.current_toxicity(db.get_player(conn, 1), now) == expected == before - 1
+        assert f"{before} → {expected}" in msg
+    # the fading clock kept its 7 hours: one hour later another point fades, as it would have without the pills
+    assert rules.current_toxicity(db.get_player(conn, 1), period) == 1
+    assert rules.current_toxicity(db.get_player(conn, 1), 2 * period) == 0
+    assert not db.get_items(conn, 1, "pills")
+
+
+def test_pills_keep_the_toxicity_fading_clock(conn):
+    new_player(conn)
+    period = training.TOXICITY_DECAY_HOURS * 3600
+    db.update_player(conn, 1, toxicity=3, toxicity_at=0)
+    loot.store(conn, 1, [crafting.crafted_pill("burst", "Mortal", 5)])
+    loot.use_item(conn, 1, db.get_items(conn, 1, "pills")[0]["id"], now=1.5 * period)
+    p = db.get_player(conn, 1)
+    assert rules.current_toxicity(p, 1.5 * period) == 3          # 3 − 1 faded + 1 from the pill
+    assert p["toxicity_at"] == period and rules.current_toxicity(p, 2 * period) == 2
+
+
+def test_craft_shows_cleansing_pills_remove_toxicity():
+    assert crafting.toxicity_text("cleansing", "Mortal", 1) == "Toxicity −1"
+    assert crafting.toxicity_text("cleansing", "Heaven", 9).startswith("Toxicity −")
+    assert crafting.toxicity_text("qi", "Mortal", 1) == "Toxicity +2"
+    assert crafting.toxicity_text("breakthrough", "Mortal", 1) == "No toxicity"
+
+
 def test_breakthrough_pill_raises_the_realm_gate(conn):
     p = new_player(conn, realm="Martial Apprentice")
     loot.store(conn, 1, [crafting.crafted_pill("breakthrough", "Yellow", 4),

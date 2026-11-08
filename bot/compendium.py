@@ -477,7 +477,7 @@ def pills_overview():
             f"Jade Chests {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} · cannot be traded"]),
     ]
     return dict(subtitle="Toxicity, patterns and rare pills",
-                intro="Every pill you swallow adds toxicity; too much weakens the next ones.",
+                intro="Pills add toxicity and too much weakens the next ones. Cleansing pills wash it out.",
                 tiles=tiles, footer="Craft pills in /craft from herbs you /gather. Pick a pill kind in the menu.")
 
 
@@ -536,7 +536,8 @@ def herbs_overview():
                 tiles=tiles,
                 footer="Herb tier by realm: " + " · ".join(f"{t} {REALM_SHORT[r[0]]}+"
                                                            for t, r in tiers.items())
-                       + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower.")
+                       + f". {pct(alchemy.LOWER_TIER_CHANCE)} are one tier lower. Until your alchemist rank can"
+                       f" refine your realm's grade, {pct(alchemy.LEARNING_TIER_CHANCE)} are the grade you can.")
 
 
 # ── sections ──────────────────────────────────────────────────────────
