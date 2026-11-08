@@ -1,7 +1,7 @@
 """
 The /gather "herb field" card that the bot edits every round (docs/alchemy.md section 2).
 
-  ┌ scene window: the place being searched (misty slope, riverbank, old pines, ravine, waterfall, meadow,
+  ┌ scene window: the place being searched (misty slope, riverbank, old pines, waterfall, meadow,
   │   shrine ruins, bamboo grove), in jade night colours
   │   over it: "Herb field · place · tier", the "You are looking for" plate (herb icon, name, tier, type,
   │   what it is used for, the description), a countdown ring and the Herbal Insight streak with its bonus
@@ -18,7 +18,7 @@ import math
 import random
 from functools import lru_cache
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 from . import theme as T
 from .scenes import photo, subject
@@ -45,6 +45,8 @@ RED_BAD = (236, 70, 56)
 TYPE_LABEL = {"qi": "Qi", "healing": "Healing", "purity": "Purity", "breakthrough": "Breakthrough"}
 TYPE_USE = {"qi": "for Qi pills", "healing": "for Mending pills", "purity": "used in every recipe",
             "breakthrough": "for Breakthrough pills"}
+TYPE_SHORT = {"qi": "Qi pills", "healing": "Mending pills", "purity": "all recipes",
+              "breakthrough": "Breakthrough pills"}
 HERB_COLOR = {"qi": (110, 170, 240), "healing": (232, 96, 96), "purity": (100, 206, 196),
               "breakthrough": (204, 150, 92)}
 HERB_ICON = {"qi": "misc:herb_qi", "healing": "misc:herb_healing", "purity": "misc:herb_purity",
@@ -60,16 +62,16 @@ OUTCOME = {"gathered": ("Gathered", GREEN_OK, "check"), "full": ("Bag full", (23
 
 # ── the places (cached) ───────────────────────────────────────────────
 
-PLACES = ("the misty slope", "the riverbank", "the shade of old pines", "a mossy ravine", "the foot of a waterfall",
+PLACES = ("the misty slope", "the riverbank", "the shade of old pines", "the foot of a waterfall",
           "a sunlit meadow", "the ruins of a mountain shrine", "the edge of a bamboo grove")
 PLACE_NAME = {"the misty slope": "Misty Slope", "the riverbank": "Riverbank", "the shade of old pines": "Old Pines",
-              "a mossy ravine": "Mossy Ravine", "the foot of a waterfall": "Waterfall",
+              "the foot of a waterfall": "Waterfall",
               "a sunlit meadow": "Sunlit Meadow", "the ruins of a mountain shrine": "Shrine Ruins",
               "the edge of a bamboo grove": "Bamboo Grove"}
 
 
 PLACE_ART = {"the misty slope": "gather_misty_slope", "the riverbank": "gather_riverbank",
-             "the shade of old pines": "gather_old_pines", "a mossy ravine": "gather_mossy_ravine",
+             "the shade of old pines": "gather_old_pines",
              "the foot of a waterfall": "gather_waterfall", "a sunlit meadow": "gather_sunlit_meadow",
              "the ruins of a mountain shrine": "gather_shrine_ruins", "the edge of a bamboo grove": "gather_bamboo_grove"}
 
@@ -115,13 +117,6 @@ def _drawn_scene(place, h):
     elif place == "the shade of old pines":
         for i in range(16):
             Wd.pine(d, i * 80 + r.uniform(-20, 20), base + 30, r.uniform(160, 280), (8, 26, 22, 255))
-    elif place == "a mossy ravine":
-        d.polygon([P(0, 0), P(SW * 0.22, 0), P(SW * 0.3, h), P(0, h)], fill=(18, 40, 34, 255))
-        d.polygon([P(SW, 0), P(SW * 0.8, 0), P(SW * 0.7, h), P(SW, h)], fill=(18, 40, 34, 255))
-        for _ in range(40):
-            x = r.choice((r.uniform(0, SW * 0.26), r.uniform(SW * 0.74, SW)))
-            y = r.uniform(0, h)
-            d.ellipse(P(x - 12, y - 6, x + 12, y + 6), fill=(50, 110, 70, 255))
     elif place == "the foot of a waterfall":
         d.polygon([P(SW * 0.35, 0), P(SW * 0.65, 0), P(SW * 0.62, base + 20), P(SW * 0.38, base + 20)],
                   fill=(20, 46, 44, 255))
@@ -154,6 +149,42 @@ def _drawn_scene(place, h):
 
 
 # ── pieces ────────────────────────────────────────────────────────────
+
+GLASS_EDGE = (255, 255, 255, 52)
+TEXT = (246, 242, 232)
+SOFT = (200, 206, 200)
+
+
+def _backdrop(place):
+    """The whole card behind the panels: the place's painting, blurred and dimmed (or the old canvas)."""
+    art = photo(PLACE_ART.get(place), W * S, H * S)
+    if art is None:
+        return T.canvas(W, H, seed=37, accent="train")
+    img = art.filter(ImageFilter.GaussianBlur(14 * S))
+    img.alpha_composite(Image.new("RGBA", img.size, (6, 10, 12, 150)))
+    # darker towards the bottom, where the text sits
+    fade = Image.linear_gradient("L").resize(img.size).point(lambda v: round(v * 0.45))
+    layer = Image.new("RGBA", img.size, (4, 6, 8, 0))
+    layer.putalpha(fade)
+    img.alpha_composite(layer)
+    return img
+
+
+def _glass(img, box, tint=(10, 16, 18), a=96, edge=GLASS_EDGE, r=18):
+    """A frosted glass panel: what is behind it blurred, a light tint, a thin bright edge, round corners."""
+    x0, y0, x1, y1 = (round(v * S) for v in box)
+    rr = round(r * S)
+    region = img.crop((x0, y0, x1, y1)).filter(ImageFilter.GaussianBlur(10 * S))
+    tinted = Image.new("RGBA", region.size, tint + (a,))
+    region.alpha_composite(tinted)
+    mask = Image.new("L", region.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, region.size[0] - 1, region.size[1] - 1), radius=rr, fill=255)
+    img.paste(region, (x0, y0), mask)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((x0, y0, x1, y1), radius=rr, outline=edge, width=max(1, round(1.2 * S)))
+    # a faint highlight along the top edge
+    d.line((x0 + rr, y0 + round(1.5 * S), x1 - rr, y0 + round(1.5 * S)), fill=(255, 255, 255, 40), width=max(1, S))
+
 
 def _scrim(img, box, a=200):
     x0, y0, x1, y1 = box
@@ -218,60 +249,62 @@ def number_badge(img, center, n, color=JADE, r=22):
 
 
 def _streak(img, x, y, data):
+    """The Herbal Insight streak, in two short lines."""
+    T.icon(img, "flame", (x + 18, y), 40, (246, 150, 60))
+    T.gold_text(img, (x + 48, y), f"×{data['streak']}", font("Cinzel.ttf", 44, "Black"), "lm")
     d = ImageDraw.Draw(img)
-    T.icon(img, "flame", (x + 18, y), 38, (246, 150, 60))
-    T.gold_text(img, (x + 50, y), f"×{data['streak']}", font("Cinzel.ttf", 40, "Black"), "lm")
-    d = ImageDraw.Draw(img)
-    T.text(d, (x, y + 38), "Herbal Insight streak", font("Inter.ttf", 25, "Bold"), T.PARCHMENT, "lm")
+    w = T.width(d, f"×{data['streak']}", font("Cinzel.ttf", 44, "Black"))
+    T.text(d, (x + 60 + w, y + 4), "streak", font("Inter.ttf", 30, "Bold"), TEXT, "lm")
+    parts = []
     if data["streak_mult"] > 1:
-        T.text(d, (x, y + 70), f"Old herbs ×{data['streak_mult']:g}", font("Inter.ttf", 25, "SemiBold"), JADE_HI, "lm")
+        parts.append(f"old herbs ×{data['streak_mult']:g}")
     nxt = data.get("streak_next")
     if nxt:
-        T.text(d, (x, y + (100 if data["streak_mult"] > 1 else 70)), f"×{nxt[1]:g} at {nxt[0]} in a row",
-               font("Inter.ttf", 24, "Medium"), T.ASH, "lm")
+        parts.append(f"×{nxt[1]:g} at {nxt[0]}")
+    if parts:
+        T.text(d, (x, y + 46), "  ·  ".join(parts), font("Inter.ttf", 27, "SemiBold"), SOFT, "lm")
 
 
 def _choice(img, box, n, ch, result, color=JADE):
     """One choice card: the number, the drawn plant and its look text. After a pick: green for the herb,
     red for a wrong pick."""
     x0, y0, x1, y1 = box
-    T.panel(img, box, fill=PANEL_FILL)
     state = None
     if result:
         if ch["key"] == result["answer"]:
             state = GREEN_OK
         elif ch["key"] == result.get("picked"):
             state = RED_BAD
-    pic = (x0 + 12, y0 + 12, x1 - 12, y0 + 12 + (x1 - x0 - 24) * PH / PW)
-    if pic[3] > y0 + 186:
-        pic = (x0 + 12, y0 + 12, x1 - 12, y0 + 186)
-    layer = T.vgradient(P(pic[2] - pic[0], pic[3] - pic[1]), (14, 40, 36), (6, 18, 16))
-    img.alpha_composite(layer, P(pic[0], pic[1]))
+    _glass(img, box, tint=(8, 14, 16) if not state else mix(state, (8, 14, 16), 0.8), a=110 if state else 92,
+           edge=alpha(state, 230) if state else GLASS_EDGE)
+    pic = (x0 + 12, y0 + 10, x1 - 12, y0 + 10 + (x1 - x0 - 24) * PH / PW)
+    if pic[3] > y0 + 160:
+        pic = (x0 + 12, y0 + 10, x1 - 12, y0 + 160)
     pw, ph = pic[2] - pic[0], pic[3] - pic[1]
+    T.soft_glow(img, (pic[0] + pw * 0.2, pic[1] + ph * 0.15, pic[2] - pw * 0.2, pic[3] - ph * 0.05),
+                (200, 240, 220, 46), 26)
     scale = min(pw / PW, ph / PH)
     im = plant(ch["name"])
     im = im.resize((round(PW * scale * S), round(PH * scale * S)), Image.LANCZOS)
     img.alpha_composite(im, (round((pic[0] + (pw - PW * scale) / 2) * S), round((pic[1] + (ph - PH * scale) / 2) * S)))
-    d = ImageDraw.Draw(img)
-    d.rectangle(P(*pic), outline=alpha(T.BRONZE, 230), width=round(1.6 * S))
     number_badge(img, (pic[0] + 26, pic[1] + 26), n, color)
     d = ImageDraw.Draw(img)
     room = x1 - x0 - 28
     text, f = ch["look"], None
-    max_lines = 3 if room > 220 else 5
-    for size in (25, 24):
+    max_lines = 3 if room > 220 else 4
+    for size in (31, 29, 27, 25):
         f = font("Inter.ttf", size, "SemiBold")
         lines = T.wrap(d, text, f, room, lines=max_lines)
-        if " ".join(lines).replace(" …", "") == text or size == 24:
+        if " ".join(lines).replace(" …", "") == text or size == 25:
             break
-    top = pic[3] + 18
+    top = pic[3] + 8
     space = y1 - 12 - top
-    step = f.size / S + 7
+    step = f.size / S + 6
     ty = top + max(0, (space - step * len(lines)) / 2) + step / 2
     for i, line in enumerate(lines):
-        T.text(d, ((x0 + x1) / 2, ty + i * step), line, f, T.PARCHMENT if not state else mix(state, WHITE, 0.55), "mm")
+        T.text(d, ((x0 + x1) / 2, ty + i * step), line, f, TEXT if not state else mix(state, WHITE, 0.55), "mm")
     if state:
-        _frame_box(img, (x0 + 4, y0 + 4, x1 - 4, y1 - 4), state, glow=state, width=3)
+        T.soft_glow(img, (x0 - 4, y0 - 4, x1 + 4, y1 + 4), alpha(state, 70), 12, "rect")
         cx, cy = pic[2] - 28, pic[3] - 28
         d = ImageDraw.Draw(img)
         d.ellipse(P(cx - 20, cy - 20, cx + 20, cy + 20), fill=(6, 16, 14, 255), outline=alpha(state, 255),
@@ -283,52 +316,48 @@ def _heading(img, box, title):
     x0, y0, x1, _ = box
     d = ImageDraw.Draw(img)
     f = font("Cinzel.ttf", 24, "Bold")
-    T.spaced(d, (x0 + 24, y0 + 32), title.upper(), f, T.GOLD, 2.4)
-    tw = sum(T.width(d, ch, f) for ch in title.upper()) + 2.4 * (len(title) - 1)
-    T.rule(d, x0 + 44 + tw, x1 - 22, y0 + 32)
+    T.spaced(d, (x0 + 24, y0 + 32), title.upper(), f, (236, 210, 150), 2.4)
 
 
 def session_panel(img, data):
     box = SESSION
-    T.panel(img, box, fill=PANEL_FILL)
-    _heading(img, box, "This session")
+    _glass(img, box)
+    _heading(img, box, f"Gathered  ·  {data['gathered']}")
     x0, y0, x1, y1 = box
     rows = data["session"]
     d = ImageDraw.Draw(img)
     if not rows:
-        T.text(d, (x0 + 26, y0 + 86), "Nothing gathered yet.", font("Inter.ttf", 25, "Medium"), T.ASH, "lm")
+        T.text(d, (x0 + 26, y0 + 98), "Nothing yet", font("Inter.ttf", 30, "Medium"), SOFT, "lm")
+        return
     tw = (x1 - x0 - 30) / 3
     for i, row in enumerate(rows[:3]):
-        x, cy = x0 + 22 + i * tw, y0 + 84
+        x, cy = x0 + 22 + i * tw, y0 + 98
         col = HERB_COLOR.get(row["type"], JADE)
-        T.seal(img, (x + 26, cy), 25, HERB_ICON.get(row["type"], "herb"), col)
+        T.seal(img, (x + 28, cy), 27, HERB_ICON.get(row["type"], "herb"), col)
         d = ImageDraw.Draw(img)
-        T.text(d, (x + 60, cy - 14), T.fit(d, row["name"], font("Inter.ttf", 24, "Bold"), tw - 66),
-               font("Inter.ttf", 24, "Bold"), T.PARCHMENT, "lm")
-        T.text(d, (x + 60, cy + 16), f"{row['age']}-year ×{row['qty']}", font("Inter.ttf", 24, "Medium"),
-               JADE_HI if row["age"] >= 100 else T.ASH, "lm")
-    if len(rows) > 3:
-        d = ImageDraw.Draw(img)
-    line = f"{data['gathered']} herb{'s' if data['gathered'] != 1 else ''} gathered"
+        f = font("Inter.ttf", 27, "Bold")
+        T.text(d, (x + 64, cy - 16), T.fit(d, row["name"], f, tw - 70), f, TEXT, "lm")
+        T.text(d, (x + 64, cy + 18), f"{row['age']}-yr ×{row['qty']}", font("Inter.ttf", 26, "Medium"),
+               JADE_HI if row["age"] >= 100 else SOFT, "lm")
     if data.get("best"):
-        line += f"  ·  best: {data['best']}"
-    T.text(d, (x0 + 26, y1 - 24), T.fit(d, line, font("Inter.ttf", 24, "Medium"), x1 - x0 - 50),
-           font("Inter.ttf", 24, "Medium"), T.ASH, "lm")
+        f = font("Inter.ttf", 26, "SemiBold")
+        T.text(d, (x0 + 26, y1 - 24), T.fit(d, f"Best: {data['best']}", f, x1 - x0 - 50), f, (250, 214, 120), "lm")
 
 
 def careful_panel(img, data):
     box = CAREFUL
-    T.panel(img, box, fill=PANEL_FILL)
-    _heading(img, box, "Careful")
+    _glass(img, box)
     x0, y0, x1, y1 = box
-    T.icon(img, "skull", (x0 + 34, y0 + 76), 30, RED_BAD)
+    T.icon(img, "skull", (x0 + 36, y0 + 46), 32, RED_BAD)
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 24, "SemiBold")
-    T.text(d, (x0 + 62, y0 + 76), "Decoys are poisonous:", f, T.PARCHMENT, "lm")
-    T.text(d, (x0 + 62, y0 + 106), T.fit(d, data["decoy_note"], f, x1 - x0 - 80), f, T.ASH, "lm")
-    T.icon(img, "heart", (x0 + 34, y0 + 146), 26, (226, 84, 72))
+    f = font("Inter.ttf", 28, "Bold")
+    T.text(d, (x0 + 66, y0 + 46), "Poison", f, (255, 150, 130), "lm")
+    f2 = font("Inter.ttf", 26, "Medium")
+    for i, line in enumerate(T.wrap(d, data["decoy_note"], f2, x1 - x0 - 50, lines=2)):
+        T.text(d, (x0 + 26, y0 + 86 + i * 32), line, f2, SOFT, "lm")
+    T.icon(img, "heart", (x0 + 36, y1 - 30), 28, (226, 84, 72))
     d = ImageDraw.Draw(img)
-    T.text(d, (x0 + 62, y0 + 146), f"HP {data['hp']:,} / {data['max_hp']:,}", f, T.PARCHMENT, "lm")
+    T.text(d, (x0 + 66, y1 - 30), f"HP {data['hp']:,} / {data['max_hp']:,}", f, TEXT, "lm")
 
 
 # ── the cards ─────────────────────────────────────────────────────────
@@ -337,13 +366,13 @@ def render_field(data):
     """data: place, tier, name, type, age, old, desc, seconds, streak, streak_mult, streak_next (n, mult) or None,
     choices [{key, name, look}], result None or {answer, picked, outcome, text}, session [{name, type, age, qty}],
     gathered, best, hp, max_hp, decoy_note."""
-    img = T.canvas(W, H, seed=37, accent="train")
+    img = _backdrop(data["place"])
     img.alpha_composite(place_scene(data["place"]), P(SCENE[0], SCENE[1]))
     T.frame(img, SCENE, 0.8)
     x0, y0, x1, y1 = SCENE
     d = ImageDraw.Draw(img)
-    T.spaced(d, (x0 + 30, y0 + 34), f"Herb field  ·  {PLACE_NAME.get(data['place'], data['place'])}  ·  "
-             f"{data['tier']} herbs".upper(), font("Cinzel.ttf", 24, "Bold"), mix(T.GOLD, WHITE, 0.2), 2.0)
+    T.spaced(d, (x0 + 30, y0 + 34), PLACE_NAME.get(data["place"], data["place"]).upper(),
+             font("Cinzel.ttf", 26, "Bold"), mix(T.GOLD, WHITE, 0.2), 2.4)
     rarity = data.get("rarity", "Common")
     rare_col = RARITY_COLOR.get(rarity)
 
@@ -353,40 +382,36 @@ def render_field(data):
     _frame_box(img, plate, rare_col or T.BRONZE)
     px0, py0, px1, py1 = plate
     col = HERB_COLOR.get(data["type"], JADE)
-    T.seal(img, (px0 + 82, py0 + 140), 60, HERB_ICON.get(data["type"], "herb"), col)
+    T.seal(img, (px0 + 66, py0 + 120), 48, HERB_ICON.get(data["type"], "herb"), col)
     d = ImageDraw.Draw(img)
-    tx = px0 + 166
-    T.spaced(d, (tx, py0 + 36), f"{rarity.upper()} FIND  ·  YOU ARE LOOKING FOR" if rare_col
-             else "YOU ARE LOOKING FOR", font("Cinzel.ttf", 24, "Bold"), rare_col or T.GOLD, 2.2)
+    tx = px0 + 132
+    T.spaced(d, (tx, py0 + 34), f"FIND  ·  {rarity.upper()}" if rare_col else "FIND",
+             font("Cinzel.ttf", 26, "Bold"), rare_col or T.GOLD, 2.4)
     name = (f"{data['age']}-year " if data["old"] else "") + data["name"]
-    name, nf = _shrink(d, name.upper(), "Cinzel.ttf", "Black", (50, 44, 38, 32), px1 - tx - 20)
+    name, nf = _shrink(d, name.upper(), "Cinzel.ttf", "Black", (62, 54, 46, 38), px1 - tx - 16)
     T.gold_text(img, (tx, py0 + 90), name, nf, "lm",
                 glow=rare_col or (col if not data["old"] else (250, 220, 120)))
     d = ImageDraw.Draw(img)
-    meta = f"{data['tier']} herb  ·  {TYPE_LABEL.get(data['type'], data['type'])}  ·  {TYPE_USE.get(data['type'], '')}"
-    T.text(d, (tx, py0 + 140), T.fit(d, meta, font("Inter.ttf", 25, "SemiBold"), px1 - tx - 20),
-           font("Inter.ttf", 25, "SemiBold"), JADE_HI, "lm")
-    f = font("Inter.ttf", 26, "Medium")
-    lines = T.wrap(d, f"“{data['desc']}”", f, px1 - tx - 24, lines=2)
+    meta = f"{data['tier']}  ·  {TYPE_SHORT.get(data['type'], data['type'])}"
+    f = font("Inter.ttf", 30, "SemiBold")
+    T.text(d, (tx, py0 + 146), T.fit(d, meta, f, px1 - tx - 16), f, JADE_HI, "lm")
+    f = font("Inter.ttf", 34, "Medium")
+    lines = T.wrap(d, data["desc"], f, px1 - px0 - 48, lines=2)
     for i, line in enumerate(lines):
-        T.text(d, (tx, py0 + 188 + i * 36), line, f, T.PARCHMENT, "lm")
+        T.text(d, (px0 + 26, py0 + 206 + i * 42), line, f, TEXT, "lm")
     if data["old"]:
-        T.text(d, (tx, py1 - 22), "An old herb: it fights back. Less time, more choices.",
-               font("Inter.ttf", 24, "SemiBold"), (250, 214, 120), "lm")
-    elif rare_col:
-        line = f"{rarity} at every realm. Don't let it slip away!"
-        T.text(d, (tx, py1 - 22), T.fit(d, line, font("Inter.ttf", 24, "SemiBold"), px1 - tx - 20),
-               font("Inter.ttf", 24, "SemiBold"), rare_col, "lm")
+        T.text(d, (px0 + 26, py1 - 20), "Old herb: less time, more choices",
+               font("Inter.ttf", 27, "Bold"), (250, 214, 120), "lm")
 
     # countdown ring and streak
     result = data.get("result")
     rcx = x0 + 900
     ring(img, (rcx, y0 + 98), 58, data["seconds"], result and result["outcome"])
     d = ImageDraw.Draw(img)
-    label = OUTCOME[result["outcome"]][0] if result else "to choose"
-    T.text(d, (rcx, y0 + 186), label, font("Inter.ttf", 26 if result else 25, "Bold" if result else "Medium"),
-           OUTCOME[result["outcome"]][1] if result else T.PARCHMENT, "mm")
-    _streak(img, x0 + 846, y0 + 240, data)
+    if result:
+        T.text(d, (rcx, y0 + 188), OUTCOME[result["outcome"]][0], font("Inter.ttf", 30, "Bold"),
+               OUTCOME[result["outcome"]][1], "mm")
+    _streak(img, x0 + 836, y0 + 250, data)
 
     # the choices
     ch = data["choices"]
