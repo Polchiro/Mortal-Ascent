@@ -21,6 +21,7 @@ from functools import lru_cache
 from PIL import Image, ImageDraw
 
 from . import theme as T
+from .scenes import photo, subject
 from . import wilds as Wd
 from .battle import _shrink
 from .plants import PH, PW, plant
@@ -67,10 +68,28 @@ PLACE_NAME = {"the misty slope": "Misty Slope", "the riverbank": "Riverbank", "t
               "the edge of a bamboo grove": "Bamboo Grove"}
 
 
+PLACE_ART = {"the misty slope": "gather_misty_slope", "the riverbank": "gather_riverbank",
+             "the shade of old pines": "gather_old_pines", "a mossy ravine": "gather_mossy_ravine",
+             "the foot of a waterfall": "gather_waterfall", "a sunlit meadow": "gather_sunlit_meadow",
+             "the ruins of a mountain shrine": "gather_shrine_ruins", "the edge of a bamboo grove": "gather_bamboo_grove"}
+
+
 @lru_cache(maxsize=10)
 def place_scene(place, spirit=False):
-    """The searched place as the scene window background (S×, RGBA)."""
+    """The searched place as the scene window background (S×, RGBA): the painting (art/scenes/gather_*.jpg),
+    dimmed a little so the text on it reads, or a drawn scene when the painting is missing."""
     h = SH if not spirit else H_SPIRIT - 32
+    art = photo(PLACE_ART.get(place), SW * S, round(h * S))
+    if art is not None:
+        art = art.copy()
+        shade = Image.new("RGBA", art.size, (6, 10, 10, 70))
+        art.alpha_composite(shade)
+        return art
+    return _drawn_scene(place, h)
+
+
+def _drawn_scene(place, h):
+    """The old drawn scene, used when a place has no painting."""
     sunny = place == "a sunlit meadow"
     top, bottom = ((26, 60, 54), (70, 120, 96)) if sunny else ((6, 18, 18), (26, 66, 58))
     img = Wd.sky(SW, h, top, bottom).convert("RGBA")
@@ -405,7 +424,14 @@ def render_spirit(data):
     sc = place_scene(data["place"], spirit=True)
     img.alpha_composite(sc, P(16, 16))
     Wd.mist(img, W, H_SPIRIT - 160, 180, (210, 236, 240), 150, seed=9, n=16)
-    _spirit(img, 920, H_SPIRIT - 70, 360)
+    ghost = subject("gather_wandering_spirit")
+    if ghost is not None:
+        gh = round(470 * S)
+        ghost = ghost.resize((round(ghost.size[0] * gh / ghost.size[1]), gh), Image.LANCZOS)
+        Wd.glow(img, 930, H_SPIRIT - 280, 200, 260, (170, 230, 250), 110, 30)
+        img.alpha_composite(ghost, (round(930 * S - ghost.size[0] / 2), round((H_SPIRIT - 40) * S) - gh))
+    else:
+        _spirit(img, 920, H_SPIRIT - 70, 360)
     T.frame(img, (16, 16, W - 16, H_SPIRIT - 16), 0.8)
     plate = (40, 60, 760, H_SPIRIT - 50)
     _scrim(img, plate, 205)
