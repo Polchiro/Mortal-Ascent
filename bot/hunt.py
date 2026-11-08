@@ -51,9 +51,10 @@ def team_beast(lair, team):
     name, tier, role = lair["beast"]
     hp, attack, _ = rules.base_stats(top["realm"], top["layer"])
     t, r = beasts.BEAST_TIERS[tier], beasts.ROLES[role]
+    ease = beasts.realm_ease(top["realm"], tier)
     extra = max(0, len(team) - t["team_size"])
-    hp = hp * t["hp"] * r.get("hp", 1) * (1 + beasts.EXTRA_PLAYER_HP_BONUS * extra)
-    atk = attack * t["attack"] * r.get("attack", 1)
+    hp = hp * t["hp"] * r.get("hp", 1) * ease["hp"] * (1 + beasts.EXTRA_PLAYER_HP_BONUS * extra)
+    atk = attack * t["attack"] * r.get("attack", 1) * ease["attack"]
     return {"name": name, "tier": tier, "role": role, "hp": round(hp), "max_hp": round(hp), "attack": atk,
             "defense": atk * beasts.BEAST_DEFENSE_RATIO * r.get("defense", 1), "dodge": r.get("dodge", 0)}
 

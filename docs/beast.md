@@ -16,6 +16,23 @@ Each realm has **3 Normal, 2 Elite and 1 Beast King** — 66 beasts in total.
 - Damage uses the normal formula, including the 30% per-turn cap
 - Each step deeper in an expedition adds +10% to beast stats (see explore.md)
 
+### Low-realm easing
+
+Early beasts felt too slow to kill and Elites were near impossible, so the first
+realms get weaker beasts (`beasts.LOW_REALM_EASE`). Multipliers on HP and Attack;
+Beast Kings and realms from Grand Martial Master on are unchanged.
+
+| Realm | Normal HP / Attack | Elite HP / Attack |
+|---|---|---|
+| Mortal, Martial Apprentice | ×0.55 / ×0.75 | ×0.35 / ×0.50 |
+| Martial Warrior | ×0.65 / ×0.80 | ×0.50 / ×0.70 |
+| Martial Expert | ×0.80 / ×0.90 | ×0.65 / ×0.80 |
+| Martial Master | ×0.90 / ×0.95 | ×0.80 / ×0.90 |
+
+Normal beasts in these realms also take up to **40%** of their max HP per turn
+(instead of 30%), so they can fall in 3 turns. In the first two realms a careful
+player can beat an Elite alone; a pair wins easily.
+
 ### Example — Martial Expert, 1st layer (player: 380 HP, 95 Attack)
 
 | Beast | HP | Attack | Player hits to kill it | Beast hits to kill a player |

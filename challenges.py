@@ -41,7 +41,7 @@ CONDITIONS_PER_TIER = {1: (0, 0), 2: (0, 1), 3: (1, 1), 4: (1, 2), 5: (2, 2)}
 
 READ_THE_MASTER = {
     "steps":            {1: 4,   2: 5,   3: 6,    4: 7,    5: 8},
-    "seconds_per_step": {1: 3.0, 2: 2.5, 3: 2.0,  4: 1.75, 5: 1.5},
+    "seconds_per_step": {1: 8.0, 2: 7.0, 3: 6.0,  4: 5.0,  5: 4.0},   # was 3.0 → 1.5s; players needed more time
     "deceptive_chance": {1: 0.0, 2: 0.0, 3: 0.10, 4: 0.20, 5: 0.30},
 }
 

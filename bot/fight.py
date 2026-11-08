@@ -257,8 +257,9 @@ class Battle:
         for _ in range(hits):
             if e["dodge"] and self.rng.random() < e["dodge"]:
                 continue
-            total += combat.damage(f.attack, e["defense"], e["max_hp"], skill * share, pierce, self.rng)
-        total = min(total, e["max_hp"] * stats.MAX_HIT_PERCENT)        # the 30% cap is per turn
+            total += combat.damage(f.attack, e["defense"], e["max_hp"], skill * share, pierce, self.rng,
+                                   cap=combat.hit_cap(e))
+        total = min(total, e["max_hp"] * combat.hit_cap(e))            # the 30% cap is per turn (40% low-realm Normals)
         if "staggered" in e["statuses"]:
             total *= battle.STAGGER_DAMAGE_BONUS
         if "stoneskin" in e["statuses"]:

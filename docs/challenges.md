@@ -38,11 +38,13 @@ Player presses the counter before time runs out.
 
 | Tier | Steps | Time per step | Deceptive tells |
 |---|---|---|---|
-| 1 | 4 | 3.0s | 0% |
-| 2 | 5 | 2.5s | 0% |
-| 3 | 6 | 2.0s | 10% |
-| 4 | 7 | 1.75s | 20% |
-| 5 | 8 | 1.5s | 30% |
+| 1 | 4 | 8.0s | 0% |
+| 2 | 5 | 7.0s | 0% |
+| 3 | 6 | 6.0s | 10% |
+| 4 | 7 | 5.0s | 20% |
+| 5 | 8 | 4.0s | 30% |
+
+(Raised from 3.0s → 1.5s: players could not react in time. Ambush uses the same timer.)
 
 - Large pool of tells per stance, picked at random
 - Deceptive tell: describes one move but contains a subtle sign revealing the real one
@@ -61,6 +63,7 @@ The master repeats a **hidden pattern** of stances, random each session.
 
 ### 🌊 Endless Waves
 Disciples attack in waves, each wave faster.
+- First wave: 7.0s / 6.5s / 6.0s / 5.0s / 4.5s by tier, then 8% faster each wave (never under 2.5s)
 - Stamina: 100. Each counter costs 10. A fast counter refunds 5.
 - **Technique strike:** costs 30 stamina, gives ×2 points for that step
 - Ends when stamina runs out or a counter is missed

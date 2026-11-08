@@ -34,11 +34,17 @@ def cooldown_turns(tech):
     return turns
 
 
-def damage(attack, defense, target_max_hp, skill=1.0, pierce=0.0, rng=random):
+def damage(attack, defense, target_max_hp, skill=1.0, pierce=0.0, rng=random, cap=None):
+    """cap: largest share of target_max_hp one hit can take (default stats.MAX_HIT_PERCENT)."""
     defense *= (1 - pierce)
     reduction = defense / (defense + attack) if defense + attack else 0
     dmg = attack * skill * (1 - reduction) * rng.uniform(stats.DAMAGE_RANDOM_MIN, stats.DAMAGE_RANDOM_MAX)
-    return min(dmg, target_max_hp * stats.MAX_HIT_PERCENT)
+    return min(dmg, target_max_hp * (cap or stats.MAX_HIT_PERCENT))
+
+
+def hit_cap(enemy):
+    """Per-turn damage cap (share of max HP) for this enemy: easier for low-realm Normal beasts."""
+    return enemy.get("hit_cap") or stats.MAX_HIT_PERCENT
 
 
 def beast_stats(player, beast, step=1):
@@ -46,12 +52,17 @@ def beast_stats(player, beast, step=1):
     name, tier, role = beast
     hp, attack, _ = rules.base_stats(player["realm"], player["layer"])
     t, r = beasts.BEAST_TIERS[tier], beasts.ROLES[role]
+    ease = beasts.realm_ease(player["realm"], tier)
     step_bonus = 1 + (step - 1) * 0.10
-    hp = hp * t["hp"] * r.get("hp", 1) * step_bonus
-    atk = attack * t["attack"] * r.get("attack", 1) * step_bonus
+    hp = hp * t["hp"] * r.get("hp", 1) * ease["hp"] * step_bonus
+    atk = attack * t["attack"] * r.get("attack", 1) * ease["attack"] * step_bonus
     dfn = atk * beasts.BEAST_DEFENSE_RATIO * r.get("defense", 1)
-    return {"name": name, "tier": tier, "role": role, "hp": round(hp), "max_hp": round(hp),
-            "attack": atk, "defense": dfn, "dodge": r.get("dodge", 0)}
+    out = {"name": name, "tier": tier, "role": role, "hp": round(hp), "max_hp": round(hp),
+           "attack": atk, "defense": dfn, "dodge": r.get("dodge", 0)}
+    cap = beasts.hit_cap(player["realm"], tier)
+    if cap:
+        out["hit_cap"] = cap
+    return out
 
 
 def bandit_stats(player, rng=random):
@@ -97,8 +108,9 @@ def fight(hero, enemy, techniques, rng=random):
             if enemy["dodge"] and rng.random() < enemy["dodge"]:
                 res["dodged"] += 1
                 continue
-            total += damage(hero["attack"], enemy["defense"], enemy["max_hp"], skill * per_hit, pierce, rng)
-        total = min(total, enemy["max_hp"] * stats.MAX_HIT_PERCENT)   # cap is per turn (technique.md)
+            total += damage(hero["attack"], enemy["defense"], enemy["max_hp"], skill * per_hit, pierce, rng,
+                            cap=hit_cap(enemy))
+        total = min(total, enemy["max_hp"] * hit_cap(enemy))   # cap is per turn (technique.md)
         enemy["hp"] = max(0, enemy["hp"] - total)
         if enemy["hp"] <= 0:
             res["won"] = True

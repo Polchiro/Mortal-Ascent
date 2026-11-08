@@ -13,6 +13,31 @@ BEAST_TIERS = {
 BEAST_DEFENSE_RATIO = 0.25          # Defense = Attack × this
 EXTRA_PLAYER_HP_BONUS = 0.20        # per player beyond team_size
 
+# ── Low-realm easing ──────────────────────────────────────────────────
+# Players found early beasts too slow to kill and Elites near impossible, so the
+# first realms get weaker beasts. Multipliers on HP and Attack per (realm, tier);
+# realms not listed (and Beast Kings) use full strength.
+LOW_REALM_EASE = {
+    "Mortal":             {"normal": {"hp": 0.55, "attack": 0.75}, "elite": {"hp": 0.35, "attack": 0.50}},
+    "Martial Apprentice": {"normal": {"hp": 0.55, "attack": 0.75}, "elite": {"hp": 0.35, "attack": 0.50}},
+    "Martial Warrior":    {"normal": {"hp": 0.65, "attack": 0.80}, "elite": {"hp": 0.50, "attack": 0.70}},
+    "Martial Expert":     {"normal": {"hp": 0.80, "attack": 0.90}, "elite": {"hp": 0.65, "attack": 0.80}},
+    "Martial Master":     {"normal": {"hp": 0.90, "attack": 0.95}, "elite": {"hp": 0.80, "attack": 0.90}},
+}
+# One turn of damage may take this share of a low-realm Normal beast's HP
+# (instead of the usual 30%), so it can fall in 3 turns instead of 4.
+LOW_REALM_NORMAL_HIT_CAP = 0.40
+
+
+def realm_ease(realm, tier):
+    """{"hp", "attack"} multipliers for a beast of this tier met in this realm."""
+    return LOW_REALM_EASE.get(realm, {}).get(tier, {"hp": 1.0, "attack": 1.0})
+
+
+def hit_cap(realm, tier):
+    """Largest share of the beast's max HP one turn of damage can take, or None for the usual cap."""
+    return LOW_REALM_NORMAL_HIT_CAP if tier == "normal" and realm in LOW_REALM_EASE else None
+
 # ── Roles ─────────────────────────────────────────────────────────────
 
 ROLES = {
