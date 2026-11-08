@@ -197,3 +197,16 @@ def test_explore_message_is_a_live_jpeg_card(conn):
         await next(c for c in view.children if c.label == "Return safely").callback(it)
         assert view.exp.over and it.edits[-1]["attachments"][0].filename == "explore.png"
     asyncio.run(go())
+
+
+def test_explore_cards_use_the_painted_scenes(conn):
+    from cards import scenes
+    new_player(conn)
+    exp = Expedition(conn, 1, random.Random(0))
+    exp.next_step()
+    data = explore_card.crossroads_data(exp)
+    assert scenes.exists(scenes.REGION[data["region"]])
+    assert card.render_crossroads(data).size == (card.W, card.H)
+    for kind in ("treasure_chest", "wandering_merchant", "blessed_land", "injured_stranger"):   # last: no art yet
+        exp.encounter = kind
+        assert card.render_encounter(explore_card.encounter_data(exp)).size == (card.W, card.H)

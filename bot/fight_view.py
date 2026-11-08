@@ -145,7 +145,7 @@ def card_data(b, header, prev=None):
                       "statuses": b.status_chips(), "body": e["body"], "slug": e.get("slug"),
                       "delta": round(e["hp"]) - prev["enemy"] if prev else 0,
                       "atk": round(e.get("attack", 0)), "def": round(e.get("defense", 0))},
-            "danger": danger,
+            "danger": danger, "scene": getattr(b, "scene", None),
             "party_title": "Hunting party" if b.team else "You", "party": party, "loadout": loadout,
             "log": list(b.log), "warning": b.warning or ("", "")}
 
