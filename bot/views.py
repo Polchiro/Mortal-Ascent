@@ -407,7 +407,7 @@ class TrainView(OwnedView):
         chips = [clean(trainer.CONDITION_NAMES[c])[0] for c in s["conditions"]] if conditions else []
         name = clean(trainer.CHALLENGE_NAMES[s["challenge"]])[0]
         log_ = [(icon, clean(t)[0]) for icon, t in log_lines if clean(t)[0]]
-        return {"palette": "Courtyard", "backdrop": "courtyard", "header": clean(self.title)[0],
+        return {"palette": "Courtyard", "backdrop": "courtyard", "scene": "spar_hall", "header": clean(self.title)[0],
                 "turn": 0, "turn_label": turn_label, "seconds": seconds or 0,
                 "seconds_label": f"{seconds:.2g}s to answer" if seconds else "No time limit", "result": None,
                 "enemy": {"name": enemy, "seal": "school:Body", "tags":
@@ -875,7 +875,7 @@ class SparView(FightMixin, OwnedView):
             warning = (hint, "Guard beats Strike · Break beats Guard · Strike beats Break. Timed techniques earn mastery.")
         else:
             warning = (hint, "Read his stance and counter it. Your technique right after a blocked Strike is perfect timing.")
-        return {"palette": "Master", "header": self.title_plain, "turn": min(sp.turn, MAX_TURNS_SPAR()),
+        return {"palette": "Master", "scene": "spar_hall", "header": self.title_plain, "turn": min(sp.turn, MAX_TURNS_SPAR()),
                 "seconds": battle_data.TURN_SECONDS, "result": None,
                 "enemy": {"name": "The Master", "seal": "school:Body", "tags": tags, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
                           "element_seal": "school:Palm", "statuses": [f"Exchange {min(sp.turn, MAX_TURNS_SPAR())}/{MAX_TURNS_SPAR()}"],

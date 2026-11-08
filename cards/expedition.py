@@ -21,7 +21,7 @@ import math
 import random
 from functools import lru_cache
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 from . import theme as T
 from . import wilds as Wd
@@ -357,8 +357,49 @@ def _ground(img, single=False):
     Wd.motes(ImageDraw.Draw(img), SW, SH, (255, 190, 110), 26, 12, y0=HORIZON + 20, r0=1, r1=2.2)
 
 
+def _shade_painted(img, strength=170):
+    shade = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shade)
+    for i in range(30):                       # darken the top so the header reads
+        sd.rectangle(P(0, i * 6, SW, i * 6 + 6), fill=(0, 0, 0, round(strength * (1 - i / 30) ** 1.6)))
+    img.alpha_composite(shade)
+    return img
+
+
+def painted_scene(name, dim=60):
+    """A painting from art/scenes fitted to the scene window (S×), dimmed a little; None if missing."""
+    from .scenes import photo
+    im = photo(name, round(SW * S), round(SH * S))
+    if im is None:
+        return None
+    im = im.copy()
+    im.alpha_composite(Image.new("RGBA", im.size, (0, 0, 0, dim)))
+    return _shade_painted(im)
+
+
+def place_subject(img, sub, height, base=0.96, glow=(255, 214, 150)):
+    """Stand a transparent subject (chest, bandits...) in the middle of the scene, on a soft shadow."""
+    sub = sub.copy()
+    sc = height * S / sub.size[1]
+    sub = sub.resize((max(1, round(sub.size[0] * sc)), max(1, round(sub.size[1] * sc))), Image.LANCZOS)
+    x = round(SW * S / 2 - sub.size[0] / 2)
+    y = round(SH * S * base - sub.size[1])
+    sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(sh).ellipse((x + sub.size[0] * 0.1, y + sub.size[1] * 0.9, x + sub.size[0] * 0.9,
+                                y + sub.size[1] * 1.04), fill=(0, 0, 0, 160))
+    img.alpha_composite(sh.filter(ImageFilter.GaussianBlur(10 * S)))
+    halo = Image.new("RGBA", sub.size, glow + (0,))
+    halo.putalpha(sub.getchannel("A").filter(ImageFilter.GaussianBlur(14 * S)).point(lambda v: round(v * 0.45)))
+    img.alpha_composite(halo, (x, y))
+    img.alpha_composite(sub, (x, y))
+
+
 @lru_cache(maxsize=24)
-def crossroads_scene(left, middle, right):
+def crossroads_scene(left, middle, right, region=None):
+    from .scenes import REGION
+    painted = painted_scene(REGION.get(region))
+    if painted is not None:
+        return painted
     """The crossroads with the mood of each path's clue kind (S×, RGBA)."""
     img = _backdrop().copy()
     for kind, key in ((left, "left"), (right, "right"), (middle, "middle")):
@@ -454,8 +495,21 @@ def _encounter_subject(img, kind, sub):
 
 
 @lru_cache(maxsize=16)
-def encounter_scene(kind, sub=""):
-    """The real encounter, drawn across the whole scene (S×, RGBA)."""
+def encounter_scene(kind, sub="", region=None, hazard=None):
+    """The real encounter, drawn across the whole scene (S×, RGBA). With art/scenes: the place's painting, or
+    the region's painting with the encounter's subject standing in it."""
+    from .scenes import PLACE, REGION, subject
+    place = painted_scene(PLACE.get(hazard or kind))
+    if place is not None:
+        return place
+    from .scenes import SUBJECT
+    obj = subject(SUBJECT.get(kind))
+    base = painted_scene(REGION.get(region), dim=110)
+    if base is not None and (obj is not None or kind not in MOOD_FN):
+        if obj is not None:
+            tall = kind in ("bandits", "wandering_merchant", "injured_stranger", "wandering_hermit", "stone_tablet")
+            place_subject(base, obj, SH * (0.78 if tall else 0.56))
+        return base
     img = _backdrop().copy()
     img.alpha_composite(mood(kind, SW, feathered=False))
     _ground(img, single=True)
@@ -468,8 +522,24 @@ def encounter_scene(kind, sub=""):
     return img
 
 
-def fight_scene(palette, body, slug):
-    """After a fight: the beast's (or the bandits') own scene from the fight screen, fitted to this window."""
+def _rim_colors():
+    return {k: v.rim for k, v in T.ELEMENT_ACCENTS.items()}
+
+
+ELEMENT_RIM = {}
+
+
+def fight_scene(palette, body, slug, region=None):
+    """After a fight: the beast (or the bandits) in the region's painting; else its scene from the fight screen."""
+    from .battle import _art
+    from .scenes import REGION, subject
+    base = painted_scene(REGION.get(region), dim=110)
+    art = _art(slug) or (subject("subject_bandits") if body == "human" else None)
+    if not ELEMENT_RIM:
+        ELEMENT_RIM.update(_rim_colors())
+    if base is not None and art is not None:
+        place_subject(base, art, SH * 0.82, base=1.0, glow=ELEMENT_RIM.get(palette, (255, 214, 150)))
+        return base
     from .battle import scene
     sc = scene(palette, body, slug)
     scale = max(SW * S / sc.size[0], SH * S / sc.size[1])
@@ -658,7 +728,7 @@ def render_crossroads(data):
     hp, max_hp, coins, items [{name, qty, icon, color_key, label}], defeat_note, bonus."""
     img = _base()
     paths = data["paths"]
-    sc = crossroads_scene(paths["left"]["kind"], paths["middle"]["kind"], paths["right"]["kind"])
+    sc = crossroads_scene(paths["left"]["kind"], paths["middle"]["kind"], paths["right"]["kind"], data.get("region"))
     img.alpha_composite(sc, P(SCENE[0], SCENE[1]))
     T.frame(img, SCENE, 0.8)
     header(img, data, data["region"], f"{data['realm']}  ·  Choose your path")
@@ -702,9 +772,10 @@ def render_encounter(data):
     color = MOOD[kind][0]
     if data.get("fight"):
         f = data["fight"]
-        sc = fight_scene(f["palette"], f["body"], f.get("slug"))
+        sc = fight_scene(f["palette"], f["body"], f.get("slug"), data.get("region"))
     else:
-        sc = encounter_scene(kind)
+        sc = encounter_scene(kind, region=data.get("region"),
+                             hazard=data["hazard"]["kind"] if data.get("hazard") else None)
     img.alpha_composite(sc, P(SCENE[0], SCENE[1]))
     if data.get("hazard"):
         hazard_overlay(img, data["hazard"]["danger"], data["hazard"]["kind"])

@@ -138,6 +138,9 @@ class Expedition:
         else:
             enemy = fight.enemy_from_bandits(enemy)
         self.battle = fight.Battle([f], enemy, self.rng)
+        from .explore_card import REGION_BY_TIER
+        from cards.scenes import REGION
+        self.battle.scene = REGION.get(REGION_BY_TIER.get(self.tier, ""))      # fight in the region's painting
         self.enemy_kind = kind
         self.pending = "fight"
 

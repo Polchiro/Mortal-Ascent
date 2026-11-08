@@ -162,7 +162,9 @@ def start_battle(conn, lair, user_ids, rng=None):
     stats_ = team_beast(lair, team)
     enemy = fight.enemy_from_beast(stats_, stats_["name"])
     enemy["realm"], enemy["slug"] = lair["realm"], beasts.slug(stats_["name"])
-    return fight.Battle(fighters, enemy, rng or random.Random())
+    b = fight.Battle(fighters, enemy, rng or random.Random())
+    b.scene = "encounter_beast_king_den" if lair["tier"] == "beast_king" else "encounter_elite_lair"
+    return b
 
 
 def pay(conn, lair, battle, now=None):

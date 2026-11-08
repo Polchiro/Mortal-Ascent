@@ -33,6 +33,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from . import battle as B
 from . import ink as K
 from . import theme as T
+from . import scenes
 from .beast_art import painted
 from .theme import P, S, alpha, font, mix
 
@@ -85,6 +86,14 @@ def _ridge(w, base, amp, seed, rough=1.0):
 
 def _world(data, acc, kind, seed=7):
     w, h = W * S, H * S
+    bg = scenes.photo(data.get("scene"), w, h) if data.get("scene") else None
+    if bg is not None:                     # a painted place (art/scenes): dim it and tint toward the element
+        img = bg.copy()
+        tint = Image.new("RGBA", (w, h), mix(acc.panel, (0, 0, 0), 0.5) + (110,))
+        img.alpha_composite(tint)
+        _, bw, bh, cx, feet = STAGING.get(data["enemy"]["body"], STAGING["cat"])
+        T.soft_glow(img, (cx - 340, feet - bh, cx + 340, feet + 20), alpha(mix(acc.rim, acc.moon, 0.4), 70), 90)
+        return img
     sky = acc.sky if hasattr(acc, "sky") else ((10, 8, 12), (40, 30, 30))
     img = T.vgradient((w, h), mix(sky[0], (0, 0, 0), 0.25), mix(sky[1], (0, 0, 0), 0.15), 0, SCENE_H * S)
     # a large soft light low in the sky, behind where the beast stands (the backlight)
@@ -141,6 +150,8 @@ def _particles(img, kind, color, seed=4):
 def _art_for(e, palette, bw, bh):
     """(image at S×, is_real_art). Real art (art/beasts/<slug>.png) keeps more of its own light."""
     art = B._art(e.get("slug"))
+    if art is None and e.get("body") == "human":
+        art = scenes.subject("subject_bandits")
     real = art is not None
     if art is None:
         art = painted("master" if e["body"] == "master" else e["body"], palette, bw * S, bh * S)
@@ -421,10 +432,10 @@ def _result(img, data, acc, tier):
 
 
 @lru_cache(maxsize=32)
-def _backdrop(palette, body, slug, tier):
+def _backdrop(palette, body, slug, tier, scene=None):
     """Sky, beast and shading: the same every turn of a fight, so drawn once (about 1s) and reused."""
     acc = T.ELEMENT_ACCENTS[palette]
-    data = {"palette": palette, "enemy": {"body": body, "slug": slug}}
+    data = {"palette": palette, "enemy": {"body": body, "slug": slug}, "scene": scene}
     img = _world(data, acc, STAGING.get(body, STAGING["cat"])[0])
     _particles(img, ATMOS.get(palette, "motes"), acc.rim)
     _beast(img, data, acc, tier)
@@ -436,7 +447,7 @@ def render_beast_fight(data):
     acc = T.ELEMENT_ACCENTS[data["palette"]]
     tier = _tier(data)
     e = data["enemy"]
-    img = _backdrop(data["palette"], e["body"], e.get("slug"), tier).copy()
+    img = _backdrop(data["palette"], e["body"], e.get("slug"), tier, data.get("scene")).copy()
     if data.get("result"):
         _result(img, data, acc, tier)
     else:
