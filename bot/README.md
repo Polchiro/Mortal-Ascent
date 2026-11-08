@@ -130,7 +130,8 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **Passive Qi** has no storage limit and is banked every minute by a background task (bot/passive.py)
   and before every command. It does not gather during seclusion; entering seclusion banks it first.
 - **Qi at a gate is never lost**: above a full bar it goes to `qi_overflow` and flows into the next
-  layers after a successful breakthrough. A failed breakthrough keeps it.
+  layers after a successful breakthrough. A failed breakthrough takes its 20% from the bar, then the
+  waiting Qi refills the bar (`player.refill_bar`), so the player can try again at once.
 - **Qi Rate** now includes the best equipped technique, an active Qi pill and a Blessed Land.
 
 ## Run it

@@ -194,6 +194,22 @@ def overflow(player):
     return player.get("qi_overflow") or 0.0
 
 
+def refill_bar(player):
+    """At a bottleneck or realm gate, top the bar back up from the Qi waiting in qi_overflow.
+    The bar and qi_overflow are one pool of the player's Qi: a failed breakthrough takes its cost
+    from the bar, and without this the waiting Qi could never refill it, so the player was stuck
+    gathering the lost Qi again while hundreds sat unused behind the gate. Mutates `player`."""
+    player["qi_overflow"] = overflow(player)
+    if next_gate(player)[0] == "layer" or player["qi_overflow"] <= 0:
+        return player
+    room = qi_needed(player["realm"], player["layer"]) - player["qi"]
+    if room > 0:
+        move = min(room, player["qi_overflow"])
+        player["qi"] += move
+        player["qi_overflow"] -= move
+    return player
+
+
 def waiting_text(player):
     """", 180 Qi is waiting" style suffix for full-bar messages, or "" when nothing waits."""
     extra = overflow(player)
@@ -233,7 +249,7 @@ def add_qi(player, amount, techniques=(), rng=random, now=None):
     which flows into the next layers after a successful /breakthrough. No Qi is ever thrown away.
     Mutates and returns `player`, plus a list of event strings."""
     events = []
-    player["qi_overflow"] = overflow(player)
+    refill_bar(player)
     player["qi"] += amount
     while player["qi"] >= qi_needed(player["realm"], player["layer"]):
         need = qi_needed(player["realm"], player["layer"])
@@ -266,8 +282,9 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
     """Try the phase or realm breakthrough. Mutates player. Returns (success or None if not possible, message).
     bonus: added chance from a Breakthrough pill (realm gates only).
     Success: the Qi waiting in qi_overflow flows into the new layer through add_qi (it can fill several
-    layers and stops at the next gate again). Failure: lose 20% of the bar only; qi_overflow is kept."""
+    layers and stops at the next gate again). Failure: lose 20% of the bar; Qi waiting in qi_overflow refills the bar (refill_bar)."""
     now = time.time() if now is None else now
+    refill_bar(player)
     need = qi_needed(player["realm"], player["layer"])
     kind, target = next_gate(player)
     if kind in ("layer", "peak"):
@@ -296,7 +313,15 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
     lost = player["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
     player["qi"] -= lost
     player["failed_breakthroughs"] += 1
-    kept = (f" The {overflow(player):,.0f} Qi waiting behind the gate is safe." if overflow(player) >= 0.5 else "")
+    waiting_before = overflow(player)
+    refill_bar(player)          # the waiting Qi tops the bar back up, so the player can try again
+    refilled = waiting_before - overflow(player)
+    kept = ""
+    if refilled >= 0.05:
+        kept = f" {refilled:,.1f} of the Qi waiting behind the gate refills your bar"
+        kept += (f", and {overflow(player):,.0f} Qi still waits." if overflow(player) >= 0.5 else ".")
+    elif overflow(player) >= 0.5:
+        kept = f" The {overflow(player):,.0f} Qi waiting behind the gate is safe."
     if kind == "realm":
         player["injured_until"] = now + training.INJURY_HOURS * 3600
         return False, (f"💥 **Breakthrough failed!** Your meridians recoil. You lose {lost:,.1f} Qi and are injured "

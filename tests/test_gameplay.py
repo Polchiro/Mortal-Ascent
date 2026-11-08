@@ -170,7 +170,8 @@ def test_phase_bottleneck_can_fail():
     p, _ = rules.add_qi(p, 30)
     assert p["qi"] == 16
     ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail())
-    assert ok is False and p["layer"] == 3 and p["failed_breakthroughs"] == 1 and p["qi"] == pytest.approx(12.8)
+    assert ok is False and p["layer"] == 3 and p["failed_breakthroughs"] == 1
+    assert p["qi"] == 16 and p["qi_overflow"] == pytest.approx(14 - 3.2)   # 20% of the bar, refilled from waiting Qi
     assert not p.get("injured_until")
 
 
