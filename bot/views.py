@@ -24,7 +24,8 @@ import training
 from . import db, hunt, loot, mastery, trainer
 from . import player as rules
 from . import result_cards
-from cards.activity import render_explore, render_spar, render_train
+from cards.activity import render_explore
+from cards.results import render_spar, render_train
 from .expedition import PATH_EMOJI, Expedition
 from . import explore_card
 from .fight_view import FightMixin, jpg

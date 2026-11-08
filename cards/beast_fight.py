@@ -33,6 +33,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from . import battle as B
 from . import ink as K
 from . import theme as T
+from . import victory as V
 from . import scenes
 from .beast_art import painted
 from .theme import P, S, alpha, font, mix
@@ -345,7 +346,8 @@ def _you(img, data, acc):
     events = list(data.get("log") or [])[-2:]
     for i, (kind, text) in enumerate(events):
         B._log_line(img, 44, 798 + i * 38, kind, text, 680, 25)
-    _moves(img, data.get("loadout", [])[:3])
+    if not data.get("result"):
+        _moves(img, data.get("loadout", [])[:3])
 
 
 def _moves(img, items):
@@ -402,21 +404,21 @@ def _party(img, data):
 def _result(img, data, acc, tier):
     label, color = B.RESULT.get(data["result"], (str(data["result"]).upper(), K.GOLD))
     label = label.title() if label != "IT GOT AWAY" else "It got away"
-    veil = Image.new("RGBA", img.size, (4, 3, 5, 150))
+    veil = Image.new("RGBA", img.size, (4, 3, 5, 175))
     img.alpha_composite(veil)
-    T.soft_glow(img, (W / 2 - 420, 160, W / 2 + 420, 460), alpha(color, 70), 70)
-    d = ImageDraw.Draw(img)
     e, m = data["enemy"], data["party"][0]
     won = data["result"] == "won"
+    if not V.crest(img, (W / 2, 160), 230, data["result"], tier):
+        T.soft_glow(img, (W / 2 - 420, 160, W / 2 + 420, 460), alpha(color, 70), 70)
+    d = ImageDraw.Draw(img)
     sub = (f"{e['name']} slain" if won else f"Defeated by the {e['name']}" if data["result"] == "lost"
            else e["name"])
     if won and tier in ("Elite", "Beast King"):
-        _spaced(d, (W / 2, 210), ("BEAST KING" if tier == "Beast King" else "ELITE") + " · " + (e["tags"][-1] or "").upper(),
-                18, TIER_LABEL_COLOR[tier], "m", "Bold", 4)
-    T.gold_text(img, (W / 2, 290), label, font("Cinzel.ttf", 92, "Bold"), "mm",
+        sub = ("Beast King " if tier == "Beast King" else "Elite ") + sub
+    T.gold_text(img, (W / 2, 330), label, font("Cinzel.ttf", 84, "Bold"), "mm",
                 top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.2))
     d = ImageDraw.Draw(img)
-    T.text(d, (W / 2, 374), sub, font("Inter.ttf", 32, "Medium"), MUTED, "mm")
+    T.text(d, (W / 2, 396), sub, font("Inter.ttf", 32, "SemiBold"), WARM, "mm")
     dealt = max(0, e["max_hp"] - e["hp"])
     taken = max(0, m["max_hp"] - m["hp"])
     stats = [("Turns", f"{data['turn']}"), ("Damage dealt", f"{dealt:,}"), ("Damage taken", f"{taken:,}"),
@@ -425,10 +427,10 @@ def _result(img, data, acc, tier):
     x0 = W / 2 - cw * len(stats) / 2
     for i, (k, v) in enumerate(stats):
         cx = x0 + cw * (i + 0.5)
-        T.text(d, (cx, 456), v, font("Inter.ttf", 50, "Black"), WARM, "mm")
-        _spaced(d, (cx, 504), k.upper(), 19, MUTED, "m", "Bold", 2.4)
+        T.text(d, (cx, 476), v, font("Inter.ttf", 50, "Black"), WARM, "mm")
+        _spaced(d, (cx, 524), k.upper(), 19, MUTED, "m", "Bold", 2.4)
         if i:
-            d.line(P(x0 + cw * i, 430, x0 + cw * i, 500), fill=(255, 255, 255, 40), width=max(1, S))
+            d.line(P(x0 + cw * i, 450, x0 + cw * i, 520), fill=(255, 255, 255, 40), width=max(1, S))
 
 
 @lru_cache(maxsize=32)

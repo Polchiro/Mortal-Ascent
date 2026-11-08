@@ -11,6 +11,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from . import expedition as X
 from . import ink as K
 from . import theme as T
+from . import victory as V
 from .scenes import REGION, photo
 from .theme import P, S, alpha, font, mix
 
@@ -61,11 +62,17 @@ def _spaced(d, xy, s, size, color, anchor="l", weight="Bold", tracking=3.0):
 def _head(img, data, title, kicker, accent, sub=None):
     d = ImageDraw.Draw(img)
     _spaced(d, (48, 58), kicker.upper(), 22, mix(accent, WARM, 0.35))
+    if title is None:
+        return _step(d, data)
     name, nf = X._shrink(d, title, "Cinzel.ttf", "Bold", (70, 62, 52, 46), 780)
     T.text(d, (46, 130), name, nf, WARM, "lm")
     if sub:
         T.text(d, (48, 192), T.fit(d, sub, font("Inter.ttf", 27, "Medium"), 1100), font("Inter.ttf", 27, "Medium"), MUTED, "lm")
-    # depth: the step and five marks, top right
+    _step(d, data)
+
+
+def _step(d, data):
+    """Depth: the step and five marks, top right."""
     T.text(d, (W - 48, 62), f"Step {data['step']} / {data['max_steps']}", font("Inter.ttf", 38, "Black"), WARM, "rm")
     n = data["max_steps"]
     for i in range(n):
@@ -116,6 +123,8 @@ def render_encounter(data):
         sc = X.encounter_scene(kind, region=data.get("region"),
                                hazard=data["hazard"]["kind"] if data.get("hazard") else None)
     img = _canvas(_cover(sc))
+    if data.get("victory"):
+        return _fight_result(img, data)
     outcome = data.get("outcome")
     tone = {"bad": (232, 76, 58), "good": (120, 220, 140)}.get(outcome, color)
     sub = data["subtitle"].split("·", 1)[-1].strip() if "·" in data["subtitle"] else data["subtitle"]
@@ -138,6 +147,38 @@ def render_encounter(data):
         for line in lines:
             T.text(d, (68, y + 8), line, f, WARM, "lm")
             y += 42
+    _band(img, data)
+    return T.finish(img)
+
+
+def _fight_result(img, data):
+    """After a fight: the beast sinks into shadow, the crest and the word, then the spoils on the silk cloth
+    (a win) or what the loss cost (a defeat)."""
+    v = data["victory"]
+    won = v["result"] == "won"
+    veil = Image.new("RGBA", img.size, (6, 4, 6, 0))
+    ImageDraw.Draw(veil).rectangle((0, 0, img.size[0], SCENE_H * S), fill=(6, 4, 6, 150))
+    img.alpha_composite(veil)
+    color = (246, 200, 96) if won else (226, 80, 64)
+    _head(img, data, None, f"{data['region']}   ·   {data['realm']}", color)
+    V.crest(img, (W / 2, 168), 220, v["result"])
+    title = data["title"]
+    T.gold_text(img, (W / 2, 330), title, font("Cinzel.ttf", 78 if len(title) < 14 else 62, "Bold"), "mm",
+                top=mix(color, (255, 255, 255), 0.6), bottom=mix(color, (0, 0, 0), 0.25))
+    d = ImageDraw.Draw(img)
+    turns = f"{v['turns']} turn{'s' if v['turns'] != 1 else ''}"
+    if won:
+        sub = (f"{v['name']} driven off in {turns}" if v["bandits"] else f"{v['name']} slain in {turns}")
+    else:
+        sub = f"The {v['name']} was too strong this time"
+    T.text(d, (W / 2, 390), sub, font("Inter.ttf", 30, "SemiBold"), WARM, "mm")
+    if won:
+        V.spoils(img, (210, 424, 990, 628), v["spoils"])
+    else:
+        lines = [s for s in data["story"] if s][-2:]
+        f = font("Inter.ttf", 26, "Medium")
+        for i, line in enumerate(lines):
+            T.text(d, (W / 2, 470 + i * 40), T.fit(d, line, f, 1000), f, MUTED, "mm")
     _band(img, data)
     return T.finish(img)
 

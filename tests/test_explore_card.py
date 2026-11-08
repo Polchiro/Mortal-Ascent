@@ -221,3 +221,36 @@ def test_new_explore_cards_render_every_encounter(conn, kind):
     assert explore_v2.render_crossroads(explore_card.crossroads_data(exp)).size == (explore_v2.W, explore_v2.H)
     exp.encounter = kind
     assert explore_v2.render_encounter(explore_card.encounter_data(exp)).size == (explore_v2.W, explore_v2.H)
+
+
+def test_explore_fight_result_shows_crest_and_spoils():
+    """A won fight shows the victory screen with the spoils of that fight; a lost one the defeat crest."""
+    import random as _r
+    from test_fight import force
+    from bot import db as _db, explore_card as _ec
+    from bot.expedition import Expedition as _E
+    from cards import explore_v2, victory
+    from test_exploits import new_player as _np
+    for name in ("victory_crest", "victory_crest_elite", "victory_crest_king", "defeat_crest", "victory_rays",
+                 "spoils_cloth"):
+        assert victory.subject(name) is not None, name
+    conn = _db.connect(":memory:")
+    _np(conn)
+    e = _E(conn, 1, _r.Random(5))
+    e.next_step()
+    e.encounter = "wild_beast"
+    e._wild_beast()
+    b = e.battle
+    b.enemy["hp"] = 1
+    for _ in range(4):
+        force(b, "break")
+        b.choose(b.fighters[0].uid, "strike")
+        b.resolve()
+        if b.over:
+            break
+    coins = e.coins
+    e.end_fight()
+    data = _ec.encounter_data(e)
+    assert data["victory"]["result"] == "won"
+    assert sum(t["name"] == "Lotus Coins" for t in data["victory"]["spoils"]) == (1 if coins < e.coins else 0)
+    assert explore_v2.render_encounter(data).size == (explore_v2.W, explore_v2.H)
