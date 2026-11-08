@@ -316,6 +316,67 @@ def store(conn, user_id, items):
     return stored, lost
 
 
+# ── Chests: roll once, store, then grant once ─────────────────────────
+
+def roll_chest(conn, user_id, player, tier, rng=random, now=None):
+    """The chest's contents, as open_chest rolls them, with the weekly Fate Weaver reroll.
+    Returns (coins, items, notes, used_fate_weaver)."""
+    notes = []
+    coins, found = open_chest(player, tier, rng, notes)
+    weaver = fate_weaver_ready(conn, user_id, player, now)
+    if weaver:                                                          # forged artifact passive, once a week
+        coins2, found2 = open_chest(player, tier, rng, notes)
+        if chest_value(coins2, found2) > chest_value(coins, found):
+            coins, found = coins2, found2
+            notes.append("🧵 **Fate Weaver:** fate is rewoven, and the chest holds something better.")
+        else:
+            notes.append("🧵 **Fate Weaver:** fate is rewoven... but the first threads were the best.")
+    return coins, found, notes, weaver
+
+
+def begin_chest(conn, user_id, item_id, rng=random, now=None):
+    """Open a chest from the bag: roll it once and store the result as a pending chest, taking the chest out of
+    the bag in the same step. Nothing is granted yet (claim_chest does that). Returns the pending chest, or None
+    if the chest is gone."""
+    now = time.time() if now is None else now
+    p = db.get_player(conn, user_id)
+    item = db.get_item(conn, user_id, item_id)
+    if not item or item["category"] != "chests":
+        return None
+    coins, found, notes, weaver = roll_chest(conn, user_id, p, item["key"], rng, now)
+    pid = db.start_pending_chest(conn, user_id, item_id, item["key"], item["name"], coins, found, notes, now)
+    if pid is None:
+        return None
+    if weaver:
+        db.bump_daily(conn, user_id, "fate_weaver", week_start(now))
+    return db.get_pending_chest(conn, pid)
+
+
+def claim_chest(conn, user_id, pending_id, announce=None, now=None):
+    """Grant a pending chest's coins and items, exactly once. Returns the pending chest with `stored` and `lost`
+    (left behind because the bag was full), or None if it was already collected."""
+    pending = db.take_pending_chest(conn, user_id, pending_id, now)
+    if pending is None:
+        return None
+    p = db.get_player(conn, user_id)
+    db.add_coins(conn, user_id, pending["coins"], f"Opened {pending['chest_name']}")
+    stored, lost = store(conn, user_id, pending["items"])
+    if announce is not None:
+        announce += [a for a in (announcement(p["name"], i) for i in stored) if a]
+    return dict(pending, stored=stored, lost=lost)
+
+
+def chest_text(result):
+    """The plain text of an opened chest (used where there is no reveal card)."""
+    lines = [f"{CHEST_EMOJI[result['chest_key']]} You open the **{result['chest_name']}**...",
+             f"🪷 **{result['coins']:,}** Lotus Coins"]
+    lines += [f"✨ **{describe(i)}**" for i in result["stored"]]
+    lines += [f"⚠️ Your bag is full, so you left **{describe(i)}** behind." for i in result["lost"]]
+    if len(lines) == 2:
+        lines.append("*Nothing else inside.*")
+    return "\n".join(lines + result["notes"])
+
+
 # ── Using items from the bag ──────────────────────────────────────────
 
 def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
@@ -327,29 +388,11 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
         return "That item is no longer in your bag."
     cat = item["category"]
 
-    if cat == "chests":
-        notes = []
-        coins, found = open_chest(p, item["key"], rng, notes)
-        if fate_weaver_ready(conn, user_id, p, now):                     # forged artifact passive, once a week
-            coins2, found2 = open_chest(p, item["key"], rng, notes)
-            db.bump_daily(conn, user_id, "fate_weaver", week_start(now))
-            if chest_value(coins2, found2) > chest_value(coins, found):
-                coins, found = coins2, found2
-                notes.append("🧵 **Fate Weaver:** fate is rewoven, and the chest holds something better.")
-            else:
-                notes.append("🧵 **Fate Weaver:** fate is rewoven... but the first threads were the best.")
-        db.remove_item(conn, item_id)
-        db.add_coins(conn, user_id, coins, f"Opened {item['name']}")
-        stored, lost = store(conn, user_id, found)
-        if announce is not None:
-            announce += [a for a in (announcement(p["name"], i) for i in stored) if a]
-        lines = [f"{CHEST_EMOJI[item['key']]} You open the **{item['name']}**...", f"🪷 **{coins:,}** Lotus Coins"]
-        lines += [f"✨ **{describe(i)}**" for i in stored]
-        lines += [f"⚠️ Your bag is full, so you left **{describe(i)}** behind." for i in lost]
-        if len(lines) == 2:
-            lines.append("*Nothing else inside.*")
-        lines += notes
-        return "\n".join(lines)
+    if cat == "chests":                    # rolled and granted at once (the sheet reveals it first: begin / claim)
+        pending = begin_chest(conn, user_id, item_id, rng, now)
+        if pending is None:
+            return "That item is no longer in your bag."
+        return chest_text(claim_chest(conn, user_id, pending["id"], announce=announce, now=now))
 
     if cat == "weapons":
         need = equipments.TIER_REALM_REQUIREMENT[item["grade"]]

@@ -109,6 +109,21 @@ CREATE TABLE IF NOT EXISTS duel_moves (
 );
 CREATE INDEX IF NOT EXISTS duel_moves_duel ON duel_moves(duel_id);
 
+-- A chest already rolled and taken out of the bag, waiting for the player to collect it (bot/chest_reveal.py).
+-- The roll is stored here so the reveal shows exactly these rewards and they are granted once.
+CREATE TABLE IF NOT EXISTS pending_chests (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    chest_key   TEXT    NOT NULL,
+    chest_name  TEXT    NOT NULL,
+    coins       INTEGER NOT NULL,
+    items       TEXT    NOT NULL,     -- JSON list of the rolled items
+    notes       TEXT    NOT NULL,     -- JSON list of lines (Deep Pockets, Fate Weaver)
+    created_at  REAL    NOT NULL,
+    claimed_at  REAL
+);
+CREATE INDEX IF NOT EXISTS pending_chests_user ON pending_chests(user_id, claimed_at);
+
 CREATE TABLE IF NOT EXISTS cooldowns (
     user_id     INTEGER NOT NULL,
     name        TEXT    NOT NULL,
@@ -449,6 +464,58 @@ def set_item_data(conn, item_id, data):
     """Replace an item's JSON extras (forged passives live here)."""
     with conn:
         conn.execute("UPDATE items SET data = ? WHERE id = ?", (json.dumps(data) if data else None, item_id))
+
+
+# ── Pending chests (rolled, not yet collected) ────────────────────────
+
+def _pending(row):
+    d = dict(row)
+    d["items"], d["notes"] = json.loads(d["items"]), json.loads(d["notes"])
+    return d
+
+
+def start_pending_chest(conn, user_id, item_id, chest_key, chest_name, coins, items, notes, now=None):
+    """Take one chest out of the bag and store its rolled contents, in one step. Returns the pending id,
+    or None if that chest is no longer in the player's bag (a double click or a stale card)."""
+    now = time.time() if now is None else now
+    with conn:
+        cur = conn.execute("UPDATE items SET qty = qty - 1 WHERE id = ? AND user_id = ? AND category = 'chests' "
+                           "AND qty >= 1", (item_id, user_id))
+        if cur.rowcount != 1:
+            return None
+        conn.execute("DELETE FROM items WHERE id = ? AND qty <= 0", (item_id,))
+        cur = conn.execute("INSERT INTO pending_chests (user_id, chest_key, chest_name, coins, items, notes, created_at) "
+                           "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           (user_id, chest_key, chest_name, int(coins), json.dumps(items), json.dumps(notes), now))
+    return cur.lastrowid
+
+
+def get_pending_chest(conn, pending_id):
+    row = conn.execute("SELECT * FROM pending_chests WHERE id = ?", (pending_id,)).fetchone()
+    return _pending(row) if row else None
+
+
+def take_pending_chest(conn, user_id, pending_id, now=None):
+    """Mark a pending chest collected. Returns it, or None if it was already collected (or isn't theirs),
+    so its rewards can only be granted once."""
+    now = time.time() if now is None else now
+    with conn:
+        cur = conn.execute("UPDATE pending_chests SET claimed_at = ? WHERE id = ? AND user_id = ? AND claimed_at IS NULL",
+                           (now, pending_id, user_id))
+        if cur.rowcount != 1:
+            return None
+        conn.execute("DELETE FROM pending_chests WHERE claimed_at IS NOT NULL AND claimed_at < ?", (now - 86400,))
+    return get_pending_chest(conn, pending_id)
+
+
+def unclaimed_chests(conn, user_id, before=None):
+    """Pending chests not yet collected (optionally only those created before `before`), oldest first."""
+    sql = "SELECT * FROM pending_chests WHERE user_id = ? AND claimed_at IS NULL"
+    args = [user_id]
+    if before is not None:
+        sql += " AND created_at < ?"
+        args.append(before)
+    return [_pending(r) for r in conn.execute(sql + " ORDER BY id", args)]
 
 
 def remove_item(conn, item_id, qty=1):
