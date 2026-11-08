@@ -26,7 +26,7 @@ from . import render as card_render
 from .duel_view import in_fight
 from .fight_view import jpg
 from .trading import Trade, TradeError
-from cards.trade import render_preview, render_trade
+from cards.trade import render_picker, render_preview, render_trade
 
 log = logging.getLogger("mortal-ascent")
 COLOR = discord.Color.from_rgb(240, 200, 110)
@@ -214,13 +214,15 @@ class TradeView(discord.ui.View):
 
     @discord.ui.button(label="Add Item", emoji="🎒", style=discord.ButtonStyle.primary, row=0)
     async def add_item(self, interaction, button):
+        await interaction.response.defer(ephemeral=True, thinking=True)
         picker = ItemPicker(self, interaction.user.id)
-        await ephemeral(interaction, embed=picker.embed(), view=picker)
+        await interaction.followup.send(file=await picker.picture(), view=picker, ephemeral=True)
 
     @discord.ui.button(label="Add Currency", emoji="🪷", style=discord.ButtonStyle.primary, row=0)
     async def add_currency(self, interaction, button):
+        await interaction.response.defer(ephemeral=True, thinking=True)
         panel = CurrencyPanel(self, interaction.user.id)
-        await ephemeral(interaction, embed=panel.embed(), view=panel)
+        await interaction.followup.send(file=await panel.picture(), view=panel, ephemeral=True)
 
     @discord.ui.button(label="Remove", emoji="➖", style=discord.ButtonStyle.secondary, row=0)
     async def remove(self, interaction, button):
@@ -386,9 +388,27 @@ class ItemPicker(_Panel):
         b.callback = self._go_back
         self.add_item(b)
 
+    def picture_data(self):
+        conn, offer = self.conn, self.window.trade.offers[self.uid]
+        if self.item:
+            row = trading.picker_row(self.item, self.offered(self.item["id"]))
+            return {"mode": "quantity", "item": row, "qty": self.qty, "note": self.message_note,
+                    "category": CAT_LABEL[trading.trade_category(self.item)][0]}
+        if self.category:
+            d = trading.picker_items(conn, self.uid, self.category, self.grade, offer)
+            return dict(d, mode="items", category=CAT_LABEL[self.category][0], grade=self.grade,
+                        note=self.message_note)
+        return {"mode": "categories", "categories": trading.picker_categories(conn, self.uid), "note": self.message_note}
+
+    async def picture(self):
+        img = await card_render.render(render_picker, self.picture_data())
+        return jpg(img, "pick.jpg")
+
     async def _show(self, interaction):
         self.build()
-        await interaction.response.edit_message(content=None, embed=self.embed(), view=self)
+        await interaction.response.defer()
+        await interaction.edit_original_response(content=None, embed=None, attachments=[await self.picture()],
+                                                 view=self)
 
     async def _go_back(self, interaction):
         self.message_note = None
@@ -441,9 +461,9 @@ class ItemPicker(_Panel):
         it = self.item
         why = await self.window.apply(interaction, self.window.trade.set_item, it["id"], self.qty)
         if why:
-            self.message_note = f"⚠️ {why}"
+            self.message_note = f"⚠ {why}"
         else:
-            self.message_note = (f"✅ Offering {self.qty:,} × {trading.item_label(it)}" if self.qty
+            self.message_note = (f"Added: {self.qty:,} × {trading.item_label(it)}" if self.qty
                                  else f"Removed {trading.item_label(it)}")
             self.item = None
         await self._show(interaction)
@@ -491,6 +511,14 @@ class CurrencyPanel(_Panel):
             e.set_footer(text=self.note)
         return e
 
+    async def picture(self):
+        p = db.get_player(self.conn, self.uid)
+        o = self.window.trade.offers[self.uid]
+        data = {"mode": "currency", "note": self.note,
+                "currencies": [{"key": cur, "label": label, "balance": p[cur], "offering": getattr(o, cur)}
+                               for cur, label, _ in TR.CURRENCIES]}
+        return jpg(await card_render.render(render_picker, data), "currency.jpg")
+
     def _open(self, cur, label):
         async def cb(interaction):
             have = db.get_player(self.conn, self.uid)[cur]
@@ -498,8 +526,10 @@ class CurrencyPanel(_Panel):
 
             async def done(inter, value):
                 why = await self.window.apply(inter, self.window.trade.set_currency, cur, value)
-                self.note = f"⚠️ {why}" if why else f"✅ Offering {max(0, value):,} {label}"
-                await inter.response.edit_message(embed=self.embed(), view=self)
+                self.note = f"⚠ {why}" if why else f"Offering {max(0, value):,} {label}"
+                await inter.response.defer()
+                await inter.edit_original_response(content=None, embed=None, attachments=[await self.picture()],
+                                                   view=self)
 
             await interaction.response.send_modal(AmountModal(have, current, done, title=label,
                                                               label=f"{label} to offer (you have {have:,})"))
