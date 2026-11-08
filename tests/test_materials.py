@@ -143,10 +143,10 @@ def test_chests_hold_jades_fortune_and_seal_stones():
     rng = random.Random(9)
     c = Counter()
     for _ in range(3000):
-        for i in materials.roll_chest("jade", rng):
+        for i in materials.roll_chest("legendary", rng):
             c[i["key"].split(":")[0] + ":" + i["key"].split(":")[1] if ":" in i["key"] else i["key"]] += 1
-    assert abs(c["base:artifact"] / 3000 - forge.CHEST_JADE["jade"][0]) < 0.03
-    assert abs(c["seal"] / 3000 - forge.CHEST_SEAL_STONE["jade"]) < 0.015
+    assert abs(c["base:artifact"] / 3000 - forge.CHEST_JADE["legendary"][0]) < 0.03
+    assert abs(c["seal"] / 3000 - forge.CHEST_SEAL_STONE["legendary"]) < 0.015
     assert c["essence:fortune"] > 0
 
 
@@ -156,7 +156,7 @@ def test_open_chest_includes_materials():
     seen = set()
     for _ in range(400):
         try:
-            _, found = loot.open_chest(p, "jade", rng)
+            _, found = loot.open_chest(p, "legendary", rng)
         except (KeyError, TypeError):
             pytest.skip("open_chest needs a full player")
         seen |= {i["key"] for i in found if i["category"] == "materials"}

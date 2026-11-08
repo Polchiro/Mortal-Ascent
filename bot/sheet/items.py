@@ -49,8 +49,8 @@ ESSENCE_RARITY_KEY = {"shard": "refined", "crystal": "treasure", "heart": "divin
 ORDER = list(CATEGORIES)
 GEAR = ("weapons", "armor", "artifacts")      # items you wear: Equip / Unequip
 
-TIER_LABEL = {"wooden": "Wooden", "bronze": "Bronze", "silver": "Silver", "jade": "Jade"}
-CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
+TIER_LABEL = {t: t.title() for t in loot.CHEST_ORDER}
+CHEST_ORDER = loot.CHEST_ORDER
 
 
 def rarity(item):
@@ -87,6 +87,8 @@ def item_icon(item):
         return pill_icon(item)
     if item["category"] == "materials" and item["key"] in materials.MATERIALS:
         return materials.icon_kind(item["key"])
+    if item["category"] == "chests":
+        return f"chest:{item['key']}"
     return CATEGORIES[item["category"]].icon
 
 

@@ -17,14 +17,18 @@ import technique
 from . import db, gear
 from . import player as rules
 
-CHEST_NAMES = {"wooden": "Wooden Chest", "bronze": "Bronze Chest", "silver": "Silver Chest", "jade": "Jade Chest"}
-CHEST_ORDER = ["wooden", "bronze", "silver", "jade"]
-CHEST_EMOJI = {"wooden": "🪵", "bronze": "🥉", "silver": "🥈", "jade": "💚"}
+CHEST_ORDER = ["common", "uncommon", "rare", "epic", "legendary", "mythic"]
+CHEST_NAMES = {t: f"{t.title()} Chest" for t in CHEST_ORDER}
+CHEST_EMOJI = {"common": "🪵", "uncommon": "🥉", "rare": "🥈", "epic": "🥇", "legendary": "💚", "mythic": "🌌"}
+# the chest tiers before the six-tier chests (bot/db.py renames them in old databases)
+OLD_CHEST_KEYS = {"wooden": "common", "bronze": "uncommon", "silver": "rare", "jade": "legendary"}
+TOP_CHESTS = ("legendary", "mythic")       # the Treasure Sense passive makes these likelier
 TIER_ORDER = equipments.TIERS
 GRADE_ORDER = list(technique.GRADES)
 
 # DEFAULT: Lotus Coins in a chest at Mortal (×2 per realm, see rules.realm_scale)
-CHEST_COINS = {"wooden": (10, 25), "bronze": (30, 60), "silver": (80, 150), "jade": (200, 400)}
+CHEST_COINS = {"common": (10, 25), "uncommon": (30, 60), "rare": (80, 150), "epic": (130, 260),
+               "legendary": (200, 400), "mythic": (500, 900)}
 # DEFAULT: duplicate of a learned manual turns into this much mastery EXP (× grade EXP multiplier)
 INSIGHT_EXP = 100
 
@@ -250,7 +254,7 @@ def _chest_items(player, tier, rng):
         items.append(roll_manual(pick(explore.CHEST_MANUAL_GRADE_ODDS[tier], rng), rng))
     if rng.random() < equipments.CHEST_WEAPON_CHANCE[tier]:
         items.append(roll_weapon(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
-    if tier == "jade" and rng.random() < talent.HEAVEN_DEFYING_PILL["jade_chest_chance"]:
+    if rng.random() < talent.HEAVEN_DEFYING_PILL["chest_chance"].get(tier, 0):
         items.append(dict(HEAVEN_DEFYING))
     if rng.random() < equipments.CHEST_ARMOR_CHANCE[tier]:
         items.append(roll_armor(pick(equipments.CHEST_TIER_ODDS[tier], rng), rng))
@@ -287,12 +291,12 @@ def beast_chest(player, beast_tier, rng=random, luck=0.0):
 
 
 def chest_odds(tiers, luck=0.0, jade=0.0):
-    """Chest tier weights with every tier above the lowest raised by `luck` (Compass artifact), and Jade Chests
-    raised by `jade` more (the Treasure Sense passive)."""
+    """Chest tier weights with every tier above the lowest raised by `luck` (Compass artifact), and Legendary and
+    Mythic Chests raised by `jade` more (the Treasure Sense passive)."""
     if not luck and not jade:
         return tiers
     lowest = min(tiers, key=CHEST_ORDER.index)
-    return {t: w * (1 if t == lowest else 1 + luck) * (1 + jade if t == "jade" else 1) for t, w in tiers.items()}
+    return {t: w * (1 if t == lowest else 1 + luck) * (1 + jade if t in TOP_CHESTS else 1) for t, w in tiers.items()}
 
 
 def describe(item):

@@ -36,7 +36,7 @@ PRACTICE = dict(WHO, mode="practice", challenge="Endless Waves", conditions=[], 
                 reward={"technique": "Viper Fang Finger", "exp": 18, "total": 918, "cap": 2000},
                 notes=["You scored **5** of 12 points."], cooldown="Practise again in 30 min")
 EXPLORE = dict(WHO, region="Misty Pine Valley", defeated=False, step=4, max_steps=5, hp=2210, max_hp=3200, coins=312, beasts=3,
-               items=[{"name": "Silver Chest", "qty": 1, "icon": "chest", "color_key": "silver", "label": "Silver"},
+               items=[{"name": "Rare Chest", "qty": 1, "icon": "chest:rare", "color_key": "rare", "label": "Rare"},
                       {"name": "Red Ginseng Root", "qty": 3, "icon": "herb", "color_key": None, "label": "Common"},
                       {"name": "Fine Spirit Saber", "qty": 1, "icon": "saber", "color_key": "spirit", "label": "Spirit"},
                       {"name": "Iron Cloth Body Manual", "qty": 1, "icon": "scroll", "color_key": "Yellow",

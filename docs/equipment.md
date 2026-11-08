@@ -103,21 +103,25 @@ Weapons drop from chests (chests drop after defeating beasts).
 ### Chance a chest contains a weapon
 | Chest | Weapon chance |
 |---|---|
-| 🪵 Wooden | 2% |
-| 🥉 Bronze | 4% |
-| 🥈 Silver | 8% |
-| 💚 Jade | 12% |
+| 🪵 Common | 2% |
+| 🥉 Uncommon | 4% |
+| 🥈 Rare | 8% |
+| 🥇 Epic | 10% |
+| 💚 Legendary | 12% |
+| 🌌 Mythic | 20% |
 
 ### Tier odds when a weapon drops
 | Chest | Ordinary | Refined | Spirit | Treasure | Divine |
 |---|---|---|---|---|---|
-| 🪵 Wooden | 99% | 1% | — | — | — |
-| 🥉 Bronze | 90% | 9.5% | 0.5% | — | — |
-| 🥈 Silver | — | 85% | 14% | 1% | — |
-| 💚 Jade | — | — | 88% | 11.9% | 0.1% |
+| 🪵 Common | 99% | 1% | — | — | — |
+| 🥉 Uncommon | 90% | 9.5% | 0.5% | — | — |
+| 🥈 Rare | — | 85% | 14% | 1% | — |
+| 🥇 Epic | — | 40% | 55% | 5% | — |
+| 💚 Legendary | — | — | 88% | 11.9% | 0.1% |
+| 🌌 Mythic | — | — | 50% | 46% | 4% |
 
 ### Average kills per weapon of that tier
-(Elite chests: half Bronze, half Silver. Beast King chests: half Silver, half Jade.)
+(Chest tiers per beast: docs/explore.md.)
 
 | Tier | From Elite beasts | From Beast Kings |
 |---|---|---|
@@ -170,7 +174,7 @@ special effect. Every rarity has its **own name** and a fixed effect value (no q
 - Same realm requirements per tier as weapons
 - You can't equip two artifacts of the same family
 - Fair Duels: combat artifacts work at **half strength**; armor counts at half, like weapons
-- About **twice as rare** as weapons; Treasure and Divine only from Jade Chests (Beast Kings)
+- About **twice as rare** as weapons; Treasure and Divine only from Legendary and Mythic Chests (Beast Kings)
 - Never sold for Moon Pearls
 
 ### ⚔️ Combat
@@ -273,10 +277,12 @@ special effect. Every rarity has its **own name** and a fixed effect value (no q
 
 | Chest | Artifact chance | Tier odds |
 |---|---|---|
-| Wooden | 1% | Ordinary 99%, Refined 1% |
-| Bronze | 2% | Ordinary 90%, Refined 9.5%, Spirit 0.5% |
-| Silver | 4% | Refined 85%, Spirit 15% |
-| Jade | 6% | Spirit 88%, Treasure 11.9%, Divine 0.1% |
+| Common | 1% | Ordinary 99%, Refined 1% |
+| Uncommon | 2% | Ordinary 90%, Refined 9.5%, Spirit 0.5% |
+| Rare | 4% | Refined 85%, Spirit 15% |
+| Epic | 5% | Refined 40%, Spirit 60% |
+| Legendary | 6% | Spirit 88%, Treasure 11.9%, Divine 0.1% |
+| Mythic | 10% | Spirit 50%, Treasure 46%, Divine 4% |
 
 Divine artifacts are announced to the whole server, like Divine weapons.
 
@@ -308,6 +314,6 @@ All values come from `equipments.ARTIFACT_FAMILIES`; the code is `bot/gear.py`.
 - Gear can't be changed during a fight, a hunt, /spar or a duel.
 
 ## Open decisions
-- [ ] Pity progress for Divine drops (each Jade Chest without one slightly raises the next chance)
+- [ ] Pity progress for Divine drops (each Legendary Chest without one slightly raises the next chance)
 - [ ] Beast King trophy artifacts (a unique artifact per Beast King with an extra twist)
 - [ ] More artifact slots at high realms

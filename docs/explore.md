@@ -58,7 +58,7 @@ One message is edited at every step (cards/expedition.py, data in bot/explore_ca
 | Encounter | Chance | What happens |
 |---|---|---|
 | 🐾 Wild Beast | 32% | Fight a Normal beast of your realm (see beast.md) |
-| 📦 Treasure Chest | 15% | Wooden 60% · Bronze 30% · Silver 10% |
+| 📦 Treasure Chest | 15% | Common 58% · Uncommon 30% · Rare 10% · Epic 2% |
 | 🌿 Herb Patch | 10% | 1–3 alchemy herbs of any grade, same rarity odds as /gather (see alchemy.md) |
 | ⛏️ Ore Vein | 6% | 2–4 weapon metal of your tier, 30% a fuel, 10% a Metal Shard (see forge.md) |
 | 🏕️ Peaceful Clearing | 9% | Rest: heal 25% max HP |
@@ -80,9 +80,12 @@ After defeating a beast, a chest may drop. In a team, **each player rolls their 
 
 | Beast | Chest chance | Chest tier |
 |---|---|---|
-| 🐾 Normal | 30% | Wooden 70% · Bronze 30% |
-| ⚔️ Elite | 60% | Bronze 50% · Silver 50% |
-| 👑 Beast King | 100% | Silver 50% · Jade 50% |
+| 🐾 Normal | 30% | Common 70% · Uncommon 30% |
+| ⚔️ Elite | 60% | Uncommon 45% · Rare 45% · Epic 10% |
+| 👑 Beast King | 100% | Rare 35% · Epic 20% · Legendary 40% · Mythic 5% |
+
+Six chest tiers: 🪵 Common · 🥉 Uncommon · 🥈 Rare · 🥇 Epic · 💚 Legendary · 🌌 Mythic (art: art/chests/).
+They replaced Wooden / Bronze / Silver / Jade, which became Common / Uncommon / Rare / Legendary.
 
 ## Chest contents
 
@@ -92,10 +95,12 @@ Then it may also contain:
 ### Manual
 | Chest | Manual chance | Grade odds |
 |---|---|---|
-| 🪵 Wooden | 5% | Mortal 100% |
-| 🥉 Bronze | 10% | Mortal 80% · Yellow 20% |
-| 🥈 Silver | 15% | Yellow 70% · Mystic 28% · Earth 2% |
-| 💚 Jade | 25% | Mystic 80% · Earth 19.8% · Heaven 0.2% |
+| 🪵 Common | 5% | Mortal 100% |
+| 🥉 Uncommon | 10% | Mortal 80% · Yellow 20% |
+| 🥈 Rare | 15% | Yellow 70% · Mystic 28% · Earth 2% |
+| 🥇 Epic | 20% | Yellow 30% · Mystic 62% · Earth 8% |
+| 💚 Legendary | 25% | Mystic 80% · Earth 19.8% · Heaven 0.2% |
+| 🌌 Mythic | 40% | Mystic 40% · Earth 55% · Heaven 5% |
 
 - Earth manual: ~1 in 38 Beast King kills
 - Heaven manual: ~1 in 4,000 Beast King kills (announced to the whole server)

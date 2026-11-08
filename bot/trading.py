@@ -52,7 +52,7 @@ def grade_label(item):
 
 
 _GRADE_ORDER = (list(alchemy.GRADES) + [t.title() for t in equipments.TIERS]
-                + [f"Tier {n}" for n in range(1, 11)] + ["Wooden", "Bronze", "Silver", "Jade"])
+                + [f"Tier {n}" for n in range(1, 11)] + [t.title() for t in ("common", "uncommon", "rare", "epic", "legendary", "mythic")])
 
 
 def grade_sort(label):

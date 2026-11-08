@@ -40,7 +40,7 @@ The only way to change it is a reroll, bought with Lotus Coins or premium curren
 ## Changing fate — Heaven-Defying Pill
 
 - Raises talent by **one rank** (e.g. Gifted → Genius), up to Divine
-- Ultra rare: from the Wandering Hermit or Jade Chests (0.05%)
+- Ultra rare: from the Wandering Hermit, Legendary Chests (0.05%) or Mythic Chests (0.5%)
 - Bound: cannot be traded
 - Using it is announced to the server:
   > 💊 *Shoaib defied the heavens! Talent raised to Prodigy!*

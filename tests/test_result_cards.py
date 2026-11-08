@@ -110,7 +110,7 @@ def test_explore_card_with_a_full_spoils_list(conn):
     exp = Expedition(conn, 1, random.Random(0))
     exp.next_step()
     from bot import loot
-    exp.items = [loot.chest("jade"), loot.herb("Mortal", "qi", 10), loot.pill("Yellow")] * 4
+    exp.items = [loot.chest("legendary"), loot.herb("Mortal", "qi", 10), loot.pill("Yellow")] * 4
     exp.finish()
     results.render_explore(result_cards.explore_data(exp))
 

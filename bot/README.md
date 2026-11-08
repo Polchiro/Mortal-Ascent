@@ -67,7 +67,7 @@ Start buttons. It stays open 30 / 60 minutes; the finder starts the fight and ev
 their own chest. Beating a Beast King counts toward the Martial King and Martial Saint requirements.
 
 Rare finds are announced in the channel: Divine weapons, armor and artifacts, Heaven manuals, the Heaven-Defying Pill
-(0.05% in Jade Chests, raises talent one rank), Saint and Divine talents, and Beast King kills.
+(0.05% in Legendary Chests, 0.5% in Mythic, raises talent one rank), Saint and Divine talents, and Beast King kills.
 
 ## Gameplay defaults
 
@@ -76,7 +76,7 @@ The design docs leave some things open. Until they are decided, the bot uses the
 
 - **Fights are turn-based** (docs/combat.md): explore beasts, bandits and team hunts use the
   interactive fight screen. All fight numbers are in `battle.py`.
-- **Coins:** chests hold 10–25 (Wooden), 30–60 (Bronze), 80–150 (Silver), 200–400 (Jade) Lotus
+- **Coins:** chests hold 10–25 (Common), 30–60 (Uncommon), 80–150 (Rare), 130–260 (Epic), 200–400 (Legendary), 500–900 (Mythic) Lotus
   Coins at Mortal; Normal beasts give 3–8, beaten bandits 10–20. All amounts double each realm.
 - **Team hunts** are played on the same fight screen; every member picks secretly each turn. Up to 8
   fighters. Winners get 20–40 (Elite) or 60–120 (King) Lotus Coins × realm scale; losing injures

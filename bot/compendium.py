@@ -311,13 +311,13 @@ def artifacts_overview():
                f"Combat ones work at {pct(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH)} in Fair Duels."),
         tiles=tiles,
         footer="Artifact chance per chest: " + chest_list(equipments.CHEST_ARTIFACT_CHANCE.items())
-               + " (Treasure and Divine only in Jade Chests)")
+               + " (Treasure and Divine only in Legendary and Mythic Chests)")
 
 
 # ── Chests ────────────────────────────────────────────────────────────
 
 def chests_strip():
-    return [(c, "chest", loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
+    return [(c, f"chest:{c}", loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
 
 
 def chest_sources(tier):
@@ -345,9 +345,9 @@ def chests_page(chest):
                                                  odds_text(equipments.CHEST_ARTIFACT_TIER_ODDS[chest], str.title)],
              cjk=False),
     ]
-    if chest == "jade":
+    if talent_rules.HEAVEN_DEFYING_PILL["chest_chance"].get(chest):
         tiles.append(tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill",
-                          [f"{pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} chance",
+                          [f"{pct(talent_rules.HEAVEN_DEFYING_PILL['chest_chance'][chest])} chance",
                            "Raises your talent one rank"], cjk=False))
     return dict(tier_label=loot.CHEST_NAMES[chest], tier_word=False, subtitle="Open it from /inventory",
                 intro="Every roll is separate, so one chest can hold several things.",
@@ -358,7 +358,7 @@ def chests_overview():
     tiles = []
     for chest, name in loot.CHEST_NAMES.items():
         lo, hi = loot.CHEST_COINS[chest]
-        tiles.append(tile("chest", T.RARITY[chest], name, [
+        tiles.append(tile(f"chest:{chest}", T.RARITY[chest], name, [
             f"{lo}–{hi} Lotus Coins",
             f"Manual {pct(explore.CHEST_MANUAL_CHANCE[chest])} · Weapon {pct(equipments.CHEST_WEAPON_CHANCE[chest])}",
             "From " + chest_sources(chest),
@@ -474,7 +474,8 @@ def pills_overview():
                                            f"Drops: {cores}", "Elite and King cores from team hunts"]),
         tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill", cjk=False, lines=[
             f"Raises talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']})",
-            f"Jade Chests {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} · cannot be traded"]),
+            "Legendary Chests " + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["legendary"]) + ", Mythic "
+            + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["mythic"]) + " · cannot be traded"]),
     ]
     return dict(subtitle="Toxicity, patterns and rare pills",
                 intro="Pills add toxicity and too much weakens the next ones. Cleansing pills wash it out.",

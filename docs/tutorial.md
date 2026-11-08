@@ -33,7 +33,7 @@ A guided path through the Mortal realm. The Old Master gives one lesson at a tim
 | 4 | Breathe | Open **/internal qi** to see Qi gathering on its own (no collecting needed) | 1 Mortal Qi Pill |
 | 5 | Into the Wild | Use **/explore** — the first expedition always meets a Wild Boar | — |
 | 6 | First Battle | Defeat the Wild Boar. The Old Master explains Strike / Guard / Break and techniques during the fight | — |
-| 7 | Spoils | Open the guaranteed Wooden Chest from the boar | Chest contents |
+| 7 | Spoils | Open the guaranteed Common Chest from the boar | Chest contents |
 | 8 | The First Gate | Reach Mortal 3rd Layer and **break through** to Martial Apprentice (guaranteed success) | 100 Lotus Coins |
 
 After lesson 8:

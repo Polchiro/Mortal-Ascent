@@ -46,11 +46,11 @@ def test_clamped_loss_takes_only_what_there_is(conn):
 
 def test_ledger_records_every_change_newest_first(conn):
     new_player(conn)
-    db.add_coins(conn, 1, 100, "Opened Bronze Chest")
+    db.add_coins(conn, 1, 100, "Opened Uncommon Chest")
     db.change_currency(conn, 1, "moon_pearls", 300, "Admin gift")
     db.spend(conn, 1, "moon_pearls", 200, "Shop: Name change")
     rows = db.ledger(conn, 1)
-    assert [r["reason"] for r in rows] == ["Shop: Name change", "Admin gift", "Opened Bronze Chest", "Starting purse"]
+    assert [r["reason"] for r in rows] == ["Shop: Name change", "Admin gift", "Opened Uncommon Chest", "Starting purse"]
     assert rows[0]["balance"] == 100 and rows[2]["balance"] == 150
 
 
@@ -117,7 +117,7 @@ def test_discard_rules(conn):
 
 def test_item_actions_match_the_game(conn):
     new_player(conn)
-    for it in (loot.chest("bronze"), loot.manual("iron_fist"), loot.pill("Mortal"), loot.herb("Mortal", "qi", 10),
+    for it in (loot.chest("uncommon"), loot.manual("iron_fist"), loot.pill("Mortal"), loot.herb("Mortal", "qi", 10),
                loot.roll_weapon("ordinary", random.Random(0))):
         db.add_item(conn, 1, **it)
     by_cat = {i["category"]: i for i in db.get_items(conn, 1)}
@@ -218,7 +218,7 @@ def fake_user(uid=1):
 def test_sheet_builds_every_tab(conn):
     from bot.sheet.view import CharacterSheet
     new_player(conn)
-    db.add_item(conn, 1, **loot.chest("wooden"))
+    db.add_item(conn, 1, **loot.chest("common"))
 
     async def go():
         view = CharacterSheet(FakeBot(conn), fake_user(), "profile")
@@ -323,7 +323,7 @@ def test_purse_shows_only_the_currencies(conn):
 
 def test_inspect_shows_the_buttons_the_item_offers(conn):
     new_player(conn)
-    db.add_item(conn, 1, **loot.chest("bronze"))
+    db.add_item(conn, 1, **loot.chest("uncommon"))
     d, page_items, _, sel = sheet.bag_data(conn, 1, "chests")
     assert d["inspect"]["actions"] == ["Open", "Discard"]
     w = loot.roll_weapon("ordinary", random.Random(1))
@@ -348,7 +348,7 @@ def test_sheet_icons_render_and_have_fallbacks():
 def test_sheet_buttons_use_plain_emojis_without_uploaded_icons(conn):
     from bot.sheet.view import CharacterSheet
     new_player(conn)
-    db.add_item(conn, 1, **loot.chest("wooden"))
+    db.add_item(conn, 1, **loot.chest("common"))
 
     async def go():
         view = CharacterSheet(FakeBot(conn), fake_user(), "inventory")

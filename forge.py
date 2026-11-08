@@ -240,7 +240,7 @@ PASSIVES = {
         "alchemy_sage":    {"name": "Alchemy Sage", "rarity": "Legendary", "family": "cauldron_ash",
                             "text": "Pills can reach 1 pattern beyond the herb-age limit", "fx": {"extra_patterns": 1}},
         "treasure_sense":  {"name": "Treasure Sense", "rarity": "Legendary", "family": "fortune",
-                            "text": "Jade Chests 20% more likely", "fx": {"jade_chest_chance": 0.20}},
+                            "text": "Legendary and Mythic Chests 20% more likely", "fx": {"jade_chest_chance": 0.20}},
         # Mythical
         "dao_heart":       {"name": "Dao Heart", "rarity": "Mythical", "family": "spirit_dew",
                             "text": "+10% Qi Rate; pill toxicity can never go above 5",
@@ -346,15 +346,18 @@ GATHER_JADE_SHARD_CHANCE = 0.03     # DEFAULT, per correct pick
 
 # Chests: artifact jades, Fortune Coin essence, Seal Stones
 CHEST_JADE = {   # chance, (min, max) — tier rolled from equipments.CHEST_TIER_ODDS. DEFAULT
-    "wooden": (0.15, (1, 2)), "bronze": (0.25, (1, 3)), "silver": (0.35, (2, 4)), "jade": (0.50, (3, 5)),
+    "common": (0.15, (1, 2)), "uncommon": (0.25, (1, 3)), "rare": (0.35, (2, 4)), "epic": (0.42, (2, 5)),
+    "legendary": (0.50, (3, 5)), "mythic": (0.75, (4, 7)),
 }
 CHEST_FORTUNE = {   # grade → chance, checked Heart → Crystal → Shard. DEFAULT
-    "wooden": {"shard": 0.05},
-    "bronze": {"crystal": 0.01, "shard": 0.08},
-    "silver": {"crystal": 0.04, "shard": 0.10},
-    "jade":   {"heart": 0.01, "crystal": 0.10, "shard": 0.10},
+    "common":    {"shard": 0.05},
+    "uncommon":  {"crystal": 0.01, "shard": 0.08},
+    "rare":      {"crystal": 0.04, "shard": 0.10},
+    "epic":      {"crystal": 0.07, "shard": 0.10},
+    "legendary": {"heart": 0.01, "crystal": 0.10, "shard": 0.10},
+    "mythic":    {"heart": 0.05, "crystal": 0.20, "shard": 0.10},
 }
-CHEST_SEAL_STONE = {"wooden": 0.00, "bronze": 0.01, "silver": 0.03, "jade": 0.08}   # DEFAULT
+CHEST_SEAL_STONE = {"common": 0.00, "uncommon": 0.01, "rare": 0.03, "epic": 0.05, "legendary": 0.08, "mythic": 0.20}   # DEFAULT
 
 # /craft: Cauldron Ash, more from higher-pattern pills. (min patterns, grade, qty), top to bottom. DEFAULT
 CRAFT_ASH = [(9, "heart", 1), (7, "crystal", 1), (4, "shard", 2), (1, "shard", 1)]

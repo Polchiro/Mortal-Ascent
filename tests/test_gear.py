@@ -81,12 +81,12 @@ def test_drop_rates_follow_the_tables():
     n = 40000
     counts = {"armor": 0, "artifacts": 0, "weapons": 0}
     for _ in range(n):
-        for i in loot.open_chest({"realm": "Mortal"}, "jade", rng)[1]:
+        for i in loot.open_chest({"realm": "Mortal"}, "legendary", rng)[1]:
             if i["category"] in counts:
                 counts[i["category"]] += 1
-    assert counts["armor"] / n == pytest.approx(eq.CHEST_ARMOR_CHANCE["jade"], abs=0.01)
-    assert counts["artifacts"] / n == pytest.approx(eq.CHEST_ARTIFACT_CHANCE["jade"], abs=0.008)
-    assert counts["weapons"] / n == pytest.approx(eq.CHEST_WEAPON_CHANCE["jade"], abs=0.01)
+    assert counts["armor"] / n == pytest.approx(eq.CHEST_ARMOR_CHANCE["legendary"], abs=0.01)
+    assert counts["artifacts"] / n == pytest.approx(eq.CHEST_ARTIFACT_CHANCE["legendary"], abs=0.008)
+    assert counts["weapons"] / n == pytest.approx(eq.CHEST_WEAPON_CHANCE["legendary"], abs=0.01)
 
 
 def test_armor_rolls_buffs_and_a_quality_prefix_like_weapons():
@@ -117,7 +117,7 @@ def test_artifact_tiers_follow_their_own_odds():
     for chest, odds in eq.CHEST_ARTIFACT_TIER_ODDS.items():
         art = [i for i in loot.open_chest({"realm": "Mortal"}, chest, rng)[1] if i["category"] == "artifacts"][0]
         assert art["grade"] in odds
-    assert "treasure" not in eq.CHEST_ARTIFACT_TIER_ODDS["silver"]      # Treasure / Divine only from Jade
+    assert "treasure" not in eq.CHEST_ARTIFACT_TIER_ODDS["rare"]      # Treasure / Divine only from Jade
 
 
 def test_divine_armor_and_artifacts_are_announced():
@@ -534,8 +534,8 @@ def test_fortune_artifact_adds_lotus_coins_from_fights_and_chests():
     p = {"realm": "Mortal", "artifact_fx": {"lotus_coins": v}}
     assert loot.roll_coins(p, (100, 100), Always(), fortune=True) == round(100 * (1 + v))
     assert loot.roll_coins(p, (100, 100), Always()) == 100        # other coins (e.g. a stranger's thanks)
-    coins, _ = loot.open_chest(p, "wooden", Never())
-    lo, hi = loot.CHEST_COINS["wooden"]
+    coins, _ = loot.open_chest(p, "common", Never())
+    lo, hi = loot.CHEST_COINS["common"]
     assert coins >= round(lo * (1 + v))
 
 

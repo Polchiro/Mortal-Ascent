@@ -72,7 +72,7 @@ def test_found_tiles_count_the_same_find_together(conn):
     from bot import loot
     exp = Expedition(conn, 1, random.Random(0))
     exp.next_step()
-    exp.items = [loot.herb("Mortal", "qi", 10), loot.herb("Mortal", "qi", 10), loot.chest("wooden")]
+    exp.items = [loot.herb("Mortal", "qi", 10), loot.herb("Mortal", "qi", 10), loot.chest("common")]
     tiles = explore_card.crossroads_data(exp)["items"]
     assert [t["qty"] for t in tiles] == [2, 1]
 

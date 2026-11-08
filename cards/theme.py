@@ -48,7 +48,8 @@ RARITY = {
     "Earth": (196, 132, 72), "Heaven": (236, 74, 60),
     "ordinary": (170, 160, 150), "refined": (96, 196, 110), "spirit": (90, 160, 240),
     "treasure": (178, 110, 228), "divine": (246, 150, 50),
-    "wooden": (168, 122, 76), "bronze": (196, 132, 70), "silver": (186, 196, 210), "jade": (82, 196, 150),
+    "common": (168, 122, 76), "uncommon": (196, 150, 90), "rare": (196, 206, 222), "epic": (244, 184, 64),
+    "legendary": (82, 210, 150), "mythic": (180, 130, 250),
     None: (150, 176, 120),
 }
 TALENT = {
@@ -558,6 +559,18 @@ def portrait(img, box, avatar_bytes, name, realm, color=EMBER):
 
 # ── Icons (drawn, so no image files are needed) ───────────────────────
 
+@lru_cache(maxsize=64)
+def chest_art(tier, width):
+    """The painted chest of a tier (art/chests/<tier>.png), `width` card px wide, at S×; None if missing."""
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "chests", f"{tier}.png")
+    if not os.path.exists(path):
+        return None
+    art = Image.open(path).convert("RGBA")
+    k = width * S / art.size[0]
+    return art.resize((max(1, round(art.size[0] * k)), max(1, round(art.size[1] * k))), Image.LANCZOS)
+
+
 def icon(img, kind, center, size, color):
     """Draw a small icon centred at `center`, `size` pixels tall."""
     d = ImageDraw.Draw(img)
@@ -567,6 +580,12 @@ def icon(img, kind, center, size, color):
     if kind.startswith("seal:"):            # armor / artifact seal: the character itself (gear.icon_kind)
         text(d, (cx, cy + size * 0.03), kind[5:], cjk(max(8, round(size * 0.82))), color, "mm")
         return
+    if kind.startswith("chest:"):           # a chest tier's painting (art/chests/<tier>.png)
+        art = chest_art(kind[6:], round(size * 1.25))
+        if art is not None:
+            img.alpha_composite(art, (round(cx * S - art.size[0] / 2), round(cy * S - art.size[1] / 2)))
+            return
+        kind = "chest"
     if kind.startswith("gear:"):            # armor type / artifact family drawing (cards/gear_icons.py)
         from .gear_icons import GEAR_ICON
         GEAR_ICON[kind[5:]](d, cx, cy, s, color, dark)

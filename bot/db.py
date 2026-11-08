@@ -188,7 +188,31 @@ def connect(path):
                 if col not in have:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
     replace_old_herbs(conn)
+    rename_old_chests(conn)
     return conn
+
+
+OLD_CHESTS = {"wooden": ("common", "Common Chest"), "bronze": ("uncommon", "Uncommon Chest"),
+              "silver": ("rare", "Rare Chest"), "jade": ("legendary", "Legendary Chest")}
+
+
+def rename_old_chests(conn):
+    """Wooden / Bronze / Silver / Jade chests became Common / Uncommon / Rare / Legendary. Chests already in a bag
+    (and opened-but-unclaimed ones) take the new name; stacks of the same new tier merge."""
+    with conn:
+        for old, (new, name) in OLD_CHESTS.items():
+            for row in conn.execute("SELECT id, user_id, qty FROM items WHERE category = 'chests' AND key = ?",
+                                    (old,)).fetchall():
+                have = conn.execute("SELECT id FROM items WHERE user_id = ? AND category = 'chests' AND key = ?",
+                                    (row["user_id"], new)).fetchone()
+                if have:
+                    conn.execute("UPDATE items SET qty = qty + ? WHERE id = ?", (row["qty"], have["id"]))
+                    conn.execute("DELETE FROM items WHERE id = ?", (row["id"],))
+                else:
+                    conn.execute("UPDATE items SET key = ?, name = ?, grade = ? WHERE id = ?",
+                                 (new, name, new, row["id"]))
+            conn.execute("UPDATE pending_chests SET chest_key = ?, chest_name = ? WHERE chest_key = ?",
+                         (new, name, old))
 
 
 def replace_old_herbs(conn):

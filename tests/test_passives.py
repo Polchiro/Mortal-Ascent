@@ -257,12 +257,12 @@ def test_heavens_favor_and_dao_heart():
 
 
 def test_treasure_sense_and_deep_pockets():
-    tiers = {"wooden": 50, "bronze": 30, "silver": 15, "jade": 5}
-    assert loot.chest_odds(tiers, 0, 0.20)["jade"] == pytest.approx(6)
+    tiers = {"common": 50, "uncommon": 30, "rare": 15, "legendary": 5}
+    assert loot.chest_odds(tiers, 0, 0.20)["legendary"] == pytest.approx(6)
     p = dict(player(artifact=["deep_pockets"]), lotus_coins=0)
     p["artifact_passives"]["deep_pockets"] = {"extra_chest_roll": 1.0}       # always, for the test
     notes = []
-    loot.open_chest(p, "jade", random.Random(1), notes)
+    loot.open_chest(p, "legendary", random.Random(1), notes)
     assert notes and "Deep Pockets" in notes[0]
 
 
@@ -272,7 +272,7 @@ def test_fate_weaver_once_a_week(conn):
     p = db.get_player(conn, 1)
     now = 1_800_000_000
     assert loot.fate_weaver_ready(conn, 1, p, now)
-    loot.store(conn, 1, [loot.chest("bronze"), loot.chest("bronze")])
+    loot.store(conn, 1, [loot.chest("uncommon"), loot.chest("uncommon")])
     chests = db.get_items(conn, 1, "chests")
     msg = loot.use_item(conn, 1, chests[0]["id"], random.Random(1), now)
     assert "Fate Weaver" in msg and not loot.fate_weaver_ready(conn, 1, p, now)
