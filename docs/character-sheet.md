@@ -9,7 +9,7 @@ card switch tabs in place, so players never have to type another command.
 | 📜 Techniques | /techniques | Attack, Defense and Flex stances (equipped, empty, or locked with what opens it), then every learned technique as a scroll: grade seal, power, passive, rest turns, effect and mastery. Equipped scrolls carry a ribbon; the rest say Ready to equip |
 | ⚔️ Equipment | /equipment | Four display cases (weapon, armor, artifact I and II): tier seal, name, realm needed, buffs or effect, forged passive sockets; base → final stats with the bonus on each bar and its sources; the worn artifacts' effects; spare gear in the bag |
 | 🎒 Inventory | /inventory | A category rail with counts, Materials groups, a 4 × 3 item grid with page beads, and an Inspect panel that also shows the buttons the item offers |
-| 🪷 Purse | /balance | Lotus Coins and Moon Pearls (short and exact amounts), the Heavenly Blessing with its perks and days left, and the Treasure Vault (chests, Seal Stones, Heaven-Defying Pills held) |
+| 🪷 Purse | /balance | Lotus Coins and Moon Pearls only (short and exact amounts); the blessing is shown by /blessing |
 
 ## Look
 
@@ -23,13 +23,14 @@ own accent so they feel related but distinct:
 | Techniques | Violet | Scripture pavilion: stances and unrolled scrolls with vermilion grade seals (凡 黄 玄 地 天) |
 | Equipment | Steel | Armory: display cases on lit pedestals with tier seals (凡 精 灵 宝 神) |
 | Inventory | Jade | Collection: category rail, rarity-glow tiles, Inspect panel |
-| Purse | Gold | Treasury: a square-holed Lotus coin, a pearl on a crescent moon, the Treasure Vault |
+| Purse | Gold | Treasury: a square-holed Lotus coin and a pearl on a crescent moon |
 | /internal qi | Sea teal | Spirit Sea (灵海): the dantian vortex in a bagua ring, a meridian stream bar, jade tablets and the Flow of Qi |
 
 - **Buttons:** the tabs, item actions and paging use octagon seal icons (cards/sheet_icons.py), uploaded
   as application emojis like the fight buttons; the open tab is the blurple button
 - **Rarity colours** are shared by technique grades, weapon / armor / artifact tiers and chest tiers
-- The ledger is still written for every coin change (economy.md) but the Purse card no longer lists it
+- The ledger is still written for every coin change (economy.md) but the Purse card no longer lists it, and the
+  Heavenly Blessing is shown by /blessing rather than the Purse
 
 ### Activity result cards
 

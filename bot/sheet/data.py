@@ -171,23 +171,10 @@ def purse_data(conn, user_id, now=None):
     return dict(
         header(p),
         currencies=currencies,
-        blessing={"tier": b[0], "days_left": b[1], "perks": rules.blessing_perks(b[0]),
-                  "total_days": economy.BLESSING_DURATION_DAYS} if b else None,
-        valuables=valuables(conn, user_id),
+        blessing={"tier": b[0], "days_left": b[1], "perks": rules.blessing_perks(b[0])} if b else None,
         ledger=[{"currency": r["currency"], "delta": r["delta"], "balance": r["balance"], "reason": r["reason"],
                  "ago": ago(now - r["at"])} for r in db.ledger(conn, user_id, 8)],
     )
-
-
-def valuables(conn, user_id):
-    """The Purse's Treasure Vault: chests (by tier), Seal Stones and Heaven-Defying Pills the player holds.
-    Display only; they are opened, used or forged from the Inventory as before."""
-    found = sorted(db.get_items(conn, user_id, "chests"),
-                   key=lambda i: items.CHEST_ORDER.index(i["key"]) if i["key"] in items.CHEST_ORDER else 99)
-    found += [i for i in db.get_items(conn, user_id, "materials") if i["key"] == "seal"]
-    found += [i for i in db.get_items(conn, user_id, "pills") if i["key"] == "heaven_defying"]
-    return [{"name": i["name"], "qty": i["qty"], "icon": items.item_icon(i), "rarity_key": items.rarity(i)[1]}
-            for i in found]
 
 
 def ago(seconds):

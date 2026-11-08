@@ -2,11 +2,9 @@
 Character Sheet · Purse tab ("Treasury", Night Ink theme with a gold accent: cards/ink.py).
 
 render_purse(data) draws bot.sheet.data.purse_data:
-- one vault per live currency (economy.md keeps the later ones hidden): Lotus Coins as an ancient square-holed
-  coin, Moon Pearls as a pearl on a crescent moon, each with the short and the exact amount;
-- the Heavenly Blessing as a celestial seal band with its perks and a ring of days left;
-- the Treasure Vault: chests, Seal Stones and Heaven-Defying Pills held (opened or used from the Inventory).
-The ledger stays in the data (purse_data["ledger"]) but is no longer drawn.
+one vault per live currency (economy.md keeps the later ones hidden): Lotus Coins as an ancient square-holed
+coin, Moon Pearls as a pearl on a crescent moon, each with the short and the exact amount. Only the currencies
+are drawn; the blessing and the ledger stay in the data (the blessing has /blessing).
 """
 import math
 
@@ -16,7 +14,7 @@ from . import ink as k
 from . import theme as t
 from .theme import P, S, alpha, font, mix, short
 
-W, H = 1200, 660
+W, H = 1200, 370
 GOLD_ACC = k.accent("purse")
 COIN_GLYPHS = "莲花通宝"           # read top, bottom, right, left on the coin, like a real cash coin
 
@@ -140,65 +138,6 @@ def vault(img, box, c):
         t.text(d, (tx + 12, cy + 68), f"{c['amount']:,}", font("Inter.ttf", 18, "SemiBold"), k.PARCHMENT, "lm")
 
 
-def blessing_band(img, box, b):
-    x0, y0, x1, y1 = box
-    on = bool(b)
-    k.plaque(img, box, "Heavenly Blessing", color=GOLD_ACC if on else k.ASH_DK,
-             fill=(22, 20, 14) if on else k.PANEL)
-    cy = (y0 + y1) / 2 + 6
-    t.medallion(img, (x0 + 64, cy), 32, "misc:blessing", GOLD_ACC if on else k.ASH_DK, cjk_char=False)
-    d = ImageDraw.Draw(img)
-    if not on:
-        t.text(d, (x0 + 116, cy - 10), "No blessing active", font("Cinzel.ttf", 22, "Bold"), k.ASH, "lm")
-        t.text(d, (x0 + 116, cy + 18), "See the eight tiers with /blessing", font("Inter.ttf", 13, "Medium"),
-               k.ASH_DK, "lm")
-        return
-    t.gold_text(img, (x0 + 116, cy - 14), b["tier"].upper(), font("Cinzel.ttf", 26, "Black"), anchor="lm")
-    x = x0 + 118
-    for perk in [p.strip() for p in b["perks"].split("·") if p.strip()]:
-        w = k.chip(img, (x, cy + 22), perk, GOLD_ACC, size=12)
-        x += w + 8
-        if x > x1 - 200:
-            break
-    # ring of days left
-    total = b.get("total_days") or 30
-    rx, ry, rr = x1 - 80, cy, 34
-    d = ImageDraw.Draw(img)
-    d.ellipse(P(rx - rr, ry - rr, rx + rr, ry + rr), outline=(40, 34, 20, 255), width=round(6 * S))
-    frac = max(0.0, min(1.0, b["days_left"] / total))
-    if frac > 0:
-        d.arc(P(rx - rr, ry - rr, rx + rr, ry + rr), -90, -90 + 360 * frac, fill=GOLD_ACC, width=round(6 * S))
-    t.text(d, (rx, ry - 4), f"{b['days_left']}d", font("Inter.ttf", 19, "Bold"), k.GOLD_HI, "mm")
-    t.text(d, (rx, ry + 15), "LEFT", font("Cinzel.ttf", 8, "Bold"), k.ASH, "mm")
-
-
-def treasure_vault(img, box, items):
-    x0, y0, x1, y1 = box
-    k.plaque(img, box, "Treasure Vault", color=GOLD_ACC)
-    cy = (y0 + y1) / 2 + 2
-    d = ImageDraw.Draw(img)
-    if not items:
-        t.text(d, ((x0 + x1) / 2, cy), "Nothing stored yet. Chests from beasts and Seal Stones gather here.",
-               font("Inter.ttf", 14, "Medium"), k.ASH, "mm")
-        return
-    n = min(len(items), 8)
-    step = min(140, (x1 - x0 - 60) / n)
-    sx = (x0 + x1) / 2 - step * (n - 1) / 2
-    for i, it in enumerate(items[:n]):
-        x = sx + i * step
-        color = t.RARITY.get(it["rarity_key"], k.GOLD)
-        t.medallion(img, (x, cy - 14), 26, it["icon"], color, cjk_char=False)
-        d = ImageDraw.Draw(img)
-        if it["qty"] > 1:
-            k.chip(img, (x + 22, cy - 34), f"×{it['qty']}", k.GOLD, size=10, anchor="m", fill=(10, 8, 4))
-            d = ImageDraw.Draw(img)
-        t.text(d, (x, cy + 26), t.fit(d, it["name"], font("Inter.ttf", 12, "SemiBold"), step - 10),
-               font("Inter.ttf", 12, "SemiBold"), k.PARCHMENT, "mm")
-    if len(items) > n:
-        t.text(d, (x1 - 20, y1 - 14), f"+{len(items) - n} more in the Inventory", font("Inter.ttf", 11, "Medium"),
-               k.ASH_DK, "rm")
-
-
 def render_purse(data):
     img = k.canvas(W, H, "purse", seed=11)
     k.sheet_frame(img, "purse")
@@ -209,7 +148,5 @@ def render_purse(data):
     w = (1140 - gap * (n - 1)) / n
     for i, c in enumerate(cur):
         x = 30 + i * (w + gap)
-        vault(img, (x, 132, x + w, 330), c)
-    blessing_band(img, (30, 366, 1170, 466), data.get("blessing"))
-    treasure_vault(img, (30, 500, 1170, 626), data.get("valuables") or [])
+        vault(img, (x, 136, x + w, 336), c)
     return t.finish(img)

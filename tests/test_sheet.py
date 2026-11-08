@@ -314,19 +314,11 @@ def test_cards_need_only_pillow(conn, monkeypatch):
 
 # ── Night Ink redesign: purse vault, inspect actions, button icons, Qi card ──
 
-def test_purse_vault_lists_chests_seals_and_heaven_defying_pills(conn):
-    from bot import materials
+def test_purse_shows_only_the_currencies(conn):
     new_player(conn)
-    db.add_item(conn, 1, **dict(loot.chest("jade"), qty=1))
-    db.add_item(conn, 1, **dict(loot.chest("wooden"), qty=3))
-    db.add_item(conn, 1, **dict(loot.HEAVEN_DEFYING))
-    db.add_item(conn, 1, **materials.material("seal", 2))
     d = sheet.purse_data(conn, 1)
-    names = [v["name"] for v in d["valuables"]]
-    assert names[0] == loot.chest("wooden")["name"] and names[1] == loot.chest("jade")["name"]   # chests by tier
-    assert len(names) == 4 and all(v["icon"] for v in d["valuables"])
-    assert "ledger" in d                                  # still in the data, just not drawn
-    assert RENDERERS["purse"](d).size == (1200, 660)
+    assert [c["key"] for c in d["currencies"]] == list(db.CURRENCY_COLUMNS)
+    assert RENDERERS["purse"](d).size == (1200, 370)
 
 
 def test_inspect_shows_the_buttons_the_item_offers(conn):
