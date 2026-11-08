@@ -96,6 +96,11 @@ class CharacterSheet(OwnedView):
         """Rebuild the buttons for the current tab and draw its card. Returns a discord.File."""
         if self.tab == "profile" and self.avatar is None:
             self.avatar = await fetch_avatar(self.user) or b""
+        from .. import chest_reveal
+        async with self.bot.db_lock:       # chest rewards nobody collected (a restart mid-reveal) are added now
+            stale = chest_reveal.collect_stale(self.bot.conn, self.owner_id, None)
+        if stale:
+            self.notice = f"{self.notice}\n{stale}" if self.notice else stale
         data = self.card_data()
         self.build()
         image = await card_render.render(RENDERERS[self.tab], data)
@@ -303,12 +308,27 @@ class CharacterSheet(OwnedView):
         if sel and sel["category"] in items.GEAR and self.in_fight():
             self.notice = "⚔️ You can't change your gear in the middle of a fight."
             return await self.show(interaction)
+        if sel and sel["category"] == "chests":
+            return await self.open_chest(interaction, item_id)
         news = []
         async with self.bot.db_lock:
             self.notice = loot.use_item(self.bot.conn, self.owner_id, item_id, announce=news)
         await self.show(interaction)
         for line in news:
             await interaction.followup.send(line)
+
+    async def open_chest(self, interaction, item_id):
+        """Open a chest with the reward reveal (bot/chest_reveal.py): roll it once and take it out of the bag
+        now, update this sheet, then post the sealed chest below it. The rewards are granted on Collect."""
+        from .. import chest_reveal
+        async with self.bot.db_lock:
+            pending = loot.begin_chest(self.bot.conn, self.owner_id, item_id)
+        if pending is None:
+            self.notice = "That chest is no longer in your bag."
+            return await self.show(interaction)
+        self.selected = None
+        await self.show(interaction)
+        await chest_reveal.post(self.bot, interaction, self, pending)
 
     async def on_ask_discard(self, interaction):
         self.confirm_discard = True
@@ -342,7 +362,8 @@ async def open_sheet(bot, interaction, tab, category=None):
     await interaction.response.defer()
     view = CharacterSheet(bot, interaction.user, tab, category)
     file = await view.render()
-    view.message = await interaction.followup.send(file=file, view=view, wait=True)
+    view.message = await interaction.followup.send(content=view.notice, file=file, view=view, wait=True)
+    view.notice = None
 
 
 async def send_public_profile(bot, interaction, member):
