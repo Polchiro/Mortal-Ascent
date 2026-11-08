@@ -3,7 +3,7 @@
 The alchemy loop: **gather herbs → craft pills in a minigame → raise your
 alchemist rank → train faster.**
 
-> **Built:** /gather, /craft (all five stages, difficulty levels, rank relief, 1–9 patterns, Pill
+> **Built:** /gather, /craft (all five stages, difficulty levels, rank relief, batch crafting, 1–9 patterns, Pill
 > Tribulation), alchemist ranks and EXP, Beast Cores, and using every crafted pill. The bot's own choices for
 > numbers this page leaves open are listed in bot/README.md. **Not built yet:** the player market for herbs,
 > herbs from chests.
@@ -344,6 +344,27 @@ For each rank **above** the pill's required rank (counts up to 3):
 - **+0.5s** per decision
 - **1 free hint** in Stage 2 (one herb's position revealed)
 - At **2+ ranks above**: 1 mistake forgiven per craft
+
+### Batch crafting (several pills at once)
+
+From **2nd Grade** an alchemist can throw several sets of herbs into the cauldron and play the minigame
+**once** for the whole batch. Pick the batch size in /craft under the recipe.
+
+| Rank | Most pills per craft |
+|---|---|
+| 1st Grade | 1 |
+| 2nd–3rd Grade | 2 |
+| 4th–5th Grade | 3 |
+| 6th–7th Grade | 4 |
+| 8th–9th Grade | 5 |
+
+- Needs every herb (and the Beast Core, for Breakthrough pills) once **per pill**
+- Every pill in the batch gets the **same patterns**; an explosion loses **every** herb in the cauldron
+- Each pill beyond the first makes the craft harder (after rank relief and artifacts):
+  **−0.5s** per decision (never below 2.5s), heat safe zone **−15%** of its width (never below 6°),
+  Yin/Yang "perfect" window **±1 tighter** (never below ±2), Seal the Core needs **2 less** imbalance (never below 6)
+- Alchemy EXP counts every pill in the batch (same rank penalty as a single craft)
+- The Pill Tribulation is fought once for the whole batch; the cauldron ash drops once
 
 ### Score → pill patterns (丹纹)
 

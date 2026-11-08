@@ -242,6 +242,26 @@ RANK_RELIEF = {
     "max_ranks_counted": 3,
 }
 
+# Batch crafting: refine several pills of one recipe in a single minigame (docs/alchemy.md, "Batch crafting").
+# Every pill in the batch gets the same patterns; an explosion loses every herb in the cauldron.
+BATCH_BY_RANK = {1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5}   # most pills per craft at each rank
+# Each pill beyond the first makes the minigame harder (applied after rank relief and artifacts):
+BATCH_PENALTY = {
+    "seconds": 0.5,             # −0.5s per decision per extra pill...
+    "min_seconds": 2.5,         # ...never below this
+    "zone": 0.15,               # heat safe zone −15% of its width per extra pill...
+    "min_zone": 6,              # ...never narrower than 6°
+    "balance_tolerance": 1,     # Yin/Yang "perfect" window (50 ± 5) shrinks by 1 per extra pill...
+    "min_balance_tolerance": 2,
+    "seal_pass": 2,             # Seal the Core passes at imbalance ≤ 12, 2 less per extra pill...
+    "min_seal_pass": 6,
+}
+
+
+def batch_cap(rank):
+    return BATCH_BY_RANK.get(rank, max(BATCH_BY_RANK.values()))
+
+
 # (minimum score, patterns) — checked top to bottom; below the last = explosion
 SCORE_TO_PATTERNS = [
     (0.95, 9), (0.90, 8), (0.85, 7), (0.77, 6), (0.70, 5),

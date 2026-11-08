@@ -201,6 +201,10 @@ LESSONS = [
       ("Alchemist rank", "Every craft gives alchemy EXP (an explosion gives a little). Each new rank unlocks "
                          "harder pills. Being above a pill's rank gives more time, a wider safe zone, herb hints "
                          "and, at 2 ranks above, one forgiven mistake."),
+      ("Batch crafting", "From 2nd Grade you can refine several pills at once (up to "
+                         f"{max(alchemy.BATCH_BY_RANK.values())} at 8th Grade): pick the batch size under the "
+                         "recipe. One minigame for all of them, but each extra pill means less time and narrower "
+                         "safe zones, and an explosion loses every herb."),
       ("Hints that lie", "From Mystic pills on, some hints can be false. If the heat number and the text disagree, "
                          "trust the number you know you just moved."),
       ("Tips for beginners", "• Craft many cheap Mortal pills first to raise your rank.\n"
