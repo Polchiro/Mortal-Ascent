@@ -128,6 +128,12 @@ def encounter_data(exp, notice=None):
         title = (FIGHT_TITLE if exp.enemy_kind == "beast" else BANDIT_TITLE).get(b.result, title)
         data["outcome"] = "good" if b.result == "won" else ("bad" if b.result == "lost" else None)
         sub = e["name"]
+        if b.result in ("won", "lost"):
+            sp = getattr(exp, "spoils", None) or {"coins": 0, "items": []}
+            tiles = ([{"name": "Lotus Coins", "label": f"+{sp['coins']:,} coins", "icon": "lotus", "color": (240, 196, 110)}]
+                     if sp["coins"] else []) + _tiles(sp["items"])
+            data["victory"] = {"result": b.result, "name": e["name"], "turns": b.turn, "spoils": tiles,
+                               "bandits": exp.enemy_kind != "beast"}
     elif exp.pending == "hazard" and exp.hazard:
         h = exp.hazard
         data["hazard"] = {"danger": h["danger"], "kind": h["kind"]}

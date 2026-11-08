@@ -157,10 +157,12 @@ class Expedition:
         self._mastery_from_fight({"attack_uses": f.atk_uses, "guard_uses": f.guard_uses})
         name = b.enemy["name"]
         self.story = []
+        coins0, n0 = self.coins, len(self.items)
         if self.enemy_kind == "beast":
             self._beast_result(b, name)
         else:
             self._bandit_result(b, name)
+        self.spoils = {"coins": max(0, self.coins - coins0), "items": self.items[n0:]}   # for the result card only
         if self.hp <= 0:
             self._defeat()
 

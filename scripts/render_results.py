@@ -12,7 +12,8 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from cards.activity import render_explore, render_spar, render_train   # noqa: E402
+from cards.activity import render_explore   # noqa: E402
+from cards.results import render_spar, render_train   # noqa: E402
 
 WHO = {"name": "Shoaib", "realm": "Martial King", "layer": 8}
 

@@ -8,7 +8,7 @@ import pytest
 from bot import db, result_cards, trainer
 from bot import player as rules
 from bot.expedition import Expedition
-from cards import activity, theme
+from cards import activity, results, theme
 
 
 @pytest.fixture
@@ -57,14 +57,14 @@ def test_spar_card_from_a_real_spar(conn):
     data = view.card
     assert data["outcome"] in ("victory", "defeat") and data["name"] == "P1"
     assert all(g["exp"] > 0 for g in data["gains"])
-    assert activity.render_spar(data).size == (1200, activity.H)
+    assert results.render_spar(data).size == (1200, results.H)
 
 
 def test_spar_card_after_walking_away(conn):
     new_player(conn)
     data = spar_to_the_end(conn, forfeit=True).card
     assert data["outcome"] == "forfeit" and data["gains"] == []
-    activity.render_spar(data)
+    results.render_spar(data)
 
 
 def test_train_and_practice_cards(conn):
@@ -76,7 +76,7 @@ def test_train_and_practice_cards(conn):
     data = result_cards.train_data(p, s, 0.8, {"qi": qi, "total": p["qi"], "need": need, "realm": p["realm"],
                                                "layer": p["layer"]}, ["✅ Correct!"] + events, 60, "train")
     assert not any(ord(ch) > 0x2600 for ch in data["challenge"] + "".join(data["conditions"]))
-    assert activity.render_train(data).size == (1200, activity.H)
+    assert results.render_train(data).size == (1200, results.H)
 
     tech = db.get_techniques(conn, 1)[0]
     s = trainer.roll_session(p, random.Random(1), tech=tech)
@@ -84,7 +84,7 @@ def test_train_and_practice_cards(conn):
     data = result_cards.train_data(p, s, 0.3, {"technique": tech["name"], "exp": round(exp),
                                                "total": tech["mastery_exp"], "cap": rules.mastery_cap(tech)}, [], 30,
                                    "practise")
-    activity.render_train(data)
+    results.render_train(data)
 
 
 def test_explore_card_from_a_real_expedition(conn):
