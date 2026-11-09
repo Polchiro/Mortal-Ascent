@@ -33,7 +33,7 @@ GUIDE_TIMEOUT = 600   # seconds the page buttons keep working
 def odds_text():
     """The breakthrough odds per realm, read from training.py (they drop as you climb)."""
     short = lambda r: r.replace("Martial ", "") if r.startswith("Martial ") else r
-    realm = " · ".join(f"{short(r)} {c:.0%}" for r, c in training.REALM_BREAKTHROUGH_SUCCESS.items())
+    realm = " · ".join(f"{short(r)} {c * 100:g}%" for r, c in training.REALM_BREAKTHROUGH_SUCCESS.items())
     phases = training.PHASE_BOTTLENECK_SUCCESS
     first, last = next(iter(phases)), list(phases)[-1]
     return (f"Gates get harder as you climb. Phase gates: **{phases[first]:.0%}** in {first} down to "

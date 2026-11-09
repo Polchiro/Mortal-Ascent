@@ -40,7 +40,7 @@ def test_phase_gates_get_harder_the_higher_you_climb():
 
 def test_pills_add_but_never_past_the_cap():
     low, high = realm_gate("Martial Apprentice"), realm_gate("Martial Ancestor")    # into Warrior, into Saint
-    assert rules.breakthrough_chance(low, 0.15) == training.BREAKTHROUGH_CHANCE_CAP
+    assert rules.breakthrough_chance(low, 0.60) == training.BREAKTHROUGH_CHANCE_CAP
     assert rules.breakthrough_chance(high, 0.15) == pytest.approx(training.REALM_BREAKTHROUGH_SUCCESS["Martial Saint"] + 0.15)
     assert rules.breakthrough_chance(at_gate("Martial King", 3), 0.15) == training.PHASE_BOTTLENECK_SUCCESS["Martial King"]
     assert rules.pill_helps(high) and not rules.pill_helps(realm_gate("Mortal"))
@@ -48,9 +48,9 @@ def test_pills_add_but_never_past_the_cap():
 
 
 def test_the_attempt_uses_the_realm_odds():
-    p = realm_gate("Martial Emperor")                        # 24% into Martial Ancestor (no extra requirement)
-    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.28))
+    p = realm_gate("Martial Emperor")                        # 3% into Martial Ancestor (no extra requirement)
+    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.05))
     assert ok is False
     p = realm_gate("Martial Emperor")
-    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.28), bonus=0.10)
+    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.05), bonus=0.05)
     assert ok is True and p["realm"] == "Martial Ancestor"
