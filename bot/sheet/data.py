@@ -111,7 +111,7 @@ def gear_sockets(weapon, armor, artifacts):
     Each: {slot, label, icon, tier, name, line} or an empty socket {slot, label, empty}."""
     out = []
     w = weapon_view(weapon)
-    out.append({"slot": "weapon", "label": "Weapon", "icon": w["type"], "tier": w["tier"], "name": w["name"],
+    out.append({"slot": "weapon", "label": "Weapon", "icon": w["icon"], "tier": w["tier"], "name": w["name"],
                 "line": rules.buff_text(rules.weapon_buffs(weapon)).replace("  ·  ", " · ")} if w else
                {"slot": "weapon", "label": "Weapon", "empty": GEAR_EMPTY["weapon"]})
     a = armor_view(armor)

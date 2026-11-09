@@ -569,6 +569,21 @@ def test_profile_gear_row_has_four_sockets(conn):
     RENDERERS["profile"](d)
 
 
+def test_profile_weapon_socket_uses_the_weapon_painting(conn):
+    """The Profile's weapon socket shows the same painting as the bag and Equipment tab (was the bare drawn
+    spear/sword line), for every weapon type, quality prefix or not."""
+    new_player(conn)
+    for wtype in eq.WEAPON_TYPES:
+        for w in db.get_items(conn, 1, "weapons"):
+            conn.execute("DELETE FROM items WHERE id=?", (w["id"],))
+        w = dict(loot.weapon(wtype, "ordinary", 0.5))
+        w["name"] = "Fine " + w["name"]
+        w = give(conn, 1, w)
+        db.equip_weapon(conn, 1, w["id"])
+        s = sheet.profile_data(conn, 1)["gear"][0]
+        assert s["icon"] == items.item_icon(w) and s["icon"].startswith("art:gear/"), (wtype, s["icon"])
+
+
 def test_equipment_tab_shows_all_slots_armor_stats_and_artifact_effects(conn):
     new_player(conn, realm="Martial Apprentice")
     arm = give(conn, 1, loot.roll_armor("refined", random.Random(5)))
