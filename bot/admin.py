@@ -1,6 +1,8 @@
 """
 Admin-only testing commands: /admin reset, /admin give, /admin item, /admin duelstats, and the /admin set_*
-commands that set a player's realm, technique mastery, alchemist rank, blacksmith rank and Herbal Insight.
+commands that set a player's realm, technique mastery, alchemist rank, blacksmith rank and Herbal Insight,
+and /admin fight_beast, which spawns any beast in the game on the normal fight screen (a test fight: no
+rewards, no injury, no cooldown).
 
 /admin item gives any item in the game (weapons, armor, artifacts, forging materials, Beast Cores,
 herbs, pills, manuals, chests). The item list comes from bot/item_catalog.py, which reads the data modules.
@@ -10,18 +12,23 @@ user IDs listed in ADMIN_IDS (comma-separated, in .env) can use them. Everyone e
 refusal, even if a server admin makes the commands visible to them.
 """
 import os
+import random
 import time
 
 import discord
 from discord import app_commands
 
 import alchemy
+import beasts
+import challenges
 import equipments
 import forge
 import technique as tech_data
 
-from . import crafting, db, forging, item_catalog, loot
+from . import combat, crafting, db, fight, forging, item_catalog, loot
 from . import player as rules
+from .fight_view import FightMixin
+from .views import COLOR, OwnedView
 
 
 def admin_ids_from_env():
@@ -183,6 +190,104 @@ def duelstats_text(conn):
     parts = [head, "", "**Techniques**"] + ([line(r) for r in tech] or ["None picked yet"])
     parts += ["", "**Basic moves**"] + [line(r) for r in basic]
     return "\n".join(parts)[:4000]
+
+
+# ── /admin fight_beast ────────────────────────────────────────────────
+
+TIER_LABEL = {"normal": "Normal", "elite": "Elite", "beast_king": "Beast King"}
+
+
+def all_beasts():
+    """Every beast in the game: [(realm, name, tier, role)] in realm order."""
+    return [(realm, name, tier, role) for realm, rows in beasts.BEASTS.items() for name, tier, role in rows]
+
+
+def beast_key(row):
+    return f"{row[0]}|{row[1]}"
+
+
+def beast_label(row):
+    realm, name, tier, role = row
+    return f"{name} · {TIER_LABEL[tier]} {role.title()} · {realm}"[:100]
+
+
+def find_beasts(text):
+    """Beasts matching the typed text (a picked value, an exact name, or part of the name/realm/tier)."""
+    rows = all_beasts()
+    text = (text or "").strip().lower()
+    if not text:
+        return rows
+    exact = [r for r in rows if text in (beast_key(r).lower(), r[1].lower())]
+    if exact:
+        return exact
+    words = text.split()
+    return [r for r in rows if all(w in beast_label(r).lower() for w in words)]
+
+
+def beast_battle(conn, user_id, row, tier=None, home_realm=False, rng=None):
+    """A solo fight against this beast on the normal fight screen (bot/fight.py).
+    Stats are scaled to the player's realm and layer like in /explore, or to the beast's own realm."""
+    realm, name, base_tier, role = row
+    tier = tier or base_tier
+    p = db.get_player(conn, user_id)
+    techs = db.get_techniques(conn, user_id)
+    hp, atk, dfn = rules.final_stats(p, techs, db.equipped_weapon(conn, user_id), db.equipped_armor(conn, user_id))
+    f = fight.Fighter(p, techs, hp, hp, atk, dfn, pills=crafting.fight_pills(conn, user_id))
+    scale = dict(p, realm=realm, layer=min(p["layer"], rules.max_layer(realm))) if home_realm else p
+    enemy = fight.enemy_from_beast(combat.beast_stats(scale, (name, tier, role)), name)
+    enemy["realm"], enemy["slug"] = scale["realm"], beasts.slug(name)
+    b = fight.Battle([f], enemy, rng or random.Random())
+    if tier == "beast_king":
+        b.scene = "encounter_beast_king_den"
+    elif tier == "elite":
+        b.scene = "encounter_elite_lair"
+    else:
+        from cards.scenes import REGION
+        from .explore_card import REGION_BY_TIER
+        b.scene = REGION.get(REGION_BY_TIER.get(challenges.REALM_TIER.get(realm), ""))
+    return b
+
+
+RESULT_HEAD = {"won": "🏆 **Victory!**", "fled": "🏃 **You fled.**", "escaped": "🌫️ **The beast got away.**",
+               "lost": "☠️ **Defeated.**"}
+
+
+class AdminFightView(FightMixin, OwnedView):
+    """/admin fight_beast: a test fight on the normal fight screen. No rewards, no injury, no cooldown."""
+
+    def __init__(self, bot, user_id, battle):
+        super().__init__(user_id, timeout=900)
+        self.bot, self.fight = bot, battle
+
+    def header(self):
+        return f"Admin test fight · {TIER_LABEL.get(self.fight.enemy['tier'], 'Beast')}"
+
+    def _free(self):
+        self.bot.busy.discard((self.owner_id, "hunt"))
+
+    async def on_fight_end(self, interaction):
+        b = self.fight
+        self._free()
+        file = await self.fight_card_file()
+        f = b.fighters[0]
+        lines = [RESULT_HEAD.get(b.result, "The fight is over."),
+                 f"**{b.enemy['name']}** · {b.enemy['max_hp']:,} HP · {b.turn} turns · "
+                 f"you ended on {round(f.hp):,} / {round(f.max_hp):,} HP",
+                 "Test fight: no rewards, no injury, no cooldown."]
+        if f.pills_used:
+            lines.append(f"💊 {f.pills_used} Mending pill(s) were used up from your bag.")
+        e = discord.Embed(title=f"🛠️ Admin fight: {b.enemy['name']}", description="\n".join(lines), color=COLOR)
+        kw = dict(content=None, embed=e, view=None, attachments=[])
+        if file:
+            e.set_image(url=f"attachment://{file.filename}")
+            kw["attachments"] = [file]
+        self.clear_items()
+        self.stop()
+        await self.edit_fight_message(interaction, **kw)
+
+    async def on_timeout(self):
+        self.stop_fight()
+        self._free()
 
 
 def register(bot):
@@ -516,6 +621,52 @@ def register(bot):
         async with bot.db_lock:
             lines = set_foraging(bot.conn, uid, insight, herbs_gathered)
         await interaction.response.send_message("\n".join(lines), ephemeral=True)
+
+    # ── /admin fight_beast: spawn any beast on the fight screen ──
+    tier_override = picks([(t, TIER_LABEL[t]) for t in beasts.BEAST_TIERS])
+
+    @group.command(name="fight_beast", description="Spawn any beast in the game and fight it (test fight: no rewards)")
+    @app_commands.describe(beast="Which beast (type to search by name, realm or tier)",
+                           tier="Fight it as this tier instead (default: its own tier)",
+                           home_realm="Use the beast's own realm strength instead of scaling it to you (default: no)")
+    @app_commands.choices(tier=tier_override)
+    async def fight_beast_cmd(interaction: discord.Interaction, beast: str,
+                              tier: app_commands.Choice[str] | None = None, home_realm: bool = False):
+        uid = await check(interaction, None)
+        if uid is None:
+            return
+        found = find_beasts(beast)
+        if len(found) != 1:
+            names = ", ".join(f"**{r[1]}**" for r in found[:15])
+            text = (f"More than one beast matches: {names}. Pick one from the list." if found
+                    else "No beast matches that. Type part of its name and pick from the list.")
+            await interaction.response.send_message(text, ephemeral=True)
+            return
+        from . import duel_view
+        if duel_view.in_fight(bot, uid):
+            await interaction.response.send_message("You are already in a fight. Finish it first "
+                                                    "(or use **/admin reset**).", ephemeral=True)
+            return
+        bot.busy.add((uid, "hunt"))             # "in a fight": no duels meanwhile
+        try:
+            await interaction.response.defer()
+            async with bot.db_lock:
+                battle = beast_battle(bot.conn, uid, found[0], tier.value if tier else None, home_realm)
+            view = AdminFightView(bot, uid, battle)
+            view.message = await interaction.original_response()
+            await view.start_fight(interaction, battle, view.header())
+        except Exception:
+            bot.busy.discard((uid, "hunt"))
+            raise
+
+    @fight_beast_cmd.autocomplete("beast")
+    async def beast_autocomplete(interaction: discord.Interaction, current: str):
+        rows = find_beasts(current)
+        if not current:                         # your own realm's beasts first
+            p = db.get_player(bot.conn, interaction.user.id)
+            mine = p["realm"] if p else None
+            rows = sorted(rows, key=lambda r: r[0] != mine)
+        return [app_commands.Choice(name=beast_label(r), value=beast_key(r)) for r in rows[:25]]
 
     @group.command(name="duelstats", description="Duel balance: each technique's pick count and win rate")
     async def duelstats(interaction: discord.Interaction):
