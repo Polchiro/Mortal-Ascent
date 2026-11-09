@@ -152,7 +152,7 @@ PLAYER_COLUMNS = {
     "qi_collected_at":      "REAL",      # passive Qi was last banked here (it gathers from this time on)
     "seclusion_start":      "REAL",
     "seclusion_end":        "REAL",
-    "fate_rerolls":         "INTEGER NOT NULL DEFAULT 0",    # Lotus Coin rerolls used (cost ×1.5 each)
+    "fate_rerolls":         "INTEGER NOT NULL DEFAULT 0",    # Lotus Coin rerolls used (count only, price is flat)
     "king_kills":           "TEXT NOT NULL DEFAULT ''",       # realms whose Beast King you helped slay
     # /gather (docs/alchemy.md)
     "herb_streak":          "INTEGER NOT NULL DEFAULT 0",    # Herbal Insight: correct picks in a row

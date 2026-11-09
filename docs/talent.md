@@ -29,8 +29,7 @@ The only way to change it is a reroll, bought with Lotus Coins or premium curren
 | 🌟 **Heavenly Fate Reroll** | Premium currency | New roll is **never lower** than your current talent |
 
 - Both use the same odds as the /start roll
-- **Fate Reroll** cost rises with each use: 10,000 Lotus Coins, then ×1.5 each time
-  (10,000 → 15,000 → 22,500 → …)
+- **Fate Reroll** costs a flat 7,500 Lotus Coins every time (the price never rises)
 - **Heavenly Fate Reroll:** fixed price in premium currency (set in the premium shop)
 - Premium currency can be traded between players, so free players can get
   Heavenly Fate Rerolls by selling items for it

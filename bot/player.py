@@ -66,8 +66,8 @@ def physician_cost(player, now=None):
 
 
 def fate_reroll_cost(player):
-    spec = talent.FATE_REROLL
-    return round(spec["base_cost"] * spec["cost_multiplier"] ** (player.get("fate_rerolls") or 0))
+    """Flat price: every Fate Reroll costs the same. fate_rerolls is only a count for stats."""
+    return talent.FATE_REROLL["cost"]
 
 
 def reroll_talent(current, can_go_lower=True, rng=random):
