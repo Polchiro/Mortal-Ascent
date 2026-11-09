@@ -16,8 +16,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/inventory [category]` | Opens the sheet on the Inventory tab (Chests, Manuals, Weapons, Armor, Artifacts, Pills, Herbs, Materials): a grid of items by category, pages, and an Inspect panel. Pick an item to Open, Learn, Take, Equip, Unequip or Discard it (Discard asks first, and never works on an equipped item) |
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
-| `/seclusion [hours]` | Enter closed-door seclusion for 8–24 hours at ×2 Qi Rate (no exploring or sparring). Run it again to check on it or leave early (early = no ×2) |
-| `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting behind a bottleneck), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, seclusion, pill toxicity) with the full formula |
+| `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting behind a bottleneck), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, pill toxicity) with the full formula |
 | `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
@@ -30,8 +29,8 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
 | `/settings [qi_pings]` | Your settings. `qi_pings:off` stops the "your Qi is full: use /breakthrough!" mention (on by default) |
-| `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, seclusion, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
-| `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, finishes a seclusion timer, frees a stuck session |
+| `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
+| `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, frees a stuck session |
 | `/admin cooldowns <action> [hours] [minutes]` | **Owner/admins only.** Turns **every** cooldown off for **everyone** for a set time (1 hour if you give no time, up to 7 days), so testers can play non-stop: explore, train, practice, spar, mastery trials, duel rematches and the Wandering Spirit's gather pause. Timers already running are cleared. Saved in the database, so it survives a restart and turns back on by itself. `Turn back on` ends it early, `Status` shows when it ends, and /cooldown shows a banner while it is off. Text version: `m admin cooldowns off hours:2` |
 | `/admin give [member] [item] [amount] [lotus_coins] [moon_pearls] [qi] [quality] [age] [patterns]` | **Owner/admins only.** Gives any item (start typing its name in **item**: weapons, armor, artifacts, materials, herbs, pills, manuals, chests) and/or coins, pearls or Qi. `/admin item` does the same for items only |
 | `/admin give_weapon`, `give_armor`, `give_artifact`, `give_herb`, `give_pill`, `give_material` | **Owner/admins only.** One command per kind of item, with pick lists for the type and tier/grade (no typing needed). Each has `amount` and `member`; herbs have `age`, pills `patterns`, weapons and armor `quality` |
@@ -54,7 +53,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 
 Every command above also works as a normal message starting with **`m`** and a space, for when
 Discord's `/` menu is acting up: `m start`, `m gather`, `m craft`, `m forge`, `m index herbs`, `m internal qi`, `m index`, `m cooldown`,
-`m profile @someone`, `m seclusion 12`, `m practice Iron Fist`, `m bestiary Martial Warrior`,
+`m profile @someone`, `m train`, `m practice Iron Fist`, `m bestiary Martial Warrior`,
 `m admin give @someone lotus_coins:500`. Capital letters don't matter. Options go in order, or by
 name like the slash menu (`m spar technique:Iron Fist`). `m help` lists them all. Shortcuts:
 `m qi`, `m cd`, `m bal`, `m inv`, `m p`, `m g` (= `m gather`), `m herbs` and `m pills`
@@ -97,7 +96,7 @@ The design docs leave some things open. Until they are decided, the bot uses the
   They come from /gather, Herb Patches in /explore (1–3, any grade by rarity) and merchants (a 10-year herb of your tier).
   They stack by kind and age in the Herbs bag tab. The old herbs (Dew Lotus Petal, Tiger Bone Moss, ...) are gone:
   any left in a bag turn into the closest 10-year Mortal herb when the bot starts.
-- **/gather** isn't blocked by injuries, only by seclusion. HP isn't stored outside fights, so a look-alike's 5% HP
+- **/gather** isn't blocked by injuries. HP isn't stored outside fights, so a look-alike's 5% HP
   only shows on the gathering message. Gathering is flagged for review (logged and saved in `gather_flag`, never a
   ban) at an average pick under 0.3s over 50 gathers or 12+ hours non-stop. Chests don't drop herbs yet (no odds in the docs).
 - **/craft** follows docs/alchemy.md. Choices the doc leaves open: Stoke/Fan move the heat 12°, normal drift is ±5°
@@ -128,9 +127,10 @@ The design docs leave some things open. Until they are decided, the bot uses the
 - **/spar**: the master repeats a 3–4 move rhythm (15% surprises) and shows a tell half the time.
   Winning an exchange lands a hit; ties hurt both a little. +30 EXP per well-timed use, +100 to each
   well-timed technique on a win. 15 exchanges; if time runs out, whoever is in better shape wins.
-  60 seconds per move, then you forfeit. Not while injured or secluded.
+  60 seconds per move, then you forfeit. Not while injured.
 - **Passive Qi** has no storage limit and is banked every minute by a background task (bot/passive.py)
-  and before every command. It does not gather during seclusion; entering seclusion banks it first.
+  and before every command. `/seclusion` was removed; anyone still
+  inside when the bot starts is let out with ×2 Qi for the hours they spent (passive.release_secluded).
 - **Qi at a gate is never lost**: above a full bar it goes to `qi_overflow` and flows into the next
   layers after a successful breakthrough. A failed breakthrough takes its 20% from the bar, then the
   waiting Qi refills the bar (`player.refill_bar`), so the player can try again at once.
@@ -180,8 +180,6 @@ Run **one** copy of the bot. Two copies would both answer every `m` command, so:
   gets "still being handled", and a button from an earlier step (or a finished view) does nothing.
   This covers confirmations (breakthrough, reroll, physician, shop, blessings), so nothing is
   bought or claimed twice. Starting a team hunt also only happens once.
-- `/seclusion` checks again under the database lock that you are not already in seclusion,
-  exploring or sparring.
 
 ### Idle panels
 

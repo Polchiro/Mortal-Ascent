@@ -14,7 +14,7 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 ```
 
 - All % bonuses add together, then the pill multiplier applies on top
-- Seclusion and Blessed Lands multiply the final rate (below)
+- Blessed Lands multiply the final rate (below)
 
 ### Base rate by realm
 
@@ -63,14 +63,8 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 - Nothing to collect: the bot adds it to your bar every minute (and before every command),
   so your profile and rank are always current
 - **/internal qi** shows how fast it flows and when your bar fills
-- Not during seclusion: that Qi is paid (×2 if completed) when the seclusion ends
 
-### 3. Closed-Door Seclusion (闭关) — /seclusion
-- Enter seclusion for 8–24 hours: **Qi Rate ×2** during that time
-- Cannot explore, fight or trade while secluded
-- Leaving early cancels the ×2 bonus for the time spent
-
-### 4. Blessed Lands (from /explore)
+### 3. Blessed Lands (from /explore)
 
 | Blessed Land | Qi Rate | Duration |
 |---|---|---|

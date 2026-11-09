@@ -71,10 +71,7 @@ LESSONS = [
      "\"Qi is the root of everything. Fill your dantian and the layers open on their own.\"",
      [("/train", "A timed challenge with the master. Your score becomes Internal Qi. Every 60 minutes."),
       ("Passive Qi", "Qi also gathers by itself at your full Qi Rate, for as long as you are away. There is "
-                     "nothing to collect: it is added to your bar every minute. **/internal qi** shows how fast it flows."),
-      ("/seclusion", f"Shut yourself away for {training.SECLUSION_MIN_HOURS}–{training.SECLUSION_MAX_HOURS} hours at "
-                     f"×{training.SECLUSION_QI_MULTIPLIER:g} Qi Rate. No exploring or sparring meanwhile, and leaving "
-                     "early loses the bonus.")]),
+                     "nothing to collect: it is added to your bar every minute. **/internal qi** shows how fast it flows.")]),
 
     ("The Gates Within",
      "\"Layers inside a phase open by themselves. Between phases and realms stands a wall.\"",
@@ -108,7 +105,7 @@ LESSONS = [
       ("Defeat", f"Lose a fight and you are injured for {explore.DEFEAT_INJURY_HOURS} hour and drop half the coins "
                  "and herbs you found. **/physician** heals you for Lotus Coins."),
       ("/cooldown", "Every timer at once: when you can explore, train, practice and spar again, your daily "
-                    "counts, seclusion, injury and active boons, in your own time zone.")]),
+                    "counts, injury and active boons, in your own time zone.")]),
 
     ("Beasts and Hunts",
      "\"Know the beast before you meet it.\"",

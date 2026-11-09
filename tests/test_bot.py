@@ -172,13 +172,13 @@ def test_admin_reset_and_give(conn, monkeypatch):
     db.set_cooldown(conn, 1, "explore", 3600, now)
     db.set_cooldown(conn, 1, "train", 3600, now)
     db.bump_daily(conn, 1, "practice", now)
-    db.update_player(conn, 1, injured_until=now + 600, seclusion_start=now - 3600, seclusion_end=now + 3600)
+    db.update_player(conn, 1, injured_until=now + 600)
     done = admin.reset_player(conn, 1, now)
-    assert len(done) == 4
+    assert len(done) == 3
     assert db.cooldown_left(conn, 1, "explore", now) == 0 and db.cooldown_left(conn, 1, "train", now) == 0
     assert db.daily_count(conn, 1, "practice", now) == 0
     p = db.get_player(conn, 1)
-    assert not rules.injured_for(p, now) and rules.seclusion_qi(p, (), now)[2]
+    assert not rules.injured_for(p, now)
     assert admin.reset_player(conn, 1, now + 1) == []
 
     admin.give(conn, 1, lotus_coins=100, moon_pearls=5, qi=rules.qi_needed("Mortal", 1) + 1)

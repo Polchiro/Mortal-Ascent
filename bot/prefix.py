@@ -4,7 +4,7 @@ Text commands with the "m" prefix, for when Discord's slash menu is acting up.
 Every slash command also works as a normal message:
 
     m start              m internal qi          m profile @someone
-    m seclusion 12       m practice Iron Fist   m bestiary Martial Warrior
+    m train              m practice Iron Fist   m bestiary Martial Warrior
     m index beasts       m admin give @someone lotus_coins:500
 
 The prefix is "m" followed by a space, in any case ("M index" works too).

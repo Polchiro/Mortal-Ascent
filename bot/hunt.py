@@ -241,8 +241,6 @@ def can_join(player, now=None):
     """None if the player may join a hunt, else the reason."""
     if not player:
         return "You have not begun your journey yet. Use **/start**."
-    if rules.in_seclusion(player):
-        return "You are in seclusion."
     hurt = rules.injured_for(player, now)
     if hurt:
         return f"You are injured for {rules.fmt_duration(hurt)}."

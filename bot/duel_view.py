@@ -56,8 +56,6 @@ def why_cannot_duel(bot, challenger, target, now=None):
     for p, who in ((me, "You are"), (them, f"**{them['name']}** is")):
         if in_fight(bot, p["user_id"]):
             return f"{who} busy in a fight or another duel right now."
-        if rules.in_seclusion(p):
-            return f"{who} in seclusion."
         hurt = rules.injured_for(p, now)
         if hurt:
             return f"{who} injured for {rules.fmt_duration(hurt)}."

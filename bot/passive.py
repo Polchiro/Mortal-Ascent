@@ -7,8 +7,10 @@ player is away. Nobody has to collect it. It is banked into the player's row:
 - before every command (client.before_command), so a command always sees the latest Qi.
 
 Both go through bank(), which adds the Qi gathered since qi_collected_at and moves qi_collected_at
-to now, so the same minutes are never counted twice. Players in seclusion are skipped: their Qi is
-paid (×2 when complete) when the seclusion ends.
+to now, so the same minutes are never counted twice.
+
+/seclusion was removed. Anyone still in seclusion from an older version is let out when the bot
+starts (release_secluded), with ×2 Qi for the hours they spent inside.
 
 When banking makes a player's bar full at a gate they can break through, they get one ping in the
 channel where they last used the bot ("@player, your Qi is full: use /breakthrough!"), once per gate,
@@ -40,7 +42,7 @@ def bank(conn, user_id, now=None, commit=True):
     (channel_id, text) when a "your Qi is full" message should be posted, else None."""
     now = time.time() if now is None else now
     p = db.get_player(conn, user_id)
-    if not p or rules.in_seclusion(p):
+    if not p:
         return 0.0, [], None
     techs = db.get_techniques(conn, user_id)
     was_ready = rules.ready_to_break(p, techs)
@@ -60,8 +62,30 @@ def bank(conn, user_id, now=None, commit=True):
 
 
 def player_ids(conn):
-    """Everyone whose passive Qi gathers now (players in seclusion are paid when it ends)."""
-    return [r[0] for r in conn.execute("SELECT user_id FROM players WHERE seclusion_start IS NULL ORDER BY user_id")]
+    """Every player, in a fixed order."""
+    return [r[0] for r in conn.execute("SELECT user_id FROM players ORDER BY user_id")]
+
+
+OLD_SECLUSION_MULTIPLIER = 2.0   # what the removed /seclusion paid for a finished stay
+
+
+def release_secluded(conn, now=None):
+    """Let out everyone still in seclusion from before /seclusion was removed. They get ×2 Qi for the
+    hours spent inside (up to the end they chose), even if it had not finished, since the command is
+    gone and they could not leave on their own. Passive Qi starts again from now. Returns the user ids."""
+    now = time.time() if now is None else now
+    rows = conn.execute("SELECT user_id FROM players WHERE seclusion_start IS NOT NULL").fetchall()
+    for (uid,) in rows:
+        p = db.get_player(conn, uid)
+        techs = db.get_techniques(conn, uid)
+        start = p["seclusion_start"]
+        end = p["seclusion_end"] if p["seclusion_end"] is not None else now
+        hours = max(0.0, min(now, end) - start) / 3600
+        qi = rules.qi_rate(p, now, techs)[0] * OLD_SECLUSION_MULTIPLIER * hours
+        p, _ = rules.add_qi(p, qi, techs, now=now)
+        db.update_player(conn, uid, **rules.progress_fields(p),
+                         seclusion_start=None, seclusion_end=None, qi_collected_at=now)
+    return [uid for (uid,) in rows]
 
 
 def batches(ids, size=BATCH_SIZE):

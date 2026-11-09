@@ -128,9 +128,8 @@ def test_three_days_away_gives_72_hours_at_the_full_rate(conn):
 def test_background_banking_and_command_banking_never_double_count(conn):
     new_player(conn, 1, qi_collected_at=0)
     new_player(conn, 2, qi_collected_at=0)
-    new_player(conn, 3, qi_collected_at=0, seclusion_start=0, seclusion_end=8 * 3600)
     rate = rules.qi_rate(db.get_player(conn, 1), 0, db.get_techniques(conn, 1))[0]
-    assert passive.player_ids(conn) == [1, 2]                 # seclusion pays when it ends
+    assert passive.player_ids(conn) == [1, 2]
     for minute in range(1, 61):                               # the task, once a minute for an hour
         passive.bank_everyone(conn, now=minute * 60)
     passive.bank_everyone(conn, now=3600)                     # the same minute again adds nothing
@@ -141,7 +140,23 @@ def test_background_banking_and_command_banking_never_double_count(conn):
                          + sum(rules.qi_needed("Mortal", layer) for layer in range(1, db.get_player(conn, uid)["layer"])))
     assert total(1) == pytest.approx(rate * 2)
     assert total(2) == pytest.approx(rate * 2)
-    assert db.get_player(conn, 3)["qi"] == 0
+
+
+def test_players_left_in_the_removed_seclusion_are_let_out(conn):
+    """/seclusion was removed: anyone still inside gets ×2 Qi for the hours spent and gathers again."""
+    new_player(conn, 1, qi_collected_at=0, seclusion_start=0, seclusion_end=8 * 3600)    # finished
+    new_player(conn, 2, qi_collected_at=0, seclusion_start=0, seclusion_end=24 * 3600)   # 4h in
+    new_player(conn, 3, qi_collected_at=0)
+    rate = rules.qi_rate(db.get_player(conn, 1), 0, db.get_techniques(conn, 1))[0]
+    total = lambda uid: (db.get_player(conn, uid)["qi"] + db.get_player(conn, uid)["qi_overflow"]
+                         + sum(rules.qi_needed("Mortal", layer) for layer in range(1, db.get_player(conn, uid)["layer"])))
+    assert passive.release_secluded(conn, now=12 * 3600) == [1, 2]
+    assert total(1) == pytest.approx(rate * 2 * 8)
+    p2 = db.get_player(conn, 2)
+    assert p2["seclusion_start"] is None and p2["seclusion_end"] is None and p2["qi_collected_at"] == 12 * 3600
+    assert total(2) == pytest.approx(rate * 2 * 12)
+    assert total(3) == 0 and db.get_player(conn, 3)["qi_collected_at"] == 0       # others untouched
+    assert passive.release_secluded(conn, now=13 * 3600) == []
 
 
 def test_batches_split_everyone():

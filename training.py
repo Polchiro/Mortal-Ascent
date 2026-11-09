@@ -39,12 +39,6 @@ TRAIN_COOLDOWN_MINUTES = 60
 # Passive Qi gathers at the Final Qi Rate with no storage limit; the bot banks it every minute
 # (bot/passive.py), so there is nothing to collect.
 
-# ── Seclusion ─────────────────────────────────────────────────────────
-
-SECLUSION_MIN_HOURS = 8
-SECLUSION_MAX_HOURS = 24
-SECLUSION_QI_MULTIPLIER = 2.0
-
 # ── Blessed Lands ─────────────────────────────────────────────────────
 
 BLESSED_LANDS = {

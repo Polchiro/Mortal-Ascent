@@ -148,7 +148,7 @@ def render_qi(data):
     # three tiles
     y, th, gap = 314, 92, 20
     tw3 = (wcol - 2 * gap) / 3
-    rate_note = f"×{data['mult']:.2f} total" + ("  ·  ×2 in seclusion" if data["secluded"] else "")
+    rate_note = f"×{data['mult']:.2f} total"
     tile(d, x0, y, tw3, th, "QI RATE", f"{fmt_qi(data['rate'])} / hour", rate_note, JADE)
     tile(d, x0 + tw3 + gap, y, tw3, th, "FULL BAR IN", data["eta"], "at your current Qi Rate", GOLD)
     tile(d, x0 + 2 * (tw3 + gap), y, tw3, th, "NEXT GATE", data["gate"], data["gate_note"], VERMILION)
@@ -180,7 +180,7 @@ def _row(seal, label, detail, value, active, warn=False):
 SAMPLE = {
     "name": "Shoaib", "realm": "Martial King", "phase": "Late Phase", "layer": 8, "talent": "Genius",
     "qi": 38210.4, "qi_needed": 53760, "pending": 4120.0, "pending_label": "gathered, not yet banked",
-    "rate": 913.92, "mult": 2.86, "secluded": False, "eta": "12h 30m",
+    "rate": 913.92, "mult": 2.86, "eta": "12h 30m",
     "gate": "9th Layer", "gate_note": "opens on its own",
     "status": "Gathering on its own", "status_tone": "jade", "train_qi": 3655.7,
     "sources": [
@@ -190,7 +190,6 @@ SAMPLE = {
         _row("福", "Heavenly Blessing", "Bright Moon · 12d left", "+30%", True),
         _row("丹", "Qi Pill", "Mystic · 2h 14m left", "×1.70", True),
         _row("地", "Blessed Land", "None · found in /explore", "×1", False),
-        _row("关", "Seclusion", "Not secluded · /seclusion", "×1", False),
         _row("毒", "Pill toxicity", "4 · Next pill at 50% strength", "50%", True, True),
     ],
     "formula": "320 × (1 + 0.2 + 0.18 + 0.3) × 1.70 = 913.92 Qi/h",

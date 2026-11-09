@@ -46,7 +46,7 @@ def admin_ids_from_env():
 
 
 def reset_player(conn, user_id, now=None):
-    """Clear every cooldown and daily limit, heal injuries, end a running seclusion timer.
+    """Clear every cooldown and daily limit, heal injuries.
     Returns a list of what changed (for the reply)."""
     now = time.time() if now is None else now
     done = []
@@ -61,9 +61,6 @@ def reset_player(conn, user_id, now=None):
     if rules.injured_for(p, now):
         db.update_player(conn, user_id, injured_until=None)
         done.append("Healed the injury")
-    if rules.in_seclusion(p) and p["seclusion_end"] > now:
-        db.update_player(conn, user_id, seclusion_end=now)
-        done.append("Seclusion timer finished: run **/seclusion** to collect the Qi (with ×2)")
     return done
 
 

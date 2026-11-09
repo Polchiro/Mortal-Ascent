@@ -1,6 +1,6 @@
 """
 /qi: everything about a player's Internal Qi in one place. Builds the data dict that
-cards.dantian.render_dantian expects, using the same formulas as passive Qi, /seclusion and /train
+cards.dantian.render_dantian expects, using the same formulas as passive Qi and /train
 (bot/player.py, training.py).
 """
 import alchemy
@@ -85,15 +85,6 @@ def sources(player, techniques, now):
         rows.append({"seal": "misc:land", "label": "Blessed Land", "detail": "None · found in /explore",
                      "value": "×1", "active": False})
 
-    if rules.in_seclusion(player):
-        left = player["seclusion_end"] - now
-        detail = f"emerge in {fmt_long(left)}" if left > 0 else "complete · /seclusion"
-        rows.append({"seal": "misc:seclusion", "label": "Seclusion", "detail": detail,
-                     "value": f"×{training.SECLUSION_QI_MULTIPLIER:g}", "active": True})
-    else:
-        rows.append({"seal": "misc:seclusion", "label": "Seclusion", "detail": "Not secluded · /seclusion",
-                     "value": "×1", "active": False})
-
     tox = rules.current_toxicity(player, now)
     eff = rules.pill_effect_mult(tox)
     detail = "Pills at full strength" if eff >= 1 else f"Next pill at {eff:.0%} strength"
@@ -141,16 +132,12 @@ def qi_data(player, techniques, now=None):
     qi = min(player["qi"], need)
     rate, mult = rules.qi_rate(player, now, techniques)
     kind, _ = rules.next_gate(player)
-    secluded = rules.in_seclusion(player)
 
     # Qi gathered but not yet added to the bar
-    if secluded:
-        pending, hours, done = rules.seclusion_qi(player, techniques, now)
-    else:
-        pending, hours = rules.passive_qi(player, techniques, now)
+    pending, hours = rules.passive_qi(player, techniques, now)
     room = max(0.0, need - qi)
     # Qi above a full bar at a gate is kept (qi_overflow) and flows on after /breakthrough
-    extra = rules.overflow(player) + (max(0.0, pending - room) if kind != "layer" and not secluded else 0.0)
+    extra = rules.overflow(player) + (max(0.0, pending - room) if kind != "layer" else 0.0)
     pending = min(pending, room)
     full = qi >= need and kind != "layer"
     overflow_text = ""
@@ -162,10 +149,6 @@ def qi_data(player, techniques, now=None):
     injured = rules.injured_for(player, now)
     if full:
         status, tone = ("At the peak" if kind == "peak" else "Bar full · use /breakthrough"), "gold"
-    elif secluded:
-        left = player["seclusion_end"] - now
-        status, tone = (("In seclusion · emerge in " + fmt_long(left)) if left > 0
-                        else "Seclusion complete · /seclusion to emerge"), "jade"
     elif injured:
         status, tone = f"Injured · {fmt_long(injured)} to heal", "red"
     else:
@@ -173,14 +156,13 @@ def qi_data(player, techniques, now=None):
         status, tone = "Gathering on its own", "jade"
 
     # time until the bar is full, at the current rate
-    eff_rate = rate * (training.SECLUSION_QI_MULTIPLIER if secluded else 1)
     left_qi = need - qi - pending
     if kind == "peak" and qi >= need:
         eta = "—"
     elif left_qi <= 0:
         eta = "Ready now"
     else:
-        eta = fmt_long(left_qi / eff_rate * 3600)
+        eta = fmt_long(left_qi / rate * 3600)
 
     gate, gate_note = gate_text(player, techniques)
     return {
@@ -194,10 +176,9 @@ def qi_data(player, techniques, now=None):
         "pending": pending,
         "overflow": extra,
         "overflow_text": overflow_text,
-        "pending_label": ("from seclusion (×2 when complete)" if secluded else "gathered, not yet banked"),
+        "pending_label": "gathered, not yet banked",
         "rate": rate,
         "mult": mult,
-        "secluded": secluded,
         "eta": eta,
         "gate": gate,
         "gate_note": gate_note,

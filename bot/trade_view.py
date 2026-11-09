@@ -21,7 +21,6 @@ from discord import app_commands
 import trade as TR
 
 from . import db, trading
-from . import player as rules
 from . import render as card_render
 from .duel_view import in_fight
 from .fight_view import jpg
@@ -49,8 +48,6 @@ def why_cannot_trade(bot, me_user, them_user):
             return f"{who} already in a trade."
         if in_fight(bot, p["user_id"]):
             return f"{who} in a fight right now."
-        if rules.in_seclusion(p):
-            return f"{who} in seclusion."
         why = trading.why_cannot_trade(p)
         if why:
             return (f"{who} not ready to trade: " if p is them else "") + why

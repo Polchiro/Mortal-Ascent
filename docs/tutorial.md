@@ -65,7 +65,7 @@ Normal cooldowns and odds apply from then on.
 - Equipped techniques: grade seal, name, grade and type, mastery stage with 5 diamonds
 - Weapon: tier seal, name with quality prefix, stat buffs
 - Footer: beasts slain, breakthroughs, failed breakthroughs, and any status
-  (active pill, Seclusion, Injured, Blessed Land)
+  (active pill, Injured, Blessed Land)
 
 Big numbers are shortened: 18,240 → 18.24K, 83,370,000,000,000 → 83.37T.
 
