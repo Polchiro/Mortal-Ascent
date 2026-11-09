@@ -92,6 +92,8 @@ CHAPTERS = [
           ("/internal qi", "Your Qi bar, your Qi Rate, how long until the bar is full, and every bonus feeding it."),
           ("/cooldown", "Every timer in one place: when you can explore, train, practice and spar again, your "
                         "daily counts, injuries and boosts."),
+          ("/profession", "Your Alchemist and Blacksmith ranks, EXP to the next grade, and what each grade "
+                          "lets you make."),
           (TRY, "**/profile** and **/internal qi**.")]),
     ]),
 
