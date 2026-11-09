@@ -424,15 +424,15 @@ def deeds(img, data, box):
         k.gem(d, ex, mid, 7, t.EMBER)
     t.spaced(d, ((x0 + x1) / 2, y0 + 14), "DEEDS OF THE JIANGHU", font("Cinzel.ttf", 12, "Bold"), t.GOLD_HI, 3, "m")
 
-    items = [("skull", "Beasts", f"{data['beasts']:,}", (210, 120, 90)),
-             ("herb", "Herbs", f"{data.get('herbs', 0):,}", t.JADE),
-             ("flame", "Breakthroughs", f"{data['breakthroughs']:,}", k.SKY),
-             ("sword", "Duels", f"{data.get('duels_won', 0)}W · {data.get('duels_lost', 0)}L", (226, 200, 120)),
-             ("star", "Rank", f"#{data['rank']}", t.GOLD_HI)]
+    items = [("deed:beasts", "Beasts", f"{data['beasts']:,}", (210, 120, 90)),
+             ("deed:herbs", "Herbs", f"{data.get('herbs', 0):,}", t.JADE),
+             ("deed:breakthroughs", "Breakthroughs", f"{data['breakthroughs']:,}", k.SKY),
+             ("deed:duels", "Duels", f"{data.get('duels_won', 0)}W · {data.get('duels_lost', 0)}L", (226, 200, 120)),
+             ("deed:rank", "Rank", f"#{data['rank']}", t.GOLD_HI)]
     purse = []
     if data.get("coins") is not None:
-        purse = [("lotus", "Lotus Coins", short(data["coins"]), t.LOTUS),
-                 ("pearl", "Moon Pearls", short(data["pearls"]), t.MOON)]
+        purse = [("deed:lotus_coin", "Lotus Coins", short(data["coins"]), t.LOTUS),
+                 ("deed:moon_pearl", "Moon Pearls", short(data["pearls"]), t.MOON)]
     allx = x1 - x0 - 140
     n = len(items) + len(purse)
     step = allx / n
@@ -441,7 +441,7 @@ def deeds(img, data, box):
     for i, (ic, label, v, col) in enumerate(items + purse):
         cx = x0 + 70 + step * (i + 0.5) + (14 if i >= len(items) else 0)
         cy = y0 + 56
-        t.medallion(img, (cx, cy), 21, ic, col, cjk_char=False)
+        t.medallion(img, (cx, cy), 22, ic, col, cjk_char=False, icon_scale=1.4)
         d = ImageDraw.Draw(img)
         t.text(d, (cx, cy + 33), v, f_v, col if i >= len(items) else k.PARCHMENT, "mm")
         t.spaced(d, (cx, cy + 52), label.upper(), f_k, k.ASH, 1.4, "m")

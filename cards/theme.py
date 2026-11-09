@@ -417,7 +417,7 @@ def socket(img, box, color=GOLD, filled=True, locked=False, tint=True):
         icon(img, "lock", ((x0 + x1) / 2, (y0 + y1) / 2), (y1 - y0) * 0.4, ASH_DK)
 
 
-def medallion(img, center, r, glyph, color, cjk_char=True):
+def medallion(img, center, r, glyph, color, cjk_char=True, icon_scale=1.1):
     """Round gold-ringed seal with a character (school, grade, realm) or a drawn icon inside.
     A painted icon (cards/art_icons.py) brings its own ring, so it is drawn alone, a little larger."""
     if not cjk_char and painted(img, glyph, center, r * 2.25):
@@ -432,7 +432,7 @@ def medallion(img, center, r, glyph, color, cjk_char=True):
         f = cjk(round(r * 1.05))
         text(d, (cx, cy + 1), glyph, f, mix(color, (255, 255, 255), 0.25), "mm")
     else:
-        icon(img, glyph, (cx, cy), r * 1.1, mix(color, (255, 255, 255), 0.25))
+        icon(img, glyph, (cx, cy), r * icon_scale, mix(color, (255, 255, 255), 0.25))
 
 
 def seal(img, center, r, glyph, color):
@@ -642,6 +642,11 @@ def icon(img, kind, center, size, color):
         from .misc_icons import MISC_ICON
         if kind[5:] in MISC_ICON:
             MISC_ICON[kind[5:]](d, cx, cy, s, color, dark)
+            return
+    if kind.startswith("deed:"):            # Profile Deeds rail and currencies (cards/deed_icons.py)
+        from .deed_icons import DEED_ICON
+        if kind[5:] in DEED_ICON:
+            DEED_ICON[kind[5:]](d, cx, cy, s, color, dark)
             return
     if kind.startswith("tech:") or kind.startswith("school:"):   # techniques (cards/technique_icons.py)
         from .technique_icons import SCHOOL_ICON, TECH_ICON
