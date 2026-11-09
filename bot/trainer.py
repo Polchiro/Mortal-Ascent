@@ -18,7 +18,7 @@ import challenges
 import technique
 import training
 
-from . import db, gear, loot, mastery, materials
+from . import db, gear, loot, mastery, materials, quests
 from . import player as rules
 
 STANCES = ["strike", "guard", "break"]
@@ -291,6 +291,7 @@ def finish(conn, user_id, session, score, event_mult=1.0, rng=random, now=None):
         loot.store(conn, user_id, dew)
         events = list(events) + ["✨ Spirit dew gathers on your skin: " + ", ".join(materials.lines(dew))]
     db.set_cooldown(conn, user_id, "train", cooldown_seconds(p, now), now)
+    quests.record(conn, user_id, "train", now=now)
     return qi, events, p
 
 
@@ -311,6 +312,7 @@ def finish_practice(conn, user_id, session, score, event_mult=1.0, now=None, rng
     exp = round(exp * (1 + gear.artifact_bonus(p, "practice_mastery_exp")))   # Insightful (forged passive)
     gained, note = mastery.gain(conn, p, tech, exp)
     db.bump_daily(conn, user_id, "practice", now)
+    quests.record(conn, user_id, "practice", now=now)
     db.update_player(conn, user_id, last_challenge=session["challenge"])
     db.set_cooldown(conn, user_id, "practice", cooldown_seconds(p, now, "practice"), now)
     ink = materials.roll_practice_ink(rng, materials.prospector(p))

@@ -21,7 +21,7 @@ import talent as talent_rules
 import technique
 import training
 
-from . import db, hunt, loot, mastery, trainer
+from . import db, hunt, loot, mastery, quests, trainer
 from . import player as rules
 from . import result_cards
 from cards.results import render_explore
@@ -1156,6 +1156,7 @@ class SparView(FightMixin, OwnedView):
                 lines.append(f"The trial failed. No EXP is lost; you may retry in {technique.TRIAL_FAIL_COOLDOWN_HOURS} hours.")
             notes.append(lines[-1])
         db.bump_daily(conn, uid, "spar")
+        quests.record(conn, uid, "spar")
         db.set_cooldown(conn, uid, "spar", technique.SPAR_COOLDOWN_MINUTES * 60)
         lines.append(f"\n*You can spar again in {technique.SPAR_COOLDOWN_MINUTES // 60} hours.*")
         outcome = "victory" if won else ("forfeit" if forfeit else "defeat")

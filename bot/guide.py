@@ -123,6 +123,8 @@ LESSONS = [
      "\"Treasure means nothing if it rots in your bag.\"",
      [("/inventory", "Your bag in tabs: chests, manuals, weapons, armor, artifacts, pills, herbs and materials. "
                      "Pick an item to **open** a chest, **learn** a manual, **equip** gear or **take** a pill."),
+      ("/daily", "Four daily quests, new every day at midnight UTC. Each pays Lotus Coins and Moon Pearls; "
+                 "finish all four for a bonus and a chance of a Common to Legendary Chest."),
       ("/trade @player", "Swap items, Lotus Coins and Moon Pearls with another player. Add items by category and "
                          "grade, review the Trade Preview, and it happens once both confirm. No tax."),
       ("/equipment", "Your four gear slots (weapon, armor, two artifacts), your stats before and after them, and "

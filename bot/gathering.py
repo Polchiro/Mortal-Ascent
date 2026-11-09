@@ -19,7 +19,7 @@ import discord
 
 import alchemy
 
-from . import db, gather_card, gear, loot, materials, passives
+from . import db, gather_card, gear, loot, materials, passives, quests
 from . import player as rules
 from .views import COLOR, PANEL_IDLE_SECONDS, OwnedView, free_old_panel
 
@@ -151,6 +151,7 @@ class Gathering:
             if stored:
                 fields["herbs_gathered"] = p["herbs_gathered"] + 1
                 self.gathered.append(r.herb)
+                quests.record(self.conn, self.user_id, "gather", now=now)
                 text = f"✅ You gather **{loot.describe(r.herb)}**."
                 if r.old:
                     text = f"✨ You pull it free before it escapes: **{loot.describe(r.herb)}**!"
