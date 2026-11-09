@@ -30,7 +30,7 @@ from . import player as rules
 from .sheet import items as sheet_items
 from .sheet.view import open_sheet, send_public_profile
 from .views import (free_old_panel, BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
-                    shop_embed)
+                    shop_data, shop_embed)
 
 log = logging.getLogger("mortal-ascent")
 
@@ -551,9 +551,11 @@ def register_commands(bot):
         if not p:
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
+        from cards.shop import render_shop
+        await interaction.response.defer()
+        image = await card_render.render(render_shop, shop_data(p))
         view = ShopView(bot, interaction.user.id)
-        await interaction.response.send_message(embed=shop_embed(p), view=view)
-        view.message = await interaction.original_response()
+        view.message = await interaction.followup.send(file=png(image, "shop.png"), view=view, wait=True)
 
     @tree.command(name="blessing", description="View and buy Heavenly Blessings with Moon Pearls")
     async def blessing(interaction: discord.Interaction):

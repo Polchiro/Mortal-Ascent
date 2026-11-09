@@ -44,7 +44,7 @@ BLESSING_FRAME_FROM = "Rolling Thunder"     # coloured profile frame from this t
 # ── Moon Pearl shop: item → price in pearls ───────────────────────────
 
 PEARL_SHOP = {
-    "heavenly_fate_reroll": 600,
+    "heavenly_fate_reroll": 300,
     "mortal_qi_pill_x3": 60,
     "yellow_qi_pill_x3": 150,
     "mystic_qi_pill_x1": 120,
