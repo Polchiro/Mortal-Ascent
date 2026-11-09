@@ -385,7 +385,7 @@ class Expedition:
         if self.techniques:
             self._give_mastery(self.rng.choice(self.techniques), HERMIT_MASTERY_EXP)
         if self.rng.random() < HERMIT_MANUAL_CHANCE:
-            m = loot.roll_manual(loot.pick(explore.CHEST_MANUAL_GRADE_ODDS["silver"], self.rng), self.rng)
+            m = loot.roll_manual(loot.pick(explore.CHEST_MANUAL_GRADE_ODDS["rare"], self.rng), self.rng)
             self.items.append(m)
             self.story.append(f"📜 As he leaves, he hands you a **{m['name']}**!")
 

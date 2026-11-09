@@ -115,7 +115,7 @@ LESSONS = [
      [("/bestiary", "A realm's six beasts with their strength measured against you."),
       ("Elite Lairs and Beast King Dens", "Finding one in /explore calls the whole channel to a hunt. "
                                           "Join, then the finder starts the fight. Every winner rolls their own chest."),
-      ("Why hunt Kings", "Jade Chests, and a Beast King kill is needed to reach Martial King and Martial Saint."),
+      ("Why hunt Kings", "Legendary and Mythic Chests, and a Beast King kill is needed to reach Martial King and Martial Saint."),
       ("/duel @player", "A friendly duel on the fight screen. Both fight at the lower player's realm and layer and "
                         "pick moves in secret each turn. Nothing to win or lose; wins and losses show on your Profile.")]),
 
@@ -464,7 +464,7 @@ def register(bot):
 
     @bot.tree.command(name="index", description="The Jianghu Compendium: every beast, technique, weapon, armor, artifact, chest, pill and herb")
     @app_commands.describe(section="Which section to open first", realm="For beasts: which realm",
-                           search="Jump straight to an item by name, e.g. Qilin or Jade Chest")
+                           search="Jump straight to an item by name, e.g. Qilin or Mythic Chest")
     @app_commands.choices(
         section=[app_commands.Choice(name=v[0], value=k) for k, v in compendium.SECTIONS.items()],
         realm=[app_commands.Choice(name=r, value=r) for r in rules.REALM_ORDER])

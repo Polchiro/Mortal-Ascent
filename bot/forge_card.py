@@ -15,10 +15,9 @@ ACTION_WORD = {"enchant": "Enchant", "reroll": "Reroll", "replace": "Replace"}
 
 
 def gear_icon(item):
-    """The theme.icon kind for a weapon (its type), armor or artifact (its drawing)."""
-    if item["category"] == "weapons":
-        return item["key"]
-    return gear_rules.icon_kind(item)
+    """The theme.icon kind for a weapon, armor or artifact: its painting, else its drawing."""
+    from .sheet.items import item_icon
+    return item_icon(item)
 
 
 def _gear(plan):

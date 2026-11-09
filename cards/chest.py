@@ -21,10 +21,12 @@ W = 1200
 RARITIES = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythical"]
 # Chest bodies by tier: (wood or metal, bands, lid)
 CHEST_LOOK = {
-    "wooden": ((112, 72, 42), (150, 110, 60), (132, 86, 50)),
-    "bronze": ((140, 88, 46), (226, 176, 92), (162, 104, 56)),
-    "silver": ((120, 130, 148), (226, 232, 242), (146, 156, 174)),
-    "jade": ((40, 128, 100), (232, 196, 110), (54, 156, 122)),
+    "common": ((112, 72, 42), (150, 110, 60), (132, 86, 50)),
+    "uncommon": ((140, 88, 46), (226, 176, 92), (162, 104, 56)),
+    "rare": ((120, 130, 148), (226, 232, 242), (146, 156, 174)),
+    "epic": ((150, 30, 30), (240, 190, 80), (170, 40, 36)),
+    "legendary": ((40, 128, 100), (232, 196, 110), (54, 156, 122)),
+    "mythic": ((70, 40, 130), (232, 196, 110), (96, 60, 170)),
 }
 OPENING_LINE = {
     "Common": "The seal gives way with a soft click...",
@@ -64,9 +66,23 @@ def light_pillar(img, base, width, height, color, strength):
 
 
 def draw_chest(img, center, w, tier, opened=False, sealed=False):
-    """A treasure chest: body with metal bands and a lock plate; the lid closed (with a talisman seal) or open."""
+    """A treasure chest: the tier's painting (art/chests) when there is one, else drawn (body, bands, lock plate,
+    the lid closed or open). Sealed adds the paper talisman; opened adds light spilling from the lid."""
     cx, cy = center
-    body, band, lid = CHEST_LOOK.get(tier, CHEST_LOOK["wooden"])
+    art = t.chest_art(tier, round(w * 1.1))
+    if art is not None:
+        ah = art.size[1] / S
+        top = cy + w * 0.4 - ah
+        t.soft_glow(img, (cx - w * 0.6, cy + w * 0.33, cx + w * 0.6, cy + w * 0.47), (0, 0, 0, 170), 14)
+        if opened:
+            col = tier_color(tier)
+            t.soft_glow(img, (cx - w * 0.55, top - w * 0.25, cx + w * 0.55, top + w * 0.2), alpha(mix(col, (255, 255, 255), 0.4), 200), 26)
+        img.alpha_composite(art, (round(cx * S - art.size[0] / 2), round(top * S)))
+        if sealed:
+            _talisman(img, cx, top + ah * 0.42)
+        return
+    cx, cy = center
+    body, band, lid = CHEST_LOOK.get(tier, CHEST_LOOK["common"])
     h = w * 0.5
     x0, x1 = cx - w / 2, cx + w / 2
     y0, y1 = cy - h * 0.2, cy + h * 0.8
@@ -104,9 +120,14 @@ def draw_chest(img, center, w, tier, opened=False, sealed=False):
                         outline=mix(band, (0, 0, 0), 0.4), width=round(2 * S))
     d.ellipse(P(cx - 5, ly + 6, cx + 5, ly + 16), fill=(20, 14, 10))
     d.polygon([P(cx - 3, ly + 14), P(cx + 3, ly + 14), P(cx + 2, ly + 26), P(cx - 2, ly + 26)], fill=(20, 14, 10))
-    if sealed:                                                                     # paper talisman 封
+    if sealed:
+        _talisman(img, cx, y0 - 20)
+
+
+def _talisman(img, tx, ty):
+    """The paper talisman 封印 across the lid."""
+    if True:
         tw, th = 46, 110
-        tx, ty = cx, y0 - 20
         paper = Image.new("RGBA", P(tw, th), (232, 206, 120, 255))
         pd = ImageDraw.Draw(paper)
         pd.rectangle((round(4 * S), round(4 * S), paper.size[0] - round(4 * S), paper.size[1] - round(4 * S)),

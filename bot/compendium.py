@@ -27,6 +27,7 @@ import technique
 import training
 
 from cards import theme as T
+from cards import art_icons
 from cards.technique_icons import tech_kind
 
 from . import gear, loot
@@ -91,12 +92,25 @@ def gear_tier_label(tier):
     return equipments.TIER_DISPLAY[tier].split(" ", 1)[1]
 
 
-def gear_strip():
-    return [(t, TIER_SEAL[t], gear_tier_label(t), T.RARITY[t]) for t in equipments.TIERS]
+def sym(section, key, fallback):
+    """The painted /index symbol of a section's tier (art/icons/index/<section>_<key>), else `fallback`."""
+    return art_icons.index(f"{section}_{art_icons.slug(key)}", fallback)
 
 
-def grade_strip():
-    return [(g, GRADE_SEAL[g], g, T.RARITY[g]) for g in technique.GRADES]
+def tier_seal(section, tier):
+    return sym(section, tier, TIER_SEAL[tier])
+
+
+def grade_seal(section, grade):
+    return sym(section, grade, GRADE_SEAL[grade])
+
+
+def gear_strip(section="weapons"):
+    return [(t, tier_seal(section, t), gear_tier_label(t), T.RARITY[t]) for t in equipments.TIERS]
+
+
+def grade_strip(section="techniques"):
+    return [(g, grade_seal(section, g), g, T.RARITY[g]) for g in technique.GRADES]
 
 
 def realm_list(realms):
@@ -128,7 +142,7 @@ def beast_rank_text(tier):
 
 
 def beasts_strip():
-    return [(r, f"emblem:realm:{r}", REALM_SHORT[r], REALM_COLOR[r]) for r in rules.REALM_ORDER]
+    return [(r, sym("beasts", r, f"emblem:realm:{r}"), REALM_SHORT[r], REALM_COLOR[r]) for r in rules.REALM_ORDER]
 
 
 def beasts_page(realm):
@@ -205,7 +219,7 @@ def techniques_overview():
     for grade, realm in technique.GRADES.items():
         skill, atk_passive = technique.ATTACK_TECHNIQUE[grade]
         block, def_passive = technique.DEFENSE_TECHNIQUE[grade]
-        tiles.append(tile(GRADE_SEAL[grade], T.RARITY[grade], f"{grade} Manuals", [
+        tiles.append(tile(grade_seal("techniques", grade), T.RARITY[grade], f"{grade} Manuals", [
             f"Learn from {realm}",
             f"Attack ×{skill:g} · +{pct(atk_passive)} ATK",
             f"Defense blocks {pct(block)} · +{pct(def_passive)} DEF",
@@ -228,7 +242,7 @@ def gear_chests(chance, tier_odds, tier):
 
 
 def weapons_page(tier):
-    tiles = [tile(w, T.RARITY[tier], equipments.WEAPON_NAMES[tier][w],
+    tiles = [tile(art_icons.gear(equipments.WEAPON_NAMES[tier][w], w), T.RARITY[tier], equipments.WEAPON_NAMES[tier][w],
                   [w.title(), buff_text(equipments.WEAPON_BUFFS[w][tier])], cjk=False)
              for w in equipments.WEAPON_TYPES]
     return dict(
@@ -239,7 +253,8 @@ def weapons_page(tier):
 
 
 def armor_page(tier):
-    tiles = [tile("gear:" + a, T.RARITY[tier], equipments.ARMOR_NAMES[tier][a],
+    tiles = [tile(art_icons.gear(equipments.ARMOR_NAMES[tier][a], "gear:" + a), T.RARITY[tier],
+                  equipments.ARMOR_NAMES[tier][a],
                   [equipments.ARMOR_TYPE_DISPLAY[a][1], buff_text(equipments.ARMOR_BUFFS[a][tier])], cjk=False)
              for a in equipments.ARMOR_TYPES]
     return dict(
@@ -255,7 +270,7 @@ def artifacts_page(tier):
     for group, label in gear.GROUP_LABEL.items():
         for fam, spec in equipments.ARTIFACT_FAMILIES.items():
             if spec["group"] == group:
-                tiles.append(tile("gear:" + fam, T.RARITY[tier], spec["names"][i], [
+                tiles.append(tile(art_icons.gear(spec["names"][i], "gear:" + fam), T.RARITY[tier], spec["names"][i], [
                     f"{label} · {fam.title()}",
                     gear.effect_text({"category": "artifacts", "key": fam, "grade": tier}),
                 ], cjk=False, group=label))
@@ -274,7 +289,7 @@ def gear_overview(kind):
     tiles = []
     for tier in equipments.TIERS:
         chests = gear_chests(chance, equipments.CHEST_TIER_ODDS, tier)
-        tiles.append(tile(TIER_SEAL[tier], T.RARITY[tier], gear_tier_label(tier), cjk=False, lines=[
+        tiles.append(tile(tier_seal(kind, tier), T.RARITY[tier], gear_tier_label(tier), cjk=False, lines=[
             f"From {equipments.TIER_REALM_REQUIREMENT[tier]}",
             f"e.g. {next(iter(names[tier].values()))}",
             "Chests: " + ", ".join(loot.CHEST_NAMES[c].split()[0] for c, _ in chests),
@@ -303,7 +318,7 @@ def artifacts_overview():
             if spec["group"] == group:
                 lo = gear.effect_text({"category": "artifacts", "key": fam, "grade": equipments.TIERS[0]}, tiny=True)
                 hi = gear.effect_text({"category": "artifacts", "key": fam, "grade": equipments.TIERS[-1]}, tiny=True)
-                tiles.append(tile("gear:" + fam, T.GOLD, f"{fam.title()} family", [
+                tiles.append(tile(art_icons.gear(spec["names"][2], "gear:" + fam), T.GOLD, f"{fam.title()} family", [
                     f"{label} · {spec['text']}", f"Ordinary {lo} · Divine {hi}"], cjk=False, group=label))
     return dict(
         subtitle="Every family, by tier",
@@ -311,13 +326,13 @@ def artifacts_overview():
                f"Combat ones work at {pct(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH)} in Fair Duels."),
         tiles=tiles,
         footer="Artifact chance per chest: " + chest_list(equipments.CHEST_ARTIFACT_CHANCE.items())
-               + " (Treasure and Divine only in Jade Chests)")
+               + " (Treasure and Divine only in Legendary and Mythic Chests)")
 
 
 # ── Chests ────────────────────────────────────────────────────────────
 
 def chests_strip():
-    return [(c, "chest", loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
+    return [(c, f"chest:{c}", loot.CHEST_NAMES[c].split()[0], T.RARITY[c]) for c in loot.CHEST_NAMES]
 
 
 def chest_sources(tier):
@@ -345,9 +360,9 @@ def chests_page(chest):
                                                  odds_text(equipments.CHEST_ARTIFACT_TIER_ODDS[chest], str.title)],
              cjk=False),
     ]
-    if chest == "jade":
+    if talent_rules.HEAVEN_DEFYING_PILL["chest_chance"].get(chest):
         tiles.append(tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill",
-                          [f"{pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} chance",
+                          [f"{pct(talent_rules.HEAVEN_DEFYING_PILL['chest_chance'][chest])} chance",
                            "Raises your talent one rank"], cjk=False))
     return dict(tier_label=loot.CHEST_NAMES[chest], tier_word=False, subtitle="Open it from /inventory",
                 intro="Every roll is separate, so one chest can hold several things.",
@@ -358,7 +373,7 @@ def chests_overview():
     tiles = []
     for chest, name in loot.CHEST_NAMES.items():
         lo, hi = loot.CHEST_COINS[chest]
-        tiles.append(tile("chest", T.RARITY[chest], name, [
+        tiles.append(tile(f"chest:{chest}", T.RARITY[chest], name, [
             f"{lo}–{hi} Lotus Coins",
             f"Manual {pct(explore.CHEST_MANUAL_CHANCE[chest])} · Weapon {pct(equipments.CHEST_WEAPON_CHANCE[chest])}",
             "From " + chest_sources(chest),
@@ -431,7 +446,7 @@ PILLS = {
 
 
 def pills_strip():
-    return [(k, seal, label, color) for k, (label, seal, color) in PILL_KINDS.items()]
+    return [(k, sym("pills", k, seal), label, color) for k, (label, seal, color) in PILL_KINDS.items()]
 
 
 def pills_page(kind):
@@ -470,11 +485,12 @@ def pills_overview():
                                              " 8+ patterns add no toxicity"]),
         tile("gear:furnace", T.GOLD, "Alchemist rank", ["Everyone starts at 1st Grade", f"Total EXP: {ranks}"],
              cjk=False),
-        tile("gear:qi", T.MOON, "Beast Cores", cjk=False, lines=["Breakthrough pills need one of their grade",
+        tile(art_icons.core("elite", "Mystic", "gear:qi"), T.MOON, "Beast Cores", cjk=False, lines=["Breakthrough pills need one of their grade",
                                            f"Drops: {cores}", "Elite and King cores from team hunts"]),
         tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill", cjk=False, lines=[
             f"Raises talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']})",
-            f"Jade Chests {pct(talent_rules.HEAVEN_DEFYING_PILL['jade_chest_chance'])} · cannot be traded"]),
+            "Legendary Chests " + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["legendary"]) + ", Mythic "
+            + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["mythic"]) + " · cannot be traded"]),
     ]
     return dict(subtitle="Toxicity, patterns and rare pills",
                 intro="Pills add toxicity and too much weakens the next ones. Cleansing pills wash it out.",
@@ -487,11 +503,11 @@ def herbs_page(grade):
     tiles = []
     for type_, (name, desc) in alchemy.HERBS[grade].items():
         uses = herb_uses(type_)
-        tiles.append(tile("herb", HERB_ICON_COLOR.get(type_, T.JADE), name,
+        tiles.append(tile(art_icons.herb(name), HERB_ICON_COLOR.get(type_, T.JADE), name,
                           [f"{loot.TYPE_LABEL[type_]} herb" + (f" · {', '.join(uses)}" if uses else ""), desc],
                           cjk=False))
     for name, desc in alchemy.DECOYS[grade]:
-        tiles.append(tile("skull", DECOY_COLOR, name, ["Poisonous look-alike", desc], cjk=False,
+        tiles.append(tile(art_icons.herb(name, "skull"), DECOY_COLOR, name, ["Poisonous look-alike", desc], cjk=False,
                           badge=("Poison", DECOY_COLOR)))
     return dict(subtitle=f"{alchemy.HERB_RARITY[grade][0]} · found at every realm",
                 intro=f"Every recipe for a {grade} grade pill uses these.",
@@ -587,7 +603,8 @@ def essence_source(family):
 
 
 def materials_strip():
-    return gear_strip() + [(ESSENCES, "mat:essence:metal:crystal", "Essences", T.GOLD)]
+    return gear_strip("materials") + [(ESSENCES, sym("materials", "essences", "mat:essence:metal:crystal"),
+                                       "Essences", T.GOLD)]
 
 
 def materials_page(tier):
@@ -700,16 +717,16 @@ ARTIFACT_PASSIVES = passives_section("artifact")
 # key → (menu label, emoji, menu description, strip builder, tier page builder, overview builder)
 SECTIONS = {
     "beasts":     ("Beasts", "🐾", "Every beast, realm by realm", beasts_strip, beasts_page, beasts_overview),
-    "techniques": ("Techniques", "📜", "Manuals by grade, with effects", grade_strip, techniques_page,
+    "techniques": ("Techniques", "📜", "Manuals by grade, with effects", lambda: grade_strip("techniques"), techniques_page,
                    techniques_overview),
-    "weapons":    ("Weapons", "⚔️", "Weapons by tier, with buffs", gear_strip, weapons_page, weapons_overview),
-    "armor":      ("Armor", "🥋", "Armor by tier, with buffs", gear_strip, armor_page, armor_overview),
-    "artifacts":  ("Artifacts", "🔮", "Every artifact family and its power by tier", gear_strip, artifacts_page,
+    "weapons":    ("Weapons", "⚔️", "Weapons by tier, with buffs", lambda: gear_strip("weapons"), weapons_page, weapons_overview),
+    "armor":      ("Armor", "🥋", "Armor by tier, with buffs", lambda: gear_strip("armor"), armor_page, armor_overview),
+    "artifacts":  ("Artifacts", "🔮", "Every artifact family and its power by tier", lambda: gear_strip("artifacts"), artifacts_page,
                    artifacts_overview),
     "chests":     ("Chests", "📦", "What each chest holds", chests_strip, chests_page, chests_overview),
     "pills":      ("Pills", "💊", "Every pill: effects, recipes, where to get them", pills_strip, pills_page,
                    pills_overview),
-    "herbs":      ("Herbs", "🌿", "How to /gather, and every herb and look-alike", grade_strip, herbs_page,
+    "herbs":      ("Herbs", "🌿", "How to /gather, and every herb and look-alike", lambda: grade_strip("herbs"), herbs_page,
                    herbs_overview),
     "materials":  ("Materials", "⛏️", "Forging materials by tier, essences, where they drop", materials_strip,
                    materials_page, materials_overview),

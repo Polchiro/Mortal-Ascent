@@ -67,7 +67,7 @@ def weapon_view(weapon):
     if not weapon:
         return None
     return {"id": weapon["id"], "name": weapon["name"], "tier": weapon["grade"],
-            "type": (weapon.get("data") or {}).get("type") or weapon["key"],
+            "type": (weapon.get("data") or {}).get("type") or weapon["key"], "icon": items.item_icon(weapon),
             "buffs": [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%")
                       for k, v in rules.weapon_buffs(weapon).items()],
             "passives": passives.slot_views(weapon, "weapon")}
@@ -77,7 +77,7 @@ def armor_view(armor):
     if not armor:
         return None
     return {"id": armor["id"], "name": armor["name"], "tier": armor["grade"], "type": gear.armor_type(armor),
-            "type_label": gear.armor_label(armor), "seal": gear.armor_seal(armor), "icon": gear.icon_kind(armor),
+            "type_label": gear.armor_label(armor), "seal": gear.armor_seal(armor), "icon": items.item_icon(armor),
             "requires": equipments.TIER_REALM_REQUIREMENT[armor["grade"]],
             "buffs": [f"+{v:.1%} {rules.STAT_LABELS[k]}".replace(".0%", "%")
                       for k, v in rules.weapon_buffs(armor).items()],
@@ -89,7 +89,7 @@ def artifact_view(a):
         return None
     spec = gear.family_spec(a)
     return {"id": a["id"], "name": a["name"], "tier": a["grade"], "family": gear.family(a), "seal": spec["seal"],
-            "icon": gear.icon_kind(a), "group": spec["group"], "group_label": gear.GROUP_LABEL[spec["group"]],
+            "icon": items.item_icon(a), "group": spec["group"], "group_label": gear.GROUP_LABEL[spec["group"]],
             "requires": equipments.TIER_REALM_REQUIREMENT[a["grade"]], "slot": a["equipped"],
             "effect": gear.effect_text(a), "effect_short": gear.effect_text(a, tiny=True), "text": spec["text"],
             "passives": passives.slot_views(a, "artifact")}

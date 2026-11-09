@@ -12,6 +12,7 @@ under half size, so nothing is drawn under 20px.
 """
 from PIL import ImageDraw
 
+from . import art_icons
 from . import theme as T
 from .theme import P, alpha, cjk, font, mix
 
@@ -137,6 +138,8 @@ def _strip(img, p):
 def seal(img, center, r, glyph, color, cjk_char=None):
     """A tile / header seal: a drawn emblem ('emblem:...', no medallion around it), a drawn icon in a
     medallion, or (old data) a character in a medallion."""
+    if T.painted(img, glyph, center, r * 2.3):
+        return
     if glyph.startswith("emblem:"):
         T.icon(img, glyph, center, r * 2 + 4, color)
     else:
@@ -146,7 +149,7 @@ def seal(img, center, r, glyph, color, cjk_char=None):
 def _strip_seal(img, d, center, glyph, f, color, active):
     if len(glyph) == 1:
         T.text(d, center, glyph, f, color, "mm")
-    elif glyph.startswith("emblem:"):
+    elif glyph.startswith(("emblem:", "art:")) or art_icons.resolve(glyph):
         T.icon(img, glyph, center, 34 if active else 30, color)
         if not active:      # dim the tiers that aren't picked
             x, y = center

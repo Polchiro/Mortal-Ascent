@@ -104,18 +104,22 @@ QUALITY_PREFIXES = [
 # ── Drop rates ────────────────────────────────────────────────────────
 
 CHEST_WEAPON_CHANCE = {
-    "wooden": 0.02,
-    "bronze": 0.04,
-    "silver": 0.08,
-    "jade":   0.12,
+    "common":    0.02,
+    "uncommon":  0.04,
+    "rare":      0.08,
+    "epic":      0.10,
+    "legendary": 0.12,
+    "mythic":    0.20,
 }
 
 # chest → tier → chance (each row sums to 1.0)
 CHEST_TIER_ODDS = {
-    "wooden": {"ordinary": 0.99, "refined": 0.01},
-    "bronze": {"ordinary": 0.90, "refined": 0.095, "spirit": 0.005},
-    "silver": {"refined": 0.85, "spirit": 0.14, "treasure": 0.01},
-    "jade":   {"spirit": 0.88, "treasure": 0.119, "divine": 0.001},
+    "common":    {"ordinary": 0.99, "refined": 0.01},
+    "uncommon":  {"ordinary": 0.90, "refined": 0.095, "spirit": 0.005},
+    "rare":      {"refined": 0.85, "spirit": 0.14, "treasure": 0.01},
+    "epic":      {"refined": 0.40, "spirit": 0.55, "treasure": 0.05},
+    "legendary": {"spirit": 0.88, "treasure": 0.119, "divine": 0.001},
+    "mythic":    {"spirit": 0.50, "treasure": 0.46, "divine": 0.04},
 }
 
 ANNOUNCE_TIERS = ["divine"]  # drops announced to the whole server
@@ -283,11 +287,13 @@ def artifact_value(family, tier):
     return ARTIFACT_FAMILIES[family]["values"][TIERS.index(tier)]
 
 
-# Artifacts are about twice as rare as weapons; Treasure and Divine only from Jade chests.
+# Artifacts are about twice as rare as weapons; Treasure and Divine only from Legendary and Mythic chests.
 CHEST_ARTIFACT_CHANCE = {chest: chance / 2 for chest, chance in CHEST_WEAPON_CHANCE.items()}
 CHEST_ARTIFACT_TIER_ODDS = {
-    "wooden": {"ordinary": 0.99, "refined": 0.01},
-    "bronze": {"ordinary": 0.90, "refined": 0.095, "spirit": 0.005},
-    "silver": {"refined": 0.85, "spirit": 0.15},
-    "jade":   {"spirit": 0.88, "treasure": 0.119, "divine": 0.001},
+    "common":    {"ordinary": 0.99, "refined": 0.01},
+    "uncommon":  {"ordinary": 0.90, "refined": 0.095, "spirit": 0.005},
+    "rare":      {"refined": 0.85, "spirit": 0.15},
+    "epic":      {"refined": 0.40, "spirit": 0.60},
+    "legendary": {"spirit": 0.88, "treasure": 0.119, "divine": 0.001},
+    "mythic":    {"spirit": 0.50, "treasure": 0.46, "divine": 0.04},
 }

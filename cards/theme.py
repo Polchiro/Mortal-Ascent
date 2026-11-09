@@ -48,7 +48,8 @@ RARITY = {
     "Earth": (196, 132, 72), "Heaven": (236, 74, 60),
     "ordinary": (170, 160, 150), "refined": (96, 196, 110), "spirit": (90, 160, 240),
     "treasure": (178, 110, 228), "divine": (246, 150, 50),
-    "wooden": (168, 122, 76), "bronze": (196, 132, 70), "silver": (186, 196, 210), "jade": (82, 196, 150),
+    "common": (168, 122, 76), "uncommon": (196, 150, 90), "rare": (196, 206, 222), "epic": (244, 184, 64),
+    "legendary": (82, 210, 150), "mythic": (180, 130, 250),
     None: (150, 176, 120),
 }
 TALENT = {
@@ -417,7 +418,10 @@ def socket(img, box, color=GOLD, filled=True, locked=False, tint=True):
 
 
 def medallion(img, center, r, glyph, color, cjk_char=True):
-    """Round gold-ringed seal with a character (school, grade, realm) or a drawn icon inside."""
+    """Round gold-ringed seal with a character (school, grade, realm) or a drawn icon inside.
+    A painted icon (cards/art_icons.py) brings its own ring, so it is drawn alone, a little larger."""
+    if not cjk_char and painted(img, glyph, center, r * 2.25):
+        return
     cx, cy = center
     soft_glow(img, (cx - r - 4, cy - r - 4, cx + r + 4, cy + r + 4), alpha(color, 90), 5)
     d = ImageDraw.Draw(img)
@@ -434,6 +438,8 @@ def medallion(img, center, r, glyph, color, cjk_char=True):
 def seal(img, center, r, glyph, color):
     """A round badge of radius r: a drawn emblem ('emblem:...', it brings its own frame), a drawn icon in a
     medallion ('tech:iron_fist', 'gear:robe', 'pill' …), or a single character in a medallion."""
+    if painted(img, glyph, center, r * 2.25):
+        return
     if glyph.startswith("emblem:"):
         icon(img, glyph, center, r * 2 + 4, color)
     else:
@@ -558,8 +564,46 @@ def portrait(img, box, avatar_bytes, name, realm, color=EMBER):
 
 # ── Icons (drawn, so no image files are needed) ───────────────────────
 
+@lru_cache(maxsize=64)
+def chest_art(tier, width):
+    """The painted chest of a tier (art/chests/<tier>.png), `width` card px wide, at S×; None if missing."""
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "chests", f"{tier}.png")
+    if not os.path.exists(path):
+        return None
+    art = Image.open(path).convert("RGBA")
+    k = width * S / art.size[0]
+    return art.resize((max(1, round(art.size[0] * k)), max(1, round(art.size[1] * k))), Image.LANCZOS)
+
+
+def painted(img, kind, center, size):
+    """Draw the painting for this icon kind (cards/art_icons.py) `size` card px wide; False if it has none.
+    A pill's patterns show as small gold dots along its bottom edge."""
+    from . import art_icons
+    hit = art_icons.resolve(kind)
+    if hit is None:
+        return False
+    path, dots = hit
+    px = max(8, round(size * S))
+    art = art_icons.image(path, px)
+    cx, cy = center
+    img.alpha_composite(art, (round(cx * S - px / 2), round(cy * S - px / 2)))
+    if dots:
+        d = ImageDraw.Draw(img)
+        r = max(1.2, size * 0.035)
+        gap = r * 2.6
+        y = cy + size * 0.44
+        x0 = cx - gap * (dots - 1) / 2
+        for i in range(dots):
+            x = x0 + i * gap
+            d.ellipse(P(x - r, y - r, x + r, y + r), fill=GOLD_HI, outline=(40, 24, 8))
+    return True
+
+
 def icon(img, kind, center, size, color):
-    """Draw a small icon centred at `center`, `size` pixels tall."""
+    """Draw a small icon centred at `center`, `size` pixels tall (its painting when it has one)."""
+    if painted(img, kind, center, size * 1.18):
+        return
     d = ImageDraw.Draw(img)
     cx, cy = center
     s = size / 2
@@ -567,6 +611,12 @@ def icon(img, kind, center, size, color):
     if kind.startswith("seal:"):            # armor / artifact seal: the character itself (gear.icon_kind)
         text(d, (cx, cy + size * 0.03), kind[5:], cjk(max(8, round(size * 0.82))), color, "mm")
         return
+    if kind.startswith("chest:"):           # a chest tier's painting (art/chests/<tier>.png)
+        art = chest_art(kind[6:], round(size * 1.25))
+        if art is not None:
+            img.alpha_composite(art, (round(cx * S - art.size[0] / 2), round(cy * S - art.size[1] / 2)))
+            return
+        kind = "chest"
     if kind.startswith("gear:"):            # armor type / artifact family drawing (cards/gear_icons.py)
         from .gear_icons import GEAR_ICON
         GEAR_ICON[kind[5:]](d, cx, cy, s, color, dark)

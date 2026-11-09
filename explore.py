@@ -48,28 +48,30 @@ STONE_TABLET_PRACTICE_SESSIONS = 2  # mastery EXP = this × /practice base
 ELITE_LAIR_OPEN_MINUTES = 30
 BEAST_KING_DEN_OPEN_MINUTES = 60
 
-TREASURE_CHEST_TIER = {"wooden": 0.60, "bronze": 0.30, "silver": 0.10}
+TREASURE_CHEST_TIER = {"common": 0.58, "uncommon": 0.30, "rare": 0.10, "epic": 0.02}
 
 BLESSED_LAND_TYPE = {"spirit_spring": 0.60, "lotus_grove": 0.35, "dragon_vein": 0.05}
 
 # ── Chests from beasts ────────────────────────────────────────────────
 
 BEAST_CHEST = {
-    "normal":     {"chance": 0.30, "tiers": {"wooden": 0.70, "bronze": 0.30}},
-    "elite":      {"chance": 0.60, "tiers": {"bronze": 0.50, "silver": 0.50}},
-    "beast_king": {"chance": 1.00, "tiers": {"silver": 0.50, "jade": 0.50}},
+    "normal":     {"chance": 0.30, "tiers": {"common": 0.70, "uncommon": 0.30}},
+    "elite":      {"chance": 0.60, "tiers": {"uncommon": 0.45, "rare": 0.45, "epic": 0.10}},
+    "beast_king": {"chance": 1.00, "tiers": {"rare": 0.35, "epic": 0.20, "legendary": 0.40, "mythic": 0.05}},
 }
 CHEST_ROLL_PER_PLAYER = True
 
 # ── Manuals in chests ─────────────────────────────────────────────────
 
-CHEST_MANUAL_CHANCE = {"wooden": 0.05, "bronze": 0.10, "silver": 0.15, "jade": 0.25}
+CHEST_MANUAL_CHANCE = {"common": 0.05, "uncommon": 0.10, "rare": 0.15, "epic": 0.20, "legendary": 0.25, "mythic": 0.40}
 
 CHEST_MANUAL_GRADE_ODDS = {
-    "wooden": {"Mortal": 1.0},
-    "bronze": {"Mortal": 0.80, "Yellow": 0.20},
-    "silver": {"Yellow": 0.70, "Mystic": 0.28, "Earth": 0.02},
-    "jade":   {"Mystic": 0.80, "Earth": 0.198, "Heaven": 0.002},
+    "common":    {"Mortal": 1.0},
+    "uncommon":  {"Mortal": 0.80, "Yellow": 0.20},
+    "rare":      {"Yellow": 0.70, "Mystic": 0.28, "Earth": 0.02},
+    "epic":      {"Yellow": 0.30, "Mystic": 0.62, "Earth": 0.08},
+    "legendary": {"Mystic": 0.80, "Earth": 0.198, "Heaven": 0.002},
+    "mythic":    {"Mystic": 0.40, "Earth": 0.55, "Heaven": 0.05},
 }
 
 ANNOUNCE_MANUAL_GRADES = ["Heaven"]

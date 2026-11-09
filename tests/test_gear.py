@@ -2,6 +2,8 @@
 every artifact effect, and the Profile / Equipment cards. Every number is read from equipments.py."""
 import random
 
+from cards import art_icons
+
 import pytest
 
 import alchemy
@@ -81,12 +83,12 @@ def test_drop_rates_follow_the_tables():
     n = 40000
     counts = {"armor": 0, "artifacts": 0, "weapons": 0}
     for _ in range(n):
-        for i in loot.open_chest({"realm": "Mortal"}, "jade", rng)[1]:
+        for i in loot.open_chest({"realm": "Mortal"}, "legendary", rng)[1]:
             if i["category"] in counts:
                 counts[i["category"]] += 1
-    assert counts["armor"] / n == pytest.approx(eq.CHEST_ARMOR_CHANCE["jade"], abs=0.01)
-    assert counts["artifacts"] / n == pytest.approx(eq.CHEST_ARTIFACT_CHANCE["jade"], abs=0.008)
-    assert counts["weapons"] / n == pytest.approx(eq.CHEST_WEAPON_CHANCE["jade"], abs=0.01)
+    assert counts["armor"] / n == pytest.approx(eq.CHEST_ARMOR_CHANCE["legendary"], abs=0.01)
+    assert counts["artifacts"] / n == pytest.approx(eq.CHEST_ARTIFACT_CHANCE["legendary"], abs=0.008)
+    assert counts["weapons"] / n == pytest.approx(eq.CHEST_WEAPON_CHANCE["legendary"], abs=0.01)
 
 
 def test_armor_rolls_buffs_and_a_quality_prefix_like_weapons():
@@ -117,7 +119,7 @@ def test_artifact_tiers_follow_their_own_odds():
     for chest, odds in eq.CHEST_ARTIFACT_TIER_ODDS.items():
         art = [i for i in loot.open_chest({"realm": "Mortal"}, chest, rng)[1] if i["category"] == "artifacts"][0]
         assert art["grade"] in odds
-    assert "treasure" not in eq.CHEST_ARTIFACT_TIER_ODDS["silver"]      # Treasure / Divine only from Jade
+    assert "treasure" not in eq.CHEST_ARTIFACT_TIER_ODDS["rare"]      # Treasure / Divine only from Jade
 
 
 def test_divine_armor_and_artifacts_are_announced():
@@ -198,17 +200,17 @@ def test_get_player_carries_the_worn_artifacts_effects(conn):
 
 # ── bag and /index ────────────────────────────────────────────────────
 
-def test_bag_has_armor_and_artifact_tabs_with_drawn_icons(conn):
+def test_bag_has_armor_and_artifact_tabs_with_painted_icons(conn):
     new_player(conn)
     give(conn, 1, loot.roll_armor("ordinary", random.Random(1)))
     give(conn, 1, loot.artifact("lotus", "ordinary"))
     assert {"armor", "artifacts"} <= set(items.CATEGORIES)
     d, *_ = sheet.bag_data(conn, 1, "artifacts")
-    assert d["tiles"][0]["icon"] == "gear:lotus"
+    assert d["tiles"][0]["icon"] == "art:gear/wooden_lotus_charm"           # its painting (art/icons/gear)
     assert d["tiles"][0]["rarity_key"] == "ordinary"
     assert d["inspect"]["effects"][0] == gear.effect_text(loot.artifact("lotus", "ordinary"))
     d, *_ = sheet.bag_data(conn, 1, "armor")
-    assert d["tiles"][0]["icon"][5:] in eq.ARMOR_TYPE_DISPLAY
+    assert d["tiles"][0]["icon"] in {"art:gear/" + art_icons.slug(n) for n in eq.ARMOR_NAMES["ordinary"].values()}
     assert items.CATEGORIES["armor"].icon == "gear:robe" and items.CATEGORIES["artifacts"].icon == "pearl"
     for cat in ("armor", "artifacts"):
         RENDERERS["inventory"](sheet.bag_data(conn, 1, cat)[0])
@@ -534,8 +536,8 @@ def test_fortune_artifact_adds_lotus_coins_from_fights_and_chests():
     p = {"realm": "Mortal", "artifact_fx": {"lotus_coins": v}}
     assert loot.roll_coins(p, (100, 100), Always(), fortune=True) == round(100 * (1 + v))
     assert loot.roll_coins(p, (100, 100), Always()) == 100        # other coins (e.g. a stranger's thanks)
-    coins, _ = loot.open_chest(p, "wooden", Never())
-    lo, hi = loot.CHEST_COINS["wooden"]
+    coins, _ = loot.open_chest(p, "common", Never())
+    lo, hi = loot.CHEST_COINS["common"]
     assert coins >= round(lo * (1 + v))
 
 
@@ -562,7 +564,7 @@ def test_profile_gear_row_has_four_sockets(conn):
     loot.use_item(conn, 1, a["id"])
     d = sheet.profile_data(conn, 1)
     s = d["gear"][2]
-    assert s["icon"] == "gear:mirror" and s["tier"] == "ordinary" and s["name"] == a["name"]
+    assert s["icon"] == "art:gear/polished_bronze_mirror" and s["tier"] == "ordinary" and s["name"] == a["name"]
     assert s["line"] == gear.effect_text(a, tiny=True)
     RENDERERS["profile"](d)
 

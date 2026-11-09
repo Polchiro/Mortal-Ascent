@@ -20,7 +20,7 @@ def conn():
     return c
 
 
-def chest_id(conn, tier="silver", qty=1):
+def chest_id(conn, tier="rare", qty=1):
     db.add_item(conn, 1, **dict(loot.chest(tier), qty=qty))
     return next(i["id"] for i in db.get_items(conn, 1, "chests") if i["key"] == tier)
 
@@ -44,9 +44,9 @@ def test_the_roll_is_the_same_as_before(conn):
     """The reveal changes nothing about the odds: same RNG, same contents as open_chest."""
     p = db.get_player(conn, 1)
     for seed in range(40):
-        cid = chest_id(conn, "jade")
+        cid = chest_id(conn, "legendary")
         pending = loot.begin_chest(conn, 1, cid, random.Random(seed))
-        coins, items = loot.open_chest(p, "jade", random.Random(seed))
+        coins, items = loot.open_chest(p, "legendary", random.Random(seed))
         assert pending["coins"] == coins
         assert [(i["category"], i["key"], i.get("qty", 1)) for i in pending["items"]] == \
             [(i["category"], i["key"], i.get("qty", 1)) for i in items]
@@ -67,10 +67,10 @@ def test_claim_grants_exactly_once(conn):
 
 def test_rewards_stack_into_existing_stacks(conn):
     db.add_item(conn, 1, **materials.material("seal", 2))
-    cid = chest_id(conn, "jade", qty=3)
+    cid = chest_id(conn, "legendary", qty=3)
     pending = loot.begin_chest(conn, 1, cid, random.Random(1))
     pending["items"] = [materials.material("seal", 3)]                 # a known reward
-    pid = db.start_pending_chest(conn, 1, cid, "jade", "Jade Chest", 10, pending["items"], [])
+    pid = db.start_pending_chest(conn, 1, cid, "legendary", "Legendary Chest", 10, pending["items"], [])
     loot.claim_chest(conn, 1, pid)
     seals = [i for i in db.get_items(conn, 1, "materials") if i["key"] == "seal"]
     assert len(seals) == 1 and seals[0]["qty"] == 5
@@ -80,7 +80,7 @@ def test_rewards_stack_into_existing_stacks(conn):
 def test_full_bag_leaves_items_behind_but_pays_the_coins(conn):
     cid = chest_id(conn)
     db.update_player(conn, 1, bag_capacity=0)
-    pid = db.start_pending_chest(conn, 1, cid, "silver", "Silver Chest", 99,
+    pid = db.start_pending_chest(conn, 1, cid, "rare", "Rare Chest", 99,
                                  [loot.roll_weapon("refined", random.Random(1))], [])
     coins0 = db.get_player(conn, 1)["lotus_coins"]
     result = loot.claim_chest(conn, 1, pid)
@@ -94,9 +94,9 @@ def test_full_bag_leaves_items_behind_but_pays_the_coins(conn):
 def test_stale_pending_chests_are_collected_when_the_sheet_opens(conn):
     now = time.time()
     old = loot.begin_chest(conn, 1, chest_id(conn), random.Random(2), now=now - cr.STALE_AFTER_SECONDS - 5)
-    fresh = loot.begin_chest(conn, 1, chest_id(conn, "wooden"), random.Random(2), now=now)
+    fresh = loot.begin_chest(conn, 1, chest_id(conn, "common"), random.Random(2), now=now)
     note = cr.collect_stale(conn, 1, now)
-    assert note and "Silver Chest" in note
+    assert note and "Rare Chest" in note
     assert db.get_pending_chest(conn, old["id"])["claimed_at"] is not None
     assert db.get_pending_chest(conn, fresh["id"])["claimed_at"] is None   # a reveal still open is left alone
     assert cr.collect_stale(conn, 1, now) is None
@@ -114,7 +114,7 @@ def test_reward_rarities():
 
 def test_every_stage_renders_and_rewards_sort_best_first(conn):
     p = db.get_player(conn, 1)
-    fake = {"id": 0, "chest_key": "jade", "chest_name": "Jade Chest", "coins": 300, "notes": ["👝 **Deep Pockets:** x"],
+    fake = {"id": 0, "chest_key": "legendary", "chest_name": "Legendary Chest", "coins": 300, "notes": ["👝 **Deep Pockets:** x"],
             "items": [loot.roll_weapon("ordinary", random.Random(1)), dict(loot.HEAVEN_DEFYING),
                       loot.roll_armor("treasure", random.Random(2))]}
     for stage in ("sealed", "opening", "reveal", "collected"):
@@ -164,16 +164,16 @@ def test_timeout_collects_for_the_player(conn):
 
 
 def test_use_item_still_opens_a_chest_in_one_step(conn):
-    cid = chest_id(conn, "jade")
+    cid = chest_id(conn, "legendary")
     msg = loot.use_item(conn, 1, cid, random.Random(0))
-    assert "Jade Chest" in msg and db.get_items(conn, 1, "chests") == []
+    assert "Legendary Chest" in msg and db.get_items(conn, 1, "chests") == []
     assert db.unclaimed_chests(conn, 1) == []
 
 
 def test_inventory_open_button_starts_a_reveal(conn):
     """The sheet's Open on a chest stores the roll, updates the sheet and posts the sealed chest."""
     from bot.sheet.view import CharacterSheet
-    cid = chest_id(conn, "bronze")
+    cid = chest_id(conn, "uncommon")
     sent, edits = [], []
 
     async def defer(*a, **k):
@@ -203,3 +203,28 @@ def test_inventory_open_button_starts_a_reveal(conn):
         assert isinstance(sent[-1]["view"], cr.ChestReveal) and sent[-1]["view"].pending["id"] == pending[0]["id"]
         assert edits                                                   # the sheet was redrawn without the chest
     asyncio.run(go())
+
+
+def test_old_chest_tiers_are_renamed_in_old_databases(tmp_path):
+    """Wooden / Bronze / Silver / Jade chests in a bag become Common / Uncommon / Rare / Legendary."""
+    path = str(tmp_path / "old.db")
+    conn = db.connect(path)
+    db.create_player(conn, 1, "Shoaib", "Genius", 50, rules.starting_techniques())
+    for old, name in (("wooden", "Wooden Chest"), ("jade", "Jade Chest")):
+        conn.execute("INSERT INTO items (user_id, category, key, name, grade, qty) VALUES (1, 'chests', ?, ?, ?, 2)",
+                     (old, name, old))
+    db.add_item(conn, 1, **loot.chest("common"))
+    conn.commit()
+    conn.close()
+    conn = db.connect(path)
+    chests = {i["key"]: i for i in db.get_items(conn, 1, "chests")}
+    assert set(chests) == {"common", "legendary"}
+    assert chests["common"]["qty"] == 3 and chests["legendary"]["name"] == "Legendary Chest"
+
+
+def test_every_chest_tier_has_art_and_opens():
+    import os
+    for tier in loot.CHEST_ORDER:
+        assert os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), "art", "chests", f"{tier}.png"))
+        coins, items = loot.open_chest({"realm": "Mortal"}, tier, random.Random(1))
+        assert coins >= loot.CHEST_COINS[tier][0]

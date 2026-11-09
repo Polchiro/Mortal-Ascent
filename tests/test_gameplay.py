@@ -45,13 +45,13 @@ def test_old_database_gets_new_columns(tmp_path):
 
 def test_bag_stacks_and_capacity(conn):
     new_player(conn)
-    assert db.add_item(conn, 1, **loot.chest("wooden"))
-    assert db.add_item(conn, 1, **loot.chest("wooden"))
+    assert db.add_item(conn, 1, **loot.chest("common"))
+    assert db.add_item(conn, 1, **loot.chest("common"))
     assert db.get_items(conn, 1, "chests")[0]["qty"] == 2
     db.update_player(conn, 1, bag_capacity=2)
     assert db.add_item(conn, 1, **loot.roll_weapon("ordinary", random.Random(1)))
     assert not db.add_item(conn, 1, **loot.roll_weapon("ordinary", random.Random(2)))   # full
-    assert db.add_item(conn, 1, **loot.chest("wooden"))                                  # stacking still fine
+    assert db.add_item(conn, 1, **loot.chest("common"))                                  # stacking still fine
     assert db.slots_used(conn, 1) == 2
 
 
@@ -76,7 +76,7 @@ def test_weapon_roll_matches_equipment_md():
 
 def test_open_chest_gives_coins_and_removes_it(conn):
     new_player(conn)
-    db.add_item(conn, 1, **loot.chest("jade"))
+    db.add_item(conn, 1, **loot.chest("legendary"))
     item = db.get_items(conn, 1, "chests")[0]
     msg = loot.use_item(conn, 1, item["id"], random.Random(0))
     assert "Lotus Coins" in msg

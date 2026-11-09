@@ -136,7 +136,7 @@ Each passive belongs to a **family**. An essence of that family makes the forge 
 | Epic | Fortune's Favor | +8% rare /explore encounters | 福 Fortune Coin |
 | Legendary | Heaven's Favor | +5% realm breakthrough chance | 气 Spirit Dew |
 | Legendary | Alchemy Sage | Pills can reach 1 pattern beyond the herb-age limit | 丹 Cauldron Ash |
-| Legendary | Treasure Sense | Jade Chests 20% more likely | 福 Fortune Coin |
+| Legendary | Treasure Sense | Legendary and Mythic Chests 20% more likely | 福 Fortune Coin |
 | Mythical | Dao Heart | +10% Qi Rate, toxicity never above 5 | 气 Spirit Dew |
 | Mythical | Fate Weaver | Once a week, reroll one chest's contents | 福 Fortune Coin |
 
@@ -219,7 +219,7 @@ In chests, the tier is rolled like a weapon's tier in that chest.
 | ⚔️ Elite beast | 60% 1–2 bindings · 60% 1–2 armor materials · 5% Crystal of the beast's element |
 | 👑 Beast King | 2–3 bindings · 2–3 armor materials · 20% Crystal, 2% Heart of the beast's element |
 | 🌿 /gather | 8% per herb: a spring's quench liquid · 3% per herb: a Jade Shard |
-| 📦 Chests | Artifact jades (15/25/35/50% for Wooden/Bronze/Silver/Jade) · Fortune Coins · Seal Stones (0/1/3/8%) |
+| 📦 Chests | Artifact jades (15/25/35/42/50/75% for Common/Uncommon/Rare/Epic/Legendary/Mythic) · Fortune Coins · Seal Stones (0/1/3/5/8/20%) |
 | ⚗️ /craft | Cauldron Ash: 1 Shard (1–3 patterns), 2 Shards (4–6), 1 Crystal (7–8), 1 Heart (9) |
 | 📜 /practice | 15% an Insight Ink Shard · a duplicate manual gives Insight Ink (Shard → Heart by grade) |
 | 🏋️ /train | 15% a Spirit Dew Shard · a breakthrough gives Spirit Dew (phase: Shard, realm: Crystal) |

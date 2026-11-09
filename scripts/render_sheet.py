@@ -44,14 +44,14 @@ def demo_player(conn, uid=1):
     for item in (loot.roll_armor("refined", rng), loot.roll_armor("divine", rng), loot.artifact("lotus", "divine"),
                  loot.artifact("fortune", "refined"), loot.artifact("furnace", "ordinary")):
         db.add_item(conn, uid, **item)
-    for item in (loot.roll_weapon("spirit", rng), loot.chest("jade"), dict(loot.chest("silver"), qty=3),
+    for item in (loot.roll_weapon("spirit", rng), loot.chest("legendary"), dict(loot.chest("rare"), qty=3),
                  dict(loot.pill("Mystic"), qty=2), dict(loot.HEAVEN_DEFYING), loot.manual("meteor_falling_kick"),
                  dict(loot.herb("Heaven", "qi", 10), qty=7), dict(loot.herb("Heaven", "purity", 50), qty=3),
                  loot.herb("Heaven", "breakthrough", 500), dict(loot.herb("Earth", "healing", 10), qty=12),
                  loot.manual("iron_cloth_body")):
         db.add_item(conn, uid, item["category"], item["key"], item["name"], item.get("grade"), item.get("qty", 1),
                     item.get("data"))
-    db.change_currency(conn, uid, "lotus_coins", 128400, "Opened Jade Chest", now=now - 86400 * 2)
+    db.change_currency(conn, uid, "lotus_coins", 128400, "Opened Legendary Chest", now=now - 86400 * 2)
     db.change_currency(conn, uid, "moon_pearls", 2240, "Admin gift", now=now - 86400)
     db.spend(conn, uid, "moon_pearls", 1500, "Blessing: Bright Moon")
     db.update_player(conn, uid, blessing_tier="Bright Moon", blessing_expires=now + 86400 * 21)

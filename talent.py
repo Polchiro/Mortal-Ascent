@@ -47,6 +47,6 @@ HEAVENLY_FATE_REROLL = {
 HEAVEN_DEFYING_PILL = {
     "rank_increase": 1,
     "max_talent": "Divine",
-    "jade_chest_chance": 0.0005,
+    "chest_chance": {"legendary": 0.0005, "mythic": 0.005},   # per chest of that tier
     "tradeable": False,
 }

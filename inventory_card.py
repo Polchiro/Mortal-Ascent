@@ -18,8 +18,8 @@ PER_PAGE = COLS * ROWS
 
 PILL_CHAR = "丹"
 MATERIAL_CHAR = "草"
-CHEST_CHARS = {"wooden": ("木", (140, 100, 60)), "bronze": ("铜", (160, 104, 50)),
-               "silver": ("银", (120, 128, 140)), "jade": ("玉", (46, 128, 104))}
+CHEST_CHARS = {"common": ("木", (140, 100, 60)), "uncommon": ("铜", (160, 104, 50)), "rare": ("银", (120, 128, 140)),
+               "epic": ("金", (190, 140, 50)), "legendary": ("玉", (46, 128, 104)), "mythic": ("星", (120, 80, 190))}
 
 
 def wrap(d, s, f, max_w):
