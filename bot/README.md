@@ -26,7 +26,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/shop` | Moon Pearl shop: Heavenly Fate Reroll (never lower), Qi pills, +20 bag slots, name change |
 | `/blessing` | The eight Heavenly Blessing tiers; buy one with Moon Pearls (same tier adds 30 days) |
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
-| `/reroll` | Fate Reroll with Lotus Coins: 10,000, then ×1.5 each time; normal odds, can go lower |
+| `/reroll` | Fate Reroll with Lotus Coins: a flat 7,500 every time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
 | `/settings [qi_pings]` | Your settings. `qi_pings:off` stops the "your Qi is full: use /breakthrough!" mention (on by default) |
 | `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |

@@ -585,7 +585,7 @@ def register_commands(bot):
         if p["lotus_coins"] < cost:
             await interaction.response.send_message(
                 f"A Fate Reroll costs 🪷 **{cost:,}** Lotus Coins; you have 🪷 {p['lotus_coins']:,}. "
-                "(Each reroll costs ×1.5 more. The Moon Pearl shop sells one that never goes lower.)", ephemeral=True)
+                "(Every reroll costs the same. The Moon Pearl shop sells one that never goes lower.)", ephemeral=True)
             return
 
         async def go():

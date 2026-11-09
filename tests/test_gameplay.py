@@ -568,9 +568,10 @@ def test_blessing_same_tier_extends_other_replaces(conn):
     assert p["moon_pearls"] == 5000 - 300 - 300 - 700
 
 
-def test_fate_reroll_cost_grows():
-    assert rules.fate_reroll_cost({"fate_rerolls": 0}) == 10000
-    assert rules.fate_reroll_cost({"fate_rerolls": 2}) == 22500
+def test_fate_reroll_cost_is_flat():
+    assert rules.fate_reroll_cost({"fate_rerolls": 0}) == 7500
+    assert rules.fate_reroll_cost({"fate_rerolls": 2}) == 7500
+    assert rules.fate_reroll_cost({"fate_rerolls": 40}) == 7500
 
 
 def test_heaven_defying_pill_raises_talent(conn):

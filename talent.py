@@ -34,8 +34,7 @@ TALENT_LOCKED_TO_ACCOUNT = True   # restarting a character keeps the talent
 
 FATE_REROLL = {
     "currency": "lotus_coins",
-    "base_cost": 10000,
-    "cost_multiplier": 1.5,      # cost × this after each use
+    "cost": 7500,                # flat price, the same every time
     "can_go_lower": True,
 }
 
