@@ -533,6 +533,8 @@ def finish_forge(conn, user_id, plan, game, rng=random, now=None):
     new_rank = rank_of(new_exp)
     out["rank_up"] = rank_label(new_rank) if new_rank > old_rank else None
     out["lines"].append(f"📈 +{out['exp']:,} blacksmith EXP")
+    from . import quests
+    quests.record(conn, user_id, "forge", now=now)
     if out["rank_up"]:
         out["lines"].append(f"🎉 You are now a **{out['rank_up']} Blacksmith**!")
     return out

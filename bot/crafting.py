@@ -607,6 +607,8 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
         pill = dict(crafted_pill(craft.kind, craft.grade, craft.result), qty=craft.batch)
         stored, _ = loot.store(conn, user_id, [pill])
         quests.record(conn, user_id, "craft", craft.batch, now=now)
+        if craft.result >= quests.config.FINE_PILL_PATTERNS:
+            quests.record(conn, user_id, "fine_pill", craft.batch, now=now)
         e = alchemy.pattern_effect(craft.result)
         what = f"**{pill['name']}**" if craft.batch == 1 else f"**{craft.batch}× {pill['name']}**"
         lines.append(f"✨ You craft {'a ' if craft.batch == 1 else ''}{what}! Effect ×{e:.2f} · "

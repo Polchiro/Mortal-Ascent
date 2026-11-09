@@ -1157,6 +1157,8 @@ class SparView(FightMixin, OwnedView):
             notes.append(lines[-1])
         db.bump_daily(conn, uid, "spar")
         quests.record(conn, uid, "spar")
+        if won:
+            quests.record(conn, uid, "spar_win")
         db.set_cooldown(conn, uid, "spar", technique.SPAR_COOLDOWN_MINUTES * 60)
         lines.append(f"\n*You can spar again in {technique.SPAR_COOLDOWN_MINUTES // 60} hours.*")
         outcome = "victory" if won else ("forfeit" if forfeit else "defeat")
