@@ -120,6 +120,7 @@ LESSONS = [
      "\"Treasure means nothing if it rots in your bag.\"",
      [("/inventory", "Your bag in tabs: chests, manuals, weapons, armor, artifacts, pills, herbs and materials. "
                      "Pick an item to **open** a chest, **learn** a manual, **equip** gear or **take** a pill."),
+      ("/profession", "Your Alchemist and Blacksmith ranks, EXP to the next grade, and what each grade lets you make."),
       ("/leaderboard", "The top ten cultivators by Realm, Lotus Coins or Moon Pearls, and your own rank."),
       ("/daily", "Four daily quests, new every day at midnight UTC. Each pays Lotus Coins and Moon Pearls; "
                  "finish all four for a bonus and a chance of a Common to Legendary Chest."),
