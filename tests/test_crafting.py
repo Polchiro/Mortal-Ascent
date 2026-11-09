@@ -267,8 +267,8 @@ def test_breakthrough_pill_raises_the_realm_gate(conn):
     it, bonus = crafting.best_breakthrough_pill(conn, 1, p)
     assert it["grade"] == "Yellow" and bonus == pytest.approx(training.BREAKTHROUGH_PILLS["Yellow"])
     p.update(layer=10, qi=rules.qi_needed("Martial Apprentice", 10))
-    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.71), bonus=bonus)
-    assert ok                                                     # 70% + 7%
+    ok, _ = rules.attempt_breakthrough(p, rng=SimpleNamespace(random=lambda: 0.55), bonus=bonus)
+    assert ok                                                     # 50% into Martial Warrior + 7%
     assert "breakthrough" in loot.use_item(conn, 1, it["id"]).lower()
 
 

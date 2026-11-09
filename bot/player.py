@@ -178,15 +178,26 @@ def next_gate(player):
     return "layer", None
 
 
-def breakthrough_chance(player):
-    kind, _ = next_gate(player)
+def breakthrough_chance(player, bonus=0.0):
+    """Chance to pass the gate ahead (None when there is no gate). Gates get harder at higher realms
+    (training.PHASE_BOTTLENECK_SUCCESS / REALM_BREAKTHROUGH_SUCCESS). bonus: a Breakthrough pill's
+    added chance. Pills and artifacts only help at realm gates, and never past BREAKTHROUGH_CHANCE_CAP."""
+    kind, target = next_gate(player)
     if kind == "realm":
         if player["realm"] == "Mortal":
             return 1.0
-        return min(1.0, training.REALM_BREAKTHROUGH_SUCCESS + gear.artifact_bonus(player, "breakthrough_chance"))
+        base = training.REALM_BREAKTHROUGH_SUCCESS[target]
+        extra = gear.artifact_bonus(player, "breakthrough_chance") + (bonus or 0)
+        return min(max(base, training.BREAKTHROUGH_CHANCE_CAP), base + extra)
     if kind == "phase":
-        return training.PHASE_BOTTLENECK_SUCCESS
+        return training.PHASE_BOTTLENECK_SUCCESS[player["realm"]]
     return None
+
+
+def pill_helps(player):
+    """True when a Breakthrough pill could still raise the chance at this gate (realm gate, below the cap)."""
+    return (next_gate(player)[0] == "realm"
+            and breakthrough_chance(player) < training.BREAKTHROUGH_CHANCE_CAP)
 
 
 def overflow(player):
@@ -295,7 +306,7 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
         missing = realm_requirement_missing(player, techniques, target)
         if missing:
             return None, f"🔒 To reach **{target}** you also need {missing}."
-    chance = breakthrough_chance(player) + (bonus if kind == "realm" else 0)
+    chance = breakthrough_chance(player, bonus)
     if rng.random() < chance:
         carry = player["qi"] - need + overflow(player)
         player["qi"], player["qi_overflow"] = 0.0, 0.0

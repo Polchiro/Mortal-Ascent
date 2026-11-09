@@ -116,8 +116,25 @@ Phase multipliers on Qi needed: Early ×1, Middle ×1.2, Late ×1.5, Peak ×2.
 | Step | How |
 |---|---|
 | Layer → layer (same phase) | Automatic when the bar fills |
-| Phase → phase (3rd→4th, 6th→7th, 9th→10th) | 90% success |
-| Realm → realm (Peak → next realm) | 70% base success |
+| Phase → phase (3rd→4th, 6th→7th, 9th→10th) | Chance by realm, see below |
+| Realm → realm (Peak → next realm) | Chance by the realm you enter, see below |
+
+Gates get much harder the higher you climb (numbers live in `training.py`):
+
+| Realm | Phase gates inside it | Realm gate into it |
+|---|---|---|
+| Martial Apprentice | 80% | 100% (from Mortal) |
+| Martial Warrior | 70% | 50% |
+| Martial Expert | 60% | 35% |
+| Martial Master | 50% | 25% |
+| Grand Martial Master | 42% | 18% |
+| Martial Grandmaster | 35% | 12% |
+| Martial King | 28% | 8% |
+| Martial Emperor | 22% | 5% |
+| Martial Ancestor | 17% | 3% |
+| Martial Saint | 12% | 1.5% |
+
+Breakthrough pills and artifacts (e.g. Heaven's Favor) add to realm gates only, up to 95% at most.
 
 - **No Qi is ever lost at a gate.** When the bar is full at a bottleneck or realm gate it stays
   exactly full, and every extra point of Qi (passive, /train, pills, anything) waits behind the

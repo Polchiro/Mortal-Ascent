@@ -104,8 +104,35 @@ PHASE_QI_MULTIPLIER = {
 
 # ── Breakthroughs ─────────────────────────────────────────────────────
 
-PHASE_BOTTLENECK_SUCCESS = 0.90
-REALM_BREAKTHROUGH_SUCCESS = 0.70
+# Gates get harder the higher you climb.
+# Phase bottleneck (3rd→4th, 6th→7th, 9th→10th layer), by the realm you are in:
+PHASE_BOTTLENECK_SUCCESS = {
+    "Martial Apprentice":   0.8,
+    "Martial Warrior":      0.7,
+    "Martial Expert":       0.6,
+    "Martial Master":       0.5,
+    "Grand Martial Master": 0.42,
+    "Martial Grandmaster":  0.35,
+    "Martial King":         0.28,
+    "Martial Emperor":      0.22,
+    "Martial Ancestor":     0.17,
+    "Martial Saint":        0.12,
+}
+# Realm gate, by the realm you break INTO (Mortal → Martial Apprentice always works):
+REALM_BREAKTHROUGH_SUCCESS = {
+    "Martial Apprentice":   1.0,
+    "Martial Warrior":      0.5,
+    "Martial Expert":       0.35,
+    "Martial Master":       0.25,
+    "Grand Martial Master": 0.18,
+    "Martial Grandmaster":  0.12,
+    "Martial King":         0.08,
+    "Martial Emperor":      0.05,
+    "Martial Ancestor":     0.03,
+    "Martial Saint":        0.015,
+}
+# Breakthrough pills and artifacts add to a realm gate's chance, but never past this.
+BREAKTHROUGH_CHANCE_CAP = 0.95
 BREAKTHROUGH_FAIL_QI_LOSS = 0.20
 INJURY_HOURS = 6
 
