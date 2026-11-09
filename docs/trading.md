@@ -28,7 +28,7 @@ Players swap items and currencies with `/trade @player`.
 - When the trade completes, everything is checked again: each player must still own what they offered,
   have the coins and pearls, and the receiver must have bag space for what doesn't stack. If anything
   fails, nothing moves and the window says why.
-- One trade at a time per player; not during a fight, seclusion or a duel.
+- One trade at a time per player; not during a fight or a duel.
 - The window closes after 15 minutes without a click (nothing changes hands).
 
 Numbers: `trade.py`. Code: `bot/trading.py` (rules), `bot/trade_view.py` (Discord), `cards/trade.py` (card).

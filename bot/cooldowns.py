@@ -48,11 +48,10 @@ def timer_sections(conn, player, now=None):
     """[(section title, [line, ...]), ...] for the /cooldown embed."""
     now = time.time() if now is None else now
     uid = player["user_id"]
-    secluded = rules.in_seclusion(player)
     hurt = rules.injured_for(player, now)
 
     # ── Martial pursuits ─────────────────────────────────────────────
-    blocked_by = "🧘 in seclusion" if secluded else ("🩹 injured" if hurt else None)
+    blocked_by = "🩹 injured" if hurt else None
     rows = [
         ("🗺️", "Explore", "explore", f"{explore.EXPLORE_COOLDOWN_MINUTES}m", True),
         ("🥋", "Train", "train", f"{training.TRAIN_COOLDOWN_MINUTES}m", False),
@@ -94,15 +93,6 @@ def timer_sections(conn, player, now=None):
 
     # ── Body and meridians ───────────────────────────────────────────
     body = []
-    if secluded:
-        end = player.get("seclusion_end") or now
-        if end > now:
-            body.append(f"🧘 **Closed-door seclusion** — emerges {stamp(end)}")
-        else:
-            body.append(f"🧘 **Closed-door seclusion** — complete, use **/seclusion** to step out")
-    else:
-        body.append(f"🧘 **Seclusion** — not in seclusion ({training.SECLUSION_MIN_HOURS}-"
-                    f"{training.SECLUSION_MAX_HOURS}h at ×{training.SECLUSION_QI_MULTIPLIER:g} Qi)")
     if hurt:
         body.append(f"🩹 **Injury** — heals {stamp(now + hurt)} (or **/physician**)")
     else:

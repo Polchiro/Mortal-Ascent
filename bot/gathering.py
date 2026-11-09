@@ -244,8 +244,6 @@ def gather_blocked(p, now=None, conn=None):
     """Why this player can't gather right now, or None. With `conn`, the Wandering Spirit's pause is
     ignored while an admin has cooldowns off (/admin cooldowns)."""
     now = time.time() if now is None else now
-    if rules.in_seclusion(p):
-        return "🧘 You are in closed-door seclusion. Leave it with **/seclusion** before gathering herbs."
     paused = (p.get("gather_paused_until") or 0) - now
     if paused > 0 and not (conn is not None and db.cooldowns_off_until(conn, now)):
         return f"👻 The Wandering Spirit's mist still hides the herbs. Gather again in **{rules.fmt_duration(paused)}**."

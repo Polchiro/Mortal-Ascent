@@ -334,7 +334,7 @@ def test_views_build_without_discord_connection(conn):
     asyncio.run(go())
 
 
-# ── passive Qi and /seclusion ─────────────────────────────────────────
+# ── passive Qi ─────────────────────────────────────────────────
 
 def test_passive_qi_has_no_cap(conn):
     p = new_player(conn, talent="Ordinary")
@@ -343,17 +343,6 @@ def test_passive_qi_has_no_cap(conn):
     qi, hours = rules.passive_qi(p, techs, now=3 * 3600)
     assert hours == 3 and qi == pytest.approx(2.5 * 1.05 * 3)
     assert rules.passive_qi(p, techs, now=100 * 3600)[1] == 100
-
-
-def test_seclusion_doubles_only_when_completed(conn):
-    p = new_player(conn, talent="Ordinary")
-    techs = db.get_techniques(conn, 1)
-    p["seclusion_start"], p["seclusion_end"] = 0, 8 * 3600
-    qi, hours, done = rules.seclusion_qi(p, techs, now=10 * 3600)
-    assert done and hours == 8 and qi == pytest.approx(2.5 * 1.05 * 2 * 8)
-    qi, hours, done = rules.seclusion_qi(p, techs, now=4 * 3600)
-    assert not done and qi == pytest.approx(2.5 * 1.05 * 4)
-    assert rules.passive_qi(p, techs, now=4 * 3600) == (0.0, 0.0)
 
 
 # ── mastery, /practice, /spar ─────────────────────────────────────────
@@ -508,7 +497,7 @@ def test_all_commands_register():
             c.to_dict(bot.tree)
         return names
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train",
-                                 "seclusion", "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
+                                 "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
                                  "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "settings", "admin",
                                  "tutorial", "index", "gather", "craft", "forge", "duel", "trade", "daily", "leaderboard"}
 
@@ -654,8 +643,6 @@ def test_passive_qi_rises_before_every_command(conn):
     assert qi == pytest.approx(2.5 * 1.05 * 2) and p["qi_collected_at"] == 2 * 3600
     assert (p["layer"], p["qi"]) == (1, pytest.approx(5.25))
     assert sync_passive_qi(conn, 1, now=2 * 3600)[0] == 0          # nothing twice
-    db.update_player(conn, 1, seclusion_start=0, seclusion_end=8 * 3600)
-    assert sync_passive_qi(conn, 1, now=5 * 3600)[0] == 0          # seclusion gathers its own way
 
 
 def test_low_realm_beasts_are_eased(conn):

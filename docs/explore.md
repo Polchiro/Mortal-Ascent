@@ -8,7 +8,7 @@ Players venture into the wild, choose paths, and decide how far to push their lu
 - Command: **/explore**
 - Cooldown: **30 minutes**, starting when the expedition ends (safe return or defeat)
 - One expedition = up to **5 steps**
-- Not available during Seclusion or while injured
+- Not available while injured
 
 ## Each step
 

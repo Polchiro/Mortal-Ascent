@@ -1,6 +1,6 @@
 """
 Discord client and slash commands: /start, /profile, /balance, /inventory, /explore, /train,
-/seclusion, /breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
+/breakthrough, /internal qi, /practice, /spar, /techniques, /equipment,
 /shop, /blessing, /recharge, /reroll, /physician, /bestiary, /cooldown, /settings.
 Passive Qi is banked by a background task every minute and before every command (passive.py). /tutorial and /index are in guide.py,
 /gather in gathering.py, /craft in crafting.py, /forge in forge_view.py, /duel in duel_view.py. Admin testing commands are in admin.py.
@@ -9,7 +9,6 @@ Every command also works as a text message with the "m" prefix ("m internal qi")
 import asyncio
 import io
 import logging
-import time
 
 import discord
 from discord import app_commands
@@ -56,6 +55,10 @@ class MortalAscent(discord.Client):
             self, allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True))
         self.tree.interaction_check = self.before_command
         self.conn = db.connect(db_path)
+        # /seclusion was removed: let out anyone an older version left inside.
+        freed = passive.release_secluded(self.conn)
+        if freed:
+            log.info("Let %d player(s) out of the removed seclusion", len(freed))
         self.guild_id = guild_id
         self.db_lock = asyncio.Lock()
         self.busy = set()          # (user_id, "explore" | "train" | "spar" | "hunt" | "duel" ...) while a session runs
@@ -89,7 +92,7 @@ class MortalAscent(discord.Client):
 
     async def passive_qi_loop(self):
         """Bank every player's passive Qi once a minute, in batches, so profiles and the rank stay
-        current without any command. Players in seclusion are paid when it ends."""
+        current without any command."""
         await self.wait_until_ready()
         while not self.is_closed():
             try:
@@ -276,10 +279,6 @@ def register_commands(bot):
         if (uid, "explore") in bot.busy and not await free_old_panel(
                 bot, interaction, "explore", "You are already on an expedition. Finish it first!"):
             return
-        if rules.in_seclusion(p):
-            await interaction.response.send_message(
-                "🧘 You are in closed-door seclusion. Leave it with **/seclusion** before exploring.", ephemeral=True)
-            return
         hurt = rules.injured_for(p)
         if hurt:
             await interaction.response.send_message(
@@ -349,74 +348,6 @@ def register_commands(bot):
 
     def save_progress(uid, p, **extra):
         db.update_player(bot.conn, uid, **rules.progress_fields(p), **extra)
-
-    async def end_seclusion(uid):
-        async with bot.db_lock:
-            p = db.get_player(bot.conn, uid)
-            if not rules.in_seclusion(p):
-                return embed("🧘 Seclusion", "You are not in seclusion.")
-            techs = db.get_techniques(bot.conn, uid)
-            now = time.time()
-            qi, hours, done = rules.seclusion_qi(p, techs, now)
-            p, events = rules.add_qi(p, qi, techs, now=now)
-            save_progress(uid, p, seclusion_start=None, seclusion_end=None, qi_collected_at=now)
-        head = ("*You open the doors after {:.1f} hours of seclusion. Your Qi surges!*" if done else
-                "*You leave seclusion early after {:.1f} hours. The ×2 bonus is lost.*").format(hours)
-        return embed("🧘 Seclusion ends", "\n".join([head, f"**Internal Qi:** +{qi:,.1f}", qi_line(p)] + events))
-
-    @tree.command(name="seclusion", description="Enter closed-door seclusion for 8-24 hours at ×2 Qi Rate, or check/leave it")
-    @app_commands.describe(hours="How long to stay in seclusion (8-24). Leave it out to check on a seclusion")
-    async def seclusion(interaction: discord.Interaction,
-                        hours: app_commands.Range[int, training.SECLUSION_MIN_HOURS, training.SECLUSION_MAX_HOURS] | None = None):
-        uid = interaction.user.id
-        p = db.get_player(bot.conn, uid)
-        if not p:
-            await interaction.response.send_message(NOT_STARTED, ephemeral=True)
-            return
-        now = time.time()
-        if rules.in_seclusion(p):
-            if now >= p["seclusion_end"]:
-                await interaction.response.send_message(embed=await end_seclusion(uid))
-                return
-            techs = db.get_techniques(bot.conn, uid)
-            so_far = rules.seclusion_qi(dict(p), techs, p["seclusion_end"])[0]
-            view = ConfirmView(uid, "Leave early", lambda: end_seclusion(uid), emoji="🚪")
-            await interaction.response.send_message(embed=embed("🧘 In seclusion", (
-                f"You emerge <t:{int(p['seclusion_end'])}:R> with about **{so_far:,.0f} Qi**.\n"
-                "Leaving early gives Qi for the time spent, **without** the ×2 bonus.")), view=view, ephemeral=True)
-            view.message = await interaction.original_response()
-            return
-        if hours is None:
-            await interaction.response.send_message(
-                f"Choose how long: **/seclusion hours:{training.SECLUSION_MIN_HOURS}** up to "
-                f"{training.SECLUSION_MAX_HOURS}. Your Qi Rate is doubled, but you cannot explore or spar.", ephemeral=True)
-            return
-        if (uid, "explore") in bot.busy or (uid, "spar") in bot.busy:
-            await interaction.response.send_message("Finish your expedition or spar first.", ephemeral=True)
-            return
-        async with bot.db_lock:
-            p = db.get_player(bot.conn, uid)
-            # Checked again now that we hold the lock: another command may have run while we waited.
-            if rules.in_seclusion(p) or (uid, "explore") in bot.busy or (uid, "spar") in bot.busy:
-                taken = True
-            else:
-                taken = False
-                techs = db.get_techniques(bot.conn, uid)
-                qi, _ = rules.passive_qi(p, techs, now)          # bank the last passive Qi before the doors close
-                p, events = rules.add_qi(p, qi, techs, now=now)
-                end = now + hours * 3600
-                save_progress(uid, p, qi_collected_at=now, seclusion_start=now, seclusion_end=end)
-        if taken:
-            await interaction.response.send_message(
-                "You are already in seclusion, or busy with an expedition or spar.", ephemeral=True)
-            return
-        rate = rules.qi_rate(p, now, techs)[0] * training.SECLUSION_QI_MULTIPLIER
-        lines = [f"*You seal the doors and sink into meditation for {hours} hours...*",
-                 f"Qi Rate ×{training.SECLUSION_QI_MULTIPLIER:g}: **{rate:,.1f} Qi/hour**. You emerge <t:{int(end)}:R>.",
-                 "No exploring or sparring until then. Use **/seclusion** to check or leave early."]
-        if qi >= 0.1:
-            lines.append(f"(Collected {qi:,.1f} passive Qi first.)")
-        await interaction.response.send_message(embed=embed("🧘 Closed-Door Seclusion", "\n".join(lines + events)))
 
     internal = app_commands.Group(name="internal", description="Your inner cultivation")
     tree.add_command(internal)
@@ -536,9 +467,6 @@ def register_commands(bot):
         p = db.get_player(bot.conn, uid)
         if not p:
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
-            return
-        if rules.in_seclusion(p):
-            await interaction.response.send_message("🧘 You are in seclusion. No sparring until you leave.", ephemeral=True)
             return
         hurt = rules.injured_for(p)
         if hurt:
@@ -694,7 +622,7 @@ def register_commands(bot):
             f"You are injured for another **{rules.fmt_duration(left)}**. Healing now costs 🪷 **{cost:,}**.")),
             view=view, ephemeral=True)
 
-    @tree.command(name="cooldown", description="See every timer at once: cooldowns, daily limits, seclusion, injury and boons")
+    @tree.command(name="cooldown", description="See every timer at once: cooldowns, daily limits, injury and boons")
     async def cooldown(interaction: discord.Interaction):
         uid = interaction.user.id
         p = db.get_player(bot.conn, uid)

@@ -42,15 +42,13 @@ def test_boosts_show_up(conn):
     assert d["mult"] == pytest.approx(rules.qi_rate(p, now, techs)[1])
 
 
-def test_eta_counts_waiting_qi_and_seclusion(conn):
+def test_eta_counts_waiting_qi(conn):
     p, techs = make(conn)
     now = p["created_at"] + 3600            # one hour of passive Qi stored
     d = qi.qi_data(p, techs, now)
     need = rules.qi_needed("Mortal", 1)
     assert d["pending"] == pytest.approx(min(need, d["rate"]))
-    p.update(seclusion_start=now, seclusion_end=now + 8 * 3600)
-    d = qi.qi_data(p, techs, now)
-    assert d["secluded"] and d["status"].startswith("In seclusion")
+    assert "Seclusion" not in {r["label"] for r in d["sources"]}
 
 
 def test_full_bar_at_gate(conn):
@@ -78,7 +76,7 @@ def test_dantian_card_renders(conn, monkeypatch):
 
     p, techs = make(conn)
     assert render_dantian(qi.qi_data(p, techs)).size == (1200, H)
-    p["seclusion_start"], p["seclusion_end"] = p["created_at"], p["created_at"] + 3600   # another status
+    p["injured_until"] = p["created_at"] + 10 ** 9                                       # another status
     assert render_dantian(qi.qi_data(p, techs)).size == (1200, H)
     monkeypatch.setattr(profile_card, "FALLBACK_FONTS", ["no-such-font.ttf"])
     monkeypatch.setattr(profile_card, "CJK_CANDIDATES", ["no-such-cjk.otf"])

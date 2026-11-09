@@ -329,34 +329,17 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
     return False, f"💢 **The bottleneck holds.** You lose {lost:,.1f} Qi. Gather it again and retry.{kept}"
 
 
-# ── Passive Qi and seclusion ──────────────────────────────────────────
-
-def in_seclusion(player):
-    return player.get("seclusion_start") is not None
-
+# ── Passive Qi ────────────────────────────────────────────────────────
 
 def passive_qi(player, techniques=(), now=None):
     """(Qi gathered by passive gathering since it was last banked, hours counted). It always gathers at
-    the full Qi Rate, with no limit on how long the player is away; nothing gathers in seclusion
-    (seclusion pays its own way when it ends)."""
+    the full Qi Rate, with no limit on how long the player is away."""
     now = time.time() if now is None else now
-    if in_seclusion(player):
-        return 0.0, 0.0
     since = player.get("qi_collected_at")
     if since is None:
         since = player["created_at"]
     hours = max(0.0, now - since) / 3600
     return qi_rate(player, now, techniques)[0] * hours, hours
-
-
-def seclusion_qi(player, techniques=(), now=None):
-    """(Qi earned, hours, completed). Leaving early cancels the ×2 for the time spent."""
-    now = time.time() if now is None else now
-    start, end = player["seclusion_start"], player["seclusion_end"]
-    done = now >= end
-    hours = (min(now, end) - start) / 3600
-    mult = training.SECLUSION_QI_MULTIPLIER if done else 1.0
-    return qi_rate(player, now, techniques)[0] * mult * hours, hours, done
 
 
 def ordinal(n):
@@ -551,9 +534,6 @@ def status_text(player, now=None):
     land = active_blessed_land(player, now)
     if land:
         parts.append(f"{land[0].replace('_', ' ').title()} ({fmt_duration(land[1])})")
-    if in_seclusion(player):
-        left = (player["seclusion_end"] or 0) - (time.time() if now is None else now)
-        parts.append(f"Seclusion ({fmt_duration(left)} left)" if left > 0 else "Seclusion complete")
     inj = injured_for(player, now)
     if inj:
         parts.append(f"Injured ({fmt_duration(inj)})")

@@ -1193,7 +1193,7 @@ def MAX_TURNS_SPAR():
     return MAX_TURNS
 
 
-# ── /breakthrough and /seclusion confirmations ────────────────────────
+# ── Confirmations (/breakthrough, /physician, ...) ────────────────────────
 
 class ConfirmView(OwnedView):
     """One action button plus Cancel. `action(interaction)` returns the text to show."""

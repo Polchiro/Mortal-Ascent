@@ -31,15 +31,14 @@ def test_timers_show_discord_timestamps():
     db.set_cooldown(conn, 1, "trial:1", 3600, NOW)
     for _ in range(6):
         db.bump_daily(conn, 1, "practice", NOW)
-    db.update_player(conn, 1, injured_until=NOW + 120, seclusion_start=NOW, seclusion_end=NOW + 8 * 3600,
+    db.update_player(conn, 1, injured_until=NOW + 120,
                      pill_grade="Mortal", pill_mult=1.2, pill_expires=NOW + 900,
                      blessing_tier="Spring Rain", blessing_expires=NOW + 86400)
     s = text(cooldowns.timer_sections(conn, db.get_player(conn, 1), NOW))
     assert f"<t:{int(NOW + 600)}:R> · <t:{int(NOW + 600)}:t>" in s["Martial Pursuits"]
-    assert "Barred, 🧘 in seclusion" in s["Martial Pursuits"]          # spar blocked
+    assert "Barred, 🩹 injured" in s["Martial Pursuits"]          # spar blocked
     assert f"<t:{int(NOW + 3600)}:R>" in s["Mastery Trials"]
     assert "6 done · now at 50% gain" in s["Daily Discipline"]
-    assert f"<t:{int(NOW + 8 * 3600)}:R>" in s["Body & Meridians"]
     assert f"<t:{int(NOW + 120)}:R>" in s["Body & Meridians"]
     assert "Ember Dantian Pill" in s["Heavenly Boons"]
 

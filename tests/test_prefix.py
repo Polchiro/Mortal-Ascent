@@ -92,12 +92,9 @@ def test_parse_choices_numbers_and_text(bot):
     kw = parse("index beasts martial warrior")
     assert kw["section"].value == "beasts" and kw["realm"].value == "Martial Warrior"
     assert parse("bestiary mortal")["realm"].value == "Mortal"
-    assert parse("seclusion 12") == {"hours": 12}
     assert parse("practice Iron Fist") == {"technique": "Iron Fist"}
     assert parse("spar technique:Iron Fist") == {"technique": "Iron Fist"}
     assert parse("admin give qi:500 lotus_coins:20") == {"qi": 500, "lotus_coins": 20}
-    with pytest.raises(prefix.UsageError):
-        parse("seclusion 99")
     assert parse("index dragons") == {"search": "dragons"}             # free text searches the Compendium
     with pytest.raises(prefix.UsageError):
         parse("practice")
@@ -124,8 +121,8 @@ def test_commands_run_from_a_message(bot):
     assert "Pills · Overview" in sent[0].kw["embed"].description
     handled, sent = run(bot, "m help")
     assert "m gather" in sent[0].kw["embed"].description and "m craft" in sent[0].kw["embed"].description
-    handled, sent = run(bot, "m seclusion 99")
-    assert "between 8 and 24" in sent[0].content
+    handled, sent = run(bot, "m seclusion 12")                 # removed command: stays quiet
+    assert not handled and not sent
     handled, sent = run(bot, "m internal")
     assert "m internal qi" in sent[0].content
     handled, sent = run(bot, "m help")
