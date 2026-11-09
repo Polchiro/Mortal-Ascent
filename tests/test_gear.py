@@ -2,6 +2,8 @@
 every artifact effect, and the Profile / Equipment cards. Every number is read from equipments.py."""
 import random
 
+from cards import art_icons
+
 import pytest
 
 import alchemy
@@ -198,17 +200,17 @@ def test_get_player_carries_the_worn_artifacts_effects(conn):
 
 # ── bag and /index ────────────────────────────────────────────────────
 
-def test_bag_has_armor_and_artifact_tabs_with_drawn_icons(conn):
+def test_bag_has_armor_and_artifact_tabs_with_painted_icons(conn):
     new_player(conn)
     give(conn, 1, loot.roll_armor("ordinary", random.Random(1)))
     give(conn, 1, loot.artifact("lotus", "ordinary"))
     assert {"armor", "artifacts"} <= set(items.CATEGORIES)
     d, *_ = sheet.bag_data(conn, 1, "artifacts")
-    assert d["tiles"][0]["icon"] == "gear:lotus"
+    assert d["tiles"][0]["icon"] == "art:gear/wooden_lotus_charm"           # its painting (art/icons/gear)
     assert d["tiles"][0]["rarity_key"] == "ordinary"
     assert d["inspect"]["effects"][0] == gear.effect_text(loot.artifact("lotus", "ordinary"))
     d, *_ = sheet.bag_data(conn, 1, "armor")
-    assert d["tiles"][0]["icon"][5:] in eq.ARMOR_TYPE_DISPLAY
+    assert d["tiles"][0]["icon"] in {"art:gear/" + art_icons.slug(n) for n in eq.ARMOR_NAMES["ordinary"].values()}
     assert items.CATEGORIES["armor"].icon == "gear:robe" and items.CATEGORIES["artifacts"].icon == "pearl"
     for cat in ("armor", "artifacts"):
         RENDERERS["inventory"](sheet.bag_data(conn, 1, cat)[0])
@@ -562,7 +564,7 @@ def test_profile_gear_row_has_four_sockets(conn):
     loot.use_item(conn, 1, a["id"])
     d = sheet.profile_data(conn, 1)
     s = d["gear"][2]
-    assert s["icon"] == "gear:mirror" and s["tier"] == "ordinary" and s["name"] == a["name"]
+    assert s["icon"] == "art:gear/polished_bronze_mirror" and s["tier"] == "ordinary" and s["name"] == a["name"]
     assert s["line"] == gear.effect_text(a, tiny=True)
     RENDERERS["profile"](d)
 

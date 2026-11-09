@@ -463,10 +463,25 @@ DRAW = {"grass": _grass, "berry": _berry, "leaf": _leaf_plant, "root": _root, "m
         "flower": _flower, "lily": _lily, "lotus": _lotus, "fruit": _fruit, "dew": _dew, "vine": _vine}
 
 
+# Herb/look-alike pairs whose paintings don't differ in just the detail the look text names (the snake
+# for Snake Moss, a red Shadow Mushroom, a phoenix bird for Phoenix Flower, a red backdrop behind Ghost
+# Grass and Grave Ginseng …). /gather keeps the drawn plants for both of each pair until they are
+# repainted, so a painting never gives the answer away. /index and the bag still show every painting.
+KEEP_DRAWN = {"Spirit Grass", "Ghost Grass", "Golden Ginseng", "Grave Ginseng", "Silver Moss", "Snake Moss", "Moon Mushroom", "Shadow Mushroom", "Jade Lily", "Weeping Lily",
+              "Phoenix Flower", "Fire Thorn", "Heaven Lotus", "Demon Lotus", "Immortal Peach", "Void Fruit"}
+
+
 @lru_cache(maxsize=64)
 def plant(name):
-    """The plant's picture: transparent, PW×PH card pixels at S×."""
-    kind, opts = PLANTS[name]
+    """The plant's picture: transparent, PW×PH card pixels at S×. Its painting (art/icons/herbs) when it
+    has one, else the drawn plant."""
+    from . import art_icons
     img = Image.new("RGBA", P(PW, PH), (0, 0, 0, 0))
+    hit = None if name in KEEP_DRAWN else art_icons.resolve(art_icons.herb(name, ""))
+    if hit:
+        side = round(PH * S)
+        img.alpha_composite(art_icons.image(hit[0], side), ((img.size[0] - side) // 2, 0))
+        return img
+    kind, opts = PLANTS[name]
     DRAW[kind](img, opts)
     return img

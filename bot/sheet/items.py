@@ -20,6 +20,8 @@ import forge
 import technique
 import training
 
+from cards import art_icons
+
 from .. import combat, db, gear, loot, materials
 from .. import player as rules
 
@@ -77,10 +79,15 @@ def rarity(item):
 
 
 def item_icon(item):
-    if item["category"] == "weapons":
-        return (item.get("data") or {}).get("type") or item["key"]
-    if item["category"] in ("armor", "artifacts"):
-        return gear.icon_kind(item)
+    """cards.theme.icon kind of a bag item: its painting (cards/art_icons.py) when there is one."""
+    cat, data = item["category"], item.get("data") or {}
+    if cat in GEAR:
+        return art_icons.gear(base_name(item), gear.icon_kind(item) if cat != "weapons" else
+                              data.get("type") or item["key"])
+    if cat == "herbs":
+        return art_icons.herb(item["name"])
+    if cat == "materials" and data.get("core"):
+        return art_icons.core(data["core"], data.get("grade") or item.get("grade") or "", "mat:core")
     if item["category"] == "manuals" and item.get("grade"):
         return f"emblem:manual:{item['key']}:{item['grade']}"
     if item["category"] == "pills" and item.get("grade"):
@@ -92,8 +99,25 @@ def item_icon(item):
     return CATEGORIES[item["category"]].icon
 
 
+def base_name(item):
+    """The plain name of a weapon / armor / artifact for its tier and type (no quality prefix)."""
+    data, tier = item.get("data") or {}, item.get("grade")
+    try:
+        if item["category"] == "weapons":
+            return equipments.WEAPON_NAMES[tier][data.get("type") or item["key"]]
+        if item["category"] == "armor":
+            return equipments.ARMOR_NAMES[tier][gear.armor_type(item)]
+        if item["category"] == "artifacts":
+            return equipments.ARTIFACT_FAMILIES[gear.family(item)]["names"][equipments.TIERS.index(tier)]
+    except (KeyError, ValueError, IndexError):
+        pass
+    return item.get("name", "")
+
+
 def pill_icon(item):
-    """cards.theme.icon kind for a pill: its type emblem tinted by grade, with the earned pattern rings."""
+    """cards.theme.icon kind for a pill: its painting by type and grade, with the earned patterns."""
+    if item["key"] == "heaven_defying":
+        return "emblem:pill:heaven_defying"
     data = item.get("data") or {}
     kind = data.get("kind") or ("breakthrough" if item["key"] == "heaven_defying" else "qi")
     return f"emblem:pill:{kind}:{data.get('grade') or item['grade']}:{int(data.get('patterns') or 0)}"

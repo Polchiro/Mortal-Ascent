@@ -418,7 +418,10 @@ def socket(img, box, color=GOLD, filled=True, locked=False, tint=True):
 
 
 def medallion(img, center, r, glyph, color, cjk_char=True):
-    """Round gold-ringed seal with a character (school, grade, realm) or a drawn icon inside."""
+    """Round gold-ringed seal with a character (school, grade, realm) or a drawn icon inside.
+    A painted icon (cards/art_icons.py) brings its own ring, so it is drawn alone, a little larger."""
+    if not cjk_char and painted(img, glyph, center, r * 2.25):
+        return
     cx, cy = center
     soft_glow(img, (cx - r - 4, cy - r - 4, cx + r + 4, cy + r + 4), alpha(color, 90), 5)
     d = ImageDraw.Draw(img)
@@ -435,6 +438,8 @@ def medallion(img, center, r, glyph, color, cjk_char=True):
 def seal(img, center, r, glyph, color):
     """A round badge of radius r: a drawn emblem ('emblem:...', it brings its own frame), a drawn icon in a
     medallion ('tech:iron_fist', 'gear:robe', 'pill' …), or a single character in a medallion."""
+    if painted(img, glyph, center, r * 2.25):
+        return
     if glyph.startswith("emblem:"):
         icon(img, glyph, center, r * 2 + 4, color)
     else:
@@ -571,8 +576,34 @@ def chest_art(tier, width):
     return art.resize((max(1, round(art.size[0] * k)), max(1, round(art.size[1] * k))), Image.LANCZOS)
 
 
+def painted(img, kind, center, size):
+    """Draw the painting for this icon kind (cards/art_icons.py) `size` card px wide; False if it has none.
+    A pill's patterns show as small gold dots along its bottom edge."""
+    from . import art_icons
+    hit = art_icons.resolve(kind)
+    if hit is None:
+        return False
+    path, dots = hit
+    px = max(8, round(size * S))
+    art = art_icons.image(path, px)
+    cx, cy = center
+    img.alpha_composite(art, (round(cx * S - px / 2), round(cy * S - px / 2)))
+    if dots:
+        d = ImageDraw.Draw(img)
+        r = max(1.2, size * 0.035)
+        gap = r * 2.6
+        y = cy + size * 0.44
+        x0 = cx - gap * (dots - 1) / 2
+        for i in range(dots):
+            x = x0 + i * gap
+            d.ellipse(P(x - r, y - r, x + r, y + r), fill=GOLD_HI, outline=(40, 24, 8))
+    return True
+
+
 def icon(img, kind, center, size, color):
-    """Draw a small icon centred at `center`, `size` pixels tall."""
+    """Draw a small icon centred at `center`, `size` pixels tall (its painting when it has one)."""
+    if painted(img, kind, center, size * 1.18):
+        return
     d = ImageDraw.Draw(img)
     cx, cy = center
     s = size / 2

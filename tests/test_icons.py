@@ -12,7 +12,7 @@ import technique
 from bot import compendium, crafting, loot
 from bot import player as rules
 from bot.sheet import items
-from cards import battle_icons
+from cards import art_icons, battle_icons
 from cards import emblems as E
 from cards import theme as T
 from cards.technique_icons import SCHOOL_ICON, TECH_ICON, tech_kind
@@ -110,12 +110,15 @@ def is_cjk(s):
     return any("㐀" <= ch <= "鿿" for ch in s)
 
 
-def test_bag_tabs_and_gear_use_drawn_icons():
+def test_bag_tabs_and_gear_use_painted_icons():
     assert items.CATEGORIES["armor"].icon == "gear:robe" and items.CATEGORIES["artifacts"].icon == "pearl"
     assert not any(is_cjk(c.icon) for c in items.CATEGORIES.values())
     armor = loot.roll_armor("spirit", random.Random(1))
-    assert items.item_icon(armor) == "gear:" + armor["key"]
-    assert items.item_icon(loot.artifact("bell", "divine")) == "gear:bell"
+    assert items.item_icon(armor) == "art:gear/" + art_icons.slug(equipments.ARMOR_NAMES["spirit"][armor["key"]])
+    assert items.item_icon(loot.artifact("bell", "divine")) == "art:gear/chaos_bell_of_the_eastern_sovereign"
+    assert items.item_icon(loot.herb("Heaven", "qi")) == "art:herbs/heaven_lotus"
+    assert items.item_icon(loot.beast_core("beast_king", "Martial Saint")) == "art:cores/beast_king_heaven"
+    assert items.item_icon({"category": "pills", "key": "heaven_defying", "grade": "Heaven"}) == "emblem:pill:heaven_defying"
     assert items.item_icon(loot.manual("iron_fist")) == "emblem:manual:iron_fist:Mortal"
     assert items.item_icon(loot.pill("Yellow")) == "emblem:pill:qi:Yellow:0"
     assert items.item_icon(crafting.crafted_pill("mending", "Earth", 5)) == "emblem:pill:mending:Earth:5"
@@ -187,3 +190,34 @@ def test_herbs_craft_stages_and_craft_buttons_are_drawn():
     assert not any(v[2] for v in alchemy_icons.ICONS.values())
     names = ["ma_" + alchemy_icons.EMOJI_NAME.get(k, k) for k in alchemy_icons.ICONS]
     assert len(set(names)) == len(names) and all(len(n) <= 32 for n in names)
+
+
+def test_every_item_has_a_painting_and_it_draws():
+    """Weapons, armor, artifacts, herbs, look-alikes, techniques, pills, forging materials and Beast Cores
+    all have a painting (art/icons), and a painted icon draws without its drawn medallion."""
+    import alchemy
+    import forge
+    names = [n for t in equipments.TIERS for n in equipments.WEAPON_NAMES[t].values()]
+    names += [n for t in equipments.TIERS for n in equipments.ARMOR_NAMES[t].values()]
+    names += [n for f in equipments.ARTIFACT_FAMILIES.values() for n in f["names"]]
+    for n in names:
+        assert art_icons.gear(n, None), n
+    for g in alchemy.GRADES:
+        for n, _ in list(alchemy.HERBS[g].values()) + alchemy.DECOYS[g]:
+            assert art_icons.herb(n, None), n
+        for kind in ("qi", "burst", "mending", "cleansing", "breakthrough"):
+            assert art_icons.resolve(f"emblem:pill:{kind}:{g}:3"), (kind, g)
+        for tier in ("normal", "elite", "beast_king"):
+            assert art_icons.core(tier, g, None), (tier, g)
+    for key in technique.TECHNIQUES:
+        assert art_icons.resolve("tech:" + key), key
+    for key, m in forge.all_materials().items():
+        if m["kind"] != "essence":
+            assert art_icons.resolve("mat:" + key), key
+    for r in forge.RARITIES:
+        assert art_icons.resolve("passive:" + r), r
+    img = Image.new("RGBA", (200 * T.S, 200 * T.S), (0, 0, 0, 255))
+    T.seal(img, (100, 100), 40, "emblem:pill:qi:Earth:6", T.GOLD)
+    T.icon(img, "art:gear/iron_sword", (100, 100), 60, T.GOLD)
+    assert img.getbbox()
+    assert not art_icons.resolve("gear:robe") and not art_icons.resolve("art:gear/nothing_here")
