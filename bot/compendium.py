@@ -150,38 +150,52 @@ def beasts_page(realm):
     for name, tier, role in beast_rules.BEASTS[realm]:
         hp, atk, dfn = beast_multipliers(tier, role, realm)
         element = beast_rules.element_of(name)
-        tiles.append(tile(f"emblem:beast:{realm}:{element}", T.ELEMENT_ACCENTS[element].rim, name, [
-            f"{role.title()} ({ROLE_TRAIT[role]}) · {element}",
-            f"HP ×{hp:.2g}  ATK ×{atk:.2g}  DEF ×{dfn:.2g}",
+        tiles.append(tile(art_icons.kind("beasts", name, f"emblem:beast:{realm}:{element}"),
+                          T.ELEMENT_ACCENTS[element].rim, name, [
+            f"{element} · {role.title()}",
+            f"HP ×{hp:.2g} · ATK ×{atk:.2g} · DEF ×{dfn:.2g}",
             f"{beast_rank_text(tier)} · chest {pct(explore.BEAST_CHEST[tier]['chance'])}",
         ], badge=(TIER_LABEL[tier], RANK_COLOR[tier])))
     return dict(
         tier_label=realm, tier_word=False,
         subtitle=f"Met in /explore as a {realm}",
-        intro="Strength is a multiple of a cultivator at the same realm and layer.",
         tiles=tiles,
-        footer="Elites and Beast Kings are hunted as a team from lairs in /explore. "
-               "/bestiary shows the exact numbers against you.")
+        footer="/bestiary shows the exact numbers against you.")
+
+
+def ov(name, fallback):
+    """A painted overview symbol (art/icons/index/ov_<name>), else the drawn `fallback`."""
+    return art_icons.index("ov_" + name, fallback)
+
+
+BEAST_TIER_ICON = {"normal": "normal", "elite": "elite", "beast_king": "king"}
+
+
+def chest_range(tiers):
+    """'Rare–Mythic': the lowest and highest chest a drop table can give."""
+    names = [loot.CHEST_NAMES[c].split()[0] for c in loot.CHEST_ORDER if c in tiers]
+    return names[0] if len(names) == 1 else f"{names[0]}–{names[-1]}"
 
 
 def beasts_overview():
     tiles = []
-    for tier, spec in explore.BEAST_CHEST.items():
-        t = beast_rules.BEAST_TIERS[tier]
-        tiles.append(tile(f"emblem:beast_tier:{tier}", RANK_COLOR[tier],
+    for tier in reversed(list(explore.BEAST_CHEST)):       # Beast King first
+        spec, t = explore.BEAST_CHEST[tier], beast_rules.BEAST_TIERS[tier]
+        tiles.append(tile(ov(BEAST_TIER_ICON[tier], f"emblem:beast_tier:{tier}"), RANK_COLOR[tier],
                           TIER_LABEL[tier] + ("" if tier == "beast_king" else " beasts"), [
                               f"HP ×{t['hp']:g} · ATK ×{t['attack']:g}",
                               beast_rank_text(tier),
-                              f"Chest {pct(spec['chance'])}: " + odds_text(spec["tiers"], lambda c: loot.CHEST_NAMES[c]),
-                          ]))
+                              f"Chest {pct(spec['chance'])}: {chest_range(spec['tiers'])}",
+                          ], cjk=False, group="Tiered beasts"))
     for role, trait in ROLE_TRAIT.items():
         r = beast_rules.ROLES[role]
         mult = " · ".join(f"{rules.STAT_LABELS[k]} ×{v:g}" for k, v in r.items() if k in rules.STAT_LABELS)
-        tiles.append(tile(ROLE_ICON[role], T.GOLD, role.title(), [trait.capitalize(), mult], cjk=False))
+        tiles.append(tile(ov(role, ROLE_ICON[role]), T.GOLD, role.title(), [trait.capitalize(), mult], cjk=False,
+                          group="Special traits"))
     return dict(subtitle="Every beast, realm by realm",
-                intro="Pick a realm in the menu. Strength is a multiple of a cultivator at the same realm and layer.",
+                intro="Strength is a multiple of a cultivator at your realm and layer.",
                 tiles=tiles,
-                footer="Normal beasts appear in /explore. Elites and Beast Kings are hunted as a team from lairs.")
+                footer="Normal beasts roam /explore. Elites and Beast Kings are team hunts from lairs.")
 
 
 # ── Techniques ────────────────────────────────────────────────────────
@@ -271,7 +285,7 @@ def artifacts_page(tier):
         for fam, spec in equipments.ARTIFACT_FAMILIES.items():
             if spec["group"] == group:
                 tiles.append(tile(art_icons.gear(spec["names"][i], "gear:" + fam), T.RARITY[tier], spec["names"][i], [
-                    f"{label} · {fam.title()}",
+                    f"{fam.title()} family",
                     gear.effect_text({"category": "artifacts", "key": fam, "grade": tier}),
                 ], cjk=False, group=label))
     return dict(
@@ -311,6 +325,13 @@ def armor_overview():
     return gear_overview("armor")
 
 
+def value_range(lo, hi):
+    """'+5% Strike>Break', '+25% Strike>Break' → '+5% → +25% Strike>Break' (the shared words once)."""
+    a, _, rest_a = lo.partition(" ")
+    b, _, rest_b = hi.partition(" ")
+    return f"{a} → {b} {rest_a}".strip() if rest_a == rest_b else f"{lo} → {hi}"
+
+
 def artifacts_overview():
     tiles = []
     for group, label in gear.GROUP_LABEL.items():
@@ -318,15 +339,13 @@ def artifacts_overview():
             if spec["group"] == group:
                 lo = gear.effect_text({"category": "artifacts", "key": fam, "grade": equipments.TIERS[0]}, tiny=True)
                 hi = gear.effect_text({"category": "artifacts", "key": fam, "grade": equipments.TIERS[-1]}, tiny=True)
-                tiles.append(tile(art_icons.gear(spec["names"][2], "gear:" + fam), T.GOLD, f"{fam.title()} family", [
-                    f"{label} · {spec['text']}", f"Ordinary {lo} · Divine {hi}"], cjk=False, group=label))
+                tiles.append(tile(art_icons.gear(spec["names"][2], "gear:" + fam), T.GOLD, fam.title(), [
+                    spec["text"], value_range(lo, hi)], cjk=False, group=label))
     return dict(
         subtitle="Every family, by tier",
-        intro=(f"{equipments.ARTIFACT_SLOTS} artifact slots, open from the start. Same realm needs as weapons. "
-               f"Combat ones work at {pct(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH)} in Fair Duels."),
+        intro=f"{equipments.ARTIFACT_SLOTS} slots. Combat ones work at {pct(equipments.DUEL_COMBAT_ARTIFACT_STRENGTH)} in duels.",
         tiles=tiles,
-        footer="Artifact chance per chest: " + chest_list(equipments.CHEST_ARTIFACT_CHANCE.items())
-               + " (Treasure and Divine only in Legendary and Mythic Chests)")
+        footer="Chance per chest: " + chest_list(equipments.CHEST_ARTIFACT_CHANCE.items()))
 
 
 # ── Chests ────────────────────────────────────────────────────────────
@@ -473,28 +492,31 @@ def pills_page(kind):
 
 def pills_overview():
     tox = " · ".join(f"{t}+: ×{m:g}" for t, m in training.PILL_TOXICITY_PENALTY if t)
-    patterns = " · ".join(f"{pct(score)}+: {n}" for score, n in alchemy.SCORE_TO_PATTERNS[::2])
-    ranks = " · ".join(f"{RANK_NAMES.get(r, f'{r}th')} {exp:,}" for r, exp in alchemy.ALCHEMIST_RANK_EXP.items() if r > 1)
-    cores = " · ".join(f"{loot.CORE_NAMES[t].replace(' Beast', '')} {pct(c)}" for t, c in alchemy.BEAST_CORE_DROP.items())
+    top = alchemy.SCORE_TO_PATTERNS[0]
+    cores = " · ".join(f"{loot.CORE_NAMES[t].replace(' Beast Core', '').replace(' Core', '')} {pct(c)}"
+                       for t, c in alchemy.BEAST_CORE_DROP.items())
+    hd = talent_rules.HEAVEN_DEFYING_PILL
     tiles = [
-        tile("skull", T.GLOW, "Pill toxicity", [f"Toxicity {tox}",
-                                                f"Drops by 1 every {training.TOXICITY_DECAY_HOURS} hours"], cjk=False),
-        tile("emblem:pill:qi:Earth:9", T.GOLD, "Pill patterns", cjk=False, lines=[f"1–9 from the craft score: {patterns}",
-                                             f"Below {pct(alchemy.EXPLODE_BELOW)} the cauldron explodes",
-                                             f"Effect ×{alchemy.pattern_effect(1):.2f} … ×{alchemy.pattern_effect(9):.2f};"
-                                             " 8+ patterns add no toxicity"]),
-        tile("gear:furnace", T.GOLD, "Alchemist rank", ["Everyone starts at 1st Grade", f"Total EXP: {ranks}"],
+        tile(ov("toxicity", "skull"), T.GLOW, "Pill toxicity", [f"Toxicity {tox}",
+                                                                f"−1 every {training.TOXICITY_DECAY_HOURS} hours"],
              cjk=False),
-        tile(art_icons.core("elite", "Mystic", "gear:qi"), T.MOON, "Beast Cores", cjk=False, lines=["Breakthrough pills need one of their grade",
-                                           f"Drops: {cores}", "Elite and King cores from team hunts"]),
-        tile(HEAVEN_DEFYING, T.RARITY["Heaven"], "Heaven-Defying Pill", cjk=False, lines=[
-            f"Raises talent one rank (up to {talent_rules.HEAVEN_DEFYING_PILL['max_talent']})",
-            "Legendary Chests " + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["legendary"]) + ", Mythic "
-            + pct(talent_rules.HEAVEN_DEFYING_PILL["chest_chance"]["mythic"]) + " · cannot be traded"]),
+        tile(ov("patterns", "emblem:pill:qi:Earth:9"), T.GOLD, "Pill patterns", cjk=False, lines=[
+            f"1–9 by craft score ({pct(top[0])}+: {top[1]})",
+            f"Under {pct(alchemy.EXPLODE_BELOW)}: it explodes",
+            "8+ patterns add no toxicity"]),
+        tile(ov("rank", "gear:furnace"), T.GOLD, "Alchemist rank", [
+            "Starts at 1st Grade", f"9th Grade: {alchemy.ALCHEMIST_RANK_EXP[max(alchemy.ALCHEMIST_RANK_EXP)]:,} EXP"],
+             cjk=False),
+        tile(ov("cores", art_icons.core("elite", "Mystic", "gear:qi")), T.MOON, "Beast Cores", cjk=False, lines=[
+            "Breakthrough pills use one", cores]),
+        tile("emblem:pill:heaven_defying", T.RARITY["Heaven"], "Heaven-Defying Pill", cjk=False, lines=[
+            f"Talent +1 rank (up to {hd['max_talent']})",
+            f"Chests: Legendary {pct(hd['chest_chance']['legendary'])} · Mythic {pct(hd['chest_chance']['mythic'])}",
+            "Cannot be traded"]),
     ]
     return dict(subtitle="Toxicity, patterns and rare pills",
-                intro="Pills add toxicity and too much weakens the next ones. Cleansing pills wash it out.",
-                tiles=tiles, footer="Craft pills in /craft from herbs you /gather. Pick a pill kind in the menu.")
+                intro="Cleansing pills wash out toxicity.",
+                tiles=tiles, footer="Craft pills in /craft from herbs you /gather.")
 
 
 # ── Herbs ─────────────────────────────────────────────────────────────
@@ -523,33 +545,32 @@ def odds_pct(c):
 
 def herbs_overview():
     lo, hi = alchemy.HERB_PATCH_HERBS
-    streak = " · ".join(f"{s}+: ×{m:g}" for s, m in reversed(alchemy.STREAK_BONUS) if m > 1)
+    streak = " · ".join(f"{s}+: ×{m:g}" for s, m in alchemy.STREAK_BONUS if m > 1)
     ages = " · ".join(f"{age}y {pct(a['chance'])}" for age, a in alchemy.HERB_AGES.items())
     tiles = [
-        tile("herb", T.JADE, "Pick the right plant", ["The bot names a herb and describes it",
-                                                      f"Look-alike: −{pct(alchemy.DECOY_HP_LOSS)} HP, nothing gathered",
-                                                      "Too slow: nothing gathered"], cjk=False),
-        tile("hourglass", T.GOLD, "Time to pick", [" · ".join(f"{t} {s}s" for t, s in alchemy.GATHER_SECONDS.items())],
-             cjk=False),
-        tile("star", T.LOTUS, "Herb age", [ages, "Older herbs: better craft score, more patterns"], cjk=False),
-        tile("flame", T.GLOW, "Herbal Insight", [f"Right picks in a row: {streak}",
-                                                 "A wrong pick or a timeout resets it"], cjk=False),
-        tile("skull", DECOY_COLOR, "Old herbs fight back", [
-            f"{alchemy.OLD_HERB_FROM_AGE}-year+: {alchemy.OLD_HERB_CHOICES} choices, "
+        tile(ov("pick", "herb"), T.JADE, "Pick the right plant", [
+            "Find the herb the bot names", f"Look-alike: −{pct(alchemy.DECOY_HP_LOSS)} HP"], cjk=False),
+        tile(ov("time", "hourglass"), T.GOLD, "Time to pick",
+             [" · ".join(f"{t} {s}s" for t, s in alchemy.GATHER_SECONDS.items())], cjk=False),
+        tile(ov("age", "star"), T.LOTUS, "Herb age", [ages, "Older: more patterns"], cjk=False),
+        tile(ov("insight", "flame"), T.GLOW, "Herbal Insight", [f"Streak {streak}", "A miss resets it"], cjk=False),
+        tile(ov("old", "skull"), DECOY_COLOR, "Old herbs fight back", [
+            f"{alchemy.OLD_HERB_FROM_AGE}y+: {alchemy.OLD_HERB_CHOICES} choices, "
             f"{alchemy.OLD_HERB_SECONDS_LESS}s less", "Miss and it escapes"], cjk=False),
-        tile("gear:focus", T.MOON, "Wandering Spirit", cjk=False, lines=[
-            f"Every {alchemy.SPIRIT_CHECK_EVERY[0]}–{alchemy.SPIRIT_CHECK_EVERY[1]} gathers it asks a question",
-            f"Miss {alchemy.SPIRIT_CHECK_FAILS_TO_PAUSE} in a row: pause {alchemy.SPIRIT_CHECK_PAUSE_MINUTES} min"]),
-        tile("herb", T.ASH, "Herb types", [" · ".join(f"{loot.TYPE_LABEL[t]} {pct(c)}"
-                                                      for t, c in alchemy.HERB_TYPE_CHANCE.items())], cjk=False),
-        tile("chest", T.LOTUS, "Other sources", [f"Herb Patches in /explore: {lo}–{hi} herbs, same odds",
-                                                 f"Merchants sell 10-year herbs ({MERCHANT_HERB_PRICE} coins)"],
+        tile(ov("spirit", "gear:focus"), T.MOON, "Wandering Spirit", cjk=False, lines=[
+            f"Asks every {alchemy.SPIRIT_CHECK_EVERY[0]}–{alchemy.SPIRIT_CHECK_EVERY[1]} gathers",
+            f"Miss {alchemy.SPIRIT_CHECK_FAILS_TO_PAUSE}: {alchemy.SPIRIT_CHECK_PAUSE_MINUTES} min pause"]),
+        tile(ov("types", "herb"), T.ASH, "Herb types", [" · ".join(f"{loot.TYPE_LABEL[t]} {pct(c)}"
+                                                                   for t, c in alchemy.HERB_TYPE_CHANCE.items())],
+             cjk=False),
+        tile(ov("sources", "chest"), T.LOTUS, "Other sources", [f"Herb Patches in /explore: {lo}–{hi}",
+                                                                f"Merchants: {MERCHANT_HERB_PRICE} coins each"],
              cjk=False),
     ]
     return dict(subtitle="How to /gather",
-                intro="Use /gather as long as you like. Poisonous look-alikes differ in one detail.",
+                intro="Look-alikes differ in one detail.",
                 tiles=tiles,
-                footer="Every grade at every realm. Mortal odds: "
+                footer="Mortal odds: "
                        + " · ".join(f"{g} {odds_pct(c)}" for g, c in alchemy.herb_grade_odds("Mortal").items())
                        + ". Higher realms are luckier.")
 
@@ -568,20 +589,24 @@ def realms_for_tier(n):
     return [r for r in rules.REALM_ORDER if forge.tier_for_realm(r) == n]
 
 
+def spread(chances):
+    """[(chest, chance)] → 'Common 15% → Mythic 75%' (the lowest and highest chest)."""
+    (c0, p0), (c1, p1) = chances[0], chances[-1]
+    return f"{loot.CHEST_NAMES[c0].split()[0]} {pct(p0)} → {loot.CHEST_NAMES[c1].split()[0]} {pct(p1)}"
+
+
 def material_sources(kind, n=None):
     """Where a material kind drops (short text)."""
-    beast = f"{pct(forge.BEAST_DROPS['normal']['binding'][0])} Normal beasts, more from Elites and Kings"
+    beast = f"{pct(forge.BEAST_DROPS['normal']['binding'][0])} from Normal, more from Elites"
     return {
         "weapon": f"Ore Vein in /explore ({forge.ORE_VEIN['metal'][0]}–{forge.ORE_VEIN['metal'][1]})",
         "armor": f"Beasts: {beast}",
-        "artifact": "Chests (" + ", ".join(f"{loot.CHEST_NAMES[c].split()[0]} {pct(p)}"
-                                           for c, (p, _) in forge.CHEST_JADE.items()) + ")",
+        "artifact": "Chests: " + spread([(c, p) for c, (p, _) in forge.CHEST_JADE.items()]),
         "binding": f"Beasts: {beast}",
         "fuel": f"Ore Vein in /explore ({pct(forge.ORE_VEIN['fuel_chance'])})",
         "liquid": f"Springs while you /gather ({pct(forge.GATHER_SPRING_CHANCE)} per herb)",
-        "seal": "Chests (" + ", ".join(f"{loot.CHEST_NAMES[c].split()[0]} {pct(p)}"
-                                       for c, p in forge.CHEST_SEAL_STONE.items() if p)
-                + f") · Shop {forge.SEAL_STONE_PEARLS} Moon Pearls",
+        "seal": "Chests: " + spread([(c, p) for c, p in forge.CHEST_SEAL_STONE.items() if p])
+                + f" · Shop {forge.SEAL_STONE_PEARLS} Pearls",
     }[kind]
 
 
@@ -637,12 +662,13 @@ def essences_page():
     for fam, spec in forge.FAMILIES.items():
         gear_list = " & ".join(GEAR_WORD[g] for g in spec["gear"])
         tiles.append(tile(f"mat:essence:{fam}:crystal", T.GOLD, f"{spec['name']} essence",
-                          [f"{gear_list} passives", essence_source(fam)], cjk=False,
+                          ([f"{gear_list} passives"] if len(spec["gear"]) > 1 else []) + [essence_source(fam)],
+                          cjk=False,
                           group=GEAR_WORD[spec["gear"][0]]))
     caps = " · ".join(f"{g['name']} up to {g['max_rarity']}" for g in forge.ESSENCE_GRADES.values())
     return dict(tier_label="Essences", tier_word=False, subtitle="13 families × Shard / Crystal / Heart",
-                intro="An essence makes the forge pick a passive of its family. " + caps + ".",
-                tiles=tiles, footer="Without an essence the passive comes from every family of that gear.")
+                intro=caps,
+                tiles=tiles, footer="An essence picks the passive's family. Without one, any family can come.")
 
 
 def materials_overview():
@@ -655,15 +681,15 @@ def materials_overview():
                                                             material_sources("artifact")], cjk=False),
         tile("mat:binding:3", T.GOLD, "Bindings", ["Beast Bone → Chaos Crystal", material_sources("binding")],
              cjk=False),
-        tile("mat:fuel:3", T.GOLD, "Fuel", ["Optional: widens the Ignite zone", material_sources("fuel")], cjk=False),
-        tile("mat:liquid:3", T.GOLD, "Quench liquids", ["Optional: widens the Quench window",
+        tile("mat:fuel:3", T.GOLD, "Fuel", ["Optional: wider Ignite zone", material_sources("fuel")], cjk=False),
+        tile("mat:liquid:3", T.GOLD, "Quench liquids", ["Optional: wider Quench window",
                                                         material_sources("liquid")], cjk=False),
-        tile("mat:essence:fortune:crystal", T.GOLD, "Essences", ["Optional: picks the passive's family",
+        tile("mat:essence:fortune:crystal", T.GOLD, "Essences", ["Optional: picks the passive family",
                                                                  "Beasts, chests, craft, practice, train"], cjk=False),
         tile("mat:seal", T.GOLD, "Seal Stone", ["Locks a slot for Replace", material_sources("seal")], cjk=False),
     ]
     return dict(subtitle="What goes into /forge", tiles=tiles,
-                intro="Tier 1–5 materials forge Ordinary → Divine gear. They don't use bag slots.",
+                intro="Tier 1–5 materials forge Ordinary → Divine gear.",
                 footer="Recipe: " + " · ".join(f"{gear_tier_label(t)} {r['base']}+{r['binding']}"
                                                for t, r in forge.RECIPE.items()) + " (base + binding)")
 

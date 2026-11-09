@@ -144,7 +144,7 @@ def test_compendium_uses_emblems_not_seal_characters():
                 assert not is_cjk(t["glyph"]), (section, t["name"])
     assert compendium.tier_page("beasts")["seal"] == "emblem:book"
     beast = compendium.tier_page("beasts", "Martial King")["tiles"][0]
-    assert beast["glyph"].startswith("emblem:beast:Martial King:")
+    assert beast["glyph"] == "art:beasts/" + art_icons.slug(beast["name"])        # its painted portrait
 
 
 def test_rare_drop_announcements_carry_their_emblem():
