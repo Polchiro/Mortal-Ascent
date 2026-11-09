@@ -20,9 +20,10 @@ import explore as explore_rules
 import technique as technique_rules
 import talent as talent_rules
 import training
+from cards.breakthrough import render_breakthrough
 from cards.dantian import render_dantian
 
-from . import (admin, combat, cooldowns, crafting, db, duel_view, forge_view, leaderboard_view, quest_view, trade_view, gathering, guide, hunt, instance, loot,
+from . import (admin, breakthrough_card, combat, cooldowns, crafting, db, duel_view, forge_view, leaderboard_view, quest_view, trade_view, gathering, guide, hunt, instance, loot,
                materials, passive, prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
@@ -465,26 +466,40 @@ def register_commands(bot):
             risk = "The Old Master guides you; this first gate cannot fail."
 
         async def attempt():
+            from .sheet.view import fetch_avatar
+            avatar = await fetch_avatar(interaction.user)
             async with bot.db_lock:
                 fresh = db.get_player(bot.conn, uid)
+                rules.refill_bar(fresh)
+                before = dict(fresh)
+                gate, gate_target = rules.next_gate(fresh)
                 use = None
                 if next_gate_is_realm(fresh):
                     use = crafting.best_breakthrough_pill(bot.conn, uid, fresh)
                     if use and rules.breakthrough_chance(fresh) >= 1:
                         use = None
                 realm_before = fresh["realm"]
+                odds = min(1.0, (rules.breakthrough_chance(fresh) or 0) + (use[1] if use else 0))
                 ok, msg = rules.attempt_breakthrough(fresh, db.get_techniques(bot.conn, uid),
                                                      bonus=use[1] if use else 0)
+                dew = None
                 if ok is not None:
                     save_progress(uid, fresh)
                 if ok:
                     dew = materials.breakthrough_dew("realm" if fresh["realm"] != realm_before else "phase")
                     loot.store(bot.conn, uid, dew)
                     msg += "\n✨ Heaven's dew settles on you: " + ", ".join(materials.lines(dew))
-                    if use:
-                        db.remove_item(bot.conn, use[0]["id"])
-                        msg += f"\n🏔️ The **{use[0]['name']}** dissolves into your meridians."
-            return embed("⛰️ Breakthrough", f"{msg}\n{qi_line(fresh)}")
+                if ok is not None and use:          # the pill is used up either way
+                    db.remove_item(bot.conn, use[0]["id"])
+                    msg += f"\n🏔️ The **{use[0]['name']}** dissolves into your meridians."
+            e = embed("⛰️ Breakthrough", f"{msg}\n{qi_line(fresh)}")
+            if ok is None:
+                return e
+            data = breakthrough_card.card_data(fresh["name"], before, fresh, gate, gate_target, ok, odds,
+                                               pill=use[0] if use else None, dew=dew, avatar=avatar)
+            image = await card_render.render(render_breakthrough, data)
+            e.set_image(url="attachment://breakthrough.png")
+            return e, png(image, "breakthrough.png")
 
         view = ConfirmView(uid, "Attempt breakthrough", attempt, style=discord.ButtonStyle.success, emoji="⛰️")
         await interaction.response.send_message(embed=embed("⛰️ Breakthrough", (
