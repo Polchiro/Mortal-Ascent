@@ -788,62 +788,107 @@ def render_battle(data):
 
 
 # ── Duels (docs/pvp.md) ───────────────────────────────────────────────
-# The same frame: the scene shows both fighters facing each other on the duelling ground, the panel
-# below has one big half per player, and the bottom bar shows the last turn (or the result).
+# A night-sky arena: each fighter sits in a painted rune ring (their Discord avatar inside it, or the
+# painted figure when they have none), TURN and VS in silver between them, then one glass panel with a
+# half per player (badge, name, realm, HP bar, last move) and the last turn along its bottom.
 # Picks stay secret: a side only shows "LOCKED IN", never what was picked, until the reveal.
 
 DUEL_SIDE_COLORS = [(92, 150, 236), (232, 120, 72)]
-DUEL_AVATAR = [(230, 214), (970, 214)]
-DUEL_AVATAR_R = 116
+DUEL_AVATAR = [(230, 206), (970, 206)]
+DUEL_AVATAR_R = 132                       # the rune ring's outer radius
+DUEL_FACE = 0.735                         # the portrait inside it, as a share of that radius
+DUEL_BOX = (14, 412, 1186, 848)           # the glass panel
+DUEL_LAST = (34, 744, 1166, 830)          # the last-turn bar inside it
+SILVER_HI, SILVER_LO = (244, 247, 252), (138, 152, 182)
+NAVY_TEXT = (176, 186, 206)
+DUEL_GOLD = (198, 164, 98)
 
 
-def _robed(size, color):
-    """A robed silhouette with rim light, for a fighter without an avatar."""
-    w = h = size
-    mask = Image.new("L", (w, h), 0)
-    _human(ImageDraw.Draw(mask), w, h, hat=False)
-    img = T.vgradient((w, h), mix(color, (0, 0, 0), 0.55), (10, 8, 12))
-    glow = Image.new("RGBA", (w, h), color + (0,))
-    glow.putalpha(mask.filter(ImageFilter.GaussianBlur(6 * S)))
-    img.alpha_composite(glow)
-    body = T.vgradient((w, h), (22, 18, 24), (4, 4, 6))
-    body.putalpha(mask)
-    img.alpha_composite(body)
-    return img
+def _scene_art(name):
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "scenes", name)
+
+
+@lru_cache(maxsize=2)
+def _galaxy(w, h, seed=21):
+    """The deep-blue night sky behind the duel (drawn once, then cached)."""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    W_, H_ = round(w * S), round(h * S)
+    y = np.linspace(0, 1, H_)[:, None]
+    base = np.zeros((H_, W_, 3))
+    base[...] = np.array([9, 15, 32]) * (1 - y[..., None] * 0.35)
+    small = Image.new("RGB", (W_ // 16, H_ // 16))
+    sp = (rng.random((H_ // 16, W_ // 16, 1)) ** 3 * np.array([30, 42, 78])).astype("uint8")
+    small = Image.fromarray(sp).resize((W_, H_), Image.BICUBIC).filter(ImageFilter.GaussianBlur(40 * S))
+    clouds = np.asarray(small).astype(float)
+    band = np.exp(-((np.linspace(-1, 1, W_)[None, :] * 0.8 - (y - 0.35) * 1.2) ** 2) / 0.08)[..., None]
+    img = np.clip(base + clouds * 1.1 + band * np.array([10, 16, 34]), 0, 255).astype("uint8")
+    sky = Image.fromarray(img).convert("RGBA")
+    d = ImageDraw.Draw(sky)
+    for _ in range(420):
+        x, yy = rng.random() * W_, rng.random() * H_
+        r = rng.choice([0.6, 0.8, 1.0, 1.4]) * S
+        a = int(rng.integers(70, 230))
+        d.ellipse((x - r, yy - r, x + r, yy + r), fill=(220, 230, 255, a))
+    return sky
+
+
+@lru_cache(maxsize=4)
+def _ring(side, px):
+    art = Image.open(_scene_art(f"duel_ring_{'left' if side == 0 else 'right'}.png")).convert("RGBA")
+    return art.resize((px, px), Image.LANCZOS)
+
+
+@lru_cache(maxsize=4)
+def _ring_band(side, px):
+    """The ring with its middle cut out, to lay over an avatar."""
+    art = _ring(side, px).copy()
+    cut = Image.new("L", (px * 2, px * 2), 0)
+    r = px * DUEL_FACE / 1.1          # the ring art carries a 10% margin around the outer rim
+    ImageDraw.Draw(cut).ellipse((px - r, px - r, px + r, px + r), fill=255)
+    cut = cut.filter(ImageFilter.GaussianBlur(px * 0.01)).resize((px, px), Image.LANCZOS)
+    art.putalpha(ImageChops.subtract(art.getchannel("A"), cut))
+    return art
+
+
+@lru_cache(maxsize=2)
+def _badge(px):
+    return Image.open(_scene_art("duel_badge.png")).convert("RGBA").resize((px, px), Image.LANCZOS)
 
 
 def _avatar(img, center, r, side, acc):
-    """The fighter's Discord avatar (or a robed silhouette) in a round gold frame."""
+    """The fighter in the rune ring: their Discord avatar, or the ring's painted figure."""
     cx, cy = center
-    color = DUEL_SIDE_COLORS[side["index"] % 2]
+    i = side["index"] % 2
     if side.get("winner"):
-        T.soft_glow(img, (cx - r - 30, cy - r - 30, cx + r + 30, cy + r + 30), alpha(T.GOLD_HI, 170), 14)
+        T.soft_glow(img, (cx - r - 26, cy - r - 26, cx + r + 26, cy + r + 26), alpha(T.GOLD_HI, 170), 16)
     else:
-        T.soft_glow(img, (cx - r - 18, cy - r - 18, cx + r + 18, cy + r + 18), alpha(color, 130), 12)
-    size = round(2 * r * S)
+        T.soft_glow(img, (cx - r - 10, cy - r - 10, cx + r + 10, cy + r + 10), (70, 130, 230, 70), 16)
+    px = round(2 * r * 1.1 * S)
+    pos = (round(cx * S - px / 2), round(cy * S - px / 2))
     face = None
     if side.get("avatar_bytes"):
         try:
             import io
-            face = Image.open(io.BytesIO(side["avatar_bytes"])).convert("RGBA").resize((size, size), Image.LANCZOS)
+            fr = round(2 * r * DUEL_FACE * S)
+            face = Image.open(io.BytesIO(side["avatar_bytes"])).convert("RGBA").resize((fr, fr), Image.LANCZOS)
+            m = Image.new("L", (fr, fr), 0)
+            ImageDraw.Draw(m).ellipse((0, 0, fr - 1, fr - 1), fill=255)
+            face.putalpha(m)
         except Exception:
             face = None
-    if face is None:
-        face = _robed(size, color)
+    layer = Image.new("RGBA", (px, px), (0, 0, 0, 0))
+    if face is not None:
+        layer.alpha_composite(face, ((px - face.size[0]) // 2, (px - face.size[1]) // 2))
+        layer.alpha_composite(_ring_band(i, px))
+    else:
+        layer.alpha_composite(_ring(i, px))
     if side.get("loser"):
-        grey = face.convert("L").convert("RGBA")
-        face = Image.blend(face, grey, 0.75)
-        face.alpha_composite(Image.new("RGBA", face.size, (0, 0, 0, 90)))
-    mask = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
-    face.putalpha(mask)
-    img.alpha_composite(face, P(cx - r, cy - r))
-    d = ImageDraw.Draw(img)
-    for off, col, wdt in ((-6, T.BRONZE_DK, 6), (-2, T.GOLD, 2.4), (3, alpha(T.BRONZE, 200), 1.2)):
-        d.ellipse(P(cx - r + off, cy - r + off, cx + r - off, cy + r - off), outline=col, width=round(wdt * S))
-    for a in (0, 90, 180, 270):                  # studs around the ring
-        x, y = cx + math.cos(math.radians(a)) * (r + 4), cy + math.sin(math.radians(a)) * (r + 4)
-        T.stud(d, x, y, 6)
+        a = layer.getchannel("A")
+        layer = Image.blend(layer, layer.convert("L").convert("RGBA"), 0.75)
+        layer = ImageChops.multiply(layer, Image.new("RGBA", layer.size, (150, 150, 150, 255)))
+        layer.putalpha(a)
+    img.alpha_composite(layer, pos)
 
 
 def _check(d, x, y, size, color):
@@ -854,120 +899,155 @@ def _check(d, x, y, size, color):
 
 
 def _lock_chip(img, center, locked, acc):
+    """'CHOOSING...' in soft silver, or a green 'LOCKED IN' with a tick."""
     cx, cy = center
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 26, "Bold")
-    if locked:
-        label, color = "LOCKED IN", (96, 206, 128)
-    else:
-        label, color = "CHOOSING...", (176, 164, 150)
-    tw = T.width(d, label, f)
-    w = tw + (82 if locked else 40)
-    x0 = cx - w / 2
-    d.rounded_rectangle(P(x0, cy - 24, x0 + w, cy + 24), radius=24 * S, fill=alpha(mix(color, (0, 0, 0), 0.7), 245),
-                        outline=alpha(color, 255), width=round(2.4 * S))
-    if locked:
-        _check(d, x0 + 34, cy, 26, mix(color, (255, 255, 255), 0.3))
-        T.text(d, (x0 + 58, cy), label, f, mix(color, (255, 255, 255), 0.55), "lm")
-    else:
-        T.text(d, (cx, cy), label, f, mix(color, (255, 255, 255), 0.4), "mm")
+    f = font("Inter.ttf", 27, "Bold")
+    if not locked:
+        T.text(d, (cx, cy), "CHOOSING...", f, (214, 222, 236), "mm")
+        return
+    color = (110, 220, 140)
+    tw = T.width(d, "LOCKED IN", f)
+    T.soft_glow(img, (cx - tw / 2 - 30, cy - 16, cx + tw / 2 + 10, cy + 16), alpha(color, 70), 10, "rect")
+    d = ImageDraw.Draw(img)
+    _check(d, cx - tw / 2 - 6, cy, 24, color)
+    T.text(d, (cx + 16, cy), "LOCKED IN", f, mix(color, (255, 255, 255), 0.35), "mm")
+
+
+def _silver(img, xy, s, f, glow=None):
+    T.gold_text(img, xy, s, f, "mm", top=SILVER_HI, bottom=SILVER_LO, glow=glow)
 
 
 def _duel_scene(img, data, acc):
-    x0, y0, x1, y1 = SCENE
     d = ImageDraw.Draw(img)
-    hf = font("Cinzel.ttf", 26, "Bold")
-    T.spaced(d, (x0 + 24, y0 + 34), "FRIENDLY DUEL", hf, T.GOLD_HI, 2.2)
+    hf = font("Cinzel.ttf", 25, "Bold")
+    T.spaced(d, (36, 40), "FRIENDLY DUEL", hf, (226, 230, 240), 2.2)
     if data.get("fair_label"):
         lab = data["fair_label"].upper()
         lw = sum(T.width(d, ch, hf) for ch in lab) + 2.2 * (len(lab) - 1)
-        T.spaced(d, (x1 - 24 - lw, y0 + 34), lab, hf, T.GOLD_HI, 2.2)
+        T.spaced(d, (W - 36 - lw, 40), lab, hf, (226, 230, 240), 2.2)
     for i, side in enumerate(data["sides"]):
         _avatar(img, DUEL_AVATAR[i], DUEL_AVATAR_R, dict(side, index=i), acc)
         if not data.get("result"):
-            _lock_chip(img, (DUEL_AVATAR[i][0], y1 - 34), side.get("locked"), acc)
-    mid = (x0 + x1) / 2
+            _lock_chip(img, (DUEL_AVATAR[i][0], 370), side.get("locked"), acc)
+    mid = W / 2
     res = data.get("result")
     if res:
-        T.gold_text(img, (mid, y0 + 130), "DRAW" if res.get("draw") else "WINNER", font("Cinzel.ttf", 40, "Black"), "mm",
-                    glow=alpha(acc.rim, 140))
+        _silver(img, (mid, 120), "DRAW" if res.get("draw") else "WINNER", font("Cinzel.ttf", 40, "Black"),
+                glow=(120, 160, 230, 120))
         name, nf = _shrink(ImageDraw.Draw(img), res["title"].upper(), "Cinzel.ttf", "Black", (60, 52, 44, 38, 32), 470)
-        T.gold_text(img, (mid, y0 + 200), name, nf, "mm", glow=alpha(acc.rim, 160))
+        T.gold_text(img, (mid, 196), name, nf, "mm", glow=alpha(T.GOLD, 150))
         d = ImageDraw.Draw(img)
         f = font("Inter.ttf", 28, "SemiBold")
-        T.text(d, (mid, y0 + 268), T.fit(d, res.get("sub", ""), f, 470), f, T.PARCHMENT, "mm")
+        T.text(d, (mid, 266), T.fit(d, res.get("sub", ""), f, 470), f, (220, 226, 238), "mm")
         return
-    T.gold_text(img, (mid, y0 + 78), f"TURN {data['turn']}", font("Cinzel.ttf", 50, "Black"), "mm")
+    _silver(img, (mid, 82), f"TURN {data['turn']}", font("Cinzel.ttf", 54, "Black"), glow=(110, 150, 230, 90))
     d = ImageDraw.Draw(img)
-    f = font("Inter.ttf", 28, "SemiBold")
+    f = font("Inter.ttf", 28, "Medium")
     label = data.get("seconds_label") or f"{data['seconds']}s to choose"
     tw = T.width(d, label, f)
-    T.icon(img, "hourglass", (mid - tw / 2 - 18, y0 + 128), 26, T.GOLD)
-    T.text(ImageDraw.Draw(img), (mid + 14, y0 + 128), label, f, T.PARCHMENT, "mm")
-    T.gold_text(img, (mid, y0 + 214), "VS", font("Cinzel.ttf", 96, "Black"), "mm", glow=alpha(acc.rim, 170))
+    T.icon(img, "hourglass", (mid - tw / 2 - 16, 138), 24, (200, 214, 240))
+    T.text(ImageDraw.Draw(img), (mid + 12, 138), label, f, (226, 232, 244), "mm")
+    _silver(img, (mid, 226), "VS", font("Cinzel.ttf", 104, "Black"), glow=(120, 160, 240, 130))
     if data.get("intensity"):
         label = f"RISING INTENSITY +{data['intensity']:.0%}"
         d = ImageDraw.Draw(img)
-        cf = font("Inter.ttf", 26, "Bold")
+        cf = font("Inter.ttf", 25, "Bold")
         w = T.width(d, label, cf) + 40
-        y = y0 + 300
-        T.soft_glow(img, (mid - w / 2 - 8, y - 30, mid + w / 2 + 8, y + 30), alpha(acc.eyes, 110), 8, "rect")
+        y = 318
+        T.soft_glow(img, (mid - w / 2 - 8, y - 28, mid + w / 2 + 8, y + 28), (230, 110, 60, 90), 8, "rect")
         d = ImageDraw.Draw(img)
-        d.rounded_rectangle(P(mid - w / 2, y - 24, mid + w / 2, y + 24), radius=24 * S,
-                            fill=alpha(mix(acc.rim, (0, 0, 0), 0.55), 245), outline=alpha(acc.eyes, 255),
-                            width=round(2.4 * S))
-        T.text(d, (mid, y), label, cf, (255, 240, 214), "mm")
+        d.rounded_rectangle(P(mid - w / 2, y - 22, mid + w / 2, y + 22), radius=22 * S, fill=(60, 22, 14, 235),
+                            outline=(240, 140, 80, 255), width=round(2 * S))
+        T.text(d, (mid, y), label, cf, (255, 236, 214), "mm")
 
 
 def _duel_side(img, box, side, i, acc):
-    """One player's half: talent seal, name, realm and layer, an ornate HP bar with the damage taken, the last move."""
+    """One player's half: the gauntlet badge, name, realm and layer, the HP bar, the damage taken and the
+    last move with its technique's painting."""
     x0, y0, x1, y1 = box
     right = i == 1
-    color = DUEL_SIDE_COLORS[i]
-    seal_x = x1 - 62 if right else x0 + 62
-    T.seal(img, (seal_x, y0 + 66), 42, "emblem:talent:" + side["talent"], T.TALENT.get(side["talent"], color))
+    bx = x1 - 56 if right else x0 + 56
+    T.soft_glow(img, (bx - 52, y0 + 32, bx + 52, y0 + 136), (90, 140, 230, 60), 10)
+    b = _badge(round(104 * S))
+    img.alpha_composite(b, (round(bx * S - b.size[0] / 2), round((y0 + 84) * S - b.size[1] / 2)))
     d = ImageDraw.Draw(img)
-    nf, rf = font("Inter.ttf", 40, "Bold"), font("Inter.ttf", 27, "SemiBold")
     low = side["max_hp"] and side["hp"] / side["max_hp"] <= LOW_HP
-    tx, anchor = (x1 - 122, "r") if right else (x0 + 122, "l")
-    T.text(d, (tx, y0 + 46), T.fit(d, side["name"], nf, x1 - x0 - 150), nf,
-           (240, 90, 76) if low else (250, 240, 222), anchor + "m")
-    realm = f"{side['realm']} · {side['layer_label']}"
-    T.text(d, (tx, y0 + 90), T.fit(d, realm, rf, x1 - x0 - 150), rf, mix(color, (255, 255, 255), 0.55), anchor + "m")
-    frac = side["hp"] / side["max_hp"] if side["max_hp"] else 0
-    bar_color = (206, 64, 52) if low else (82, 176, 120)
-    K.ornate_bar(img, (x0 + 66, y0 + 144, x1 - 50, y0 + 192), frac, bar_color, "heart",
-                 f"{side['hp']:,} / {side['max_hp']:,} HP")
-    if side.get("delta"):
-        _damage(img, ((x0 + x1) / 2, y0 + 236), side["delta"], (236, 80, 70) if side["delta"] < 0 else (110, 230, 160),
-                anchor="mm", big=True)
+    tx, anchor = (x1 - 124, "r") if right else (x0 + 124, "l")
+    nf = font("Cinzel.ttf", 44, "Black")
+    name = T.fit(d, side["name"], nf, x1 - x0 - 150)
+    if low:
+        T.text(d, (tx, y0 + 64), name, nf, (240, 96, 80), anchor + "m")
+    else:
+        T.gold_text(img, (tx, y0 + 64), name, nf, anchor + "m", glow=alpha(T.GOLD, 70))
     d = ImageDraw.Draw(img)
-    last = side.get("last")
+    rf = font("Inter.ttf", 27, "Medium")
+    realm = f"{side['realm']} · {side['layer_label']}"
+    T.text(d, (tx, y0 + 112), T.fit(d, realm, rf, x1 - x0 - 150), rf, NAVY_TEXT, anchor + "m")
+    frac = side["hp"] / side["max_hp"] if side["max_hp"] else 0
+    K.ornate_bar(img, (x0 + 74, y0 + 160, x1 - 54, y0 + 214), frac, (206, 64, 52) if low else (82, 176, 120), "heart",
+                 f"{side['hp']:,} / {side['max_hp']:,} HP")
+    last, kind = side.get("last"), side.get("last_icon")
+    cy = y0 + 280
+    if side.get("delta"):
+        _damage(img, ((x1 - 40) if not right else (x0 + 40), cy), side["delta"],
+                (236, 80, 70) if side["delta"] < 0 else (110, 230, 160), anchor="rm" if not right else "lm", big=True)
     if last:
+        d = ImageDraw.Draw(img)
         lf = font("Inter.ttf", 28, "SemiBold")
-        T.text(d, ((x0 + x1) / 2, y1 - 36), T.fit(d, last, lf, x1 - x0 - 50), lf, (236, 222, 196), "mm")
+        room = x1 - x0 - 230
+        text = T.fit(d, last, lf, room)
+        sx = x0 + 34 if not right else x1 - 34 - 58 - 14 - T.width(d, text, lf)
+        if kind:
+            T.icon(img, kind, (sx + 29, cy), 56, T.GOLD)
+        T.text(ImageDraw.Draw(img), (sx + 72, cy), text, lf, (236, 230, 216), "lm")
+
+
+def _duel_last(img, data):
+    x0, y0, x1, y1 = DUEL_LAST
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(layer).rounded_rectangle(P(x0, y0, x1, y1), radius=10 * S, fill=(8, 13, 26, 225))
+    img.alpha_composite(layer)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle(P(x0, y0, x1, y1), radius=10 * S, outline=alpha(DUEL_GOLD, 235), width=round(2 * S))
+    head, hint = data.get("bottom") or ("", "")
+    kind = next((s.get("last_icon") for s in data["sides"] if s.get("last_icon", "") and
+                 s["last_icon"].startswith("tech:")), None) or "star"
+    T.soft_glow(img, (x0 + 14, y0 + 12, x0 + 74, y1 - 12), (240, 200, 120, 60), 8)
+    T.icon(img, kind, (x0 + 44, (y0 + y1) / 2), 48, T.GOLD_HI)
+    d = ImageDraw.Draw(img)
+    tx, mw = x0 + 92, x1 - x0 - 112
+    if not hint:
+        head, hf = _shrink(d, head, "Inter.ttf", "Bold", (32, 29, 26), mw)
+        T.text(d, (tx, (y0 + y1) / 2), head, hf, (240, 210, 140), "lm")
+        return
+    head, hf = _shrink(d, head, "Inter.ttf", "Bold", (30, 28, 26), mw)
+    T.text(d, (tx, y0 + 28), head, hf, (240, 210, 140), "lm")
+    hint, sf = _shrink(d, hint, "Inter.ttf", "Medium", (24, 23, 22), mw)
+    T.text(d, (tx, y0 + 60), hint, sf, NAVY_TEXT, "lm")
 
 
 def _duel_panel(img, data, acc):
-    x0, y0, x1, y1 = DUEL_PANEL
-    T.panel(img, DUEL_PANEL, None, fill=mix(acc.panel, (0, 0, 0), 0.25), glow=True, accent=acc)
-    mid = (x0 + x1) / 2
+    x0, y0, x1, y1 = DUEL_BOX
+    layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    ImageDraw.Draw(layer).rounded_rectangle(P(x0, y0, x1, y1), radius=14 * S, fill=(12, 20, 40, 200))
+    img.alpha_composite(layer)
     d = ImageDraw.Draw(img)
-    d.line(P(mid, y0 + 18, mid, y1 - 18), fill=alpha(T.BRONZE, 200), width=round(2 * S))
-    K.gem(d, mid, (y0 + y1) / 2, 9, acc.rim)
+    d.rounded_rectangle(P(x0, y0, x1, y1), radius=14 * S, outline=alpha(DUEL_GOLD, 240), width=round(2.4 * S))
+    d.rounded_rectangle(P(x0 + 6, y0 + 6, x1 - 6, y1 - 6), radius=10 * S, outline=(198, 164, 98, 70), width=max(1, S))
+    mid = (x0 + x1) / 2
+    d.line(P(mid, y0 + 26, mid, DUEL_LAST[1] - 22), fill=(150, 160, 190, 110), width=round(1.4 * S))
+    d.line(P(x0 + 24, DUEL_LAST[1] - 12, x1 - 24, DUEL_LAST[1] - 12), fill=(150, 160, 190, 60), width=max(1, S))
     for i, side in enumerate(data["sides"]):
-        _duel_side(img, (x0 + 4, y0, mid - 4, y1) if i == 0 else (mid + 4, y0, x1 - 4, y1), side, i, acc)
+        _duel_side(img, (x0 + 4, y0, mid - 4, DUEL_LAST[1]) if i == 0 else (mid + 4, y0, x1 - 4, DUEL_LAST[1]),
+                   side, i, acc)
+    _duel_last(img, data)
 
 
 def render_duel(data):
     """The PvP duel card. data: see bot/duel_view.duel_card_data."""
     acc = T.ELEMENT_ACCENTS[data.get("palette", "Duel")]
-    img = T.canvas(W, H, seed=13, accent=data.get("palette", "Duel").lower())
-    sc = scene(data.get("palette", "Duel"), None, None, backdrop="ledge")
-    img.alpha_composite(sc, P(SCENE[0], SCENE[1]))
-    T.frame(img, SCENE, 0.8)
+    img = _galaxy(W, H).copy()
     _duel_scene(img, data, acc)
     _duel_panel(img, data, acc)
-    _warning(img, dict(data, warning=data.get("bottom") or ("", "")), acc)
-    T.frame(img, (6, 6, W - 6, H - 6), 1.0)
     return T.finish(img)

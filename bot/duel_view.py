@@ -26,6 +26,7 @@ from . import player as rules
 from . import render as card_render
 from .fight_view import LOG_EMOJI, describe, emoji, jpg
 from cards.battle import render_duel
+from cards.technique_icons import tech_kind
 from cards.theme import ELEMENT_ACCENTS
 
 log = logging.getLogger("mortal-ascent")
@@ -223,6 +224,16 @@ def _last_text(d):
     return f"{d.last_move} · {d.last_dealt:,} dmg" if d.last_dealt else d.last_move
 
 
+def move_icon(move):
+    """cards.theme.icon kind of a move: the technique's painting, or a plain icon for Strike / Guard / Break."""
+    if not move:
+        return None
+    t = rules.TECH_BY_NAME.get(move)
+    if t:
+        return tech_kind(move, t.get("school", "Body"))
+    return {"Strike": "sword", "Guard": "shield", "Break": "fist"}.get(move, "star")
+
+
 def hp_change(duel, i):
     """HP side i gained or lost on the last turn (the card's damage number); 0 before the first turn."""
     if not duel.history:
@@ -239,7 +250,7 @@ def duel_card_data(duel, avatars=(None, None)):
         sides.append({"name": d.name, "realm": duel.fair[0] if duel.fair else d.realm,
                       "layer_label": f"{rules.ordinal(duel.fair[1] if duel.fair else d.layer)} layer",
                       "talent": d.talent, "hp": round(d.hp), "max_hp": round(d.max_hp), "locked": duel.locked(d),
-                      "last": _last_text(d), "avatar_bytes": avatars[i] if i < len(avatars) else None,
+                      "last": _last_text(d), "last_icon": move_icon(d.last_move), "avatar_bytes": avatars[i] if i < len(avatars) else None,
                       "winner": duel.over and duel.winner is d, "loser": duel.over and duel.winner is not None
                       and duel.winner is not d, "delta": hp_change(duel, i)})
     data = {"palette": "Duel", "turn": duel.turn, "seconds": pvp.TURN_SECONDS, "intensity": duel.intensity(),
