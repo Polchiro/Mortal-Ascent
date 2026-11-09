@@ -35,6 +35,7 @@ ALIASES = {
     "qi": "internal qi",
     "cd": "cooldown",
     "lb": "leaderboard",
+    "prof": "profession",
     "bal": "balance",
     "inv": "inventory",
     "p": "profile",

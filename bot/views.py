@@ -1479,9 +1479,44 @@ class NameModal(discord.ui.Modal, title="Change your name"):
         self.bot = bot
 
     async def on_submit(self, interaction):
-        async with self.bot.db_lock:
-            msg, _ = buy_shop_item(self.bot.conn, interaction.user.id, "name_change", str(self.name))
-        await interaction.response.send_message(msg, ephemeral=True)
+        new_name = str(self.name).strip()[:32]
+
+        async def buy():
+            async with self.bot.db_lock:
+                msg, _ = buy_shop_item(self.bot.conn, interaction.user.id, "name_change", new_name)
+            return discord.Embed(title="✏️ Name Change", description=msg, color=COLOR)
+
+        p = db.get_player(self.bot.conn, interaction.user.id)
+        await send_pearl_confirm(interaction, p, f"Change your name to **{new_name}**", "✏️ Name Change",
+                                 economy.PEARL_SHOP["name_change"], buy)
+
+
+def pearl_confirm_embed(p, what, title, price, note=None):
+    """'Are you sure?' for a Moon Pearl purchase: the item, the price and the balance before → after."""
+    have = p["moon_pearls"]
+    e = discord.Embed(title=f"🌙 Confirm purchase · {title}", color=COLOR)
+    lines = [f"{what}?", "", f"**Price:** 🌙 {price:,} Moon Pearls"]
+    if have >= price:
+        lines.append(f"**Your pearls:** 🌙 {have:,} → **🌙 {have - price:,}**")
+    else:
+        lines.append(f"❌ You have only 🌙 {have:,}. You need **🌙 {price - have:,} more**.")
+    if note:
+        lines += ["", note]
+    lines += ["", "*Moon Pearls are not refunded once spent.*"]
+    e.description = "\n".join(lines)
+    return e
+
+
+async def send_pearl_confirm(interaction, p, what, title, price, buy, note=None):
+    """Ask before spending pearls. Shows a Confirm / Cancel pair (or only the shortfall when they can't afford it)."""
+    e = pearl_confirm_embed(p, what, title, price, note)
+    if p["moon_pearls"] < price:
+        await interaction.response.send_message(embed=e, ephemeral=True)
+        return
+    confirm = ConfirmView(p["user_id"], f"Confirm · {price:,} pearls", buy, style=discord.ButtonStyle.success,
+                          emoji="🌙")
+    await interaction.response.send_message(embed=e, view=confirm, ephemeral=True)
+    confirm.message = await interaction.original_response()
 
 
 def shop_embed(p):
@@ -1519,9 +1554,14 @@ class ShopView(OwnedView):
                 await interaction.channel.send(news)
             return discord.Embed(title=label, description=msg, color=COLOR)
 
-        confirm = ConfirmView(self.owner_id, f"Buy for {economy.PEARL_SHOP[key]:,} pearls", buy,
-                              style=discord.ButtonStyle.success, emoji="🌙")
-        await interaction.response.send_message(f"Buy **{label}**?", view=confirm, ephemeral=True)
+        p = db.get_player(self.bot.conn, self.owner_id)
+        note = None
+        if key == "heavenly_fate_reroll":
+            note = f"Your talent now: **{p['talent']}**. The new roll is never lower."
+        elif key == "inventory_expansion_20":
+            note = f"Your bag: {p['bag_capacity']} → **{p['bag_capacity'] + 20}** slots."
+        await send_pearl_confirm(interaction, p, f"Buy **{label.split(' ', 1)[1]}**", label.split(" ", 1)[1],
+                                 economy.PEARL_SHOP[key], buy, note)
 
 
 BLESSING_EMOJI = {"Gentle Breeze": "🍃", "Spring Rain": "🌧️", "Bright Moon": "🌕", "Blazing Sun": "☀️",
@@ -1549,6 +1589,28 @@ def buy_blessing(conn, user_id, tier, now=None):
         return f"You need 🌙 {price:,} Moon Pearls but have 🌙 {p['moon_pearls']:,}."
     db.update_player(conn, user_id, blessing_tier=tier, blessing_expires=expires)
     return msg + f"\n🌙 −{price:,} Moon Pearls"
+
+
+BLESSING_COLOR = {"Gentle Breeze": (120, 220, 190), "Spring Rain": (140, 190, 240), "Bright Moon": (240, 226, 160),
+                  "Blazing Sun": (250, 160, 70), "Rolling Thunder": (250, 140, 60), "Starfall": (170, 140, 250),
+                  "Heavenly Dragon": (90, 210, 130), "Eternal Dao": (190, 160, 250)}
+
+
+def blessing_data(p, now=None):
+    """The data for the blessings card (cards/blessings.py)."""
+    from cards.art_icons import slug
+    b = rules.active_blessing(p, now)
+    short = {"Lotus Coins": "Coins", "Mastery EXP": "Mastery", "Chest Drops": "Chests", "Comprehension": "Insight"}
+    def perks(tier):
+        text = rules.blessing_perks(tier).replace("  ·  ", " · ")
+        for k, v in short.items():
+            text = text.replace(k, v)
+        return text
+    tiers = [{"name": tier, "price": t["price"], "perks": perks(tier),
+              "icon": f"art:blessings/{slug(tier)}", "color": BLESSING_COLOR.get(tier, (220, 200, 140)),
+              "active": bool(b and b[0] == tier), "days_left": b[1] if b and b[0] == tier else None}
+             for tier, t in economy.BLESSING_TIERS.items()]
+    return {"pearls": p["moon_pearls"], "active": b, "tiers": tiers, "days": economy.BLESSING_DURATION_DAYS}
 
 
 def blessing_embed(p):
@@ -1580,6 +1642,14 @@ class BlessingView(OwnedView):
                 msg = buy_blessing(self.bot.conn, self.owner_id, tier)
             return discord.Embed(title="☯️ Heavenly Blessing", description=msg, color=COLOR)
 
-        confirm = ConfirmView(self.owner_id, f"Buy {tier}", buy, style=discord.ButtonStyle.success, emoji="☯️")
-        await interaction.response.send_message(
-            f"Buy **{tier}** for 🌙 {economy.BLESSING_TIERS[tier]['price']:,}?", view=confirm, ephemeral=True)
+        p = db.get_player(self.bot.conn, self.owner_id)
+        cur = rules.active_blessing(p)
+        if cur and cur[0] == tier:
+            note = f"☯️ Extends your **{tier}** by {economy.BLESSING_DURATION_DAYS} days ({cur[1]} days left now)."
+        elif cur:
+            note = (f"⚠️ This **replaces** your **{cur[0]}** ({cur[1]} days left) with a fresh "
+                    f"{economy.BLESSING_DURATION_DAYS} days of {tier}. The days left are not refunded.")
+        else:
+            note = f"☯️ {rules.blessing_perks(tier)} for {economy.BLESSING_DURATION_DAYS} days."
+        await send_pearl_confirm(interaction, p, f"{BLESSING_EMOJI[tier]} Receive the **{tier}** blessing",
+                                 tier, economy.BLESSING_TIERS[tier]["price"], buy, note)

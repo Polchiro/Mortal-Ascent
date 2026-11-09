@@ -22,7 +22,7 @@ import training
 from cards.breakthrough import render_breakthrough
 from cards.dantian import render_dantian
 
-from . import (admin, breakthrough_card, combat, cooldowns, crafting, db, duel_view, forge_view, leaderboard_view, quest_view, trade_view, gathering, guide, hunt, instance, loot,
+from . import (admin, breakthrough_card, combat, cooldowns, crafting, db, duel_view, forge_view, leaderboard_view, profession_view, quest_view, trade_view, gathering, guide, hunt, instance, loot,
                materials, passive, prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
@@ -30,7 +30,7 @@ from . import player as rules
 from .sheet import items as sheet_items
 from .sheet.view import open_sheet, send_public_profile
 from .views import (free_old_panel, BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
-                    shop_data, shop_embed)
+                    blessing_data, shop_data, shop_embed)
 
 log = logging.getLogger("mortal-ascent")
 
@@ -75,6 +75,7 @@ class MortalAscent(discord.Client):
         trade_view.register(self)
         quest_view.register(self)
         leaderboard_view.register(self)
+        profession_view.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: remember the channel (for the "Qi is full" ping) and bank
@@ -563,9 +564,11 @@ def register_commands(bot):
         if not p:
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
+        from cards.blessings import render_blessings
+        await interaction.response.defer()
+        image = await card_render.render(render_blessings, blessing_data(p))
         view = BlessingView(bot, interaction.user.id)
-        await interaction.response.send_message(embed=blessing_embed(p), view=view)
-        view.message = await interaction.original_response()
+        view.message = await interaction.followup.send(file=png(image, "blessings.png"), view=view, wait=True)
 
     @tree.command(name="recharge", description="Moon Pearl Pavilion: see the Moon Pearl packages")
     async def recharge(interaction: discord.Interaction):
