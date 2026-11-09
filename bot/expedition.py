@@ -14,7 +14,7 @@ import explore
 import technique
 import training
 
-from . import combat, db, fight, gear, hunt, loot, mastery, materials
+from . import combat, db, fight, gear, hunt, loot, mastery, materials, quests
 from . import player as rules
 
 CLUES = {
@@ -429,6 +429,8 @@ class Expedition:
             fields["injured_until"] = now + explore.DEFEAT_INJURY_HOURS * 3600
         db.update_player(self.conn, self.user_id, **fields)
         db.set_cooldown(self.conn, self.user_id, "explore", explore.EXPLORE_COOLDOWN_MINUTES * 60, now)
+        quests.record(self.conn, self.user_id, "explore", now=now)
+        quests.record(self.conn, self.user_id, "beasts", self.beasts_slain, now=now)
 
         if coins:
             lines.append(f"🪷 **{coins:,}** Lotus Coins")

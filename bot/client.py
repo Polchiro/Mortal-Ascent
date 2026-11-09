@@ -22,7 +22,7 @@ import talent as talent_rules
 import training
 from cards.dantian import render_dantian
 
-from . import (admin, combat, cooldowns, crafting, db, duel_view, forge_view, trade_view, gathering, guide, hunt, instance, loot,
+from . import (admin, combat, cooldowns, crafting, db, duel_view, forge_view, quest_view, trade_view, gathering, guide, hunt, instance, loot,
                materials, passive, prefix, qi, trainer)
 from . import render as card_render
 from .emojis import Emojis
@@ -69,6 +69,7 @@ class MortalAscent(discord.Client):
         forge_view.register(self)
         duel_view.register(self)
         trade_view.register(self)
+        quest_view.register(self)
 
     async def before_command(self, interaction):
         """Runs before every slash command: remember the channel (for the "Qi is full" ping) and bank

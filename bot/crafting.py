@@ -27,7 +27,7 @@ import discord
 import alchemy
 import training
 
-from . import craft_card, db, gear, loot, materials, passives
+from . import craft_card, db, gear, loot, materials, passives, quests
 from . import player as rules
 from . import render as card_render
 from .fight_view import jpg
@@ -606,6 +606,7 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
     else:
         pill = dict(crafted_pill(craft.kind, craft.grade, craft.result), qty=craft.batch)
         stored, _ = loot.store(conn, user_id, [pill])
+        quests.record(conn, user_id, "craft", craft.batch, now=now)
         e = alchemy.pattern_effect(craft.result)
         what = f"**{pill['name']}**" if craft.batch == 1 else f"**{craft.batch}× {pill['name']}**"
         lines.append(f"✨ You craft {'a ' if craft.batch == 1 else ''}{what}! Effect ×{e:.2f} · "
