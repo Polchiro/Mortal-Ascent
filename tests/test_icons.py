@@ -60,6 +60,15 @@ def test_technique_icons_draw_small_and_large(size):
         assert ink(drawn(lambda img, c, s: T.icon(img, "tech:" + k, c, s, T.GOLD), size)) > 0
 
 
+def test_deeds_rail_icons_are_drawn_and_distinct():
+    from cards.deed_icons import DEED_ICON
+    assert set(DEED_ICON) == {"beasts", "herbs", "breakthroughs", "duels", "rank", "lotus_coin", "moon_pearl"}
+    for size in (24, 100):
+        imgs = [drawn(lambda img, c, s, k=k: T.icon(img, "deed:" + k, c, s, T.GOLD), size) for k in DEED_ICON]
+        assert all(ink(i) > 0 for i in imgs)
+        assert_distinct(imgs)
+
+
 # ── emblems ───────────────────────────────────────────────────────────
 
 SETS = {

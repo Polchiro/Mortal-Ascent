@@ -569,6 +569,17 @@ def test_profile_gear_row_has_four_sockets(conn):
     RENDERERS["profile"](d)
 
 
+def test_profile_weapon_socket_shows_the_weapon_painting(conn):
+    new_player(conn)
+    for tier, names in eq.WEAPON_NAMES.items():
+        for typ in names:
+            w = give(conn, 1, dict(loot.roll_weapon(tier, random.Random(1)), key=typ,
+                                   name="Fine " + names[typ], data={"type": typ}))
+            db.equip_weapon(conn, 1, w["id"])
+            s = sheet.profile_data(conn, 1)["gear"][0]
+            assert s["icon"].startswith("art:gear/"), (tier, typ, s["icon"])
+
+
 def test_equipment_tab_shows_all_slots_armor_stats_and_artifact_effects(conn):
     new_player(conn, realm="Martial Apprentice")
     arm = give(conn, 1, loot.roll_armor("refined", random.Random(5)))
