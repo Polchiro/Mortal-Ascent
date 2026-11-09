@@ -274,13 +274,53 @@ async def parse_args(bot, message, cmd, text):
 
 # ── help and the message handler ──────────────────────────────────────
 
+# m help groups the commands so a new player can find them. A command missing here still shows,
+# under "More", so a new command never disappears from the list.
+HELP_GROUPS = [
+    ("🌱 Start here", [("start", "Begin and roll your talent"), ("tutorial", "Learn how to play, step by step"),
+                      ("index", "Every beast, item, pill and herb"), ("help", "This list")]),
+    ("👤 You", [("profile", "Your Character Sheet"), ("internal qi", "Your Qi bar and Qi Rate"),
+               ("balance", "Your coins and pearls"), ("cooldown", "Every timer at once"),
+               ("settings", "Turn the \"Qi is full\" ping on or off")]),
+    ("☯️ Qi and realms", [("train", "Gather Qi in a short challenge"),
+                         ("breakthrough", "Break through a gate when your bar is full")]),
+    ("⚔️ Techniques and fights", [("techniques", "See and equip techniques"),
+                                 ("practice", "Train one technique's mastery"),
+                                 ("spar", "Fight a master for mastery EXP"),
+                                 ("explore", "Adventure: beasts, chests, herbs"),
+                                 ("bestiary", "A realm's beasts and their strength"),
+                                 ("physician", "Heal an injury now")]),
+    ("🎒 Gear and bag", [("inventory", "Your bag: open, learn, equip, take"),
+                        ("equipment", "Weapon, armor, artifacts and stats"),
+                        ("forge", "Forge passives onto your gear")]),
+    ("⚗️ Alchemy", [("gather", "Pick herbs"), ("craft", "Brew pills from herbs")]),
+    ("🤝 Other players", [("daily", "Today's quests"), ("duel", "A friendly duel, no risk"),
+                         ("trade", "Swap items, coins and pearls"), ("leaderboard", "The top cultivators")]),
+    ("🌙 Shop", [("shop", "The Moon Pearl shop"), ("blessing", "30-day boosts"),
+                ("reroll", "Reroll your talent for Lotus Coins"), ("recharge", "Moon Pearl packages")]),
+]
+
+
+def _help_line(name, cmd, text):
+    return f"{usage(name, cmd) if cmd else f'`{PREFIX} {name}`'} · {text}"
+
+
 def help_embed(table):
-    lines = [usage(name, cmd) for name, cmd in table.items()
-             if not isinstance(cmd, app_commands.Group) and not name.startswith("admin")]
+    shown = {name: cmd for name, cmd in table.items()
+             if not isinstance(cmd, app_commands.Group) and not name.startswith("admin")}
     e = discord.Embed(title="📜 Commands", color=0x8B5A2B, description=(
-        f"Every slash command also works with **`{PREFIX}`** in front, like `{PREFIX} internal qi` or "
-        f"`{PREFIX} index`. `<option>` is needed, `[option]` is optional. You can also name an option, "
-        f"like `{PREFIX} spar technique:Iron Fist`.\n\n" + "\n".join(lines)))
+        f"Type **`{PREFIX}`** and a command in chat, like `{PREFIX} explore`, or use it as a slash command "
+        f"(`/explore`). `<option>` is needed, `[option]` is optional.\n"
+        f"New here? Start with **`{PREFIX} tutorial`**."))
+    placed = set()
+    for title, entries in HELP_GROUPS:
+        lines = [_help_line(n, shown.get(n), text) for n, text in entries if n in shown or n == "help"]
+        placed.update(n for n, _ in entries)
+        if lines:
+            e.add_field(name=title, value="\n".join(lines)[:1024], inline=False)
+    rest = [_help_line(n, c, c.description) for n, c in shown.items() if n not in placed]
+    if rest:
+        e.add_field(name="✨ More", value="\n".join(rest)[:1024], inline=False)
     e.set_footer(text=f"Shortcuts: " + ", ".join(f"{PREFIX} {k} = {PREFIX} {v}" for k, v in ALIASES.items())
                  + f" · {PREFIX} ping shows which computer the bot runs on")
     return e

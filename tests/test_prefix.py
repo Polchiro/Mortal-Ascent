@@ -120,13 +120,14 @@ def test_commands_run_from_a_message(bot):
     handled, sent = run(bot, "m pills")
     assert "Pills · Overview" in sent[0].kw["embed"].description
     handled, sent = run(bot, "m help")
-    assert "m gather" in sent[0].kw["embed"].description and "m craft" in sent[0].kw["embed"].description
+    help_text = "\n".join(f.value for f in sent[0].kw["embed"].fields)
+    assert "m gather" in help_text and "m craft" in help_text
     handled, sent = run(bot, "m seclusion 12")                 # removed command: stays quiet
     assert not handled and not sent
     handled, sent = run(bot, "m internal")
     assert "m internal qi" in sent[0].content
     handled, sent = run(bot, "m help")
-    assert "m internal qi" in sent[0].kw["embed"].description
+    assert "m internal qi" in "\n".join(f.value for f in sent[0].kw["embed"].fields)
 
 
 def test_chat_is_ignored(bot):
@@ -147,3 +148,15 @@ def test_each_message_is_answered_once(bot):
 def test_ping_names_this_copy(bot):
     handled, sent = run(bot, "m ping")
     assert handled and "Pong" in sent[0].content and "process" in sent[0].content
+
+
+def test_help_groups_every_command(bot):
+    """m help sorts every player command into a group; removed commands never show."""
+    e = prefix.help_embed(prefix.command_table(bot.tree))
+    text = "\n".join(f.value for f in e.fields)
+    assert "More" not in [f.name for f in e.fields]       # every command has a group
+    for gone in ("seclusion", "meditate", "admin"):
+        assert f"m {gone}" not in text, gone
+    for cmd in ("m start", "m tutorial", "m explore", "m forge", "m craft", "m duel", "m internal qi", "m help"):
+        assert cmd in text, cmd
+    assert len(e) <= 6000 and all(len(f.value) <= 1024 for f in e.fields)
