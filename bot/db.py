@@ -130,6 +130,10 @@ CREATE TABLE IF NOT EXISTS cooldowns (
     until       REAL    NOT NULL,
     PRIMARY KEY (user_id, name)
 );
+CREATE TABLE IF NOT EXISTS settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT
+);
 """
 
 # Columns added to `players` after the first release. Existing databases get
@@ -605,15 +609,57 @@ def unequip_item(conn, user_id, item_id):
 
 # ── Cooldowns ─────────────────────────────────────────────────────────
 
-def cooldown_left(conn, user_id, name, now=None):
-    """Seconds until the cooldown ends (0 when ready)."""
+# ── Bot-wide settings (key/value) ─────────────────────────────────────
+
+def get_setting(conn, key, default=None):
+    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return row[0] if row else default
+
+
+def set_setting(conn, key, value):
+    with conn:
+        if value is None:
+            conn.execute("DELETE FROM settings WHERE key = ?", (key,))
+        else:
+            conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, str(value)))
+
+
+def cooldowns_off_until(conn, now=None):
+    """When /admin cooldowns switches every cooldown off, the time it switches back on.
+    0 when cooldowns are on as normal. Saved in the database, so it survives a restart."""
     now = time.time() if now is None else now
+    try:
+        until = float(get_setting(conn, "cooldowns_off_until", 0) or 0)
+    except ValueError:
+        return 0.0
+    return until if until > now else 0.0
+
+
+def set_cooldowns_off(conn, seconds, now=None):
+    """Switch every cooldown off for `seconds` (0 or less switches them back on). Returns the end time or 0."""
+    now = time.time() if now is None else now
+    if seconds <= 0:
+        set_setting(conn, "cooldowns_off_until", None)
+        return 0.0
+    set_setting(conn, "cooldowns_off_until", now + seconds)
+    return now + seconds
+
+
+def cooldown_left(conn, user_id, name, now=None):
+    """Seconds until the cooldown ends (0 when ready, and always 0 while an admin has cooldowns off)."""
+    now = time.time() if now is None else now
+    if cooldowns_off_until(conn, now):
+        return 0.0
     row = conn.execute("SELECT until FROM cooldowns WHERE user_id = ? AND name = ?", (user_id, name)).fetchone()
     return max(0.0, row[0] - now) if row else 0.0
 
 
 def set_cooldown(conn, user_id, name, seconds, now=None):
+    """Start a cooldown. While an admin has cooldowns off nothing is saved, so when they come back on
+    nobody is left waiting on a timer from the free window."""
     now = time.time() if now is None else now
+    if cooldowns_off_until(conn, now):
+        return
     with conn:
         conn.execute("INSERT OR REPLACE INTO cooldowns (user_id, name, until) VALUES (?, ?, ?)",
                      (user_id, name, now + seconds))
