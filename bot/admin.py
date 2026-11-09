@@ -1,6 +1,11 @@
 """
-Admin-only testing commands: /admin reset, /admin give, /admin item, /admin duelstats, and the /admin set_*
+Admin-only testing commands: /admin reset, /admin cooldowns, /admin give, /admin item, /admin duelstats, and the /admin set_*
 commands that set a player's realm, technique mastery, alchemist rank, blacksmith rank and Herbal Insight.
+
+/admin cooldowns switches every cooldown off for everyone for a set time (for testers), switches them back
+on early, or shows the status. The end time is saved in the database (db.cooldowns_off_until), so it
+survives a restart and switches back on by itself. db.cooldown_left reads it, so every timed command
+(explore, train, practice, spar, mastery trials, duel rematches, the Wandering Spirit's gather pause) is free.
 
 /admin item gives any item in the game (weapons, armor, artifacts, forging materials, Beast Cores,
 herbs, pills, manuals, chests). The item list comes from bot/item_catalog.py, which reads the data modules.
@@ -53,6 +58,35 @@ def reset_player(conn, user_id, now=None):
         db.update_player(conn, user_id, seclusion_end=now)
         done.append("Seclusion timer finished: run **/seclusion** to collect the Qi (with ×2)")
     return done
+
+
+MAX_COOLDOWNS_OFF_HOURS = 24 * 7
+
+
+def cooldowns_switch(conn, action, hours=0, minutes=0, now=None):
+    """/admin cooldowns: action "off" (for hours + minutes, 1 hour if both are 0), "on", or "status".
+    Returns (reply text, public). Public replies go to the channel so testers see them."""
+    now = time.time() if now is None else now
+    until = db.cooldowns_off_until(conn, now)
+    if action == "off":
+        seconds = max(0, hours) * 3600 + max(0, minutes) * 60 or 3600
+        seconds = min(seconds, MAX_COOLDOWNS_OFF_HOURS * 3600)
+        end = db.set_cooldowns_off(conn, seconds, now)
+        with conn:     # timers already running end now, so everyone starts fresh
+            conn.execute("DELETE FROM cooldowns")
+            conn.execute("UPDATE players SET gather_paused_until = NULL WHERE gather_paused_until IS NOT NULL")
+        return (f"🔓 **All cooldowns are off for {rules.fmt_duration(seconds)}.** Explore, train, practice, spar, "
+                f"trials, duels and gathering have no waiting. They come back on <t:{int(end)}:R> "
+                f"(<t:{int(end)}:t>).", True)
+    if action == "on":
+        if not until:
+            return "🔒 Cooldowns are already on.", False
+        db.set_cooldowns_off(conn, 0, now)
+        return "🔒 **Cooldowns are back on.** Timers start again from the next command.", True
+    if until:
+        return (f"🔓 Cooldowns are **off**. They come back on <t:{int(until)}:R> (<t:{int(until)}:t>), "
+                f"in {rules.fmt_duration(until - now)}.", False)
+    return "🔒 Cooldowns are **on** as normal.", False
 
 
 def give(conn, user_id, lotus_coins=0, moon_pearls=0, qi=0.0, now=None):
@@ -226,6 +260,23 @@ def register(bot):
         who = member.mention if member else "You"
         text = "\n".join(f"• {d}" for d in done) if done else "Nothing was on cooldown."
         await interaction.response.send_message(f"🔄 **{who}: everything is ready again.**\n{text}", ephemeral=True)
+
+    @group.command(name="cooldowns", description="Turn every cooldown off for everyone for a set time, back on, or see status")
+    @app_commands.describe(action="Turn cooldowns off, back on, or see the status",
+                           hours="How many hours to keep them off (with minutes; 1 hour if you leave both empty)",
+                           minutes="How many minutes to keep them off (added to hours)")
+    @app_commands.choices(action=[app_commands.Choice(name="Turn off (for a set time)", value="off"),
+                                  app_commands.Choice(name="Turn back on", value="on"),
+                                  app_commands.Choice(name="Status", value="status")])
+    async def cooldowns_cmd(interaction: discord.Interaction, action: app_commands.Choice[str],
+                            hours: app_commands.Range[int, 0, MAX_COOLDOWNS_OFF_HOURS] = 0,
+                            minutes: app_commands.Range[int, 0, 59 * 24] = 0):
+        if not await is_admin(interaction.user.id):
+            await interaction.response.send_message("⛔ Only the bot owner can use admin commands.", ephemeral=True)
+            return
+        async with bot.db_lock:
+            text, public = cooldowns_switch(bot.conn, action.value, hours, minutes)
+        await interaction.response.send_message(text, ephemeral=not public)
 
     quality_choices = [app_commands.Choice(name=q.title(), value=q) for q in item_catalog.QUALITY_POS]
     age_choices = [app_commands.Choice(name=f"{a}-year", value=a) for a in sorted(alchemy.HERB_AGES)]

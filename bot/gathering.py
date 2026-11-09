@@ -237,13 +237,14 @@ def streak_text(streak):
     return text
 
 
-def gather_blocked(p, now=None):
-    """Why this player can't gather right now, or None."""
+def gather_blocked(p, now=None, conn=None):
+    """Why this player can't gather right now, or None. With `conn`, the Wandering Spirit's pause is
+    ignored while an admin has cooldowns off (/admin cooldowns)."""
     now = time.time() if now is None else now
     if rules.in_seclusion(p):
         return "🧘 You are in closed-door seclusion. Leave it with **/seclusion** before gathering herbs."
     paused = (p.get("gather_paused_until") or 0) - now
-    if paused > 0:
+    if paused > 0 and not (conn is not None and db.cooldowns_off_until(conn, now)):
         return f"👻 The Wandering Spirit's mist still hides the herbs. Gather again in **{rules.fmt_duration(paused)}**."
     return None
 
@@ -451,7 +452,7 @@ class GatherView(OwnedView):
 
     async def on_again(self, interaction):
         p = self.g.player
-        why = gather_blocked(p)
+        why = gather_blocked(p, conn=self.g.conn)
         if why:
             self.g.over = True
             self.result = why
@@ -528,7 +529,7 @@ def register(bot):
                 "You have not begun your journey yet. Use **/start** to step through the gates of the Jianghu.",
                 ephemeral=True)
             return
-        why = gather_blocked(p)
+        why = gather_blocked(p, conn=bot.conn)
         if why:
             await interaction.response.send_message(why, ephemeral=True)
             return
