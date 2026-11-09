@@ -178,3 +178,18 @@ def test_pct():
     assert guide.pct(0.25) == "25%"
     assert guide.pct(0.005) == "0.5%"
     assert guide.pct(0.0005) == "0.05%"
+
+
+def test_tutorial_is_in_chapters_and_up_to_date():
+    import quests
+    import talent
+    assert len(guide.CHAPTER_OF) == len(guide.LESSONS)
+    for _, _, fields in guide.LESSONS:
+        assert fields[-1][0] == guide.TRY            # every lesson ends with what to try next
+    text = "\n".join(f"{t}\n{w}\n" + "\n".join(f"{n}\n{v}" for n, v in fields) for t, w, fields in guide.LESSONS)
+    for gone in ("/seclusion", "/meditate", "Four daily quests"):
+        assert gone not in text, gone
+    assert f"{talent.FATE_REROLL['cost']:,}" in text and f"{quests.QUESTS_PER_DAY} quests" in text
+    for cmd in ("/duel", "/forge", "/craft", "/gather", "/breakthrough", "/equipment", "/index", "Strike", "Guard",
+                "Break", "Batch crafting"):
+        assert cmd in text, cmd
