@@ -1196,7 +1196,7 @@ def MAX_TURNS_SPAR():
 # ── Confirmations (/breakthrough, /physician, ...) ────────────────────────
 
 class ConfirmView(OwnedView):
-    """One action button plus Cancel. `action(interaction)` returns the text to show."""
+    """One action button plus Cancel. `action()` returns the embed to show, or (embed, file) to show a card with it."""
 
     def __init__(self, owner_id, label, action, style=discord.ButtonStyle.danger, emoji=None):
         super().__init__(owner_id, timeout=120)
@@ -1205,10 +1205,15 @@ class ConfirmView(OwnedView):
         self.button("Cancel", self.on_cancel)
 
     async def on_go(self, interaction):
-        embed = await self.action()
+        await interaction.response.defer()          # a card may take a moment to draw
+        result = await self.action()
         self.clear_items()
         self.stop()
-        await interaction.response.edit_message(embed=embed, view=None)
+        if isinstance(result, tuple):
+            embed, file = result
+            await interaction.edit_original_response(embed=embed, attachments=[file], view=None)
+        else:
+            await interaction.edit_original_response(embed=result, view=None)
 
     async def on_cancel(self, interaction):
         self.stop()

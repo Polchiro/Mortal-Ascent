@@ -808,7 +808,7 @@ def _scene_art(name):
     return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "scenes", name)
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=6)
 def _galaxy(w, h, seed=21):
     """The deep-blue night sky behind the duel (drawn once, then cached)."""
     import numpy as np
