@@ -34,6 +34,7 @@ ERROR_MSG = "⚠️ Something went wrong on our side. The error was logged; plea
 ALIASES = {
     "qi": "internal qi",
     "cd": "cooldown",
+    "lb": "leaderboard",
     "bal": "balance",
     "inv": "inventory",
     "p": "profile",
