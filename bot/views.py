@@ -1399,11 +1399,37 @@ SHOP_ITEMS = {
                                f"×{training.QI_PILLS['Yellow']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h each"),
     "mystic_qi_pill_x1":      (f"💊 {alchemy.QI_PILLS['Mystic']['name']} ×1",
                                f"×{training.QI_PILLS['Mystic']:g} Qi Rate for {training.QI_PILL_DURATION_HOURS}h"),
-    "inventory_expansion_20": ("🎒 Inventory expansion", "+20 bag slots"),
-    "name_change":            ("✏️ Name change", "Change the name on your cards"),
+    "inventory_expansion_20": ("🎒 Inventory Expansion", "+20 bag slots"),
+    "name_change":            ("✏️ Name Change", "Change the name on your cards"),
     "seal_stone":             ("🔏 Seal Stone", "Locks one passive slot when you Replace in /forge"),
 }
 SHOP_PILLS = {"mortal_qi_pill_x3": ("Mortal", 3), "yellow_qi_pill_x3": ("Yellow", 3), "mystic_qi_pill_x1": ("Mystic", 1)}
+SHOP_CARD_TEXT = {      # the short line under each item on the shop card
+    "heavenly_fate_reroll": "Reroll your talent. It never goes lower",
+    "inventory_expansion_20": "+20 bag slots",
+    "name_change": "Change the name on your cards",
+    "seal_stone": "Locks a passive slot in /forge Replace",
+}
+
+
+def shop_data(p):
+    """The data for the shop card (cards/shop.py)."""
+    items = []
+    for key, (label, desc) in SHOP_ITEMS.items():
+        name = label.split(" ", 1)[1]                    # drop the emoji
+        text = SHOP_CARD_TEXT.get(key, desc)
+        if key in SHOP_PILLS:
+            grade, n = SHOP_PILLS[key]
+            name = alchemy.QI_PILLS[grade]["name"]
+            text = (f"{n} pills · " if n > 1 else "") + f"×{training.QI_PILLS[grade]:g} Qi Rate for " \
+                f"{training.QI_PILL_DURATION_HOURS}h" + (" each" if n > 1 else "")
+        price = economy.PEARL_SHOP[key]
+        items.append({"key": key, "name": name, "price": f"{price:,}", "min_price": price,
+                      "text": text, "icon": f"art:shop/{key}"})
+    lo, hi = economy.PEARL_SHOP["profile_theme"]
+    items.append({"key": "profile_theme", "name": "Profile Card Themes", "price": f"{lo}–{hi}", "min_price": lo,
+                  "text": "New looks for your profile card", "icon": "art:shop/profile_theme", "soon": True})
+    return {"pearls": p["moon_pearls"], "items": items}
 
 
 def buy_shop_item(conn, user_id, key, new_name=None, rng=random):

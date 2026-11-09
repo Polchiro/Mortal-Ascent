@@ -6,6 +6,7 @@ import time
 
 import pytest
 
+import economy
 import explore
 import equipments
 import technique
@@ -552,7 +553,7 @@ def test_shop_purchases(conn):
     p = db.get_player(conn, 1)
     assert p["bag_capacity"] == 80 and p["name"] == "Iron Lotus"
     assert rules.talent.TALENTS.index(p["talent"]) >= 1          # never lower than Gifted
-    assert p["moon_pearls"] == 2000 - 60 - 300 - 200 - 600
+    assert p["moon_pearls"] == 2000 - 60 - 300 - 200 - economy.PEARL_SHOP["heavenly_fate_reroll"]
 
 
 def test_blessing_same_tier_extends_other_replaces(conn):
@@ -672,3 +673,12 @@ def test_practice_timers_are_longer_and_tighten_by_tier():
     secs = trainer.challenges.READ_THE_MASTER["seconds_per_step"]
     assert 6 <= secs[1] <= 8 and secs[1] > secs[3] > secs[5]
     assert 6 <= trainer.wave_seconds(1, 1, []) <= 8
+
+
+def test_shop_card_shows_every_item():
+    from bot.views import SHOP_ITEMS, shop_data
+    from cards.shop import render_shop
+    d = shop_data({"moon_pearls": 100})
+    assert [i["key"] for i in d["items"][:-1]] == list(SHOP_ITEMS) and d["items"][-1]["soon"]
+    assert d["items"][0]["price"] == f"{economy.PEARL_SHOP['heavenly_fate_reroll']:,}"
+    assert render_shop(d).size[0] == 1200

@@ -82,7 +82,7 @@ What Moon Pearls can buy — **speed and style, never power**.
 
 | Item | Moon Pearls | Notes |
 |---|---|---|
-| 🌟 Heavenly Fate Reroll | 600 | Talent reroll that never goes lower (see talent.md) |
+| 🌟 Heavenly Fate Reroll | 300 | Talent reroll that never goes lower (see talent.md) |
 | 💊 Ember Dantian Pill ×3 | 60 | Mortal grade; toxicity still applies |
 | 💊 Clear Meridian Pill ×3 | 150 | Yellow grade; toxicity still applies |
 | 💊 Jade Marrow Pill ×1 | 120 | Mystic grade; highest grade sold |
