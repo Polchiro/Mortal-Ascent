@@ -87,3 +87,43 @@ def test_set_commands_as_text(monkeypatch):
     for name in ("set_realm", "set_mastery", "set_alchemy", "set_foraging"):
         for p in bot.tree.get_command("admin").get_command(name).parameters:
             assert len(p.choices) <= 25
+
+
+def test_give_technique_learns_skips_known_and_all(conn):
+    found = admin.find_catalog_techniques("Fierce Tiger Claw")
+    assert [k for k, _ in found] == ["fierce_tiger_claw"]
+    assert admin.give_techniques(conn, 1, found) == (["Fierce Tiger Claw"], [])
+    tiger = [t for t in db.get_techniques(conn, 1, equipped_only=False) if t["name"] == "Fierce Tiger Claw"]
+    assert len(tiger) == 1 and tiger[0]["equipped"]
+    assert admin.give_techniques(conn, 1, found) == ([], ["Fierce Tiger Claw"])      # already known: no copy
+    equipped = {t["name"] for t in db.get_techniques(conn, 1)}
+    learned, known = admin.give_techniques(conn, 1, admin.find_catalog_techniques("all"))
+    assert "Fierce Tiger Claw" in known and len(learned) + len(known) == len(technique.TECHNIQUES)
+    assert {t["name"] for t in db.get_techniques(conn, 1)} == equipped                # "all" equips nothing
+    assert len(db.get_techniques(conn, 1, equipped_only=False)) == len(technique.TECHNIQUES)
+    assert admin.find_catalog_techniques("yellow fist")
+    assert admin.find_catalog_techniques("no such move") == []
+
+
+def test_give_technique_as_text(monkeypatch):
+    from bot.client import MortalAscent
+    bot = asyncio.run(_make(MortalAscent))
+    user = FakeUser()
+
+    async def app_info():
+        return SimpleNamespace(team=None, owner=user)
+    monkeypatch.setattr(bot, "application_info", app_info)
+    run(bot, "m start", author=user)
+    checks = [("m admin give_technique technique:Fierce Tiger Claw", "learned **Fierce Tiger Claw**"),
+              ("m admin give_technique technique:fierce_tiger_claw", "already know"),
+              ("m admin give_technique technique:fist", "More than one technique"),
+              ("m admin give_technique technique:all", "new technique")]
+    for text, expect in checks:
+        _, sent = run(bot, text, author=user)
+        assert expect in sent[-1].content, (text, sent[-1].content)
+    cmd = bot.tree.get_command("admin").get_command("give_technique")
+    ac = cmd._params["technique"].autocomplete
+    got = asyncio.run(ac(SimpleNamespace(namespace=SimpleNamespace(), user=user), ""))
+    assert got[0].value == "all" and len(got) <= 25
+    got = asyncio.run(ac(SimpleNamespace(namespace=SimpleNamespace(), user=user), "heaven"))
+    assert got and all("Heaven" in c.name for c in got)
