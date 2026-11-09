@@ -357,12 +357,13 @@ def ledger(conn, user_id, limit=10):
 
 # ── Techniques ────────────────────────────────────────────────────────
 
-def learn_technique(conn, user_id, name, type_, grade, slots=2):
-    """Learn a technique and equip it (see equip_technique). Returns its id."""
+def learn_technique(conn, user_id, name, type_, grade, slots=2, equip=True):
+    """Learn a technique and equip it (see equip_technique) unless `equip` is False. Returns its id."""
     with conn:
         cur = conn.execute("INSERT INTO techniques (user_id, name, type, grade, equipped) VALUES (?, ?, ?, ?, 0)",
                            (user_id, name, type_, grade))
-    equip_technique(conn, user_id, cur.lastrowid, slots)
+    if equip:
+        equip_technique(conn, user_id, cur.lastrowid, slots)
     return cur.lastrowid
 
 

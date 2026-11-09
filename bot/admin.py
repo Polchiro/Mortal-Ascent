@@ -1,5 +1,6 @@
 """
-Admin-only testing commands: /admin reset, /admin cooldowns, /admin give, /admin item, /admin duelstats, and the /admin set_*
+Admin-only testing commands: /admin reset, /admin cooldowns, /admin give, /admin item, /admin give_technique,
+/admin duelstats, and the /admin set_*
 commands that set a player's realm, technique mastery, alchemist rank, blacksmith rank and Herbal Insight,
 and /admin fight_beast, which spawns any beast in the game on the normal fight screen (a test fight: no
 rewards, no injury, no cooldown).
@@ -153,6 +154,44 @@ def find_techniques(techs, text):
             return hit
     exact = [t for t in techs if t["name"].lower() == text]
     return exact or [t for t in techs if text in t["name"].lower()]
+
+
+def technique_label(t):
+    return f"{t['name']} · {t['grade']} {t['type']} · {t['school']}"
+
+
+def find_catalog_techniques(text):
+    """Techniques in the game (technique.TECHNIQUES) that `text` names: "all", a key, an exact name, or words
+    from the name/grade/type/school. Returns a list of (key, technique)."""
+    rows = list(tech_data.TECHNIQUES.items())
+    text = (text or "").strip().lower()
+    if text in ("all", "all techniques"):
+        return rows
+    if not text:
+        return []
+    exact = [(k, t) for k, t in rows if text in (k, t["name"].lower())]
+    if exact:
+        return exact
+    words = text.split()
+    return [(k, t) for k, t in rows if all(w in technique_label(t).lower() for w in words)]
+
+
+def give_techniques(conn, user_id, found):
+    """Teach these techniques (from find_catalog_techniques), ignoring the realm a manual would need.
+    One technique is equipped like reading its manual; when giving several, none are equipped so the
+    player's loadout stays as it is. Known techniques are skipped. Returns (learned names, known names)."""
+    p = db.get_player(conn, user_id)
+    known = {t["name"] for t in db.get_techniques(conn, user_id, equipped_only=False)}
+    learned, skipped = [], []
+    for _key, t in found:
+        if t["name"] in known:
+            skipped.append(t["name"])
+            continue
+        db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"], rules.technique_slots(p["realm"]),
+                           equip=len(found) == 1)
+        known.add(t["name"])
+        learned.append(t["name"])
+    return learned, skipped
 
 
 def stage_exp(tech, stage):
@@ -624,6 +663,51 @@ def register(bot):
         for t in shown:
             label = f"{t['name']} · {t['grade']} {t['type']} · {tech_data.MASTERY_STAGES[rules.stage_of(t)]['name']}"
             out.append(app_commands.Choice(name=label[:100], value=str(t["id"])))
+        return out[:25]
+
+    @group.command(name="give_technique", description="Teach a martial technique (or all of them)")
+    @app_commands.describe(technique="Which technique (type to search by name, grade or school)",
+                           member=member_help)
+    async def give_technique_cmd(interaction: discord.Interaction, technique: str,
+                                 member: discord.User | None = None):
+        uid = await check(interaction, member)
+        if uid is None:
+            return
+        found = find_catalog_techniques(technique)
+        if not found or (len(found) > 1 and technique.strip().lower() not in ("all", "all techniques")):
+            names = ", ".join(f"**{t['name']}**" for _, t in found[:15])
+            text = (f"More than one technique matches: {names}. Pick one from the list." if found
+                    else "No technique matches that. Type part of its name and pick from the list.")
+            await interaction.response.send_message(text, ephemeral=True)
+            return
+        async with bot.db_lock:
+            learned, known = give_techniques(bot.conn, uid, found)
+        who = member.mention if member else "You"
+        if len(found) == 1:
+            t = found[0][1]
+            if learned:
+                text = (f"📜 {who} learned **{t['name']}** ({t['grade']} {t['type']}) and equipped it "
+                        f"in the {t['type']} slot.")
+            else:
+                text = f"📜 {who} already know{'s' if member else ''} **{t['name']}**. Nothing changed."
+        else:
+            text = f"📜 {who} learned **{len(learned)}** new technique{'s' if len(learned) != 1 else ''}"
+            text += (": " + ", ".join(f"**{n}**" for n in learned)) if learned else "."
+            if known:
+                text += f"\nAlready known (skipped): {len(known)}."
+            if learned:
+                text += "\nEquip them with **/techniques**."
+        await interaction.response.send_message(text[:2000], ephemeral=True)
+
+    @give_technique_cmd.autocomplete("technique")
+    async def give_technique_autocomplete(interaction: discord.Interaction, current: str):
+        target = getattr(interaction.namespace, "member", None) or interaction.user
+        known = {t["name"] for t in db.get_techniques(bot.conn, target.id, equipped_only=False)}
+        rows = find_catalog_techniques(current) if current.strip() else list(tech_data.TECHNIQUES.items())
+        out = [app_commands.Choice(name="All techniques", value="all")] if not current.strip() else []
+        for key, t in sorted(rows, key=lambda r: r[1]["name"] in known):      # not-yet-known first
+            label = technique_label(t) + (" · known" if t["name"] in known else "")
+            out.append(app_commands.Choice(name=label[:100], value=key))
         return out[:25]
 
     rank_choices = picks([(r, crafting.rank_label(r)) for r in sorted(alchemy.ALCHEMIST_RANK_EXP)])
