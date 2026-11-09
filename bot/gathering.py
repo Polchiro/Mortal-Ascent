@@ -152,6 +152,8 @@ class Gathering:
                 fields["herbs_gathered"] = p["herbs_gathered"] + 1
                 self.gathered.append(r.herb)
                 quests.record(self.conn, self.user_id, "gather", now=now)
+                if r.old:
+                    quests.record(self.conn, self.user_id, "old_herb", now=now)
                 text = f"✅ You gather **{loot.describe(r.herb)}**."
                 if r.old:
                     text = f"✨ You pull it free before it escapes: **{loot.describe(r.herb)}**!"

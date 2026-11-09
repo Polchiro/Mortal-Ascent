@@ -361,6 +361,8 @@ def claim_chest(conn, user_id, pending_id, announce=None, now=None):
         return None
     p = db.get_player(conn, user_id)
     db.add_coins(conn, user_id, pending["coins"], f"Opened {pending['chest_name']}")
+    from . import quests
+    quests.record(conn, user_id, "chest", now=now)
     stored, lost = store(conn, user_id, pending["items"])
     if announce is not None:
         announce += [a for a in (announcement(p["name"], i) for i in stored) if a]

@@ -18,8 +18,8 @@ from .compendium import EDGE, GOLD_LINE, PAD, SOFT, TEXT, _glass, _sky
 from .theme import P, S, alpha, font, mix
 
 W = T.W
-ROW_H = 132
-ROW_GAP = 14
+ROW_H = 118
+ROW_GAP = 12
 TOP = 168
 GREEN = (112, 222, 146)
 LOTUS = (244, 196, 120)
@@ -80,17 +80,17 @@ def _row(img, box, q):
     _glass(img, box, edge=edge, a=185, width=2.2 if q["done"] else 1.6)
     cy = (y0 + y1) / 2
     T.soft_glow(img, (x0 + 14, y0 + 14, x0 + 118, y1 - 14), (120, 150, 220, 60), 12)
-    T.icon(img, q["icon"], (x0 + 66, cy), 96, T.GOLD)
+    T.icon(img, q["icon"], (x0 + 64, cy), 88, T.GOLD)
     if q["claimed"]:
         layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        ImageDraw.Draw(layer).ellipse(P(x0 + 18, cy - 48, x0 + 114, cy + 48), fill=(6, 10, 20, 110))
+        ImageDraw.Draw(layer).ellipse(P(x0 + 20, cy - 44, x0 + 108, cy + 44), fill=(6, 10, 20, 110))
         img.alpha_composite(layer)
     d = ImageDraw.Draw(img)
     tx = x0 + 134
-    T.text(d, (tx, y0 + 34), q["name"], font("Inter.ttf", 31, "Bold"), TEXT, "lm")
-    T.text(d, (tx, y0 + 70), q["text"], font("Inter.ttf", 25, "Medium"), SOFT, "lm")
+    T.text(d, (tx, y0 + 30), q["name"], font("Inter.ttf", 31, "Bold"), TEXT, "lm")
+    T.text(d, (tx, y0 + 63), q["text"], font("Inter.ttf", 25, "Medium"), SOFT, "lm")
     # progress bar
-    bx0, bx1, by = tx, tx + 430, y0 + 106
+    bx0, bx1, by = tx, tx + 430, y0 + 96
     d.rounded_rectangle(P(bx0, by - 7, bx1, by + 7), radius=7 * S, fill=(8, 12, 24, 230),
                         outline=alpha(EDGE, 120), width=max(1, S))
     frac = q["have"] / q["need"] if q["need"] else 1
@@ -103,8 +103,8 @@ def _row(img, box, q):
     rf = font("Inter.ttf", 29, "Bold")
     sx = x1 - 196
     d.line(P(sx - 24, y0 + 22, sx - 24, y1 - 22), fill=alpha(EDGE, 90), width=max(1, S))
-    _reward(img, sx, y0 + 40, "lotus", q["coins"], LOTUS, rf)
-    _reward(img, sx, y0 + 84, "pearl", q["pearls"], PEARL, rf)
+    _reward(img, sx, y0 + 36, "lotus", q["coins"], LOTUS, rf)
+    _reward(img, sx, y0 + 80, "pearl", q["pearls"], PEARL, rf)
     if q["done"]:
         _state(img, (x1 - 300, cy), q["claimed"])
 
