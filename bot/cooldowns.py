@@ -69,7 +69,8 @@ def timer_sections(conn, player, now=None):
         else:
             state = READY
         pursuits.append(f"{icon} **{label}** ({base}) — {state}")
-    paused = player.get("gather_paused_until") or 0
+    off_until = db.cooldowns_off_until(conn, now)
+    paused = 0 if off_until else (player.get("gather_paused_until") or 0)
     pursuits.append("🌿 **Gather** (no cooldown) — " + (f"paused by the Wandering Spirit until {stamp(paused)}"
                                                         if paused > now else READY)
                     + f" · 🔥 streak {player.get('herb_streak') or 0}")
@@ -129,6 +130,9 @@ def timer_sections(conn, player, now=None):
     pavilion = [f"🎲 **Fate Reroll** — no waiting · next costs **{rules.fate_reroll_cost(player):,}** Lotus Coins"]
 
     sections = [("Martial Pursuits", pursuits)]
+    if off_until:
+        sections.insert(0, ("🔓 Cooldowns Off", [f"An admin switched every cooldown off for testing. "
+                                                 f"They come back {stamp(off_until)}."]))
     if trials:
         sections.append(("Mastery Trials", trials))
     sections += [("Daily Discipline", daily), ("Body & Meridians", body),
