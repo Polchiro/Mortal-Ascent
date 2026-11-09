@@ -17,7 +17,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/explore` | A 5-step expedition: pick a path from its clue, face what is there, then go deeper or return with the loot. 30 min cooldown |
 | `/train` | A timed training challenge with the master. The score becomes Internal Qi; layers inside a phase open automatically. 60 min cooldown |
 | `/internal qi` | Sends the dantian card (same crimson-and-gold style as the Character Sheet, with the dantian orb filling as your bar fills): Qi bar (plus Qi waiting behind a bottleneck), Qi Rate, time to a full bar, the next gate, your cultivation status, and every Qi source (talent, technique, blessing, pill, Blessed Land, pill toxicity) with the full formula |
-| `/breakthrough` | When your Qi bar is full at a phase bottleneck (90%) or realm gate (70%), attempt it. Shows the chance and risk first |
+| `/breakthrough` | When your Qi bar is full at a phase bottleneck or realm gate, attempt it (odds drop at higher realms, see docs/training.md). Shows the chance and risk first |
 | `/practice <technique>` | A training challenge for one technique's mastery EXP (40 × score). 30 min cooldown; 5 full sessions a day, then 50%, then 10% |
 | `/spar [technique]` | A turn-by-turn fight with a master. EXP only for techniques used at the right moment. With a technique whose bar is full, it is that technique's **mastery trial**. 2 h cooldown |
 | `/duel @player` | A friendly PvP duel on the fight screen: Accept/Decline for 60 s, both fight at the lower player's realm and layer, picks are secret. No rewards, no risk; wins/losses show on the Profile. Rules: docs/pvp.md |

@@ -30,6 +30,19 @@ GUIDE_TIMEOUT = 600   # seconds the page buttons keep working
 
 # ── /tutorial ─────────────────────────────────────────────────────────
 
+def odds_text():
+    """The breakthrough odds per realm, read from training.py (they drop as you climb)."""
+    short = lambda r: r.replace("Martial ", "") if r.startswith("Martial ") else r
+    realm = " · ".join(f"{short(r)} {c:.0%}" for r, c in training.REALM_BREAKTHROUGH_SUCCESS.items())
+    phases = training.PHASE_BOTTLENECK_SUCCESS
+    first, last = next(iter(phases)), list(phases)[-1]
+    return (f"Gates get harder as you climb. Phase gates: **{phases[first]:.0%}** in {first} down to "
+            f"**{phases[last]:.0%}** in {last}. New realm (the realm you enter): {realm}. "
+            f"Breakthrough pills and artifacts add to realm gates, up to **{training.BREAKTHROUGH_CHANCE_CAP:.0%}**. "
+            f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your bar, and your saved Qi "
+            "tops it back up, so you can try again.")
+
+
 def _recipe(kind, grade):
     """'2 Spirit Grass and 1 Dew Leaf' for a pill recipe."""
     parts = [f"{n} {alchemy.HERBS[grade][t][0]}" for t, n in crafting.KINDS[kind][3]]
@@ -115,10 +128,7 @@ CHAPTERS = [
           ("No Qi is lost", "Qi you gather while stuck at a gate is **saved** behind it. After you break through, "
                             "it flows on into your next layers. I mention you once when the bar fills "
                             "(**/settings** turns that off)."),
-          ("The odds", f"Phase gate: **{training.PHASE_BOTTLENECK_SUCCESS:.0%}**. New realm: "
-                       f"**{training.REALM_BREAKTHROUGH_SUCCESS:.0%}** (Mortal → Martial Apprentice always works). "
-                       f"A failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your bar, and your saved Qi "
-                       "tops it back up, so you can try again."),
+          ("The odds", odds_text()),
           ("Higher gates", "Martial Master, Martial King and Martial Saint also need technique mastery, and the "
                            "last two need a slain **Beast King**."),
           (TRY, "**/breakthrough** when your bar is full.")]),

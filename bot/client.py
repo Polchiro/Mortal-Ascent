@@ -390,9 +390,9 @@ def register_commands(bot):
         chance = rules.breakthrough_chance(p)
         risk = (f"Failure costs {training.BREAKTHROUGH_FAIL_QI_LOSS:.0%} of your Qi"
                 + (f" and a {training.INJURY_HOURS}-hour injury." if kind == "realm" else "."))
-        pill = crafting.best_breakthrough_pill(bot.conn, uid, p) if kind == "realm" and chance < 1 else None
+        pill = crafting.best_breakthrough_pill(bot.conn, uid, p) if rules.pill_helps(p) else None
         if pill:
-            chance = min(1.0, chance + pill[1])
+            chance = rules.breakthrough_chance(p, pill[1])
             risk += f"\n🏔️ Your **{pill[0]['name']}** adds **+{pill[1]:.1%}** (used up either way)."
         if chance >= 1 and kind == "realm" and p["realm"] == "Mortal":
             risk = "The Old Master guides you; this first gate cannot fail."
@@ -408,10 +408,10 @@ def register_commands(bot):
                 use = None
                 if next_gate_is_realm(fresh):
                     use = crafting.best_breakthrough_pill(bot.conn, uid, fresh)
-                    if use and rules.breakthrough_chance(fresh) >= 1:
+                    if use and not rules.pill_helps(fresh):
                         use = None
                 realm_before = fresh["realm"]
-                odds = min(1.0, (rules.breakthrough_chance(fresh) or 0) + (use[1] if use else 0))
+                odds = rules.breakthrough_chance(fresh, use[1] if use else 0) or 0
                 ok, msg = rules.attempt_breakthrough(fresh, db.get_techniques(bot.conn, uid),
                                                      bonus=use[1] if use else 0)
                 dew = None

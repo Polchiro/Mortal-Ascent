@@ -15,7 +15,7 @@ def player(realm="Martial Expert", layer=10, qi=None):
 def test_success_and_failure_data_match_the_attempt():
     before = player(layer=3)
     after = dict(before)
-    ok, _ = rules.attempt_breakthrough(after, rng=random.Random(1))       # phase gates succeed 90%
+    ok, _ = rules.attempt_breakthrough(after, rng=random.Random(1))       # Martial Expert phase gates succeed 90%
     assert ok
     d = bc.card_data("A", before, after, "phase", "Middle Phase", ok, 0.9, dew=materials.breakthrough_dew("phase"))
     assert d["from"] == "Early Phase" and d["to"] == "Middle Phase"
