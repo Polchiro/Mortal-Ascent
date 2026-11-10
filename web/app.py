@@ -13,6 +13,7 @@ The website only READS the game for now. Every number comes from the same code t
 """
 import os
 import secrets
+import urllib.parse
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
@@ -71,12 +72,27 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def home(request: Request):
+        moved = other_address(request)
+        if moved:
+            return moved
         if current_user(request):
             return RedirectResponse("/profile", status_code=303)
         return page(request, "login.html", message=request.session.pop("flash", None))
 
+    site = urllib.parse.urlsplit(settings.redirect_uri)
+
+    def other_address(request):
+        """The page opened at another address than the one Discord returns to (127.0.0.1 vs localhost):
+        the login cookie would be lost on the way back, so move to the right address first."""
+        if request.url.netloc != site.netloc:
+            return RedirectResponse(f"{site.scheme}://{site.netloc}{request.url.path}", status_code=303)
+        return None
+
     @app.get("/login")
     def login(request: Request):
+        moved = other_address(request)
+        if moved:
+            return moved
         state = oauth.new_state()
         request.session["oauth_state"] = state
         return RedirectResponse(oauth.authorize_url(settings.client_id, settings.redirect_uri, state), status_code=303)
@@ -89,7 +105,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         if not code or not expected or not secrets.compare_digest(state, expected):
             return page(request, "error.html", status=400,
-                        message="That login link has expired. Please press Continue with Discord again.")
+                        message="That login link has expired. Please press Continue with Discord again. "
+                                "(Use a normal browser like Chrome; the browser inside VS Code can't keep the login.)")
         try:
             token = oauth.exchange_code(settings.client_id, settings.client_secret, settings.redirect_uri, code)
             me = oauth.fetch_user(token)
