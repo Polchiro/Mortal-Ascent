@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Gathering · Mortal Ascent{% endblock %}
+{% block body_class %}gatherbg{% endblock %}
+{% block body %}
+<style>body.gatherbg{background-image:linear-gradient(rgba(8,14,32,.70),rgba(8,14,32,.93)),url({{ g.scene }})}</style>
+{% with page="gather" %}{% include "_topbar.html" %}{% endwith %}
+{% set st = g.status %}
+
+<main class="forgeplay">
+  <aside class="track" aria-label="This trip">
+    <div class="stg on"><span>Herbal Insight</span><b>{{ st.streak }}</b></div>
+    {% if st.mult or st.next %}<p class="sub side">{% if st.mult %}Old herbs ×{{ st.mult }}. {% endif %}{% if st.next %}{{ st.next }}{% endif %}</p>{% endif %}
+    <div class="stg"><span>HP</span><b>{{ st.hp }} / {{ st.max_hp }}</b></div>
+    <div class="tbar hpbar"><div style="width: {{ st.hp_pct }}%"></div></div>
+    <p class="sub side">A look-alike costs {{ st.decoy }}.</p>
+    <div class="stg done"><span>This trip</span><b>{{ st.gathered }}</b></div>
+    {% for h in st.session %}
+    <div class="use slim">{% if h.picture %}<img src="{{ h.picture }}" alt="" width="36" height="36">{% endif %}<span><b>{{ h.qty }} × {{ h.name }}</b><span class="sub">{{ h.age }}-year</span></span></div>
+    {% endfor %}
+  </aside>
+
+  <section class="stage card" aria-live="polite">
+    <p class="kicker">{{ g.place | upper }}</p>
+
+    {% if g.mode == "over" %}
+      <h1 class="title">The trip ends</h1>
+      {% for l in g.result %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      {% if g.summary %}
+      <div class="uses center">{% for h in g.summary %}<div class="use">{% if h.picture %}<img src="{{ h.picture }}" alt="" width="48" height="48">{% endif %}<span><b>{{ h.qty }} × {{ h.name }}</b><span class="sub">{{ h.age }}-year</span></span></div>{% endfor %}</div>
+      {% else %}<p class="pline">You leave the wilds empty-handed.</p>{% endif %}
+      <div class="choices">
+        <form method="post" action="/gather/begin"><button class="btn btn-gold" type="submit">Gather again</button></form>
+        <a class="btn btn-gold ghost" href="/alchemy">To the cauldron</a>
+      </div>
+
+    {% else %}
+      {% if g.mode == "round" %}{% for l in g.prompt %}<p class="pline{% if loop.last and g.target %} desc{% endif %}">{{ l | safe }}</p>{% endfor %}{% endif %}
+
+      {% if g.target %}{% set t = g.target %}
+      <div class="target" style="border-color: {{ t.color }}">
+        {% if t.picture %}<img src="{{ t.picture }}" alt="" width="64" height="64">{% endif %}
+        <span><span class="sub">You are looking for</span><b style="color: {{ t.color }}">{% if t.age %}{{ t.age }}-year {% endif %}{{ t.name }}</b>
+        <span class="sub">{{ t.grade }} · {{ t.rarity }} · {{ t.emoji }} {{ t.type }} herb</span></span>
+      </div>
+      {% if g.mode == "result" %}<p class="pline desc"><i>{{ t.desc }}</i></p>{% endif %}
+      <form method="post" action="/gather/pick" class="plants{% if g.wide %} wide{% endif %}">
+        <input type="hidden" name="turn" value="{{ g.turn }}">
+        {% for c in g.choices %}
+        <button class="plantcard {{ c.state or "" }}" type="submit" name="key" value="{{ c.key }}"{% if g.mode != "round" %} disabled{% endif %}>
+          <span class="no">{{ c.no }}</span>
+          <img src="{{ c.picture }}" alt="" width="240" height="170">
+          {% if c.name %}<b>{{ c.name }}</b>{% endif %}
+          <span class="look">{{ c.look }}</span>
+        </button>
+        {% endfor %}
+      </form>
+      {% endif %}
+
+      {% if g.spirit %}
+      <img class="stageart" src="{{ g.spirit.art }}" alt="" width="200" height="200">
+      {% if g.spirit.signs %}
+      <form method="post" action="/gather/pick" class="choices">
+        <input type="hidden" name="turn" value="{{ g.turn }}">
+        {% for s in g.spirit.signs %}<button class="btn btn-gold sign" type="submit" name="key" value="{{ s.key }}" aria-label="{{ s.key }}">{{ s.emoji }}</button>{% endfor %}
+      </form>
+      {% endif %}
+      {% endif %}
+
+      {% if g.mode == "round" %}
+      <div class="timer"><div class="tbar"><div id="tfill" style="width: {{ (g.left / g.seconds * 100) | round(1) }}%"></div></div><span id="tleft">{{ g.left }}s</span></div>
+      <form method="post" action="/gather/stop"><input type="hidden" name="turn" value="{{ g.turn }}"><button class="link" type="submit">Stop (this herb counts as missed)</button></form>
+      <script>
+      (function () {
+        var left = {{ g.left }}, total = {{ g.seconds }}, fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
+        var end = Date.now() + left * 1000;
+        var t = setInterval(function () {
+          var l = Math.max(0, (end - Date.now()) / 1000);
+          fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
+          fill.style.background = l / total > 0.5 ? '#6FD9B0' : l / total > 0.25 ? '#E8C27A' : '#E05A4F';
+          if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/gather/play'); }, 1100); }
+        }, 100);
+        document.querySelectorAll('.plantcard, .sign').forEach(function (b) { b.addEventListener('click', function () { clearInterval(t); }); });
+        document.addEventListener('keydown', function (e) {
+          var b = document.querySelectorAll('.plantcard')[parseInt(e.key, 10) - 1];
+          if (b && !e.ctrlKey && !e.metaKey && !e.altKey) { b.click(); }
+        });
+      })();
+      </script>
+      {% else %}
+      {% for l in g.result %}<p class="pline big2">{{ l | safe }}</p>{% endfor %}
+      <div class="choices">
+        <form method="post" action="/gather/again"><input type="hidden" name="turn" value="{{ g.turn }}"><button class="btn btn-jade" type="submit" autofocus>Gather again</button></form>
+        <form method="post" action="/gather/stop"><input type="hidden" name="turn" value="{{ g.turn }}"><button class="btn btn-gold ghost" type="submit">Stop</button></form>
+      </div>
+      {% endif %}
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

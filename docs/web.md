@@ -4,10 +4,10 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built:** Discord login, the player's real profile page, the inventory, the **forge** and **alchemy** (both
-fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
+**Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy** and **gathering**
+(all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** the other playable screens from the web mockup (gather, fight), then using items
+**Next:** the other playable screens from the web mockup (fight), then using items
 (Open, Equip, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
@@ -104,6 +104,29 @@ The server referees the clock exactly like the forge: every decision has a deadl
 crafting.TIMER_GRACE_SECONDS`), late or missing pages play the timed-out move, old or repeated pages and buttons
 that aren't on offer are ignored. One craft at a time per player, kept in the website's memory.
 A nine-pattern pill is announced only when it is crafted in Discord (the website has no channel to post in).
+
+## Gathering
+
+`/gather` is the bot's `/gather` (docs/alchemy.md, section 2) in the browser, with the same engine:
+`bot/gathering.py` (`Gathering`) rolls the herb, its age and the choices, checks the pick, stores the herb and keeps
+the Herbal Insight streak, the Wandering Spirit check, the poison HP and the review flags.
+
+1. **Start:** the streak, the odds per grade at the player's realm, and the Wandering Spirit's pause if there is one.
+2. **Round:** the place (its painting is the background), the herb to find with its description, the numbered
+   choice cards (each plant's drawing and LOOK text) and a timer bar. Keys **1–6** pick a card. The Wandering
+   Spirit round shows four signs instead.
+3. **Result:** the real herb ringed in green, a wrong pick in red, every plant named, then **Gather again** or **Stop**.
+4. **The trip ends** (Stop, two idle minutes, or the spirit's pause): what was gathered this trip.
+
+**Why this is fast with many players.** In Discord every round is a 1200×940 card drawn on the server, one at a
+time for all players. Here the browser shows the page; the server only sends text and small pictures that are
+drawn once and kept.
+
+**The server referees.** Which choice is real stays on the server until the pick: the page has no plant names,
+and each choice's picture is asked for by its position (`/gather/plant/<turn>/o2.png`), only for the page now
+showing. The time for a pick is measured on the server, so a late right answer is still "too slow", and a closed
+page times out. Old or repeated pages and unknown choices are ignored. One trip at a time per player, kept in
+the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
 
 Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
