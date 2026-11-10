@@ -6,6 +6,7 @@ Pages:
   /login      sends the player to Discord's permission page
   /callback   Discord sends the player back here; we log them in
   /profile    their character, read from the bot's own database
+  /inventory  their bag: every tab, item and its details (viewing only)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -25,6 +26,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from bot import db
 from . import discord_oauth as oauth
+from .inventory import inventory_view
 from .profile import profile_view
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -56,7 +58,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         https_only=settings.redirect_uri.startswith("https://"),
     )
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes"):                       # only the art the pages use
+    for folder in ("icons", "scenes", "chests"):                       # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
 
@@ -130,6 +132,21 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
         return page(request, "profile.html", p=view, user=user, avatar=avatar)
+
+    @app.get("/inventory", response_class=HTMLResponse)
+    def inventory(request: Request, tab: str = "weapons", item: int | None = None):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        c = conn()
+        try:
+            view = inventory_view(c, user["id"], tab, item)
+        finally:
+            c.close()
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if view is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "inventory.html", v=view, user=user, avatar=avatar)
 
     @app.get("/api/me")
     def api_me(request: Request):

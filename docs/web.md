@@ -4,10 +4,11 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built (step 1):** Discord login, the player's real profile page, logout, and `/api/me` (the profile as
-JSON for the next pages). The website only **reads** the game for now; every action still happens in Discord.
+**Built:** Discord login, the player's real profile page, the inventory, logout, and `/api/me` (the profile
+as JSON for the next pages). The website only **reads** the game for now; every action still happens in Discord.
 
-**Next:** inventory, then the playable screens from the web mockup (forge, alchemy, gather, fight).
+**Next:** the playable screens from the web mockup (forge, alchemy, gather, fight), then using items
+(Open, Equip, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -46,7 +47,20 @@ realm, layer and phase, talent, realm rank, Internal Qi (with rate and time to f
 Lotus Coins and Moon Pearls, the technique slots with their painted icons, beasts slain, herbs gathered,
 breakthroughs, duels won and the weapon.
 
-Only `art/icons` and `art/scenes` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
+## The inventory page
+
+`/inventory` is the same bag as the bot's `/inventory`: the tabs (Chests, Manuals, Weapons, Armor,
+Artifacts, Pills, Herbs, Materials) with how many items each holds, the items as painted tiles in
+their rarity colour, and an Inspect panel for the chosen item. The tabs, items and Inspect text all come
+from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so they always match Discord.
+
+- `?tab=<key>` picks a tab (an unknown one shows Weapons); `?item=<id>` picks an item. Only the
+  logged-in player's own items can be picked.
+- Pictures: each item's painting (`cards/art_icons.py`); chests use `art/chests/<rarity>.png` and
+  manuals their technique's icon.
+- Viewing only for now: using, equipping and opening items stays in Discord.
+
+Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
 
 ## Going online later

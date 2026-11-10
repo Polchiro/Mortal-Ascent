@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Inventory · Mortal Ascent{% endblock %}
+{% block body %}
+{% with page="inventory", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="inventory">
+  <nav class="bagtabs" aria-label="Bag sections">
+    {% for t in v.tabs %}
+    <a href="/inventory?tab={{ t.key }}" class="bagtab{% if t.active %} on{% endif %}"{% if t.active %} aria-current="page"{% endif %}>
+      {% if t.picture %}<img src="{{ t.picture }}" alt="" width="40" height="40">{% endif %}
+      <span>{{ t.label }}</span><b>{{ t.count }}</b>
+    </a>
+    {% endfor %}
+  </nav>
+
+  <section class="card bag" aria-label="{{ v.label }}">
+    <div class="baghead"><h2>{{ v.label }}</h2><span class="sub">Bag {{ v.used }} / {{ v.capacity }}</span></div>
+    {% if v.tiles %}
+    <div class="grid">
+      {% for it in v.tiles %}
+      <a href="/inventory?tab={{ v.category }}&amp;item={{ it.id }}" class="tile{% if it.selected %} sel{% endif %}" style="--rc: {{ it.color }}" aria-label="{{ it.name }}">
+        {% if it.picture %}<img src="{{ it.picture }}" alt="" width="84" height="84" loading="lazy">{% else %}<div class="ph"></div>{% endif %}
+        {% if it.qty > 1 %}<span class="qty">×{{ it.qty }}</span>{% endif %}
+        {% if it.equipped %}<span class="eq">Equipped</span>{% endif %}
+        <span class="tname">{{ it.name }}</span>
+        <span class="rar">{{ it.rarity }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">Nothing here yet. {{ v.label }} drop from exploring, beasts and chests in Discord.</p>
+    {% endif %}
+  </section>
+
+  <aside class="card inspect" aria-label="Item details">
+    {% if v.inspect %}{% set d = v.inspect %}
+    <div class="ihead" style="--rc: {{ d.color }}">
+      {% if d.picture %}<img src="{{ d.picture }}" alt="" width="120" height="120">{% endif %}
+      <div>
+        <h2>{{ d.name }}{% if d.qty > 1 %} <span class="sub">×{{ d.qty }}</span>{% endif %}</h2>
+        <p class="rarity">{{ d.rarity }}</p>
+        <p class="sub">{{ d.kind }}</p>
+      </div>
+    </div>
+    {% for line in d.lines %}<p class="desc">{{ line }}</p>{% endfor %}
+    {% if d.effects %}<ul class="effects">{% for e in d.effects %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    {% for text, c in d.notes %}<p class="inote" style="color: {{ c }}">{{ text }}</p>{% endfor %}
+    <p class="soon small">Using, equipping and opening items comes next. For now, do it in Discord with /inventory.</p>
+    {% else %}
+    <p class="empty">Pick an item to see what it does.</p>
+    {% endif %}
+  </aside>
+</main>
+{% endblock %}

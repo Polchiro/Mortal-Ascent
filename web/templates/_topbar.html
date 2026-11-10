@@ -1,0 +1,13 @@
+<header class="topbar">
+  <span class="brand">MORTAL ASCENT</span>
+  <nav class="tabsnav" aria-label="Main">
+    <a href="/profile"{% if page == "profile" %} class="on" aria-current="page"{% endif %}>Profile</a>
+    <a href="/inventory"{% if page == "inventory" %} class="on" aria-current="page"{% endif %}>Inventory</a>
+  </nav>
+  <div class="purse">
+    <span class="chip coins" title="Lotus Coins">{{ coins }} Lotus</span>
+    <span class="chip pearls" title="Moon Pearls">{{ pearls }} Pearls</span>
+    {% if avatar %}<img class="avatar" src="{{ avatar }}" alt="{{ user.username }}" width="40" height="40">{% endif %}
+    <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
+  </div>
+</header>
