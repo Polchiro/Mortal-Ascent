@@ -33,7 +33,7 @@ def new_state():
 def authorize_url(client_id, redirect_uri, state):
     query = urllib.parse.urlencode({
         "client_id": client_id, "redirect_uri": redirect_uri, "response_type": "code",
-        "scope": SCOPE, "state": state, "prompt": "none",
+        "scope": SCOPE, "state": state,
     })
     return f"{AUTHORIZE_URL}?{query}"
 

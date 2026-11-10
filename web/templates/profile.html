@@ -1,15 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
 {% block body %}
-<header class="topbar">
-  <span class="brand">MORTAL ASCENT</span>
-  <div class="purse">
-    <span class="chip coins" title="Lotus Coins">{{ p.coins }} Lotus</span>
-    <span class="chip pearls" title="Moon Pearls">{{ p.pearls }} Pearls</span>
-    {% if avatar %}<img class="avatar" src="{{ avatar }}" alt="{{ user.username }}" width="40" height="40">{% endif %}
-    <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
-  </div>
-</header>
+{% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 
 <main class="profile">
   <section class="card hero" aria-label="Your cultivator">
@@ -67,7 +59,7 @@
       <p class="sub">Weapon: {{ p.weapon or "none yet (weapons drop from chests)" }}</p>
     </section>
 
-    <p class="soon">Training, exploring, alchemy and the forge come to the website next. For now, play them in Discord: your progress shows up here.</p>
+    <p class="soon">See your bag in <a href="/inventory">Inventory</a>. Training, exploring, alchemy and the forge come to the website next. For now, play them in Discord: your progress shows up here.</p>
   </section>
 </main>
 {% endblock %}

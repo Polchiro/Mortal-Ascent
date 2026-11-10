@@ -42,7 +42,7 @@ def client(db_path, monkeypatch):
 
     monkeypatch.setattr(oauth, "exchange_code", fake_exchange)
     monkeypatch.setattr(oauth, "fetch_user", fake_user)
-    c = TestClient(web_app.create_app(settings), follow_redirects=False)
+    c = TestClient(web_app.create_app(settings), base_url="http://localhost:8000", follow_redirects=False)
     c.seen = seen
     return c
 
@@ -148,3 +148,63 @@ def test_helpers():
     url = oauth.authorize_url("cid", "http://localhost:8000/callback", "abc")
     assert url.startswith(oauth.AUTHORIZE_URL) and "scope=identify" in url and "state=abc" in url
     assert oauth.avatar_url(1, None) is None and oauth.avatar_url(1, "h").endswith("/avatars/1/h.png?size=256")
+
+
+def test_wrong_address_moves_to_the_redirect_address(db_path):
+    settings = web_app.Settings(client_id="cid", client_secret="secret", db_path=db_path, session_secret="t",
+                                redirect_uri="http://localhost:8765/callback")
+    c = TestClient(web_app.create_app(settings), base_url="http://127.0.0.1:8765", follow_redirects=False)
+    for path in ("/", "/login"):
+        r = c.get(path)
+        assert r.status_code == 303 and r.headers["location"] == "http://localhost:8765" + path
+
+
+
+def give(path, uid, *entries):
+    from bot import item_catalog, loot
+    c = db.connect(path)
+    for e in entries:
+        loot.store(c, uid, item_catalog.make(e, 3 if e.startswith("herb") else 1))
+    c.close()
+
+
+def test_inventory_needs_a_login(client):
+    r = client.get("/inventory")
+    assert r.status_code == 303 and r.headers["location"] == "/"
+
+
+def test_inventory_shows_the_bag_with_pictures_and_details(client, db_path):
+    give(db_path, UID, "weapon:spirit:sword", "herb:Mystic:qi", "chest:epic", "pill:qi:Yellow")
+    log_in(client)
+    page = client.get("/inventory")
+    assert page.status_code == 200 and "Weapons" in page.text and "Herbs" in page.text
+    assert "/art/icons/gear/azure_frost_sword.webp" in page.text and "Azure Frost Sword" in page.text
+    assert "Weapons only give stat buffs" in page.text                 # the Inspect panel, first item
+    herbs = client.get("/inventory?tab=herbs")
+    assert "Moon Mushroom" in herbs.text and "×3" in herbs.text and "Refine it with /craft" in herbs.text
+    chests = client.get("/inventory?tab=chests")
+    assert "/art/chests/epic.png" in chests.text and "Epic Chest" in chests.text
+    assert client.get("/art/chests/epic.png").status_code == 200
+
+
+def test_inventory_picks_an_item_and_ignores_other_players_items(client, db_path):
+    give(db_path, UID, "pill:qi:Yellow", "pill:mending:Mortal")
+    c = db.connect(db_path)
+    db.create_player(c, 42, "Other", "Genius", rules.STARTING_LOTUS_COINS, rules.starting_techniques())
+    c.close()
+    give(db_path, 42, "pill:heaven_defying")
+    c = db.connect(db_path)
+    mine = [i["id"] for i in db.get_items(c, UID, "pills")]
+    theirs = db.get_items(c, 42, "pills")[0]["id"]
+    c.close()
+    log_in(client)
+    second = client.get(f"/inventory?tab=pills&item={mine[1]}")
+    assert 'class="tile sel"' in second.text and f"item={mine[1]}" in second.text
+    other = client.get(f"/inventory?tab=pills&item={theirs}")
+    assert other.status_code == 200 and "Heaven-Defying" not in other.text
+
+
+def test_inventory_unknown_tab_and_empty_tab(client):
+    log_in(client)
+    assert client.get("/inventory?tab=../../etc").status_code == 200
+    assert "Nothing here yet" in client.get("/inventory?tab=chests").text

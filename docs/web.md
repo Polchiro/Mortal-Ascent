@@ -4,10 +4,11 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built (step 1):** Discord login, the player's real profile page, logout, and `/api/me` (the profile as
-JSON for the next pages). The website only **reads** the game for now; every action still happens in Discord.
+**Built:** Discord login, the player's real profile page, the inventory, the **forge** (fully playable, saved
+to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** inventory, then the playable screens from the web mockup (forge, alchemy, gather, fight).
+**Next:** the other playable screens from the web mockup (alchemy, gather, fight), then using items
+(Open, Equip, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -46,7 +47,40 @@ realm, layer and phase, talent, realm rank, Internal Qi (with rate and time to f
 Lotus Coins and Moon Pearls, the technique slots with their painted icons, beasts slain, herbs gathered,
 breakthroughs, duels won and the weapon.
 
-Only `art/icons` and `art/scenes` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
+## The inventory page
+
+`/inventory` is the same bag as the bot's `/inventory`: the tabs (Chests, Manuals, Weapons, Armor,
+Artifacts, Pills, Herbs, Materials) with how many items each holds, the items as painted tiles in
+their rarity colour, and an Inspect panel for the chosen item. The tabs, items and Inspect text all come
+from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so they always match Discord.
+
+- `?tab=<key>` picks a tab (an unknown one shows Weapons); `?item=<id>` picks an item. Only the
+  logged-in player's own items can be picked.
+- Pictures: each item's painting (`cards/art_icons.py`); chests use `art/chests/<rarity>.png` and
+  manuals their technique's icon.
+- Viewing only for now: using, equipping and opening items stays in Discord.
+
+## The forge
+
+`/forge` is the bot's `/forge` (docs/forge.md, section 5) in the browser, with the same engine:
+`bot/forging.py` makes the plan, takes the materials, runs the five stages and writes the passive.
+
+1. **Choose:** the player's weapons, armor and artifacts (worn first) with their passive slots; the action
+   (Enchant / Reroll / Replace, and the slot to lock for Replace); an optional essence, fuel and quench liquid.
+2. **Cost:** the materials (with how many they have), the Lotus Coins, the difficulty and anything missing.
+   **Begin** is only active when nothing is missing; the plan is rebuilt from the database on Begin,
+   never trusted from the page.
+3. **Play:** one page per decision with the stage's picture, the engine's lines and the buttons it offers,
+   a timer bar, and the points per stage. The hidden zone, true metal and temperatures stay on the server.
+4. **Result:** the rarity, the new passives, the lines from `finish_forge` (EXP, rank up, Second Chance).
+
+**The server referees the clock.** Every decision has a deadline (`seconds + forge.TIMER_GRACE_SECONDS`).
+When the page comes back late, or is closed, each missed decision is played as a timeout (`act(None)`),
+exactly like the bot's timer, so walking away can't help. Each page carries a turn number: an old or
+repeated page, or a button that isn't on offer, is ignored. One forge at a time per player; a forge in
+progress lives in the website's memory and is lost if the website restarts (like a bot restart).
+
+Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
 
 ## Going online later

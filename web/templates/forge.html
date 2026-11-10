@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Forge · Mortal Ascent{% endblock %}
+{% block body_class %}forgebg{% endblock %}
+{% block body %}
+{% with page="forge", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="forge">
+  <section class="fhead">
+    <div><p class="kicker">BLACKSMITH · {{ v.rank | upper }}</p><h1 class="title">The Forge</h1>
+    <p class="sub">Forge a passive onto your weapon, armor or artifact. Five stages, 100 points: under 50 the materials are lost.</p></div>
+    <span class="chip">{{ v.exp }} blacksmith EXP</span>
+  </section>
+
+  {% if error %}<p class="ferror" role="alert">{{ error }}</p>{% endif %}
+
+  {% if not v.gear %}
+  <section class="card"><p class="empty">You have no weapons, armor or artifacts yet. They drop from chests and beasts in Discord.</p></section>
+  {% else %}
+  {% set c = v.chosen %}
+  <section class="card">
+    <h2>1 · Choose your gear</h2>
+    <div class="gearpick">
+      {% for g in v.gear %}
+      <a href="/forge?item={{ g.id }}" class="gearcard{% if g.selected %} sel{% endif %}">
+        {% if g.picture %}<img src="{{ g.picture }}" alt="" width="64" height="64">{% endif %}
+        <span><b>{{ g.name }}</b><span class="sub">{{ g.tier }} {{ g.gear }}{% if g.equipped %} · worn{% endif %}</span>
+        <span class="slotsline">{% for p in g.slots %}{% if p %}<i style="color: {{ p.color }}">{{ p.name }}</i>{% else %}<i class="emptyslot">empty slot</i>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <form class="card" method="get" action="/forge" id="planform">
+    <input type="hidden" name="item" value="{{ c.item.id }}">
+    <h2>2 · What to forge</h2>
+    <div class="row2">
+      <fieldset><legend>Action</legend>
+        {% for a in c.actions %}<label class="pill"><input type="radio" name="action" value="{{ a.key }}"{% if a.on %} checked{% endif %}> {{ a.label }}</label>{% endfor %}
+        {% if c.action == "replace" %}
+        <p class="sub">Keep (lock with Seal Stones):</p>
+        {% for p in c.item.slots %}<label class="pill"><input type="radio" name="lock" value="{{ loop.index0 }}"{% if c.lock == loop.index0 %} checked{% endif %}> {{ p.name if p else "empty" }}</label>{% endfor %}
+        {% endif %}
+      </fieldset>
+      <fieldset><legend>Extras (optional)</legend>
+        <label>Essence <select name="essence"><option value="">None: any passive</option>
+          {% for e in c.essences %}<option value="{{ e.key }}"{% if e.on %} selected{% endif %}{% if not e.ok %} disabled{% endif %}>{{ e.name }}{% if not e.ok %} ({{ e.why }}){% endif %}</option>{% endfor %}</select></label>
+        <label>Fuel <select name="fuel"><option value="">None</option>
+          {% for f in c.fuels %}<option value="{{ f.key }}"{% if f.on %} selected{% endif %}>{{ f.name }} (wider Ignite zone)</option>{% endfor %}</select></label>
+        <label>Quench liquid <select name="liquid"><option value="">None</option>
+          {% for l in c.liquids %}<option value="{{ l.key }}"{% if l.on %} selected{% endif %}>{{ l.name }} (wider Quench window)</option>{% endfor %}</select></label>
+      </fieldset>
+    </div>
+    <noscript><button class="btn btn-gold small" type="submit">Update cost</button></noscript>
+  </form>
+
+  <section class="card">
+    <h2>3 · Cost</h2>
+    <div class="uses">
+      {% for u in c.uses %}
+      <div class="use{% if u.short %} short{% endif %}">{% if u.picture %}<img src="{{ u.picture }}" alt="" width="48" height="48">{% endif %}
+        <span><b>{{ u.qty }} × {{ u.name }}</b><span class="sub">you have {{ u.have }}</span></span></div>
+      {% endfor %}
+      {% if c.coins %}<div class="use"><span><b>{{ c.coins }} Lotus Coins</b></span></div>{% endif %}
+    </div>
+    <p class="sub">Difficulty: <b>{{ c.difficulty }}</b> · {{ c.seconds }} s per decision · Ignite zone {{ c.zone }}° · needs a {{ c.needs_rank }} blacksmith</p>
+    {% if c.missing %}<p class="ferror">Missing: {{ c.missing | join(", ") }}</p>{% endif %}
+    <form method="post" action="/forge/begin">
+      {% for k in ["action", "essence", "fuel", "liquid"] %}<input type="hidden" name="{{ k }}" value="{{ c[k] or "" }}">{% endfor %}
+      <input type="hidden" name="item" value="{{ c.item.id }}">
+      <input type="hidden" name="lock" value="{{ c.lock if c.lock is not none else "" }}">
+      <button class="btn btn-gold" type="submit"{% if not c.ready %} disabled{% endif %}>Begin forging</button>
+    </form>
+    <p class="sub">The materials and coins are taken when you press Begin.</p>
+  </section>
+  {% endif %}
+</main>
+<script>
+document.querySelectorAll('#planform input, #planform select').forEach(function (el) {
+  el.addEventListener('change', function () { document.getElementById('planform').submit(); });
+});
+</script>
+{% endblock %}
