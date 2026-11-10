@@ -29,7 +29,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _lock(path):
-    f = open(path, "a+")
+    """Lock byte 0 of the file and write our process id after it, so a second copy can say
+    which process to close. Returns the open file, or None if another process holds the lock."""
+    f = os.fdopen(os.open(path, os.O_RDWR | os.O_CREAT), "r+")
     try:
         if os.name == "nt":
             import msvcrt
@@ -41,7 +43,24 @@ def _lock(path):
     except OSError:
         f.close()
         return None
+    try:
+        f.seek(1)          # byte 0 is the locked one; the id goes after it
+        f.truncate()
+        f.write(str(os.getpid()))
+        f.flush()
+    except OSError:
+        pass
     return f
+
+
+def _holder(path):
+    try:
+        with open(path) as f:
+            f.seek(1)
+            text = f.read().strip()
+        return int(text) if text.isdigit() else None
+    except OSError:
+        return None
 
 
 def token_lock_path(token):
@@ -62,6 +81,15 @@ def acquire(db_path, token=None):
             return None
         held.append(f)
     return held
+
+
+def holder(db_path, token=None):
+    """The process id of the copy that holds the lock, if it wrote one."""
+    for path in [f"{db_path}.lock"] + ([token_lock_path(token)] if token else []):
+        pid = _holder(path)
+        if pid and pid != os.getpid():
+            return pid
+    return None
 
 
 def code_version():
