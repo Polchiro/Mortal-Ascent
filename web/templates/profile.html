@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
+{% block body %}
+<header class="topbar">
+  <span class="brand">MORTAL ASCENT</span>
+  <div class="purse">
+    <span class="chip coins" title="Lotus Coins">{{ p.coins }} Lotus</span>
+    <span class="chip pearls" title="Moon Pearls">{{ p.pearls }} Pearls</span>
+    {% if avatar %}<img class="avatar" src="{{ avatar }}" alt="{{ user.username }}" width="40" height="40">{% endif %}
+    <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
+  </div>
+</header>
+
+<main class="profile">
+  <section class="card hero" aria-label="Your cultivator">
+    <img class="emblem" src="/art/scenes/duel_ring_left.png" alt="" width="200" height="200">
+    <h1 class="name">{{ p.name }}</h1>
+    <p class="realm">{{ p.realm }} · {{ p.layer }} layer · {{ p.phase }}</p>
+    <p class="sub">{{ p.talent }} talent · #{{ p.rank }} on the realm ranks</p>
+    {% if p.status %}<p class="status">{{ p.status }}</p>{% endif %}
+
+    <div class="qi">
+      <div class="row"><span>Internal Qi</span><span class="jade">{{ p.qi }} / {{ p.qi_cap }}</span></div>
+      <div class="bar" role="progressbar" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100"><div style="width: {{ p.qi_pct }}%"></div></div>
+      <p class="sub">+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</p>
+      <p class="sub">Next: {{ p.qi_gate }}{% if p.qi_gate_note %} ({{ p.qi_gate_note }}){% endif %}</p>
+    </div>
+
+    <div class="stats3">
+      <div><b>{{ p.hp }}</b><span>HP{% if p.injured %} · injured{% endif %}</span></div>
+      <div><b>{{ p.attack }}</b><span>Attack</span></div>
+      <div><b>{{ p.defense }}</b><span>Defense</span></div>
+    </div>
+  </section>
+
+  <section class="col">
+    <section class="card">
+      <h2>Techniques</h2>
+      <div class="slots">
+        {% for s in p.slots %}
+        <div class="slot{% if s.locked %} locked{% endif %}">
+          {% if s.icon %}<img src="{{ s.icon }}" alt="" width="64" height="64">{% else %}<div class="ph"></div>{% endif %}
+          <div>
+            <p class="label">{{ s.slot }}</p>
+            {% if s.name %}
+            <p class="tname">{{ s.name }}</p>
+            <p class="sub">{{ s.grade }} · {{ s.mastery }}</p>
+            <p class="sub">{{ s.power }}</p>
+            {% elif s.locked %}
+            <p class="sub">{{ s.note or "Locked" }}</p>
+            {% else %}
+            <p class="sub">Empty</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Journey</h2>
+      <div class="journey">
+        {% for label, value in p.stats %}
+        <div><b>{{ value }}</b><span>{{ label }}</span></div>
+        {% endfor %}
+      </div>
+      <p class="sub">Weapon: {{ p.weapon or "none yet (weapons drop from chests)" }}</p>
+    </section>
+
+    <p class="soon">Training, exploring, alchemy and the forge come to the website next. For now, play them in Discord: your progress shows up here.</p>
+  </section>
+</main>
+{% endblock %}

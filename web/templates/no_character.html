@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}No character yet · Mortal Ascent{% endblock %}
+{% block body_class %}scene{% endblock %}
+{% block body %}
+<main class="center panel-wrap">
+  <section class="panel">
+    <p class="kicker">LOGGED IN AS {{ user.username | upper }}</p>
+    <h1 class="title">No character yet</h1>
+    <p class="lead">Start your journey in Discord: type <b>/start</b> in a server with the Mortal Ascent bot. Then come back and refresh this page.</p>
+    <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
+  </section>
+</main>
+{% endblock %}
