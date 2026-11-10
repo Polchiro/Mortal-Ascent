@@ -8,7 +8,7 @@ website, and later the other way round.
 (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
 **Next:** the other playable screens from the web mockup (fight), then using items
-(Open, Equip, Take) from the inventory.
+(Open, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -60,7 +60,14 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
   manuals their technique's icon. Items with no painted file (the 39 essences) are drawn by the bot's own
   card code and served from `/art/drawn/<kind>.png` (`web/drawn.py`, drawn once and kept in memory), so they
   look exactly like the Discord cards.
-- Viewing only for now: using, equipping and opening items stays in Discord.
+- **Equip / Unequip** for weapons, armor and artifacts, in the Inspect panel. The rules are the bot's own
+  (`loot.use_item`, `gear.equip_problem`): the realm a tier needs, one weapon and one armor, two artifacts of
+  different families. Only the logged-in player's own gear can be changed, and the bot's message is shown.
+- The profile page has an **Equipment** card: the four slots (weapon, armor, two artifacts) with what is worn,
+  its effects, Unequip, and a link to the bag for an empty slot. HP / Attack / Defense follow at once.
+- The website can't see a fight running in Discord. A fight reads the gear when it starts, so changing gear here
+  during one counts from the next fight.
+- Using and opening items (pills, chests, manuals) stays in Discord for now.
 
 ## The forge
 

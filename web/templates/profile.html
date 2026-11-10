@@ -56,10 +56,36 @@
         <div><b>{{ value }}</b><span>{{ label }}</span></div>
         {% endfor %}
       </div>
-      <p class="sub">Weapon: {{ p.weapon or "none yet (weapons drop from chests)" }}</p>
     </section>
 
-    <p class="soon">See your bag in <a href="/inventory">Inventory</a>. Training, exploring, alchemy and the forge come to the website next. For now, play them in Discord: your progress shows up here.</p>
+    <section class="card" id="gear">
+      <h2>Equipment</h2>
+      {% if notice %}<p class="gnotice" role="status">{{ notice | rich | safe }}</p>{% endif %}
+      <div class="gearslots">
+        {% for w in worn %}
+        <div class="gearslot"{% if w.item %} style="--rc: {{ w.item.color }}"{% endif %}>
+          <span class="kicker">{{ w.slot | upper }}</span>
+          {% if w.item %}
+          <a class="gearitem" href="/inventory?tab={{ w.tab }}&amp;item={{ w.item.id }}">
+            {% if w.item.picture %}<img src="{{ w.item.picture }}" alt="" width="64" height="64">{% endif %}
+            <span><b>{{ w.item.name }}</b><span class="sub">{{ w.item.rarity }}</span></span>
+          </a>
+          {% for e in w.item.effects[:3] %}<span class="sub">{{ e }}</span>{% endfor %}
+          <form method="post" action="/inventory/unequip">
+            <input type="hidden" name="item" value="{{ w.item.id }}"><input type="hidden" name="back" value="profile">
+            <button class="link" type="submit">Unequip</button>
+          </form>
+          {% else %}
+          <span class="sub">Empty</span>
+          {% if w.spare %}<a class="link" href="/inventory?tab={{ w.tab }}">Choose from {{ w.spare }} in your bag</a>
+          {% else %}<span class="sub">None in your bag yet. They drop from chests and beasts.</span>{% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <p class="soon">See your bag in <a href="/inventory">Inventory</a>. Gather herbs, refine pills and forge your gear from the tabs above. Training, exploring and fights are still in Discord: your progress shows up here.</p>
   </section>
 </main>
 {% endblock %}

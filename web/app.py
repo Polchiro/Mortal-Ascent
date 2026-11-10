@@ -6,7 +6,7 @@ Pages:
   /login      sends the player to Discord's permission page
   /callback   Discord sends the player back here; we log them in
   /profile    their character, read from the bot's own database
-  /inventory  their bag: every tab, item and its details (viewing only)
+  /inventory  their bag: every tab, item and its details; Equip / Unequip for weapons, armor and artifacts
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
@@ -31,6 +31,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import db
 from . import discord_oauth as oauth
 from . import alchemy_play, drawn, forge_play, gather_play
+from . import inventory as bag
 from .inventory import inventory_view
 from .profile import profile_view
 
@@ -74,6 +75,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     for folder in ("icons", "scenes", "chests"):                       # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
+    templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
 
     def conn():
         return db.connect(settings.db_path)
@@ -139,12 +141,14 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         c = conn()
         try:
             view = profile_view(c, user["id"], username=user["username"])
+            worn = bag.worn_view(c, user["id"]) if view else None
         finally:
             c.close()
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
-        return page(request, "profile.html", p=view, user=user, avatar=avatar)
+        return page(request, "profile.html", p=view, worn=worn, user=user, avatar=avatar,
+                    notice=request.session.pop("gear_notice", None))
 
     @app.get("/inventory", response_class=HTMLResponse)
     def inventory(request: Request, tab: str = "weapons", item: int | None = None):
@@ -159,7 +163,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
-        return page(request, "inventory.html", v=view, user=user, avatar=avatar)
+        return page(request, "inventory.html", v=view, user=user, avatar=avatar,
+                    notice=request.session.pop("gear_notice", None))
 
     @app.get("/api/me")
     def api_me(request: Request):
@@ -172,6 +177,24 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         finally:
             c.close()
         return {"user": {"id": str(user["id"]), "username": user["username"]}, "profile": view}
+
+    def gear_step(fn):
+        async def step(request: Request):
+            user = current_user(request)
+            if not user:
+                return RedirectResponse("/", status_code=303)
+            form = await form_of(request)
+            item_id = num(form.get("item"))
+            tab, message = await run_in_threadpool(with_conn, fn, user["id"], item_id)
+            request.session["gear_notice"] = message
+            if form.get("back") == "profile":
+                return RedirectResponse("/profile", status_code=303)
+            where = {"tab": tab, "item": item_id} if tab else {}
+            return RedirectResponse("/inventory?" + urllib.parse.urlencode(where), status_code=303)
+        return step
+
+    app.post("/inventory/equip")(gear_step(bag.equip))
+    app.post("/inventory/unequip")(gear_step(bag.unequip))
 
     forges = app.state.forges = forge_play.Forges()
 

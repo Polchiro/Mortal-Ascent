@@ -177,3 +177,11 @@ body.gatherbg{background:linear-gradient(rgba(8,14,32,.70),rgba(8,14,32,.93)),ur
 .btn.sign{min-width:84px;font-size:32px}
 .btn.ghost{background:transparent;border:2px solid var(--gold);color:var(--gold2);text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
 @media (max-width:520px){.tabsnav{overflow-x:auto;max-width:100%}.tabsnav a{padding-left:12px;padding-right:12px}}
+.gnotice{margin:0;padding:10px 14px;border-radius:12px;background:rgba(111,217,176,.12);border:1px solid rgba(111,217,176,.5);color:#CFF5E6}
+.inspect form .btn{width:100%}
+.gearslots{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:10px}
+.gearslot{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:rgba(9,16,36,.65);border:2px solid var(--rc,rgba(232,194,122,.2))}
+.gearslot .kicker{margin:0}
+.gearitem{display:flex;align-items:center;gap:10px;color:var(--cream);text-decoration:none}.gearitem img{object-fit:contain;flex:none}
+.gearitem>span{display:flex;flex-direction:column}.gearitem b{color:var(--rc,var(--cream))}
+.gearslot .link{align-self:flex-start;padding:0;color:var(--gold2)}

@@ -45,7 +45,15 @@
     {% for line in d.lines %}<p class="desc">{{ line }}</p>{% endfor %}
     {% if d.effects %}<ul class="effects">{% for e in d.effects %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
     {% for text, c in d.notes %}<p class="inote" style="color: {{ c }}">{{ text }}</p>{% endfor %}
-    <p class="soon small">Using, equipping and opening items comes next. For now, do it in Discord with /inventory.</p>
+    {% if notice %}<p class="gnotice" role="status">{{ notice | rich | safe }}</p>{% endif %}
+    {% if d.action %}
+    <form method="post" action="/inventory/{{ d.action }}">
+      <input type="hidden" name="item" value="{{ d.id }}">
+      <button class="btn {{ "btn-gold" if d.action == "equip" else "btn-gold ghost" }}" type="submit">{{ "Equip" if d.action == "equip" else "Unequip" }}</button>
+    </form>
+    {% else %}
+    <p class="soon small">Using and opening items comes next. For now, do it in Discord with /inventory.</p>
+    {% endif %}
     {% else %}
     <p class="empty">Pick an item to see what it does.</p>
     {% endif %}
