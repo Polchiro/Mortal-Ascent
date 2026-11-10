@@ -44,8 +44,12 @@ def main():
     settings = settings_from_env()
     host = os.environ.get("WEB_HOST", "127.0.0.1")
     port = int(os.environ.get("WEB_PORT", "8000"))
-    print(f"\n  Mortal Ascent website: open http://localhost:{port} in your browser\n")
-    uvicorn.run(create_app(settings), host=host, port=port, log_level="info")
+
+    def ready():                # printed only once the website really runs
+        print(f"\n  Mortal Ascent website is running: open http://127.0.0.1:{port} in your browser"
+              f"\n  (keep this window open; press Ctrl+C to stop)\n", flush=True)
+
+    uvicorn.run(create_app(settings, on_ready=ready), host=host, port=port, log_level="info")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ The website only READS the game for now. Every number comes from the same code t
 """
 import os
 import secrets
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from fastapi import FastAPI, Request
@@ -39,8 +40,14 @@ class Settings:
     session_secret: str = ""
 
 
-def create_app(settings: Settings) -> FastAPI:
-    app = FastAPI(title="Mortal Ascent", docs_url=None, redoc_url=None, openapi_url=None)
+def create_app(settings: Settings, on_ready=None) -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app):
+        if on_ready:
+            on_ready()
+        yield
+
+    app = FastAPI(title="Mortal Ascent", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.add_middleware(
         SessionMiddleware,
         secret_key=settings.session_secret or secrets.token_urlsafe(32),
