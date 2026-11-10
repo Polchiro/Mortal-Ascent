@@ -17,6 +17,7 @@ import forge
 
 from bot import db, forging, materials, passives
 
+from . import drawn
 from .profile import art_url, number
 
 STAGE_ART = {s: f"/art/scenes/forge_stage_{s}.png" for s in forge.STAGES}
@@ -121,7 +122,8 @@ def passive_view(gear, key):
 
 def material_view(key, qty=None, have=None):
     m = materials.MATERIALS[key]
-    return {"key": key, "name": m["name"], "qty": qty, "have": have, "picture": art_url(materials.icon_kind(key)),
+    kind = materials.icon_kind(key)
+    return {"key": key, "name": m["name"], "qty": qty, "have": have, "picture": art_url(kind) or drawn.url(kind),
             "short": have is not None and qty is not None and have < qty}
 
 

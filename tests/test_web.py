@@ -208,3 +208,14 @@ def test_inventory_unknown_tab_and_empty_tab(client):
     log_in(client)
     assert client.get("/inventory?tab=../../etc").status_code == 200
     assert "Nothing here yet" in client.get("/inventory?tab=chests").text
+
+
+def test_essences_get_drawn_pictures(client, db_path):
+    give(db_path, UID, "material:essence:venom:shard")
+    log_in(client)
+    page = client.get("/inventory?tab=materials")
+    assert "/art/drawn/mat:essence:venom:shard.png" in page.text
+    r = client.get("/art/drawn/mat:essence:venom:shard.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
+    for bad in ("/art/drawn/../../.env.png", "/art/drawn/nonsense.png", "/art/drawn/mat:" + "x" * 80 + ".png"):
+        assert client.get(bad).status_code == 404
