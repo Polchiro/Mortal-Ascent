@@ -156,3 +156,24 @@ body.alchemybg{background:linear-gradient(rgba(8,14,32,.74),rgba(8,14,32,.94)),u
 .gauge.yin{background:linear-gradient(90deg,#0A1226,#3A4A7A 50%,#0A1226)}
 .gauge.yang{background:linear-gradient(90deg,#3A2A0A,#E8C27A 50%,#3A2A0A)}
 .stageart.pulse{filter:drop-shadow(0 0 calc(8px + 40px * var(--glow,0)) rgba(245,220,166,calc(.3 + .6 * var(--glow,0))))}
+body.gatherbg{background:linear-gradient(rgba(8,14,32,.70),rgba(8,14,32,.93)),url(/art/scenes/gather_misty_slope.jpg) center/cover fixed,var(--navy);background-size:cover;background-position:center;background-attachment:fixed}
+.sub.side{margin:0 12px}.hpbar{flex:none;margin:0 12px}.hpbar div{background:#E05A4F}
+.use.slim{padding:4px 12px 4px 6px}
+.uses.center{justify-content:center}
+.target{display:flex;align-items:center;gap:14px;padding:10px 18px 10px 10px;border-radius:16px;border:2px solid;background:rgba(9,16,36,.7);text-align:left}
+.target>span{display:flex;flex-direction:column}.target b{font:800 22px Cinzel,Georgia,serif}.target img{object-fit:contain}
+.pline.desc{font-size:20px;color:var(--gold2)}.pline.big2{font-size:19px}
+.plants{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;width:100%}
+.plants.wide{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.plants,.plants.wide{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.plantcard{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;border-radius:16px;border:2px solid rgba(232,194,122,.3);background:rgba(9,16,36,.8);color:var(--cream);font:15px Inter,Arial,sans-serif;cursor:pointer;min-height:44px}
+.plantcard:hover:enabled,.plantcard:focus-visible{border-color:var(--gold);background:rgba(232,194,122,.12)}
+.plantcard:disabled{cursor:default;opacity:.75}
+.plantcard img{width:100%;height:auto;object-fit:contain}
+.plantcard .no{position:absolute;top:8px;left:8px;width:30px;height:30px;line-height:30px;border-radius:50%;background:var(--gold);color:#14223F;font:800 16px/30px Cinzel,Georgia,serif}
+.plantcard .look{line-height:1.35}
+.plantcard.right{border-color:var(--jade);box-shadow:0 0 18px rgba(111,217,176,.5);opacity:1}
+.plantcard.wrong{border-color:#E05A4F;box-shadow:0 0 18px rgba(224,90,79,.5);opacity:1}
+.btn.sign{min-width:84px;font-size:32px}
+.btn.ghost{background:transparent;border:2px solid var(--gold);color:var(--gold2);text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+@media (max-width:520px){.tabsnav{overflow-x:auto;max-width:100%}.tabsnav a{padding-left:12px;padding-right:12px}}

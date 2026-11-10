@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Gather · Mortal Ascent{% endblock %}
+{% block body_class %}gatherbg{% endblock %}
+{% block body %}
+{% with page="gather", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="forge">
+  <section class="fhead">
+    <div><p class="kicker">THE WILDS</p><h1 class="title">Gather Herbs</h1>
+    <p class="sub">Each round names a herb and describes it. Pick the plant that matches before time runs out.
+    Poisonous look-alikes differ in one detail, so read carefully. No limit: gather as long as you like.</p></div>
+    <span class="chip">{{ v.total }} herbs gathered</span>
+  </section>
+
+  {% if error %}<p class="ferror" role="alert">{{ error | replace("**", "") }}</p>{% endif %}
+
+  <section class="card">
+    <h2>Herbal Insight {{ v.streak }}</h2>
+    <p class="sub">Each correct pick in a row builds your streak. A wrong pick or a timeout resets it.
+      {% if v.mult %}Old herbs are now <b>×{{ v.mult }}</b> as likely.{% endif %}{% if v.next %} Next: {{ v.next }}.{% endif %}</p>
+    <h2>What you may find</h2>
+    <div class="uses">
+      {% for o in v.odds %}<div class="use"><span><b style="color: {{ o.color }}">{{ o.grade }}</b><span class="sub">{{ o.pct }}</span></span></div>{% endfor %}
+    </div>
+    {% if v.blocked %}<p class="ferror">{{ v.blocked | safe }}</p>{% endif %}
+    <form method="post" action="/gather/begin">
+      <button class="btn btn-gold" type="submit"{% if v.blocked %} disabled{% endif %}>Start gathering</button>
+    </form>
+    <p class="sub">The timer starts as soon as the first herb appears. Herbs go straight into your bag, for Alchemy.</p>
+  </section>
+</main>
+{% endblock %}
