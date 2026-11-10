@@ -42,7 +42,7 @@ def client(db_path, monkeypatch):
 
     monkeypatch.setattr(oauth, "exchange_code", fake_exchange)
     monkeypatch.setattr(oauth, "fetch_user", fake_user)
-    c = TestClient(web_app.create_app(settings), follow_redirects=False)
+    c = TestClient(web_app.create_app(settings), base_url="http://localhost:8000", follow_redirects=False)
     c.seen = seen
     return c
 
@@ -148,3 +148,13 @@ def test_helpers():
     url = oauth.authorize_url("cid", "http://localhost:8000/callback", "abc")
     assert url.startswith(oauth.AUTHORIZE_URL) and "scope=identify" in url and "state=abc" in url
     assert oauth.avatar_url(1, None) is None and oauth.avatar_url(1, "h").endswith("/avatars/1/h.png?size=256")
+
+
+def test_wrong_address_moves_to_the_redirect_address(db_path):
+    settings = web_app.Settings(client_id="cid", client_secret="secret", db_path=db_path, session_secret="t",
+                                redirect_uri="http://localhost:8765/callback")
+    c = TestClient(web_app.create_app(settings), base_url="http://127.0.0.1:8765", follow_redirects=False)
+    for path in ("/", "/login"):
+        r = c.get(path)
+        assert r.status_code == 303 and r.headers["location"] == "http://localhost:8765" + path
+
