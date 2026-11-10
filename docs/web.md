@@ -4,10 +4,10 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built:** Discord login, the player's real profile page, the inventory, logout, and `/api/me` (the profile
-as JSON for the next pages). The website only **reads** the game for now; every action still happens in Discord.
+**Built:** Discord login, the player's real profile page, the inventory, the **forge** (fully playable, saved
+to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** the playable screens from the web mockup (forge, alchemy, gather, fight), then using items
+**Next:** the other playable screens from the web mockup (alchemy, gather, fight), then using items
 (Open, Equip, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
@@ -59,6 +59,26 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 - Pictures: each item's painting (`cards/art_icons.py`); chests use `art/chests/<rarity>.png` and
   manuals their technique's icon.
 - Viewing only for now: using, equipping and opening items stays in Discord.
+
+## The forge
+
+`/forge` is the bot's `/forge` (docs/forge.md, section 5) in the browser, with the same engine:
+`bot/forging.py` makes the plan, takes the materials, runs the five stages and writes the passive.
+
+1. **Choose:** the player's weapons, armor and artifacts (worn first) with their passive slots; the action
+   (Enchant / Reroll / Replace, and the slot to lock for Replace); an optional essence, fuel and quench liquid.
+2. **Cost:** the materials (with how many they have), the Lotus Coins, the difficulty and anything missing.
+   **Begin** is only active when nothing is missing; the plan is rebuilt from the database on Begin,
+   never trusted from the page.
+3. **Play:** one page per decision with the stage's picture, the engine's lines and the buttons it offers,
+   a timer bar, and the points per stage. The hidden zone, true metal and temperatures stay on the server.
+4. **Result:** the rarity, the new passives, the lines from `finish_forge` (EXP, rank up, Second Chance).
+
+**The server referees the clock.** Every decision has a deadline (`seconds + forge.TIMER_GRACE_SECONDS`).
+When the page comes back late, or is closed, each missed decision is played as a timeout (`act(None)`),
+exactly like the bot's timer, so walking away can't help. Each page carries a turn number: an old or
+repeated page, or a button that isn't on offer, is ignored. One forge at a time per player; a forge in
+progress lives in the website's memory and is lost if the website restarts (like a bot restart).
 
 Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.

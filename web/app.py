@@ -7,6 +7,7 @@ Pages:
   /callback   Discord sends the player back here; we log them in
   /profile    their character, read from the bot's own database
   /inventory  their bag: every tab, item and its details (viewing only)
+  /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -22,10 +23,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from bot import db
 from . import discord_oauth as oauth
+from . import forge_play
 from .inventory import inventory_view
 from .profile import profile_view
 
@@ -159,6 +162,91 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         finally:
             c.close()
         return {"user": {"id": str(user["id"]), "username": user["username"]}, "profile": view}
+
+    forges = app.state.forges = forge_play.Forges()
+
+    def num(v):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return None
+
+    async def form_of(request):
+        """A posted form as a plain dict (no extra library needed)."""
+        body = (await request.body()).decode("utf-8", "replace")
+        return {k: v[0] for k, v in urllib.parse.parse_qs(body).items()}
+
+    def with_conn(fn, *args):
+        c = conn()
+        try:
+            return fn(c, *args)
+        finally:
+            c.close()
+
+    @app.get("/forge", response_class=HTMLResponse)
+    def forge_page(request: Request, item: str = "", action: str = "", essence: str = "", fuel: str = "",
+                   liquid: str = "", lock: str = ""):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        if with_conn(forges.catch_up, user["id"]):
+            return RedirectResponse("/forge/play", status_code=303)
+        view = with_conn(forge_play.setup_view, user["id"], num(item), action or None, essence or None,
+                         fuel or None, liquid or None, num(lock))
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if view is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "forge.html", v=view, user=user, avatar=avatar, error=request.session.pop("forge_error", None))
+
+    @app.post("/forge/begin")
+    async def forge_begin(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+
+        def begin(c, uid):
+            plan = forge_play.plan_from(c, uid, form)
+            if plan is None:
+                return "Pick a piece of gear first."
+            return forges.start(c, uid, plan)[1]
+
+        error = await run_in_threadpool(with_conn, begin, user["id"])
+        if error:
+            request.session["forge_error"] = error
+            return RedirectResponse("/forge?" + urllib.parse.urlencode({k: v for k, v in form.items() if v}), status_code=303)
+        return RedirectResponse("/forge/play", status_code=303)
+
+    @app.get("/forge/play", response_class=HTMLResponse)
+    def forge_playing(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        s = with_conn(forges.catch_up, user["id"])
+        if not s:
+            return RedirectResponse("/forge", status_code=303)
+        p = with_conn(lambda c, uid: db.get_player(c, uid), user["id"])
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        return page(request, "forge_play.html", g=forge_play.play_view(s, forges.clock()), user=user, avatar=avatar,
+                    coins=f"{p['lotus_coins']:,}", pearls=f"{p['moon_pearls']:,}")
+
+    @app.post("/forge/act")
+    async def forge_act(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        await run_in_threadpool(with_conn, forges.act, user["id"], form.get("key", ""), num(form.get("turn")))
+        return RedirectResponse("/forge/play", status_code=303)
+
+    @app.post("/forge/done")
+    def forge_done(request: Request):
+        user = current_user(request)
+        if user:
+            s = forges.get(user["id"])
+            if s and s.outcome is not None:
+                forges.clear(user["id"])
+        return RedirectResponse("/forge", status_code=303)
 
     @app.post("/logout")
     def logout(request: Request):
