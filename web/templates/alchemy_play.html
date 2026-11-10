@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Refining · Mortal Ascent{% endblock %}
+{% block body_class %}alchemybg{% endblock %}
+{% block body %}
+{% with page="alchemy" %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="forgeplay">
+  <aside class="track" aria-label="Stages">
+    <div class="stg on pillhead" style="border-color: {{ g.color }}">
+      {% if g.picture %}<img src="{{ g.picture }}" alt="" width="44" height="44">{% endif %}
+      <span style="color: {{ g.color }}">{{ g.name }}{% if g.batch > 1 %} ×{{ g.batch }}{% endif %}<span class="sub">{{ g.effect }}</span></span>
+    </div>
+    {% for s in g.points %}
+    <div class="stg{% if s.active %} on{% endif %}{% if s.pct is not none %} done{% endif %}">
+      <span class="emo" aria-hidden="true">{{ s.emoji }}</span><span>{{ s.name }}</span><b>{{ s.pct if s.pct is not none else "—" }}</b>
+    </div>
+    {% endfor %}
+    <div class="herbsin">
+      {% for h in g.herbs %}<p class="sub">{{ h.qty }} × {{ h.label }}</p>{% endfor %}
+    </div>
+    <p class="sub">{{ rank.rank }} Alchemist · {{ rank.exp }} EXP</p>
+  </aside>
+
+  {% if not g.done %}
+  <section class="stage card" aria-live="polite">
+    <p class="kicker">{% if g.stage_no %}STAGE {{ g.stage_no }} OF {{ g.total }} · {% endif %}{{ g.title | upper }}</p>
+    <img class="stageart{% if g.stage == 4 %} pulse{% endif %}" src="{{ g.art }}" alt="" width="220" height="220"
+      {% if g.gauge and g.gauge.kind == "pulse" %}style="--glow: {{ (g.gauge.level / g.gauge.steps) | round(2) }}"{% endif %}>
+    {% for line in g.lines %}<p class="pline">{{ line | safe }}</p>{% endfor %}
+    {% if g.gauge %}{% set q = g.gauge %}
+    {% if q.kind == "heat" %}
+    <div class="gauge"><div class="needle" style="left: {{ q.pct }}%"></div></div>
+    <div class="glabels"><span>{{ q.left }}</span><span>{{ q.label }}</span><span>{{ q.right }}</span></div>
+    {% elif q.kind == "balance" %}
+    <div class="balance">
+      <span>Yin {{ q.yin }}</span><div class="gauge yin"><div class="tgt" style="left: 50%"></div><div class="needle" style="left: {{ q.yin }}%"></div></div>
+      <span>Yang {{ q.yang }}</span><div class="gauge yang"><div class="tgt" style="left: 50%"></div><div class="needle" style="left: {{ q.yang }}%"></div></div>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
+    <div class="timer"><div class="tbar"><div id="tfill" style="width: {{ (g.left / g.seconds * 100) | round(1) }}%"></div></div><span id="tleft">{{ g.left }}s</span></div>
+    <form method="post" action="/alchemy/act" class="choices">
+      <input type="hidden" name="turn" value="{{ g.turn }}">
+      {% for o in g.options %}<button class="btn {{ 'btn-jade' if o.good else 'btn-gold' }}" type="submit" name="key" value="{{ o.key }}">{{ o.emoji }} {{ o.label }}</button>{% endfor %}
+    </form>
+  </section>
+  <script>
+  (function () {
+    var left = {{ g.left }}, total = {{ g.seconds }}, fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
+    var end = Date.now() + left * 1000;
+    var t = setInterval(function () {
+      var l = Math.max(0, (end - Date.now()) / 1000);
+      fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
+      fill.style.background = l / total > 0.5 ? '#6FD9B0' : l / total > 0.25 ? '#E8C27A' : '#E05A4F';
+      if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/alchemy/play'); }, 1100); }
+    }, 100);
+    document.querySelectorAll('.choices button').forEach(function (b) { b.addEventListener('click', function () { clearInterval(t); }); });
+  })();
+  </script>
+  {% else %}
+  <section class="stage card result" style="--rc: {{ g.result_color }}">
+    <img class="stageart" src="{{ g.art }}" alt="" width="220" height="220">
+    <p class="kicker">FINAL SCORE {{ g.score }}{% if g.patterns %} · {{ g.patterns }} PATTERN{{ "S" if g.patterns > 1 }}{% endif %}</p>
+    <h1 class="title" style="color: {{ g.result_color }}">{{ g.title }}</h1>
+    {% if g.tribulation == "won" %}<p class="pline">⛈️ You survived the Pill Tribulation!</p>{% endif %}
+    {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
+    {% for l in g.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+    <form method="post" action="/alchemy/done"><button class="btn btn-gold" type="submit">Craft again</button></form>
+    <p class="sub"><a href="/inventory?tab=pills">See your pills</a></p>
+  </section>
+  {% endif %}
+</main>
+{% endblock %}

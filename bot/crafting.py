@@ -575,6 +575,20 @@ class Craft:
                      * self.batch)
 
 
+def furnace_degrees(player):
+    """Extra safe-zone degrees from a worn Furnace artifact (炉) and the Steady Hand passive."""
+    return gear.artifact_bonus(player, "craft_zone_degrees") + passives.artifact_passive(player, "steady_hand",
+                                                                                         "safe_zone_degrees")
+
+
+def craft_for(player, kind, grade, age, rng=None, batch=1):
+    """A Craft with this player's alchemist rank, Furnace, Swift Hands and Alchemy Sage.
+    The one place both /craft (CraftView) and the website start a craft."""
+    return Craft(kind, grade, rank_of(player["alchemy_exp"]), age, rng, furnace_degrees(player),
+                 passives.artifact_passive(player, "swift_hands", "decision_seconds"),
+                 passives.artifact_passive(player, "alchemy_sage", "extra_patterns"), batch=batch)
+
+
 def heat_bar(value, width=20, mark=None):
     pos = round(value / 100 * (width - 1))
     cells = ["▱"] * width
@@ -782,16 +796,10 @@ class CraftView(OwnedView):
 
     def furnace(self):
         """Extra safe-zone degrees from a worn Furnace artifact (炉) and the Steady Hand passive."""
-        p = self.player
-        return gear.artifact_bonus(p, "craft_zone_degrees") + passives.artifact_passive(p, "steady_hand",
-                                                                                        "safe_zone_degrees")
+        return furnace_degrees(self.player)
 
     def new_craft(self, kind, grade, age, rng, batch=None):
-        p = self.player
-        return Craft(kind, grade, self.rank(), age, rng, self.furnace(),
-                     passives.artifact_passive(p, "swift_hands", "decision_seconds"),
-                     passives.artifact_passive(p, "alchemy_sage", "extra_patterns"),
-                     batch=self.batch if batch is None else batch)
+        return craft_for(self.player, kind, grade, age, rng, self.batch if batch is None else batch)
 
     def batch_cap(self):
         return alchemy.batch_cap(self.rank())

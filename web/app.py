@@ -8,10 +8,11 @@ Pages:
   /profile    their character, read from the bot's own database
   /inventory  their bag: every tab, item and its details (viewing only)
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
+  /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
-The website only READS the game for now. Every number comes from the same code the bot uses.
+Every number comes from the same code the bot uses. The forge and alchemy write to the same character.
 """
 import os
 import secrets
@@ -28,7 +29,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from bot import db
 from . import discord_oauth as oauth
-from . import drawn, forge_play
+from . import alchemy_play, drawn, forge_play
 from .inventory import inventory_view
 from .profile import profile_view
 
@@ -255,6 +256,76 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             if s and s.outcome is not None:
                 forges.clear(user["id"])
         return RedirectResponse("/forge", status_code=303)
+
+    crafts = app.state.crafts = alchemy_play.Crafts()
+
+    @app.get("/alchemy", response_class=HTMLResponse)
+    def alchemy_page(request: Request, pill: str = "", batch: str = "", prefer: str = ""):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        if with_conn(crafts.catch_up, user["id"]):
+            return RedirectResponse("/alchemy/play", status_code=303)
+        view = with_conn(alchemy_play.setup_view, user["id"], pill or None, num(batch), prefer or None)
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if view is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "alchemy.html", v=view, user=user, avatar=avatar,
+                    error=request.session.pop("alchemy_error", None))
+
+    @app.post("/alchemy/begin")
+    async def alchemy_begin(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+
+        def begin(c, uid):
+            pill = alchemy_play.parse_pill(form.get("pill"))
+            if pill is None:
+                return "Pick a pill first."
+            return crafts.start(c, uid, *pill, prefer=form.get("prefer") or "young", batch=num(form.get("batch")) or 1)[1]
+
+        error = await run_in_threadpool(with_conn, begin, user["id"])
+        if error:
+            request.session["alchemy_error"] = error
+            return RedirectResponse("/alchemy?" + urllib.parse.urlencode({k: v for k, v in form.items() if v}),
+                                    status_code=303)
+        return RedirectResponse("/alchemy/play", status_code=303)
+
+    @app.get("/alchemy/play", response_class=HTMLResponse)
+    def alchemy_playing(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        s = with_conn(crafts.catch_up, user["id"])
+        if not s:
+            return RedirectResponse("/alchemy", status_code=303)
+        p = with_conn(lambda c, uid: db.get_player(c, uid), user["id"])
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        return page(request, "alchemy_play.html", g=alchemy_play.play_view(s, crafts.clock()), user=user,
+                    avatar=avatar, coins=f"{p['lotus_coins']:,}", pearls=f"{p['moon_pearls']:,}",
+                    rank=alchemy_play.rank_view(p))
+
+    @app.post("/alchemy/act")
+    async def alchemy_act(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        await run_in_threadpool(with_conn, crafts.act, user["id"], form.get("key", ""), num(form.get("turn")))
+        return RedirectResponse("/alchemy/play", status_code=303)
+
+    @app.post("/alchemy/done")
+    def alchemy_done(request: Request):
+        user = current_user(request)
+        back = "/alchemy"
+        if user:
+            s = crafts.get(user["id"])
+            if s and s.outcome is not None:
+                back = "/alchemy?" + urllib.parse.urlencode({"pill": f"{s.kind}:{s.grade}", "batch": s.craft.batch})
+                crafts.clear(user["id"])
+        return RedirectResponse(back, status_code=303)
 
     @app.post("/logout")
     def logout(request: Request):

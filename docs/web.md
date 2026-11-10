@@ -4,10 +4,10 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built:** Discord login, the player's real profile page, the inventory, the **forge** (fully playable, saved
-to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
+**Built:** Discord login, the player's real profile page, the inventory, the **forge** and **alchemy** (both
+fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** the other playable screens from the web mockup (alchemy, gather, fight), then using items
+**Next:** the other playable screens from the web mockup (gather, fight), then using items
 (Open, Equip, Take) from the inventory.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
@@ -81,6 +81,29 @@ When the page comes back late, or is closed, each missed decision is played as a
 exactly like the bot's timer, so walking away can't help. Each page carries a turn number: an old or
 repeated page, or a button that isn't on offer, is ignored. One forge at a time per player; a forge in
 progress lives in the website's memory and is lost if the website restarts (like a bot restart).
+
+## Alchemy
+
+`/alchemy` is the bot's `/craft` (docs/alchemy.md, section 5) in the browser, with the same engine:
+`bot/crafting.py` picks the herbs (`plan`), takes them (`take_ingredients`), runs the stages (`Craft`, started by
+`craft_for`, the same function `/craft` uses, so the Furnace artifact, Steady Hand, Swift Hands and Alchemy Sage
+count on both) and stores the pill (`finish_craft`: EXP, rank up, quests, cauldron ash, Second Chance).
+
+1. **Choose:** every pill the player's alchemist rank allows, each marked *Ready to craft* or *Missing herbs*.
+2. **Recipe:** the herbs needed (with how many they have), the difficulty, seconds per decision, heat zone and
+   stages; the batch size (from 2nd Grade, up to `alchemy.batch_cap`) and youngest / oldest herbs; then exactly
+   which herbs go in, their average age and the most patterns it allows, and any rank relief.
+   **Begin** is only active when nothing is missing; the plan is rebuilt from the database on Begin.
+3. **Play:** one page per decision with the engine's lines and buttons, a timer bar, and the score per stage:
+   a heat gauge (Ignite), the herb buttons (Add the Herbs), Yin and Yang bars (Fuse, Seal the Core), the glowing
+   pill (Condense) and the Pill Tribulation. The safe heat zone, the herb order and the true pulse stay on the server.
+4. **Result:** the pill and its patterns (e.g. *Jade Marrow Pill · 七纹*) or the explosion, with the lines from
+   `finish_craft`. **Craft again** returns to the same recipe.
+
+The server referees the clock exactly like the forge: every decision has a deadline (`seconds +
+crafting.TIMER_GRACE_SECONDS`), late or missing pages play the timed-out move, old or repeated pages and buttons
+that aren't on offer are ignored. One craft at a time per player, kept in the website's memory.
+A nine-pattern pill is announced only when it is crafted in Discord (the website has no channel to post in).
 
 Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.

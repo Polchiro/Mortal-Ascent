@@ -144,3 +144,15 @@ select{min-height:40px;border-radius:10px;border:1px solid rgba(232,194,122,.4);
 .choices .btn{width:auto;min-width:150px}
 .result .stageart{filter:drop-shadow(0 0 30px var(--rc))}
 .newpassive{display:flex;flex-direction:column;gap:2px;padding:12px 18px;border-radius:14px;border:2px solid;background:rgba(9,16,36,.7);font-size:18px}
+body.alchemybg{background:linear-gradient(rgba(8,14,32,.74),rgba(8,14,32,.94)),url(/art/scenes/alchemy_chamber.jpg) center/cover fixed,var(--navy)}
+.btn-jade{background:var(--jade);color:#0B2A20;font-family:Cinzel,Georgia,serif}
+.slotsline .ok{color:var(--jade)}
+.recipehead{display:flex;align-items:center;gap:16px;margin-bottom:12px}.recipehead h2{margin:0}.recipehead img{object-fit:contain}
+.pillhead span{display:flex;flex-direction:column}.pillhead .sub{font-weight:400}
+.stg .emo{flex:none;width:24px;text-align:center}
+.herbsin{padding:4px 12px}.herbsin .sub{margin:2px 0}
+.balance{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px 12px;width:min(560px,100%);font-weight:700;text-align:left}
+.balance .gauge{width:100%}
+.gauge.yin{background:linear-gradient(90deg,#0A1226,#3A4A7A 50%,#0A1226)}
+.gauge.yang{background:linear-gradient(90deg,#3A2A0A,#E8C27A 50%,#3A2A0A)}
+.stageart.pulse{filter:drop-shadow(0 0 calc(8px + 40px * var(--glow,0)) rgba(245,220,166,calc(.3 + .6 * var(--glow,0))))}
