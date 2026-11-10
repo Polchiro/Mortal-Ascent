@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body_class %}scene{% endblock %}
+{% block body %}
+<main class="center">
+  <img class="emblem" src="/art/scenes/duel_ring_left.png" alt="" width="170" height="170">
+  <h1 class="logo">MORTAL ASCENT</h1>
+  <p class="lead">Same character as the Discord bot. Play anywhere.</p>
+  <a class="btn btn-discord" href="/login">Continue with Discord</a>
+  {% if message %}<p class="note">{{ message }}</p>{% endif %}
+  <p class="fine">Discord only tells us your username and picture.<br>We never see your password, email or messages.</p>
+</main>
+{% endblock %}

@@ -7,6 +7,7 @@ Every immortal started as a mortal, but cultivation isn’t where the journey be
 - `docs/` holds the design docs (realms, stats, talent, technique, training, beasts, explore, challenges, economy, equipment, tutorial).
 - The `.py` files at the root hold the game data and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`, `qi_card.py`).
 - `fonts/` is where the card fonts go; see [fonts/README.md](fonts/README.md).
+- `web/` is the website: log in with Discord and see your real character. See [docs/web.md](docs/web.md).
 
 ## Setup
 
@@ -14,3 +15,13 @@ Every immortal started as a mortal, but cultivation isn’t where the journey be
 pip install -r requirements.txt
 python scripts/render_cards.py   # renders every card as a smoke check
 ```
+
+## Website
+
+```
+pip install -r requirements-web.txt
+python -m web                    # then open http://localhost:8000
+```
+
+It needs `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` in `.env`, and `http://localhost:8000/callback`
+added under OAuth2 > Redirects in the Discord Developer Portal. Full steps: [docs/web.md](docs/web.md).
