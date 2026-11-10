@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Alchemy · Mortal Ascent{% endblock %}
+{% block body_class %}alchemybg{% endblock %}
+{% block body %}
+{% with page="alchemy", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="forge">
+  <section class="fhead">
+    <div><p class="kicker">ALCHEMIST · {{ v.rank | upper }}</p><h1 class="title">Alchemy Cauldron</h1>
+    <p class="sub">Refine herbs into pills. Every craft is random: the safe heat, herb order, balance and timing change each time.
+    Your score gives 1–9 pill patterns (丹纹). Below 40% the cauldron explodes and the herbs are lost.</p></div>
+    <span class="chip">{{ v.exp }} alchemy EXP · {{ v.next }}</span>
+  </section>
+
+  {% if error %}<p class="ferror" role="alert">{{ error }}</p>{% endif %}
+
+  {% set c = v.chosen %}
+  <section class="card">
+    <h2>1 · Choose a pill</h2>
+    <div class="gearpick">
+      {% for p in v.pills %}
+      <a href="/alchemy?pill={{ p.key }}" class="gearcard{% if p.selected %} sel{% endif %}">
+        {% if p.picture %}<img src="{{ p.picture }}" alt="" width="56" height="56">{% endif %}
+        <span><b>{{ p.name }}</b><span class="sub"><span style="color: {{ p.color }}">{{ p.grade }}</span> {{ p.label }}</span>
+        <span class="slotsline">{% if p.ready %}<i class="ok">Ready to craft</i>{% else %}<i class="emptyslot">Missing herbs</i>{% endif %}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if c %}
+  <section class="card recipe">
+    <div class="recipehead">
+      {% if c.picture %}<img src="{{ c.picture }}" alt="" width="88" height="88">{% endif %}
+      <div><h2 style="color: {{ c.color }}">{{ c.emoji }} {{ c.name }}</h2>
+      <p class="sub">{{ c.effect }} · needs a {{ c.needs_rank }} alchemist</p></div>
+    </div>
+
+    <h2>2 · Recipe</h2>
+    <div class="uses">
+      {% for r in c.recipe %}
+      <div class="use{% if r.short %} short{% endif %}">{% if r.picture %}<img src="{{ r.picture }}" alt="" width="48" height="48">{% endif %}
+        <span><b>{{ r.qty }} × {{ r.name }}</b><span class="sub">you have {{ r.have }}</span></span></div>
+      {% endfor %}
+    </div>
+    <p class="sub">Herbs: {{ c.min_age }} · Difficulty: <b>{{ c.difficulty }}</b> · {{ c.seconds }} s per decision · heat zone {{ c.zone }}°</p>
+    <p class="sub">Stages: {{ c.stages | join(" → ") }}</p>
+
+    <form method="get" action="/alchemy" id="planform">
+      <input type="hidden" name="pill" value="{{ c.key }}">
+      <div class="row2">
+        {% if v.cap > 1 %}
+        <fieldset><legend>Batch</legend>
+          <label>Pills at once <select name="batch">
+            {% for b in c.batches %}<option value="{{ b.n }}"{% if b.on %} selected{% endif %}>{{ b.n }} pill{{ "s" if b.n > 1 }}{% if b.n > 1 %} (harder){% endif %}{% if not b.ready %} · missing herbs{% endif %}</option>{% endfor %}
+          </select></label>
+          {% if c.solo %}<p class="sub">One minigame for all {{ c.batch }} pills, every pill gets the same patterns: {{ c.seconds }} s per decision
+            (instead of {{ c.solo.seconds }} s), heat zone {{ c.zone }}° (instead of {{ c.solo.zone }}°), tighter Yin/Yang. An explosion loses every herb.</p>
+          {% else %}<p class="sub">As a {{ v.rank }} alchemist you can refine up to {{ v.cap }} pills at once. Bigger batches are harder.</p>{% endif %}
+        </fieldset>
+        {% endif %}
+        <fieldset><legend>Herbs to use</legend>
+          <label class="pill"><input type="radio" name="prefer" value="young"{% if c.prefer == "young" %} checked{% endif %}> Youngest herbs</label>
+          <label class="pill"><input type="radio" name="prefer" value="old"{% if c.prefer == "old" %} checked{% endif %}> Oldest herbs (better score)</label>
+        </fieldset>
+      </div>
+      <noscript><button class="btn btn-gold small" type="submit">Update</button></noscript>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>3 · Into the cauldron</h2>
+    {% if c.uses %}
+    <div class="uses">
+      {% for u in c.uses %}
+      <div class="use">{% if u.picture %}<img src="{{ u.picture }}" alt="" width="48" height="48">{% endif %}<span><b>{{ u.qty }} × {{ u.name }}</b></span></div>
+      {% endfor %}
+    </div>
+    <p class="sub">Average age <b>{{ c.age }}-year</b>: up to <b>{{ c.max_patterns }}</b> patterns{% if c.score_bonus %}, {{ c.score_bonus }} score{% endif %}</p>
+    {% endif %}
+    {% if c.relief %}<p class="sub">{{ c.relief | join(" · ") }}</p>{% endif %}
+    {% if c.missing %}<p class="ferror">Missing: {{ c.missing | join(", ") }}. Gather herbs with /gather in Discord.</p>{% endif %}
+    <form method="post" action="/alchemy/begin">
+      <input type="hidden" name="pill" value="{{ c.key }}">
+      <input type="hidden" name="batch" value="{{ c.batch }}">
+      <input type="hidden" name="prefer" value="{{ c.prefer }}">
+      <button class="btn btn-gold" type="submit"{% if not c.ready %} disabled{% endif %}>Begin refining</button>
+    </form>
+    <p class="sub">The herbs are taken when you press Begin.</p>
+  </section>
+  {% endif %}
+</main>
+<script>
+document.querySelectorAll('#planform input, #planform select').forEach(function (el) {
+  el.addEventListener('change', function () { document.getElementById('planform').submit(); });
+});
+</script>
+{% endblock %}
