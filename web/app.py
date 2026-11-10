@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
@@ -28,7 +28,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from bot import db
 from . import discord_oauth as oauth
-from . import forge_play
+from . import drawn, forge_play
 from .inventory import inventory_view
 from .profile import profile_view
 
@@ -60,6 +60,14 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         session_cookie="ma_session", max_age=SESSION_DAYS * 86400, same_site="lax",
         https_only=settings.redirect_uri.startswith("https://"),
     )
+    @app.get("/art/drawn/{kind}.png")
+    def drawn_icon(kind: str):
+        """Icons with no painted file, drawn by the bot's card code (web/drawn.py)."""
+        data = drawn.png(kind)
+        if data is None:
+            return Response(status_code=404)
+        return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests"):                       # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")

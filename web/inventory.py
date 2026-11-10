@@ -11,6 +11,7 @@ from bot import db
 from bot.sheet import data as sheet
 from bot.sheet import items
 
+from . import drawn
 from .profile import ART_ROOT, art_url, number
 
 RARITY_COLOR = {                       # the bag's rarity colours (cards/theme.py RARITY), as CSS
@@ -28,8 +29,9 @@ def item_picture(item):
         path = os.path.join(ART_ROOT, "chests", f"{item['key']}.png")
         return f"/art/chests/{item['key']}.png" if os.path.exists(path) else None
     if item["category"] == "manuals":
-        return art_url(f"tech:{item['key']}")
-    return art_url(items.item_icon(item))
+        return art_url(f"tech:{item['key']}") or drawn.url(items.item_icon(item))
+    kind = items.item_icon(item)
+    return art_url(kind) or drawn.url(kind)        # painted file, else drawn like the cards (essences)
 
 
 def color(key):

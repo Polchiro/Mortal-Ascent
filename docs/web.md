@@ -57,7 +57,9 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 - `?tab=<key>` picks a tab (an unknown one shows Weapons); `?item=<id>` picks an item. Only the
   logged-in player's own items can be picked.
 - Pictures: each item's painting (`cards/art_icons.py`); chests use `art/chests/<rarity>.png` and
-  manuals their technique's icon.
+  manuals their technique's icon. Items with no painted file (the 39 essences) are drawn by the bot's own
+  card code and served from `/art/drawn/<kind>.png` (`web/drawn.py`, drawn once and kept in memory), so they
+  look exactly like the Discord cards.
 - Viewing only for now: using, equipping and opening items stays in Discord.
 
 ## The forge
