@@ -99,7 +99,9 @@ def test_a_beast_fight_shows_the_fight_screen(client):
     assert e["name"] in page and f"/art/beasts/{e['slug']}.png" in page
     for label in ("Strike", "Guard", "Break", "Flee", "Iron Fist", "Horse Stance Guard"):
         assert label in page, label
-    assert page.count('class="actbtn') == 7 and "BATTLE LOG" in page
+    assert page.count('class="actbtn') == 4 and "BATTLE LOG" in page             # Strike, Techniques, Guard, Break
+    assert page.count('class="sidebtn') == 2 and "Techniques" in page             # Pill and Flee on the side
+    assert 'id="tfill"' not in page and "no turn timer" in page
     assert client.get(f"/art/beasts/{e['slug']}.png").status_code == 200
     assert client.get("/art/icons/actions/break.webp").status_code == 200
 
@@ -128,13 +130,26 @@ def test_old_pages_and_impossible_moves_are_ignored(client):
     assert s.battle is b
 
 
-def test_the_turn_timer_plays_guard_when_time_runs_out(client):
+def test_no_reaction_time_but_a_forgotten_fight_still_ends(client):
+    from web import explore_play
     s = fight(client)
     b = s.battle
     t0 = b.turn
-    client.now[0] += battle_rules.TURN_SECONDS + 2
+    client.now[0] += battle_rules.TURN_SECONDS * 4                # thinking is fine: the turn waits
+    client.get("/explore/play")
+    assert b.turn == t0
+    client.now[0] += explore_play.TURN_LIMIT
     client.get("/explore/play")
     assert b.turn == t0 + 1 and any("hesitated" in t for _, t in b.history[-1])
+
+
+def test_a_turn_shows_the_result_word(client):
+    s = fight(client)
+    b = s.battle
+    b.intent = {"move": "strike", "kind": "normal", "target": b.fighters[0], "name": "Strike"}
+    act(client, "move", "guard")
+    page = client.get("/explore/play").text
+    assert "Countered!" in page or s.battle is None
 
 
 def test_winning_ends_the_fight_and_the_expedition_goes_on(client):
@@ -196,7 +211,7 @@ def test_a_lair_can_be_hunted_alone_after_the_expedition(client, db_path):
     act(client, "hunt")
     assert s.lair_battle is not None
     page = client.get("/explore/play").text
-    assert "Elite lair" in page and page.count('class="actbtn') == 7
+    assert "Elite lair" in page and page.count('class="actbtn') == 4
     act(client, "move", "flee")
     for _ in range(20):
         if s.lair_result is not None:

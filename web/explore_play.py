@@ -28,8 +28,13 @@ from .forge_play import rich
 from .profile import number
 
 IDLE_SECONDS = 120                      # like the bot's expedition panel (views.PANEL_IDLE_SECONDS)
+# No reaction time on the website for now: a turn waits for the player. Only a page left alone this long
+# gets the bot's timed-out move (Guard; three in a row: flee), so a forgotten fight still ends.
+TURN_LIMIT = 600
 MAX_TIMEOUTS = 200
-ACTIONS = ("strike", "attack_tech", "defense_tech", "pill", "guard", "break", "flee")   # keys 1-7
+ACTIONS = ("strike", "attack_tech", "defense_tech", "pill", "guard", "break", "flee")
+MAIN = ("strike", "techniques", "guard", "break")             # the four big buttons, keys 1-4
+SIDE = ("pill", "flee")                                       # small buttons on the side: P and F
 ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique",
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
@@ -122,9 +127,9 @@ class Explores:
             now = self.clock()
             b = s.battle
             n = 0
-            while b is not None and not b.over and now > s.turn_started + battle_rules.TURN_SECONDS + TURN_GRACE \
+            while b is not None and not b.over and now > s.turn_started + TURN_LIMIT + TURN_GRACE \
                     and n < MAX_TIMEOUTS:
-                missed = s.turn_started + battle_rules.TURN_SECONDS
+                missed = s.turn_started + TURN_LIMIT
                 self._resolve(conn, s, b)                    # nobody picked: the engine plays Guard
                 s.turn_started = missed + TURN_GRACE
                 n += 1
@@ -357,21 +362,64 @@ def action_info(b, f, key):
     return f"{t['name']}: {describe(t)}. Counts as {as_}. Rests {rest} turn{'s' if rest != 1 else ''} after use."
 
 
+def action(b, f, key):
+    t = f.tech(key) if key.endswith("_tech") else None
+    state = ""
+    if key.endswith("_tech"):
+        left = f.cooldowns.get(key, 0)
+        state = "Empty slot" if not t else (f"Rests {left} turn{'s' if left != 1 else ''}" if left else "Ready")
+    elif key == "pill":
+        n = f.pill_count()
+        state = f"×{n}" if n else "None"
+    icon = f"/art/icons/actions/{key}.webp"
+    if t:
+        from bot.sheet.data import tech_kind
+        from .profile import art_url
+        icon = art_url(tech_kind(t["name"], rules.TECH_BY_NAME.get(t["name"], {}).get("school", "Body"))) or icon
+    return {"key": key, "label": t["name"] if t else ACTION_LABEL[key], "icon": icon,
+            "ready": f.ready(key) and not b.over, "state": state, "info": action_info(b, f, key),
+            "kind": "Attack technique" if key == "attack_tech" else "Defense technique" if key == "defense_tech" else ""}
+
+
 def actions(b, f):
-    out = []
-    for i, key in enumerate(ACTIONS):
-        t = f.tech(key) if key.endswith("_tech") else None
-        label = t["name"] if t else ACTION_LABEL[key]
-        state = ""
-        if key.endswith("_tech"):
-            left = f.cooldowns.get(key, 0)
-            state = "Empty" if not t else (f"{left} turn{'s' if left != 1 else ''}" if left else "Ready")
-        elif key == "pill":
-            n = f.pill_count()
-            state = f"×{n}" if n else "None"
-        out.append({"key": key, "no": i + 1, "label": label, "icon": f"/art/icons/actions/{key}.webp",
-                    "ready": f.ready(key) and not b.over, "state": state, "info": action_info(b, f, key)})
-    return out
+    """The four big buttons (Strike, Techniques, Guard, Break) and the two small ones (Pill, Flee)."""
+    techs = [action(b, f, k) for k in ("attack_tech", "defense_tech")]
+    main = []
+    for i, key in enumerate(MAIN):
+        if key == "techniques":
+            ready = [t for t in techs if t["ready"]]
+            main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/attack_tech.webp",
+                         "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Resting",
+                         "info": "Your attack technique counts as a Strike, your defense technique as a Guard. "
+                                 "Both rest a few turns after use.", "techs": techs})
+        else:
+            main.append(dict(action(b, f, key), no=i + 1))
+    side = [dict(action(b, f, k), hotkey="P" if k == "pill" else "F") for k in SIDE]
+    return main, side
+
+
+def result_banner(log, me):
+    """The big word over your fighter after a turn, read from the engine's log (like the mockup's "Dodge!")."""
+    mine = [t for _, t in log if t.startswith(me)]
+    theirs = [t for _, t in log if not t.startswith(me)]
+    text = " ".join(mine)
+    if "counters for" in text:
+        return "Countered!", "You blocked the blow and struck back."
+    if "Stunned" in text:
+        return "Stunned!", "Your Strike hit its Guard. Only Guard next turn."
+    if "blocked by" in text:
+        return "Blocked!", "It guarded against your Strike."
+    if any("shatters" in t or "staggers" in t for t in mine + theirs):
+        return "Guard broken!", "It is staggered and loses its next turn."
+    if "clash" in text:
+        return "Clash!", "Same move: both hit at half."
+    if "heals" in text or "swallow" in text.lower():
+        return "Restored!", "The pill's warmth spreads through you."
+    if mine and "dmg" in text:
+        return "Hit!", None
+    if any("misses" in t or "blocked" in t for t in theirs):
+        return "Evaded!", "The attack missed."
+    return None, None
 
 
 def fight_view(conn, s, b, p, now):
@@ -384,7 +432,8 @@ def fight_view(conn, s, b, p, now):
     log = [(icon, rich(text)) for icon, text in (b.log or [])]
     fx = effects(b.log or [], f.name)
     prev = s.prev or {}
-    left = max(0.0, s.turn_started + battle_rules.TURN_SECONDS - now)
+    main, side = actions(b, f)
+    word, sub = result_banner(b.log or [], f.name)
     return {
         "lair": b is s.lair_battle,
         "title": ("Beast King's den" if e["tier"] == "beast_king" else "Elite lair") if b is s.lair_battle else
@@ -393,6 +442,8 @@ def fight_view(conn, s, b, p, now):
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
                "face": FACE, "art": FIGHTER, "qi": number(round(p["qi"])),
+               "qi_cap": number(rules.qi_needed(p["realm"], p["layer"])),
+               "qi_pct": max(0, min(100, round(p["qi"] / max(1, rules.qi_needed(p["realm"], p["layer"])) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
         "enemy": {"name": e["name"], "tier": TIER_LABEL[e["tier"]], "role": e.get("role", "").title(),
                   "element": e.get("element") if beast else None, "realm": e.get("realm", ""),
@@ -401,8 +452,8 @@ def fight_view(conn, s, b, p, now):
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
-        "log": log, "fx": fx, "turn_no": b.turn, "seconds": battle_rules.TURN_SECONDS, "left": round(left, 1),
-        "actions": actions(b, f), "arena": ARENA,
+        "log": log, "fx": fx, "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
+        "result": {"word": word, "sub": sub} if word else None,
     }
 
 
