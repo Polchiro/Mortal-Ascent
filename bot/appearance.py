@@ -7,11 +7,11 @@ import looks
 from . import db
 
 
-def choose(conn, user_id, gender, hair, color):
+def choose(conn, user_id, gender, hair):
     """Save a new look. Returns (ok, message)."""
-    look = looks.clean(gender, hair, color)
+    look = looks.clean(gender, hair)
     if look is None:
-        return False, "Pick a gender, a hairstyle and a hair colour."
+        return False, "Pick a gender and a hairstyle."
     p = db.get_player(conn, user_id)
     if p is None:
         return False, "No character yet."

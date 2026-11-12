@@ -77,7 +77,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     @app.get("/look/{name}")
     def look_picture(name: str):
-        """A finished character look (looks.py): /look/female_braid_azure.webp, or ..._face.png for the round face."""
+        """A finished character look (looks.py): /look/female_braid.webp, or ..._face.png for the round face."""
         face = name.endswith("_face.png")
         look = looks.from_key(name[:-len("_face.png")] if face else name[:-len(".webp")] if name.endswith(".webp") else "")
         if look is None:
@@ -247,7 +247,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         form = await form_of(request)
         ok, message = await run_in_threadpool(with_conn, appearance_rules.choose, user["id"],
-                                              form.get("gender"), form.get("hair"), form.get("color"))
+                                              form.get("gender"), form.get("hair"))
         if ok:
             request.session["look_done"] = message
             return RedirectResponse("/profile", status_code=303)

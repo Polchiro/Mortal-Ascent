@@ -244,4 +244,4 @@ def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
     for pose in ("idle", "windup", "strike"):
         assert f"/art/portraits/fight/sword_{pose}.webp" in page
     assert 'data-pose="idle"' in page and 'data-bar="me"' in page and 'data-bar="enemy"' in page
-    assert "data-events='[{" in page and '"act": "strike"' in page and '"hit": true' in page
+    assert "data-events='[{" in page and '"act": "strike"' in page

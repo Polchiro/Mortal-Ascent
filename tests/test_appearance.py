@@ -36,24 +36,24 @@ def test_new_and_existing_players_have_no_look_yet(conn):
 def test_every_option_has_its_picture_and_hair_mask():
     for g, hairs in looks.HAIRSTYLES.items():
         for h, _ in hairs:
-            img = looks.render({"gender": g, "hair": h, "color": "silver"})
+            img = looks.render({"gender": g, "hair": h})
             assert img.size == (260, 540)
 
 
 def test_first_look_is_free_then_moon_pearls(conn):
     stats_before = {k: me(conn)[k] for k in ("strength", "vitality", "spirit", "realm", "layer", "lotus_coins")}
-    ok, msg = appearance.choose(conn, UID, "female", "braid", "azure")
+    ok, msg = appearance.choose(conn, UID, "female", "braid")
     assert ok and "Single Braid" in msg and "Moon Pearls" not in msg
     p = me(conn)
-    assert looks.of_player(p) == {"gender": "female", "hair": "braid", "color": "azure"}
+    assert looks.of_player(p) == {"gender": "female", "hair": "braid"}
     assert p["appearance_changes"] == 1 and p["moon_pearls"] == 0
     assert {k: p[k] for k in stats_before} == stats_before                 # a picture only
 
-    ok, msg = appearance.choose(conn, UID, "male", "topknot", "black")     # no pearls: refused, nothing changes
+    ok, msg = appearance.choose(conn, UID, "male", "topknot")     # no pearls: refused, nothing changes
     assert not ok and "200 Moon Pearls" in msg and looks.of_player(me(conn))["gender"] == "female"
 
     db.update_player(conn, UID, moon_pearls=250)
-    ok, msg = appearance.choose(conn, UID, "male", "topknot", "black")
+    ok, msg = appearance.choose(conn, UID, "male", "topknot")
     assert ok and "200 Moon Pearls" in msg
     p = me(conn)
     assert p["moon_pearls"] == 50 and p["appearance_changes"] == 2 and looks.of_player(p)["hair"] == "topknot"
@@ -61,29 +61,26 @@ def test_first_look_is_free_then_moon_pearls(conn):
 
 
 def test_bad_or_unchanged_choices_are_refused(conn):
-    assert not appearance.choose(conn, UID, "female", "topknot", "silver")[0]     # a male hairstyle
-    assert not appearance.choose(conn, UID, "male", "topknot", "green")[0]
-    assert not appearance.choose(conn, UID, "robot", "topknot", "silver")[0]
-    assert appearance.choose(conn, UID, "male", "long", "silver")[0]
-    ok, msg = appearance.choose(conn, UID, "male", "long", "silver")
+    assert not appearance.choose(conn, UID, "female", "topknot")[0]     # a male hairstyle
+    assert not appearance.choose(conn, UID, "robot", "topknot")[0]
+    assert appearance.choose(conn, UID, "male", "long")[0]
+    ok, msg = appearance.choose(conn, UID, "male", "long")
     assert not ok and "already" in msg and me(conn)["appearance_changes"] == 1
 
 
 def test_a_broken_stored_look_counts_as_none():
-    assert looks.parse("{not json") is None and looks.parse('{"gender": "male", "hair": "x", "color": "silver"}') is None
+    assert looks.parse("{not json") is None and looks.parse('{"gender": "male", "hair": "x"}') is None
 
 
-def test_colour_changes_only_the_hair():
-    import numpy as np
-    plain = np.asarray(looks.render({"gender": "female", "hair": "ponytail", "color": "silver"}))
-    red = np.asarray(looks.render({"gender": "female", "hair": "ponytail", "color": "crimson"}))
-    outside = np.asarray(Image.open(f"{looks.ART}/female_ponytail_hair.png").convert("L")) == 0
-    moved = (plain != red).any(-1)[outside]
-    assert moved.mean() < 0.02                                # outside the hair (bar its soft edge) nothing moves
+def test_a_look_saved_with_a_colour_is_silver_now(conn):
+    db.update_player(conn, UID, appearance='{"color": "azure", "gender": "female", "hair": "braid"}', appearance_changes=1)
+    assert looks.of_player(me(conn)) == {"gender": "female", "hair": "braid"}
+    assert looks.key(looks.of_player(me(conn))) == "female_braid"
+    assert not appearance.choose(conn, UID, "female", "braid")[0]          # same look: nothing charged
 
 
 def test_face_for_cards_is_cached_png():
-    look = {"gender": "male", "hair": "topknot", "color": "brown"}
+    look = {"gender": "male", "hair": "topknot"}
     data = looks.face_png(look)
     assert Image.open(io.BytesIO(data)).size == (looks.FACE_SIZE, looks.FACE_SIZE)
     assert looks.face_png(look) == data
@@ -119,11 +116,12 @@ def player_at(path):
 
 
 def test_look_pictures_are_served(client):
-    r = client.get("/look/female_crown_bun_azure.webp")
+    r = client.get("/look/female_crown_bun.webp")
     assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
-    r = client.get("/look/male_long_crimson_face.png")
+    r = client.get("/look/male_long_face.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
-    assert client.get("/look/female_topknot_silver.webp").status_code == 404
+    assert client.get("/look/female_topknot.webp").status_code == 404
+    assert client.get("/look/female_braid_azure.webp").status_code == 404
     assert client.get("/look/../../etc/passwd").status_code == 404
 
 
@@ -131,14 +129,14 @@ def test_profile_invites_a_free_look_then_shows_it(client):
     page = client.get("/profile").text
     assert "Choose your look" in page and "/art/portraits/cultivator_default.webp" in page
     page = client.get("/appearance").text
-    assert "Your first look is <b>free</b>" in page and "Decide later" in page and "Single Braid" in page
-    r = client.post("/appearance", data={"gender": "female", "hair": "braid", "color": "azure"})
+    assert "Your first look is <b>free</b>" in page and "Decide later" in page and "Single Braid" in page and "Hair colour" not in page
+    r = client.post("/appearance", data={"gender": "female", "hair": "braid"})
     assert r.headers["location"] == "/profile"
     page = client.get("/profile").text
-    assert "/look/female_braid_azure.webp" in page and "Change look" in page and "new look is set" in page
+    assert "/look/female_braid.webp" in page and "Change look" in page and "new look is set" in page
     page = client.get("/appearance").text
     assert "200 Moon Pearls" in page and "disabled" in page              # no pearls yet
-    client.post("/appearance", data={"gender": "male", "hair": "topknot", "color": "silver"})
+    client.post("/appearance", data={"gender": "male", "hair": "topknot"})
     assert "200 Moon Pearls" in client.get("/appearance").text
     assert looks.of_player(player_at(client.path))["hair"] == "braid"
 
@@ -152,5 +150,5 @@ def test_profile_page_scripts_stay_out_of_the_title(client):
 def test_logged_out_cannot_choose(client):
     from fastapi.testclient import TestClient
     fresh = TestClient(client.app, base_url="http://localhost:8000", follow_redirects=False)
-    assert fresh.post("/appearance", data={"gender": "male", "hair": "long", "color": "silver"}).status_code == 303
+    assert fresh.post("/appearance", data={"gender": "male", "hair": "long"}).status_code == 303
     assert player_at(client.path)["appearance"] is None

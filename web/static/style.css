@@ -471,13 +471,11 @@ form.inline{display:inline}
 .lookopt:has(input:focus-visible){outline:2px solid var(--spirit);outline-offset:2px}
 .lookopt.gender{flex-direction:row;min-width:110px;justify-content:center;font-size:16px}
 .lookopt.hair{width:118px}.lookopt.hair img{width:84px;height:84px;border-radius:50%;border:1px solid rgba(201,164,92,.4);object-fit:cover}
-.lookopt.color{width:100px}.lookopt.color i{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.25)}
 .lookpay{display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(201,164,92,.22)}.lookpay p{margin:0}
 .lookbtns{display:flex;flex-wrap:wrap;gap:10px}
 .gnotice.warn{background:rgba(224,90,79,.12);border-color:rgba(224,90,79,.5);color:#F3C6C1}
 #lookimg{transition:opacity .2s}#lookimg.loading{opacity:.45}
-@media (max-width:600px){.lookopt.hair,.lookopt.color{width:calc((100% - 20px)/3);padding:8px 4px}.lookopt.hair img{width:64px;height:64px}.lookopt{font-size:12.5px;text-align:center}}
-
+@media (max-width:600px){.lookopt.hair,
 /* ── Technique animations (docs/web.md): a callout, then a look by school, then one by effect.
    --tc is the technique's grade colour. The fighter stands on the left of .bscene, the beast on the right. ── */
 .casting .slashfx{display:none}

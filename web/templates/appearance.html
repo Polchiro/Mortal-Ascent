@@ -8,7 +8,7 @@
 <main class="xlook">
   <section class="xpanel lookstage" aria-label="Preview">
     <div class="portrait">
-      <img id="lookimg" src="/look/{{ s.gender }}_{{ s.hair }}_{{ s.color }}.webp" alt="Preview of your look" width="260" height="540">
+      <img id="lookimg" src="/look/{{ s.gender }}_{{ s.hair }}.webp" alt="Preview of your look" width="260" height="540">
     </div>
     <p class="sub" id="looktext">{% if v.current_text %}Now: {{ v.current_text }}{% else %}You haven't chosen a look yet.{% endif %}</p>
   </section>
@@ -40,18 +40,6 @@
         {% endfor %}
       </fieldset>
 
-      <fieldset>
-        <legend>Hair colour</legend>
-        <div class="lookopts">
-          {% for c in v.colors %}
-          <label class="lookopt color" title="{{ c.name }}">
-            <input type="radio" name="color" value="{{ c.key }}"{% if c.key == s.color %} checked{% endif %}>
-            <i style="background:{{ c.swatch }}"></i><span>{{ c.name }}</span>
-          </label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
       <div class="lookpay">
         {% if v.cost %}
         <p>Changing your look costs <b>{{ v.cost }} Moon Pearls</b>. You have {{ v.pearls_text }}.</p>
@@ -81,10 +69,10 @@
       box.querySelectorAll('input').forEach(function (i) { i.disabled = !on; });
       if (on && !box.querySelector('input:checked')) box.querySelector('input').checked = true;
     });
-    var h = pick('hair'), c = pick('color');
-    var src = '/look/' + g + '_' + h + '_' + c + '.webp';
+    var h = pick('hair');
+    var src = '/look/' + g + '_' + h + '.webp';
     if (img.getAttribute('src') !== src) { img.classList.add('loading'); img.src = src; }
-    var same = current.gender === g && current.hair === h && current.color === c;
+    var same = current.gender === g && current.hair === h;
     save.disabled = same || !canPay;
   }
   img.addEventListener('load', function () { img.classList.remove('loading'); });
