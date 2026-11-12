@@ -584,3 +584,48 @@ def test_a_beasts_stun_holds_on_your_next_turn():
     b.choose(1, "strike")
     b.resolve()
     assert b.fighters[0].stunned
+
+
+# ── defense techniques against a Break (technique.md) ─────────────────
+
+def break_damage(choice, techs=TECHS):
+    b = make_battle(techs=techs, seed=4)
+    f = b.fighters[0]
+    f.bqi = f.max_bqi
+    force(b, "break")
+    b.choose(1, choice)
+    b.resolve()
+    return f.max_hp - f.hp, b
+
+
+def test_defense_technique_holds_its_block_of_a_break():
+    plain, _ = break_damage("guard")
+    held, b = break_damage("defense_tech")
+    assert plain > 0
+    assert held == pytest.approx(plain * 0.8, abs=2)                    # Mortal: holds 20%
+    assert any("holds 20% of the Break" in text for _, text in b.log)
+
+
+def test_unbreakable_halves_what_gets_past_the_block():
+    iron = [TECHS[0], {"id": 3, "name": "Iron Cloth Body", "type": "defense", "grade": "Yellow",
+                       "mastery_exp": 0, "stage": 0}]
+    plain, _ = break_damage("guard", iron)
+    held, _ = break_damage("defense_tech", iron)
+    assert held == pytest.approx(plain * 0.75 * 0.5, abs=2)             # Yellow 25%, then half the rest
+
+
+def test_without_the_rule_a_break_goes_through_as_before(monkeypatch):
+    monkeypatch.setattr(data, "DEFENSE_TECH_BLOCKS_BREAK", False)
+    plain, _ = break_damage("guard")
+    held, _ = break_damage("defense_tech")
+    assert held == plain
+
+
+def test_horse_stance_guard_recovers_on_a_block():
+    b = make_battle()
+    f = b.fighters[0]
+    f.bqi, f.hp = f.max_bqi, f.max_hp // 2
+    force(b, "strike")
+    b.choose(1, "defense_tech")
+    b.resolve()
+    assert f.hp == f.max_hp // 2 + round(f.max_hp * 0.02)

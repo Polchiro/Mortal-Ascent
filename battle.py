@@ -42,6 +42,7 @@ TELL_CHANCE = 0.7            # share of turns where the warning bar gives away t
 
 CHARGE_EVERY = 3             # Elite / Beast King: every 3rd enemy turn is charged
 CHARGE_MULT = 1.5            # charged hit = 1.5 × a normal hit, no 30% cap
+DEFENSE_TECH_BLOCKS_BREAK = True   # a defense technique also blocks its share of a Break (technique.md)
 CHARGE_GUARD_BLOCK = 0.50    # plain Guard blocks this share of a charged hit; a defense technique adds its block
 SIGNATURE_EVERY = 4          # Normal beasts: every 4th enemy turn is the signature strike
 SIGNATURE_MULT = 1.2

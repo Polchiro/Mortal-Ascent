@@ -64,6 +64,18 @@ def tech_effect(tech):
     return rules.TECH_BY_NAME.get(tech["name"], {}).get("effect") if tech else None
 
 
+def break_held(def_t, eff):
+    """Share of a Break a defense technique still holds (technique.md): its block %, then Unbreakable halves the
+    rest. 0 for a plain Guard."""
+    rest = 1.0
+    if battle.DEFENSE_TECH_BLOCKS_BREAK:
+        block = technique.DEFENSE_TECHNIQUE[def_t["grade"]][0] * rules.mastery_mult(def_t)
+        rest -= min(technique.MAX_DAMAGE_BLOCKED, block)
+    if eff and eff[0] == "unbreakable":
+        rest *= 0.5
+    return 1 - rest
+
+
 class Fighter:
     """One player in the fight."""
 
@@ -512,11 +524,14 @@ class Battle:
                         dmg *= battle.CLASH_DAMAGE
                     elif mine == "guard" and m == "break" and t.def_t and t.last_move == t.def_t["name"]:
                         eff = tech_effect(t.def_t)
-                        if eff and eff[0] == "unbreakable":
-                            dmg *= 0.5
-                        elif eff and eff[0] == "evade" and self.rng.random() < eff[1]:
+                        if eff and eff[0] == "evade" and self.rng.random() < eff[1]:
                             dmg = 0
                             log.append(("shield", f"{t.name} slipped away from the {en}'s Break"))
+                        else:
+                            held = break_held(t.def_t, eff)
+                            if held:
+                                dmg *= 1 - held
+                                log.append(("shield", f"{t.name} — {t.last_move}: holds {held:.0%} of the Break"))
                     dmg = round(dmg)
                     if dmg <= 0:
                         continue
