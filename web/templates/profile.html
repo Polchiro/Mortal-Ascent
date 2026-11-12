@@ -16,18 +16,33 @@
     document.getElementById('pv-bq').textContent = add.q ? q0 + ' → ' + q1 : q0;
     var left = free - add.s - add.v - add.q;
     document.getElementById('pv-left').textContent = left + ' left';
-    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
-    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
-    form.querySelector('output[name=q_out]').textContent = add.q ? '+' + add.q : '0';
+    form.querySelectorAll('input.amt').forEach(function (inp) {
+      if (document.activeElement !== inp) inp.value = add[inp.dataset.stat];
+      inp.max = add[inp.dataset.stat] + left;
+    });
     inS.value = add.s; inV.value = add.v; inQ.value = add.q;
     ok.disabled = !(add.s + add.v + add.q);
     form.querySelectorAll('.step').forEach(function (b) {
       var k = b.parentNode.dataset.stat, d = +b.dataset.d;
       b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
     });
+    form.querySelectorAll('.maxbtn').forEach(function (b) { b.disabled = left <= 0; });
   }
   form.querySelectorAll('.step').forEach(function (b) {
     b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  function others(k) { return add.s + add.v + add.q - add[k]; }
+  form.querySelectorAll('input.amt').forEach(function (inp) {     // type any amount; never more than is free
+    inp.addEventListener('input', function () {
+      var k = inp.dataset.stat, n = parseInt(inp.value, 10);
+      add[k] = Math.max(0, Math.min(isNaN(n) ? 0 : n, free - others(k)));
+      draw();
+    });
+    inp.addEventListener('blur', function () { inp.value = add[inp.dataset.stat]; });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
+  form.querySelectorAll('.maxbtn').forEach(function (b) {          // everything still free into this one
+    b.addEventListener('click', function () { var k = b.dataset.stat; add[k] = free - others(k); draw(); });
   });
   draw();
 })();
@@ -50,18 +65,33 @@
     document.getElementById('pv-bq').textContent = add.q ? q0 + ' → ' + q1 : q0;
     var left = free - add.s - add.v - add.q;
     document.getElementById('pv-left').textContent = left + ' left';
-    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
-    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
-    form.querySelector('output[name=q_out]').textContent = add.q ? '+' + add.q : '0';
+    form.querySelectorAll('input.amt').forEach(function (inp) {
+      if (document.activeElement !== inp) inp.value = add[inp.dataset.stat];
+      inp.max = add[inp.dataset.stat] + left;
+    });
     inS.value = add.s; inV.value = add.v; inQ.value = add.q;
     ok.disabled = !(add.s + add.v + add.q);
     form.querySelectorAll('.step').forEach(function (b) {
       var k = b.parentNode.dataset.stat, d = +b.dataset.d;
       b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
     });
+    form.querySelectorAll('.maxbtn').forEach(function (b) { b.disabled = left <= 0; });
   }
   form.querySelectorAll('.step').forEach(function (b) {
     b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  function others(k) { return add.s + add.v + add.q - add[k]; }
+  form.querySelectorAll('input.amt').forEach(function (inp) {     // type any amount; never more than is free
+    inp.addEventListener('input', function () {
+      var k = inp.dataset.stat, n = parseInt(inp.value, 10);
+      add[k] = Math.max(0, Math.min(isNaN(n) ? 0 : n, free - others(k)));
+      draw();
+    });
+    inp.addEventListener('blur', function () { inp.value = add[inp.dataset.stat]; });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
+  form.querySelectorAll('.maxbtn').forEach(function (b) {          // everything still free into this one
+    b.addEventListener('click', function () { var k = b.dataset.stat; add[k] = free - others(k); draw(); });
   });
   draw();
 })();
@@ -144,8 +174,10 @@
           {% if dv.free %}
           <div class="stepper" data-stat="s">
             <button type="button" class="step" data-d="-1" aria-label="One less Strength">−</button>
-            <output name="s_out">0</output>
+            <input class="amt" type="number" inputmode="numeric" min="0" max="{{ dv.free }}" value="0" data-stat="s"
+              aria-label="Strength points to add">
             <button type="button" class="step" data-d="1" aria-label="One more Strength">+</button>
+            <button type="button" class="maxbtn" data-stat="s" aria-label="Put every free point into Strength">Max</button>
           </div>
           {% endif %}
         </div>
@@ -156,8 +188,10 @@
           {% if dv.free %}
           <div class="stepper" data-stat="v">
             <button type="button" class="step" data-d="-1" aria-label="One less Vitality">−</button>
-            <output name="v_out">0</output>
+            <input class="amt" type="number" inputmode="numeric" min="0" max="{{ dv.free }}" value="0" data-stat="v"
+              aria-label="Vitality points to add">
             <button type="button" class="step" data-d="1" aria-label="One more Vitality">+</button>
+            <button type="button" class="maxbtn" data-stat="v" aria-label="Put every free point into Vitality">Max</button>
           </div>
           {% endif %}
         </div>
@@ -168,8 +202,10 @@
           {% if dv.free %}
           <div class="stepper" data-stat="q">
             <button type="button" class="step" data-d="-1" aria-label="One less Spirit">−</button>
-            <output name="q_out">0</output>
+            <input class="amt" type="number" inputmode="numeric" min="0" max="{{ dv.free }}" value="0" data-stat="q"
+              aria-label="Spirit points to add">
             <button type="button" class="step" data-d="1" aria-label="One more Spirit">+</button>
+            <button type="button" class="maxbtn" data-stat="q" aria-label="Put every free point into Spirit">Max</button>
           </div>
           {% endif %}
         </div>
@@ -274,18 +310,33 @@
     document.getElementById('pv-bq').textContent = add.q ? q0 + ' → ' + q1 : q0;
     var left = free - add.s - add.v - add.q;
     document.getElementById('pv-left').textContent = left + ' left';
-    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
-    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
-    form.querySelector('output[name=q_out]').textContent = add.q ? '+' + add.q : '0';
+    form.querySelectorAll('input.amt').forEach(function (inp) {
+      if (document.activeElement !== inp) inp.value = add[inp.dataset.stat];
+      inp.max = add[inp.dataset.stat] + left;
+    });
     inS.value = add.s; inV.value = add.v; inQ.value = add.q;
     ok.disabled = !(add.s + add.v + add.q);
     form.querySelectorAll('.step').forEach(function (b) {
       var k = b.parentNode.dataset.stat, d = +b.dataset.d;
       b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
     });
+    form.querySelectorAll('.maxbtn').forEach(function (b) { b.disabled = left <= 0; });
   }
   form.querySelectorAll('.step').forEach(function (b) {
     b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  function others(k) { return add.s + add.v + add.q - add[k]; }
+  form.querySelectorAll('input.amt').forEach(function (inp) {     // type any amount; never more than is free
+    inp.addEventListener('input', function () {
+      var k = inp.dataset.stat, n = parseInt(inp.value, 10);
+      add[k] = Math.max(0, Math.min(isNaN(n) ? 0 : n, free - others(k)));
+      draw();
+    });
+    inp.addEventListener('blur', function () { inp.value = add[inp.dataset.stat]; });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
+  });
+  form.querySelectorAll('.maxbtn').forEach(function (b) {          // everything still free into this one
+    b.addEventListener('click', function () { var k = b.dataset.stat; add[k] = free - others(k); draw(); });
   });
   draw();
 })();

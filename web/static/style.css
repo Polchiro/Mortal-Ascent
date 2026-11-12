@@ -445,3 +445,9 @@ form.inline{display:inline}
 .beast .dmg{top:30%}
 .techbtn img{background:radial-gradient(circle,rgba(232,194,122,.25),transparent 70%)}
 @media (max-width:900px){.bbar .actbtn img{max-width:72px}}
+.stepper .amt{width:64px;height:40px;text-align:center;border-radius:8px;border:1px solid rgba(232,194,122,.45);background:rgba(0,0,0,.35);
+  color:var(--jade);font:700 17px Inter,Arial,sans-serif;-moz-appearance:textfield}
+.stepper .amt::-webkit-inner-spin-button,.stepper .amt::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stepper .amt:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.maxbtn{height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--ag,#C9A45C);background:rgba(201,164,92,.12);color:var(--ag2,#EBCB86);font:700 13px Inter,Arial,sans-serif;cursor:pointer}
+.maxbtn:hover:enabled{background:rgba(201,164,92,.25)}.maxbtn:disabled{opacity:.35;cursor:default}
