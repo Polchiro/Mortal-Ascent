@@ -1,74 +1,44 @@
 """
-Character appearance: gender and hairstyle. docs/appearance.md.
+Character appearance: male or female. docs/appearance.md.
 
 The look is only a picture. It never touches stats, fights or anything else in the game.
 
-Each hairstyle is one painted picture of the cultivator in the plain robe with silver hair
-(art/looks/<gender>_<hair>.webp). Everyone's hair is silver: there are no hair colours.
-Web-ready copies are cached in art/.looks/ (not in git), so each look is only prepared once.
+Each gender has one painting of the cultivator in white and blue robes with blue Qi streams
+(art/portraits/hero_<gender>.webp, see-through background). The same painting, turned to face the beast,
+is the fighter in website fights (art/portraits/fight/hero_<gender>.webp), and its head is the round face
+(art/portraits/hero_<gender>_face.webp). A player who hasn't chosen a look shows the male painting.
 """
-import io
 import json
-import os
-
-from PIL import Image
-
-ROOT = os.path.dirname(os.path.abspath(__file__))
-ART = os.path.join(ROOT, "art", "looks")
-CACHE = os.path.join(ROOT, "art", ".looks")
 
 GENDERS = {"male": "Male", "female": "Female"}
-HAIRSTYLES = {                      # (key, name), in the order the Appearance screen shows them
-    "male": [("topknot", "Topknot"), ("long", "Long & Loose")],
-    "female": [("ponytail", "High Ponytail"), ("twin_buns", "Twin Buns"), ("long_straight", "Long Straight"),
-               ("braid", "Single Braid"), ("crown_bun", "Crown Bun")],
-}
+DEFAULT_GENDER = "male"             # the painting shown until a player chooses
 FREE_CHANGES = 1                    # choosing your first look costs nothing
 CHANGE_PEARLS = 200                 # every change after that, in Moon Pearls
-FACE_BOX = (63, 2, 193, 132)        # the head in a look picture (260 x 540), for round avatars
-FACE_SIZE = 256
 
 
 def parse(raw):
     """A stored appearance (JSON text) as a clean dict, or None if the player hasn't chosen one.
-    Looks saved while hair colours existed carry a "color"; it is ignored (everyone is silver now)."""
+    Looks saved while hairstyles and hair colours existed carry "hair" and "color"; only the gender counts now."""
     if not raw:
         return None
     try:
-        a = json.loads(raw)
-        return clean(a.get("gender"), a.get("hair"))
+        return clean(json.loads(raw).get("gender"))
     except (ValueError, AttributeError):
         return None
 
 
-def clean(gender, hair):
-    """{'gender', 'hair'} if both are real options, else None."""
-    if gender not in GENDERS or hair not in dict(HAIRSTYLES[gender]):
-        return None
-    return {"gender": gender, "hair": hair}
+def clean(gender):
+    """{'gender'} if it is a real option, else None."""
+    return {"gender": gender} if gender in GENDERS else None
 
 
 def dump(look):
-    return json.dumps({"gender": look["gender"], "hair": look["hair"]}, sort_keys=True)
-
-
-def key(look):
-    """'female_braid': names the picture."""
-    return f"{look['gender']}_{look['hair']}"
-
-
-def from_key(k):
-    """The look a key names, or None."""
-    for g in GENDERS:
-        for h, _ in HAIRSTYLES[g]:
-            if k == f"{g}_{h}":
-                return {"gender": g, "hair": h}
-    return None
+    return json.dumps({"gender": look["gender"]}, sort_keys=True)
 
 
 def describe(look):
-    """'Female · Single Braid'."""
-    return f"{GENDERS[look['gender']]} · {dict(HAIRSTYLES[look['gender']])[look['hair']]}"
+    """'Female'."""
+    return GENDERS[look["gender"]]
 
 
 def change_cost(player):
@@ -76,45 +46,25 @@ def change_cost(player):
     return 0 if (player.get("appearance_changes") or 0) < FREE_CHANGES else CHANGE_PEARLS
 
 
-def render(look):
-    """The full-body picture for a look, as RGBA."""
-    return Image.open(os.path.join(ART, key(look) + ".webp")).convert("RGBA")
-
-
-def _cached(name, make):
-    path = os.path.join(CACHE, name)
-    if not os.path.exists(path):
-        os.makedirs(CACHE, exist_ok=True)
-        data = make()
-        tmp = path + f".{os.getpid()}.tmp"
-        with open(tmp, "wb") as f:
-            f.write(data)
-        os.replace(tmp, path)                       # two drawers at once can't leave half a file
-    with open(path, "rb") as f:
-        return f.read()
-
-
-def full_webp(look):
-    """The full-body picture as WebP bytes (cached)."""
-    def make():
-        out = io.BytesIO()
-        render(look).save(out, "WEBP", quality=90, method=6)
-        return out.getvalue()
-    return _cached(key(look) + ".webp", make)
-
-
-def face_png(look):
-    """A square head-and-shoulders picture as PNG bytes (cached), for the round face on the website fight card."""
-    def make():
-        img = render(look).crop(FACE_BOX).resize((FACE_SIZE, FACE_SIZE), Image.LANCZOS)
-        bg = Image.new("RGBA", img.size, (20, 24, 32, 255))     # avatars are drawn in circles: no see-through
-        bg.alpha_composite(img)
-        out = io.BytesIO()
-        bg.convert("RGB").save(out, "PNG", optimize=True)
-        return out.getvalue()
-    return _cached(key(look) + "_face.png", make)
-
-
 def of_player(player):
-    """The player's chosen look, or None (they still use the default portrait)."""
+    """The player's chosen look, or None (they still show the default painting)."""
     return parse(player.get("appearance")) if player else None
+
+
+def gender_of(look):
+    return look["gender"] if look else DEFAULT_GENDER
+
+
+def portrait(look):
+    """The full painting (profile, Appearance page), as a website path."""
+    return f"/art/portraits/hero_{gender_of(look)}.webp"
+
+
+def fighter(look):
+    """The painting facing right, on the 1024 x 559 fight canvas."""
+    return f"/art/portraits/fight/hero_{gender_of(look)}.webp"
+
+
+def face(look):
+    """The square head-and-shoulders picture (shown in a circle on the fight card)."""
+    return f"/art/portraits/hero_{gender_of(look)}_face.webp"
