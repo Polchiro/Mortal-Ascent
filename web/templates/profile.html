@@ -1,91 +1,122 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
+{% block body_class %}hallbg{% endblock %}
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
+{% set t = p.track %}
 
-<main class="profile">
-  <section class="card hero" aria-label="Your cultivator">
-    <img class="emblem" src="/art/scenes/duel_ring_left.png" alt="" width="200" height="200">
-    <h1 class="name">{{ p.name }}</h1>
-    <p class="realm">{{ p.realm }} · {{ p.layer }} layer · {{ p.phase }}</p>
-    <p class="sub">{{ p.talent }} talent · #{{ p.rank }} on the realm ranks</p>
-    {% if p.status %}<p class="status">{{ p.status }}</p>{% endif %}
-
-    <div class="qi">
-      <div class="row"><span>Internal Qi</span><span class="jade">{{ p.qi }} / {{ p.qi_cap }}</span></div>
-      <div class="bar" role="progressbar" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100"><div style="width: {{ p.qi_pct }}%"></div></div>
-      <p class="sub">+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</p>
-      <p class="sub">Next: {{ p.qi_gate }}{% if p.qi_gate_note %} ({{ p.qi_gate_note }}){% endif %}</p>
+<main class="xprofile">
+  <!-- A. Identity -->
+  <section class="xpanel identity" aria-label="Your cultivator">
+    <div class="portrait">
+      <span class="seal" aria-hidden="true">{{ t.seal }}</span>
+      <img src="{{ p.portrait }}" alt="" width="279" height="522">
     </div>
-
-    <div class="stats3">
-      <div><b>{{ p.hp }}</b><span>HP{% if p.injured %} · injured{% endif %}</span></div>
-      <div><b>{{ p.attack }}</b><span>Attack</span></div>
-      <div><b>{{ p.defense }}</b><span>Defense</span></div>
+    <h1 class="xname">{{ p.name }}</h1>
+    <p class="xrealm">{{ p.realm }} · {{ p.layer }} Layer</p>
+    <div class="titles">
+      {% for text, kind in p.titles %}<span class="tchip {{ kind }}">{{ text }}</span>{% endfor %}
+      <span class="tchip rank">#{{ p.rank }} on the realm ranks</span>
     </div>
+    {% if p.status %}<p class="xstatus">{{ p.status }}</p>{% endif %}
   </section>
 
-  <section class="col">
-    <section class="card">
-      <h2>Techniques</h2>
-      <div class="slots">
-        {% for s in p.slots %}
-        <div class="slot{% if s.locked %} locked{% endif %}">
-          {% if s.icon %}<img src="{{ s.icon }}" alt="" width="64" height="64">{% else %}<div class="ph"></div>{% endif %}
-          <div>
-            <p class="label">{{ s.slot }}</p>
-            {% if s.name %}
-            <p class="tname">{{ s.name }}</p>
-            <p class="sub">{{ s.grade }} · {{ s.mastery }}</p>
-            <p class="sub">{{ s.power }}</p>
-            {% elif s.locked %}
-            <p class="sub">{{ s.note or "Locked" }}</p>
-            {% else %}
-            <p class="sub">Empty</p>
-            {% endif %}
+  <div class="xcol">
+    <!-- D. Cultivation -->
+    <section class="xpanel" aria-labelledby="cult-h">
+      <div class="phead"><h2 id="cult-h">Cultivation</h2><span class="sub">Realm {{ t.no }} of {{ t.of }}</span></div>
+      <div class="cult">
+        <span class="realmseal" aria-hidden="true">{{ t.seal }}</span>
+        <div class="cultmain">
+          <p class="crealm">{{ p.realm }}<span>{{ p.phase }}</span></p>
+          <div class="pips" role="img" aria-label="Layer {{ p.layer_no }} of {{ p.max_layer }}">
+            {% for pip in t.pips %}<i class="{% if pip.on %}on{% endif %}{% if pip.now %} now{% endif %}" title="Layer {{ pip.n }}"></i>{% endfor %}
+          </div>
+          <p class="sub">Layer {{ p.layer_no }} of {{ p.max_layer }}</p>
+        </div>
+      </div>
+      <div class="qibar">
+        <div class="row"><span><img src="/art/icons/attr/qi.webp" alt="" width="22" height="22"> Internal Qi</span><b>{{ p.qi }} / {{ p.qi_cap }}</b></div>
+        <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100"><div style="width: {{ p.qi_pct }}%"></div></div>
+        <div class="row sub"><span>+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</span><span class="tone-{{ p.qi_tone }}">{{ p.qi_status }}</span></div>
+      </div>
+      <div class="nextbt">
+        <span class="kicker">NEXT</span>
+        <p><b>{{ p.qi_gate }}</b>{% if p.qi_gate_note %} · {{ p.qi_gate_note }}{% endif %}</p>
+        {% if t.next %}<p class="sub">After this realm: {{ t.next }}</p>{% else %}<p class="sub">The peak of the martial path. Beyond lies the Heavenly Tribulation.</p>{% endif %}
+      </div>
+    </section>
+
+    <!-- B. Attributes -->
+    <section class="xpanel" aria-labelledby="attr-h">
+      <div class="phead"><h2 id="attr-h">Attributes</h2>{% if p.injured %}<span class="sub warn">Injured</span>{% endif %}</div>
+      <div class="attrs">
+        {% for a in p.attributes %}
+        <div class="attr">
+          <img src="{{ a.icon }}" alt="" width="56" height="56">
+          <div class="aval">
+            <span class="alabel">{{ a.label }}</span>
+            <b>{{ a.value }}{% if a.of %}<small> / {{ a.of }}</small>{% endif %}</b>
+            {% if a.base %}<span class="sub">{{ a.base }} from your realm{% if a.bonus %} · <span class="jade">{{ a.bonus }}</span>{% endif %}</span>{% endif %}
+            {% for name, v in a.sources %}<span class="src"><span>{{ name }}</span><span class="jade">{{ v }}</span></span>{% endfor %}
           </div>
         </div>
         {% endfor %}
       </div>
     </section>
 
-    <section class="card">
-      <h2>Journey</h2>
-      <div class="journey">
-        {% for label, value in p.stats %}
-        <div><b>{{ value }}</b><span>{{ label }}</span></div>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="card" id="gear">
-      <h2>Equipment</h2>
+    <!-- C. Equipment -->
+    <section class="xpanel" id="gear" aria-labelledby="gear-h">
+      <div class="phead"><h2 id="gear-h">Equipment</h2><a class="sub" href="/inventory?tab=weapons">Open bag</a></div>
       {% if notice %}<p class="gnotice" role="status">{{ notice | rich | safe }}</p>{% endif %}
-      <div class="gearslots">
+      <div class="xgear">
         {% for w in worn %}
-        <div class="gearslot"{% if w.item %} style="--rc: {{ w.item.color }}"{% endif %}>
+        <div class="xslot{% if not w.item %} empty{% endif %}"{% if w.item %} style="--rc: {{ w.item.color }}"{% endif %}>
           <span class="kicker">{{ w.slot | upper }}</span>
           {% if w.item %}
-          <a class="gearitem" href="/inventory?tab={{ w.tab }}&amp;item={{ w.item.id }}">
-            {% if w.item.picture %}<img src="{{ w.item.picture }}" alt="" width="64" height="64">{% endif %}
-            <span><b>{{ w.item.name }}</b><span class="sub">{{ w.item.rarity }}</span></span>
+          <a class="xicon" href="/inventory?tab={{ w.tab }}&amp;item={{ w.item.id }}" aria-label="{{ w.item.name }}">
+            {% if w.item.picture %}<img src="{{ w.item.picture }}" alt="" width="84" height="84">{% endif %}
           </a>
-          {% for e in w.item.effects[:3] %}<span class="sub">{{ e }}</span>{% endfor %}
+          <b class="iname">{{ w.item.name }}</b>
+          <span class="sub">{{ w.item.rarity }}</span>
+          <ul class="ifx">{% for e in w.item.effects[:2] %}<li>{{ e }}</li>{% endfor %}</ul>
           <form method="post" action="/inventory/unequip">
             <input type="hidden" name="item" value="{{ w.item.id }}"><input type="hidden" name="back" value="profile">
             <button class="link" type="submit">Unequip</button>
           </form>
           {% else %}
+          <a class="xicon" href="/inventory?tab={{ w.tab }}" aria-label="Choose for {{ w.slot }}"><span class="plus" aria-hidden="true">+</span></a>
           <span class="sub">Empty</span>
-          {% if w.spare %}<a class="link" href="/inventory?tab={{ w.tab }}">Choose from {{ w.spare }} in your bag</a>
-          {% else %}<span class="sub">None in your bag yet. They drop from chests and beasts.</span>{% endif %}
+          {% if w.spare %}<a class="link" href="/inventory?tab={{ w.tab }}">{{ w.spare }} in your bag</a>
+          {% else %}<span class="sub small">Drops from chests and beasts</span>{% endif %}
           {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <h3 class="subh">Techniques</h3>
+      <div class="xtech">
+        {% for s in p.slots %}
+        <div class="tslot{% if s.locked %} locked{% endif %}">
+          {% if s.icon %}<img src="{{ s.icon }}" alt="" width="56" height="56">{% else %}<span class="ring" aria-hidden="true"></span>{% endif %}
+          <div>
+            <span class="kicker">{{ s.slot | upper }}</span>
+            {% if s.name %}<b>{{ s.name }}</b><span class="sub">{{ s.grade }} · {{ s.mastery }}</span><span class="sub jade">{{ s.power }}</span>
+            {% elif s.locked %}<span class="sub">{{ s.note or "Locked" }}</span>
+            {% else %}<span class="sub">Empty</span>{% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>
     </section>
 
-    <p class="soon">See your bag in <a href="/inventory">Inventory</a>. Gather herbs, refine pills and forge your gear from the tabs above. Training, exploring and fights are still in Discord: your progress shows up here.</p>
-  </section>
+    <!-- Journey -->
+    <section class="xpanel" aria-labelledby="jour-h">
+      <div class="phead"><h2 id="jour-h">Journey</h2></div>
+      <div class="xjourney">
+        {% for label, value in p.stats %}<div><b>{{ value }}</b><span>{{ label }}</span></div>{% endfor %}
+      </div>
+    </section>
+  </div>
 </main>
 {% endblock %}
