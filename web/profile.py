@@ -15,7 +15,6 @@ from bot.sheet import data as sheet
 from cards import art_icons
 from cards.theme import REALM_CHAR
 
-PORTRAIT = "/art/portraits/cultivator_default.webp"
 ATTR_ICON = "/art/icons/attr/{}.webp"
 ART_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art")
 
@@ -158,7 +157,7 @@ def profile_view(conn, user_id, username=None):
                   ("Breakthroughs", number(d["breakthroughs"])),
                   ("Duels won", number(d["duels_won"]))],
         "status": d["status"],
-        "portrait": f"/look/{looks.key(look)}.webp" if look else PORTRAIT,
+        "portrait": looks.portrait(look),
         "look": looks.describe(look) if look else None,
         "dev": development(conn, user_id),
         "layer_no": d["layer"],

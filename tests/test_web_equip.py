@@ -126,10 +126,10 @@ def test_logged_out_cannot_equip(db_path):
 def test_profile_redesign_sections(client, db_path):
     page = client.get("/profile").text
     for text in ("Cultivation", "Attributes", "Internal Qi", "Attack", "Defense", "Techniques", "Journey",
-                 "Realm 1 of 11", "Genius Talent", "/art/portraits/cultivator_default.webp", "/art/icons/attr/hp.webp"):
+                 "Realm 1 of 11", "Genius Talent", "/art/portraits/hero_male.webp", "/art/icons/attr/hp.webp"):
         assert text in page, text
     assert page.count('title="Layer ') == 3                                    # Mortal has three layers
-    assert client.get("/art/portraits/cultivator_default.webp").status_code == 200
+    assert client.get("/art/portraits/hero_male.webp").status_code == 200
     for name in ("hp", "qi", "attack", "defense"):
         assert client.get(f"/art/icons/attr/{name}.webp").status_code == 200
     assert client.get("/art/scenes/profile_hall.jpg").status_code == 200

@@ -242,7 +242,7 @@ def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
     act(client, "move", "strike")
     page = client.get("/explore/play").text
     for pose in ("idle", "windup", "strike"):
-        assert f"/art/portraits/fight/sword_{pose}.webp" in page
+        assert f'class="pose p-{pose}" src="/art/portraits/fight/hero_male.webp"' in page
     assert 'src="/art/fx/slash.webp"' in page and client.get("/art/fx/slash.webp").status_code == 200
     assert 'data-pose="idle"' in page and 'data-bar="me"' in page and 'data-bar="enemy"' in page
     assert "data-events='[{" in page and '"act": "strike"' in page
