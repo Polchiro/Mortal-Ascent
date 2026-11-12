@@ -163,16 +163,21 @@ a lair is fought with `bot/hunt.py`.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
    (`art/portraits/fighter_stance.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
-   middle, the battle log, and seven actions with keys 1–7 (`art/icons/actions/`): Strike, Attack technique,
-   Defense technique, Mending Pill, Guard, Break, Flee. Hovering an action shows what it beats and its cooldown.
+   plate, the battle log, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
+   small menu with your attack and defense technique, their effect and rest), Guard, Break. **Mending Pill** (P)
+   and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
+   turn a big word over your fighter says what happened (Countered!, Blocked!, Stunned!, Clash!, Guard broken!).
+   A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.
 
-The server keeps every clock: a fight turn left too long plays Guard (three in a row: flee), a hazard answered too
-late fails, and two idle minutes end the expedition (as the bot's panel does). Old pages and moves that aren't
+The server keeps every clock. **Fight turns have no reaction time on the website for now**: a turn waits for the
+player, and only a page left alone for 10 minutes (`explore_play.TURN_LIMIT`) gets the bot's timed-out move
+(Guard; three in a row: flee), so a forgotten fight still ends. A hazard answered too late fails, and two idle
+minutes outside a fight end the expedition (as the bot's panel does). Old pages and moves that aren't
 possible are ignored. Rare finds are announced only in Discord.
 
 Only `art/icons`, `art/scenes`, `art/chests`, `art/portraits` and `art/beasts` are served (as `/art/...`), plus `web/static`. Nothing else in the repo

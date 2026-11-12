@@ -14,17 +14,19 @@
 {% endmacro %}
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}" style="--arena: url({{ F.arena }})" aria-label="{{ F.title }}">
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}" style="--arena: url({{ F.arena }})" aria-label="{{ F.title }}" data-turn="{{ g.turn }}">
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
     <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
     <div class="bstats">
       <p class="bname">{{ F.me.name }}</p>
       <p class="brealm">{{ F.me.realm }} · Layer {{ F.me.layer }}</p>
-      <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="22" height="22"><span>HP</span>
+      <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="20" height="20"><span class="bl">HP</span>
         <div class="bhp"><div style="width: {{ F.me.hp_pct }}%"></div></div><b>{{ F.me.hp }} / {{ F.me.max_hp }}</b></div>
-      <div class="brow"><img src="/art/icons/attr/attack.webp" alt="" width="22" height="22"><span>Attack</span><b>{{ F.me.attack }}</b>
-        <img src="/art/icons/attr/defense.webp" alt="" width="22" height="22"><span>Defense</span><b>{{ F.me.defense }}</b></div>
+      <div class="brow"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"><span class="bl">Internal Qi</span>
+        <div class="bhp qi"><div style="width: {{ F.me.qi_pct }}%"></div></div><b>{{ F.me.qi }} / {{ F.me.qi_cap }}</b></div>
+      <div class="brow"><img src="/art/icons/attr/attack.webp" alt="" width="20" height="20"><span class="bl">Attack</span><b>{{ F.me.attack }}</b>
+        <img src="/art/icons/attr/defense.webp" alt="" width="20" height="20"><span class="bl">Defense</span><b>{{ F.me.defense }}</b></div>
       {% if F.me.statuses %}<p class="chips">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
     </div>
   </section>
@@ -35,21 +37,20 @@
     <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>
     <div class="ehp"><div style="width: {{ F.enemy.hp_pct }}%"></div><span>{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
     {% if F.enemy.statuses %}<p class="chips">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
+    <div class="bwarn{% if F.warning.danger %} danger{% endif %}" aria-live="polite">
+      <p class="whead">{{ F.warning.head | safe }}</p>
+      {% if F.warning.hint %}<p class="whint">{{ F.warning.hint | safe }}</p>{% endif %}
+    </div>
   </section>
 
   <!-- the scene -->
-  <section class="bscene" aria-hidden="true">
-    <div class="fighter"><img src="{{ F.me.art }}" alt="" width="732" height="465">
+  <section class="bscene">
+    <div class="fighter" aria-hidden="true"><img src="{{ F.me.art }}" alt="" width="732" height="465">
       {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
-    <div class="beast"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
+    <div class="beast" aria-hidden="true"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
       {% if F.enemy.delta %}<span class="dmg hit">{{ F.enemy.delta }}</span>{% endif %}</div>
+    {% if F.result %}<div class="bresult" role="status"><p class="rword">{{ F.result.word }}</p>{% if F.result.sub %}<p class="rsub">{{ F.result.sub }}</p>{% endif %}</div>{% endif %}
     <span class="slashfx"></span><span class="clawfx"></span><span class="ringfx"></span>
-  </section>
-
-  <!-- the warning -->
-  <section class="bbanner{% if F.warning.danger %} danger{% endif %}" aria-live="polite">
-    <p class="whead">{{ F.warning.head | safe }}</p>
-    {% if F.warning.hint %}<p class="whint">{{ F.warning.hint | safe }}</p>{% endif %}
   </section>
 
   <!-- log -->
@@ -59,54 +60,54 @@
     {% if g.notice %}<p class="li li-warn">{{ g.notice | safe }}</p>{% endif %}
   </section>
 
-  <!-- actions -->
-  <section class="bbar">
-    <div class="btimer"><div id="tfill" style="width: {{ (F.left / F.seconds * 100) | round(1) }}%"></div></div>
-    <form method="post" action="/explore/act" class="acts" id="acts">
-      <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
-      {% for a in F.actions %}
-      <button class="actbtn{% if not a.ready %} off{% endif %}" type="submit" name="arg" value="{{ a.key }}" data-info="{{ a.info }}"
-        data-label="{{ a.label }}" data-state="{{ a.state }}"{% if not a.ready %} disabled{% endif %} aria-keyshortcuts="{{ a.no }}">
-        <img src="{{ a.icon }}" alt="" width="96" height="96">
-        <span class="alab">{{ a.label }}</span>{% if a.state %}<span class="ast">{{ a.state }}</span>{% endif %}
+  <!-- small options: pill and flee -->
+  <form method="post" action="/explore/act" class="bside fightform">
+    <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
+    {% for a in F.side %}
+    <button class="sidebtn{% if not a.ready %} off{% endif %}" type="submit" name="arg" value="{{ a.key }}" data-key="{{ a.hotkey }}"
+      data-label="{{ a.label }}" data-state="{{ a.state }}" data-info="{{ a.info }}"{% if not a.ready %} disabled{% endif %}
+      aria-keyshortcuts="{{ a.hotkey }}" title="{{ a.label }} ({{ a.hotkey }})">
+      <img src="{{ a.icon }}" alt="" width="44" height="44"><span>{{ a.label }}{% if a.key == "pill" %} {{ a.state }}{% endif %}</span>
+    </button>
+    {% endfor %}
+  </form>
+
+  <!-- the four moves -->
+  <form method="post" action="/explore/act" class="bbar fightform" id="acts">
+    <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
+    {% for a in F.main %}
+    {% if a.key == "techniques" %}
+    <details class="techmenu{% if not a.ready %} off{% endif %}" data-key="{{ a.no }}" data-label="{{ a.label }}" data-state="{{ a.state }}" data-info="{{ a.info }}">
+      <summary class="actbtn" aria-keyshortcuts="{{ a.no }}">
+        <img src="{{ a.icon }}" alt="" width="104" height="104"><span class="alab">Techniques</span><span class="ast">{{ a.state }}</span>
         <span class="ano">{{ a.no }}</span>
-      </button>
-      {% endfor %}
-    </form>
-  </section>
-  <aside class="binfo" id="binfo" aria-live="polite">
-    <p class="ititle" id="ititle">{{ F.actions[0].label }}</p>
-    <p class="itext" id="itext">{{ F.actions[0].info }}</p>
-    <p class="sub"><span id="tleft">{{ F.left }}s</span> left · keys 1–7</p>
+      </summary>
+      <div class="techpop" role="menu">
+        {% for t in a.techs %}
+        <button class="techbtn" type="submit" name="arg" value="{{ t.key }}" role="menuitem" data-label="{{ t.label }}" data-state="{{ t.state }}"
+          data-info="{{ t.info }}"{% if not t.ready %} disabled{% endif %}>
+          <img src="{{ t.icon }}" alt="" width="56" height="56">
+          <span><span class="tkind">{{ t.kind }}</span><b>{{ t.label }}</b><span class="tstate">{{ t.state }}</span></span>
+        </button>
+        {% endfor %}
+      </div>
+    </details>
+    {% else %}
+    <button class="actbtn{% if not a.ready %} off{% endif %}" type="submit" name="arg" value="{{ a.key }}" data-key="{{ a.no }}"
+      data-label="{{ a.label }}" data-state="{{ a.state }}" data-info="{{ a.info }}"{% if not a.ready %} disabled{% endif %} aria-keyshortcuts="{{ a.no }}">
+      <img src="{{ a.icon }}" alt="" width="104" height="104"><span class="alab">{{ a.label }}</span>
+      <span class="ano">{{ a.no }}</span>
+    </button>
+    {% endif %}
+    {% endfor %}
+  </form>
+  <aside class="binfo" aria-live="polite">
+    <p class="ititle">{{ F.main[0].label }}</p>
+    <p class="itext">{{ F.main[0].info }}</p>
+    <p class="sub">Keys 1–4 · P pill · F flee. Take your time: there's no turn timer.</p>
   </aside>
 </main>
-<script>
-(function () {
-  var left = {{ F.left }}, total = {{ F.seconds }}, fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
-  var end = Date.now() + left * 1000, form = document.getElementById('acts'), sent = false;
-  var t = setInterval(function () {
-    var l = Math.max(0, (end - Date.now()) / 1000);
-    fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
-    fill.style.background = l / total > 0.5 ? '#6FD9B0' : l / total > 0.25 ? '#E8C27A' : '#E05A4F';
-    if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/explore/play'); }, 1600); }
-  }, 100);
-  var title = document.getElementById('ititle'), text = document.getElementById('itext');
-  form.querySelectorAll('.actbtn').forEach(function (b) {
-    function show() { title.textContent = b.dataset.label + (b.dataset.state ? ' · ' + b.dataset.state : ''); text.textContent = b.dataset.info; }
-    b.addEventListener('mouseenter', show); b.addEventListener('focus', show);
-  });
-  form.addEventListener('submit', function (ev) {
-    if (sent) { ev.preventDefault(); return; }
-    sent = true; clearInterval(t);
-    setTimeout(function () { form.querySelectorAll('.actbtn').forEach(function (b) { b.disabled = true; }); }, 0);
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    var b = form.querySelectorAll('.actbtn')[parseInt(e.key, 10) - 1];
-    if (b && !b.disabled) { b.click(); }
-  });
-})();
-</script>
+<script src="/static/fight.js" defer></script>
 
 {% else %}
 <main class="forgeplay explore">
