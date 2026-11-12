@@ -9,6 +9,7 @@ Pages:
   /inventory  their bag: every tab, item and its details; Equip / Unequip for weapons, armor and artifacts
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
+  /explore    an expedition: five steps, encounters and turn-based fights (bot/expedition.py, bot/fight.py)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
@@ -30,7 +31,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, forge_play, gather_play
+from . import alchemy_play, drawn, explore_play, forge_play, gather_play
 from . import inventory as bag
 from .inventory import inventory_view
 from .profile import profile_view
@@ -72,7 +73,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits"):                     # only the art the pages use
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts"):                     # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
@@ -372,6 +373,81 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
                 back = "/alchemy?" + urllib.parse.urlencode({"pill": f"{s.kind}:{s.grade}", "batch": s.craft.batch})
                 crafts.clear(user["id"])
         return RedirectResponse(back, status_code=303)
+
+    explores = app.state.explores = explore_play.Explores()
+
+    @app.get("/explore", response_class=HTMLResponse)
+    def explore_page(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        s = with_conn(explores.catch_up, user["id"])
+        if s and not explores._finished(s):
+            return RedirectResponse("/explore/play", status_code=303)
+        view = with_conn(explore_play.home_view, user["id"], explores)
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if view is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "explore.html", v=view, user=user, avatar=avatar,
+                    error=request.session.pop("explore_error", None))
+
+    @app.post("/explore/begin")
+    async def explore_begin(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        def begin(c, uid):
+            s = explores.get(uid)
+            if s and explores._finished(s):
+                explores.clear(uid)
+            return explores.start(c, uid)[1]
+
+        error = await run_in_threadpool(with_conn, begin, user["id"])
+        if error:
+            request.session["explore_error"] = error
+            return RedirectResponse("/explore", status_code=303)
+        return RedirectResponse("/explore/play", status_code=303)
+
+    @app.get("/explore/play", response_class=HTMLResponse)
+    def explore_playing(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+
+        def view(c, uid):
+            s = explores.catch_up(c, uid)
+            if not s:
+                return None
+            explores.seen(uid)
+            return explore_play.play_view(c, s, explores.clock())
+
+        g = with_conn(view, user["id"])
+        if g is None:
+            return RedirectResponse("/explore", status_code=303)
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        resp = page(request, "explore_play.html", g=g, user=user, avatar=avatar, coins=g["coins"], pearls=g["pearls"])
+        resp.headers["Cache-Control"] = "no-store"
+        return resp
+
+    @app.post("/explore/act")
+    async def explore_act(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        await run_in_threadpool(with_conn, explores.act, user["id"], form.get("what", ""), form.get("arg", ""),
+                                num(form.get("turn")))
+        return RedirectResponse("/explore/play", status_code=303)
+
+    @app.post("/explore/done")
+    def explore_done(request: Request):
+        user = current_user(request)
+        if user:
+            s = explores.get(user["id"])
+            if s and explores._finished(s):
+                explores.clear(user["id"])
+        return RedirectResponse("/explore", status_code=303)
 
     gathers = app.state.gathers = gather_play.Gathers()
 
