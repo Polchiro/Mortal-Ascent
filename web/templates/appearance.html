@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Appearance · Mortal Ascent{% endblock %}
+{% block body_class %}hallbg{% endblock %}
+{% block body %}
+{% with page="profile", coins=v.coins, pearls=v.pearls_text %}{% include "_topbar.html" %}{% endwith %}
+{% set s = v.start %}
+
+<main class="xlook">
+  <section class="xpanel lookstage" aria-label="Preview">
+    <div class="portrait">
+      <img id="lookimg" src="/look/{{ s.gender }}_{{ s.hair }}_{{ s.color }}.webp" alt="Preview of your look" width="260" height="540">
+    </div>
+    <p class="sub" id="looktext">{% if v.current_text %}Now: {{ v.current_text }}{% else %}You haven't chosen a look yet.{% endif %}</p>
+  </section>
+
+  <section class="xpanel" aria-labelledby="look-h">
+    <div class="phead"><h2 id="look-h">Appearance</h2><span class="sub">A picture only: it never changes your stats or fights.</span></div>
+    {% if notice %}<p class="gnotice warn" role="status">{{ notice | rich | safe }}</p>{% endif %}
+    <form method="post" action="/appearance" id="lookform" class="lookform">
+      <fieldset>
+        <legend>Gender</legend>
+        <div class="lookopts">
+          {% for k, name in v.genders %}
+          <label class="lookopt gender"><input type="radio" name="gender" value="{{ k }}"{% if k == s.gender %} checked{% endif %}><span>{{ name }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Hairstyle</legend>
+        {% for g, hairs in v.hairs.items() %}
+        <div class="lookopts hairs" data-gender="{{ g }}"{% if g != s.gender %} hidden{% endif %}>
+          {% for h in hairs %}
+          <label class="lookopt hair">
+            <input type="radio" name="hair" value="{{ h.key }}"{% if g == s.gender and h.key == s.hair %} checked{% endif %}{% if g != s.gender %} disabled{% endif %}>
+            <img src="{{ h.thumb }}" alt="" width="84" height="84" loading="lazy"><span>{{ h.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </fieldset>
+
+      <fieldset>
+        <legend>Hair colour</legend>
+        <div class="lookopts">
+          {% for c in v.colors %}
+          <label class="lookopt color" title="{{ c.name }}">
+            <input type="radio" name="color" value="{{ c.key }}"{% if c.key == s.color %} checked{% endif %}>
+            <i style="background:{{ c.swatch }}"></i><span>{{ c.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="lookpay">
+        {% if v.cost %}
+        <p>Changing your look costs <b>{{ v.cost }} Moon Pearls</b>. You have {{ v.pearls_text }}.</p>
+        {% else %}
+        <p>Your first look is <b>free</b>. Changing it later costs {{ v.change_pearls }} Moon Pearls.</p>
+        {% endif %}
+        <div class="lookbtns">
+          <button class="btn btn-gold small" type="submit" id="looksave"{% if not v.can_pay %} disabled{% endif %}>
+            {% if v.cost %}Change look · {{ v.cost }} Pearls{% else %}Save my look{% endif %}</button>
+          <a class="btn ghost small" href="/profile">{% if v.current %}Back{% else %}Decide later{% endif %}</a>
+        </div>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script>
+(function () {
+  var form = document.getElementById('lookform'), img = document.getElementById('lookimg');
+  var current = {{ (v.current or {}) | tojson }}, save = document.getElementById('looksave'), canPay = {{ v.can_pay | tojson }};
+  function pick(name) { var r = form.querySelector('input[name="' + name + '"]:checked:not(:disabled)'); return r && r.value; }
+  function draw() {
+    var g = pick('gender');
+    form.querySelectorAll('.hairs').forEach(function (box) {
+      var on = box.dataset.gender === g;
+      box.hidden = !on;
+      box.querySelectorAll('input').forEach(function (i) { i.disabled = !on; });
+      if (on && !box.querySelector('input:checked')) box.querySelector('input').checked = true;
+    });
+    var h = pick('hair'), c = pick('color');
+    var src = '/look/' + g + '_' + h + '_' + c + '.webp';
+    if (img.getAttribute('src') !== src) { img.classList.add('loading'); img.src = src; }
+    var same = current.gender === g && current.hair === h && current.color === c;
+    save.disabled = same || !canPay;
+  }
+  img.addEventListener('load', function () { img.classList.remove('loading'); });
+  form.addEventListener('change', draw);
+  draw();
+})();
+</script>
+{% endblock %}

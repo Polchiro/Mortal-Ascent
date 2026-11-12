@@ -48,7 +48,8 @@ breakthroughs, duels won and the weapon.
 
 Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
 
-- **Identity:** the portrait (`art/portraits/cultivator_default.webp`, the same for everyone for now) over the
+- **Identity:** the player's chosen look (docs/appearance.md), or `art/portraits/cultivator_default.webp` until they
+  choose one, with a **Choose your look** (free) or **Change look** button. The portrait sits over the
   realm's seal character (`cards/theme.REALM_CHAR`), name, realm and layer, and title chips: talent, alchemist and
   blacksmith rank (once they have EXP) and the realm rank.
 - **Cultivation:** realm n of 11, the layer pips, phase, the Internal Qi bar, rate, status and the next gate.
@@ -62,6 +63,13 @@ Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.
 - **Journey:** beasts slain, herbs gathered, breakthroughs, duels won.
 
 Apart from placing and resetting points and unequipping gear, the page only shows.
+
+## The appearance page
+
+`/appearance` (from the profile's look button): gender, hairstyle (round face thumbnails) and hair colour, with a
+live full-body preview. The first look is free, then each change costs 200 Moon Pearls; **Decide later** goes back
+to the profile. Saving goes through `bot/appearance.py`. Pictures come from `/look/<gender>_<hair>_<color>.webp`
+(full body) and `/look/..._face.png` (round faces), drawn by `looks.py` and cached in `art/.looks/`.
 
 ## The inventory page
 

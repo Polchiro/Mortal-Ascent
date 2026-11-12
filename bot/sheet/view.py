@@ -12,6 +12,8 @@ import logging
 
 import discord
 
+import looks
+
 from cards import RENDERERS, sheet_icons
 
 from .. import db, gear, loot
@@ -29,7 +31,26 @@ FIGHT_SESSIONS = ("explore", "spar", "hunt", "duel")    # technique.md: techniqu
 AVATAR_TIMEOUT_SECONDS = 5
 
 
+PLAYER_OF = None    # set by the bot (client.py): user id -> player row, so cards can show the chosen look
+
+
+async def look_face(user_id):
+    """PNG bytes of the player's chosen look (looks.py), or None if they haven't chosen one."""
+    if PLAYER_OF is None:
+        return None
+    try:
+        look = looks.of_player(PLAYER_OF(user_id))           # the database stays on the bot's own thread
+        return await asyncio.to_thread(looks.face_png, look) if look else None   # drawn once, then cached
+    except Exception:
+        log.warning("Could not draw the look of %s; using the Discord avatar", user_id, exc_info=True)
+        return None
+
+
 async def fetch_avatar(user):
+    """The picture cards show for a player: their chosen look, else their Discord avatar."""
+    face = await look_face(user.id)
+    if face:
+        return face
     try:
         return await asyncio.wait_for(user.display_avatar.with_format("png").with_size(512).read(),
                                       AVATAR_TIMEOUT_SECONDS)

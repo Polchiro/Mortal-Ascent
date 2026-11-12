@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 import battle as battle_rules
 import explore as explore_rules
+import looks
 
 from bot import crafting, db, hunt
 from bot import player as rules
@@ -421,6 +422,12 @@ def result_banner(log, me):
     return None, None
 
 
+def look_face(player):
+    """The round face on the fight card: the player's chosen look, or the default portrait."""
+    look = looks.of_player(player)
+    return f"/look/{looks.key(look)}_face.png" if look else FACE
+
+
 def fight_view(conn, s, b, p, now):
     f = b.fighters[0]
     e = b.enemy
@@ -440,7 +447,7 @@ def fight_view(conn, s, b, p, now):
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
-               "face": FACE, "art": FIGHTER, "bqi": round(f.bqi), "max_bqi": f.max_bqi,
+               "face": look_face(p), "art": FIGHTER, "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
         "enemy": {"name": e["name"], "tier": TIER_LABEL[e["tier"]], "role": e.get("role", "").title(),

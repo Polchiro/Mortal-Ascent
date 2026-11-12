@@ -29,10 +29,13 @@ from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
+import looks
+from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
 from . import alchemy_play, drawn, explore_play, forge_play, gather_play
 from . import inventory as bag
+from .appearance import appearance_view
 from .inventory import inventory_view
 from .profile import profile_view
 
@@ -71,6 +74,17 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if data is None:
             return Response(status_code=404)
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+    @app.get("/look/{name}")
+    def look_picture(name: str):
+        """A finished character look (looks.py): /look/female_braid_azure.webp, or ..._face.png for the round face."""
+        face = name.endswith("_face.png")
+        look = looks.from_key(name[:-len("_face.png")] if face else name[:-len(".webp")] if name.endswith(".webp") else "")
+        if look is None:
+            return Response(status_code=404)
+        data = looks.face_png(look) if face else looks.full_webp(look)
+        return Response(data, media_type="image/png" if face else "image/webp",
+                        headers={"Cache-Control": "public, max-age=604800, immutable"})
 
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests", "portraits", "beasts"):                     # only the art the pages use
@@ -150,7 +164,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return page(request, "no_character.html", user=user, avatar=avatar)
         return page(request, "profile.html", p=view, worn=worn, user=user, avatar=avatar,
                     notice=request.session.pop("gear_notice", None),
-                    points_notice=request.session.pop("points_notice", None))
+                    points_notice=request.session.pop("points_notice", None),
+                    look_done=request.session.pop("look_done", None))
 
     @app.get("/inventory", response_class=HTMLResponse)
     def inventory(request: Request, tab: str = "weapons", item: int | None = None):
@@ -208,6 +223,36 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
                                                   num(form.get("spirit")) or 0)
         request.session["points_notice"] = message
         return RedirectResponse("/profile#develop", status_code=303)
+
+    @app.get("/appearance", response_class=HTMLResponse)
+    def appearance(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        c = conn()
+        try:
+            view = appearance_view(c, user["id"])
+        finally:
+            c.close()
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if view is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "appearance.html", v=view, user=user, avatar=avatar,
+                    notice=request.session.pop("look_notice", None))
+
+    @app.post("/appearance")
+    async def choose_appearance(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        ok, message = await run_in_threadpool(with_conn, appearance_rules.choose, user["id"],
+                                              form.get("gender"), form.get("hair"), form.get("color"))
+        if ok:
+            request.session["look_done"] = message
+            return RedirectResponse("/profile", status_code=303)
+        request.session["look_notice"] = message
+        return RedirectResponse("/appearance", status_code=303)
 
     @app.post("/profile/attributes")
     async def place_points(request: Request):
