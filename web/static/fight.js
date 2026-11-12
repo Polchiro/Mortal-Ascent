@@ -15,6 +15,8 @@
       target.addEventListener('mouseenter', show);
       target.addEventListener('focus', show);
     });
+    var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
+    if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
     main.querySelectorAll('form.fightform').forEach(function (form) {
       form.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -39,6 +41,7 @@
           var before = bars(now);
           if (playing) playing.finish();
           var fresh = document.importNode(next, true);
+          keepHistory(now, fresh);
           now.replaceWith(fresh);                             // same scroll position: nothing jumps
           busy = false;
           init();
@@ -48,6 +51,12 @@
         }
       })
       .catch(function () { location.replace('/explore/play'); });
+  }
+
+  /* Battle History stays open (and scrolled to the top, where the newest turn is) when the next turn comes in */
+  function keepHistory(now, fresh) {
+    var a = now.querySelector('.bhist'), b = fresh.querySelector('.bhist');
+    if (a && b && a.open) b.open = true;
   }
 
   /* ── Acting a turn out ──────────────────────────────────────────────────────────────────────────────
@@ -84,6 +93,8 @@
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
 
     var after = bars(main), held = {}, W = scene.clientWidth;
+    var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
+    function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
@@ -148,7 +159,7 @@
           done = true;
           var p = at(br, 0.12, 0.42);
           if (ev.hit) {
-            drop('enemy'); pop(beastBox, 'hit', '−' + ev.dmg); burst('tspark', p[0], p[1]);
+            drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
             if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
               {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
           } else {
@@ -184,9 +195,9 @@
           done = true;
           var p = at(fr, 0.52, 0.5);
           if (guard) { burst('tring', p[0], p[1]); pop(fighter, 'word', 'Blocked'); }
-          else { drop('me'); pop(fighter, 'hurt', '−' + ev.dmg); burst('tspark', p[0], p[1], '#FFC2B8'); }
+          else { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1], '#FFC2B8'); }
         }
-        if (guard && ev.counter && h >= 130 && !countered) { countered = true; drop('enemy'); pop(beastBox, 'hit', '−' + ev.counter); }
+        if (guard && ev.counter && h >= 130 && !countered) { countered = true; drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter); }
       }};
     }
 
@@ -229,6 +240,7 @@
     if (e.ctrlKey || e.metaKey || e.altKey || busy) return;
     var main = document.querySelector('main.battle');
     if (!main) return;
+    if (e.key === 'Escape') { main.querySelectorAll('details[open]').forEach(function (d) { d.open = false; }); return; }
     var k = e.key.toUpperCase(), el = main.querySelector('[data-key="' + k + '"]');
     if (!el) return;
     if (el.tagName === 'DETAILS') { el.open = !el.open; if (el.open) { var f = el.querySelector('.techbtn:not(:disabled)'); if (f) f.focus(); } return; }

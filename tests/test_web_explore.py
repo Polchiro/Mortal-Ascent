@@ -99,7 +99,7 @@ def test_a_beast_fight_shows_the_fight_screen(client):
     assert e["name"] in page and f"/art/beasts/{e['slug']}.png" in page
     for label in ("Strike", "Guard", "Break", "Flee", "Iron Fist", "Horse Stance Guard"):
         assert label in page, label
-    assert page.count('class="actbtn') == 4 and "BATTLE LOG" in page             # Strike, Techniques, Guard, Break
+    assert page.count('class="actbtn') == 4 and "BATTLE HISTORY" in page and "blog" not in page             # Strike, Techniques, Guard, Break
     assert page.count('class="sidebtn') == 2 and "Techniques" in page             # Pill and Flee on the side
     assert 'id="tfill"' not in page and "no turn timer" in page
     assert client.get(f"/art/beasts/{e['slug']}.png").status_code == 200
@@ -113,7 +113,7 @@ def test_a_move_plays_one_turn_with_the_engine(client):
     act(client, "move", "break")
     assert b.turn == t0 + 1 and s.turn > turn and b.log
     page = client.get("/explore/play").text
-    assert "TURN" in page
+    assert f"Turn {t0}" in page and 'class="toast' in page                  # this turn called out, and in the history
 
 
 def test_old_pages_and_impossible_moves_are_ignored(client):
@@ -246,3 +246,20 @@ def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
     assert 'src="/art/fx/slash.webp"' in page and client.get("/art/fx/slash.webp").status_code == 200
     assert 'data-pose="idle"' in page and 'data-bar="me"' in page and 'data-bar="enemy"' in page
     assert "data-events='[{" in page and '"act": "strike"' in page
+
+
+def test_battle_history_keeps_every_turn(client):
+    s = fight(client)
+    b = s.battle
+    page = client.get("/explore/play").text
+    assert 'class="bhist"' in page and "The fight begins" in page            # before any move: the opening line
+    for _ in range(3):
+        if s.battle is None:
+            break
+        b.intent = {"move": "guard", "kind": "normal", "target": b.fighters[0], "name": "Guard"}
+        act(client, "move", "guard")
+    page = client.get("/explore/play").text
+    if s.battle is not None:
+        turns = len(b.history)
+        assert turns >= 2 and all(f"Turn {n}" in page for n in range(1, turns + 1))
+        assert page.index(f"Turn {turns}") < page.index("Turn 1<")          # newest turn first
