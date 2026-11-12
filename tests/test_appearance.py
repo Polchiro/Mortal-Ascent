@@ -1,5 +1,4 @@
 """Character appearance (docs/appearance.md): choosing a look, paying for changes, pictures, website and cards."""
-import asyncio
 import io
 import urllib.parse
 
@@ -9,7 +8,6 @@ from PIL import Image
 import looks
 from bot import appearance, db
 from bot import player as rules
-from bot.sheet import view as sheet_view
 
 UID = 791
 
@@ -89,28 +87,6 @@ def test_face_for_cards_is_cached_png():
     data = looks.face_png(look)
     assert Image.open(io.BytesIO(data)).size == (looks.FACE_SIZE, looks.FACE_SIZE)
     assert looks.face_png(look) == data
-
-
-def test_discord_cards_use_the_look_once_chosen(conn, monkeypatch):
-    monkeypatch.setattr(sheet_view, "PLAYER_OF", lambda uid: db.get_player(conn, uid))
-
-    class User:
-        id = UID
-        class display_avatar:                     # stands in for Discord: the real avatar
-            @staticmethod
-            def with_format(_):
-                return User.display_avatar
-            @staticmethod
-            def with_size(_):
-                return User.display_avatar
-            @staticmethod
-            async def read():
-                return b"discord-avatar"
-
-    assert asyncio.run(sheet_view.fetch_avatar(User())) == b"discord-avatar"
-    appearance.choose(conn, UID, "female", "twin_buns", "chestnut")
-    face = asyncio.run(sheet_view.fetch_avatar(User()))
-    assert face == looks.face_png({"gender": "female", "hair": "twin_buns", "color": "chestnut"})
 
 
 # ── website ──────────────────────────────────────────────────────────

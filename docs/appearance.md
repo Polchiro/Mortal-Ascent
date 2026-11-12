@@ -16,16 +16,15 @@ Everyone wears the same robe. Facial hair and clothing choices may come later.
 
 ## Cost
 
-- New and existing players start with no look chosen (default portrait, Discord avatar on cards).
+- New and existing players start with no look chosen (default portrait).
 - The **first** look is free (`looks.FREE_CHANGES`).
 - Every change after that costs **200 Moon Pearls** (`looks.CHANGE_PEARLS`), written in the ledger as
   "Appearance change". Picking the look you already have is refused and costs nothing.
 
 ## Where it shows
 
-- Website: the profile portrait, the Appearance page preview, and the round face on the fight card (Explore).
-- Discord: every card that shows the player's avatar (profile sheet, breakthrough, duel, trade, leaderboard)
-  shows the look's face instead, once chosen (`bot/sheet/view.fetch_avatar`).
+The look shows on the website only: the profile portrait, the Appearance page preview, and the round face on
+the fight card (Explore). Discord cards keep showing the player's Discord avatar.
 
 ## How the pictures are made
 

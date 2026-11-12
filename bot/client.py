@@ -28,7 +28,6 @@ from . import render as card_render
 from .emojis import Emojis
 from . import player as rules
 from .sheet import items as sheet_items
-from .sheet import view as sheet_view
 from .sheet.view import open_sheet, send_public_profile
 from .views import (free_old_panel, BlessingView, ConfirmView, ExploreView, ShopView, SparView, TrainView, blessing_embed,
                     blessing_data, shop_data, shop_embed)
@@ -72,7 +71,6 @@ class MortalAscent(discord.Client):
             self, allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True))
         self.tree.interaction_check = self.before_command
         self.conn = db.connect(db_path)
-        sheet_view.PLAYER_OF = lambda uid: db.get_player(self.conn, uid)     # cards show the player's chosen look
         # /seclusion was removed: let out anyone an older version left inside.
         freed = passive.release_secluded(self.conn)
         if freed:

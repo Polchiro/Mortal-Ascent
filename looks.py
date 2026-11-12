@@ -135,7 +135,7 @@ def full_webp(look):
 
 
 def face_png(look):
-    """A square head-and-shoulders picture as PNG bytes (cached), for round avatars on cards and fights."""
+    """A square head-and-shoulders picture as PNG bytes (cached), for the round face on the website fight card."""
     def make():
         img = render(look).crop(FACE_BOX).resize((FACE_SIZE, FACE_SIZE), Image.LANCZOS)
         bg = Image.new("RGBA", img.size, (20, 24, 32, 255))     # avatars are drawn in circles: no see-through
@@ -147,5 +147,5 @@ def face_png(look):
 
 
 def of_player(player):
-    """The player's chosen look, or None (they still use the default portrait and their Discord avatar)."""
+    """The player's chosen look, or None (they still use the default portrait)."""
     return parse(player.get("appearance")) if player else None
