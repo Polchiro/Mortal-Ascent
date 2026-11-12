@@ -232,3 +232,16 @@ def test_a_technique_turn_plays_its_own_animation(client):
     page = client.get("/explore/play").text
     assert "casting cast-attack cast-fist" in page and "cast-landed" in page
     assert 'class="castcall"' in page and "Mortal technique" in page and "--tc: #" in page
+
+
+def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
+    s = fight(client)
+    b = s.battle
+    b.enemy["statuses"].clear()
+    b.intent = {"move": "break", "kind": "normal", "target": b.fighters[0], "name": "Break"}
+    act(client, "move", "strike")
+    page = client.get("/explore/play").text
+    for pose in ("idle", "windup", "strike"):
+        assert f"/art/portraits/fight/sword_{pose}.webp" in page
+    assert 'data-pose="idle"' in page and 'data-bar="me"' in page and 'data-bar="enemy"' in page
+    assert "data-events='[{" in page and '"act": "strike"' in page and '"hit": true' in page

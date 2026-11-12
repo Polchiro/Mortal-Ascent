@@ -179,6 +179,14 @@ a lair is fought with `bot/hunt.py`.
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
+   **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
+   Strike or Break the fighter winds up, dashes in, swings (three pose pictures, `art/portraits/fight/`) with a
+   trail, and steps back; the beast is knocked back, flashes, and its HP bar and the damage number change at the
+   moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
+   A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
+   `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
+   row in `RECIPES` in `fight.js`. Click the scene to skip. Without JavaScript or with reduced motion the turn
+   simply shows its result.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
    school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
