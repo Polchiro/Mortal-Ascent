@@ -179,6 +179,11 @@ a lair is fought with `bot/hunt.py`.
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
+   **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
+   name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
+   school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
+   effect that actually happened (combo hits, pierce, heavy flash, stagger swirl, counter, recover, Unbreakable
+   bell, evade afterimage). A blocked attack shows only the callout. All of it is off for reduced motion.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.

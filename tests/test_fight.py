@@ -629,3 +629,63 @@ def test_horse_stance_guard_recovers_on_a_block():
     b.choose(1, "defense_tech")
     b.resolve()
     assert f.hp == f.max_hp // 2 + round(f.max_hp * 0.02)
+
+
+# ── technique animations on the website (web/explore_play.cast) ───────
+
+def cast_after(tech, enemy_move):
+    from web.explore_play import cast
+    b = make_battle(techs=[TECHS[0], TECHS[1], tech] if tech["type"] == "attack" else [TECHS[0], tech])
+    f = b.fighters[0]
+    if tech["type"] == "attack":
+        f.atk_t = tech
+    f.bqi = f.max_bqi
+    force(b, enemy_move)
+    b.choose(1, f"{tech['type']}_tech")
+    b.resolve()
+    return cast(b, f)
+
+
+def T(name, type_, grade):
+    return {"id": 9, "name": name, "type": type_, "grade": grade, "mastery_exp": 0, "stage": 0}
+
+
+def test_each_technique_shows_its_school_effect_and_grade():
+    c = cast_after(T("Thousand Shadow Palm", "attack", "Earth"), "break")
+    assert (c["school"], c["effect"], c["landed"], c["grade"]) == ("palm", "combo", True, "Earth")
+    assert c["icon"] == "/art/icons/tech/thousand_shadow_palm.webp" and c["color"].startswith("#")
+    c = cast_after(T("River-Splitting Finger", "attack", "Earth"), "break")
+    assert (c["school"], c["effect"]) == ("finger", "pierce")
+    c = cast_after(T("Moon Mirror Palm", "defense", "Mystic"), "strike")
+    assert (c["school"], c["effect"], c["landed"]) == ("palmdef", "counter", True)
+    c = cast_after(T("Golden Bell Cover", "defense", "Earth"), "break")
+    assert (c["school"], c["effect"]) == ("body", "unbreakable")
+
+
+def test_a_blocked_technique_shows_no_hit():
+    c = cast_after(T("Raging Bull Fist", "attack", "Yellow"), "guard")
+    assert c["landed"] is False and c["effect"] == ""
+
+
+def test_a_plain_move_casts_nothing():
+    from web.explore_play import cast
+    b = make_battle()
+    force(b, "strike")
+    b.choose(1, "guard")
+    b.resolve()
+    assert cast(b, b.fighters[0]) is None
+
+
+def test_technique_icons_are_whole_circles():
+    """The 30 icons were re-cut: a centred medallion, nothing outside the circle (no stray text or paper)."""
+    import glob
+    from PIL import Image
+    files = glob.glob("art/icons/tech/*.webp")
+    assert len(files) == 30
+    for path in files:
+        im = Image.open(path).convert("RGBA")
+        assert im.size == (160, 160)
+        a = im.getchannel("A")
+        for x, y in ((2, 2), (157, 2), (2, 157), (157, 157), (80, 2), (80, 157)):
+            assert a.getpixel((x, y)) <= 8, path                   # corners and edges clear
+        assert a.getpixel((80, 150)) >= 250 and a.getpixel((80, 10)) >= 250, path   # the full circle is there
