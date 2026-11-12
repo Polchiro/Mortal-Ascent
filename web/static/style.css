@@ -565,7 +565,8 @@ form.inline{display:inline}
 .fighter[data-pose=idle]:not(.acting) .poses{animation:breathe 3.2s ease-in-out infinite}
 @keyframes breathe{50%{transform:translateY(-1.5px)}}
 .fighter svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.trailfx .tint{stop-color:var(--trail,#EAF4FF)}
+.fighter img.trailfx{position:absolute;left:10.7%;top:-10.4%;width:100%;height:60%;opacity:0;pointer-events:none;filter:drop-shadow(0 0 6px rgba(80,230,255,.5))}
+.fighter[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1)}   /* Break: the same slash in gold */
 .clawsfx{filter:drop-shadow(0 0 8px #FF2A3C) drop-shadow(0 0 18px rgba(255,40,60,.6))}
 .fighter::before,.beast::before{content:"";position:absolute;bottom:-2%;height:8%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,0) 70%)}
 .fighter::before{left:36%;width:30%}.beast::before{left:8%;width:84%}

@@ -185,7 +185,8 @@ a lair is fought with `bot/hunt.py`.
    moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
-   row in `RECIPES` in `fight.js`. Click the scene to skip. Without JavaScript or with reduced motion the turn
+   row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
+   gold for Break). Click the scene to skip. Without JavaScript or with reduced motion the turn
    simply shows its result.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
