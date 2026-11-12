@@ -380,8 +380,11 @@ def _moves(img, items):
         lines = T.wrap(d, it["name"], f, 136, lines=2)
         for j, line in enumerate(lines):
             T.text(d, (x, cy + r + 22 + j * 26), line, f, WARM if ready else DIM, "mm")
-        if ready and it["state"] not in ("Ready", ""):     # pill count, or a training counter
-            T.text(d, (x + r - 2, cy - r + 6), it["state"], font("Inter.ttf", 21, "Black"), (246, 214, 150), "mm")
+        if ready and it["state"] not in ("Ready", ""):     # pill count, Qi cost, or a training counter
+            badge = it["state"].split(" · ")[0]           # "30 · 100/100 Qi" -> "30 Qi" (the full text is in the embed)
+            if badge.isdigit():
+                badge += " Qi"
+            T.text(d, (x + r - 2, cy - r + 6), badge, font("Inter.ttf", 21, "Black"), (246, 214, 150), "mm")
 
 
 def _party(img, data):

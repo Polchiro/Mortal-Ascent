@@ -13,7 +13,7 @@ from bot.sheet import data as sheet
 from bot.sheet import items
 
 from . import drawn
-from .profile import ART_ROOT, art_url, number
+from .profile import ART_ROOT, art_url, fresh, number
 
 RARITY_COLOR = {                       # the bag's rarity colours (cards/theme.py RARITY), as CSS
     "common": "#C9D2E6", "uncommon": "#6FD9B0", "rare": "#6FA8FF", "epic": "#B57BFF", "legendary": "#F5C35C",
@@ -28,7 +28,7 @@ def item_picture(item):
     """The painted picture of a bag item, or None (the page then shows the category's emblem)."""
     if item["category"] == "chests":
         path = os.path.join(ART_ROOT, "chests", f"{item['key']}.png")
-        return f"/art/chests/{item['key']}.png" if os.path.exists(path) else None
+        return fresh(f"/art/chests/{item['key']}.png") if os.path.exists(path) else None
     if item["category"] == "manuals":
         return art_url(f"tech:{item['key']}") or drawn.url(items.item_icon(item))
     kind = items.item_icon(item)
@@ -83,7 +83,7 @@ def tab_picture(key):
     if not art:
         return None
     if art.startswith("/"):
-        return art
+        return fresh(art)
     return art_url(f"art:{art}")
 
 

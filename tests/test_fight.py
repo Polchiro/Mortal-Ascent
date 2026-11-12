@@ -653,7 +653,7 @@ def T(name, type_, grade):
 def test_each_technique_shows_its_school_effect_and_grade():
     c = cast_after(T("Thousand Shadow Palm", "attack", "Earth"), "break")
     assert (c["school"], c["effect"], c["landed"], c["grade"]) == ("palm", "combo", True, "Earth")
-    assert c["icon"] == "/art/icons/tech/thousand_shadow_palm.webp" and c["color"].startswith("#")
+    assert c["icon"].startswith("/art/icons/tech/thousand_shadow_palm.webp?v=") and c["color"].startswith("#")
     c = cast_after(T("River-Splitting Finger", "attack", "Earth"), "break")
     assert (c["school"], c["effect"]) == ("finger", "pierce")
     c = cast_after(T("Moon Mirror Palm", "defense", "Mystic"), "strike")
