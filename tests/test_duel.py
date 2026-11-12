@@ -428,3 +428,14 @@ def test_startup_lists_the_synced_commands_and_flags_missing_ones():
     assert ok[0] == "Bot code version: abc123" and "duel, spar" in ok[1] and "All commands reached" in ok[2]
     bad = sync_report(["duel", "spar"], ["spar"])
     assert bad[-1] == "WARNING: these commands did not reach Discord: duel"
+
+
+def test_a_defense_technique_holds_part_of_a_break():
+    plain = make()
+    play(plain, "break", "guard")
+    tech_ = make()
+    play(tech_, "break", "defense_tech")
+    lost_plain = plain.sides[1].max_hp - plain.sides[1].hp
+    lost_tech = tech_.sides[1].max_hp - tech_.sides[1].hp
+    assert lost_plain > 0 and lost_tech == pytest.approx(lost_plain * 0.8, abs=2)   # Mortal: holds 20%
+    assert tech_.sides[1].staggered                                                # Break still wins the exchange

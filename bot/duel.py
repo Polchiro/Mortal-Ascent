@@ -23,6 +23,7 @@ import stats
 import technique
 
 from . import combat, gear, passives
+from .fight import break_held
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
@@ -280,8 +281,9 @@ class Duel:
                     if self.turn - dfn.evaded_turn > pvp.EVADE_COOLDOWN_TURNS and self.rng.random() < eff[1]:
                         dfn.evaded_turn = self.turn
                         return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} slips away (Evade)")
-                if eff and eff[0] == "unbreakable":
-                    share, note = 0.5, "the guard holds half (Unbreakable)"
+                held = break_held(dfn.def_t, eff) if def_tech else 0
+                if held:
+                    share, note = 1 - held, f"the guard still holds {held:.0%}"
                 notes.append(("stagger", dfn, 0))
         dodge = dfn.fx.get("dodge_chance")
         if dodge and self.rng.random() < dodge:                                 # Feather artifact

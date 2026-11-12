@@ -77,6 +77,9 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 
 - Mastery multiplier applies to all four values
   (e.g. Heaven attack at Return to Simplicity = ×2.00 × 1.50 = ×3.00 damage)
+- "Damage blocked" counts against a **Break** too: Break still beats Guard (you're staggered), but a defense
+  technique holds its block % of the Break (a plain Guard holds nothing). Unbreakable then halves what's left.
+  It also adds to a plain Guard's 50% against a charged attack.
 - Damage blocked can never go above 80%
 - Passive % buffs add into the buff totals in stats.md
 - The 30% one-hit cap in stats.md still applies to every technique
@@ -121,7 +124,7 @@ to damage and block; the 30% cap applies to **total damage in one turn**.
 |---|---|
 | Counter | Reflects part of the blocked damage back |
 | Recover | Heals a % of max HP when it blocks |
-| Unbreakable | Break moves deal only half damage against it |
+| Unbreakable | Break moves deal half of what gets past the block |
 | Evade | Chance to take no damage at all |
 
 ### Cooldowns in fights
@@ -154,7 +157,7 @@ Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
 | Iron Fist | Attack | Fist | — |
 | Twin Palm Strike | Attack | Palm | Combo: 2 hits × 60% |
 | Crescent Sweep | Attack | Leg | Stagger: next block −15% |
-| Horse Stance Guard | Defense | Body | — |
+| Horse Stance Guard | Defense | Body | Recover 2% |
 | Parrying Arm | Defense | Body | Counter 10% |
 | Calm Breath Stance | Defense | Body | Recover 3% |
 

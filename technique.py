@@ -116,7 +116,7 @@ TECHNIQUES = {
     "iron_fist":             _t("Iron Fist", "attack", "Mortal", "Fist"),
     "twin_palm_strike":      _t("Twin Palm Strike", "attack", "Mortal", "Palm", ("combo", (2, 0.60))),
     "crescent_sweep":        _t("Crescent Sweep", "attack", "Mortal", "Leg", ("stagger", 0.15)),
-    "horse_stance_guard":    _t("Horse Stance Guard", "defense", "Mortal", "Body"),
+    "horse_stance_guard":    _t("Horse Stance Guard", "defense", "Mortal", "Body", ("recover", 0.02)),
     "parrying_arm":          _t("Parrying Arm", "defense", "Mortal", "Body", ("counter", 0.10)),
     "calm_breath_stance":    _t("Calm Breath Stance", "defense", "Mortal", "Body", ("recover", 0.03)),
     # Yellow

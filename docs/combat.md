@@ -90,9 +90,10 @@ players use their techniques more often (about 75% of turns when reading the bea
 
 - **Attack technique** = a stronger Strike. Combo hits several times, Pierce ignores defense,
   Heavy hits harder, Stagger weakens the beast's next Guard (Nine Dragons: it cannot Guard at all).
-- **Defense technique** = a Guard with extras: Counter reflects blocked damage, Recover heals on a
-  block, Unbreakable halves a Break, Evade may dodge a Break. Against a charged attack it adds its
-  block % to the Guard.
+- **Defense technique** = a Guard with extras: it **holds its block % of a Break** (20% Mortal to 50% Heaven;
+  a plain Guard holds nothing), so it's the safe pick when you can't read the beast. Counter reflects blocked
+  damage, Recover heals on a block, Unbreakable halves what's left of a Break, Evade may dodge a Break.
+  Against a charged attack it adds its block % to the Guard.
 - +20 mastery EXP per use, as before.
 
 ## Telegraphed moves
