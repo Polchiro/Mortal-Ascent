@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Explore · Mortal Ascent{% endblock %}
+{% block body_class %}wildsbg{% endblock %}
+{% block body %}
+<style>body.wildsbg{background-image:linear-gradient(rgba(8,10,16,.55),rgba(8,10,16,.92)),url({{ v.scene }})}</style>
+{% with page="explore", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="forge">
+  <section class="fhead">
+    <div><p class="kicker">{{ v.region | upper }} · {{ v.realm | upper }}</p><h1 class="title">Explore the Wilds</h1>
+    <p class="sub">Up to {{ v.steps }} steps. At each step three paths lie ahead, each with a clue. Beasts, bandits, herbs, ore,
+    merchants and hidden lairs wait in the wilds. Go deeper for rarer finds, or head home with what you carry.</p></div>
+    <span class="chip">{{ v.cooldown }} min rest after each expedition</span>
+  </section>
+
+  {% if error %}<p class="ferror" role="alert">{{ error | rich | safe }}</p>{% endif %}
+
+  <section class="card">
+    <h2>How fights work</h2>
+    <div class="howto">
+      <div><img src="/art/icons/actions/strike.webp" alt="" width="56" height="56"><span><b>Strike</b> beats Break. Into a Guard it is blocked and you are <b>Stunned</b>.</span></div>
+      <div><img src="/art/icons/actions/guard.webp" alt="" width="56" height="56"><span><b>Guard</b> beats Strike and <b>counters</b> for half.</span></div>
+      <div><img src="/art/icons/actions/break.webp" alt="" width="56" height="56"><span><b>Break</b> beats Guard and staggers the beast. It stops charged attacks.</span></div>
+    </div>
+    <p class="sub">Watch the warning above the beast: most turns it gives away its next move. {{ "Keys 1–7 pick a move." }} 15 seconds per turn.</p>
+    {% if v.blocked %}<p class="ferror">{{ v.blocked | safe }}</p>{% endif %}
+    <form method="post" action="/explore/begin">
+      <button class="btn btn-gold" type="submit"{% if v.blocked %} disabled{% endif %}>Set out</button>
+    </form>
+    <p class="sub">Your expedition rest starts when you set out, here or in Discord.</p>
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Exploring · Mortal Ascent{% endblock %}
+{% block body_class %}wildsbg{% endblock %}
+{% block body %}
+<style>body.wildsbg{background-image:linear-gradient(rgba(8,10,16,.5),rgba(8,10,16,.9)),url({{ g.scene }})}</style>
+{% with page="explore" %}{% include "_topbar.html" %}{% endwith %}
+
+{% macro act(what, arg, label, cls="btn btn-gold", extra="") %}
+<form method="post" action="/explore/act" class="inline">
+  <input type="hidden" name="what" value="{{ what }}"><input type="hidden" name="arg" value="{{ arg }}">
+  <input type="hidden" name="turn" value="{{ g.turn }}">
+  <button class="{{ cls }}" type="submit"{{ extra | safe }}>{{ label }}</button>
+</form>
+{% endmacro %}
+
+{% if g.mode == "fight" %}{% set F = g.fight %}
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}" style="--arena: url({{ F.arena }})" aria-label="{{ F.title }}">
+  <!-- you -->
+  <section class="bme{% if F.me.stunned %} stunned{% endif %}">
+    <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
+    <div class="bstats">
+      <p class="bname">{{ F.me.name }}</p>
+      <p class="brealm">{{ F.me.realm }} · Layer {{ F.me.layer }}</p>
+      <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="22" height="22"><span>HP</span>
+        <div class="bhp"><div style="width: {{ F.me.hp_pct }}%"></div></div><b>{{ F.me.hp }} / {{ F.me.max_hp }}</b></div>
+      <div class="brow"><img src="/art/icons/attr/attack.webp" alt="" width="22" height="22"><span>Attack</span><b>{{ F.me.attack }}</b>
+        <img src="/art/icons/attr/defense.webp" alt="" width="22" height="22"><span>Defense</span><b>{{ F.me.defense }}</b></div>
+      {% if F.me.statuses %}<p class="chips">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
+    </div>
+  </section>
+
+  <!-- the beast -->
+  <section class="benemy">
+    <p class="ename">{{ F.enemy.name }}</p>
+    <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>
+    <div class="ehp"><div style="width: {{ F.enemy.hp_pct }}%"></div><span>{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
+    {% if F.enemy.statuses %}<p class="chips">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
+  </section>
+
+  <!-- the scene -->
+  <section class="bscene" aria-hidden="true">
+    <div class="fighter"><img src="{{ F.me.art }}" alt="" width="732" height="465">
+      {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
+    <div class="beast"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
+      {% if F.enemy.delta %}<span class="dmg hit">{{ F.enemy.delta }}</span>{% endif %}</div>
+    <span class="slashfx"></span><span class="clawfx"></span><span class="ringfx"></span>
+  </section>
+
+  <!-- the warning -->
+  <section class="bbanner{% if F.warning.danger %} danger{% endif %}" aria-live="polite">
+    <p class="whead">{{ F.warning.head | safe }}</p>
+    {% if F.warning.hint %}<p class="whint">{{ F.warning.hint | safe }}</p>{% endif %}
+  </section>
+
+  <!-- log -->
+  <section class="blog" aria-label="Battle log">
+    <p class="kicker">BATTLE LOG · TURN {{ F.turn_no }}</p>
+    {% for icon, text in F.log %}<p class="li li-{{ icon }}">{{ text | safe }}</p>{% else %}<p class="li">The fight begins.</p>{% endfor %}
+    {% if g.notice %}<p class="li li-warn">{{ g.notice | safe }}</p>{% endif %}
+  </section>
+
+  <!-- actions -->
+  <section class="bbar">
+    <div class="btimer"><div id="tfill" style="width: {{ (F.left / F.seconds * 100) | round(1) }}%"></div></div>
+    <form method="post" action="/explore/act" class="acts" id="acts">
+      <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
+      {% for a in F.actions %}
+      <button class="actbtn{% if not a.ready %} off{% endif %}" type="submit" name="arg" value="{{ a.key }}" data-info="{{ a.info }}"
+        data-label="{{ a.label }}" data-state="{{ a.state }}"{% if not a.ready %} disabled{% endif %} aria-keyshortcuts="{{ a.no }}">
+        <img src="{{ a.icon }}" alt="" width="96" height="96">
+        <span class="alab">{{ a.label }}</span>{% if a.state %}<span class="ast">{{ a.state }}</span>{% endif %}
+        <span class="ano">{{ a.no }}</span>
+      </button>
+      {% endfor %}
+    </form>
+  </section>
+  <aside class="binfo" id="binfo" aria-live="polite">
+    <p class="ititle" id="ititle">{{ F.actions[0].label }}</p>
+    <p class="itext" id="itext">{{ F.actions[0].info }}</p>
+    <p class="sub"><span id="tleft">{{ F.left }}s</span> left · keys 1–7</p>
+  </aside>
+</main>
+<script>
+(function () {
+  var left = {{ F.left }}, total = {{ F.seconds }}, fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
+  var end = Date.now() + left * 1000, form = document.getElementById('acts'), sent = false;
+  var t = setInterval(function () {
+    var l = Math.max(0, (end - Date.now()) / 1000);
+    fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
+    fill.style.background = l / total > 0.5 ? '#6FD9B0' : l / total > 0.25 ? '#E8C27A' : '#E05A4F';
+    if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/explore/play'); }, 1600); }
+  }, 100);
+  var title = document.getElementById('ititle'), text = document.getElementById('itext');
+  form.querySelectorAll('.actbtn').forEach(function (b) {
+    function show() { title.textContent = b.dataset.label + (b.dataset.state ? ' · ' + b.dataset.state : ''); text.textContent = b.dataset.info; }
+    b.addEventListener('mouseenter', show); b.addEventListener('focus', show);
+  });
+  form.addEventListener('submit', function (ev) {
+    if (sent) { ev.preventDefault(); return; }
+    sent = true; clearInterval(t);
+    setTimeout(function () { form.querySelectorAll('.actbtn').forEach(function (b) { b.disabled = true; }); }, 0);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var b = form.querySelectorAll('.actbtn')[parseInt(e.key, 10) - 1];
+    if (b && !b.disabled) { b.click(); }
+  });
+})();
+</script>
+
+{% else %}
+<main class="forgeplay explore">
+  <aside class="track" aria-label="This expedition">
+    <div class="stg on"><span>{{ g.region }}</span><b>Step {{ g.step }} / {{ g.steps }}</b></div>
+    <div class="stg"><span>HP</span><b>{{ g.hp }} / {{ g.max_hp }}</b></div>
+    <div class="tbar hpbar"><div style="width: {{ g.hp_pct }}%"></div></div>
+    <div class="stg done"><span>Found</span><b>{{ g.found | length }}</b></div>
+    {% for f in g.found %}<p class="sub side">{{ f }}</p>{% else %}<p class="sub side">Nothing yet.</p>{% endfor %}
+  </aside>
+
+  <section class="stage card" aria-live="polite">
+    {% if g.notice %}<p class="gnotice" role="status">{{ g.notice | safe }}</p>{% endif %}
+
+    {% if g.mode == "choose" %}
+      {% for l in g.story %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      <p class="kicker">STEP {{ g.step }} OF {{ g.steps }} · THREE PATHS LIE AHEAD</p>
+      <div class="paths">
+        {% for p in g.paths %}
+        <form method="post" action="/explore/act" class="pathform">
+          <input type="hidden" name="what" value="path"><input type="hidden" name="arg" value="{{ p.key }}"><input type="hidden" name="turn" value="{{ g.turn }}">
+          <button class="pathcard" type="submit"><span class="kicker">{{ p.label | upper }}</span><i>{{ p.clue }}</i></button>
+        </form>
+        {% endfor %}
+      </div>
+      {% if g.deeper_note %}<p class="sub">{{ g.deeper_note }}</p>{% endif %}
+      <div class="choices">{{ act("return", "", "Return safely", "btn btn-gold ghost") }}</div>
+
+    {% elif g.mode == "hazard" %}
+      {% for l in g.story %}<p class="pline big2">{{ l | safe }}</p>{% endfor %}
+      <div class="timer"><div class="tbar"><div id="tfill" style="width: {{ (g.hazard.left / g.hazard.seconds * 100) | round(1) }}%"></div></div><span id="tleft">{{ g.hazard.left }}s</span></div>
+      <div class="choices">{% for p in g.hazard.paths %}{{ act("dodge", p.key, "Leap " ~ p.label, "btn btn-gold") }}{% endfor %}</div>
+      <script>
+      (function () { var left = {{ g.hazard.left }}, total = {{ g.hazard.seconds }}, end = Date.now() + left * 1000;
+        var fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
+        var t = setInterval(function () { var l = Math.max(0, (end - Date.now()) / 1000);
+          fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
+          if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/explore/play'); }, 1200); } }, 100); })();
+      </script>
+
+    {% elif g.mode == "stranger" %}
+      {% for l in g.story %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      <div class="choices">
+        {{ act("help", "coins", "Give 🪷 " ~ g.stranger.cost) }}
+        {{ act("help", "hp", "Tend wounds (−15% HP)") }}
+        {{ act("help", "leave", "Walk past", "btn btn-gold ghost") }}
+      </div>
+
+    {% elif g.mode == "story" %}
+      {% for l in g.story %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      {% if g.merchant %}
+      <div class="choices">{% for m in g.merchant %}{{ act("buy", m.key, m.label ~ " · 🪷 " ~ m.price, "btn btn-gold", " disabled" if m.bought else "") }}{% endfor %}</div>
+      {% endif %}
+      {% if g.lair_note %}<p class="sub">{{ g.lair_note }}</p>{% endif %}
+      <div class="choices">
+        {% if g.deeper %}{{ act("deeper", "", "Go deeper", "btn btn-jade") }}{% endif %}
+        {{ act("return", "", "Return safely", "btn btn-gold ghost") }}
+      </div>
+
+    {% elif g.mode == "over" %}
+      <h1 class="title">{{ g.title }}</h1>
+      {% for l in g.story %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      {% for l in g.summary %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      {% if g.lair %}
+      <div class="laircard">
+        <img src="{{ g.lair.art }}" alt="" width="160" height="160">
+        <div><p class="kicker">{{ g.lair.tier | upper }} · OPEN {{ g.lair.closes }} MORE MINUTES</p>
+          <p class="pline">The <b>{{ g.lair.name }}</b> waits in its lair. Nobody here can join you: you would face it alone.</p>
+          {% if g.lair.problem %}<p class="ferror">{{ g.lair.problem | safe }}</p>
+          {% else %}{{ act("hunt", "", "Hunt it alone", "btn btn-jade") }}{% endif %}</div>
+      </div>
+      {% endif %}
+      <form method="post" action="/explore/done"><button class="btn btn-gold" type="submit">Back</button></form>
+
+    {% elif g.mode == "lair_over" %}
+      <h1 class="title">{{ g.lair.title }}</h1>
+      {% for l in g.lair.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      <form method="post" action="/explore/done"><button class="btn btn-gold" type="submit">Back</button></form>
+    {% endif %}
+  </section>
+</main>
+{% endif %}
+{% endblock %}

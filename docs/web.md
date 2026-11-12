@@ -4,11 +4,10 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 **game rules**, so a character is one character everywhere: progress made in Discord shows up on the
 website, and later the other way round.
 
-**Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy** and **gathering**
-(all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
+**Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy**, **gathering**
+and **exploring with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** the other playable screens from the web mockup (fight), then using items
-(Open, Take) from the inventory.
+**Next:** using items (Open, Take) from the inventory, training, and team hunts.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -151,7 +150,32 @@ showing. The time for a pick is measured on the server, so a late right answer i
 page times out. Old or repeated pages and unknown choices are ignored. One trip at a time per player, kept in
 the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
 
-Only `art/icons`, `art/scenes`, `art/chests` and `art/portraits` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
+## Explore
+
+`/explore` is the bot's `/explore` (docs/explore.md) in the browser, with the same engines: `bot/expedition.py` runs
+the steps, encounters, loot and the walk home; every fight turn is `bot/fight.py` (the rules in docs/combat.md);
+a lair is fought with `bot/hunt.py`.
+
+1. **Set out:** the same checks as Discord (injury, the 30-minute rest). The rest starts when you set out and is
+   saved, so Discord can't start a second expedition at the same time, and the other way round.
+2. **Steps:** three paths with their clues, then the encounter: merchant, wounded stranger, hazard (a 3-second
+   leap, timed from when the page shows it), herbs, ore, chests and so on. Go deeper or return safely.
+3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
+   Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
+   (`art/portraits/fighter_stance.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
+   middle, the battle log, and seven actions with keys 1–7 (`art/icons/actions/`): Strike, Attack technique,
+   Defense technique, Mending Pill, Guard, Break, Flee. Hovering an action shows what it beats and its cooldown.
+   Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
+   the beast hits, a blue ring on a block, green on a pill, damage numbers.
+4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
+   hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
+   `hunt.pay`), from the end screen while it is open.
+
+The server keeps every clock: a fight turn left too long plays Guard (three in a row: flee), a hazard answered too
+late fails, and two idle minutes end the expedition (as the bot's panel does). Old pages and moves that aren't
+possible are ignored. Rare finds are announced only in Discord.
+
+Only `art/icons`, `art/scenes`, `art/chests`, `art/portraits` and `art/beasts` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
 
 ## Going online later
