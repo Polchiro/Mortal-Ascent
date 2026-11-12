@@ -281,3 +281,20 @@ body.hallbg{--ag:#C9A45C;--ag2:#EBCB86;--char:#101114;--spirit:#7FA8D9;
 .xjourney div{display:flex;flex-direction:column;align-items:center;padding:12px 6px;border-radius:4px;background:rgba(0,0,0,.28);border:1px solid rgba(201,164,92,.15)}
 .xjourney b{font:800 24px Cinzel,Georgia,serif;color:var(--ag2)}.xjourney span{font-size:13px;color:var(--mist)}
 @media (max-width:900px){.portrait{max-width:220px}.portrait .seal{font-size:110px}}
+/* E. Strength & Vitality */
+.devform{display:flex;flex-direction:column;gap:12px}
+.devrow{display:flex;align-items:center;gap:14px;padding:12px;border-radius:4px;background:rgba(0,0,0,.28);border:1px solid rgba(201,164,92,.18)}
+.devrow img{flex:none;object-fit:contain}
+.devtext{flex:1;display:flex;flex-direction:column;min-width:0}.devtext b{font:800 24px Cinzel,Georgia,serif}.devtext .sub{margin:0}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper output{min-width:38px;text-align:center;font-weight:700;color:var(--jade)}
+.step{width:44px;height:44px;border-radius:50%;border:1px solid var(--ag);background:rgba(201,164,92,.1);color:var(--ag2);font:600 22px/1 Inter,Arial,sans-serif;cursor:pointer}
+.step:hover:enabled{background:rgba(201,164,92,.25)}.step:disabled{opacity:.35;cursor:default}
+.preview{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:baseline;padding:10px 14px;border-left:3px solid var(--jade);background:rgba(111,217,176,.06)}
+.preview b{color:var(--cream)}.preview .sub{margin:0}
+.devform .btn{align-self:flex-start}
+.devform .btn:disabled{opacity:.45;cursor:default}
+.reset{margin-top:14px}.reset summary{cursor:pointer;color:var(--ag2);font-size:14px}
+.reset form{margin-top:6px}
+.btn.small{padding:8px 16px;font-size:14px}
+@media (max-width:560px){.devrow{flex-wrap:wrap}.devtext{flex-basis:calc(100% - 70px)}.stepper{width:100%;justify-content:flex-end}}

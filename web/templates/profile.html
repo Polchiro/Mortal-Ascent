@@ -1,6 +1,66 @@
 {% extends "base.html" %}
-{% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
-{% block body_class %}hallbg{% endblock %}
+{% block title %}{{ p.name }} · Mortal Ascent<script>
+(function () {
+  var form = document.getElementById('devform'), data = document.getElementById('devcalc');
+  if (!form || !data || !document.getElementById('dev-ok')) return;
+  var c = JSON.parse(data.textContent), free = {{ p.dev.free }}, add = {s: 0, v: 0};
+  var inS = document.getElementById('in-s'), inV = document.getElementById('in-v'), ok = document.getElementById('dev-ok');
+  inS.disabled = inV.disabled = false;
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function draw() {
+    var a0 = Math.round(c.attack * (1 + c.atk_pct + c.s * c.ps)), a1 = Math.round(c.attack * (1 + c.atk_pct + (c.s + add.s) * c.ps));
+    var h0 = Math.round(c.hp * (1 + c.hp_pct + c.v * c.pv)), h1 = Math.round(c.hp * (1 + c.hp_pct + (c.v + add.v) * c.pv));
+    document.getElementById('pv-atk').textContent = add.s ? fmt(a0) + ' → ' + fmt(a1) : fmt(a0);
+    document.getElementById('pv-hp').textContent = add.v ? fmt(h0) + ' → ' + fmt(h1) : fmt(h0);
+    var left = free - add.s - add.v;
+    document.getElementById('pv-left').textContent = left + ' left';
+    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
+    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
+    inS.value = add.s; inV.value = add.v;
+    ok.disabled = !(add.s + add.v);
+    form.querySelectorAll('.step').forEach(function (b) {
+      var k = b.parentNode.dataset.stat, d = +b.dataset.d;
+      b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
+    });
+  }
+  form.querySelectorAll('.step').forEach(function (b) {
+    b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  draw();
+})();
+</script>
+{% endblock %}
+{% block body_class %}hallbg<script>
+(function () {
+  var form = document.getElementById('devform'), data = document.getElementById('devcalc');
+  if (!form || !data || !document.getElementById('dev-ok')) return;
+  var c = JSON.parse(data.textContent), free = {{ p.dev.free }}, add = {s: 0, v: 0};
+  var inS = document.getElementById('in-s'), inV = document.getElementById('in-v'), ok = document.getElementById('dev-ok');
+  inS.disabled = inV.disabled = false;
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function draw() {
+    var a0 = Math.round(c.attack * (1 + c.atk_pct + c.s * c.ps)), a1 = Math.round(c.attack * (1 + c.atk_pct + (c.s + add.s) * c.ps));
+    var h0 = Math.round(c.hp * (1 + c.hp_pct + c.v * c.pv)), h1 = Math.round(c.hp * (1 + c.hp_pct + (c.v + add.v) * c.pv));
+    document.getElementById('pv-atk').textContent = add.s ? fmt(a0) + ' → ' + fmt(a1) : fmt(a0);
+    document.getElementById('pv-hp').textContent = add.v ? fmt(h0) + ' → ' + fmt(h1) : fmt(h0);
+    var left = free - add.s - add.v;
+    document.getElementById('pv-left').textContent = left + ' left';
+    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
+    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
+    inS.value = add.s; inV.value = add.v;
+    ok.disabled = !(add.s + add.v);
+    form.querySelectorAll('.step').forEach(function (b) {
+      var k = b.parentNode.dataset.stat, d = +b.dataset.d;
+      b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
+    });
+  }
+  form.querySelectorAll('.step').forEach(function (b) {
+    b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  draw();
+})();
+</script>
+{% endblock %}
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
@@ -65,6 +125,64 @@
       </div>
     </section>
 
+    <!-- E. Character development -->
+    {% set dv = p.dev %}
+    <section class="xpanel" id="develop" aria-labelledby="dev-h">
+      <div class="phead"><h2 id="dev-h">Strength &amp; Vitality</h2><span class="sub">{{ dv.free }} point{{ "s" if dv.free != 1 }} to place</span></div>
+      {% if points_notice %}<p class="gnotice" role="status">{{ points_notice | rich | safe }}</p>{% endif %}
+      <form method="post" action="/profile/attributes" class="devform" id="devform">
+        <div class="devrow">
+          <img src="/art/icons/attr/strength.webp" alt="" width="56" height="56">
+          <div class="devtext"><span class="alabel">Strength</span><b>{{ dv.strength }}</b>
+            <span class="sub">{{ dv.per_str }} Attack per point · now <span class="jade">{{ dv.str_pct }}</span></span></div>
+          {% if dv.free %}
+          <div class="stepper" data-stat="s">
+            <button type="button" class="step" data-d="-1" aria-label="One less Strength">−</button>
+            <output name="s_out">0</output>
+            <button type="button" class="step" data-d="1" aria-label="One more Strength">+</button>
+          </div>
+          {% endif %}
+        </div>
+        <div class="devrow">
+          <img src="/art/icons/attr/vitality.webp" alt="" width="56" height="56">
+          <div class="devtext"><span class="alabel">Vitality</span><b>{{ dv.vitality }}</b>
+            <span class="sub">{{ dv.per_vit }} max HP per point · now <span class="jade">{{ dv.vit_pct }}</span></span></div>
+          {% if dv.free %}
+          <div class="stepper" data-stat="v">
+            <button type="button" class="step" data-d="-1" aria-label="One less Vitality">−</button>
+            <output name="v_out">0</output>
+            <button type="button" class="step" data-d="1" aria-label="One more Vitality">+</button>
+          </div>
+          {% endif %}
+        </div>
+        {% if dv.free %}
+        <div class="preview" aria-live="polite">
+          <span>Attack <b id="pv-atk">—</b></span><span>HP <b id="pv-hp">—</b></span><span class="sub" id="pv-left"></span>
+        </div>
+        <noscript><p class="sub">Type how many points to add:
+          <label>Strength <input type="number" name="strength" min="0" max="{{ dv.free }}" value="0"></label>
+          <label>Vitality <input type="number" name="vitality" min="0" max="{{ dv.free }}" value="0"></label></p></noscript>
+        <input type="hidden" name="strength" value="0" id="in-s" disabled>
+        <input type="hidden" name="vitality" value="0" id="in-v" disabled>
+        <button class="btn btn-gold" type="submit" id="dev-ok" disabled>Place points</button>
+        {% else %}
+        <p class="sub">You get one point for every layer you climb ({{ dv.earned }} so far). Climb a layer to earn the next.</p>
+        {% endif %}
+      </form>
+      {% if dv.can_reset %}
+      <details class="reset">
+        <summary>Reset my points</summary>
+        <p class="sub">Every placed point comes back so you can place them again.
+          {% if dv.reset_cost %}Costs <b>{{ dv.reset_cost }} Moon Pearls</b> (you have {{ dv.pearls }}).{% else %}Your first reset is <b>free</b>.{% endif %}</p>
+        <form method="post" action="/profile/attributes/reset">
+          <button class="btn btn-gold ghost small" type="submit"{% if dv.reset_cost and dv.pearls < dv.reset_cost %} disabled{% endif %}>
+            {% if dv.reset_cost %}Reset for {{ dv.reset_cost }} 🌙{% else %}Reset for free{% endif %}</button>
+        </form>
+      </details>
+      {% endif %}
+      <script type="application/json" id="devcalc">{{ dv.calc | tojson }}</script>
+    </section>
+
     <!-- C. Equipment -->
     <section class="xpanel" id="gear" aria-labelledby="gear-h">
       <div class="phead"><h2 id="gear-h">Equipment</h2><a class="sub" href="/inventory?tab=weapons">Open bag</a></div>
@@ -119,4 +237,34 @@
     </section>
   </div>
 </main>
+<script>
+(function () {
+  var form = document.getElementById('devform'), data = document.getElementById('devcalc');
+  if (!form || !data || !document.getElementById('dev-ok')) return;
+  var c = JSON.parse(data.textContent), free = {{ p.dev.free }}, add = {s: 0, v: 0};
+  var inS = document.getElementById('in-s'), inV = document.getElementById('in-v'), ok = document.getElementById('dev-ok');
+  inS.disabled = inV.disabled = false;
+  function fmt(n) { return n.toLocaleString('en-US'); }
+  function draw() {
+    var a0 = Math.round(c.attack * (1 + c.atk_pct + c.s * c.ps)), a1 = Math.round(c.attack * (1 + c.atk_pct + (c.s + add.s) * c.ps));
+    var h0 = Math.round(c.hp * (1 + c.hp_pct + c.v * c.pv)), h1 = Math.round(c.hp * (1 + c.hp_pct + (c.v + add.v) * c.pv));
+    document.getElementById('pv-atk').textContent = add.s ? fmt(a0) + ' → ' + fmt(a1) : fmt(a0);
+    document.getElementById('pv-hp').textContent = add.v ? fmt(h0) + ' → ' + fmt(h1) : fmt(h0);
+    var left = free - add.s - add.v;
+    document.getElementById('pv-left').textContent = left + ' left';
+    form.querySelector('output[name=s_out]').textContent = add.s ? '+' + add.s : '0';
+    form.querySelector('output[name=v_out]').textContent = add.v ? '+' + add.v : '0';
+    inS.value = add.s; inV.value = add.v;
+    ok.disabled = !(add.s + add.v);
+    form.querySelectorAll('.step').forEach(function (b) {
+      var k = b.parentNode.dataset.stat, d = +b.dataset.d;
+      b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
+    });
+  }
+  form.querySelectorAll('.step').forEach(function (b) {
+    b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
+  });
+  draw();
+})();
+</script>
 {% endblock %}

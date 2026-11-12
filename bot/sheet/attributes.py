@@ -43,7 +43,7 @@ def attribute_values(player, techniques=(), weapon=None, armor=None):
     """[{key, label, icon, color, base, final, bonus, sources: [(name, pct)]}] for the player's path."""
     base = dict(zip(("hp", "attack", "defense"), rules.base_stats(player["realm"], player["layer"])))
     final = dict(zip(("hp", "attack", "defense"), rules.final_stats(player, techniques, weapon, armor)))
-    buffs = rules.stat_buffs(techniques, weapon, armor)
+    buffs = rules.all_buffs(player, techniques, weapon, armor)
     out = []
     for a in PATHS[path_for(player)]:
         src = buffs.get(a.key, [])

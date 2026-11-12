@@ -499,7 +499,7 @@ def test_all_commands_register():
         return names
     assert asyncio.run(go()) == {"start", "profile", "balance", "inventory", "explore", "train",
                                  "breakthrough", "internal", "practice", "spar", "techniques", "equipment",
-                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "settings", "admin",
+                                 "shop", "blessing", "recharge", "reroll", "physician", "bestiary", "cooldown", "settings", "attributes", "admin",
                                  "tutorial", "index", "gather", "craft", "forge", "duel", "trade", "daily", "leaderboard", "profession"}
 
 

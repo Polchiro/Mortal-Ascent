@@ -6,7 +6,9 @@ so the website and Discord always agree. This module only turns them into text a
 """
 import os
 
-from bot import crafting, db, forging
+import stats
+
+from bot import crafting, db, forging, points
 from bot import player as rules
 from bot.sheet import data as sheet
 from cards import art_icons
@@ -85,6 +87,26 @@ def realm_track(realm, layer, max_layer):
             "pips": [{"n": n, "on": n <= layer, "now": n == layer} for n in range(1, max_layer + 1)]}
 
 
+def development(conn, user_id):
+    """The Strength / Vitality panel: points, what they give, and what the page needs to preview a choice."""
+    from bot.sheet.data import worn
+    p = db.get_player(conn, user_id)
+    techs = db.get_techniques(conn, user_id)
+    weapon, armor, _ = worn(conn, user_id)
+    hp, attack, _ = rules.base_stats(p["realm"], p["layer"])
+    other = {k: sum(v for _, v in src) for k, src in rules.stat_buffs(techs, weapon, armor).items()}
+    cost = points.reset_cost(p)
+    return {"strength": p["strength"], "vitality": p["vitality"], "free": rules.unspent_points(p),
+            "earned": rules.attribute_points(p["realm"], p["layer"]),
+            "str_pct": pct(p["strength"] * stats.STRENGTH_ATTACK), "vit_pct": pct(p["vitality"] * stats.VITALITY_HP),
+            "per_str": pct(stats.STRENGTH_ATTACK), "per_vit": pct(stats.VITALITY_HP),
+            "reset_cost": cost, "can_reset": bool(p["strength"] or p["vitality"]),
+            "pearls": p["moon_pearls"],
+            # the preview uses the same formula as player.final_stats: round(base × (1 + every % bonus))
+            "calc": {"hp": hp, "attack": attack, "hp_pct": other["hp"], "atk_pct": other["attack"],
+                     "s": p["strength"], "v": p["vitality"], "ps": stats.STRENGTH_ATTACK, "pv": stats.VITALITY_HP}}
+
+
 def profile_view(conn, user_id, username=None):
     """Everything profile.html shows, or None when this Discord account has no character yet."""
     if db.get_player(conn, user_id) is None:
@@ -119,6 +141,7 @@ def profile_view(conn, user_id, username=None):
                   ("Duels won", number(d["duels_won"]))],
         "status": d["status"],
         "portrait": PORTRAIT,
+        "dev": development(conn, user_id),
         "layer_no": d["layer"],
         "titles": titles(db.get_player(conn, user_id)),
         "track": realm_track(d["realm"], d["layer"], d["max_layer"]),

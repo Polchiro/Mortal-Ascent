@@ -28,7 +28,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-from bot import db
+from bot import db, points
 from . import discord_oauth as oauth
 from . import alchemy_play, drawn, forge_play, gather_play
 from . import inventory as bag
@@ -148,7 +148,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
         return page(request, "profile.html", p=view, worn=worn, user=user, avatar=avatar,
-                    notice=request.session.pop("gear_notice", None))
+                    notice=request.session.pop("gear_notice", None),
+                    points_notice=request.session.pop("points_notice", None))
 
     @app.get("/inventory", response_class=HTMLResponse)
     def inventory(request: Request, tab: str = "weapons", item: int | None = None):
@@ -192,6 +193,27 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             where = {"tab": tab, "item": item_id} if tab else {}
             return RedirectResponse("/inventory?" + urllib.parse.urlencode(where), status_code=303)
         return step
+
+    async def points_step(request: Request, reset=False):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        if reset:
+            ok, message = await run_in_threadpool(with_conn, points.reset, user["id"])
+        else:
+            ok, message = await run_in_threadpool(with_conn, points.place, user["id"],
+                                                  num(form.get("strength")) or 0, num(form.get("vitality")) or 0)
+        request.session["points_notice"] = message
+        return RedirectResponse("/profile#develop", status_code=303)
+
+    @app.post("/profile/attributes")
+    async def place_points(request: Request):
+        return await points_step(request)
+
+    @app.post("/profile/attributes/reset")
+    async def reset_points(request: Request):
+        return await points_step(request, reset=True)
 
     app.post("/inventory/equip")(gear_step(bag.equip))
     app.post("/inventory/unequip")(gear_step(bag.unequip))

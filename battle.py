@@ -32,7 +32,7 @@ MOVE_WEIGHTS = {
     "armored": {"strike": 0.30, "guard": 0.45, "break": 0.25},
     "bandit":  {"strike": 0.45, "guard": 0.25, "break": 0.30},
 }
-TELL_CHANCE = 0.6            # share of turns where the warning bar gives away the enemy's next move
+TELL_CHANCE = 0.7            # share of turns where the warning bar gives away the enemy's next move
 
 # ── Telegraphed moves ─────────────────────────────────────────────────
 # Every beast has an element move it announces one turn ahead in the warning bar.
@@ -45,6 +45,10 @@ CHARGE_MULT = 1.5            # charged hit = 1.5 × a normal hit, no 30% cap
 CHARGE_GUARD_BLOCK = 0.50    # plain Guard blocks this share of a charged hit; a defense technique adds its block
 SIGNATURE_EVERY = 4          # Normal beasts: every 4th enemy turn is the signature strike
 SIGNATURE_MULT = 1.2
+
+# Reading the beast must beat spamming Strike (tested with 600-fight simulations per build, Nov 2026):
+BLOCKED_STRIKE_STUN = True   # a Strike into the enemy's Guard leaves you Stunned (only Guard next turn)
+GUARD_COUNTER = 0.5          # a Guard that blocks a normal Strike hits back with this share of a Strike
 
 # ── Statuses ──────────────────────────────────────────────────────────
 # on: who carries it. turns: how long it lasts.
