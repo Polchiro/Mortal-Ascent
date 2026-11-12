@@ -49,10 +49,7 @@
     <div class="fighter" aria-hidden="true" data-pose="idle">
       <div class="poses">
         {% for pose, src in F.me.poses.items() %}<img class="pose p-{{ pose }}" src="{{ src }}" alt="" width="1024" height="559">{% endfor %}
-        <svg class="trailfx" viewBox="0 0 1024 559"><defs>
-          <linearGradient id="trailg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" class="tint" stop-opacity=".55"/><stop offset="1" stop-color="#fff"/></linearGradient>
-          <clipPath id="trailclip"><rect x="0" y="-200" width="0" height="900"/></clipPath></defs>
-          <g clip-path="url(#trailclip)" opacity="0"><path d="M 235 150 C 450 -10, 850 0, 990 160 C 800 80, 480 80, 235 150 Z" fill="url(#trailg)"/></g></svg>
+        <img class="trailfx" src="/art/fx/slash.webp" alt="" width="1024" height="559">
       </div>
       <svg class="clawsfx" viewBox="0 0 1024 559"><defs>
         <linearGradient id="clawg" x1="1" x2="0"><stop offset="0" stop-color="#FF3B4E" stop-opacity="0"/><stop offset=".45" stop-color="#FF4A5C" stop-opacity=".85"/><stop offset="1" stop-color="#FFE3E0"/></linearGradient>
