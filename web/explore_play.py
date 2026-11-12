@@ -422,6 +422,36 @@ def result_banner(log, me):
     return None, None
 
 
+GRADE_COLOR = {"Mortal": "#D8D4CC", "Yellow": "#F0C566", "Mystic": "#7FB4FF", "Earth": "#6FD99A", "Heaven": "#E2A8FF"}
+DEFENSE_SHOWS = {"counter": "countered", "recover": "recovered", "evade": "slipped away", "unbreakable": "of the Break"}
+
+
+def cast(b, f):
+    """The technique you used this turn, for its own animation (docs/web.md): which school and effect it has,
+    its grade colour, and whether it landed. None when the turn used no technique."""
+    t = next((x for x in (f.atk_t, f.def_t) if x and b.log and f.last_move == x["name"]), None)
+    if t is None:
+        return None
+    info = rules.TECH_BY_NAME.get(t["name"], {})
+    mine = " ".join(text for _, text in b.log if text.startswith(f.name + " — " + t["name"]))
+    effect = (info.get("effect") or ("",))[0]
+    if t["type"] == "attack":
+        landed = "dmg" in mine
+        shown = effect if landed else ""
+        school = info.get("school", "Fist").lower()
+    else:
+        landed = "blocked" in mine or "holds" in mine or "slipped away" in mine
+        shown = effect if effect in DEFENSE_SHOWS and DEFENSE_SHOWS[effect] in mine else ""
+        if "holds" in mine and not shown:
+            shown = "hold"
+        school = "body" if info.get("school") == "Body" else "palmdef"
+    from bot.sheet.data import tech_kind
+    from .profile import art_url
+    return {"name": t["name"], "kind": t["type"], "school": school, "effect": shown, "landed": landed,
+            "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
+            "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
+
+
 def look_face(player):
     """The round face on the fight card: the player's chosen look, or the default portrait."""
     look = looks.of_player(player)
@@ -457,7 +487,7 @@ def fight_view(conn, s, b, p, now):
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
-        "log": log, "fx": fx, "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
+        "log": log, "fx": fx, "cast": cast(b, f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
         "result": {"word": word, "sub": sub} if word else None,
     }
 

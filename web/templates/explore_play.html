@@ -14,7 +14,8 @@
 {% endmacro %}
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}" style="--arena: url({{ F.arena }})" aria-label="{{ F.title }}" data-turn="{{ g.turn }}">
+{% set C = F.cast %}
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}">
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
     <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
@@ -51,6 +52,10 @@
       {% if F.enemy.delta %}<span class="dmg hit">{{ F.enemy.delta }}</span>{% endif %}</div>
     {% if F.result %}<div class="bresult" role="status"><p class="rword">{{ F.result.word }}</p>{% if F.result.sub %}<p class="rsub">{{ F.result.sub }}</p>{% endif %}</div>{% endif %}
     <span class="slashfx"></span><span class="clawfx"></span><span class="ringfx"></span>
+    {% if C %}
+    <div class="castcall" role="status"><img src="{{ C.icon }}" alt="" width="56" height="56"><span><small>{{ C.grade }} technique</small>{{ C.name }}</span></div>
+    <span class="tfx tfx-a" aria-hidden="true"></span><span class="tfx tfx-b" aria-hidden="true"></span><span class="tfx tfx-c" aria-hidden="true"></span>
+    {% endif %}
   </section>
 
   <!-- log -->

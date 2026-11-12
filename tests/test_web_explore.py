@@ -219,3 +219,16 @@ def test_a_lair_can_be_hunted_alone_after_the_expedition(client, db_path):
         act(client, "move", "flee")
     assert s.lair_result is not None
     assert "Back" in client.get("/explore/play").text
+
+
+def test_a_technique_turn_plays_its_own_animation(client):
+    s = fight(client)
+    b = s.battle
+    f = b.fighters[0]
+    f.bqi = f.max_bqi
+    b.enemy["statuses"].clear()
+    b.intent = {"move": "break", "kind": "normal", "target": f, "name": "Break"}
+    act(client, "move", "attack_tech")
+    page = client.get("/explore/play").text
+    assert "casting cast-attack cast-fist" in page and "cast-landed" in page
+    assert 'class="castcall"' in page and "Mortal technique" in page and "--tc: #" in page
