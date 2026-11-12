@@ -26,7 +26,19 @@ def art_url(kind):
     if not found:
         return None
     rel = os.path.relpath(found[0], ART_ROOT).replace(os.sep, "/")
-    return "/art/" + rel
+    return fresh("/art/" + rel)
+
+
+def fresh(url):
+    """'/art/icons/tech/iron_fist.webp' -> '/art/icons/tech/iron_fist.webp?v=1731420000': the file's change time
+    rides along, so a browser that kept an old copy of a picture (say a cut-off icon fixed since) fetches the
+    new one as soon as the file changes, instead of showing the old one from its cache."""
+    if not url.startswith("/art/"):
+        return url
+    try:
+        return f"{url}?v={int(os.path.getmtime(os.path.join(ART_ROOT, url[5:])))}"
+    except OSError:
+        return url
 
 
 def number(x):

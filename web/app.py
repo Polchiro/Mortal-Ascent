@@ -67,6 +67,15 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         session_cookie="ma_session", max_age=SESSION_DAYS * 86400, same_site="lax",
         https_only=settings.redirect_uri.startswith("https://"),
     )
+    @app.middleware("http")
+    async def recheck_art(request, call_next):
+        """Pictures under /art/ are checked with the server each time (a quick 'not changed' when they're the
+        same), so a fixed icon shows up after a git pull without clearing the browser's cache."""
+        response = await call_next(request)
+        if request.url.path.startswith("/art/") and "cache-control" not in response.headers:
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
     @app.get("/art/drawn/{kind}.png")
     def drawn_icon(kind: str):
         """Icons with no painted file, drawn by the bot's card code (web/drawn.py)."""
