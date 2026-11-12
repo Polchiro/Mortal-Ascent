@@ -604,7 +604,7 @@ form.inline{display:inline}
 .sover{position:absolute;z-index:3;margin:0!important;justify-content:center;pointer-events:none}
 .sover .schip{font-size:13px;padding:3px 10px;border:1px solid currentColor;backdrop-filter:blur(2px);box-shadow:0 2px 8px rgba(0,0,0,.5);animation:slidein .35s ease-out}
 .sover .schip:not(.bad){background:rgba(10,14,24,.7)}.sover .schip.bad{background:rgba(40,10,10,.7)}
-.sme{left:12%;width:24%;bottom:66%}.senemy{right:8%;width:27%;top:36%}
+.sme{left:10%;width:28%;bottom:1%}.senemy{right:8%;width:27%;bottom:1%}
 /* this turn's lines, called out one after another, then they fade (the full record stays in Battle History) */
 .bfeed{position:absolute;z-index:4;left:50%;top:44%;transform:translateX(-50%);width:min(440px,40%);display:flex;flex-direction:column;
   align-items:center;gap:6px;pointer-events:none}
@@ -617,15 +617,15 @@ form.inline{display:inline}
 .tnum.big{font-size:52px;color:#FFD36B;text-shadow:0 0 18px rgba(255,190,80,.9),0 2px 6px #000;animation-duration:1.5s}
 .tnum.hurt.big{color:#FF5E50;text-shadow:0 0 18px rgba(255,60,50,.9),0 2px 6px #000}
 /* Battle History: a small button over the scene's lower right; the panel slides over the arena */
-.bhist{position:relative;z-index:6;grid-row:2;grid-column:3;justify-self:end;align-self:end;margin:0 4px 10px 0}
+.bhist{position:relative;z-index:6;grid-row:2;grid-column:1/-1;justify-self:center;align-self:end;margin:0 0 10px}
 .histbtn{list-style:none;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 10px;border-radius:999px;cursor:pointer;
   background:rgba(10,12,20,.88);border:1px solid rgba(232,194,122,.5);color:var(--cream);font:600 13.5px Inter,Arial,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 .histbtn::-webkit-details-marker{display:none}
 .histbtn:hover,.histbtn:focus-visible,.bhist[open]>.histbtn{border-color:#FFE7A8;color:var(--gold2)}
 .histbtn .hicon{width:18px;height:18px;color:var(--gold)}
 .histbtn b{padding:1px 8px;border-radius:999px;background:rgba(232,194,122,.16);font-size:12px;color:var(--gold2)}
-.histpanel{position:absolute;right:0;bottom:calc(100% + 10px);width:min(380px,calc(100vw - 32px));max-height:min(520px,60vh);display:flex;flex-direction:column;
-  border-radius:14px;background:rgba(10,12,20,.96);border:1px solid var(--gold);box-shadow:0 16px 40px rgba(0,0,0,.65);animation:slidein .25s ease-out}
+.histpanel{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(100% + 10px);width:min(380px,calc(100vw - 32px));max-height:min(520px,60vh);display:flex;flex-direction:column;
+  border-radius:14px;background:rgba(10,12,20,.96);border:1px solid var(--gold);box-shadow:0 16px 40px rgba(0,0,0,.65)}
 .histpanel header{display:flex;justify-content:space-between;align-items:center;padding:10px 10px 8px 16px;border-bottom:1px solid rgba(232,194,122,.2)}
 .histpanel .kicker{margin:0}
 .histclose{width:32px;height:32px;border-radius:8px;border:1px solid rgba(232,194,122,.35);background:transparent;color:var(--gold2);font-size:20px;line-height:1;cursor:pointer}
@@ -650,7 +650,7 @@ form.inline{display:inline}
   .benemy{padding:8px 10px}.ename{font-size:16px}.etags{font-size:11px}
   .bwarn .whead{font-size:14px}.whint{font-size:12px}
   .bscene .fighter{width:60%;left:-3%;bottom:2%}.bscene .beast{top:12%;right:2%;width:40%;bottom:2%}
-  .sme{left:8%;width:36%;bottom:58%;top:auto}.senemy{right:2%;width:40%;top:4%}
+  .sme{left:6%;width:40%;bottom:1%}.senemy{right:2%;width:40%;bottom:1%}
   .sover .schip{font-size:11px;padding:2px 7px}
   .bfeed{top:3%;width:min(56%,420px)}
   .toast{font-size:12.5px;padding:4px 10px}
@@ -660,7 +660,7 @@ form.inline{display:inline}
   .bhist{grid-area:hist;justify-self:end;align-self:center;margin:0}
   .bside{justify-content:flex-start}
   .histbtn{padding:6px 12px 6px 8px}
-  .histpanel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:70vh;border-radius:16px 16px 0 0;border-bottom:none;padding-bottom:env(safe-area-inset-bottom)}
+  .histpanel{position:fixed;left:0;right:0;bottom:0;transform:none;width:auto;max-height:70vh;border-radius:16px 16px 0 0;border-bottom:none;padding-bottom:env(safe-area-inset-bottom)}
 }
 @media (max-width:480px){
   .battle{grid-template-areas:"me" "enemy" "scene" "bar" "side" "hist" "info";grid-template-columns:minmax(0,1fr)}
@@ -668,6 +668,7 @@ form.inline{display:inline}
   .bme .brow:last-child{display:none}
   .bbar{gap:8px}.bbar .actbtn img{max-width:56px}.alab{font-size:13.5px}
   .binfo .sub{display:none}
+  .bscene .fighter{width:74%;left:-10%}.bscene .beast{width:50%;right:-2%;top:4%}
 }
 .dmg.big{font-size:50px;text-shadow:0 0 18px rgba(255,190,80,.9),0 2px 6px #000}
 @media (min-width:601px) and (max-width:900px){.bbar{grid-template-columns:repeat(4,minmax(0,1fr))}}
