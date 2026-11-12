@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 import battle as battle_rules
 import explore as explore_rules
 
-from bot import combat, crafting, db, hunt
+from bot import crafting, db, hunt
 from bot import player as rules
 from bot.expedition import TIMER_GRACE_SECONDS as HAZARD_GRACE, Expedition
 from bot.fight_view import GRACE_SECONDS as TURN_GRACE, TIER_LABEL, describe
@@ -343,8 +343,8 @@ def action_info(b, f, key):
     if key == "strike":
         return "Beats Break. Into a Guard it is blocked and you are Stunned. Same move: both hit at half."
     if key == "guard":
-        return ("Beats Strike: blocks it and counters for half a Strike. "
-                f"Blocks {battle_rules.CHARGE_GUARD_BLOCK:.0%} of a charged attack.")
+        return (f"Beats Strike: blocks it, counters for half a Strike and gives +{battle_rules.BATTLE_QI_GOOD_GUARD} "
+                f"Battle Qi. Blocks {battle_rules.CHARGE_GUARD_BLOCK:.0%} of a charged attack.")
     if key == "break":
         return "Beats Guard: shatters it and staggers the beast. Interrupts a charged attack. Loses to Strike."
     if key == "flee":
@@ -357,17 +357,15 @@ def action_info(b, f, key):
     t = f.tech(key)
     if not t:
         return "No technique in this slot yet."
-    rest = combat.cooldown_turns(t)
     as_ = "a Strike" if key == "attack_tech" else "a Guard"
-    return f"{t['name']}: {describe(t)}. Counts as {as_}. Rests {rest} turn{'s' if rest != 1 else ''} after use."
+    return f"{t['name']}: {describe(t)}. Counts as {as_}. Costs {f.qi_cost(key)} Battle Qi."
 
 
 def action(b, f, key):
     t = f.tech(key) if key.endswith("_tech") else None
     state = ""
     if key.endswith("_tech"):
-        left = f.cooldowns.get(key, 0)
-        state = "Empty slot" if not t else (f"Rests {left} turn{'s' if left != 1 else ''}" if left else "Ready")
+        state = "Empty slot" if not t else f"{f.qi_cost(key)} Battle Qi" + ("" if f.ready(key) else " · not enough")
     elif key == "pill":
         n = f.pill_count()
         state = f"×{n}" if n else "None"
@@ -389,9 +387,10 @@ def actions(b, f):
         if key == "techniques":
             ready = [t for t in techs if t["ready"]]
             main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/attack_tech.webp",
-                         "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Resting",
+                         "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Need Battle Qi",
                          "info": "Your attack technique counts as a Strike, your defense technique as a Guard. "
-                                 "Both rest a few turns after use.", "techs": techs})
+                                 f"They spend Battle Qi: +{battle_rules.BATTLE_QI_PER_TURN} comes back every turn, "
+                                 f"+{battle_rules.BATTLE_QI_GOOD_GUARD} more on a good Guard.", "techs": techs})
         else:
             main.append(dict(action(b, f, key), no=i + 1))
     side = [dict(action(b, f, k), hotkey="P" if k == "pill" else "F") for k in SIDE]
@@ -441,9 +440,8 @@ def fight_view(conn, s, b, p, now):
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
-               "face": FACE, "art": FIGHTER, "qi": number(round(p["qi"])),
-               "qi_cap": number(rules.qi_needed(p["realm"], p["layer"])),
-               "qi_pct": max(0, min(100, round(p["qi"] / max(1, rules.qi_needed(p["realm"], p["layer"])) * 100))),
+               "face": FACE, "art": FIGHTER, "bqi": round(f.bqi), "max_bqi": f.max_bqi,
+               "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
         "enemy": {"name": e["name"], "tier": TIER_LABEL[e["tier"]], "role": e.get("role", "").title(),
                   "element": e.get("element") if beast else None, "realm": e.get("realm", ""),

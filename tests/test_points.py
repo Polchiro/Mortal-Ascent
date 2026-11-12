@@ -124,7 +124,7 @@ def player_at(path):
 
 def test_profile_panel_places_and_resets(client):
     page = client.get("/profile").text
-    assert "Strength &amp; Vitality" in page and "18 points to place" in page and "Place points" in page
+    assert "Strength, Vitality &amp; Spirit" in page and "18 points to place" in page and "Place points" in page
     r = client.post("/profile/attributes", data={"strength": "5", "vitality": "3"})
     assert r.headers["location"] == "/profile#develop"
     p = player_at(client.path)
@@ -145,3 +145,29 @@ def test_logged_out_cannot_place(client):
     fresh = TestClient(client.app, base_url="http://localhost:8000", follow_redirects=False)
     assert fresh.post("/profile/attributes", data={"strength": "5"}).headers["location"] == "/"
     assert player_at(client.path)["strength"] == 0
+
+
+def test_spirit_points_count_against_the_same_pool_and_reset(conn):
+    ok, msg = points.place(conn, UID, strength=8, vitality=4, spirit=6)
+    assert ok and "+6 Spirit" in msg and rules.unspent_points(me(conn)) == 0
+    assert points.place(conn, UID, spirit=1)[0] is False
+    assert rules.final_stats(me(conn))[1] == round(rules.base_stats("Martial Warrior", 6)[1] * (1 + 8 * stats.STRENGTH_ATTACK))
+    points.reset(conn, UID)
+    assert me(conn)["spirit"] == 0 and rules.unspent_points(me(conn)) == 18
+
+
+def test_fights_start_with_spirit_battle_qi(conn):
+    import battle
+    points.place(conn, UID, spirit=5)
+    from bot.expedition import Expedition
+    e = Expedition(conn, UID)
+    e.next_step()
+    e.paths = {p: ("wild_beast", "x") for p in e.paths}
+    e.choose("left")
+    assert e.battle.fighters[0].max_bqi == battle.BATTLE_QI_START + 5 * stats.SPIRIT_BATTLE_QI
+
+
+def test_profile_panel_places_spirit(client):
+    client.post("/profile/attributes", data={"spirit": "4"})
+    assert player_at(client.path)["spirit"] == 4
+    assert "fights start with" in client.get("/profile").text

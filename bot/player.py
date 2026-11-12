@@ -449,7 +449,7 @@ def attribute_points(realm, layer):
 
 def unspent_points(player):
     return max(0, attribute_points(player["realm"], player["layer"])
-               - (player.get("strength") or 0) - (player.get("vitality") or 0))
+               - (player.get("strength") or 0) - (player.get("vitality") or 0) - (player.get("spirit") or 0))
 
 
 def attribute_buffs(player, cap=None):

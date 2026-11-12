@@ -230,7 +230,7 @@ ARTIFACT_FAMILIES = {
                 "names": ["Sparrow Feather", "Swallow Wing Charm", "Crane Feather Fan",
                           "Cloud-Stepping Ribbon", "Wind-and-Fire Wheels"]},
     "focus": {"seal": "心", "group": "combat", "effect": "cooldown_reset_chance",
-              "text": "Chance a technique's cooldown resets instantly",
+              "text": "Chance a technique costs no Battle Qi (in duels and spars: its cooldown resets)",
               "values": [0.05, 0.08, 0.12, 0.16, 0.20],
               "names": ["Meditation Beads", "Sandalwood Prayer Beads", "Seal of Clear Mind",
                         "Sutra of Endless Breath", "Lamp of Eternal Insight"]},

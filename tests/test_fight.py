@@ -185,21 +185,45 @@ def test_picking_resets_the_timeout_count():
     assert not b.over
 
 
-def test_technique_cooldown_and_chilled():
+def test_techniques_spend_battle_qi_and_it_comes_back():
     b = make_battle()
+    f = b.fighters[0]
+    assert f.bqi == f.max_bqi == data.BATTLE_QI_START
+    cost = data.TECHNIQUE_QI_COST[f.atk_t["grade"]]
     force(b, "break")                                       # a Strike into a Guard would stun now
     assert b.choose(1, "attack_tech") is None
     b.resolve()
-    assert "recovering" in b.choose(1, "attack_tech")
-    b.fighters[0].pick = None
-    force(b, "guard")
+    assert f.bqi == data.BATTLE_QI_START - cost + data.BATTLE_QI_PER_TURN
+    assert b.choose(1, "attack_tech") is None              # no cooldown: usable again while Qi lasts
+    f.pick = None
+    f.bqi = cost - 1
+    assert "Not enough Battle Qi" in b.choose(1, "attack_tech")
+    f.statuses["chilled"] = 2
+    assert f.qi_cost("attack_tech") == cost + data.CHILLED_QI_COST
+
+
+def test_a_good_guard_gives_battle_qi_and_it_never_passes_the_max():
+    b = make_battle()
+    f = b.fighters[0]
+    f.bqi = 10
+    force(b, "strike")
     b.choose(1, "guard")
     b.resolve()
-    assert b.choose(1, "attack_tech") is None              # Mortal: rests 1 turn
-    b.fighters[0].statuses["chilled"] = 2
-    force(b, "guard")
+    assert f.bqi == 10 + data.BATTLE_QI_GOOD_GUARD + data.BATTLE_QI_PER_TURN
+    assert any("Battle Qi" in t for _, t in b.log)
+    f.bqi = f.max_bqi
+    force(b, "break")
+    b.choose(1, "break")
     b.resolve()
-    assert b.fighters[0].cooldowns["attack_tech"] == 2      # +1 while Chilled
+    assert f.bqi == f.max_bqi
+
+
+def test_spirit_points_raise_battle_qi():
+    import stats
+    b = make_battle()
+    p = dict(b.fighters[0].player, spirit=10)
+    f = fight.Fighter(p, b.fighters[0].techs, 100, 100, 10, 5)
+    assert f.max_bqi == data.BATTLE_QI_START + 10 * stats.SPIRIT_BATTLE_QI
 
 
 def test_pills_heal_and_are_limited():

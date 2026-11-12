@@ -204,7 +204,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             ok, message = await run_in_threadpool(with_conn, points.reset, user["id"])
         else:
             ok, message = await run_in_threadpool(with_conn, points.place, user["id"],
-                                                  num(form.get("strength")) or 0, num(form.get("vitality")) or 0)
+                                                  num(form.get("strength")) or 0, num(form.get("vitality")) or 0,
+                                                  num(form.get("spirit")) or 0)
         request.session["points_notice"] = message
         return RedirectResponse("/profile#develop", status_code=303)
 

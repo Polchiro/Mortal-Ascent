@@ -13,7 +13,9 @@ Each turn:
 
 Combat artifacts (bot/gear.py, docs/equipment.md) ride on each Fighter as `fx`: Fang (Strike beats
 Break), Bell (charged attacks), Mirror (Guard reflects), Thunder (Break staggers), Lotus (heal per
-turn), Feather (dodge) and Focus (cooldown reset).
+turn), Feather (dodge) and Focus (a free technique).
+
+Techniques spend Battle Qi (battle.BATTLE_QI_START, TECHNIQUE_QI_COST); there are no technique cooldowns here.
 
 Forged weapon and armor passives (docs/forge.md) ride on each Fighter as `kit` (bot/passives.Kit): the turn
 asks it for damage bonuses, what a landed hit does (Lifesteal...), how a hit taken is softened (Golden Body...),
@@ -74,7 +76,10 @@ class Fighter:
         self.techs = techniques
         self.atk_t = next((t for t in techniques if t["type"] == "attack"), None)
         self.def_t = next((t for t in techniques if t["type"] == "defense"), None)
-        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}
+        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}   # always 0 here: Battle Qi limits techniques
+        self.max_bqi = battle.BATTLE_QI_START + (player.get("spirit") or 0) * stats.SPIRIT_BATTLE_QI
+        self.bqi = self.max_bqi           # Battle Qi: full at the start of every fight
+        self.free_cast = False            # Sword Heart: the next technique costs nothing
         self.statuses = {}                # key -> turns left
         self.pills = pills or []          # [{"id", "name", "heal", "qty"}] Mending pills in the bag
         self.pills_used = 0
@@ -98,6 +103,18 @@ class Fighter:
     def tech(self, key):
         return self.atk_t if key == "attack_tech" else self.def_t
 
+    def qi_cost(self, key):
+        """Battle Qi this technique costs now: by grade, more while Chilled, nothing after Sword Heart."""
+        t = self.tech(key)
+        if not t:
+            return 0
+        if self.free_cast:
+            return 0
+        return battle.TECHNIQUE_QI_COST.get(t["grade"], 30) + (battle.CHILLED_QI_COST if "chilled" in self.statuses else 0)
+
+    def gain_qi(self, amount):
+        self.bqi = min(self.max_bqi, self.bqi + amount)
+
     def pill_count(self):
         return sum(p["qty"] for p in self.pills)
 
@@ -109,7 +126,7 @@ class Fighter:
         if self.stunned and choice != "guard":
             return False
         if choice in ("attack_tech", "defense_tech"):
-            return self.tech(choice) is not None and self.cooldowns[choice] == 0
+            return self.tech(choice) is not None and self.bqi >= self.qi_cost(choice)
         if choice == "pill":
             return self.can_pill()
         return choice in MOVES or choice == "flee"
@@ -240,8 +257,9 @@ class Battle:
                 return "You are stunned: you can only Guard this turn."
             if choice == "pill":
                 return "You have no Mending pill you can use now."
-            left = f.cooldowns.get(choice, 0)
-            return f"That technique is still recovering ({left} more turn{'s' if left != 1 else ''})."
+            if f.tech(choice) is None:
+                return "You have no technique in that slot."
+            return f"Not enough Battle Qi: it costs {f.qi_cost(choice)} and you have {f.bqi:.0f}."
         f.pick = choice
         f.timeouts = 0
         return None
@@ -357,15 +375,14 @@ class Battle:
                 f.atk_uses += 1
             elif used == "defense_tech":
                 f.guard_uses += 1
-            for k in f.cooldowns:
-                f.cooldowns[k] = max(0, f.cooldowns[k] - 1)
             if used:
-                extra = battle.STATUSES["chilled"]["cooldown_plus"] if "chilled" in f.statuses else 0
-                f.cooldowns[used] = combat.cooldown_turns(f.tech(used)) + extra
+                cost = f.qi_cost(used)
+                f.free_cast = False
                 reset = f.fx.get("cooldown_reset_chance")
-                if reset and self.rng.random() < reset:                      # Focus artifact
-                    f.cooldowns[used] = 0
-                    log.append(("star", f"{f.name} — Focus: {f.tech(used)['name']} is ready again at once!"))
+                if cost and reset and self.rng.random() < reset:            # Focus artifact
+                    log.append(("star", f"{f.name} — Focus: {f.tech(used)['name']} costs no Battle Qi!"))
+                else:
+                    f.bqi = max(0, f.bqi - cost)
 
             if base == "guard":
                 f.kit.moved(base)
@@ -484,6 +501,9 @@ class Battle:
                         if battle.GUARD_COUNTER and kind == "normal" and e["hp"] > 0:
                             back = self._hit_enemy(t, battle.GUARD_COUNTER)
                             blocked_note += f", counters for {back:,.0f}"
+                        if kind == "normal" and battle.BATTLE_QI_GOOD_GUARD:
+                            t.gain_qi(battle.BATTLE_QI_GOOD_GUARD)
+                            blocked_note += f", +{battle.BATTLE_QI_GOOD_GUARD} Battle Qi"
                         log.append(("shield", f"{t.name} — {t.last_move}: {blocked_note}"))
                     elif mine == "strike" and m == "break":
                         log.append(("shield", f"{t.name} beat the {en}'s Break to the punch"))
@@ -570,7 +590,8 @@ class Battle:
                 if f.statuses[key] <= 0:
                     del f.statuses[key]
             if f.active:
-                log += f.kit.end_turn(f, self.turn, f.cooldowns)
+                f.gain_qi(battle.BATTLE_QI_PER_TURN)
+                log += f.kit.end_turn(f, self.turn)
             bleed = f.kit.bleed_tick(e["max_hp"]) if e["hp"] > 0 else 0
             if bleed:
                 e["hp"] = max(0, e["hp"] - bleed)

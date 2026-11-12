@@ -46,6 +46,14 @@ CHARGE_GUARD_BLOCK = 0.50    # plain Guard blocks this share of a charged hit; a
 SIGNATURE_EVERY = 4          # Normal beasts: every 4th enemy turn is the signature strike
 SIGNATURE_MULT = 1.2
 
+# Battle Qi: the energy techniques spend in beast fights (explore, hunts). Separate from cultivation Qi.
+# Simulated (1,200 fights per row, Nov 2026): balance unchanged, techniques used more often than with cooldowns.
+BATTLE_QI_START = 100         # every fight starts full (+ the player's Spirit points, stats.SPIRIT_BATTLE_QI)
+BATTLE_QI_PER_TURN = 10       # back at the end of every turn
+BATTLE_QI_GOOD_GUARD = 25     # back when a Guard fully blocks a normal Strike
+TECHNIQUE_QI_COST = {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 50}
+CHILLED_QI_COST = 10          # techniques cost this much more while Chilled
+
 # Reading the beast must beat spamming Strike (tested with 600-fight simulations per build, Nov 2026):
 BLOCKED_STRIKE_STUN = True   # a Strike into the enemy's Guard leaves you Stunned (only Guard next turn)
 GUARD_COUNTER = 0.5          # a Guard that blocks a normal Strike hits back with this share of a Strike
@@ -53,7 +61,7 @@ GUARD_COUNTER = 0.5          # a Guard that blocks a normal Strike hits back wit
 # ── Statuses ──────────────────────────────────────────────────────────
 # on: who carries it. turns: how long it lasts.
 #   dot: share of max HP lost at the end of each turn
-#   cooldown_plus: techniques rest this many extra turns
+#   cooldown_plus: techniques rest this many extra turns (duels, spars); in beast fights they cost CHILLED_QI_COST more
 #   stun: you can only Guard next turn
 #   dodge_strike: Strikes against the carrier miss (Break still lands and ends it)
 #   damage_taken: carrier takes this share of damage
