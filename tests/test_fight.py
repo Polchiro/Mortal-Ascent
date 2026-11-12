@@ -689,3 +689,15 @@ def test_technique_icons_are_whole_circles():
         for x, y in ((2, 2), (157, 2), (2, 157), (157, 157), (80, 2), (80, 157)):
             assert a.getpixel((x, y)) <= 8, path                   # corners and edges clear
         assert a.getpixel((80, 150)) >= 250 and a.getpixel((80, 10)) >= 250, path   # the full circle is there
+
+
+def test_index_and_pill_icons_are_whole():
+    """The /index section icons were cut off at the bottom; pills had a stray seal in a corner."""
+    import glob
+    import numpy as np
+    from PIL import Image
+    for path in glob.glob("art/icons/index/*.webp"):
+        a = np.asarray(Image.open(path).convert("RGBA"))[..., 3]
+        rows = np.where((a > 200).sum(1) > a.shape[1] * 0.35)[0]
+        cols = np.where((a > 200).sum(0) > a.shape[0] * 0.25)[0]
+        assert rows.max() - rows.min() >= cols.max() - cols.min() - 8, path      # as tall as wide: nothing cut
