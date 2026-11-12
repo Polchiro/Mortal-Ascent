@@ -154,8 +154,10 @@ def details(item, player, learned_names=()):
         effects.append(f"+{passive:.0%} {'Attack' if t['type'] == 'attack' else 'Defense'} while equipped")
         if t.get("effect"):
             effects.append(technique_effect(t["effect"]))
+        import battle
         cd = combat.cooldown_turns(dict(t, stage=0))
-        effects.append(f"Rests {cd} turn{'s' if cd > 1 else ''} after use")
+        effects.append(f"Costs {battle.TECHNIQUE_QI_COST.get(t['grade'], 30)} Battle Qi against beasts; "
+                       f"rests {cd} turn{'s' if cd > 1 else ''} in duels and spars")
         need = technique.GRADES[t["grade"]]
         if t["name"] in learned_names:
             notes.append(("Already learned: reading it again gives mastery EXP", "jade"))

@@ -54,8 +54,8 @@ Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.
 - **Cultivation:** realm n of 11, the layer pips, phase, the Internal Qi bar, rate, status and the next gate.
 - **Attributes:** HP, Internal Qi, Attack, Defense (icons in `art/icons/attr/`), each with its realm base and
   every bonus on top (weapon, armor, technique passives), from `bot/sheet/attributes.attribute_values`.
-- **Strength & Vitality:** the points to place (docs/attributes.md), + and − buttons with a live preview of the new
-  Attack and HP (same formula as `player.final_stats`), Place points, and Reset (first free, then 200 Moon Pearls).
+- **Strength, Vitality & Spirit:** the points to place (docs/attributes.md), + and − buttons with a live preview of the new
+  Attack, HP and Battle Qi (same formula as `player.final_stats`), Place points, and Reset (first free, then 200 Moon Pearls).
   Everything is checked again on the server (`bot/points.py`).
 - **Equipment:** weapon, armor and the two artifact slots, plus the three technique slots. Unequip from here.
 - **Journey:** beasts slain, herbs gathered, breakthroughs, duels won.
@@ -164,7 +164,7 @@ a lair is fought with `bot/hunt.py`.
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
    (`art/portraits/fighter_stance.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
    plate, the battle log, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
-   small menu with your attack and defense technique, their effect and rest), Guard, Break. **Mending Pill** (P)
+   small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
    turn a big word over your fighter says what happened (Countered!, Blocked!, Stunned!, Clash!, Guard broken!).
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.

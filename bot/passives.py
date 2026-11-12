@@ -359,10 +359,15 @@ class Kit:
             self.stone = min(self.fx("stone_skin", "max"), self.stone + self.fx("stone_skin", "defense_per_turn"))
             owner.defense = self.base_defense * (1 + self.stone)
         every = self.fx("sword_heart", "every_turns")
-        if every and cooldowns is not None and (turn + 1) % every == 0 and any(cooldowns.values()):
-            for k in cooldowns:
-                cooldowns[k] = 0
-            lines.append(self._line("star", "sword_heart", "your technique is ready"))
+        if every and (turn + 1) % every == 0:
+            if cooldowns is None and hasattr(owner, "free_cast"):       # beast fights: Battle Qi
+                if not owner.free_cast:
+                    owner.free_cast = True
+                    lines.append(self._line("star", "sword_heart", "your next technique costs no Battle Qi"))
+            elif cooldowns is not None and any(cooldowns.values()):     # duels and spars: cooldowns
+                for k in cooldowns:
+                    cooldowns[k] = 0
+                lines.append(self._line("star", "sword_heart", "your technique is ready"))
         return lines
 
 

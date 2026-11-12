@@ -23,8 +23,8 @@
       <p class="brealm">{{ F.me.realm }} · Layer {{ F.me.layer }}</p>
       <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="20" height="20"><span class="bl">HP</span>
         <div class="bhp"><div style="width: {{ F.me.hp_pct }}%"></div></div><b>{{ F.me.hp }} / {{ F.me.max_hp }}</b></div>
-      <div class="brow"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"><span class="bl">Internal Qi</span>
-        <div class="bhp qi"><div style="width: {{ F.me.qi_pct }}%"></div></div><b>{{ F.me.qi }} / {{ F.me.qi_cap }}</b></div>
+      <div class="brow"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"><span class="bl">Battle Qi</span>
+        <div class="bhp qi"><div style="width: {{ F.me.bqi_pct }}%"></div></div><b>{{ F.me.bqi }} / {{ F.me.max_bqi }}</b></div>
       <div class="brow"><img src="/art/icons/attr/attack.webp" alt="" width="20" height="20"><span class="bl">Attack</span><b>{{ F.me.attack }}</b>
         <img src="/art/icons/attr/defense.webp" alt="" width="20" height="20"><span class="bl">Defense</span><b>{{ F.me.defense }}</b></div>
       {% if F.me.statuses %}<p class="chips">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}

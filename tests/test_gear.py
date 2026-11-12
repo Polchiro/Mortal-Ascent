@@ -343,17 +343,18 @@ def test_feather_dodges_a_hit():
     assert b.fighters[0].hp < b.fighters[0].max_hp
 
 
-def test_focus_can_reset_a_cooldown():
+def test_focus_can_make_a_technique_free():
     b = battle("cooldown_reset_chance", value("focus", "divine"), Always())
     force(b, "guard")
     b.choose(1, "attack_tech")
     b.resolve()
-    assert b.fighters[0].cooldowns["attack_tech"] == 0
+    f = b.fighters[0]
+    assert f.bqi == f.max_bqi and any("Focus" in t for _, t in b.log)
     b = battle(rng=Always())
     force(b, "guard")
     b.choose(1, "attack_tech")
     b.resolve()
-    assert b.fighters[0].cooldowns["attack_tech"] > 0
+    assert b.fighters[0].bqi < b.fighters[0].max_bqi
 
 
 def test_team_hunt_fighters_carry_their_artifacts(conn):

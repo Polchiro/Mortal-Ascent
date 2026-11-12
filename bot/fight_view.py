@@ -121,10 +121,11 @@ def card_data(b, header, prev=None):
             t = f.tech(key)
             if not t:
                 continue
-            left = f.cooldowns[key]
+            cost = f.qi_cost(key)
             school = _school(t)
+            ok = f.bqi >= cost
             loadout.append({"name": t["name"], "seal": tech_kind(t["name"], school), "color": SCHOOL_COLOR.get(school),
-                            "ready": not left, "state": "Ready" if not left else f"{left} turn{'s' if left > 1 else ''}",
+                            "ready": ok, "state": f"{cost} · {f.bqi:.0f}/{f.max_bqi} Qi",
                             "desc": describe(t), "short": short_effect(t)})
         n = f.pill_count()
         loadout.append({"name": f.pills[0]["name"] if f.pills else "Mending Pill",
@@ -239,10 +240,10 @@ class FightMixin:
                 t = solo.tech(key)
                 if not t:
                     continue
-                left = solo.cooldowns[key]
-                label = t["name"][:60] + (f" (⏳ {left})" if left else "")
-                self._fight_button(label, key, discord.ButtonStyle.secondary if left else discord.ButtonStyle.success,
-                                   1, disabled=bool(left) or stunned, icon=battle_icons.tech_emoji_key(t["name"]))
+                cost, short = solo.qi_cost(key), solo.bqi < solo.qi_cost(key)
+                label = t["name"][:50] + f" ({cost} Qi)"
+                self._fight_button(label, key, discord.ButtonStyle.secondary if short else discord.ButtonStyle.success,
+                                   1, disabled=short or stunned, icon=battle_icons.tech_emoji_key(t["name"]))
             else:
                 self._fight_button("Attack technique" if key == "attack_tech" else "Defense technique", key,
                                    discord.ButtonStyle.success, 1)

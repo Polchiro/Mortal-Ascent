@@ -69,7 +69,24 @@ normal emojis if that fails):
 
 ## Techniques
 
-Techniques keep their effects and the per-grade cooldowns from technique.md.
+Techniques keep their effects from technique.md. Against beasts they have **no cooldown**: they spend **Battle Qi**.
+
+### Battle Qi
+
+A fight energy, separate from cultivation's Internal Qi (it never touches your cultivation bar).
+
+| | |
+|---|---|
+| Start of every fight | 100 (`battle.BATTLE_QI_START`) + 2 per **Spirit** point (attributes.md) |
+| Back every turn | +10 (`BATTLE_QI_PER_TURN`), never above the start |
+| A good Guard (fully blocks a normal Strike) | +25 more (`BATTLE_QI_GOOD_GUARD`) |
+| Technique cost | Mortal 30 · Yellow 35 · Mystic 40 · Earth 45 · Heaven 50 (`TECHNIQUE_QI_COST`) |
+| Chilled | techniques cost +10 |
+
+Gear that touched cooldowns works on Battle Qi here: **Focus** (artifact) gives a chance that a technique costs
+nothing, **Sword Heart** (forged passive) makes the next technique free every 3rd turn. Duels and spars keep their
+per-grade cooldowns. Simulated against normal beasts (1,200 fights per row): win rates and HP left are unchanged;
+players use their techniques more often (about 75% of turns when reading the beast, was 61%).
 
 - **Attack technique** = a stronger Strike. Combo hits several times, Pierce ignores defense,
   Heavy hits harder, Stagger weakens the beast's next Guard (Nine Dragons: it cannot Guard at all).

@@ -29,5 +29,6 @@ MAX_HIT_PERCENT = 0.30  # one hit can never exceed 30% of target max HP
 ATTRIBUTE_POINTS_PER_LAYER = 1
 STRENGTH_ATTACK = 0.005      # each Strength point: +0.5% Attack
 VITALITY_HP = 0.005          # each Vitality point: +0.5% max HP
+SPIRIT_BATTLE_QI = 2         # each Spirit point: +2 Battle Qi in beast fights (battle.BATTLE_QI_START)
 FREE_ATTRIBUTE_RESETS = 1    # the first reset costs nothing
 ATTRIBUTE_RESET_PEARLS = 200 # every reset after that, in Moon Pearls

@@ -131,7 +131,7 @@ PASSIVES = {
                             "text": "12% chance to deal ×1.5 damage", "fx": {"chance": 0.12, "mult": 1.5}},
         # Mythical
         "sword_heart":     {"name": "Sword Heart", "rarity": "Mythical", "family": "shadow",
-                            "text": "Every 3rd turn your technique has no cooldown", "fx": {"every_turns": 3}},
+                            "text": "Every 3rd turn your next technique costs no Battle Qi (in duels: no cooldown)", "fx": {"every_turns": 3}},
         "ten_thousand_swords": {"name": "Ten Thousand Swords Return", "rarity": "Mythical", "family": "thunder",
                                 "text": "After 5 turns, your next hit deals ×2", "fx": {"after_turns": 5, "mult": 2.0}},
         "devouring_edge":  {"name": "Devouring Edge", "rarity": "Mythical", "family": "blood",

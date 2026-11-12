@@ -96,15 +96,18 @@ def development(conn, user_id):
     hp, attack, _ = rules.base_stats(p["realm"], p["layer"])
     other = {k: sum(v for _, v in src) for k, src in rules.stat_buffs(techs, weapon, armor).items()}
     cost = points.reset_cost(p)
-    return {"strength": p["strength"], "vitality": p["vitality"], "free": rules.unspent_points(p),
+    import battle
+    return {"strength": p["strength"], "vitality": p["vitality"], "spirit": p["spirit"], "free": rules.unspent_points(p),
+            "bqi": battle.BATTLE_QI_START + p["spirit"] * stats.SPIRIT_BATTLE_QI, "per_spi": stats.SPIRIT_BATTLE_QI,
             "earned": rules.attribute_points(p["realm"], p["layer"]),
             "str_pct": pct(p["strength"] * stats.STRENGTH_ATTACK), "vit_pct": pct(p["vitality"] * stats.VITALITY_HP),
             "per_str": pct(stats.STRENGTH_ATTACK), "per_vit": pct(stats.VITALITY_HP),
-            "reset_cost": cost, "can_reset": bool(p["strength"] or p["vitality"]),
+            "reset_cost": cost, "can_reset": bool(p["strength"] or p["vitality"] or p["spirit"]),
             "pearls": p["moon_pearls"],
             # the preview uses the same formula as player.final_stats: round(base × (1 + every % bonus))
             "calc": {"hp": hp, "attack": attack, "hp_pct": other["hp"], "atk_pct": other["attack"],
-                     "s": p["strength"], "v": p["vitality"], "ps": stats.STRENGTH_ATTACK, "pv": stats.VITALITY_HP}}
+                     "s": p["strength"], "v": p["vitality"], "ps": stats.STRENGTH_ATTACK, "pv": stats.VITALITY_HP,
+                     "q": p["spirit"], "pq": stats.SPIRIT_BATTLE_QI, "bq": battle.BATTLE_QI_START}}
 
 
 def profile_view(conn, user_id, username=None):

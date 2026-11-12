@@ -175,6 +175,7 @@ PLAYER_COLUMNS = {
     # Strength and Vitality points the player placed (docs/attributes.md); unplaced points are not stored
     "strength":             "INTEGER NOT NULL DEFAULT 0",
     "vitality":             "INTEGER NOT NULL DEFAULT 0",
+    "spirit":               "INTEGER NOT NULL DEFAULT 0",    # +Battle Qi in beast fights
     "attribute_resets":     "INTEGER NOT NULL DEFAULT 0",
 }
 TECHNIQUE_COLUMNS = {

@@ -53,8 +53,9 @@ def attributes_text(p, note=None):
     lines = [note, ""] if note else []
     lines += [f"**Strength {p['strength']}**: +{p['strength'] * stats.STRENGTH_ATTACK:.1%} Attack",
               f"**Vitality {p['vitality']}**: +{p['vitality'] * stats.VITALITY_HP:.1%} max HP",
+              f"**Spirit {p['spirit']}**: +{p['spirit'] * stats.SPIRIT_BATTLE_QI} Battle Qi in beast fights",
               f"**Points to place: {free}** (one for every layer you climb)", "",
-              "Place them with **/attributes strength:<n> vitality:<n>**. "
+              "Place them with **/attributes strength:<n> vitality:<n> spirit:<n>**. "
               f"Reset with **/attributes reset:True** ({'free the first time' if not cost else f'{cost} Moon Pearls'})."]
     return "\n".join(lines)
 
@@ -717,24 +718,26 @@ def register_commands(bot):
             f"Turn them {'off' if on else 'on'} with **/settings qi_pings:{'off' if on else 'on'}**."]))
         await interaction.response.send_message(embed=e, ephemeral=True)
 
-    @tree.command(name="attributes", description="Place your Strength and Vitality points, or reset them")
+    @tree.command(name="attributes", description="Place your Strength, Vitality and Spirit points, or reset them")
     @app_commands.describe(strength="Points to put into Strength (+0.5% Attack each)",
                            vitality="Points to put into Vitality (+0.5% max HP each)",
+                           spirit="Points to put into Spirit (+2 Battle Qi in beast fights each)",
                            reset="Take every placed point back (first time free, then Moon Pearls)")
     async def attributes(interaction: discord.Interaction, strength: app_commands.Range[int, 0, 500] = 0,
-                         vitality: app_commands.Range[int, 0, 500] = 0, reset: bool = False):
+                         vitality: app_commands.Range[int, 0, 500] = 0, spirit: app_commands.Range[int, 0, 500] = 0,
+                         reset: bool = False):
         uid = interaction.user.id
         if not db.get_player(bot.conn, uid):
             await interaction.response.send_message(NOT_STARTED, ephemeral=True)
             return
         note = None
-        if (strength or vitality or reset) and any((uid, k) in bot.busy for k in ("explore", "spar", "hunt", "duel")):
+        if (strength or vitality or spirit or reset) and any((uid, k) in bot.busy for k in ("explore", "spar", "hunt", "duel")):
             note = "⚔️ Finish your fight first: points can't change in the middle of one."
         elif reset:
             async with bot.db_lock:
                 note = points.reset(bot.conn, uid)[1]
-        elif strength or vitality:
+        elif strength or vitality or spirit:
             async with bot.db_lock:
-                note = points.place(bot.conn, uid, strength, vitality)[1]
-        await interaction.response.send_message(embed=embed("💪 Strength & Vitality", attributes_text(
+                note = points.place(bot.conn, uid, strength, vitality, spirit)[1]
+        await interaction.response.send_message(embed=embed("💪 Strength, Vitality & Spirit", attributes_text(
             db.get_player(bot.conn, uid), note)), ephemeral=True)
