@@ -47,6 +47,19 @@ realm, layer and phase, talent, realm rank, Internal Qi (with rate and time to f
 Lotus Coins and Moon Pearls, the technique slots with their painted icons, beasts slain, herbs gathered,
 breakthroughs, duels won and the weapon.
 
+Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
+
+- **Identity:** the portrait (`art/portraits/cultivator_default.webp`, the same for everyone for now) over the
+  realm's seal character (`cards/theme.REALM_CHAR`), name, realm and layer, and title chips: talent, alchemist and
+  blacksmith rank (once they have EXP) and the realm rank.
+- **Cultivation:** realm n of 11, the layer pips, phase, the Internal Qi bar, rate, status and the next gate.
+- **Attributes:** HP, Internal Qi, Attack, Defense (icons in `art/icons/attr/`), each with its realm base and
+  every bonus on top (weapon, armor, technique passives), from `bot/sheet/attributes.attribute_values`.
+- **Equipment:** weapon, armor and the two artifact slots, plus the three technique slots. Unequip from here.
+- **Journey:** beasts slain, herbs gathered, breakthroughs, duels won.
+
+The page only shows. It doesn't change any number or formula.
+
 ## The inventory page
 
 `/inventory` is the same bag as the bot's `/inventory`: the tabs (Chests, Manuals, Weapons, Armor,
@@ -135,7 +148,7 @@ showing. The time for a pick is measured on the server, so a late right answer i
 page times out. Old or repeated pages and unknown choices are ignored. One trip at a time per player, kept in
 the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
 
-Only `art/icons`, `art/scenes` and `art/chests` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
+Only `art/icons`, `art/scenes`, `art/chests` and `art/portraits` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
 
 ## Going online later

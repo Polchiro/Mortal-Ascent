@@ -6,10 +6,14 @@ so the website and Discord always agree. This module only turns them into text a
 """
 import os
 
-from bot import db
+from bot import crafting, db, forging
+from bot import player as rules
 from bot.sheet import data as sheet
 from cards import art_icons
+from cards.theme import REALM_CHAR
 
+PORTRAIT = "/art/portraits/cultivator_default.webp"
+ATTR_ICON = "/art/icons/attr/{}.webp"
 ART_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art")
 
 
@@ -38,6 +42,47 @@ def eta_text(eta):
     if not eta:
         return None
     return f"full in {eta}" if eta[0].isdigit() else eta
+
+
+def pct(x):
+    """0.025 -> '+2.5%'."""
+    v = round(x * 100, 1)
+    return f"{'+' if v >= 0 else ''}{v:g}%"
+
+
+def attribute_rows(attrs, qi):
+    """HP, Internal Qi, Attack, Defense: the number, its realm base and every bonus on top (name, %)."""
+    rows = []
+    for key in ("hp", "attack", "defense"):
+        a = attrs[key]
+        rows.append({"key": key, "label": "HP" if key == "hp" else a["label"], "icon": ATTR_ICON.format(key),
+                     "value": number(a["final"]), "base": number(a["base"]),
+                     "bonus": pct(a["bonus"]) if a["bonus"] else None,
+                     "sources": [(name, pct(v)) for name, v in a["sources"]]})
+    rows.insert(1, {"key": "qi", "label": "Internal Qi", "icon": ATTR_ICON.format("qi"),
+                    "value": number(qi["qi"]), "base": None, "of": number(qi["capacity"]), "bonus": None,
+                    "sources": [("Flows in", f"+{number(float(qi['rate']))} / hour")]})
+    return rows
+
+
+def titles(player):
+    """The character's standing: talent and crafting ranks (the game has no other titles yet)."""
+    out = [(f"{player['talent']} Talent", "talent")]
+    a, b = crafting.rank_of(player["alchemy_exp"]), forging.rank_of(player["blacksmith_exp"])
+    if player["alchemy_exp"]:
+        out.append((f"{crafting.rank_label(a)} Alchemist", "craft"))
+    if player["blacksmith_exp"]:
+        out.append((f"{forging.rank_label(b)} Blacksmith", "craft"))
+    return out
+
+
+def realm_track(realm, layer, max_layer):
+    """Realm n of N, the layer pips and the next realm's name."""
+    order = rules.REALM_ORDER
+    i = order.index(realm)
+    return {"no": i + 1, "of": len(order), "seal": REALM_CHAR.get(realm, "武"),
+            "next": order[i + 1] if i + 1 < len(order) else None,
+            "pips": [{"n": n, "on": n <= layer, "now": n == layer} for n in range(1, max_layer + 1)]}
 
 
 def profile_view(conn, user_id, username=None):
@@ -73,4 +118,10 @@ def profile_view(conn, user_id, username=None):
                   ("Breakthroughs", number(d["breakthroughs"])),
                   ("Duels won", number(d["duels_won"]))],
         "status": d["status"],
+        "portrait": PORTRAIT,
+        "layer_no": d["layer"],
+        "titles": titles(db.get_player(conn, user_id)),
+        "track": realm_track(d["realm"], d["layer"], d["max_layer"]),
+        "attributes": attribute_rows(attrs, qi),
+        "qi_tone": qi["status_tone"],
     }

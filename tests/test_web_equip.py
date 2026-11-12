@@ -106,7 +106,7 @@ def test_only_your_own_gear_and_only_gear(client, db_path):
 
 def test_profile_shows_the_gear_slots(client, db_path):
     page = client.get("/profile").text
-    assert "Equipment" in page and "WEAPON" in page and "ARTIFACT 2" in page and "Choose from 2 in your bag" in page
+    assert "Equipment" in page and "WEAPON" in page and "ARTIFACT 2" in page and "2 in your bag" in page
     a = bag(db_path, "weapons")[0]
     client.post("/inventory/equip", data={"item": a["id"]})
     page = client.get("/profile").text
@@ -121,3 +121,15 @@ def test_logged_out_cannot_equip(db_path):
     a = bag(db_path, "weapons")[0]
     assert c.post("/inventory/equip", data={"item": a["id"]}).headers["location"] == "/"
     assert not bag(db_path, "weapons")[0]["equipped"]
+
+
+def test_profile_redesign_sections(client, db_path):
+    page = client.get("/profile").text
+    for text in ("Cultivation", "Attributes", "Internal Qi", "Attack", "Defense", "Techniques", "Journey",
+                 "Realm 1 of 11", "Genius Talent", "/art/portraits/cultivator_default.webp", "/art/icons/attr/hp.webp"):
+        assert text in page, text
+    assert page.count('title="Layer ') == 3                                    # Mortal has three layers
+    assert client.get("/art/portraits/cultivator_default.webp").status_code == 200
+    for name in ("hp", "qi", "attack", "defense"):
+        assert client.get(f"/art/icons/attr/{name}.webp").status_code == 200
+    assert client.get("/art/scenes/profile_hall.jpg").status_code == 200
