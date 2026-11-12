@@ -28,6 +28,7 @@ future profile theme. See `docs/character-sheet.md` for how the sheet is built.
 | `/recharge` | Shows the Moon Pearl packages. Buying is not switched on (see below) |
 | `/reroll` | Fate Reroll with Lotus Coins: a flat 7,500 every time; normal odds, can go lower |
 | `/physician` | Pay Lotus Coins to heal an injury right away |
+| `/attributes [strength] [vitality] [reset]` | Place your Strength (+0.5% Attack) and Vitality (+0.5% max HP) points, one per layer climbed, or reset them (first free, then 200 Moon Pearls). docs/attributes.md |
 | `/settings [qi_pings]` | Your settings. `qi_pings:off` stops the "your Qi is full: use /breakthrough!" mention (on by default) |
 | `/cooldown` | Every timer in one place: explore, train, practice and spar cooldowns, mastery trials, daily practice/spar counts, injury, pill toxicity, blessing, Qi pill and blessed land. Times show in your own time zone |
 | `/admin reset [member]` | **Owner/admins only.** Clears all cooldowns and daily limits, heals injuries, frees a stuck session |

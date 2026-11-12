@@ -1,4 +1,5 @@
 """Gathering on the website (docs/web.md, "Gathering"): the bot's own /gather engine, refereed on the server."""
+import html
 import urllib.parse
 
 import pytest
@@ -109,7 +110,7 @@ def test_a_right_pick_stores_the_herb_and_builds_the_streak(client, db_path):
     assert "You gather" in page or "pull it free" in page
     assert "plantcard right" in page and "Gather again" in page
     for name in rnd.names.values():                    # after the pick every plant is named
-        assert name in page
+        assert html.escape(name) in page
 
 
 def test_a_decoy_poisons_and_resets_the_streak(client, db_path):

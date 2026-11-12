@@ -51,14 +51,20 @@ normal emojis if that fails):
 
 | You \ Beast | Strike | Guard | Break |
 |---|---|---|---|
-| **Strike** | Both hit at 50% | Blocked | You hit, it misses |
-| **Guard** | Blocked fully | Nothing happens | It hits you |
+| **Strike** | Both hit at 50% | Blocked, and you are **Stunned** | You hit, it misses |
+| **Guard** | Blocked fully, and you **counter** for 50% | Nothing happens | It hits you |
 | **Break** | It hits you, you miss | You hit and **stagger** it | Both hit at 50% |
 
 - **Stagger:** the beast loses its next turn and takes +25% damage meanwhile.
+- **Stunned (you):** a Strike into the beast's Guard throws you off balance: you can only Guard next turn
+  (`battle.BLOCKED_STRIKE_STUN`). Thunder's stun works the same way.
+- **Counter:** a Guard that fully blocks a normal Strike hits back with half a Strike (`battle.GUARD_COUNTER`).
+  Not against signature or charged attacks.
+- Why: spamming Strike and the attack technique used to win as often as reading the beast, and faster.
+  Simulations (600 fights per build) now show reading the beast leaves more HP and ends fights ~20% sooner.
 - Damage uses stats.md, with the **30% per-turn cap** on every hit except charged attacks.
 - Each turn the beast attacks **one** fighter (the arrow). Others are only hurt by charged attacks.
-- Beasts pick moves by role (Armored guards more, Hunters strike more). In 60% of turns the warning
+- Beasts pick moves by role (Armored guards more, Hunters strike more). In 70% of turns the warning
   bar shows a **tell** for the move it is about to make.
 
 ## Techniques

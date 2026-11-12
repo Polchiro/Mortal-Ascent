@@ -55,10 +55,13 @@ Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.
 - **Cultivation:** realm n of 11, the layer pips, phase, the Internal Qi bar, rate, status and the next gate.
 - **Attributes:** HP, Internal Qi, Attack, Defense (icons in `art/icons/attr/`), each with its realm base and
   every bonus on top (weapon, armor, technique passives), from `bot/sheet/attributes.attribute_values`.
+- **Strength & Vitality:** the points to place (docs/attributes.md), + and − buttons with a live preview of the new
+  Attack and HP (same formula as `player.final_stats`), Place points, and Reset (first free, then 200 Moon Pearls).
+  Everything is checked again on the server (`bot/points.py`).
 - **Equipment:** weapon, armor and the two artifact slots, plus the three technique slots. Unequip from here.
 - **Journey:** beasts slain, herbs gathered, breakthroughs, duels won.
 
-The page only shows. It doesn't change any number or formula.
+Apart from placing and resetting points and unequipping gear, the page only shows.
 
 ## The inventory page
 

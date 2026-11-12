@@ -172,6 +172,10 @@ PLAYER_COLUMNS = {
     "qi_pings":             "INTEGER NOT NULL DEFAULT 1",    # 0 = the player turned the pings off
     "qi_ping_gate":         "TEXT",                          # the gate ("Mortal:3") already pinged about
     "last_channel_id":      "INTEGER",                       # where the player last used the bot
+    # Strength and Vitality points the player placed (docs/attributes.md); unplaced points are not stored
+    "strength":             "INTEGER NOT NULL DEFAULT 0",
+    "vitality":             "INTEGER NOT NULL DEFAULT 0",
+    "attribute_resets":     "INTEGER NOT NULL DEFAULT 0",
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial

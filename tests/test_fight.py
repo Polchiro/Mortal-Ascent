@@ -187,7 +187,7 @@ def test_picking_resets_the_timeout_count():
 
 def test_technique_cooldown_and_chilled():
     b = make_battle()
-    force(b, "guard")
+    force(b, "break")                                       # a Strike into a Guard would stun now
     assert b.choose(1, "attack_tech") is None
     b.resolve()
     assert "recovering" in b.choose(1, "attack_tech")
@@ -522,3 +522,41 @@ def test_encounter_screen_renders_fights_hunts_and_results(beast, n):
     assert render_beast_fight(card_data(b, "x", prev)).size == (EW, EH)
     b.enemy["slug"] = None                                   # no art file: the drawn creature
     assert render_beast_fight(card_data(b, "x")).size == (EW, EH)
+
+
+def test_a_strike_into_a_guard_stuns_you_for_the_next_turn():
+    b = make_battle()
+    force(b, "guard")
+    b.choose(1, "strike")
+    b.resolve()
+    f = b.fighters[0]
+    assert f.stunned and "stunned" in b.choose(1, "strike").lower()
+    assert any("Stunned" in t for _, t in b.log)
+    force(b, "guard")
+    b.choose(1, "guard")
+    b.resolve()
+    assert not f.stunned                                    # one turn only
+
+
+def test_a_good_guard_counters_a_strike():
+    b = make_battle()
+    before = b.enemy["hp"]
+    force(b, "strike")
+    b.choose(1, "guard")
+    b.resolve()
+    assert b.enemy["hp"] < before and any("counters for" in t for _, t in b.log)
+    b = make_battle()
+    force(b, "strike", "signature")                         # not against signature or charged attacks
+    before = b.enemy["hp"]
+    b.choose(1, "guard")
+    b.resolve()
+    assert b.enemy["hp"] == before
+
+
+def test_a_beasts_stun_holds_on_your_next_turn():
+    b = make_battle(seed=1)
+    b.enemy["element"] = next(k for k, v in data.ELEMENTS.items() if v["status"] == "stunned")
+    force(b, "strike", "signature")                         # a signature strike always applies its status
+    b.choose(1, "strike")
+    b.resolve()
+    assert b.fighters[0].stunned

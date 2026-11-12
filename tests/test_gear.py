@@ -6,6 +6,8 @@ from cards import art_icons
 
 import pytest
 
+import battle as battle_rules
+
 import alchemy
 import beasts
 import equipments as eq
@@ -295,7 +297,8 @@ def test_bell_softens_charged_attacks():
     assert lost_bell == pytest.approx(lost_plain * (1 - v), abs=1)
 
 
-def test_mirror_reflects_guarded_damage():
+def test_mirror_reflects_guarded_damage(monkeypatch):
+    monkeypatch.setattr(battle_rules, "GUARD_COUNTER", 0.0)        # only the Mirror, not the Guard's own counter
     v = value("mirror", "divine")
     assert enemy_loss(battle(rng=Never()), "guard", "strike") == 0
     b = battle("guard_reflect", v, Never())

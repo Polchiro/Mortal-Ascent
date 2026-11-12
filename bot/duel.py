@@ -44,10 +44,13 @@ def lower_of(p1, p2):
 
 def fair_stats(player, techniques, weapon, realm, layer, armor=None):
     """(hp, attack, defense) for a fair duel: the base stats of (realm, layer), plus this player's
-    weapon, armor and technique % buffs at pvp.BUFF_SHARE strength."""
+    weapon, armor and technique % buffs at pvp.BUFF_SHARE strength, and Strength / Vitality up to the
+    points that (realm, layer) earns."""
     hp, attack, defense = rules.base_stats(realm, layer)
     pct = {k: sum(v for _, v in src) * pvp.BUFF_SHARE
            for k, src in rules.stat_buffs(techniques, weapon, armor).items()}
+    for k, src in rules.attribute_buffs(player, cap=rules.attribute_points(realm, layer)).items():
+        pct[k] += sum(v for _, v in src)              # Strength / Vitality: only the points (realm, layer) earns
     return (round(hp * (1 + pct["hp"])), round(attack * (1 + pct["attack"])), round(defense * (1 + pct["defense"])))
 
 

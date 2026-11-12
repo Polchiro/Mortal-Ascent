@@ -441,10 +441,44 @@ def stat_buffs(techniques=(), weapon=None, armor=None):
     return out
 
 
+def attribute_points(realm, layer):
+    """Strength / Vitality points earned at (realm, layer): one per layer climbed since Mortal layer 1."""
+    climbed = sum(max_layer(r) for r in REALM_ORDER[:REALM_ORDER.index(realm)]) + layer - 1
+    return climbed * stats.ATTRIBUTE_POINTS_PER_LAYER
+
+
+def unspent_points(player):
+    return max(0, attribute_points(player["realm"], player["layer"])
+               - (player.get("strength") or 0) - (player.get("vitality") or 0))
+
+
+def attribute_buffs(player, cap=None):
+    """{"attack": [("Strength", pct)], "hp": [("Vitality", pct)]} from the points the player placed.
+    cap: the most points that count (Fair Duels: what the lower player's level earns), shared in proportion."""
+    s, v = (player.get("strength") or 0), (player.get("vitality") or 0)
+    if cap is not None and s + v > cap:
+        scale = cap / (s + v)
+        s, v = s * scale, v * scale
+    out = {"hp": [], "attack": [], "defense": []}
+    if s:
+        out["attack"].append(("Strength", s * stats.STRENGTH_ATTACK))
+    if v:
+        out["hp"].append(("Vitality", v * stats.VITALITY_HP))
+    return out
+
+
+def all_buffs(player, techniques=(), weapon=None, armor=None):
+    """stat_buffs plus Strength and Vitality: everything final_stats adds to the realm's base."""
+    out = stat_buffs(techniques, weapon, armor)
+    for k, src in attribute_buffs(player).items():
+        out[k] += src
+    return out
+
+
 def final_stats(player, techniques=(), weapon=None, armor=None):
-    """(hp, attack, defense) after weapon, armor and technique passive buffs."""
+    """(hp, attack, defense) after Strength / Vitality, weapon, armor and technique passive buffs."""
     hp, attack, defense = base_stats(player["realm"], player["layer"])
-    pct = {k: sum(v for _, v in src) for k, src in stat_buffs(techniques, weapon, armor).items()}
+    pct = {k: sum(v for _, v in src) for k, src in all_buffs(player, techniques, weapon, armor).items()}
     return (round(hp * (1 + pct["hp"])), round(attack * (1 + pct["attack"])),
             round(defense * (1 + pct["defense"])))
 

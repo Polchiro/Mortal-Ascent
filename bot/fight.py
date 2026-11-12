@@ -297,7 +297,8 @@ class Battle:
     def _apply_status(self, f, key):
         spec = battle.STATUSES[key]
         if spec["on"] == "player":
-            f.statuses[key] = spec["turns"]
+            # +1: statuses tick down at the end of this turn, and a stun must still hold on the next one
+            f.statuses[key] = spec["turns"] + (1 if spec.get("stun") else 0)
 
     def resolve(self):
         """Play the turn. Fighters who have not picked Guard (a timeout). Returns the turn's log."""
@@ -392,6 +393,9 @@ class Battle:
                         note = "Heaven-Splitting: no guard can stop it!"
                     elif weak <= 0:
                         log.append(("shield", f"{f.name} — {label}: blocked by the {en}'s guard"))
+                        if battle.BLOCKED_STRIKE_STUN and not f.kit.resists_stun():
+                            self._apply_status(f, "stunned")
+                            log.append(("shield", f"{f.name} is thrown off balance: Stunned"))
                         continue
                     else:
                         share, note = weak, "slips through its weakened guard"
@@ -477,6 +481,9 @@ class Battle:
                                 heal = round(t.max_hp * eff[1])
                                 t.hp = min(t.max_hp, t.hp + heal)
                                 blocked_note += f", recovered {heal:,}"
+                        if battle.GUARD_COUNTER and kind == "normal" and e["hp"] > 0:
+                            back = self._hit_enemy(t, battle.GUARD_COUNTER)
+                            blocked_note += f", counters for {back:,.0f}"
                         log.append(("shield", f"{t.name} — {t.last_move}: {blocked_note}"))
                     elif mine == "strike" and m == "break":
                         log.append(("shield", f"{t.name} beat the {en}'s Break to the punch"))
