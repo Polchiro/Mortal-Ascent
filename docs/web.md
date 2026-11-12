@@ -48,8 +48,8 @@ breakthroughs, duels won and the weapon.
 
 Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
 
-- **Identity:** the player's chosen look (docs/appearance.md), or `art/portraits/cultivator_default.webp` until they
-  choose one, with a **Choose your look** (free) or **Change look** button. The portrait sits over the
+- **Identity:** the player's painting (docs/appearance.md): `art/portraits/hero_female.webp` or
+  `hero_male.webp` (the male one until they choose), with a **Choose your look** (free) or **Change look** button. The portrait sits over the
   realm's seal character (`cards/theme.REALM_CHAR`), name, realm and layer, and title chips: talent, alchemist and
   blacksmith rank (once they have EXP) and the realm rank.
 - **Cultivation:** realm n of 11, the layer pips, phase, the Internal Qi bar, rate, status and the next gate.
@@ -66,10 +66,10 @@ Apart from placing and resetting points and unequipping gear, the page only show
 
 ## The appearance page
 
-`/appearance` (from the profile's look button): gender and hairstyle (round face thumbnails), with a
-live full-body preview. The first look is free, then each change costs 200 Moon Pearls; **Decide later** goes back
-to the profile. Saving goes through `bot/appearance.py`. Pictures come from `/look/<gender>_<hair>.webp`
-(full body) and `/look/..._face.png` (round faces), drawn by `looks.py` and cached in `art/.looks/`.
+`/appearance` (from the profile's look button): Male or Female (round face thumbnails), with a live preview of
+the painting. The first look is free, then each change costs 200 Moon Pearls; **Decide later** goes back
+to the profile. Saving goes through `bot/appearance.py`. The pictures are plain files in `art/portraits/`
+(`looks.portrait`, `looks.fighter`, `looks.face`).
 
 ## The inventory page
 
@@ -171,7 +171,7 @@ a lair is fought with `bot/hunt.py`.
    leap, timed from when the page shows it), herbs, ore, chests and so on. Go deeper or return safely.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
-   (`art/portraits/fighter_stance.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
+   (the player's painting turned to face right, `art/portraits/fight/hero_<gender>.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
    plate, the battle log, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
    small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
@@ -180,7 +180,8 @@ a lair is fought with `bot/hunt.py`.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
    **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
-   Strike or Break the fighter winds up, dashes in, swings (three pose pictures, `art/portraits/fight/`) with a
+   Strike or Break the fighter winds up, dashes in, strikes (the fight script swaps three pose
+   pictures; for now one painting serves all three, `explore_play.look_poses`) with a
    trail, and steps back; the beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from

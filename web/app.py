@@ -29,7 +29,6 @@ from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
-import looks
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
@@ -83,17 +82,6 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if data is None:
             return Response(status_code=404)
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
-
-    @app.get("/look/{name}")
-    def look_picture(name: str):
-        """A finished character look (looks.py): /look/female_braid.webp, or ..._face.png for the round face."""
-        face = name.endswith("_face.png")
-        look = looks.from_key(name[:-len("_face.png")] if face else name[:-len(".webp")] if name.endswith(".webp") else "")
-        if look is None:
-            return Response(status_code=404)
-        data = looks.face_png(look) if face else looks.full_webp(look)
-        return Response(data, media_type="image/png" if face else "image/webp",
-                        headers={"Cache-Control": "public, max-age=604800, immutable"})
 
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests", "portraits", "beasts"):                     # only the art the pages use
@@ -256,7 +244,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         form = await form_of(request)
         ok, message = await run_in_threadpool(with_conn, appearance_rules.choose, user["id"],
-                                              form.get("gender"), form.get("hair"))
+                                              form.get("gender"))
         if ok:
             request.session["look_done"] = message
             return RedirectResponse("/profile", status_code=303)

@@ -8,7 +8,7 @@
 <main class="xlook">
   <section class="xpanel lookstage" aria-label="Preview">
     <div class="portrait">
-      <img id="lookimg" src="/look/{{ s.gender }}_{{ s.hair }}.webp" alt="Preview of your look" width="260" height="540">
+      <img id="lookimg" src="/art/portraits/hero_{{ s.gender }}.webp" alt="Preview of your look" width="550" height="445">
     </div>
     <p class="sub" id="looktext">{% if v.current_text %}Now: {{ v.current_text }}{% else %}You haven't chosen a look yet.{% endif %}</p>
   </section>
@@ -18,26 +18,15 @@
     {% if notice %}<p class="gnotice warn" role="status">{{ notice | rich | safe }}</p>{% endif %}
     <form method="post" action="/appearance" id="lookform" class="lookform">
       <fieldset>
-        <legend>Gender</legend>
+        <legend>Your cultivator</legend>
         <div class="lookopts">
-          {% for k, name in v.genders %}
-          <label class="lookopt gender"><input type="radio" name="gender" value="{{ k }}"{% if k == s.gender %} checked{% endif %}><span>{{ name }}</span></label>
-          {% endfor %}
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Hairstyle</legend>
-        {% for g, hairs in v.hairs.items() %}
-        <div class="lookopts hairs" data-gender="{{ g }}"{% if g != s.gender %} hidden{% endif %}>
-          {% for h in hairs %}
-          <label class="lookopt hair">
-            <input type="radio" name="hair" value="{{ h.key }}"{% if g == s.gender and h.key == s.hair %} checked{% endif %}{% if g != s.gender %} disabled{% endif %}>
-            <img src="{{ h.thumb }}" alt="" width="84" height="84" loading="lazy"><span>{{ h.name }}</span>
+          {% for g in v.genders %}
+          <label class="lookopt hair" data-art="{{ g.art }}">
+            <input type="radio" name="gender" value="{{ g.key }}"{% if g.key == s.gender %} checked{% endif %}>
+            <img src="{{ g.thumb }}" alt="" width="84" height="84"><span>{{ g.name }}</span>
           </label>
           {% endfor %}
         </div>
-        {% endfor %}
       </fieldset>
 
       <div class="lookpay">
@@ -60,20 +49,12 @@
 (function () {
   var form = document.getElementById('lookform'), img = document.getElementById('lookimg');
   var current = {{ (v.current or {}) | tojson }}, save = document.getElementById('looksave'), canPay = {{ v.can_pay | tojson }};
-  function pick(name) { var r = form.querySelector('input[name="' + name + '"]:checked:not(:disabled)'); return r && r.value; }
   function draw() {
-    var g = pick('gender');
-    form.querySelectorAll('.hairs').forEach(function (box) {
-      var on = box.dataset.gender === g;
-      box.hidden = !on;
-      box.querySelectorAll('input').forEach(function (i) { i.disabled = !on; });
-      if (on && !box.querySelector('input:checked')) box.querySelector('input').checked = true;
-    });
-    var h = pick('hair');
-    var src = '/look/' + g + '_' + h + '.webp';
+    var r = form.querySelector('input[name="gender"]:checked');
+    if (!r) return;
+    var src = r.closest('.lookopt').dataset.art;
     if (img.getAttribute('src') !== src) { img.classList.add('loading'); img.src = src; }
-    var same = current.gender === g && current.hair === h;
-    save.disabled = same || !canPay;
+    save.disabled = current.gender === r.value || !canPay;
   }
   img.addEventListener('load', function () { img.classList.remove('loading'); });
   form.addEventListener('change', draw);
