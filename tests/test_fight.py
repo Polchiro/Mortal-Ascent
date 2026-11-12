@@ -701,3 +701,38 @@ def test_index_and_pill_icons_are_whole():
         rows = np.where((a > 200).sum(1) > a.shape[1] * 0.35)[0]
         cols = np.where((a > 200).sum(0) > a.shape[0] * 0.25)[0]
         assert rows.max() - rows.min() >= cols.max() - cols.min() - 8, path      # as tall as wide: nothing cut
+
+
+# ── the turn acted out on the website (web/explore_play.events, web/static/fight.js) ──
+
+def events_after(mine, enemy_move):
+    from web.explore_play import events
+    b = make_battle(seed=3)
+    f = b.fighters[0]
+    f.bqi = f.max_bqi
+    force(b, enemy_move)
+    b.choose(1, mine)
+    b.resolve()
+    return events(b.log, f), b
+
+
+def test_events_list_the_turn_in_order():
+    ev, b = events_after("strike", "strike")                       # a clash: you hit, then it hits
+    assert [e["who"] for e in ev] == ["me", "enemy"]
+    assert ev[0]["act"] == "strike" and ev[0]["hit"] and ev[0]["dmg"] > 0
+    assert ev[1] == {"who": "enemy", "act": "attack", "dmg": ev[1]["dmg"]} and ev[1]["dmg"] > 0
+    f = b.fighters[0]
+    assert round(f.max_hp - f.hp) == ev[1]["dmg"]                   # the number shown is the damage dealt
+
+
+def test_events_for_blocked_missed_guard_and_techniques():
+    ev, _ = events_after("strike", "guard")
+    assert ev == [{"who": "me", "act": "strike", "hit": False, "dmg": 0, "blocked": True}]
+    ev, _ = events_after("break", "strike")
+    assert ev[0] == {"who": "me", "act": "break", "hit": False, "dmg": 0, "blocked": False} and ev[1]["who"] == "enemy"
+    ev, _ = events_after("guard", "strike")
+    assert len(ev) == 1 and ev[0]["who"] == "me" and ev[0]["act"] == "guard" and "counter" in ev[0]
+    ev, _ = events_after("attack_tech", "break")
+    assert ev[0] == {"who": "me", "act": "tech"}
+    ev, _ = events_after("guard", "guard")
+    assert ev == []

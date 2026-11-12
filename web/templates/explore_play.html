@@ -15,7 +15,7 @@
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
 {% set C = F.cast %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}">
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-events='{{ F.events | tojson }}'>
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
     <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
@@ -23,7 +23,7 @@
       <p class="bname">{{ F.me.name }}</p>
       <p class="brealm">{{ F.me.realm }} · Layer {{ F.me.layer }}</p>
       <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="20" height="20"><span class="bl">HP</span>
-        <div class="bhp"><div style="width: {{ F.me.hp_pct }}%"></div></div><b>{{ F.me.hp }} / {{ F.me.max_hp }}</b></div>
+        <div class="bhp" data-bar="me"><div style="width: {{ F.me.hp_pct }}%"></div></div><b data-val="me">{{ F.me.hp }} / {{ F.me.max_hp }}</b></div>
       <div class="brow"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"><span class="bl">Battle Qi</span>
         <div class="bhp qi"><div style="width: {{ F.me.bqi_pct }}%"></div></div><b>{{ F.me.bqi }} / {{ F.me.max_bqi }}</b></div>
       <div class="brow"><img src="/art/icons/attr/attack.webp" alt="" width="20" height="20"><span class="bl">Attack</span><b>{{ F.me.attack }}</b>
@@ -36,7 +36,7 @@
   <section class="benemy">
     <p class="ename">{{ F.enemy.name }}</p>
     <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>
-    <div class="ehp"><div style="width: {{ F.enemy.hp_pct }}%"></div><span>{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
+    <div class="ehp" data-bar="enemy"><div style="width: {{ F.enemy.hp_pct }}%"></div><span data-val="enemy">{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
     {% if F.enemy.statuses %}<p class="chips">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
     <div class="bwarn{% if F.warning.danger %} danger{% endif %}" aria-live="polite">
       <p class="whead">{{ F.warning.head | safe }}</p>
@@ -46,7 +46,21 @@
 
   <!-- the scene -->
   <section class="bscene">
-    <div class="fighter" aria-hidden="true"><img src="{{ F.me.art }}" alt="" width="732" height="465">
+    <div class="fighter" aria-hidden="true" data-pose="idle">
+      <div class="poses">
+        {% for pose, src in F.me.poses.items() %}<img class="pose p-{{ pose }}" src="{{ src }}" alt="" width="1024" height="559">{% endfor %}
+        <svg class="trailfx" viewBox="0 0 1024 559"><defs>
+          <linearGradient id="trailg" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" class="tint" stop-opacity=".55"/><stop offset="1" stop-color="#fff"/></linearGradient>
+          <clipPath id="trailclip"><rect x="0" y="-200" width="0" height="900"/></clipPath></defs>
+          <g clip-path="url(#trailclip)" opacity="0"><path d="M 235 150 C 450 -10, 850 0, 990 160 C 800 80, 480 80, 235 150 Z" fill="url(#trailg)"/></g></svg>
+      </div>
+      <svg class="clawsfx" viewBox="0 0 1024 559"><defs>
+        <linearGradient id="clawg" x1="1" x2="0"><stop offset="0" stop-color="#FF3B4E" stop-opacity="0"/><stop offset=".45" stop-color="#FF4A5C" stop-opacity=".85"/><stop offset="1" stop-color="#FFE3E0"/></linearGradient>
+        <clipPath id="clawclip"><rect x="1300" y="-200" width="0" height="900"/></clipPath></defs>
+        <g clip-path="url(#clawclip)" fill="url(#clawg)" opacity="0">
+          <path d="M 1290 60 C 1000 30, 640 100, 340 255 C 620 165, 1000 115, 1290 60 Z"/>
+          <path d="M 1310 165 C 1000 165, 640 235, 320 370 C 620 300, 1000 235, 1310 165 Z"/>
+          <path d="M 1290 270 C 1000 295, 660 360, 360 485 C 640 425, 1000 355, 1290 270 Z"/></g></svg>
       {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
     <div class="beast" aria-hidden="true"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
       {% if F.enemy.delta %}<span class="dmg hit">{{ F.enemy.delta }}</span>{% endif %}</div>

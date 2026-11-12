@@ -554,3 +554,35 @@ form.inline{display:inline}
 .cast-evade .fighter img{animation:afterimage 1s ease-out}
 .cast-evade .tfx-c{left:2%;bottom:0;width:46%;height:100%;background:radial-gradient(ellipse at 40% 60%,color-mix(in srgb,var(--tc) 30%,transparent),transparent 60%);animation:flash .8s ease-out .1s}
 @keyframes afterimage{0%{transform:none;opacity:1}30%{transform:translateX(-40px);opacity:.35}100%{transform:none;opacity:1}}
+
+/* ── The fight scene acted out (web/static/fight.js, docs/web.md): the two stand apart; an attack is a dash,
+   a swing through three poses, a trail, and the other side's reaction. All positions are % of .bscene. ── */
+.bscene{min-height:360px}
+.fighter{left:1%;width:42%;aspect-ratio:1024/559;bottom:3%}
+.fighter .poses{position:absolute;inset:0;will-change:transform}
+.fighter img.pose{position:absolute;inset:0;width:100%;height:100%;visibility:hidden;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
+.fighter[data-pose=idle] .p-idle,.fighter[data-pose=windup] .p-windup,.fighter[data-pose=strike] .p-strike{visibility:visible}
+.fighter[data-pose=idle]:not(.acting) .poses{animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{50%{transform:translateY(-1.5px)}}
+.fighter svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.trailfx .tint{stop-color:var(--trail,#EAF4FF)}
+.clawsfx{filter:drop-shadow(0 0 8px #FF2A3C) drop-shadow(0 0 18px rgba(255,40,60,.6))}
+.fighter::before,.beast::before{content:"";position:absolute;bottom:-2%;height:8%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,0) 70%)}
+.fighter::before{left:36%;width:30%}.beast::before{left:8%;width:84%}
+.beast{right:9%;width:25%;top:16%;bottom:3%}
+.beast img{will-change:transform;transform-origin:50% 100%}
+.fighter .dmg{left:50%;top:-6%}.beast .dmg{top:-4%}
+.fx-shield .ringfx{left:8%;top:14%;width:26%}
+.tnum{position:absolute;left:50%;top:-6%;z-index:5;font:800 34px Cinzel,Georgia,serif;text-shadow:0 2px 6px #000;pointer-events:none;white-space:nowrap;animation:floatup 1.2s ease-out forwards}
+.tnum.hit{color:#FFE7A8}.tnum.hurt{color:#FF7A6E}.tnum.word{color:#9FD0FF;font-size:26px}
+.tspark{position:absolute;z-index:4;width:13%;aspect-ratio:1;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,#fff 0 10%,var(--sc,#FFE9B8) 22%,color-mix(in srgb,var(--sc,#FFE9B8) 50%,transparent) 42%,transparent 66%);animation:burst .22s ease-out forwards}
+.tring{position:absolute;z-index:4;width:20%;aspect-ratio:1;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);border:4px solid rgba(127,190,255,.9);
+  box-shadow:0 0 30px rgba(127,190,255,.8),inset 0 0 30px rgba(127,190,255,.5);animation:tring .6s ease-out forwards}
+@keyframes tring{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}
+/* while the scene is being acted out, the old all-at-once effects for the same thing stay quiet */
+.tl-me .slashfx,.tl-me .beast .dmg.hit,.tl-enemy .clawfx,.tl-enemy .fighter .dmg.hurt,.tl-guard .ringfx{display:none}
+.tl-me.fx-slash .beast img,.tl-me.fx-crack .beast img,.tl-me.fx-counter .beast img,.tl-guard.fx-counter .beast img{animation:none}
+.tl-me.fx-crack,.tl-enemy.fx-claw .bme{animation:none}
+.tl-hold .bhp div,.tl-hold .ehp div{transition:none}
+@media (max-width:900px){.bscene{min-height:0;height:52vw}.tnum{font-size:22px}.tnum.word{font-size:17px}}
