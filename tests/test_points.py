@@ -171,3 +171,11 @@ def test_profile_panel_places_spirit(client):
     client.post("/profile/attributes", data={"spirit": "4"})
     assert player_at(client.path)["spirit"] == 4
     assert "fights start with" in client.get("/profile").text
+
+
+def test_panel_lets_you_type_an_amount_or_take_max(client):
+    page = client.get("/profile").text
+    assert page.count('class="amt"') == 3 and page.count('class="maxbtn"') == 3
+    client.post("/profile/attributes", data={"strength": "12", "vitality": "6", "spirit": "0"})   # many at once
+    p = player_at(client.path)
+    assert (p["strength"], p["vitality"]) == (12, 6)

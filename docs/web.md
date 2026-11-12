@@ -55,7 +55,8 @@ Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.
 - **Attributes:** HP, Internal Qi, Attack, Defense (icons in `art/icons/attr/`), each with its realm base and
   every bonus on top (weapon, armor, technique passives), from `bot/sheet/attributes.attribute_values`.
 - **Strength, Vitality & Spirit:** the points to place (docs/attributes.md), + and − buttons with a live preview of the new
-  Attack, HP and Battle Qi (same formula as `player.final_stats`), Place points, and Reset (first free, then 200 Moon Pearls).
+  Attack, HP and Battle Qi (same formula as `player.final_stats`); type any amount or press **Max** to put every
+  free point into one stat; Place points, and Reset (first free, then 200 Moon Pearls).
   Everything is checked again on the server (`bot/points.py`).
 - **Equipment:** weapon, armor and the two artifact slots, plus the three technique slots. Unequip from here.
 - **Journey:** beasts slain, herbs gathered, breakthroughs, duels won.
