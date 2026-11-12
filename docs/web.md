@@ -66,9 +66,9 @@ Apart from placing and resetting points and unequipping gear, the page only show
 
 ## The appearance page
 
-`/appearance` (from the profile's look button): gender, hairstyle (round face thumbnails) and hair colour, with a
+`/appearance` (from the profile's look button): gender and hairstyle (round face thumbnails), with a
 live full-body preview. The first look is free, then each change costs 200 Moon Pearls; **Decide later** goes back
-to the profile. Saving goes through `bot/appearance.py`. Pictures come from `/look/<gender>_<hair>_<color>.webp`
+to the profile. Saving goes through `bot/appearance.py`. Pictures come from `/look/<gender>_<hair>.webp`
 (full body) and `/look/..._face.png` (round faces), drawn by `looks.py` and cached in `art/.looks/`.
 
 ## The inventory page
