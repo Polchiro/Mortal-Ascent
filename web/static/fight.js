@@ -55,8 +55,8 @@
      a recipe below: times in ms, sizes as a share of the scene's width. A new weapon or attack type is one
      more row. Nothing here decides anything: it only shows what the server already resolved. */
   var RECIPES = {
-    strike: {dash: 200, swing: 300, hit: 370, recover: 640, end: 960, knock: 0.024, trail: '#EAF4FF'},
-    break:  {dash: 260, swing: 380, hit: 450, recover: 780, end: 1120, knock: 0.042, trail: '#FFD9A0', shake: true},
+    strike: {dash: 200, swing: 300, hit: 370, recover: 640, end: 960, knock: 0.024},
+    break:  {dash: 260, swing: 380, hit: 450, recover: 780, end: 1120, knock: 0.042, shake: true},
     beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},
     tech:   {end: 1100}                                         // techniques play their own animation (style.css)
   };
@@ -84,7 +84,7 @@
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
 
     var after = bars(main), held = {}, W = scene.clientWidth;
-    var trail = fighter.querySelector('.trailfx g'), trailClip = fighter.querySelector('#trailclip rect');
+    var trail = fighter.querySelector('.trailfx');
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
     var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * 0.962));     // sword tip to the beast
@@ -132,7 +132,7 @@
     function attack(ev) {
       var R = RECIPES[ev.act] || RECIPES.strike, done = false;
       if (ev.hit) hold('enemy');
-      fighter.style.setProperty('--trail', R.trail);
+      fighter.dataset.trail = ev.act;
       return {end: R.end, render: function (t) {
         pose(t < 0 || t >= R.recover ? 'idle' : t < R.swing ? 'windup' : 'strike');
         var x = 0, y = 0;
@@ -140,8 +140,8 @@
         else if (t < R.recover) { x = -0.011 * W + (reachMe + 0.011 * W) * ease(span(t, R.dash, R.hit)); }
         else if (t < R.end) { var b = inout(span(t, R.recover, R.end)); x = reachMe * (1 - b); y = -0.035 * W * Math.sin(Math.PI * b); }
         hero(x, y);
-        trailClip.setAttribute('width', 1024 * span(t, R.swing - 10, R.hit + 10));
-        trail.setAttribute('opacity', t < R.swing - 10 ? 0 : 1 - span(t, R.hit + 20, R.hit + 200));
+        trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';     // sweeps left to right
+        trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 300);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
         animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
         if (t >= R.hit && !done) {
@@ -205,7 +205,7 @@
 
     var i = 0, start = null, stopped = false;
     function reset() { pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
-      trail.setAttribute('opacity', 0); claws.setAttribute('opacity', 0); }
+      trail.style.opacity = 0; claws.setAttribute('opacity', 0); }
     function finish() {
       if (stopped) return;
       stopped = true;
