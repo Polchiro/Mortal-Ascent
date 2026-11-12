@@ -11,6 +11,7 @@ does when its timer runs out: Guard in a fight (three in a row: flee), a failed 
 idle minutes the walk home.
 """
 import threading
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -39,7 +40,8 @@ SIDE = ("pill", "flee")                                       # small buttons on
 ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique",
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
-FIGHTER = "/art/portraits/fighter_stance.webp"
+FIGHTER = "/art/portraits/fight/sword_idle.webp"
+POSES = {pose: f"/art/portraits/fight/sword_{pose}.webp" for pose in ("idle", "windup", "strike")}   # docs/web.md
 FACE = "/art/portraits/cultivator_default.webp"
 ARENA = "/art/scenes/arena_ruins.jpg"
 
@@ -477,7 +479,7 @@ def fight_view(conn, s, b, p, now):
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
-               "face": look_face(p), "art": FIGHTER, "bqi": round(f.bqi), "max_bqi": f.max_bqi,
+               "face": look_face(p), "art": FIGHTER, "poses": POSES, "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
         "enemy": {"name": e["name"], "tier": TIER_LABEL[e["tier"]], "role": e.get("role", "").title(),
@@ -487,9 +489,42 @@ def fight_view(conn, s, b, p, now):
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
-        "log": log, "fx": fx, "cast": cast(b, f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
+        "log": log, "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
         "result": {"word": word, "sub": sub} if word else None,
     }
+
+
+def _number(text, pattern):
+    m = re.search(pattern, text)
+    return int(m.group(1).replace(",", "")) if m else 0
+
+
+def events(log, f):
+    """What happened this turn, in order, for the fight screen to act out (web/static/fight.js, docs/web.md).
+    Read from the engine's own log; nothing here decides anything.
+
+    {"who": "me", "act": "strike" | "break", "hit": bool, "dmg": n, "blocked": bool}   your weapon attack
+    {"who": "me", "act": "guard", "counter": n}       the beast struck and your Guard stopped it (n = counter damage)
+    {"who": "me", "act": "tech"}                      a technique: it plays its own animation
+    {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
+    """
+    out = []
+    techs = {t["name"] for t in (f.atk_t, f.def_t) if t}
+    for icon, text in log:
+        mine = text.startswith(f.name + " — ")
+        move = text[len(f.name) + 3:].split(":")[0] if mine else ""
+        if move in ("Strike", "Break"):
+            dmg = _number(text, r"([\d,]+) dmg")
+            out.append({"who": "me", "act": move.lower(), "hit": dmg > 0, "dmg": dmg, "blocked": "blocked" in text})
+        elif move == "Guard" and "blocked" in text:
+            out.append({"who": "me", "act": "guard", "counter": _number(text, r"counters for ([\d,]+)")})
+        elif move in techs:
+            out.append({"who": "me", "act": "tech"})
+        elif icon == "skull" and not mine:
+            dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
+            if dmg:
+                out.append({"who": "enemy", "act": "attack", "dmg": dmg})
+    return out
 
 
 def effects(log, me):
