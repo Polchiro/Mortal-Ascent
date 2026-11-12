@@ -177,6 +177,9 @@ PLAYER_COLUMNS = {
     "vitality":             "INTEGER NOT NULL DEFAULT 0",
     "spirit":               "INTEGER NOT NULL DEFAULT 0",    # +Battle Qi in beast fights
     "attribute_resets":     "INTEGER NOT NULL DEFAULT 0",
+    # The character's look, a picture only (looks.py, docs/appearance.md). NULL = not chosen yet
+    "appearance":           "TEXT",                          # JSON: {"gender", "hair", "color"}
+    "appearance_changes":   "INTEGER NOT NULL DEFAULT 0",    # the first is free, then Moon Pearls
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial

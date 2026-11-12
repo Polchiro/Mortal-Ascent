@@ -1,102 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ p.name }} · Mortal Ascent<script>
-(function () {
-  var form = document.getElementById('devform'), data = document.getElementById('devcalc');
-  if (!form || !data || !document.getElementById('dev-ok')) return;
-  var c = JSON.parse(data.textContent), free = {{ p.dev.free }}, add = {s: 0, v: 0, q: 0};
-  var inS = document.getElementById('in-s'), inV = document.getElementById('in-v'), inQ = document.getElementById('in-q'), ok = document.getElementById('dev-ok');
-  inS.disabled = inV.disabled = inQ.disabled = false;
-  function fmt(n) { return n.toLocaleString('en-US'); }
-  function draw() {
-    var a0 = Math.round(c.attack * (1 + c.atk_pct + c.s * c.ps)), a1 = Math.round(c.attack * (1 + c.atk_pct + (c.s + add.s) * c.ps));
-    var h0 = Math.round(c.hp * (1 + c.hp_pct + c.v * c.pv)), h1 = Math.round(c.hp * (1 + c.hp_pct + (c.v + add.v) * c.pv));
-    document.getElementById('pv-atk').textContent = add.s ? fmt(a0) + ' → ' + fmt(a1) : fmt(a0);
-    document.getElementById('pv-hp').textContent = add.v ? fmt(h0) + ' → ' + fmt(h1) : fmt(h0);
-    var q0 = c.bq + c.q * c.pq, q1 = c.bq + (c.q + add.q) * c.pq;
-    document.getElementById('pv-bq').textContent = add.q ? q0 + ' → ' + q1 : q0;
-    var left = free - add.s - add.v - add.q;
-    document.getElementById('pv-left').textContent = left + ' left';
-    form.querySelectorAll('input.amt').forEach(function (inp) {
-      if (document.activeElement !== inp) inp.value = add[inp.dataset.stat];
-      inp.max = add[inp.dataset.stat] + left;
-    });
-    inS.value = add.s; inV.value = add.v; inQ.value = add.q;
-    ok.disabled = !(add.s + add.v + add.q);
-    form.querySelectorAll('.step').forEach(function (b) {
-      var k = b.parentNode.dataset.stat, d = +b.dataset.d;
-      b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
-    });
-    form.querySelectorAll('.maxbtn').forEach(function (b) { b.disabled = left <= 0; });
-  }
-  form.querySelectorAll('.step').forEach(function (b) {
-    b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
-  });
-  function others(k) { return add.s + add.v + add.q - add[k]; }
-  form.querySelectorAll('input.amt').forEach(function (inp) {     // type any amount; never more than is free
-    inp.addEventListener('input', function () {
-      var k = inp.dataset.stat, n = parseInt(inp.value, 10);
-      add[k] = Math.max(0, Math.min(isNaN(n) ? 0 : n, free - others(k)));
-      draw();
-    });
-    inp.addEventListener('blur', function () { inp.value = add[inp.dataset.stat]; });
-    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
-  });
-  form.querySelectorAll('.maxbtn').forEach(function (b) {          // everything still free into this one
-    b.addEventListener('click', function () { var k = b.dataset.stat; add[k] = free - others(k); draw(); });
-  });
-  draw();
-})();
-</script>
-{% endblock %}
-{% block body_class %}hallbg<script>
-(function () {
-  var form = document.getElementById('devform'), data = document.getElementById('devcalc');
-  if (!form || !data || !document.getElementById('dev-ok')) return;
-  var c = JSON.parse(data.textContent), free = {{ p.dev.free }}, add = {s: 0, v: 0, q: 0};
-  var inS = document.getElementById('in-s'), inV = document.getElementById('in-v'), inQ = document.getElementById('in-q'), ok = document.getElementById('dev-ok');
-  inS.disabled = inV.disabled = inQ.disabled = false;
-  function fmt(n) { return n.toLocaleString('en-US'); }
-  function draw() {
-    var a0 = Math.round(c.attack * (1 + c.atk_pct + c.s * c.ps)), a1 = Math.round(c.attack * (1 + c.atk_pct + (c.s + add.s) * c.ps));
-    var h0 = Math.round(c.hp * (1 + c.hp_pct + c.v * c.pv)), h1 = Math.round(c.hp * (1 + c.hp_pct + (c.v + add.v) * c.pv));
-    document.getElementById('pv-atk').textContent = add.s ? fmt(a0) + ' → ' + fmt(a1) : fmt(a0);
-    document.getElementById('pv-hp').textContent = add.v ? fmt(h0) + ' → ' + fmt(h1) : fmt(h0);
-    var q0 = c.bq + c.q * c.pq, q1 = c.bq + (c.q + add.q) * c.pq;
-    document.getElementById('pv-bq').textContent = add.q ? q0 + ' → ' + q1 : q0;
-    var left = free - add.s - add.v - add.q;
-    document.getElementById('pv-left').textContent = left + ' left';
-    form.querySelectorAll('input.amt').forEach(function (inp) {
-      if (document.activeElement !== inp) inp.value = add[inp.dataset.stat];
-      inp.max = add[inp.dataset.stat] + left;
-    });
-    inS.value = add.s; inV.value = add.v; inQ.value = add.q;
-    ok.disabled = !(add.s + add.v + add.q);
-    form.querySelectorAll('.step').forEach(function (b) {
-      var k = b.parentNode.dataset.stat, d = +b.dataset.d;
-      b.disabled = d < 0 ? add[k] <= 0 : left <= 0;
-    });
-    form.querySelectorAll('.maxbtn').forEach(function (b) { b.disabled = left <= 0; });
-  }
-  form.querySelectorAll('.step').forEach(function (b) {
-    b.addEventListener('click', function () { add[b.parentNode.dataset.stat] += +b.dataset.d; draw(); });
-  });
-  function others(k) { return add.s + add.v + add.q - add[k]; }
-  form.querySelectorAll('input.amt').forEach(function (inp) {     // type any amount; never more than is free
-    inp.addEventListener('input', function () {
-      var k = inp.dataset.stat, n = parseInt(inp.value, 10);
-      add[k] = Math.max(0, Math.min(isNaN(n) ? 0 : n, free - others(k)));
-      draw();
-    });
-    inp.addEventListener('blur', function () { inp.value = add[inp.dataset.stat]; });
-    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inp.blur(); } });
-  });
-  form.querySelectorAll('.maxbtn').forEach(function (b) {          // everything still free into this one
-    b.addEventListener('click', function () { var k = b.dataset.stat; add[k] = free - others(k); draw(); });
-  });
-  draw();
-})();
-</script>
-{% endblock %}
+{% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
+{% block body_class %}hallbg{% endblock %}
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
@@ -115,6 +19,12 @@
       <span class="tchip rank">#{{ p.rank }} on the realm ranks</span>
     </div>
     {% if p.status %}<p class="xstatus">{{ p.status }}</p>{% endif %}
+    {% if look_done %}<p class="gnotice" role="status">{{ look_done | rich | safe }}</p>{% endif %}
+    {% if p.look %}
+    <a class="lookbtn" href="/appearance">Change look</a>
+    {% else %}
+    <a class="lookbtn first" href="/appearance">Choose your look <span>free</span></a>
+    {% endif %}
   </section>
 
   <div class="xcol">

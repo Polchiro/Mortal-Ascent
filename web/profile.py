@@ -6,6 +6,7 @@ so the website and Discord always agree. This module only turns them into text a
 """
 import os
 
+import looks
 import stats
 
 from bot import crafting, db, forging, points
@@ -112,8 +113,10 @@ def development(conn, user_id):
 
 def profile_view(conn, user_id, username=None):
     """Everything profile.html shows, or None when this Discord account has no character yet."""
-    if db.get_player(conn, user_id) is None:
+    player = db.get_player(conn, user_id)
+    if player is None:
         return None
+    look = looks.of_player(player)
     d = sheet.profile_data(conn, user_id, username=username)
     qi = d["qi"]
     cap = qi["capacity"] or 1
@@ -143,7 +146,8 @@ def profile_view(conn, user_id, username=None):
                   ("Breakthroughs", number(d["breakthroughs"])),
                   ("Duels won", number(d["duels_won"]))],
         "status": d["status"],
-        "portrait": PORTRAIT,
+        "portrait": f"/look/{looks.key(look)}.webp" if look else PORTRAIT,
+        "look": looks.describe(look) if look else None,
         "dev": development(conn, user_id),
         "layer_no": d["layer"],
         "titles": titles(db.get_player(conn, user_id)),
