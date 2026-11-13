@@ -224,6 +224,34 @@ TRAITS = {
 }
 
 
+# ── Death animations (website fight screen; docs/web.md, "The victory sequence") ──────────────────────────────
+# One shared set of frames per body category, not per beast. web/death.py recolours the frames from each beast's
+# own picture and web/static/fight.js sizes and places them over it, so a beast needs no art of its own.
+# A new category (flying, serpentine ...) is one more row here, one sheet cut by scripts/make_death_sheet.py, and
+# its beasts in DEATH_CATEGORY. A beast with no category tips over where it stands (its own picture).
+#   frames/cols/rows: the grid.  ms: how long each frame shows (the last one stays).  impact: the frame that
+#   hits the ground (dust).  cell: one frame's size in px.  body: the standing body in frame 1 as shares of the
+#   cell (left, top, right, bottom).  faces: the way the drawing looks (fights face left, so "right" is flipped).
+DEATH_ANIMATIONS = {
+    "quadruped": {"sheet": "quadruped.webp", "frames": 8, "cols": 4, "rows": 2,
+                  "ms": [150, 120, 120, 130, 150, 140, 150, 0], "impact": 4,
+                  "cell": (284, 305), "body": (0.0, 0.275, 0.961, 0.997), "faces": "right"},
+}
+DEATH_CATEGORY = {
+    "Iron-Hide Boar": "quadruped",
+    "Red Fox": "quadruped",
+    "Shadow Wolf": "quadruped",
+    "Horned Stag": "quadruped",
+    "Mountain Tiger": "quadruped",
+}
+
+
+def death_category(name):
+    """The beast's death animation category (a DEATH_ANIMATIONS key), or None for the plain fall."""
+    cat = DEATH_CATEGORY.get(name)
+    return cat if cat in DEATH_ANIMATIONS else None
+
+
 def element_of(name):
     return TRAITS[name][0]
 

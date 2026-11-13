@@ -791,3 +791,44 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 @media (max-width:900px){.bscene .beast.posed{width:36%;right:4%;bottom:4%}}
 @media (max-width:480px){.bscene .beast.posed{width:40%;right:2%}}
 main.battle.skill-pounce:not(.playing) .beast.posed img{transform:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,186,64,.85))}
+
+/* ── The victory sequence (docs/web.md): a won fight stays on screen. main.slain is the finished picture, the one
+   a reload shows: the body down, the Victory panel up. fight.js takes .slain off to act the last turn out, puts
+   .dying on while the beast goes down, and .slain back at the end.
+   .deathfx: a category's shared frames (beasts.DEATH_ANIMATIONS) in the beast's own colours, laid over its picture
+   by fight.js at the beast's size. death-fall: a beast with no category tips over. death-rout: bandits scatter. ── */
+.deathfx{position:absolute;left:0;bottom:0;width:100%;aspect-ratio:284/305;background-repeat:no-repeat;background-position:100% 100%;
+  opacity:0;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65))}
+.deathfx.flip{transform:scaleX(-1)}
+main.battle.slain .deathfx,main.battle.dying .deathfx{opacity:1}
+main.battle.slain .deathfx{filter:drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(.78) saturate(.8)}
+main.battle.slain .beast img,main.battle.dying .beast img{animation:none!important;transition:none!important}
+main.battle.slain .beast.death-sheet>img,main.battle.dying .beast.death-sheet>img{opacity:0}
+main.battle.slain .beast.death-fall>img{transform:translateY(-30%) rotate(82deg);filter:brightness(.55) saturate(.6)}
+main.battle.slain .beast.death-rout>img{opacity:0}
+main.battle.slain .beast.death-sheet::before{left:-4%;width:108%}
+main.battle.slain .beast .qiring,main.battle.slain .bresult,main.battle.slain .bfeed,main.battle.slain .beast .dmg,main.battle.slain .fighter .dmg{display:none}
+main.battle.slain .bbar,main.battle.slain .bside,main.battle.slain .binfo{opacity:.35;pointer-events:none}
+.ddust{position:absolute;z-index:4;width:9%;aspect-ratio:2.4/1;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);
+  background:radial-gradient(rgba(214,196,160,.75),rgba(214,196,160,0) 70%);animation:ddust .7s ease-out forwards}
+@keyframes ddust{from{opacity:.9;transform:translate(-50%,-50%) scale(.4)}to{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),-90%) scale(1.9)}}
+.bvictory{display:none;position:fixed;inset:0;z-index:30;pointer-events:none;align-items:center;justify-content:center;padding:16px}
+main.battle.slain .bvictory{display:flex}
+.vcard{pointer-events:auto;width:min(440px,100%);max-height:calc(100dvh - 32px);overflow:auto;margin-right:min(24vw,340px);padding:20px 24px 22px;text-align:center;
+  border-radius:16px;background:linear-gradient(rgba(16,14,22,.95),rgba(10,10,16,.96));border:1px solid rgba(232,194,122,.7);
+  box-shadow:0 18px 50px rgba(0,0,0,.7),0 0 34px rgba(232,194,122,.22);animation:vrise .45s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes vrise{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+.vtitle{margin:0;font:800 40px Cinzel,Georgia,serif;color:#F4D58C;letter-spacing:.04em;text-shadow:0 0 22px rgba(244,200,110,.55),0 2px 6px #000}
+.vsub{margin:4px 0 12px;font-size:14.5px;color:#C9CEDB}
+.vlines{margin:0 0 16px;padding:12px 14px;text-align:left;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(232,194,122,.22)}
+.vlines p{margin:0 0 7px;font-size:15.5px;line-height:1.45}.vlines p:last-child{margin:0}
+.vgo{min-width:190px;font-size:17px;padding:11px 26px}
+@media (max-width:900px){
+  /* phones and tablets: the panel takes the place of the move buttons, under the scene, so the body stays in view */
+  main.battle.slain .bbar,main.battle.slain .bside,main.battle.slain .binfo{display:none}
+  .bvictory{position:static;grid-column:1/-1;padding:0}
+  .vcard{margin-right:0;width:min(560px,100%);max-height:none;padding:14px 16px 16px}
+  .vtitle{font-size:27px}.vsub{font-size:13.5px;margin-bottom:8px}.vlines{padding:9px 11px;margin-bottom:12px}.vlines p{font-size:14.5px}
+  .vgo{width:100%}
+}
+@media (prefers-reduced-motion:reduce){.vcard{animation:none}}

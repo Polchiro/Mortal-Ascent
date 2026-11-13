@@ -19,6 +19,8 @@
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
+    placeDeath(main);
+    if (main.classList.contains('slain')) showVictory(main);
     main.querySelectorAll('form.fightform').forEach(function (form) {
       form.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -28,6 +30,38 @@
       });
     });
   }
+
+  /* A beaten beast's death frames (.deathfx; beasts.DEATH_ANIMATIONS, one shared sheet per body category) are laid
+     over the beast's own picture: the standing body of frame 1 is made as wide as the beast's body, centred on it and
+     stood on the same ground, so every beast gets the animation at its own size and place with no art of its own. */
+  function showVictory(main) {                                 // the panel is up: Continue is in reach (and on screen on a phone)
+    var go = main.querySelector('.vgo'), card = main.querySelector('.vcard');
+    if (go) go.focus({preventScroll: true});
+    if (card && card.scrollIntoView) card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  }
+  function endOf(main) { try { return JSON.parse(main.dataset.end || 'null'); } catch (e) { return null; } }
+  function placeDeath(main) {
+    var box = main && main.querySelector('.beast'), fx = box && box.querySelector('.deathfx'), img = box && box.querySelector('img');
+    var d = main && endOf(main);
+    if (!fx || !img || !d || d.kind !== 'sheet') return;
+    function go() {
+      var W = box.clientWidth, H = box.clientHeight, w = img.offsetWidth, h = img.offsetHeight, x = img.offsetLeft, y = img.offsetTop;
+      if (!W || !H || !w || !h) return;
+      if (!box.classList.contains('posed') && img.naturalWidth) {       // a painting is fitted inside its box, feet down
+        var sc = Math.min(w / img.naturalWidth, h / img.naturalHeight), cw = img.naturalWidth * sc, ch = img.naturalHeight * sc;
+        x += (w - cw) / 2; y += h - ch; w = cw; h = ch;
+      }
+      var x0 = x + d.box[0] * w, x1 = x + d.box[2] * w, ground = y + d.box[3] * h;
+      var l = d.body[0], r = d.body[2];
+      if (d.flip) { var t = 1 - r; r = 1 - l; l = t; }
+      var cellW = (x1 - x0) / (r - l), cellH = cellW * d.cell[1] / d.cell[0];
+      fx.style.width = cellW / W * 100 + '%';
+      fx.style.left = ((x0 + x1) / 2 - cellW * (l + r) / 2) / W * 100 + '%';
+      fx.style.bottom = (H - ground - (1 - d.body[3]) * cellH) / H * 100 + '%';
+    }
+    if (img.complete && img.naturalWidth) go(); else img.addEventListener('load', go, {once: true});
+  }
+  window.addEventListener('resize', function () { placeDeath(document.querySelector('main.battle')); });
 
   function send(form, button) {
     busy = true;
@@ -102,7 +136,8 @@
     try { events = JSON.parse(main.dataset.events || '[]'); } catch (e) {}
     var scene = main.querySelector('.bscene'), fighter = main.querySelector('.fighter'), poses = main.querySelector('.fighter .poses');
     var beastBox = main.querySelector('.beast'), beast = main.querySelector('.beast img');
-    if (!events.length || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
+    var end = endOf(main);                                      // the fight was won on this turn: the beast goes down last
+    if ((!events.length && !end) || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
 
     var after = bars(main), held = {}, W = scene.clientWidth;
@@ -331,6 +366,42 @@
       }};
     }
 
+    /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "sheet": its
+       category's shared frames, one after another, then the body stays down. "fall": a beast with no category tips
+       over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
+       Nothing is decided here: the server has already ended the fight and paid it out, once. */
+    function death(d) {
+      var sheetEl = d.kind === 'sheet' ? beastBox.querySelector('.deathfx') : null, did = {}, total = 0, starts = [];
+      if (sheetEl) d.ms.forEach(function (m) { starts.push(total); total += m; });
+      else total = d.kind === 'rout' ? 600 : 900;
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function thud() {
+        [0.2, 0.5, 0.8].forEach(function (q, n) { var p = at(br, q, 0.97); fx('ddust', p[0], p[1], 720, {'--dx': (n - 1) * 26 + 'px'}); });
+        if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(0,5px)'}, {transform: 'translate(0,-2px)'}, {transform: 'none'}], {duration: 260});
+      }
+      return {end: total + (d.linger || 800), render: function (t) {
+        if (t < 0) return;
+        if (once('start')) main.classList.add('dying');
+        pose('idle'); hero(0, 0);
+        if (sheetEl) {
+          var f = 0;
+          for (var j = 0; j < starts.length; j++) if (t >= starts[j]) f = j;
+          sheetEl.style.backgroundPosition = (f % d.cols) / Math.max(1, d.cols - 1) * 100 + '% ' + Math.floor(f / d.cols) / Math.max(1, d.rows - 1) * 100 + '%';
+          var flash = 1 - span(t, 0, 200), dim = span(t, total, total + 500);
+          sheetEl.style.filter = 'drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(' + (1 + 1.5 * flash - 0.22 * dim) + ') saturate(' + (1 - 0.2 * dim) + ')';
+          if (f >= d.impact && once('thud')) thud();
+        } else if (d.kind === 'rout') {
+          var g = ease(span(t, 0, total));
+          beast.style.opacity = 1 - g; beast.style.transform = 'translateX(' + 0.06 * W * g + 'px)';
+        } else {
+          var a = span(t, 0, 260), b = span(t, 260, total), bb = b * b;
+          beast.style.transform = 'translateY(' + -30 * bb + '%) rotate(' + (b > 0 ? 82 * bb : -8 * Math.sin(Math.PI * a)) + 'deg)';
+          beast.style.filter = 'brightness(' + (1 - 0.45 * bb) + ') saturate(' + (1 - 0.4 * bb) + ')';
+          if (b >= 1 && once('thud')) thud();
+        }
+      }, clear: function () { if (sheetEl) { sheetEl.style.filter = ''; sheetEl.style.backgroundPosition = ''; } beast.style.opacity = ''; }};
+    }
+
     var steps = [], kinds = {};
     events.forEach(function (ev) {
       if (ev.who === 'enemy' && ev.act === 'pounce') { steps.push(pounce(ev)); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
@@ -339,6 +410,8 @@
       else if (ev.who === 'enemy') { steps.push(charge(ev)); kinds.enemy = 1; }
       else if (ev.act === 'tech') steps.push({end: RECIPES.tech.end, render: function () {}});
     });
+    var dying = end ? death(end) : null;
+    if (dying) { steps.push(dying); main.classList.remove('slain'); }      // .slain (the finished picture) returns in finish()
     if (!steps.length) return null;
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
     main.classList.add('tl-hold', 'playing'); fighter.classList.add('acting');
@@ -352,6 +425,10 @@
       if (stopped) return;
       stopped = true;
       reset(); drop('me'); drop('enemy'); fighter.classList.remove('acting'); main.classList.remove('playing');
+      if (dying) {
+        dying.clear(); main.classList.remove('dying'); main.classList.add('slain');
+        showVictory(main);
+      }
       if (playing && playing.finish === finish) playing = null;
     }
     function frame(now) {
