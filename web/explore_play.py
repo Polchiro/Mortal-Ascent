@@ -492,9 +492,19 @@ def fight_view(conn, s, b, p, now):
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
-        "log": log, "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
         "result": {"word": word, "sub": sub} if word else None,
     }
+
+
+def history(b):
+    """Every turn's log so far, newest first, for the Battle History panel (the engine keeps them in b.history).
+    Before the first move it is the fight's opening line."""
+    turns = getattr(b, "history", None) or []
+    out = [{"turn": i + 1, "lines": [(icon, rich(text)) for icon, text in log]} for i, log in enumerate(turns) if log]
+    if not out:
+        return [{"turn": 0, "lines": [(icon, rich(text)) for icon, text in (b.log or [])]}]
+    return out[::-1]
 
 
 def _number(text, pattern):

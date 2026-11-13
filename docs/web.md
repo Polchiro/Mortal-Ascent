@@ -172,7 +172,7 @@ a lair is fought with `bot/hunt.py`.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
    (the player's painting turned to face right, `art/portraits/fight/hero_<gender>.webp`) facing the beast's painting (`art/beasts/`), the beast's warning in the
-   plate, the battle log, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
+   plate, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
    small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
    turn a big word over your fighter says what happened (Countered!, Blocked!, Stunned!, Clash!, Guard broken!).
@@ -189,6 +189,12 @@ a lair is fought with `bot/hunt.py`.
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
    gold for Break). Click the scene to skip. Without JavaScript or with reduced motion the turn
    simply shows its result.
+   **No side log** (Nov 12): the arena takes the full width and the two plates sit over its top corners. This
+   turn's lines are called out one after another over the middle of the fight and fade (`.bfeed`), statuses
+   float under whoever has them, and a hit of a fifth of the target's HP or more gets a bigger number. The
+   whole fight's record (`b.history`, newest turn first) opens from the small **Battle History** button (key H,
+   Esc closes) and stays open between turns. On phones the plates stack, the moves sit under the arena and
+   the history opens as a sheet from the bottom.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
    school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
