@@ -41,7 +41,15 @@ ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
 POSES = looks.POSES                  # the fight script swaps these (docs/web.md)
-ARENA = "/art/scenes/arena_ruins.jpg"
+ARENA = "/art/scenes/arena_ruins.jpg"   # a fight with no region (should not happen; kept as the fallback)
+
+
+def arena(exp):
+    """The fight background: the battleground of the region being explored (art/scenes/battle_<region>.jpg)."""
+    name = REGION_BY_TIER.get(getattr(exp, "tier", None))
+    if not name:
+        return ARENA
+    return f"/art/scenes/battle_{name.lower().replace(' ', '_')}.jpg"
 
 
 @dataclass
@@ -492,7 +500,7 @@ def fight_view(conn, s, b, p, now):
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
-        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }
 

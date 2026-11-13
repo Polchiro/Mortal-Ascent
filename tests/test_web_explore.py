@@ -263,3 +263,26 @@ def test_battle_history_keeps_every_turn(client):
         turns = len(b.history)
         assert turns >= 2 and all(f"Turn {n}" in page for n in range(1, turns + 1))
         assert page.index(f"Turn {turns}") < page.index("Turn 1<")          # newest turn first
+
+
+def test_each_region_fights_on_its_own_battleground():
+    import os
+    from bot.explore_card import REGION_BY_TIER
+    from web.explore_play import arena
+
+    class Exp:
+        tier = 0
+    seen = set()
+    for tier in REGION_BY_TIER:
+        Exp.tier = tier
+        path = arena(Exp)
+        assert path.startswith("/art/scenes/battle_") and os.path.exists(path.lstrip("/")), path
+        seen.add(path)
+    assert len(seen) == len(REGION_BY_TIER)
+
+
+def test_a_fight_uses_the_explored_regions_battleground(client):
+    from web.explore_play import arena
+    s = fight(client)
+    page = client.get("/explore/play").text
+    assert f"--arena: url({arena(s.exp)})" in page and "battle_" in page
