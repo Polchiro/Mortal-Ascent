@@ -28,6 +28,7 @@ from bot.fight_view import GRACE_SECONDS as TURN_GRACE, TIER_LABEL, describe
 from cards.scenes import REGION
 from bot.explore_card import REGION_BY_TIER
 
+from . import death
 from .forge_play import rich
 from .profile import number
 
@@ -88,6 +89,7 @@ class Run:
     lair_result: list = None
     lair_won: str = None
     test: bool = False                  # an /admin web_fight test fight (rides in lair_battle): no rewards
+    ended: dict = None                  # a fight just won, still on screen: its victory sequence (see _resolve)
     refused: int = 0                    # button presses turned away for an old turn (duplicates, stale pages)
     started: float = field(default_factory=time.time)
 
@@ -217,6 +219,15 @@ class Explores:
         s = self.catch_up(conn, uid)
         if not s:
             return s
+        if s.ended is not None:                              # a won fight is still on screen: nothing but Continue
+            with self._lock:
+                if what == "continue" and s.ended is not None:
+                    s.ended, s.notice = None, None
+                    s.turn += 1
+                    s.touched = self.clock()
+                elif what != "continue":
+                    s.refused += 1
+            return s
         with self._lock:
             if turn != s.turn:
                 s.refused += 1
@@ -299,6 +310,13 @@ class Explores:
             else:
                 s.exp.end_fight()
                 s.choosing = False
+            if b.result == "won":
+                # The victory sequence. Everything above has already paid out, once, exactly as before; this only
+                # keeps the finished fight on screen (the last blow, the beast going down, what you won) until the
+                # player presses Continue. A reload shows the same thing again and pays nothing.
+                mine = b is s.lair_battle
+                s.ended = {"battle": b, "lines": list(s.lair_result if mine else s.exp.story),
+                           "next": "done" if mine else "continue"}
 
 
 # ── whose turn it is ─────────────────────────────────────────────────
@@ -313,12 +331,12 @@ PHASES = (PLAYER_TURN, SUBMITTING, PLAYER_ACTING, BEAST_ACTING, DYING, FINISHED)
 
 def phase(s):
     """Where this player's fight stands on the server: PLAYER_TURN while a fight waits for a move, FINISHED once
-    it is over (won, lost, fled), None when there is no fight."""
+    it is over (won and still on screen for its victory sequence, lost, fled), None when there is no fight."""
     if s is None:
         return None
     if s.battle is not None and not s.battle.over:
         return PLAYER_TURN
-    if s.lair_result is not None or s.exp.over:
+    if s.ended is not None or s.lair_result is not None or s.exp.over:
         return FINISHED
     return None
 
@@ -361,6 +379,8 @@ def play_view(conn, s, now):
            "found": found_list(e), "notice": rich(s.notice) if s.notice else None,
            "coins": number(p["lotus_coins"]), "pearls": number(p["moon_pearls"])}
     b = s.battle
+    if b is None and s.ended is not None:
+        b = s.ended["battle"]
     if b is not None:
         out["mode"] = "fight"
         out["fight"] = fight_view(conn, s, b, p, now)
@@ -538,6 +558,20 @@ def cast(b, f):
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
+def victory(s, b):
+    """The end of a won fight, for the fight page: how the enemy goes down (web/death.py) and the Victory panel
+    (what the win paid, in the game's own words). None while the fight is still going or was not won."""
+    end = s.ended
+    if not end or end["battle"] is not b:
+        return None
+    f = b.fighters[0]
+    name = b.enemy["name"]
+    return {"death": death.view(b.enemy), "title": "Victory!",
+            "sub": f"{name} defeated in {b.turn} turn{'s' if b.turn != 1 else ''}",
+            "hp": f"{round(f.hp):,} / {round(f.max_hp):,} HP left", "lines": lines(end["lines"]),
+            "next": end["next"], "button": "Continue" if end["next"] == "continue" else "Finish"}
+
+
 def look_face(player):
     """The round face on the fight card: the player's painting (looks.py)."""
     return looks.face(looks.of_player(player))
@@ -564,6 +598,9 @@ def fight_view(conn, s, b, p, now):
     prev = s.prev or {}
     main, side = actions(b, f)
     word, sub = result_banner(b.log or [], f.name)
+    end = victory(s, b)
+    if end:
+        head, hint, danger = "Defeated", "", None
     return {
         "lair": b is s.lair_battle,
         "phase": phase(s),
@@ -588,7 +625,7 @@ def fight_view(conn, s, b, p, now):
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},
-        "roused": "roused" in e["statuses"],
+        "roused": "roused" in e["statuses"] and not end, "end": end,
         "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }

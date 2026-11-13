@@ -163,6 +163,8 @@ def test_winning_ends_the_fight_and_the_expedition_goes_on(client):
         b.intent = {"move": "break", "kind": "normal", "target": b.fighters[0], "name": "Break"}
         act(client, "move", "strike")
     assert s.battle is None and s.exp.beasts_slain == 1
+    assert "Victory!" in client.get("/explore/play").text       # the victory sequence comes first
+    act(client, "continue")
     page = client.get("/explore/play").text
     assert "falls" in page and ("Go deeper" in page or "Return safely" in page)
 
@@ -397,6 +399,109 @@ def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path)
     assert "Set out" in client.get("/explore").text        # back to normal
 
 
+# ── The victory sequence (docs/web.md) ──────────────────────────────────────────────────────────────────
+
+def win(client, s):
+    """Strike the beast down from 1 HP."""
+    for _ in range(40):
+        b = s.battle
+        if b is None:
+            break
+        b.enemy["hp"] = 1
+        b.enemy["statuses"].clear()
+        b.intent = {"move": "break", "kind": "normal", "target": b.fighters[0], "name": "Break"}
+        act(client, "move", "strike")
+    assert s.battle is None
+
+
+def test_a_won_fight_stays_on_screen_until_continue(client):
+    s = fight(client)
+    win(client, s)
+    assert s.ended and s.ended["battle"].result == "won"
+    page = client.get("/explore/play").text
+    assert 'class="battle' in page and " slain" in page and "data-end=" in page
+    assert "Victory!" in page and "defeated in" in page and "falls" in page and ">Continue<" in page
+    assert page.count('class="actbtn off"') == 3 and "Go deeper" not in page      # no fight button works any more
+    assert '"act": "strike"' in page                                # the last blow is still acted out
+
+
+def test_the_win_pays_once_whatever_the_page_does(client):
+    s = fight(client)
+    win(client, s)
+    e = s.exp
+    paid = (e.coins, list(e.items), e.beasts_slain, e.step, round(e.hp))
+    turn = s.turn
+    for _ in range(3):                                              # reloads
+        assert "Victory!" in client.get("/explore/play").text
+    for what, arg in (("move", "strike"), ("move", "flee"), ("deeper", ""), ("return", ""), ("path", "left")):
+        act(client, what, arg)                                      # nothing but Continue is heard
+    assert s.ended and not e.over and s.turn == turn
+    assert (e.coins, list(e.items), e.beasts_slain, e.step, round(e.hp)) == paid
+    client.post("/explore/act", data={"what": "continue", "arg": "", "turn": 0})    # even from an old page
+    assert s.ended is None and s.turn == turn + 1
+    client.post("/explore/act", data={"what": "continue", "arg": "", "turn": 0})    # a double click does nothing
+    assert s.turn == turn + 1
+    assert (e.coins, list(e.items), e.beasts_slain, e.step, round(e.hp)) == paid
+    assert "Victory!" not in client.get("/explore/play").text
+
+
+def test_losing_or_fleeing_has_no_victory_sequence(client):
+    s = fight(client)
+    for _ in range(40):
+        if s.battle is None:
+            break
+        act(client, "move", "flee")
+    assert s.ended is None and "Victory!" not in client.get("/explore/play").text
+
+
+def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
+    import os
+    import beasts
+    from web import death
+    views = {}
+    for name in ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):
+        v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
+        assert v["kind"] == "warp" and v["category"] == "quadruped"
+        assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
+        assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
+        assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
+        assert "src" not in v                                       # numbers only: no picture but the beast's own
+    assert views["Red Fox"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
+    assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
+    assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
+    assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["kind"] == "fall"
+    assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
+
+
+def test_the_beast_dies_as_its_own_picture(client):
+    s = fight(client)
+    b = s.battle
+    b.enemy.update(name="Red Fox", slug="red_fox")
+    win(client, s)
+    page = client.get("/explore/play").text
+    assert '<canvas class="deathfx">' in page and "death-warp" in page
+    assert page.count("/art/beasts/red_fox.png") >= 2 and "/art/death/" not in page and "quadruped.webp" not in page
+
+
+def test_a_won_test_fight_ends_with_finish_and_pays_nothing(client, db_path):
+    from bot import admin
+    row = next(r for r in admin.all_beasts() if r[1] == "Mountain Tiger")
+    c = db.connect(db_path)
+    admin.queue_web_fight(c, UID, row)
+    coins = db.get_player(c, UID)["lotus_coins"]
+    c.close()
+    client.get("/explore")
+    s = run(client)
+    win(client, s)
+    page = client.get("/explore/play").text
+    assert "Victory!" in page and "Test fight: no rewards" in page and ">Finish<" in page and 'action="/explore/done"' in page
+    client.post("/explore/done")
+    c = db.connect(db_path)
+    assert db.get_player(c, UID)["lotus_coins"] == coins
+    c.close()
+    assert "Set out" in client.get("/explore").text
+
+
 # ── one action per turn (docs/web.md) ────────────────────────────────────────────────────────────────
 
 def test_the_fight_page_carries_the_action_state(client):
@@ -468,8 +573,12 @@ def test_the_winning_blow_pays_once_however_often_it_is_sent(client, db_path):
     data = {"what": "move", "arg": "strike", "turn": turn}
     client.post("/explore/act", data=data)
     assert b.result == "won" and s.battle is None
-    assert explore_play.phase(s) is None                              # the expedition goes on: no fight to act in
+    assert explore_play.phase(s) == explore_play.FINISHED             # the victory sequence: no fight to act in
+    assert 'data-phase="finished"' in client.get("/explore/play").text
     found = (s.exp.coins, list(s.exp.items))
     for _ in range(3):
         client.post("/explore/act", data=data)
     assert (s.exp.coins, list(s.exp.items)) == found and s.exp.last_battle is b
+    act(client, "continue")
+    assert explore_play.phase(s) is None                              # the expedition goes on
+    assert (s.exp.coins, list(s.exp.items)) == found

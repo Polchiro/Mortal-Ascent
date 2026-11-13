@@ -65,6 +65,8 @@
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
+    drawDeath(main);                                           // a won fight on a fresh page: the body already down
+    if (main.classList.contains('slain')) { Combat.set('finished'); showVictory(main); }      // a won fight: nothing to act in
     main.querySelectorAll('form.fightform').forEach(function (form) {
       form.addEventListener('submit', function (ev) {
         ev.preventDefault();
@@ -78,6 +80,65 @@
     });
     Combat.paint();
   }
+
+  function showVictory(main) {                                 // the panel is up: Continue is in reach (and on screen on a phone)
+    var go = main.querySelector('.vgo'), card = main.querySelector('.vcard');
+    if (go) go.focus({preventScroll: true});
+    if (card && card.scrollIntoView) card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+  }
+  function endOf(main) { try { return JSON.parse(main.dataset.end || 'null'); } catch (e) { return null; } }
+
+  /* A beaten beast goes down as ITSELF. Its body category has one shared movement (beasts.DEATH_ANIMATIONS: per
+     frame, how wide the body lies and how high its back stands at points from tail to head, measured from SHOAIB's
+     reference sheet) and no artwork. Here the beast's own picture is drawn on the .deathfx canvas in thin upright
+     strips, each one lowered to the height the movement gives that part of the body at time t (ms; frames are
+     blended, so it moves smoothly): the legs fold first, then the body above them comes down with a little squash,
+     the head end lowest. Enemies face left, so the head is the left end. With no t it redraws where it was (the
+     finished picture on a fresh page, or after the window changes size). */
+  var LEGS = 0.42, LEGS_MIN = 0.14, BODY_MIN = 0.7;            // the legs' share of the body's height; how far each part gives
+  function drawDeath(main, t) {
+    var box = main && main.querySelector('.beast'), cv = box && box.querySelector('canvas.deathfx'), img = box && box.querySelector('img');
+    var d = main && endOf(main);
+    if (!cv || !img || !d || d.kind !== 'warp' || !cv.getContext) return;
+    if (t === undefined) t = cv._t === undefined ? Infinity : cv._t;
+    cv._t = t;
+    if (!(img.complete && img.naturalWidth)) { img.addEventListener('load', function () { drawDeath(main); }, {once: true}); return; }
+    var W = box.clientWidth, H = box.clientHeight, w = img.offsetWidth, h = img.offsetHeight, x = img.offsetLeft, y = img.offsetTop;
+    if (!W || !H || !w || !h) return;
+    if (!box.classList.contains('posed')) {                    // a painting is fitted inside its box, feet down
+      var sc = Math.min(w / img.naturalWidth, h / img.naturalHeight), fw = img.naturalWidth * sc, fh = img.naturalHeight * sc;
+      x += (w - fw) / 2; y += h - fh; w = fw; h = fh;
+    }
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), M = 0.1;                       // the canvas overhangs the box by M all round
+    var cw = Math.round(W * (1 + 2 * M) * dpr), ch = Math.round(H * (1 + 2 * M) * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch);
+    ctx.setTransform(dpr, 0, 0, dpr, W * M * dpr, H * M * dpr);
+    var n = d.motion.length, f = n - 1, k = 0, acc = 0;
+    for (var i = 0; i < n - 1; i++) { if (t < acc + d.ms[i]) { f = i; k = Math.max(0, (t - acc) / d.ms[i]); break; } acc += d.ms[i]; }
+    var A = d.motion[f], B = d.motion[Math.min(n - 1, f + 1)], cols = A.h.length;
+    function mix(a, b, q) { return a + (b - a) * q; }
+    function high(u) {                                         // the back's height at u (0 tail .. 1 head), as a share of standing
+      var p = Math.max(0, Math.min(1, u)) * (cols - 1), a = Math.floor(p), b = Math.min(cols - 1, a + 1), q = p - a;
+      return mix(mix(A.h[a], A.h[b], q), mix(B.h[a], B.h[b], q), k);
+    }
+    var wide = mix(A.w, B.w, k);
+    var x0 = x + d.box[0] * w, x1 = x + d.box[2] * w, top = y + d.box[1] * h, ground = y + d.box[3] * h, mid = (x0 + x1) / 2;
+    var tall = ground - top, legs = tall * LEGS, knee = ground - legs;                   // above the knee line: the body
+    var S = Math.max(24, Math.min(96, Math.round(w / 3))), nw = img.naturalWidth, nh = img.naturalHeight, kneeSrc = (knee - y) / h * nh;
+    for (var s = 0; s < S; s++) {
+      var a0 = x + w * s / S, a1 = x + w * (s + 1) / S;
+      var r = high(1 - ((a0 + a1) / 2 - x0) / (x1 - x0));
+      var give = (1 - r) * tall;                               // how far this part of the back has come down
+      var lg = Math.max(LEGS_MIN, 1 - give / legs);            // the legs fold first ...
+      var bd = Math.max(BODY_MIN, 1 - Math.max(0, give - legs * (1 - lg)) / (tall - legs));   // ... then the body gives a little
+      var d0 = mid + (a0 - mid) * wide, dw = (a1 - a0) * wide + 0.7, kneeTo = ground - legs * lg;
+      ctx.drawImage(img, nw * s / S, 0, nw / S, kneeSrc, d0, kneeTo - (knee - y) * bd, dw, (knee - y) * bd);
+      ctx.drawImage(img, nw * s / S, kneeSrc, nw / S, nh - kneeSrc, d0, kneeTo, dw, (y + h - knee) * lg);
+    }
+  }
+  window.addEventListener('resize', function () { drawDeath(document.querySelector('main.battle')); });
 
   function send(form, button) {
     Combat.set('submitting');                                   // before anything else: a second press finds the lock
@@ -123,7 +184,8 @@
     if (playing) playing.finish(true);
     var fresh = document.importNode(next, true);
     var moved = +fresh.dataset.turn !== sent;                   // the server took the move (or refused it with a notice)
-    var played = fresh.dataset.round !== now.dataset.round;     // a turn of the fight was played: there is something to act out
+    var played = fresh.dataset.round !== now.dataset.round      // a turn of the fight was played: there is something to act out
+      || (!!fresh.dataset.end && !now.dataset.end);             // ... or it was the winning turn (the round count stops there)
     keepHistory(now, fresh);
     now.replaceWith(fresh);                                     // same scroll position: nothing jumps
     init();                                                     // still locked: the new buttons are painted as such
@@ -133,7 +195,7 @@
       return;
     }
     playing = played ? act(fresh, before) : null;               // act the turn out: dash, swing, hit, the beast's answer
-    if (!playing) setTimeout(function () { if (Combat.phase !== 'player_turn' && fresh.isConnected) Combat.set('player_turn'); }, SETTLE);
+    if (!playing) setTimeout(function () { if (Combat.phase !== 'player_turn' && Combat.phase !== 'finished' && fresh.isConnected) Combat.set('player_turn'); }, SETTLE);
   }
 
   function notice(main, text) {
@@ -191,7 +253,8 @@
     try { events = JSON.parse(main.dataset.events || '[]'); } catch (e) {}
     var scene = main.querySelector('.bscene'), fighter = main.querySelector('.fighter'), poses = main.querySelector('.fighter .poses');
     var beastBox = main.querySelector('.beast'), beast = main.querySelector('.beast img');
-    if (!events.length || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
+    var end = endOf(main);                                      // the fight was won on this turn: the beast goes down last
+    if ((!events.length && !end) || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
 
     var after = bars(main), held = {}, W = scene.clientWidth;
@@ -437,6 +500,40 @@
       }};
     }
 
+    /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
+       picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
+       over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
+       Nothing is decided here: the server has already ended the fight and paid it out, once. */
+    function death(d) {
+      var cv = d.kind === 'warp' ? beastBox.querySelector('canvas.deathfx') : null, did = {}, total = 0, hitAt = 0;
+      if (cv) d.ms.forEach(function (m, n) { if (n < d.impact) hitAt += m; total += m; });
+      else total = d.kind === 'rout' ? 600 : 900;
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function thud() {
+        [0.2, 0.5, 0.8].forEach(function (q, n) { var p = at(br, q, 0.97); fx('ddust', p[0], p[1], 720, {'--dx': (n - 1) * 26 + 'px'}); });
+        if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(0,5px)'}, {transform: 'translate(0,-2px)'}, {transform: 'none'}], {duration: 260});
+      }
+      return {end: total + (d.linger || 800), render: function (t) {
+        if (t < 0) return;
+        if (once('start')) main.classList.add('dying');
+        pose('idle'); hero(0, 0);
+        if (cv) {
+          drawDeath(main, t);                                  // the beast's own picture, bent through the shared movement
+          var flash = 1 - span(t, 0, 200), dim = span(t, total, total + 500);
+          cv.style.filter = 'drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(' + (1 + 1.2 * flash - 0.28 * dim) + ') saturate(' + (1 - 0.25 * dim) + ')';
+          if (t >= hitAt && once('thud')) thud();
+        } else if (d.kind === 'rout') {
+          var g = ease(span(t, 0, total));
+          beast.style.opacity = 1 - g; beast.style.transform = 'translateX(' + 0.06 * W * g + 'px)';
+        } else {
+          var a = span(t, 0, 260), b = span(t, 260, total), bb = b * b;
+          beast.style.transform = 'translateY(' + -30 * bb + '%) rotate(' + (b > 0 ? 82 * bb : -8 * Math.sin(Math.PI * a)) + 'deg)';
+          beast.style.filter = 'brightness(' + (1 - 0.45 * bb) + ') saturate(' + (1 - 0.4 * bb) + ')';
+          if (b >= 1 && once('thud')) thud();
+        }
+      }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } beast.style.opacity = ''; }};
+    }
+
     var steps = [], kinds = {};
     function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
     events.forEach(function (ev) {
@@ -446,6 +543,8 @@
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
+    var dying = end ? death(end) : null;
+    if (dying) { add(dying, 'dying'); main.classList.remove('slain'); }      // .slain (the finished picture) returns in finish()
     if (!steps.length) return null;
     Combat.set(steps[0].phase);
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
@@ -462,6 +561,11 @@
       stopped = true;
       clearTimeout(guard);
       reset(); drop('me'); drop('enemy'); fighter.classList.remove('acting'); main.classList.remove('playing');
+      if (dying) {
+        dying.clear(); main.classList.remove('dying'); main.classList.add('slain');
+        showVictory(main);
+        if (cut !== true) Combat.set('finished');               // the fight is won: only the Victory panel's button is left
+      }
       if (playing && playing.finish === finish) playing = null;
       if (cut !== true && Combat.phase !== 'dying' && Combat.phase !== 'finished') Combat.set('player_turn');
     }

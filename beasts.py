@@ -224,6 +224,42 @@ TRAITS = {
 }
 
 
+# ── Death animations (website fight screen; docs/web.md, "The victory sequence") ──────────────────────────────
+# One shared MOVEMENT per body category, not per beast, and no artwork: every beast goes down as its own picture.
+# web/static/fight.js bends and lowers the beast's own picture through these frames, at the beast's own size.
+# A new category (flying, serpentine ...) is one more row here, measured from a reference sheet by
+# scripts/make_death_motion.py, and its beasts in DEATH_CATEGORY. A beast with no category tips over where it stands.
+#   ms: how long each frame takes to reach the next (the last one stays).  impact: the frame that hits the ground
+#   (dust).  motion: per frame, (how wide the body lies, how high its back stands at 12 points from tail to head),
+#   as shares of the standing first frame. Measured from the eight frames of SHOAIB's wolf sheet: the head sinks
+#   first, the legs give way, the body drops flat and settles.
+DEATH_ANIMATIONS = {
+    "quadruped": {"ms": [150, 120, 120, 130, 150, 140, 150, 0], "impact": 4, "motion": [
+        (1.00, (1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00)),
+        (0.94, (0.98, 1.02, 1.04, 1.03, 1.00, 0.93, 0.88, 0.88, 0.86, 0.81, 0.73, 0.65)),
+        (0.99, (0.76, 0.82, 0.89, 0.93, 0.94, 0.92, 0.91, 0.92, 0.91, 0.86, 0.79, 0.72)),
+        (1.02, (0.64, 0.72, 0.84, 0.90, 0.89, 0.82, 0.78, 0.79, 0.79, 0.75, 0.64, 0.53)),
+        (1.03, (0.54, 0.58, 0.64, 0.69, 0.68, 0.62, 0.58, 0.59, 0.60, 0.57, 0.51, 0.44)),
+        (1.04, (0.54, 0.58, 0.65, 0.72, 0.71, 0.65, 0.61, 0.61, 0.60, 0.56, 0.47, 0.39)),
+        (1.03, (0.52, 0.56, 0.61, 0.65, 0.65, 0.61, 0.59, 0.60, 0.59, 0.53, 0.44, 0.34)),
+        (1.01, (0.55, 0.59, 0.64, 0.67, 0.67, 0.62, 0.60, 0.61, 0.60, 0.55, 0.47, 0.39)),
+    ]},
+}
+DEATH_CATEGORY = {
+    "Iron-Hide Boar": "quadruped",
+    "Red Fox": "quadruped",
+    "Shadow Wolf": "quadruped",
+    "Horned Stag": "quadruped",
+    "Mountain Tiger": "quadruped",
+}
+
+
+def death_category(name):
+    """The beast's death animation category (a DEATH_ANIMATIONS key), or None for the plain fall."""
+    cat = DEATH_CATEGORY.get(name)
+    return cat if cat in DEATH_ANIMATIONS else None
+
+
 def element_of(name):
     return TRAITS[name][0]
 

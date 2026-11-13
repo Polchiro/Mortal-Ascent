@@ -264,6 +264,37 @@ possible are ignored. Rare finds are announced only in Discord.
 Only `art/icons`, `art/scenes`, `art/chests`, `art/portraits` and `art/beasts` are served (as `/art/...`), plus `web/static`. Nothing else in the repo
 (code, `.env`, the database) can be opened from the browser.
 
+### The victory sequence
+
+When a fight is won the page no longer jumps straight to the next step. In order:
+
+1. The last blow is acted out like any other turn. The fight is already over on the server, so no move works.
+2. The beast goes down (its death animation).
+3. The body stays where it fell for a moment (`web/death.py`, `LINGER_MS`).
+4. The **Victory** panel comes up: the beast, the turns, your HP, and what the win paid, in the game's own lines.
+5. **Continue** takes you on (after a lair or a test fight the button is **Finish**).
+
+Nothing about the rules changed. `Explores._resolve` pays the win at the same moment and with the same code as
+before (`Expedition.end_fight`, `hunt.pay`), once; it then keeps the finished fight in `Run.ended`. While that is
+set, `Explores.act` listens to nothing but `continue`, so there is no move, path or second payout to be had, and
+a reload simply shows the same finished picture again (the body down, the panel up, no replay). Continue works even
+from an old page, and pressing it twice does nothing. Fights that are lost, fled or timed out go on as before.
+
+**Death animations** are shared, one per body category, not per beast, and they are a *movement*, not artwork
+(`beasts.DEATH_ANIMATIONS`, `beasts.DEATH_CATEGORY`). Every beast goes down as its own picture.
+
+- `quadruped`: for Iron-Hide Boar, Red Fox, Shadow Wolf, Horned Stag and Mountain Tiger. Its eight frames were
+  measured from SHOAIB's wolf sheet: per frame, how wide the body lies and how high its back stands at 12 points from
+  tail to head, as shares of the standing first frame, plus the sheet's timing. No wolf drawing is kept.
+- `fight.js` (`drawDeath`) draws the beast's own picture on a canvas in thin upright strips and lowers each strip to
+  the height the movement gives that part of the body: the legs fold, the body comes down, the head end lowest.
+  `web/death.py` says where the body is inside the picture, so the same movement fits every beast's size and place.
+- A beast with no category tips over where it stands; bandits scatter.
+
+To add a category (flying, serpentine ...): measure a reference sheet with
+`python -m scripts.make_death_motion <video.mp4>`, add a row to `DEATH_ANIMATIONS` with the rows it prints, and list
+its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, add its name to `DEATH_CATEGORY`.
+
 ## Going online later
 
 - Add the real address as a second redirect, e.g. `https://<your-domain>/callback`, and set
