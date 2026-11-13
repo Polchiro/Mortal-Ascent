@@ -340,3 +340,19 @@ def test_a_fight_uses_the_explored_regions_battleground(client):
     s = fight(client)
     page = client.get("/explore/play").text
     assert f"--arena: url({arena(s.exp)})" in page and "battle_" in page
+
+
+def test_the_tiger_is_drawn_from_its_cut_out_poses(client):
+    from web.explore_play import beast_poses
+    poses = beast_poses("mountain_tiger")
+    assert set(poses["poses"]) == {"idle", "crouch", "leap", "slam", "roar"}
+    for p in poses["poses"].values():
+        assert client.get(p["src"]).status_code == 200
+    assert beast_poses("wild_boar") is None and beast_poses(None) is None
+    s, b = tiger_fight(client)
+    page = client.get("/explore/play").text
+    assert 'class="beast posed"' in page and "data-poses='" in page
+    assert 'src="/art/beasts/poses/mountain_tiger/crouch.webp" alt="" data-pose="crouch"' in page   # winding up
+    act(client, "move", "guard")
+    page = client.get("/explore/play").text
+    assert 'data-pose="idle"' in page and "/art/beasts/poses/mountain_tiger/idle.webp" in page

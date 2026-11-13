@@ -10,6 +10,8 @@ hazard and idle limit has a deadline measured here. A page that comes back late 
 does when its timer runs out: Guard in a fight (three in a row: flee), a failed leap from a hazard, and after two
 idle minutes the walk home.
 """
+import json
+import os
 import threading
 import re
 import time
@@ -42,6 +44,26 @@ ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
 POSES = looks.POSES                  # the fight script swaps these (docs/web.md)
 ARENA = "/art/scenes/arena_ruins.jpg"   # a fight with no region (should not happen; kept as the fallback)
+
+
+POSES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "beasts", "poses")
+_poses_cache = {}
+
+
+def beast_poses(slug):
+    """A beast's cut-out fight poses (art/beasts/poses/<slug>/: idle, crouch, leap, slam, roar + poses.json), or None.
+    Each pose: its picture and where it sits, in % of the idle pose (fight.js swaps them as the beast moves)."""
+    if not slug:
+        return None
+    if slug not in _poses_cache:
+        try:
+            with open(os.path.join(POSES_DIR, slug, "poses.json")) as fh:
+                data = json.load(fh)
+            _poses_cache[slug] = {"aspect": data["aspect"], "poses": {
+                k: dict(v, src=f"/art/beasts/poses/{slug}/{k}.webp") for k, v in data["poses"].items()}}
+        except (OSError, ValueError, KeyError):
+            _poses_cache[slug] = None
+    return _poses_cache[slug]
 
 
 def arena(exp):
@@ -479,6 +501,8 @@ def fight_view(conn, s, b, p, now):
     intent = getattr(b, "intent", None) or {}
     danger = intent.get("kind") if intent.get("kind") in ("charged", "signature") else None
     skill = battle_rules.UNIQUE_SKILLS.get(e["name"]) if beast else None
+    poses = beast_poses(e.get("slug")) if beast else None
+    winding = bool(skill and intent.get("skill") and not b.over)
     log = [(icon, rich(text)) for icon, text in (b.log or [])]
     fx = effects(b.log or [], f.name)
     prev = s.prev or {}
@@ -499,10 +523,12 @@ def fight_view(conn, s, b, p, now):
                   "element": e.get("element") if beast else None, "realm": e.get("realm", ""),
                   "hp": round(e["hp"]), "max_hp": round(e["max_hp"]), "hp_pct": round(e["hp"] / max(1, e["max_hp"]) * 100),
                   "statuses": statuses(e["statuses"]),
-                  "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
+                  "art": poses["poses"]["idle"]["src"] if poses else
+                         f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
+                  "poses": poses, "pose": "crouch" if poses and winding and "crouch" in poses["poses"] else "idle",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
-                    "skill": skill["fx"] if skill and intent.get("skill") and not b.over else None},
+                    "skill": skill["fx"] if winding else None},
         "roused": "roused" in e["statuses"],
         "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
