@@ -72,6 +72,16 @@
   };
   var GAP = 160;
 
+  /* the frame-by-frame sword attack (looks.ATTACK_SHEETS, from SHOAIB's video): [ms, frame] keys, played in between.
+     He raises the blade behind him (0-6), spins it round in a blue Qi arc while he closes in (7-14), lifts it overhead
+     (15-28), cuts down and forward through the beast (29-34, the hit) and settles back on guard (35-40). */
+  var BLADE = {
+    strike: {keys: [[0, 0], [210, 6], [470, 14], [640, 23], [720, 28], [840, 34], [1150, 40]],
+             dash: [180, 560], swing: 720, hit: 800, back: [860, 1200], end: 1260, knock: 0.024},
+    break:  {keys: [[0, 0], [250, 6], [540, 14], [730, 23], [820, 28], [960, 34], [1300, 40]],
+             dash: [200, 640], swing: 820, hit: 910, back: [980, 1340], end: 1400, knock: 0.042, shake: true}
+  };
+
   function ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
   function inout(x) { return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function span(t, a, b) { return Math.max(0, Math.min(1, (t - a) / (b - a))); }
@@ -97,6 +107,7 @@
     var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
     function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
+    var sheet = fighter.querySelector('.sheetfx');              // a frame-by-frame attack, when this look has one
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
     var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
@@ -142,6 +153,7 @@
 
     /* your weapon attack: wind up, dash, swing with a trail, then step back */
     function attack(ev) {
+      if (sheet) return sweep(ev);
       var R = RECIPES[ev.act] || RECIPES.strike, done = false;
       if (ev.hit) hold('enemy');
       fighter.dataset.trail = ev.act;
@@ -154,6 +166,47 @@
         hero(x, y);
         trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';     // sweeps left to right
         trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 300);
+        var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
+        animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
+        if (t >= R.hit && !done) {
+          done = true;
+          var p = at(br, 0.12, 0.42);
+          if (ev.hit) {
+            drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
+            if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
+              {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
+          } else {
+            burst('tring', p[0] + 4, p[1] + 6); pop(beastBox, 'word', ev.blocked ? 'Blocked' : 'Missed');
+          }
+        }
+      }};
+    }
+
+    /* the same attack, frame by frame from the video: the spin closes the distance, the forward cut lands */
+    function sweep(ev) {
+      var R = BLADE[ev.act] || BLADE.strike, done = false;
+      var n = +sheet.dataset.frames, cols = +sheet.dataset.cols, rows = +sheet.dataset.rows;
+      if (ev.hit) hold('enemy');
+      fighter.dataset.trail = ev.act;
+      function show(f) {
+        f = Math.max(0, Math.min(n - 1, Math.round(f)));
+        sheet.style.backgroundPosition = (f % cols) / (cols - 1) * 100 + '% ' + Math.floor(f / cols) / (rows - 1) * 100 + '%';
+      }
+      return {end: R.end, render: function (t) {
+        if (t < 0 || t >= R.end) { pose('idle'); hero(0, 0); }
+        else {
+          pose('sheet');
+          var f = R.keys[R.keys.length - 1][1];
+          for (var j = 1; j < R.keys.length; j++) {
+            if (t < R.keys[j][0]) { var a = R.keys[j - 1], b = R.keys[j]; f = a[1] + (b[1] - a[1]) * span(t, a[0], b[0]); break; }
+          }
+          show(f);
+          var x = reachMe * inout(span(t, R.dash[0], R.dash[1])), y = 0;
+          if (t >= R.back[0]) { var r = inout(span(t, R.back[0], R.back[1])); x = reachMe * (1 - r); y = -0.03 * W * Math.sin(Math.PI * r); }
+          hero(x, y);
+        }
+        trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';
+        trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 320);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
         animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
         if (t >= R.hit && !done) {

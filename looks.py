@@ -60,7 +60,10 @@ def portrait(look):
 
 
 POSES = ("idle", "windup", "strike")
-SWORD_POSES = {"male": 0.91, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
+SWORD_POSES = {"male": 0.66, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
+# genders whose sword attack plays frame by frame (scripts/make_hero_attack.py cuts it from SHOAIB's video):
+# a grid of 320 x 360 frames that web/static/fight.js steps through; the stills above come from the same video.
+ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6}}
 
 
 def fighter(look, pose="idle"):
@@ -74,6 +77,11 @@ def fighter(look, pose="idle"):
 def sword_tip(look):
     """How far across the fight canvas the weapon reaches in the strike pose (0-1), or None for a single painting."""
     return SWORD_POSES.get(gender_of(look))
+
+
+def attack_sheet(look):
+    """The frame-by-frame sword attack for this look (ATTACK_SHEETS), or None to swing through the three poses."""
+    return ATTACK_SHEETS.get(gender_of(look))
 
 
 def face(look):

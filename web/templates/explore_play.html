@@ -48,10 +48,12 @@
   <section class="bscene">
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
     {% if F.enemy.statuses %}<p class="chips sover senemy" aria-label="Beast statuses">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
-    <div class="fighter{% if F.me.tip %} sworded{% endif %}" aria-hidden="true" data-pose="idle"{% if F.me.tip %} data-tip="{{ F.me.tip }}"{% endif %}>
+    <div class="fighter{% if F.me.tip %} sworded{% endif %}{% if F.me.sheet %} sheeted{% endif %}" aria-hidden="true" data-pose="idle"{% if F.me.tip %} data-tip="{{ F.me.tip }}"{% endif %}>
       <div class="poses">
         {% for pose, src in F.me.poses.items() %}<img class="pose p-{{ pose }}" src="{{ src }}" alt="" width="1024" height="559">{% endfor %}
         <img class="trailfx" src="/art/fx/slash.webp" alt="" width="1024" height="559">
+        {% if F.me.sheet %}<div class="sheetfx" data-frames="{{ F.me.sheet.frames }}" data-cols="{{ F.me.sheet.cols }}" data-rows="{{ F.me.sheet.rows }}"
+          style="background-image: url({{ F.me.sheet.src }}); background-size: {{ F.me.sheet.cols * 100 }}% {{ F.me.sheet.rows * 100 }}%"></div>{% endif %}
       </div>
       <svg class="clawsfx" viewBox="0 0 1024 559"><defs>
         <linearGradient id="clawg" x1="1" x2="0"><stop offset="0" stop-color="#FF3B4E" stop-opacity="0"/><stop offset=".45" stop-color="#FF4A5C" stop-opacity=".85"/><stop offset="1" stop-color="#FFE3E0"/></linearGradient>
