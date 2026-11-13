@@ -34,6 +34,7 @@
 
   <!-- the beast -->
   <section class="benemy">
+    <img class="eface" src="{{ F.enemy.art }}" alt="" width="60" height="60">
     <p class="ename">{{ F.enemy.name }}</p>
     <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>
     <div class="ehp" data-bar="enemy"><div style="width: {{ F.enemy.hp_pct }}%"></div><span data-val="enemy">{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
