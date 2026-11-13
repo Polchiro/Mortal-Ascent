@@ -220,6 +220,10 @@ a lair is fought with `bot/hunt.py`.
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.
 
+**Testing a beast:** `/admin web_fight <beast>` in Discord (owner/admins) queues a test fight; the next time that
+player opens Explore on the website, it starts right away (`Explores.start_test`, `admin.take_web_fight`): no
+expedition, no rewards, no injury, no cooldown.
+
 The server keeps every clock. **Fight turns have no reaction time on the website for now**: a turn waits for the
 player, and only a page left alone for 10 minutes (`explore_play.TURN_LIMIT`) gets the bot's timed-out move
 (Guard; three in a row: flee), so a forgotten fight still ends. A hazard answered too late fails, and two idle

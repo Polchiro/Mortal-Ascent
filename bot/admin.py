@@ -318,6 +318,28 @@ def beast_battle(conn, user_id, row, tier=None, home_realm=False, rng=None):
     return b
 
 
+WEB_FIGHT_KEY = "web_test_fight:{}"        # settings row: the beast /admin web_fight queued for the website
+
+
+def queue_web_fight(conn, user_id, row, tier=None, home_realm=False):
+    """/admin web_fight: the next time this player opens Explore on the website, a test fight with this beast
+    starts there (web/explore_play.Explores.start_test). Stored in the shared database, so the bot and the
+    website don't need to be the same program."""
+    realm, name, _base, _role = row
+    db.set_setting(conn, WEB_FIGHT_KEY.format(user_id), f"{realm}|{name}|{tier or ''}|{1 if home_realm else 0}")
+
+
+def take_web_fight(conn, user_id):
+    """The queued website test fight as (row, tier, home_realm), removed from the queue; or None."""
+    raw = db.get_setting(conn, WEB_FIGHT_KEY.format(user_id))
+    if not raw:
+        return None
+    db.set_setting(conn, WEB_FIGHT_KEY.format(user_id), None)
+    realm, name, tier, home = (raw.split("|") + ["", "", "", "0"])[:4]
+    found = [r for r in all_beasts() if r[0] == realm and r[1] == name]
+    return (found[0], tier or None, home == "1") if found else None
+
+
 RESULT_HEAD = {"won": "🏆 **Victory!**", "fled": "🏃 **You fled.**", "escaped": "🌫️ **The beast got away.**",
                "lost": "☠️ **Defeated.**"}
 
@@ -799,6 +821,30 @@ def register(bot):
             mine = p["realm"] if p else None
             rows = sorted(rows, key=lambda r: r[0] != mine)
         return [app_commands.Choice(name=beast_label(r), value=beast_key(r)) for r in rows[:25]]
+
+    @group.command(name="web_fight", description="Fight any beast on the website: it starts when you open Explore there")
+    @app_commands.describe(beast="Which beast (type to search by name, realm or tier)",
+                           tier="Fight it as this tier instead (default: its own tier)",
+                           home_realm="Use the beast's own realm strength instead of scaling it to you (default: no)")
+    @app_commands.choices(tier=tier_override)
+    async def web_fight_cmd(interaction: discord.Interaction, beast: str,
+                            tier: app_commands.Choice[str] | None = None, home_realm: bool = False):
+        uid = await check(interaction, None)
+        if uid is None:
+            return
+        found = find_beasts(beast)
+        if len(found) != 1:
+            await interaction.response.send_message("Pick one beast from the list (type part of its name).",
+                                                    ephemeral=True)
+            return
+        async with bot.db_lock:
+            queue_web_fight(bot.conn, uid, found[0], tier.value if tier else None, home_realm)
+        await interaction.response.send_message(
+            f"🛠️ **{found[0][1]}** is waiting for you on the website. Open **Explore** there (or refresh it) "
+            "and the fight starts right away.\nTest fight: no rewards, no injury, no cooldown "
+            "(Mending pills you swallow are used up).", ephemeral=True)
+
+    web_fight_cmd.autocomplete("beast")(beast_autocomplete)
 
     @group.command(name="duelstats", description="Duel balance: each technique's pick count and win rate")
     async def duelstats(interaction: discord.Interaction):
