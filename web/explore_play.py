@@ -40,7 +40,7 @@ SIDE = ("pill", "flee")                                       # small buttons on
 ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique",
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
-POSES = ("idle", "windup", "strike")   # the fight script swaps these; one painting serves all three (docs/web.md)
+POSES = looks.POSES                  # the fight script swaps these (docs/web.md)
 ARENA = "/art/scenes/arena_ruins.jpg"
 
 
@@ -459,8 +459,8 @@ def look_face(player):
 
 def look_poses(player):
     """The fighter's pose pictures: the player's painting, facing the beast."""
-    art = looks.fighter(looks.of_player(player))
-    return {pose: art for pose in POSES}
+    look = looks.of_player(player)
+    return {pose: looks.fighter(look, pose) for pose in POSES}
 
 
 def fight_view(conn, s, b, p, now):
@@ -482,7 +482,7 @@ def fight_view(conn, s, b, p, now):
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
-               "face": look_face(p), "poses": look_poses(p), "bqi": round(f.bqi), "max_bqi": f.max_bqi,
+               "face": look_face(p), "poses": look_poses(p), "tip": looks.sword_tip(looks.of_player(p)), "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
         "enemy": {"name": e["name"], "tier": TIER_LABEL[e["tier"]], "role": e.get("role", "").title(),

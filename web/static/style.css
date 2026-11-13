@@ -733,3 +733,6 @@ body:has(main.battle)>.topbar,body:has(main.battle)>header,body:has(main.battle)
   .bbar .alab{display:block;overflow:visible;-webkit-line-clamp:unset}
   .techmenu>.actbtn{flex-wrap:wrap;column-gap:10px;row-gap:0}
 }
+/* the male in his three sword poses stands mid-canvas: the slash follows his blade, and he is drawn a little larger */
+.fighter.sworded img.trailfx{left:4%;top:1%}
+@media (min-width:901px){.bscene .fighter.sworded{width:min(44%,76vh);left:0}}

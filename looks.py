@@ -3,10 +3,10 @@ Character appearance: male or female. docs/appearance.md.
 
 The look is only a picture. It never touches stats, fights or anything else in the game.
 
-Each gender has one painting of the cultivator in white and blue robes with blue Qi streams
-(art/portraits/hero_<gender>.webp, see-through background). The same painting, turned to face the beast,
-is the fighter in website fights (art/portraits/fight/hero_<gender>.webp), and its head is the round face
-(art/portraits/hero_<gender>_face.webp). A player who hasn't chosen a look shows the male painting.
+Each gender has one painting of the cultivator in white and blue robes (art/portraits/hero_<gender>.webp,
+see-through background) and a round face (art/portraits/hero_<gender>_face.webp). In website fights the male
+has three sword poses (art/portraits/fight/hero_male_{idle,windup,strike}.webp); the female has one painting
+for now (art/portraits/fight/hero_female.webp). A player who hasn't chosen a look shows the male painting.
 """
 import json
 
@@ -60,9 +60,21 @@ def portrait(look):
     return f"/art/portraits/hero_{gender_of(look)}.webp"
 
 
-def fighter(look):
-    """The painting facing right, on the 1024 x 559 fight canvas."""
-    return f"/art/portraits/fight/hero_{gender_of(look)}.webp"
+POSES = ("idle", "windup", "strike")
+SWORD_POSES = {"male"}              # genders painted in all three sword poses; the others use one painting
+
+
+def fighter(look, pose="idle"):
+    """The fighter on the 1024 x 559 fight canvas, facing right, in one of POSES (web/static/fight.js swaps them)."""
+    gender = gender_of(look)
+    if gender in SWORD_POSES:
+        return f"/art/portraits/fight/hero_{gender}_{pose}.webp"
+    return f"/art/portraits/fight/hero_{gender}.webp"
+
+
+def sword_tip(look):
+    """How far across the fight canvas the weapon reaches in the strike pose (0-1), or None for a single painting."""
+    return 0.91 if gender_of(look) in SWORD_POSES else None
 
 
 def face(look):
