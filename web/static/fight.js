@@ -98,7 +98,7 @@
     var trail = fighter.querySelector('.trailfx');
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
-    var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * 0.962));     // sword tip to the beast
+    var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
     var reachBeast = Math.max(0, br.left - (fr.left + fr.width * 0.64));                       // the beast to your body
     var beastFilter = getComputedStyle(beast).filter;
 

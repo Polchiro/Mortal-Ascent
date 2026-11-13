@@ -23,7 +23,7 @@ fights and the round face on the fight card. Discord cards keep showing the play
 | File | Used for |
 |---|---|
 | `art/portraits/hero_<gender>.webp` (550 × 445, see-through) | profile and Appearance page |
-| `art/portraits/fight/hero_<gender>.webp` (1024 × 559, facing right) | the fighter in explore fights |
+| `art/portraits/fight/hero_male_{idle,windup,strike}.webp`, `hero_female.webp` (1024 × 559, facing right) | the fighter in explore fights: the male has three sword poses, the female one painting for now |
 | `art/portraits/hero_<gender>_face.webp` (256 × 256) | the round face on the fight card, Appearance thumbnails |
 
 They were cut out of the two paintings SHOAIB supplied (dark background removed, Qi streams kept see-through,
