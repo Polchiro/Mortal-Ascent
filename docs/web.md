@@ -224,6 +224,34 @@ a lair is fought with `bot/hunt.py`.
 player opens Explore on the website, it starts right away (`Explores.start_test`, `admin.take_web_fight`): no
 expedition, no rewards, no injury, no cooldown.
 
+**One action per turn** (the combat action state: `Combat` in `fight.js`, the same phase names in
+`explore_play.py`). A fight is always in one phase, and a move can be sent in the first one only:
+
+| Phase | What is happening | Buttons |
+|---|---|---|
+| `player_turn` | waiting for your move | on |
+| `submitting` | your move is on its way to the server | locked |
+| `player_acting` | your Strike, Break or technique is acted out | locked |
+| `beast_acting` | the beast attacks, or reacts to your Guard | locked |
+| `dying` | the loser goes down (set by a death animation: `MACombat.set('dying')`) | locked |
+| `finished` | the fight is over | locked |
+
+- The buttons lock the moment a move is pressed and come back only when the whole turn (your action, then the
+  beast's) has been acted out. Buttons, hotkeys (a held key counts once) and the techniques menu all ask
+  `Combat.can()`. Locked buttons are a little dimmer, and a small label says whose turn it is (`.turnchip`).
+  A turn's animation can't be skipped or cut short by the next move.
+- There is no fixed cooldown: the lock lasts exactly as long as that turn's animations, and a turn with nothing
+  to act out (a pill, a refused move) frees the buttons after a fifth of a second.
+- **The server decides, the screen only shows.** A turn is resolved (damage, statuses, rewards) in one step
+  before anything is acted out, so closing the tab mid-animation loses or repeats nothing. Each turn takes
+  exactly one action: `Explores.act` checks the turn number while holding the lock, so a double click, a retry
+  or many requests at once play one turn; the others change nothing (`Run.refused` counts them).
+- **A lost connection:** when a move gets no answer in 12 seconds (or the request fails), the page asks the
+  server for the fight as it stands. If the move was played, the turn is acted out as usual; if it never
+  arrived, the buttons come back with a note and nothing was spent.
+- Other scripts can read `window.MACombat.phase`, call `MACombat.set(...)`, or listen for the `combat:phase`
+  event on `document`. Frames stop in a hidden tab, so a timer ends the turn anyway: the buttons never stay locked.
+
 The server keeps every clock. **Fight turns have no reaction time on the website for now**: a turn waits for the
 player, and only a page left alone for 10 minutes (`explore_play.TURN_LIMIT`) gets the bot's timed-out move
 (Guard; three in a row: flee), so a forgotten fight still ends. A hazard answered too late fails, and two idle

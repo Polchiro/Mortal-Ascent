@@ -15,7 +15,7 @@
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
 {% set C = F.cast %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-events='{{ F.events | tojson }}'
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-round="{{ F.turn_no }}" data-phase="{{ F.phase }}" data-events='{{ F.events | tojson }}'
   data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}"{% if F.warning.skill or F.roused %} data-crater="/art/fx/crater.webp"{% endif %}>
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
@@ -141,6 +141,7 @@
     {% endfor %}
   </form>
   <aside class="binfo" aria-live="polite">
+    <p class="turnchip" role="status">Your turn</p>
     <p class="ititle">{{ F.main[0].label }}</p>
     <p class="itext">{{ F.main[0].info }}</p>
     <p class="sub">Keys 1–4 · P pill · F flee. Take your time: there's no turn timer.</p>

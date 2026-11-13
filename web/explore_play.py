@@ -88,6 +88,7 @@ class Run:
     lair_result: list = None
     lair_won: str = None
     test: bool = False                  # an /admin web_fight test fight (rides in lair_battle): no rewards
+    refused: int = 0                    # button presses turned away for an old turn (duplicates, stale pages)
     started: float = field(default_factory=time.time)
 
     @property
@@ -208,11 +209,18 @@ class Explores:
     # ── the player's choices ────────────────────────────────────────
 
     def act(self, conn, uid, what, arg, turn):
-        """One button press. Ignored when it is for an old page or not possible now."""
+        """One button press. Ignored when it is for an old page or not possible now.
+
+        Each turn takes exactly one action: the turn number is checked while holding the lock, so of two
+        requests sent for the same turn (a double click, a retry after a lost answer) only the first plays.
+        The other changes nothing and is answered with the fight as it now stands."""
         s = self.catch_up(conn, uid)
-        if not s or turn != s.turn:
+        if not s:
             return s
         with self._lock:
+            if turn != s.turn:
+                s.refused += 1
+                return s
             e, now = s.exp, self.clock()
             s.notice = None
             b = s.battle
@@ -291,6 +299,28 @@ class Explores:
             else:
                 s.exp.end_fight()
                 s.choosing = False
+
+
+# ── whose turn it is ─────────────────────────────────────────────────
+
+# The combat action state (docs/web.md, "One action per turn"). The server only ever rests in the first or the
+# last: a turn (your move, then the beast's) is resolved in one step under the lock. The ones in between are how
+# the fight screen acts that turn out (web/static/fight.js keeps the same names); buttons work in PLAYER_TURN only.
+PLAYER_TURN, SUBMITTING, PLAYER_ACTING, BEAST_ACTING, DYING, FINISHED = (
+    "player_turn", "submitting", "player_acting", "beast_acting", "dying", "finished")
+PHASES = (PLAYER_TURN, SUBMITTING, PLAYER_ACTING, BEAST_ACTING, DYING, FINISHED)
+
+
+def phase(s):
+    """Where this player's fight stands on the server: PLAYER_TURN while a fight waits for a move, FINISHED once
+    it is over (won, lost, fled), None when there is no fight."""
+    if s is None:
+        return None
+    if s.battle is not None and not s.battle.over:
+        return PLAYER_TURN
+    if s.lair_result is not None or s.exp.over:
+        return FINISHED
+    return None
 
 
 # ── page data ────────────────────────────────────────────────────────
@@ -536,6 +566,7 @@ def fight_view(conn, s, b, p, now):
     word, sub = result_banner(b.log or [], f.name)
     return {
         "lair": b is s.lair_battle,
+        "phase": phase(s),
         "title": "Admin test fight" if s.test else
                  ("Beast King's den" if e["tier"] == "beast_king" else "Elite lair") if b is s.lair_battle else
                  ("Bandits" if not beast else "Wild beast") + f" · Step {s.exp.step} of {explore_rules.MAX_STEPS}",

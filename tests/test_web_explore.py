@@ -382,3 +382,81 @@ def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path)
     c.close()
     client.post("/explore/done")
     assert "Set out" in client.get("/explore").text        # back to normal
+
+
+# ── one action per turn (docs/web.md) ────────────────────────────────────────────────────────────────
+
+def test_the_fight_page_carries_the_action_state(client):
+    from web import explore_play
+    s = fight(client)
+    assert explore_play.phase(s) == explore_play.PLAYER_TURN
+    page = client.get("/explore/play").text
+    assert 'data-phase="player_turn"' in page and f'data-round="{s.battle.turn}"' in page and 'class="turnchip"' in page
+    js = client.get("/static/fight.js").text
+    for name in explore_play.PHASES:                                  # the screen and the server use the same names
+        assert name in js, name
+    assert "click the scene to skip" not in js                        # a turn's animation can't be cut short
+
+
+def test_many_requests_for_one_turn_play_one_turn(client, monkeypatch):
+    """A double click, a retry, a script: of all the moves sent for the same turn only one is played."""
+    import threading
+    s = fight(client)
+    b = s.battle
+    b.enemy["hp"] = b.enemy["max_hp"] = 10 ** 9                       # nobody dies in one turn
+    turn, t0, n = s.turn, b.turn, 8
+    ex, gate = client.explores, threading.Barrier(8)
+    caught = ex.catch_up
+
+    def together(conn, uid):                                          # every request is past the clocks before one acts
+        out = caught(conn, uid)
+        gate.wait(timeout=5)
+        return out
+    monkeypatch.setattr(ex, "catch_up", together)
+
+    def press():
+        c = db.connect(client.path)
+        try:
+            ex.act(c, UID, "move", "strike", turn)
+        finally:
+            c.close()
+    threads = [threading.Thread(target=press) for _ in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=10)
+    assert b.turn == t0 + 1 and len(b.history) == 1                   # one turn, not eight
+    assert s.turn == turn + 1 and s.refused == n - 1
+
+
+def test_a_repeated_move_is_answered_with_the_fight_as_it_stands(client):
+    """The answer to a move is lost and the page sends it again: nothing is played twice, and it is told where
+    the fight stands now (the next turn), so it can go on."""
+    s = fight(client)
+    b = s.battle
+    b.enemy["hp"] = b.enemy["max_hp"] = 10 ** 9
+    old, t0 = s.turn, b.turn
+    data = {"what": "move", "arg": "guard", "turn": old}
+    assert client.post("/explore/act", data=data).headers["location"] == "/explore/play"
+    hp = (b.enemy["hp"], b.fighters[0].hp, b.fighters[0].bqi)
+    again = client.post("/explore/act", data=data)
+    assert again.headers["location"] == "/explore/play"
+    assert b.turn == t0 + 1 and (b.enemy["hp"], b.fighters[0].hp, b.fighters[0].bqi) == hp
+    assert f'data-turn="{s.turn}"' in client.get("/explore/play").text and s.turn == old + 1
+
+
+def test_the_winning_blow_pays_once_however_often_it_is_sent(client, db_path):
+    from web import explore_play
+    s = fight(client)
+    b = s.battle
+    b.enemy["hp"] = 1
+    b.intent = {"kind": "normal", "move": "break"}                    # your Strike beats its Break
+    turn = s.turn
+    data = {"what": "move", "arg": "strike", "turn": turn}
+    client.post("/explore/act", data=data)
+    assert b.result == "won" and s.battle is None
+    assert explore_play.phase(s) is None                              # the expedition goes on: no fight to act in
+    found = (s.exp.coins, list(s.exp.items))
+    for _ in range(3):
+        client.post("/explore/act", data=data)
+    assert (s.exp.coins, list(s.exp.items)) == found and s.exp.last_battle is b
