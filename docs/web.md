@@ -187,8 +187,13 @@ a lair is fought with `bot/hunt.py`.
    Gorge, Thunder Peaks, Northern Sea Wilds), each with open ground across the bottom for the two fighters.
    **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
    Strike or Break the fighter winds up, dashes in, strikes (the fight script swaps three pose
-   pictures; for now one painting serves all three, `explore_play.look_poses`) with a
-   trail, and steps back; the beast is knocked back, flashes, and its HP bar and the damage number change at the
+   pictures, `explore_play.look_poses`) with a
+   trail, and steps back. The **male** cultivator's attack is played frame by frame from SHOAIB's video
+   (`looks.ATTACK_SHEETS`, `art/portraits/fight/hero_male_attack.webp`, built by `scripts/make_hero_attack.py`):
+   he raises the sword behind him, spins it in a blue Qi arc while closing in, lifts it overhead and cuts down
+   through the beast (the blue slash trail and the hit land on that cut), then settles back on guard (`BLADE` in
+   `fight.js`; Break plays it a little slower with the gold slash and a shake). His idle, wind-up and strike stills
+   come from the same video; the beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one

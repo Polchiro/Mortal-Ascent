@@ -248,6 +248,20 @@ def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
     assert "data-events='[{" in page and '"act": "strike"' in page
 
 
+def test_the_male_sword_attack_plays_frame_by_frame(client):
+    import looks
+    fight(client)
+    page = client.get("/explore/play").text
+    sheet = looks.ATTACK_SHEETS["male"]
+    assert 'class="sheetfx"' in page and sheet["src"] in page and " sheeted" in page
+    assert f'data-frames="{sheet["frames"]}"' in page and client.get(sheet["src"]).status_code == 200
+    from PIL import Image
+    import os
+    im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
+    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert looks.attack_sheet({"gender": "female"}) is None                  # she still swings through her three poses
+
+
 def test_battle_history_keeps_every_turn(client):
     s = fight(client)
     b = s.battle
