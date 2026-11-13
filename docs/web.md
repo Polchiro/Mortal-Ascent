@@ -182,6 +182,9 @@ a lair is fought with `bot/hunt.py`.
    **The fight is the whole screen:** during a fight the top bar and the footer are hidden, and on a computer the
    page fits one window with no scrolling. Each top corner has a plain HUD (round picture, name, HP bar; your
    Battle Qi under your HP; the beast's tell under its bar). Flee, or finishing the fight, brings the menus back.
+   **Each region has its own battleground** (`explore_play.arena`): the fight takes place in
+   `art/scenes/battle_<region>.jpg` for the region being explored (Bamboo Forest, Misty Pine Valley, Red Cliff
+   Gorge, Thunder Peaks, Northern Sea Wilds), each with open ground across the bottom for the two fighters.
    **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
    Strike or Break the fighter winds up, dashes in, strikes (the fight script swaps three pose
    pictures; for now one painting serves all three, `explore_play.look_poses`) with a
