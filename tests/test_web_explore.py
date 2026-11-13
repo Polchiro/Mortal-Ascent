@@ -303,3 +303,26 @@ def test_a_guarded_pounce_is_one_event():
            ("roar", "Tiger — Mountain-Splitting Pounce: it roars...")]
     assert events(log, F) == [{"who": "enemy", "act": "pounce", "dmg": 40, "guard": True, "stun": False}]
     assert events(log[:1] + log[2:], F) == [{"who": "enemy", "act": "pounce", "dmg": 0, "guard": True, "stun": False}]
+
+
+def test_each_region_fights_on_its_own_battleground():
+    import os
+    from bot.explore_card import REGION_BY_TIER
+    from web.explore_play import arena
+
+    class Exp:
+        tier = 0
+    seen = set()
+    for tier in REGION_BY_TIER:
+        Exp.tier = tier
+        path = arena(Exp)
+        assert path.startswith("/art/scenes/battle_") and os.path.exists(path.lstrip("/")), path
+        seen.add(path)
+    assert len(seen) == len(REGION_BY_TIER)
+
+
+def test_a_fight_uses_the_explored_regions_battleground(client):
+    from web.explore_play import arena
+    s = fight(client)
+    page = client.get("/explore/play").text
+    assert f"--arena: url({arena(s.exp)})" in page and "battle_" in page

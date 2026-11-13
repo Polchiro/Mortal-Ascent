@@ -171,7 +171,7 @@ a lair is fought with `bot/hunt.py`.
    leap, timed from when the page shows it), herbs, ore, chests and so on. Go deeper or return safely.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
-   (`looks.fighter`: the male in three sword poses, the female in one painting for now) facing the beast's painting (`art/beasts/`), the beast's warning in the
+   (`looks.fighter`: the player's cultivator in three sword poses) facing the beast's painting (`art/beasts/`), the beast's warning in the
    plate, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
    small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
@@ -182,6 +182,9 @@ a lair is fought with `bot/hunt.py`.
    **The fight is the whole screen:** during a fight the top bar and the footer are hidden, and on a computer the
    page fits one window with no scrolling. Each top corner has a plain HUD (round picture, name, HP bar; your
    Battle Qi under your HP; the beast's tell under its bar). Flee, or finishing the fight, brings the menus back.
+   **Each region has its own battleground** (`explore_play.arena`): the fight takes place in
+   `art/scenes/battle_<region>.jpg` for the region being explored (Bamboo Forest, Misty Pine Valley, Red Cliff
+   Gorge, Thunder Peaks, Northern Sea Wilds), each with open ground across the bottom for the two fighters.
    **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
    Strike or Break the fighter winds up, dashes in, strikes (the fight script swaps three pose
    pictures; for now one painting serves all three, `explore_play.look_poses`) with a
