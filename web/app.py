@@ -32,7 +32,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, death, drawn, explore_play, forge_play, gather_play
+from . import alchemy_play, drawn, explore_play, forge_play, gather_play
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -82,14 +82,6 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if data is None:
             return Response(status_code=404)
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
-
-    @app.get("/art/death/{category}/{slug}.webp")
-    def death_sheet(category: str, slug: str):
-        """A beast's death animation: the category's shared frames in that beast's colours (web/death.py)."""
-        data = death.sheet(category, slug)
-        if data is None:
-            return Response(status_code=404)
-        return Response(data, media_type="image/webp", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx"):                     # only the art the pages use

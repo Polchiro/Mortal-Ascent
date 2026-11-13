@@ -225,17 +225,25 @@ TRAITS = {
 
 
 # ── Death animations (website fight screen; docs/web.md, "The victory sequence") ──────────────────────────────
-# One shared set of frames per body category, not per beast. web/death.py recolours the frames from each beast's
-# own picture and web/static/fight.js sizes and places them over it, so a beast needs no art of its own.
-# A new category (flying, serpentine ...) is one more row here, one sheet cut by scripts/make_death_sheet.py, and
-# its beasts in DEATH_CATEGORY. A beast with no category tips over where it stands (its own picture).
-#   frames/cols/rows: the grid.  ms: how long each frame shows (the last one stays).  impact: the frame that
-#   hits the ground (dust).  cell: one frame's size in px.  body: the standing body in frame 1 as shares of the
-#   cell (left, top, right, bottom).  faces: the way the drawing looks (fights face left, so "right" is flipped).
+# One shared MOVEMENT per body category, not per beast, and no artwork: every beast goes down as its own picture.
+# web/static/fight.js bends and lowers the beast's own picture through these frames, at the beast's own size.
+# A new category (flying, serpentine ...) is one more row here, measured from a reference sheet by
+# scripts/make_death_motion.py, and its beasts in DEATH_CATEGORY. A beast with no category tips over where it stands.
+#   ms: how long each frame takes to reach the next (the last one stays).  impact: the frame that hits the ground
+#   (dust).  motion: per frame, (how wide the body lies, how high its back stands at 12 points from tail to head),
+#   as shares of the standing first frame. Measured from the eight frames of SHOAIB's wolf sheet: the head sinks
+#   first, the legs give way, the body drops flat and settles.
 DEATH_ANIMATIONS = {
-    "quadruped": {"sheet": "quadruped.webp", "frames": 8, "cols": 4, "rows": 2,
-                  "ms": [150, 120, 120, 130, 150, 140, 150, 0], "impact": 4,
-                  "cell": (284, 305), "body": (0.0, 0.275, 0.961, 0.997), "faces": "right"},
+    "quadruped": {"ms": [150, 120, 120, 130, 150, 140, 150, 0], "impact": 4, "motion": [
+        (1.00, (1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00)),
+        (0.94, (0.98, 1.02, 1.04, 1.03, 1.00, 0.93, 0.88, 0.88, 0.86, 0.81, 0.73, 0.65)),
+        (0.99, (0.76, 0.82, 0.89, 0.93, 0.94, 0.92, 0.91, 0.92, 0.91, 0.86, 0.79, 0.72)),
+        (1.02, (0.64, 0.72, 0.84, 0.90, 0.89, 0.82, 0.78, 0.79, 0.79, 0.75, 0.64, 0.53)),
+        (1.03, (0.54, 0.58, 0.64, 0.69, 0.68, 0.62, 0.58, 0.59, 0.60, 0.57, 0.51, 0.44)),
+        (1.04, (0.54, 0.58, 0.65, 0.72, 0.71, 0.65, 0.61, 0.61, 0.60, 0.56, 0.47, 0.39)),
+        (1.03, (0.52, 0.56, 0.61, 0.65, 0.65, 0.61, 0.59, 0.60, 0.59, 0.53, 0.44, 0.34)),
+        (1.01, (0.55, 0.59, 0.64, 0.67, 0.67, 0.62, 0.60, 0.61, 0.60, 0.55, 0.47, 0.39)),
+    ]},
 }
 DEATH_CATEGORY = {
     "Iron-Hide Boar": "quadruped",

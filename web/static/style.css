@@ -795,18 +795,16 @@ main.battle.skill-pounce:not(.playing) .beast.posed img{transform:none;filter:dr
 /* ── The victory sequence (docs/web.md): a won fight stays on screen. main.slain is the finished picture, the one
    a reload shows: the body down, the Victory panel up. fight.js takes .slain off to act the last turn out, puts
    .dying on while the beast goes down, and .slain back at the end.
-   .deathfx: a category's shared frames (beasts.DEATH_ANIMATIONS) in the beast's own colours, laid over its picture
-   by fight.js at the beast's size. death-fall: a beast with no category tips over. death-rout: bandits scatter. ── */
-.deathfx{position:absolute;left:0;bottom:0;width:100%;aspect-ratio:284/305;background-repeat:no-repeat;background-position:100% 100%;
-  opacity:0;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65))}
-.deathfx.flip{transform:scaleX(-1)}
+   .deathfx: a canvas over the beast on which fight.js draws the beast's OWN picture going down, bent through its
+   category's shared movement (beasts.DEATH_ANIMATIONS). death-fall: a beast with no category tips over.
+   death-rout: bandits scatter. ── */
+.deathfx{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;pointer-events:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65))}
 main.battle.slain .deathfx,main.battle.dying .deathfx{opacity:1}
-main.battle.slain .deathfx{filter:drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(.78) saturate(.8)}
+main.battle.slain .deathfx{filter:drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(.72) saturate(.75)}
 main.battle.slain .beast img,main.battle.dying .beast img{animation:none!important;transition:none!important}
-main.battle.slain .beast.death-sheet>img,main.battle.dying .beast.death-sheet>img{opacity:0}
+main.battle.slain .beast.death-warp>img,main.battle.dying .beast.death-warp>img{opacity:0}
 main.battle.slain .beast.death-fall>img{transform:translateY(-30%) rotate(82deg);filter:brightness(.55) saturate(.6)}
 main.battle.slain .beast.death-rout>img{opacity:0}
-main.battle.slain .beast.death-sheet::before{left:-4%;width:108%}
 main.battle.slain .beast .qiring,main.battle.slain .bresult,main.battle.slain .bfeed,main.battle.slain .beast .dmg,main.battle.slain .fighter .dmg{display:none}
 main.battle.slain .bbar,main.battle.slain .bside,main.battle.slain .binfo{opacity:.35;pointer-events:none}
 .ddust{position:absolute;z-index:4;width:9%;aspect-ratio:2.4/1;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);

@@ -19,7 +19,7 @@
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
-    placeDeath(main);
+    drawDeath(main);                                           // a won fight on a fresh page: the body already down
     if (main.classList.contains('slain')) showVictory(main);
     main.querySelectorAll('form.fightform').forEach(function (form) {
       form.addEventListener('submit', function (ev) {
@@ -31,37 +31,64 @@
     });
   }
 
-  /* A beaten beast's death frames (.deathfx; beasts.DEATH_ANIMATIONS, one shared sheet per body category) are laid
-     over the beast's own picture: the standing body of frame 1 is made as wide as the beast's body, centred on it and
-     stood on the same ground, so every beast gets the animation at its own size and place with no art of its own. */
   function showVictory(main) {                                 // the panel is up: Continue is in reach (and on screen on a phone)
     var go = main.querySelector('.vgo'), card = main.querySelector('.vcard');
     if (go) go.focus({preventScroll: true});
     if (card && card.scrollIntoView) card.scrollIntoView({block: 'nearest', behavior: 'smooth'});
   }
   function endOf(main) { try { return JSON.parse(main.dataset.end || 'null'); } catch (e) { return null; } }
-  function placeDeath(main) {
-    var box = main && main.querySelector('.beast'), fx = box && box.querySelector('.deathfx'), img = box && box.querySelector('img');
+
+  /* A beaten beast goes down as ITSELF. Its body category has one shared movement (beasts.DEATH_ANIMATIONS: per
+     frame, how wide the body lies and how high its back stands at points from tail to head, measured from SHOAIB's
+     reference sheet) and no artwork. Here the beast's own picture is drawn on the .deathfx canvas in thin upright
+     strips, each one lowered to the height the movement gives that part of the body at time t (ms; frames are
+     blended, so it moves smoothly): the legs fold first, then the body above them comes down with a little squash,
+     the head end lowest. Enemies face left, so the head is the left end. With no t it redraws where it was (the
+     finished picture on a fresh page, or after the window changes size). */
+  var LEGS = 0.42, LEGS_MIN = 0.14, BODY_MIN = 0.7;            // the legs' share of the body's height; how far each part gives
+  function drawDeath(main, t) {
+    var box = main && main.querySelector('.beast'), cv = box && box.querySelector('canvas.deathfx'), img = box && box.querySelector('img');
     var d = main && endOf(main);
-    if (!fx || !img || !d || d.kind !== 'sheet') return;
-    function go() {
-      var W = box.clientWidth, H = box.clientHeight, w = img.offsetWidth, h = img.offsetHeight, x = img.offsetLeft, y = img.offsetTop;
-      if (!W || !H || !w || !h) return;
-      if (!box.classList.contains('posed') && img.naturalWidth) {       // a painting is fitted inside its box, feet down
-        var sc = Math.min(w / img.naturalWidth, h / img.naturalHeight), cw = img.naturalWidth * sc, ch = img.naturalHeight * sc;
-        x += (w - cw) / 2; y += h - ch; w = cw; h = ch;
-      }
-      var x0 = x + d.box[0] * w, x1 = x + d.box[2] * w, ground = y + d.box[3] * h;
-      var l = d.body[0], r = d.body[2];
-      if (d.flip) { var t = 1 - r; r = 1 - l; l = t; }
-      var cellW = (x1 - x0) / (r - l), cellH = cellW * d.cell[1] / d.cell[0];
-      fx.style.width = cellW / W * 100 + '%';
-      fx.style.left = ((x0 + x1) / 2 - cellW * (l + r) / 2) / W * 100 + '%';
-      fx.style.bottom = (H - ground - (1 - d.body[3]) * cellH) / H * 100 + '%';
+    if (!cv || !img || !d || d.kind !== 'warp' || !cv.getContext) return;
+    if (t === undefined) t = cv._t === undefined ? Infinity : cv._t;
+    cv._t = t;
+    if (!(img.complete && img.naturalWidth)) { img.addEventListener('load', function () { drawDeath(main); }, {once: true}); return; }
+    var W = box.clientWidth, H = box.clientHeight, w = img.offsetWidth, h = img.offsetHeight, x = img.offsetLeft, y = img.offsetTop;
+    if (!W || !H || !w || !h) return;
+    if (!box.classList.contains('posed')) {                    // a painting is fitted inside its box, feet down
+      var sc = Math.min(w / img.naturalWidth, h / img.naturalHeight), fw = img.naturalWidth * sc, fh = img.naturalHeight * sc;
+      x += (w - fw) / 2; y += h - fh; w = fw; h = fh;
     }
-    if (img.complete && img.naturalWidth) go(); else img.addEventListener('load', go, {once: true});
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), M = 0.1;                       // the canvas overhangs the box by M all round
+    var cw = Math.round(W * (1 + 2 * M) * dpr), ch = Math.round(H * (1 + 2 * M) * dpr);
+    if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cw, ch);
+    ctx.setTransform(dpr, 0, 0, dpr, W * M * dpr, H * M * dpr);
+    var n = d.motion.length, f = n - 1, k = 0, acc = 0;
+    for (var i = 0; i < n - 1; i++) { if (t < acc + d.ms[i]) { f = i; k = Math.max(0, (t - acc) / d.ms[i]); break; } acc += d.ms[i]; }
+    var A = d.motion[f], B = d.motion[Math.min(n - 1, f + 1)], cols = A.h.length;
+    function mix(a, b, q) { return a + (b - a) * q; }
+    function high(u) {                                         // the back's height at u (0 tail .. 1 head), as a share of standing
+      var p = Math.max(0, Math.min(1, u)) * (cols - 1), a = Math.floor(p), b = Math.min(cols - 1, a + 1), q = p - a;
+      return mix(mix(A.h[a], A.h[b], q), mix(B.h[a], B.h[b], q), k);
+    }
+    var wide = mix(A.w, B.w, k);
+    var x0 = x + d.box[0] * w, x1 = x + d.box[2] * w, top = y + d.box[1] * h, ground = y + d.box[3] * h, mid = (x0 + x1) / 2;
+    var tall = ground - top, legs = tall * LEGS, knee = ground - legs;                   // above the knee line: the body
+    var S = Math.max(24, Math.min(96, Math.round(w / 3))), nw = img.naturalWidth, nh = img.naturalHeight, kneeSrc = (knee - y) / h * nh;
+    for (var s = 0; s < S; s++) {
+      var a0 = x + w * s / S, a1 = x + w * (s + 1) / S;
+      var r = high(1 - ((a0 + a1) / 2 - x0) / (x1 - x0));
+      var give = (1 - r) * tall;                               // how far this part of the back has come down
+      var lg = Math.max(LEGS_MIN, 1 - give / legs);            // the legs fold first ...
+      var bd = Math.max(BODY_MIN, 1 - Math.max(0, give - legs * (1 - lg)) / (tall - legs));   // ... then the body gives a little
+      var d0 = mid + (a0 - mid) * wide, dw = (a1 - a0) * wide + 0.7, kneeTo = ground - legs * lg;
+      ctx.drawImage(img, nw * s / S, 0, nw / S, kneeSrc, d0, kneeTo - (knee - y) * bd, dw, (knee - y) * bd);
+      ctx.drawImage(img, nw * s / S, kneeSrc, nw / S, nh - kneeSrc, d0, kneeTo, dw, (y + h - knee) * lg);
+    }
   }
-  window.addEventListener('resize', function () { placeDeath(document.querySelector('main.battle')); });
+  window.addEventListener('resize', function () { drawDeath(document.querySelector('main.battle')); });
 
   function send(form, button) {
     busy = true;
@@ -383,13 +410,13 @@
       }};
     }
 
-    /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "sheet": its
-       category's shared frames, one after another, then the body stays down. "fall": a beast with no category tips
+    /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
+       picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
        over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
        Nothing is decided here: the server has already ended the fight and paid it out, once. */
     function death(d) {
-      var sheetEl = d.kind === 'sheet' ? beastBox.querySelector('.deathfx') : null, did = {}, total = 0, starts = [];
-      if (sheetEl) d.ms.forEach(function (m) { starts.push(total); total += m; });
+      var cv = d.kind === 'warp' ? beastBox.querySelector('canvas.deathfx') : null, did = {}, total = 0, hitAt = 0;
+      if (cv) d.ms.forEach(function (m, n) { if (n < d.impact) hitAt += m; total += m; });
       else total = d.kind === 'rout' ? 600 : 900;
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
       function thud() {
@@ -400,13 +427,11 @@
         if (t < 0) return;
         if (once('start')) main.classList.add('dying');
         pose('idle'); hero(0, 0);
-        if (sheetEl) {
-          var f = 0;
-          for (var j = 0; j < starts.length; j++) if (t >= starts[j]) f = j;
-          sheetEl.style.backgroundPosition = (f % d.cols) / Math.max(1, d.cols - 1) * 100 + '% ' + Math.floor(f / d.cols) / Math.max(1, d.rows - 1) * 100 + '%';
+        if (cv) {
+          drawDeath(main, t);                                  // the beast's own picture, bent through the shared movement
           var flash = 1 - span(t, 0, 200), dim = span(t, total, total + 500);
-          sheetEl.style.filter = 'drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(' + (1 + 1.5 * flash - 0.22 * dim) + ') saturate(' + (1 - 0.2 * dim) + ')';
-          if (f >= d.impact && once('thud')) thud();
+          cv.style.filter = 'drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(' + (1 + 1.2 * flash - 0.28 * dim) + ') saturate(' + (1 - 0.25 * dim) + ')';
+          if (t >= hitAt && once('thud')) thud();
         } else if (d.kind === 'rout') {
           var g = ease(span(t, 0, total));
           beast.style.opacity = 1 - g; beast.style.transform = 'translateX(' + 0.06 * W * g + 'px)';
@@ -416,7 +441,7 @@
           beast.style.filter = 'brightness(' + (1 - 0.45 * bb) + ') saturate(' + (1 - 0.4 * bb) + ')';
           if (b >= 1 && once('thud')) thud();
         }
-      }, clear: function () { if (sheetEl) { sheetEl.style.filter = ''; sheetEl.style.backgroundPosition = ''; } beast.style.opacity = ''; }};
+      }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } beast.style.opacity = ''; }};
     }
 
     var steps = [], kinds = {};

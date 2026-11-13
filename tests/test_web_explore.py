@@ -454,30 +454,33 @@ def test_losing_or_fleeing_has_no_victory_sequence(client):
     assert s.ended is None and "Victory!" not in client.get("/explore/play").text
 
 
-def test_quadrupeds_share_one_death_animation_in_their_own_colours(client):
+def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
+    import os
     import beasts
     from web import death
+    views = {}
     for name in ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):
-        v = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
-        assert v["kind"] == "sheet" and v["category"] == "quadruped" and v["frames"] == 8 == len(v["ms"])
-        assert 0 <= v["box"][0] < v["box"][2] <= 1
-        r = client.get(v["src"])
-        assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
-    boar, fox = (client.get(f"/art/death/quadruped/{x}.webp").content for x in ("iron_hide_boar", "red_fox"))
-    assert boar != fox                                              # one sheet, recoloured per beast
-    assert client.get("/art/death/quadruped/no_such_beast.webp").status_code == 404
-    assert client.get("/art/death/flying/red_fox.webp").status_code == 404
+        v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
+        assert v["kind"] == "warp" and v["category"] == "quadruped"
+        assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
+        assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
+        assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
+        assert "src" not in v                                       # numbers only: no picture but the beast's own
+    assert views["Red Fox"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
+    assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
+    assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["kind"] == "fall"
     assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
 
 
-def test_the_fight_page_carries_the_beasts_death_frames(client):
+def test_the_beast_dies_as_its_own_picture(client):
     s = fight(client)
     b = s.battle
     b.enemy.update(name="Red Fox", slug="red_fox")
     win(client, s)
     page = client.get("/explore/play").text
-    assert 'class="deathfx flip"' in page and "/art/death/quadruped/red_fox.webp" in page and "death-sheet" in page
+    assert '<canvas class="deathfx">' in page and "death-warp" in page
+    assert page.count("/art/beasts/red_fox.png") >= 2 and "/art/death/" not in page and "quadruped.webp" not in page
 
 
 def test_a_won_test_fight_ends_with_finish_and_pays_nothing(client, db_path):

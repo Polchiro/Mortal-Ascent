@@ -252,20 +252,20 @@ set, `Explores.act` listens to nothing but `continue`, so there is no move, path
 a reload simply shows the same finished picture again (the body down, the panel up, no replay). Continue works even
 from an old page, and pressing it twice does nothing. Fights that are lost, fled or timed out go on as before.
 
-**Death animations** are shared, one per body category, not per beast (`beasts.DEATH_ANIMATIONS`,
-`beasts.DEATH_CATEGORY`):
+**Death animations** are shared, one per body category, not per beast, and they are a *movement*, not artwork
+(`beasts.DEATH_ANIMATIONS`, `beasts.DEATH_CATEGORY`). Every beast goes down as its own picture.
 
-- `quadruped`: the eight frames cut from SHOAIB's video (`art/fx/death/quadruped.webp`), for Iron-Hide Boar, Red Fox,
-  Shadow Wolf, Horned Stag and Mountain Tiger.
-- `web/death.py` recolours the frames from each beast's own picture (its dark, middle and light tones) and serves
-  them at `/art/death/<category>/<slug>.webp`; `fight.js` (`placeDeath`) makes the standing body of frame 1 as wide
-  as the beast's own body and stands it on the same ground. So a beast needs no art of its own.
-- A beast with no category tips over where it stands (its own picture); bandits scatter.
+- `quadruped`: for Iron-Hide Boar, Red Fox, Shadow Wolf, Horned Stag and Mountain Tiger. Its eight frames were
+  measured from SHOAIB's wolf sheet: per frame, how wide the body lies and how high its back stands at 12 points from
+  tail to head, as shares of the standing first frame, plus the sheet's timing. No wolf drawing is kept.
+- `fight.js` (`drawDeath`) draws the beast's own picture on a canvas in thin upright strips and lowers each strip to
+  the height the movement gives that part of the body: the legs fold, the body comes down, the head end lowest.
+  `web/death.py` says where the body is inside the picture, so the same movement fits every beast's size and place.
+- A beast with no category tips over where it stands; bandits scatter.
 
-To add a category (flying, serpentine ...): cut a sheet with
-`python -m scripts.make_death_sheet <video.mp4> <category>`, add a row to `DEATH_ANIMATIONS` with the numbers the
-script prints, and list its beasts in `DEATH_CATEGORY`. To give another four-legged beast the animation, add its name
-to `DEATH_CATEGORY`.
+To add a category (flying, serpentine ...): measure a reference sheet with
+`python -m scripts.make_death_motion <video.mp4>`, add a row to `DEATH_ANIMATIONS` with the rows it prints, and list
+its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, add its name to `DEATH_CATEGORY`.
 
 ## Going online later
 

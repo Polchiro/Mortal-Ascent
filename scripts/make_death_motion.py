@@ -1,12 +1,13 @@
-"""Cuts a shared death animation (art/fx/death/<category>.webp) out of SHOAIB's reference video: a sprite sheet on
-white paper, 4 x 2 numbered cells, the beast staggering and going down. Keys out the paper, the grid, the frame
-numbers and the painted shadow, and writes the frames as one transparent grid (same cell size, every frame on the same ground line). Prints the numbers beasts.DEATH_ANIMATIONS needs (the standing body's box, the ground).
+"""Measures a shared death animation's MOVEMENT from SHOAIB's reference video: a sprite sheet on white paper, 4 x 2
+numbered cells, a beast staggering and going down. Only the movement is taken, never the drawing: for each frame,
+how wide the body lies and how high its back stands along its length (tail to head), as shares of the standing
+first frame. Prints the "motion" rows for beasts.DEATH_ANIMATIONS; web/static/fight.js plays them on each beast's
+own picture. Nothing is written to art/.
 
-  python -m scripts.make_death_sheet <video.mp4> [category] [seconds into the video where the sheet is complete]
+  python -m scripts.make_death_motion <video.mp4> [seconds into the video where the sheet is complete]
   (needs ffmpeg, numpy, scipy)
 """
 import io
-import os
 import subprocess
 import sys
 
@@ -14,7 +15,6 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COLS, ROWS = 4, 2
 XS = [(24, 319), (336, 631), (649, 944), (962, 1256)]         # the cells on the 1280 x 720 video frame
 YS = [(36, 351), (370, 685)]
@@ -60,34 +60,40 @@ def cut(cell):
     return np.dstack([rgb, alpha * 255]).clip(0, 255).astype(np.uint8)
 
 
+COLUMNS = 12                                                  # points along the body, tail to head
+
+
+def profile(alpha):
+    """(body width in px, the back's height above the ground at COLUMNS points along the body)."""
+    ys, xs = np.nonzero(alpha)
+    x0, x1, ground = xs.min(), xs.max() + 1, ys.max() + 1
+    tops = np.array([np.nonzero(alpha[:, x])[0].min() if alpha[:, x].any() else np.nan for x in range(x0, x1)])
+    high = ground - tops
+    at = np.arange(len(high))
+    ok = ~np.isnan(high)
+    high = np.interp(at, at[ok], high[ok])
+    return x1 - x0, np.array([high[int(i * len(high) / COLUMNS):int((i + 1) * len(high) / COLUMNS)].mean()
+                              for i in range(COLUMNS)])
+
+
 def main():
     video = sys.argv[1]
-    category = sys.argv[2] if len(sys.argv) > 2 else "quadruped"
-    at = float(sys.argv[3]) if len(sys.argv) > 3 else 6.5
+    at = float(sys.argv[2]) if len(sys.argv) > 2 else 6.5
     sheet = still(video, at)
     w = min(x1 - x0 for x0, x1 in XS) - 2 * INSET
     h = min(y1 - y0 for y0, y1 in YS) - 2 * INSET
-    out = Image.new("RGBA", (w * COLS, h * ROWS))
-    boxes = []
-    for r, (y0, _) in enumerate(YS):
-        for c, (x0, _) in enumerate(XS):
-            frame = cut(sheet[y0 + INSET:y0 + INSET + h, x0 + INSET:x0 + INSET + w])
-            ys, xs = np.nonzero(frame[:, :, 3] > 128)
-            drop = h - 2 - ys.max()                            # every frame stands or lies on the same ground line
-            frame = np.concatenate([np.zeros_like(frame[:drop]), frame[:h - drop]])
-            out.paste(Image.fromarray(frame), (c * w, r * h))
-            ys, xs = np.nonzero(frame[:, :, 3] > 128)
-            boxes.append((xs.min() / w, ys.min() / h, (xs.max() + 1) / w, (ys.max() + 1) / h))
-    folder = os.path.join(ROOT, "art", "fx", "death")
-    os.makedirs(folder, exist_ok=True)
-    path = os.path.join(folder, f"{category}.webp")
-    out.save(path, "WEBP", quality=92, method=6)
-    ground = max(b[3] for b in boxes)
-    print(path, out.size, f"cell {w} x {h}")
-    print("body (frame 1, standing): left %.3f top %.3f right %.3f bottom %.3f" % boxes[0])
-    print("ground: %.3f" % ground)
-    for i, b in enumerate(boxes):
-        print(i + 1, "%.3f %.3f %.3f %.3f" % b)
+    rows = []
+    for y0, _ in YS:
+        for x0, _ in XS:
+            rows.append(profile(cut(sheet[y0 + INSET:y0 + INSET + h, x0 + INSET:x0 + INSET + w])[:, :, 3] > 128))
+    wide0, high0 = rows[0]
+    print('"motion": [   # (width, the back\'s height tail -> head), as shares of frame 1')
+    for wide, high in rows:
+        r = high / high0
+        r[0] = max(r[0], r[1] * 0.9)                           # the tail tip waves about: follow the rump
+        r = np.convolve(np.pad(r, 1, mode="edge"), [0.25, 0.5, 0.25], mode="valid")
+        print(f"    ({wide / wide0:.2f}, ({', '.join(f'{v:.2f}' for v in np.clip(r, 0.2, 1.15))})),")
+    print("],")
 
 
 if __name__ == "__main__":
