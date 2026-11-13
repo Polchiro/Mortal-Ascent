@@ -87,6 +87,7 @@ class Run:
     lair_battle: object = None          # a lair hunted alone (bot/hunt.py), after the expedition
     lair_result: list = None
     lair_won: str = None
+    test: bool = False                  # an /admin web_fight test fight (rides in lair_battle): no rewards
     started: float = field(default_factory=time.time)
 
     @property
@@ -141,6 +142,27 @@ class Explores:
             s = Run(exp, touched=now)
             self._s[uid] = s
             return s, None
+
+    def start_test(self, conn, uid):
+        """A test fight queued in Discord with /admin web_fight: it starts now, on its own (no expedition, no
+        cooldown), and pays nothing. None when nothing is queued or an expedition is still going."""
+        from bot import admin
+        with self._lock:
+            s = self._s.get(uid)
+            if s and not self._finished(s):
+                return None
+            queued = admin.take_web_fight(conn, uid)
+            if not queued:
+                return None
+            row, tier, home = queued
+            now = self.clock()
+            exp = Expedition(conn, uid, self.rng_factory() if self.rng_factory else None)
+            exp.over = True
+            s = Run(exp, choosing=False, touched=now, test=True)
+            s.lair_battle = admin.beast_battle(conn, uid, row, tier, home, rng=self.rng_factory() if self.rng_factory else None)
+            s.turn_started = now
+            self._s[uid] = s
+            return s
 
     @staticmethod
     def _finished(s):
@@ -258,7 +280,12 @@ class Explores:
         s.turn += 1
         s.turn_started = self.clock()
         if b.over:
-            if b is s.lair_battle:
+            if b is s.lair_battle and s.test:
+                f = b.fighters[0]
+                s.lair_result = [f"{b.enemy['name']} · {b.turn} turns · you ended on {round(f.hp):,} / {round(f.max_hp):,} HP",
+                                 "Test fight: no rewards, no injury, no cooldown."]
+                s.lair_won = b.result
+            elif b is s.lair_battle:
                 lines, _news = hunt.pay(conn, s.exp.lair, b)     # the website has no channel to announce in
                 s.lair_result, s.lair_won = lines, b.result
             else:
@@ -310,8 +337,7 @@ def play_view(conn, s, now):
         return out
     if s.lair_result is not None:
         out["mode"] = "lair_over"
-        lair = e.lair
-        out["lair"] = {"name": lair["beast"][0], "won": s.lair_won, "lines": lines(s.lair_result),
+        out["lair"] = {"name": s.lair_battle.enemy["name"], "won": s.lair_won, "lines": lines(s.lair_result),
                        "title": {"won": "Victory!", "fled": "You slipped away", "escaped": "It escaped"}.get(
                            s.lair_won, "The hunt failed")}
         return out
@@ -510,7 +536,8 @@ def fight_view(conn, s, b, p, now):
     word, sub = result_banner(b.log or [], f.name)
     return {
         "lair": b is s.lair_battle,
-        "title": ("Beast King's den" if e["tier"] == "beast_king" else "Elite lair") if b is s.lair_battle else
+        "title": "Admin test fight" if s.test else
+                 ("Beast King's den" if e["tier"] == "beast_king" else "Elite lair") if b is s.lair_battle else
                  ("Bandits" if not beast else "Wild beast") + f" · Step {s.exp.step} of {explore_rules.MAX_STEPS}",
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),

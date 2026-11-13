@@ -61,3 +61,19 @@ def test_fight_beast_as_a_text_command(monkeypatch):
 
 async def _make(cls):
     return cls(":memory:")
+
+
+def test_web_fight_queues_a_fight_for_the_website(monkeypatch):
+    from bot.client import MortalAscent
+    bot = asyncio.run(_make(MortalAscent))
+    user = FakeUser()
+
+    async def app_info():
+        return SimpleNamespace(team=None, owner=user)
+    monkeypatch.setattr(bot, "application_info", app_info)
+    run(bot, "m start", author=user)
+    _, sent = run(bot, "m admin web_fight Mountain Tiger", author=user)
+    assert "waiting for you on the website" in sent[-1].content
+    row, tier, home = admin.take_web_fight(bot.conn, user.id)
+    assert row[1] == "Mountain Tiger" and tier is None and home is False
+    assert admin.take_web_fight(bot.conn, user.id) is None

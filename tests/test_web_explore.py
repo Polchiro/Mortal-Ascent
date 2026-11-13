@@ -356,3 +356,29 @@ def test_the_tiger_is_drawn_from_its_cut_out_poses(client):
     act(client, "move", "guard")
     page = client.get("/explore/play").text
     assert 'data-pose="idle"' in page and "/art/beasts/poses/mountain_tiger/idle.webp" in page
+
+
+def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path):
+    from bot import admin
+    row = next(r for r in admin.all_beasts() if r[1] == "Mountain Tiger")
+    c = db.connect(db_path)
+    admin.queue_web_fight(c, UID, row)
+    coins = db.get_player(c, UID)["lotus_coins"]
+    c.close()
+    assert client.get("/explore").headers["location"] == "/explore/play"
+    s = run(client)
+    assert s.test and s.battle.enemy["name"] == "Mountain Tiger" and s.battle.enemy["tier"] == "beast_king"
+    page = client.get("/explore/play").text
+    assert "Admin test fight" in page and 'class="beast posed"' in page
+    for _ in range(40):                                   # flee until it is over
+        if s.lair_result is not None:
+            break
+        act(client, "move", "flee")
+    page = client.get("/explore/play").text
+    assert "Test fight: no rewards" in page
+    c = db.connect(db_path)
+    assert db.get_player(c, UID)["lotus_coins"] == coins and db.cooldown_left(c, UID, "explore") == 0
+    assert admin.take_web_fight(c, UID) is None           # used up
+    c.close()
+    client.post("/explore/done")
+    assert "Set out" in client.get("/explore").text        # back to normal

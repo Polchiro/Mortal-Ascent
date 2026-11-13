@@ -427,6 +427,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         s = with_conn(explores.catch_up, user["id"])
         if s and not explores._finished(s):
             return RedirectResponse("/explore/play", status_code=303)
+        if with_conn(explores.start_test, user["id"]):              # /admin web_fight queued a test fight
+            return RedirectResponse("/explore/play", status_code=303)
         view = with_conn(explore_play.home_view, user["id"], explores)
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         if view is None:
