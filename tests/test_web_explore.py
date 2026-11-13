@@ -264,6 +264,14 @@ def test_the_male_sword_attack_plays_frame_by_frame(client):
     assert looks.attack_sheet({"gender": "female"}) is None                  # she still swings through her three poses
 
 
+def test_break_slams_the_ground_with_its_own_effects(client):
+    fight(client)
+    for name in ("break_burst", "break_crater"):                 # scripts/make_break_fx.py, played by fight.js `slam`
+        assert client.get(f"/art/fx/{name}.webp").status_code == 200
+    js = client.get("/static/fight.js").text
+    assert "slam: true" in js and "/art/fx/break_burst.webp" in js
+
+
 def test_the_male_guard_plays_frame_by_frame(client):
     import os
     import looks

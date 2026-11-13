@@ -192,8 +192,14 @@ a lair is fought with `bot/hunt.py`.
    (`looks.ATTACK_SHEETS`, `art/portraits/fight/hero_male_attack.webp`, built by `scripts/make_hero_attack.py`):
    he raises the sword behind him, spins it in a blue Qi arc while closing in, lifts it overhead and cuts down
    through the beast (the blue slash trail and the hit land on that cut), then settles back on guard (`BLADE` in
-   `fight.js`; Break plays it a little slower with the gold slash and a shake). His idle, wind-up and strike stills
-   come from the same video. His **Guard** is frame by frame too (`looks.GUARD_SHEETS`, `hero_male_guard.webp`,
+   `fight.js`). His idle, wind-up and strike stills come from the same video.
+   **Break** is the ground slam from SHOAIB's Break video, played with the cultivator's own sword (only the move
+   and its effects come from the video, not its character or greatsword): blue Qi rings gather at his feet as he
+   draws the blade back, he leaps in with it raised overhead (no spin), cuts down into the ground at the beast's
+   feet and holds it there while spikes of blue Qi burst from the split ground (`art/fx/break_burst.webp`,
+   `art/fx/break_crater.webp`, drawn by `scripts/make_break_fx.py`) with a shockwave, stones, rolling dust and a
+   hard shake, then steps back on guard (`BLADE.break`, `gathered` and `slam` in `fight.js`). It slams whether it
+   hits or misses; the female plays the same effects over her three poses (`RECIPES.break`). His **Guard** is frame by frame too (`looks.GUARD_SHEETS`, `hero_male_guard.webp`,
    from SHOAIB's second video, robes recoloured to match): he stands with the blade raised as the beast comes in,
    the blow bursts into a gold flash and sparks on the blade, he leans back under it and steadies (`block()` in
    `fight.js`; also used when he guards the Mountain Tiger's pounce); the beast is knocked back, flashes, and its HP bar and the damage number change at the

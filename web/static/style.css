@@ -778,6 +778,28 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .proar{width:12%;aspect-ratio:1;border:4px solid rgba(255,214,120,.9);box-shadow:0 0 26px #FFAA33;animation:proar .9s ease-out forwards}
 .proar.r2{animation-delay:.18s;opacity:0}
 @keyframes proar{0%{opacity:1;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
+/* ── Break: the ground slam (fight.js `gathered` and `slam`, from SHOAIB's Break video). Blue Qi rings at your feet
+   as you draw back; where the blade comes down, spikes of Qi (art/fx/break_burst.webp) over the split ground
+   (art/fx/break_crater.webp), a shockwave, stones and a cloud of dust. Placed by their point of impact. ── */
+.bqring,.bwave{position:absolute;z-index:3;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)}
+.bqring{width:18%;aspect-ratio:3.4/1;border:3px solid #9FDBFF;box-shadow:0 0 22px #3AA0FF,inset 0 0 16px #3AA0FF;animation:bqring .76s ease-out forwards}
+@keyframes bqring{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-62%) scale(1.15)}}
+.bqring.q2{width:15%;animation-delay:.18s;opacity:0}
+.bcrater{position:absolute;z-index:1;width:40%;height:auto;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:screen;animation:pcrater 2.6s ease-out forwards}
+.bburst{position:absolute;z-index:4;width:36%;height:auto;pointer-events:none;transform-origin:50% 87.5%;mix-blend-mode:screen;animation:bburst 1s ease-out forwards}
+@keyframes bburst{0%{opacity:0;transform:translate(-50%,-87.5%) scale(.25,.1)}8%{opacity:1;transform:translate(-50%,-87.5%) scale(1.06,1.1);filter:brightness(1.6)}
+  30%{opacity:1;transform:translate(-50%,-87.5%) scale(1);filter:brightness(1)}100%{opacity:0;transform:translate(-50%,-87.5%) scale(1.04,1.12)}}
+.bwave{width:18%;aspect-ratio:3.4/1;border:5px solid rgba(170,225,255,.95);box-shadow:0 0 36px #3A9BFF,inset 0 0 26px rgba(80,170,255,.8);animation:pwave .8s ease-out forwards}
+.bwave.w2{border-width:3px;animation-duration:1s;animation-delay:.08s;opacity:0}
+.bflash{position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle at 60% 85%,rgba(210,240,255,.55),rgba(80,160,255,.16) 35%,transparent 65%);
+  animation:flash .45s ease-out forwards;left:0!important;top:0!important}
+.fighter[data-trail=slam] img.trailfx{transform:rotate(34deg);transform-origin:58% 46%}   /* Break: the cut comes down, not across */
+.pdebris.cold{background:#BFE6FF;box-shadow:0 0 8px #3A9BFF}
+.bdust{position:absolute;z-index:3;width:13%;aspect-ratio:1.6;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 50% 60%,rgba(214,206,196,.72),rgba(170,160,150,.4) 45%,transparent 70%);filter:blur(3px);
+  animation:bdust 1.7s ease-out forwards}
+@keyframes bdust{0%{opacity:0;transform:translate(-50%,-50%) scale(calc(var(--s) * .35))}15%{opacity:.95}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-95%) scale(calc(var(--s) * 1.6))}}
 .tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
 .tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
 @media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}
