@@ -79,6 +79,7 @@ STATUSES = {
     "stoneskin": {"name": "Stoneskin", "on": "enemy",  "turns": 2, "damage_taken": 0.70},
     "regrowth":  {"name": "Regrowth",  "on": "enemy",  "turns": 3, "regen": 0.04},
     "charged":   {"name": "Charged",   "on": "enemy",  "turns": 1},     # shown while a charged attack winds up
+    "roused":    {"name": "Roused",    "on": "enemy",  "turns": 2, "attack_mult": 1.20},   # after a unique skill lands
 }
 STATUS_ON_HIT_CHANCE = 0.30  # a normal enemy hit that lands applies its element's status this often
 
@@ -105,6 +106,27 @@ ELEMENTS = {
                 "warn": ("Green light knits the {name}'s wounds...", "It heals each turn. Keep up the pressure.")},
 }
 BANDIT_ELEMENT = "Blood"      # bandits fight with blades: Blood palette, Bleeding
+
+# ── Unique beast skills ───────────────────────────────────────────────
+# A few beasts have a skill of their own that takes the place of some of their charged attacks.
+# It is announced one turn ahead like any charged attack, hits the whole party, ignores the 30% cap,
+# and is answered the same way: Guard blocks part of it, Break interrupts it.
+#   every: which charged attacks become the skill (2 = the 1st, 3rd, 5th... the others stay the element move)
+#   mult: damage, instead of CHARGE_MULT
+#   status: put on everyone it hits who did NOT Guard (instead of the element's status)
+#   after: the beast's own status once the skill lands (not when it is interrupted)
+#   fx: the animation the website plays (web/static/fight.js)
+
+UNIQUE_SKILLS = {
+    "Mountain Tiger": {
+        "name": "Mountain-Splitting Pounce", "every": 2, "mult": 1.75, "status": "stunned", "after": "roused",
+        "fx": "pounce",
+        "warn": ("The {name} sinks low, golden Qi coiling around its paws...",
+                 "Mountain-Splitting Pounce: it will leap and split the ground. {who}Guard, or Break it first. "
+                 "Anyone caught off guard is Stunned, and it comes down Roused."),
+        "roused": "it roars over the broken ground, golden Qi blazing. Roused: it hits 20% harder for 2 turns.",
+    },
+}
 
 # ── Fleeing and pills ─────────────────────────────────────────────────
 

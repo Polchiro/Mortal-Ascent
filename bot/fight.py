@@ -169,6 +169,7 @@ class Battle:
         self.title, self.subtitle = title, subtitle
         self.turn = 1
         self.enemy_turns = 0
+        self.charges = 0                  # charged attacks planned so far (unique skills take some of them)
         self.log = [("star", self._intro())]
         self.intent = None
         self.warning = None
@@ -231,7 +232,18 @@ class Battle:
             elif self.enemy_turns % battle.SIGNATURE_EVERY == 0:
                 kind = "signature"
         el = battle.ELEMENTS[e["element"]]
-        if kind != "normal":
+        skill = None
+        if kind == "charged":
+            self.charges += 1
+            skill = self.unique_skill()
+            if skill and (self.charges - 1) % skill["every"]:
+                skill = None
+        if skill:
+            move = "strike"
+            head, hint = skill["warn"]
+            self.warning = (head.format(name=nm), hint.format(who="Everyone " if self.team else ""))
+            e["statuses"]["charged"] = 1
+        elif kind != "normal":
             move = "strike"
             head, effect = el["warn"]
             head = head.format(name=nm)
@@ -254,8 +266,16 @@ class Battle:
                 self.warning = (self.rng.choice(tells[move]).format(name=nm), "Read its move and counter it.")
             else:
                 self.warning = (NO_TELL.format(name=nm), "No tell this turn. Trust your instincts.")
-        self.intent = {"move": move, "kind": kind, "target": target,
-                       "name": el["move"] if kind != "normal" else MOVE_LABEL[move]}
+        self.intent = {"move": move, "kind": kind, "target": target, "skill": skill["name"] if skill else None,
+                       "name": skill["name"] if skill else el["move"] if kind != "normal" else MOVE_LABEL[move]}
+
+    def unique_skill(self):
+        """The beast's own skill (battle.UNIQUE_SKILLS), or None."""
+        return battle.UNIQUE_SKILLS.get(self.enemy["name"]) if self.enemy["kind"] == "beast" else None
+
+    def planned_skill(self):
+        """The unique skill the beast is winding up this turn, or None."""
+        return self.unique_skill() if self.intent and self.intent.get("skill") else None
 
     # ── picking ───────────────────────────────────────────────────────
 
@@ -318,11 +338,14 @@ class Battle:
 
     def _enemy_hit(self, f, kind):
         e = self.enemy
+        atk = e["attack"] * (battle.STATUSES["roused"]["attack_mult"] if "roused" in e["statuses"] else 1.0)
         if kind == "charged":
-            dmg = combat.damage(e["attack"], f.defense, float("inf"), battle.CHARGE_MULT, rng=self.rng)
+            skill = self.planned_skill()
+            mult = skill["mult"] if skill else battle.CHARGE_MULT
+            dmg = combat.damage(atk, f.defense, float("inf"), mult, rng=self.rng)
             return dmg * (1 - min(1.0, f.fx.get("charged_damage_reduction", 0)))     # Bell artifact
         mult = battle.SIGNATURE_MULT if kind == "signature" else 1.0
-        return combat.damage(e["attack"], f.defense, f.max_hp, mult, rng=self.rng)
+        return combat.damage(atk, f.defense, f.max_hp, mult, rng=self.rng)
 
     def _apply_status(self, f, key):
         spec = battle.STATUSES[key]
@@ -336,6 +359,7 @@ class Battle:
             return []
         e = self.enemy
         it = self.intent
+        uskill = self.planned_skill()       # the beast's unique skill, if this is it
         m = it["move"] if it else None
         kind = it["kind"] if it else None
         en = e["name"] if e["kind"] == "bandit" else short_name(e["name"])
@@ -552,8 +576,10 @@ class Battle:
                     t.hp = max(0, t.hp - dmg)
                     hit_names.append(f"{t.name} −{dmg:,}")
                     saves = t.kit.after_taken(t)
-                    status = battle.ELEMENTS[e["element"]]["status"]
-                    if battle.STATUSES[status]["on"] == "player" and t.hp > 0 and (
+                    status = uskill["status"] if uskill else battle.ELEMENTS[e["element"]]["status"]
+                    if uskill and mine == "guard":
+                        status = None                                           # a Guard rides out the shockwave
+                    if status and battle.STATUSES[status]["on"] == "player" and t.hp > 0 and (
                             kind != "normal" or self.rng.random() < battle.STATUS_ON_HIT_CHANCE):
                         if t.kit.immune(status):
                             hit_names[-1] += f" (Immortal Body: no {battle.STATUSES[status]['name']})"
@@ -568,6 +594,10 @@ class Battle:
                 if hit_names:
                     what = it["name"] if kind != "normal" else MOVE_LABEL[m]
                     log.append(("skull", f"{en} — {what} on " + ", ".join(hit_names)))
+                if uskill and e["hp"] > 0:
+                    after = uskill["after"]
+                    e["statuses"][after] = battle.STATUSES[after]["turns"] + 1       # +1: this turn's tick
+                    log.append(("roar", f"{en} — {uskill['name']}: " + uskill["roused"]))
         elif e["hp"] > 0 and m == "guard" and not any(b in ("strike", "break") for b in played.values()):
             log.append(("shield", f"{en} — Guard: it waits behind its guard"))
 

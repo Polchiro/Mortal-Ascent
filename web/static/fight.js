@@ -67,7 +67,8 @@
     strike: {dash: 200, swing: 300, hit: 370, recover: 640, end: 960, knock: 0.024},
     break:  {dash: 260, swing: 380, hit: 450, recover: 780, end: 1120, knock: 0.042, shake: true},
     beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},
-    tech:   {end: 1100}                                         // techniques play their own animation (style.css)
+    tech:   {end: 1100},                                        // techniques play their own animation (style.css)
+    pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2500, knock: 0.05}   // Mountain-Splitting Pounce
   };
   var GAP = 160;
 
@@ -201,16 +202,81 @@
       }};
     }
 
+    /* a fleeting effect over the scene at (x%, y%): removed after `life` ms */
+    function fx(cls, xPct, yPct, life, style) {
+      var n = document.createElement(cls === 'pcrater' ? 'img' : 'span');
+      n.className = cls; n.style.left = xPct + '%'; n.style.top = yPct + '%';
+      if (cls === 'pcrater') { n.src = main.dataset.crater || '/art/fx/crater.webp'; n.alt = ''; }
+      Object.keys(style || {}).forEach(function (k) { n.style.setProperty(k, style[k]); });
+      scene.appendChild(n);
+      setTimeout(function () { n.remove(); }, life);
+      return n;
+    }
+
+    /* the Mountain Tiger's Mountain-Splitting Pounce (battle.UNIQUE_SKILLS): it sinks low with golden Qi swirling at
+       its paws, leaps high across the arena, comes down on you and splits the ground in a golden shockwave, bounds
+       back and roars, Roused. The damage, the stun and the block come from the server like any other hit. */
+    function pounce(ev) {
+      var R = RECIPES.pounce, did = {}, lastGhost = -1e9;
+      var land = -(reachBeast + 0.03 * W), bf = beastFilter && beastFilter !== 'none' ? beastFilter + ' ' : '';
+      if (ev.dmg) hold('me');
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      return {end: R.end, render: function (t) {
+        var x = 0, y = 0, rot = 0, sx = 1, sy = 1, glow = 0;
+        if (t < R.crouch) { var q = ease(span(t, 0, R.crouch)); x = 0.02 * W * q; sy = 1 - 0.13 * q; sx = 1 + 0.05 * q; glow = q; }
+        else if (t < R.hit) { var c = span(t, R.crouch, R.hit); x = 0.02 * W + (land - 0.02 * W) * inout(c); y = -0.2 * W * Math.sin(Math.PI * c);
+          rot = -14 + 30 * c; sy = 1 + 0.06 * Math.sin(Math.PI * c); glow = 1; }
+        else if (t < R.back) { var l = span(t, R.hit, R.hit + 170); x = land; sy = 0.88 + 0.12 * l; sx = 1.07 - 0.07 * l; glow = 1 - 0.4 * l; }
+        else if (t < R.home) { var r = inout(span(t, R.back, R.home)); x = land * (1 - r); y = -0.07 * W * Math.sin(Math.PI * r); rot = 6 * Math.sin(Math.PI * r); glow = 0.6; }
+        else { var p2 = Math.min(1, span(t, R.home, R.end) * 1.6); sx = sy = 1 + 0.06 * Math.sin(Math.PI * p2); glow = 0.6 + 0.7 * Math.sin(Math.PI * p2); }
+        beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg) scale(' + sx + ',' + sy + ')';
+        beast.style.filter = glow > 0.02 ? bf + 'drop-shadow(0 0 ' + (6 + 24 * glow) + 'px rgba(255,186,64,' + (0.95 * glow).toFixed(2) + ')) brightness(' + (1 + 0.22 * glow) + ')' : '';
+        if (t >= 0 && once('gather')) { var g = at(br, 0.5, 0.96); fx('pqring', g[0], g[1], R.crouch + 260); fx('pqring q2', g[0], g[1], R.crouch + 260); }
+        if (t >= R.crouch + 60 && t < R.hit - 40 && t - lastGhost > 95) {                     // golden afterimages along the leap
+          lastGhost = t;
+          var gh = beast.cloneNode(false); gh.className = 'pghost'; gh.style.filter = ''; beastBox.appendChild(gh);
+          setTimeout(function () { gh.remove(); }, 300);
+        }
+        var h = t - R.hit;
+        if (h >= 0 && once('impact')) {
+          var f = at(fr, 0.5, 0.97);
+          fx('pcrater', f[0], f[1], 3400); fx('pwave', f[0], f[1], 900); fx('pwave w2', f[0], f[1], 1100); fx('pflash', 50, 50, 500);
+          for (var i = 0; i < 14; i++) {
+            var a = Math.PI * (1.05 + 0.9 * i / 13) + (Math.random() - 0.5) * 0.3, d = 60 + Math.random() * 140;
+            fx('pdebris' + (i % 3 ? '' : ' hot'), f[0], f[1], 900, {'--dx': Math.cos(a) * d + 'px', '--dy': Math.sin(a) * d * 0.9 + 'px',
+              '--rot': (Math.random() * 540 - 270) + 'deg', '--sz': (5 + Math.random() * 9) + 'px'});
+          }
+          if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-14px,9px)'}, {transform: 'translate(13px,-8px)'},
+            {transform: 'translate(-9px,5px)'}, {transform: 'translate(6px,-3px)'}, {transform: 'none'}], {duration: 560});
+          var p = at(fr, 0.52, 0.5);
+          if (ev.guard) { burst('tring', p[0], p[1]); pop(fighter, 'word', 'Guarded'); }
+          if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
+        }
+        if (ev.stun && h >= 260 && once('stun')) pop(fighter, 'word stun', 'Stunned!');
+        if (ev.dmg && !ev.guard) {
+          var k = knocked(h, R.knock * W);
+          pose('idle'); hero(-k[0], 0, -k[0] / 5);
+          poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
+        } else { pose('idle'); hero(0, 0); }
+        if (t >= R.home && once('roar')) {
+          var m = at(br, 0.16, 0.36);
+          fx('proar', m[0], m[1], 900); fx('proar r2', m[0], m[1], 1100);
+          pop(beastBox, 'word roused', 'Roused!');
+        }
+      }};
+    }
+
     var steps = [], kinds = {};
     events.forEach(function (ev) {
-      if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { steps.push(attack(ev)); kinds.me = 1; }
+      if (ev.who === 'enemy' && ev.act === 'pounce') { steps.push(pounce(ev)); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
+      else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { steps.push(attack(ev)); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { steps.push(charge(ev)); kinds.guard = 1; }
       else if (ev.who === 'enemy') { steps.push(charge(ev)); kinds.enemy = 1; }
       else if (ev.act === 'tech') steps.push({end: RECIPES.tech.end, render: function () {}});
     });
     if (!steps.length) return null;
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
-    main.classList.add('tl-hold'); fighter.classList.add('acting');
+    main.classList.add('tl-hold', 'playing'); fighter.classList.add('acting');
     main.offsetWidth;                                           // the held bars are in place before transitions return
     main.classList.remove('tl-hold');
 
@@ -220,7 +286,7 @@
     function finish() {
       if (stopped) return;
       stopped = true;
-      reset(); drop('me'); drop('enemy'); fighter.classList.remove('acting');
+      reset(); drop('me'); drop('enemy'); fighter.classList.remove('acting'); main.classList.remove('playing');
       if (playing && playing.finish === finish) playing = null;
     }
     function frame(now) {

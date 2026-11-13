@@ -147,12 +147,13 @@ def card_data(b, header, prev=None):
                       "delta": round(e["hp"]) - prev["enemy"] if prev else 0,
                       "atk": round(e.get("attack", 0)), "def": round(e.get("defense", 0))},
             "danger": danger, "scene": getattr(b, "scene", None),
+            "skill": intent.get("skill") if danger and not b.over else None,       # a unique skill winding up
             "party_title": "Hunting party" if b.team else "You", "party": party, "loadout": loadout,
             "log": list(b.log), "warning": b.warning or ("", "")}
 
 
 LOG_EMOJI = {"sword": "⚔️", "shield": "🛡️", "fist": "💥", "skull": "💀", "star": "✨", "pill": "💊", "flee": "🏃",
-             "hourglass": "⏳", "flame": "🔥", "herb": "🌿"}
+             "hourglass": "⏳", "flame": "🔥", "herb": "🌿", "roar": "🐯"}
 
 
 def _hp(x):

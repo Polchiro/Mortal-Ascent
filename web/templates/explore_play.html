@@ -15,8 +15,8 @@
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
 {% set C = F.cast %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-events='{{ F.events | tojson }}'
-  data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}">
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-events='{{ F.events | tojson }}'
+  data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}"{% if F.warning.skill or F.roused %} data-crater="/art/fx/crater.webp"{% endif %}>
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
     <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
@@ -38,7 +38,7 @@
     <p class="ename">{{ F.enemy.name }}</p>
     <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>
     <div class="ehp" data-bar="enemy"><div style="width: {{ F.enemy.hp_pct }}%"></div><span data-val="enemy">{{ F.enemy.hp }} / {{ F.enemy.max_hp }}</span></div>
-    <div class="bwarn{% if F.warning.danger %} danger{% endif %}" aria-live="polite">
+    <div class="bwarn{% if F.warning.danger %} danger{% endif %}{% if F.warning.skill %} skill{% endif %}" aria-live="polite">
       <p class="whead">{{ F.warning.head | safe }}</p>
       {% if F.warning.hint %}<p class="whint">{{ F.warning.hint | safe }}</p>{% endif %}
     </div>
@@ -62,6 +62,7 @@
           <path d="M 1290 270 C 1000 295, 660 360, 360 485 C 640 425, 1000 355, 1290 270 Z"/></g></svg>
       {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}{{ ' big' if -F.me.delta >= F.me.max_hp * 0.2 }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
     <div class="beast" aria-hidden="true"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
+      {% if F.warning.skill %}<span class="qiring"></span><span class="qiring q2"></span>{% endif %}
       {% if F.enemy.delta %}<span class="dmg hit{{ ' big' if -F.enemy.delta >= F.enemy.max_hp * 0.2 }}">{{ F.enemy.delta }}</span>{% endif %}</div>
     {% if F.result %}<div class="bresult" role="status"><p class="rword">{{ F.result.word }}</p>{% if F.result.sub %}<p class="rsub">{{ F.result.sub }}</p>{% endif %}</div>{% endif %}
     <span class="slashfx"></span><span class="clawfx"></span><span class="ringfx"></span>
