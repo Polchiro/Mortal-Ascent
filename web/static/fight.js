@@ -15,6 +15,8 @@
       target.addEventListener('mouseenter', show);
       target.addEventListener('focus', show);
     });
+    var posed = main.querySelector('.beast.posed');             // load every pose picture now, so swaps are instant
+    if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
     main.querySelectorAll('form.fightform').forEach(function (form) {
@@ -68,7 +70,7 @@
     break:  {dash: 260, swing: 380, hit: 450, recover: 780, end: 1120, knock: 0.042, shake: true},
     beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},
     tech:   {end: 1100},                                        // techniques play their own animation (style.css)
-    pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2500, knock: 0.05}   // Mountain-Splitting Pounce
+    pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2800, knock: 0.05}   // Mountain-Splitting Pounce
   };
   var GAP = 160;
 
@@ -102,6 +104,14 @@
     var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
     var reachBeast = Math.max(0, br.left - (fr.left + fr.width * 0.64));                       // the beast to your body
     var beastFilter = getComputedStyle(beast).filter;
+    var bposes = null, home = beast.dataset.pose || 'idle';
+    try { bposes = JSON.parse(beastBox.dataset.poses || 'null'); } catch (e) {}
+    function bpose(p) {                                        // a beast with cut-out poses (art/beasts/poses/) changes pose
+      if (!bposes || !bposes[p] || beast.dataset.pose === p) return;
+      var g = bposes[p];
+      beast.src = g.src; beast.style.width = g.w + '%'; beast.style.left = g.left + '%'; beast.style.bottom = g.bottom + '%';
+      beast.dataset.pose = p;
+    }
 
     function hold(who) {                                        // keep a bar at last turn's value until its hit lands
       if (!before[who] || !after[who] || held[who]) return;
@@ -179,6 +189,7 @@
         if (t < R.charge) { var q = ease(span(t, 0, R.charge)); x = 0.015 * W * q; rot = 4 * q; }
         else if (t < R.back) { var c = span(t, R.charge, R.hit); x = 0.015 * W - (reachBeast + 0.015 * W) * c * c; rot = -6 * c; }
         else if (t < R.end) { var r = inout(span(t, R.back, R.end)); x = -reachBeast * (1 - r); y = -0.024 * W * Math.sin(Math.PI * r); }
+        bpose(t < R.charge ? 'crouch' : t < R.back ? 'leap' : 'idle');
         var ck = guard && ev.counter ? knocked(t - R.hit - 130, 0.03 * W) : [0, 0];
         animal(x + ck[0], y, rot, ck[1]);
         var h = t - R.hit;
@@ -229,12 +240,13 @@
         else if (t < R.back) { var l = span(t, R.hit, R.hit + 170); x = land; sy = 0.88 + 0.12 * l; sx = 1.07 - 0.07 * l; glow = 1 - 0.4 * l; }
         else if (t < R.home) { var r = inout(span(t, R.back, R.home)); x = land * (1 - r); y = -0.07 * W * Math.sin(Math.PI * r); rot = 6 * Math.sin(Math.PI * r); glow = 0.6; }
         else { var p2 = Math.min(1, span(t, R.home, R.end) * 1.6); sx = sy = 1 + 0.06 * Math.sin(Math.PI * p2); glow = 0.6 + 0.7 * Math.sin(Math.PI * p2); }
+        if (bposes) { bpose(t < R.crouch ? 'crouch' : t < R.hit ? 'leap' : t < R.back ? 'slam' : t < R.home ? 'idle' : 'roar'); if (t < R.crouch) sy = 1 - 0.05 * (1 - sy) / 0.13; }
         beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg) scale(' + sx + ',' + sy + ')';
         beast.style.filter = glow > 0.02 ? bf + 'drop-shadow(0 0 ' + (6 + 24 * glow) + 'px rgba(255,186,64,' + (0.95 * glow).toFixed(2) + ')) brightness(' + (1 + 0.22 * glow) + ')' : '';
         if (t >= 0 && once('gather')) { var g = at(br, 0.5, 0.96); fx('pqring', g[0], g[1], R.crouch + 260); fx('pqring q2', g[0], g[1], R.crouch + 260); }
-        if (t >= R.crouch + 60 && t < R.hit - 40 && t - lastGhost > 95) {                     // golden afterimages along the leap
+        if (t >= R.crouch + 60 && t < R.hit - 40 && t - lastGhost > (bposes ? 130 : 95)) {                     // golden afterimages along the leap
           lastGhost = t;
-          var gh = beast.cloneNode(false); gh.className = 'pghost'; gh.style.filter = ''; beastBox.appendChild(gh);
+          var gh = beast.cloneNode(false); gh.className = 'pghost'; gh.style.filter = ''; if (bposes) { gh.style.top = 'auto'; gh.style.height = 'auto'; } beastBox.appendChild(gh);
           setTimeout(function () { gh.remove(); }, 300);
         }
         var h = t - R.hit;
@@ -281,7 +293,7 @@
     main.classList.remove('tl-hold');
 
     var i = 0, start = null, stopped = false;
-    function reset() { pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
+    function reset() { bpose(home); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
       trail.style.opacity = 0; claws.setAttribute('opacity', 0); }
     function finish() {
       if (stopped) return;

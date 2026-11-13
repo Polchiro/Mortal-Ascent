@@ -61,7 +61,10 @@
           <path d="M 1310 165 C 1000 165, 640 235, 320 370 C 620 300, 1000 235, 1310 165 Z"/>
           <path d="M 1290 270 C 1000 295, 660 360, 360 485 C 640 425, 1000 355, 1290 270 Z"/></g></svg>
       {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}{{ ' big' if -F.me.delta >= F.me.max_hp * 0.2 }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
-    <div class="beast" aria-hidden="true"><img src="{{ F.enemy.art }}" alt="" width="900" height="890">
+    {% set BP = F.enemy.poses %}
+    <div class="beast{% if BP %} posed{% endif %}" aria-hidden="true"{% if BP %} data-poses='{{ BP.poses | tojson }}' style="--bar: {{ BP.aspect[0] }} / {{ BP.aspect[1] }}"{% endif %}>
+      {%- if BP %}{% set P = BP.poses[F.enemy.pose] %}<img src="{{ P.src }}" alt="" data-pose="{{ F.enemy.pose }}" style="width: {{ P.w }}%; left: {{ P.left }}%; bottom: {{ P.bottom }}%">
+      {%- else %}<img src="{{ F.enemy.art }}" alt="" width="900" height="890">{% endif %}
       {% if F.warning.skill %}<span class="qiring"></span><span class="qiring q2"></span>{% endif %}
       {% if F.enemy.delta %}<span class="dmg hit{{ ' big' if -F.enemy.delta >= F.enemy.max_hp * 0.2 }}">{{ F.enemy.delta }}</span>{% endif %}</div>
     {% if F.result %}<div class="bresult" role="status"><p class="rword">{{ F.result.word }}</p>{% if F.result.sub %}<p class="rsub">{{ F.result.sub }}</p>{% endif %}</div>{% endif %}

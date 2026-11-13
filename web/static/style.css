@@ -776,3 +776,13 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
 .tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
 @media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}
+
+/* ── Beasts with cut-out poses (art/beasts/poses/<slug>/, web/explore_play.beast_poses): the box keeps the idle
+   pose's shape; each pose picture sits in it at its own size (inline style), and fight.js swaps them. ── */
+.bscene .beast.posed{aspect-ratio:var(--bar);height:auto;top:auto;max-height:none}
+.bscene .beast.posed img{position:absolute;height:auto;max-height:none;object-fit:fill;transform-origin:50% 100%;
+  filter:drop-shadow(0 10px 14px rgba(0,0,0,.7))}
+@media (min-width:901px){.bscene .beast.posed{width:min(21%,40vh);right:10%}}
+@media (max-width:900px){.bscene .beast.posed{width:36%;right:4%;bottom:4%}}
+@media (max-width:480px){.bscene .beast.posed{width:40%;right:2%}}
+main.battle.skill-pounce:not(.playing) .beast.posed img{transform:none;filter:drop-shadow(0 10px 14px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,186,64,.85))}

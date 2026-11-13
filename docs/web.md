@@ -201,6 +201,11 @@ a lair is fought with `bot/hunt.py`.
    whole fight's record (`b.history`, newest turn first) opens from the small **Battle History** button (key H,
    Esc closes) and stays open between turns. On phones the plates stack, the moves sit under the arena and
    the history opens as a sheet from the bottom.
+   **Beasts with poses:** a beast with cut-out pose pictures (`art/beasts/poses/<slug>/`: idle, crouch, leap, slam,
+   roar, and `poses.json` with each one's size and place) is drawn from them instead of its card painting, and changes
+   pose as it moves (`explore_play.beast_poses`, `bpose` in `fight.js`): it crouches to wind up, leaps to attack, and
+   for its unique skill lands in the slam pose and roars. So far the Mountain Tiger, cut from SHOAIB's reference video
+   (`scripts/cut_tiger_poses.py`, clean edges with no white fringe). The Discord card keeps the painting.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
    school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
