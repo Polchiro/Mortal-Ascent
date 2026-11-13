@@ -63,6 +63,7 @@
     });
     var posed = main.querySelector('.beast.posed');             // load every pose picture now, so swaps are instant
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
+    ['/art/fx/break_burst.webp', '/art/fx/break_crater.webp'].forEach(function (src) { new Image().src = src; });   // Break's slam
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
     drawDeath(main);                                           // a won fight on a fresh page: the body already down
@@ -218,7 +219,7 @@
      more row. Nothing here decides anything: it only shows what the server already resolved. */
   var RECIPES = {
     strike: {dash: 200, swing: 300, hit: 370, recover: 640, end: 960, knock: 0.024},
-    break:  {dash: 260, swing: 380, hit: 450, recover: 780, end: 1120, knock: 0.042, shake: true},
+    break:  {dash: 300, swing: 440, hit: 520, recover: 900, end: 1320, knock: 0.042, slam: true},   // the ground slam (`slam`)
     beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},
     tech:   {end: 1100},                                        // techniques play their own animation (style.css)
     pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2800, knock: 0.05}   // Mountain-Splitting Pounce
@@ -227,12 +228,16 @@
 
   /* the frame-by-frame sword attack (looks.ATTACK_SHEETS, from SHOAIB's video): [ms, frame] keys, played in between.
      He raises the blade behind him (0-6), spins it round in a blue Qi arc while he closes in (7-14), lifts it overhead
-     (15-28), cuts down and forward through the beast (29-34, the hit) and settles back on guard (35-40). */
+     (15-28), cuts down and forward through the beast (29-34, the hit) and settles back on guard (35-40).
+     Break is the ground slam from SHOAIB's Break video, played with his own sword: blue Qi gathers at his feet as he
+     draws the blade back (0-6), he leaps in with it raised overhead (15-28, no spin), brings it down into the ground
+     at the beast's feet (34, the hit: `slam`), holds it there while the dust rises, then steps back on guard (35-40).
+     hop / dip: how high he leaps and how low he sinks into the blow, as a share of the scene's width. */
   var BLADE = {
     strike: {keys: [[0, 0], [210, 6], [470, 14], [640, 23], [720, 28], [840, 34], [1150, 40]],
              dash: [180, 560], swing: 720, hit: 800, back: [860, 1200], end: 1260, knock: 0.024},
-    break:  {keys: [[0, 0], [250, 6], [540, 14], [730, 23], [820, 28], [960, 34], [1300, 40]],
-             dash: [200, 640], swing: 820, hit: 910, back: [980, 1340], end: 1400, knock: 0.042, shake: true}
+    break:  {keys: [[0, 0], [300, 6], [301, 15], [700, 28], [850, 34], [1220, 34], [1560, 40]],
+             dash: [330, 790], swing: 760, hit: 850, back: [1220, 1560], end: 1640, knock: 0.05, slam: true, hop: 0.03, dip: 0.008}
   };
 
   function ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
@@ -314,13 +319,53 @@
       return [size * (ease(span(h, 0, 70)) - ease(span(h, 110, 420))), h < 120 ? 1 - h / 120 : 0];
     }
 
+    /* the moment your weapon lands: the damage number and spark, or Blocked / Missed. A Break (R.slam) comes down into
+       the ground at the beast's feet whether it hits or not. */
+    function strikes(ev, R) {
+      var p = at(br, 0.12, 0.42);
+      if (R.slam) slam();
+      if (ev.hit) {
+        drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
+        if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
+          {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
+      } else {
+        burst('tring', p[0] + 4, p[1] + 6); pop(beastBox, 'word', ev.blocked ? 'Blocked' : 'Missed');
+      }
+    }
+
+    /* Break's Qi: it gathers in rings at your feet as you draw back (`gathered`), and bursts out of the ground where
+       the blade comes down (`slam`): spikes of blue Qi, the split ground (art/fx/break_*.webp, scripts/make_break_fx.py),
+       a shockwave, stones, a cloud of dust, and a hard shake. */
+    function gathered() {
+      var g = at(fr, sheet ? 0.44 : 0.46, 0.96);
+      fx('bqring', g[0], g[1], 760); fx('bqring q2', g[0], g[1], 900);
+    }
+    function slam() {
+      var f = at(br, 0.1, 0.96);
+      fx('bcrater', f[0], f[1], 2600); fx('bburst', f[0], f[1], 1000); fx('bwave', f[0], f[1], 800); fx('bwave w2', f[0], f[1], 1000);
+      fx('bflash', 50, 50, 450);
+      for (var i = 0; i < 12; i++) {
+        var a = Math.PI * (1.08 + 0.84 * i / 11) + (Math.random() - 0.5) * 0.3, d = 50 + Math.random() * 130;
+        fx('pdebris' + (i % 3 ? ' cold' : ''), f[0], f[1] - 1, 900, {'--dx': Math.cos(a) * d + 'px', '--dy': Math.sin(a) * d * 0.9 + 'px',
+          '--rot': (Math.random() * 540 - 270) + 'deg', '--sz': (3 + Math.random() * 4) + 'px'});
+      }
+      for (var j = 0; j < 6; j++) {                              // dust rolls out both ways along the ground
+        var side = j % 2 ? 1 : -1;
+        fx('bdust', f[0] + side * (1 + j), f[1] - 2 - Math.random() * 3, 1700, {'--dx': side * (30 + 18 * j) + 'px',
+          '--s': (0.8 + Math.random() * 0.7).toFixed(2), 'animation-delay': (40 * j) + 'ms'});
+      }
+      if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-11px,8px)'}, {transform: 'translate(10px,-6px)'},
+        {transform: 'translate(-7px,4px)'}, {transform: 'translate(4px,-2px)'}, {transform: 'none'}], {duration: 520});
+    }
+
     /* your weapon attack: wind up, dash, swing with a trail, then step back */
     function attack(ev) {
       if (sheet) return sweep(ev);
-      var R = RECIPES[ev.act] || RECIPES.strike, done = false;
+      var R = RECIPES[ev.act] || RECIPES.strike, done = false, began = false;
       if (ev.hit) hold('enemy');
-      fighter.dataset.trail = ev.act;
+      fighter.dataset.trail = R.slam ? 'slam' : ev.act;
       return {end: R.end, render: function (t) {
+        if (R.slam && t >= 0 && !began) { began = true; gathered(); }
         pose(t < 0 || t >= R.recover ? 'idle' : t < R.swing ? 'windup' : 'strike');
         var x = 0, y = 0;
         if (t < R.dash) { var k = ease(span(t, 0, R.dash)); x = -0.011 * W * k; y = 3 * k; }
@@ -331,31 +376,22 @@
         trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 300);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
         animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
-        if (t >= R.hit && !done) {
-          done = true;
-          var p = at(br, 0.12, 0.42);
-          if (ev.hit) {
-            drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
-            if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
-              {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
-          } else {
-            burst('tring', p[0] + 4, p[1] + 6); pop(beastBox, 'word', ev.blocked ? 'Blocked' : 'Missed');
-          }
-        }
+        if (t >= R.hit && !done) { done = true; strikes(ev, R); }
       }};
     }
 
     /* the same attack, frame by frame from the video: the spin closes the distance, the forward cut lands */
     function sweep(ev) {
-      var R = BLADE[ev.act] || BLADE.strike, done = false;
+      var R = BLADE[ev.act] || BLADE.strike, done = false, began = false;
       var n = +sheet.dataset.frames, cols = +sheet.dataset.cols, rows = +sheet.dataset.rows;
       if (ev.hit) hold('enemy');
-      fighter.dataset.trail = ev.act;
+      fighter.dataset.trail = R.slam ? 'slam' : ev.act;
       function show(f) {
         f = Math.max(0, Math.min(n - 1, Math.round(f)));
         sheet.style.backgroundPosition = (f % cols) / (cols - 1) * 100 + '% ' + Math.floor(f / cols) / (rows - 1) * 100 + '%';
       }
       return {end: R.end, render: function (t) {
+        if (R.slam && t >= 0 && !began) { began = true; gathered(); }
         if (t < 0 || t >= R.end) { pose('idle'); hero(0, 0); }
         else {
           pose('sheet');
@@ -365,6 +401,8 @@
           }
           show(f);
           var x = reachMe * inout(span(t, R.dash[0], R.dash[1])), y = 0;
+          if (R.hop) y = -R.hop * W * Math.sin(Math.PI * span(t, R.dash[0], R.dash[1]));              // a leap in, blade overhead
+          if (R.dip && t >= R.hit && t < R.back[0]) y = R.dip * W * (1 - span(t, R.back[0] - 160, R.back[0]));  // into the blow
           if (t >= R.back[0]) { var r = inout(span(t, R.back[0], R.back[1])); x = reachMe * (1 - r); y = -0.03 * W * Math.sin(Math.PI * r); }
           hero(x, y);
         }
@@ -372,17 +410,7 @@
         trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 320);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
         animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
-        if (t >= R.hit && !done) {
-          done = true;
-          var p = at(br, 0.12, 0.42);
-          if (ev.hit) {
-            drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
-            if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
-              {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
-          } else {
-            burst('tring', p[0] + 4, p[1] + 6); pop(beastBox, 'word', ev.blocked ? 'Blocked' : 'Missed');
-          }
-        }
+        if (t >= R.hit && !done) { done = true; strikes(ev, R); }
       }};
     }
 
@@ -436,10 +464,12 @@
     }
 
     /* a fleeting effect over the scene at (x%, y%): removed after `life` ms */
+    var PICTURES = {pcrater: main.dataset.crater || '/art/fx/crater.webp', bcrater: '/art/fx/break_crater.webp', bburst: '/art/fx/break_burst.webp'};
     function fx(cls, xPct, yPct, life, style) {
-      var n = document.createElement(cls === 'pcrater' ? 'img' : 'span');
+      var src = PICTURES[cls.split(' ')[0]];
+      var n = document.createElement(src ? 'img' : 'span');
       n.className = cls; n.style.left = xPct + '%'; n.style.top = yPct + '%';
-      if (cls === 'pcrater') { n.src = main.dataset.crater || '/art/fx/crater.webp'; n.alt = ''; }
+      if (src) { n.src = src; n.alt = ''; }
       Object.keys(style || {}).forEach(function (k) { n.style.setProperty(k, style[k]); });
       scene.appendChild(n);
       setTimeout(function () { n.remove(); }, life);
