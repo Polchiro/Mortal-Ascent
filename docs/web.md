@@ -179,6 +179,9 @@ a lair is fought with `bot/hunt.py`.
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
+   **The fight is the whole screen:** during a fight the top bar and the footer are hidden, and on a computer the
+   page fits one window with no scrolling. Each top corner has a plain HUD (round picture, name, HP bar; your
+   Battle Qi under your HP; the beast's tell under its bar). Flee, or finishing the fight, brings the menus back.
    **The turn is acted out** (`fight.js`, after a move is sent): the fighter and the beast stand apart. For a
    Strike or Break the fighter winds up, dashes in, strikes (the fight script swaps three pose
    pictures; for now one painting serves all three, `explore_play.look_poses`) with a

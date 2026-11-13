@@ -672,3 +672,64 @@ form.inline{display:inline}
 }
 .dmg.big{font-size:50px;text-shadow:0 0 18px rgba(255,190,80,.9),0 2px 6px #000}
 @media (min-width:601px) and (max-width:900px){.bbar{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* ── Fight screen v4: the fight is the whole screen. No top bar or footer during a fight; on a computer everything
+   fits in one window with no scrolling, with smaller plates, fighters and move buttons. ── */
+body:has(main.battle)>.topbar,body:has(main.battle)>header,body:has(main.battle)>.privacy{display:none}
+@media (min-width:901px){
+  body:has(main.battle){height:100dvh;min-height:0;overflow:hidden}
+  .battle{height:100dvh;max-width:none;padding:12px 16px;gap:8px;grid-template-columns:150px minmax(0,1fr) minmax(220px,300px)}
+  .battle>.bscene{min-height:0}
+  .battle>.bme{width:min(100%,350px);gap:10px;padding:7px 14px 7px 7px}
+  .bface{width:60px;height:60px}
+  .bname{font-size:15.5px}.brealm{font-size:12px}
+  .brow{font-size:12px;margin-top:2px}.brow img{width:16px;height:16px}.brow .bl{min-width:56px}
+  .bme .bhp{height:9px}.bme .bhp:not(.qi){height:11px}
+  .battle>.benemy{width:min(100%,320px);padding:8px 12px}
+  .ename{font-size:16.5px}.etags{font-size:11.5px}.ehp{height:17px;margin-top:4px}.ehp span{font-size:11.5px}
+  .bwarn{margin-top:6px;padding-top:6px}.bwarn .whead{font-size:14px}.whint{font-size:12.5px}
+  .bscene .fighter{width:min(36%,62vh);left:6%;bottom:4%}
+  .bscene .beast{width:min(20%,34vh);right:11%;top:auto;height:min(52%,36vh);bottom:4%}
+  .sme{left:10%;width:26%}.senemy{right:9%;width:24%}
+  .rword{font-size:36px}.bresult{top:26%}
+  .bbar{gap:10px;max-width:760px;width:100%;justify-self:center}
+  .bbar .actbtn{flex-direction:row;justify-content:center;gap:10px;padding:8px 10px}
+  .bbar .actbtn img{width:52px;max-width:52px}
+  .alab{font-size:14px}.bbar .ast{font-size:11.5px}
+  .sidebtn{padding:4px 10px 4px 4px;font-size:13px}.sidebtn img{width:30px;height:30px}
+  .bside{gap:6px}
+  .binfo{padding:8px 12px;align-self:end}.ititle{font-size:14.5px}.itext{font-size:12.5px;line-height:1.4}.binfo .sub{font-size:11.5px;margin:0}
+  .bhist{margin:0 0 6px}.histbtn{padding:5px 12px 5px 8px;font-size:13px}
+}
+/* the two plates as a plain HUD: a round picture, the name, and the bars, with no box around them */
+.eface{display:none}
+@media (min-width:901px){
+  .battle>.bme,.battle>.benemy{background:none;border:0;border-radius:0;padding:0;text-shadow:0 1px 4px #000,0 0 10px rgba(0,0,0,.8)}
+  .battle>.bme{width:min(100%,430px)}
+  .bme .bstats{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;align-items:baseline}
+  .bme .brow{grid-column:1/-1}.bme .brow:last-child{display:none}                       /* Attack and Defense are on the profile */
+  .bme .brow>img,.bme .brow .bl{display:none}
+  .bme .brow{position:relative;margin-top:4px}
+  .bme .bhp{border-radius:10px;background:rgba(8,8,10,.8);border:1px solid rgba(232,194,122,.7)}
+  .bme .bhp:not(.qi){height:20px}.bme .bhp.qi{height:13px;flex:0 0 76%;border-color:rgba(127,168,217,.7)}
+  .bme .bhp div{border-radius:9px}
+  .bme .brow b{position:absolute;left:0;right:0;text-align:center;font-size:12px;line-height:20px;pointer-events:none}
+  .bme .brow:nth-of-type(2) b{right:24%;font-size:10.5px;line-height:13px}
+  .bface{width:62px;height:62px;box-shadow:0 0 12px rgba(0,0,0,.7)}
+  .bname{font-size:19px}.brealm{font-size:12px}
+  .battle>.benemy{width:min(100%,430px);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;text-align:right}
+  .eface{display:block;grid-column:2;grid-row:1/4;align-self:start;width:62px;height:62px;border-radius:50%;border:2px solid var(--gold);
+    background:#14161c;object-fit:cover;object-position:20% 30%;box-shadow:0 0 12px rgba(0,0,0,.7)}
+  .benemy .ename,.benemy .etags,.benemy .ehp{grid-column:1}
+  .ename{font-size:19px;order:0}.etags{font-size:12px}
+  .ehp{height:20px;clip-path:none;border-radius:10px;background:rgba(8,8,10,.8);border:1px solid rgba(232,194,122,.7);transform:scaleX(-1)}
+  .ehp span{transform:scaleX(-1);font-size:12px}.ehp div{border-radius:9px}
+  .bwarn{grid-column:1/-1;border-top:0;margin-top:8px;padding:6px 12px;border-radius:10px;background:rgba(18,8,10,.62);text-align:left;text-shadow:none}
+}
+@media (min-width:901px){
+  .battle>.benemy{grid-column:2/-1}
+  .bme .brow:nth-of-type(2) b::before{content:"Battle Qi "}
+  .bbar{max-width:900px}
+  .bbar .alab{display:block;overflow:visible;-webkit-line-clamp:unset}
+  .techmenu>.actbtn{flex-wrap:wrap;column-gap:10px;row-gap:0}
+}
