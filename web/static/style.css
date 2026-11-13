@@ -830,3 +830,18 @@ main.battle.slain .bvictory{display:flex}
   .vgo{width:100%}
 }
 @media (prefers-reduced-motion:reduce){.vcard{animation:none}}
+/* ── one action per turn (fight.js Combat, docs/web.md): while a move is sent and the turn is acted out the
+   buttons are locked. Subtle on purpose: a little dimmer and flatter, back the moment it is your turn. ── */
+.bbar .actbtn,.bbar .techmenu>summary,.bside .sidebtn{transition:opacity .18s ease,filter .18s ease,transform .12s ease,border-color .12s ease,box-shadow .12s ease}
+main.battle:not([data-phase=player_turn]) :is(.bbar,.bside){pointer-events:none}
+main.battle:not([data-phase=player_turn]) :is(.actbtn:not(.off),.sidebtn:not(.off)){opacity:.7;filter:saturate(.65) brightness(.92);cursor:default;transform:none;box-shadow:none}
+main.battle:not([data-phase=player_turn]) .techmenu:not(.off)>summary{opacity:.7;filter:saturate(.65) brightness(.92)}
+.turnchip{display:inline-flex;align-items:center;gap:7px;margin:0 0 6px!important;padding:2px 10px 2px 8px;border-radius:999px;font:700 12px/1.6 Cinzel,Georgia,serif;
+  letter-spacing:.08em;text-transform:uppercase;color:#FFE7A8;border:1px solid rgba(232,194,122,.6);background:rgba(232,194,122,.12);transition:color .18s,border-color .18s,background .18s}
+.turnchip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.turnchip:empty{display:none}
+main.battle:not([data-phase=player_turn]) .turnchip{color:#AEB6C6;border-color:rgba(174,182,198,.35);background:rgba(174,182,198,.08)}
+main.battle[data-phase=beast_acting] .turnchip{color:#FF9B8F;border-color:rgba(255,120,104,.5);background:rgba(255,120,104,.1)}
+main.battle:not([data-phase=player_turn]) .turnchip::before{box-shadow:none}
+@media (prefers-reduced-motion:no-preference){main.battle[data-phase=player_turn] .turnchip::before{animation:turnpulse 1.6s ease-in-out infinite}}
+@keyframes turnpulse{50%{opacity:.35}}

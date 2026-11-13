@@ -1,6 +1,52 @@
 /* The fight screen: send a move without leaving the page (no jump to the top), then swap in the next turn. */
 (function () {
-  var busy = false, playing = null;
+  var playing = null;
+
+  /* ── The combat action state ────────────────────────────────────────────────────────────────────────
+     One place decides whether a move may be sent (docs/web.md, "One action per turn"). The phases have the
+     same names as web/explore_play.py:
+
+       player_turn    the buttons work: pick a move
+       submitting     the move is on its way to the server; everything is locked
+       player_acting  your action is being acted out
+       beast_acting   the beast is acting, or reacting to your Guard
+       dying          the loser is going down (a death animation sets this; nothing can be pressed)
+       finished       the fight is over
+
+     Only player_turn lets a move through: buttons, hotkeys and the techniques menu all ask Combat.can().
+     The server has already resolved the turn before anything is acted out, so the phases only pace what is
+     shown; they never decide damage or rewards. Other scripts can read window.MACombat.phase, call
+     MACombat.set('dying'), or listen for the "combat:phase" event on document. */
+  var Combat = {
+    phase: 'player_turn',
+    token: 0,                                                   // goes up with every move sent: late answers are dropped
+    can: function () { return Combat.phase === 'player_turn'; },
+    set: function (phase) {
+      if (Combat.phase === phase) return;
+      Combat.phase = phase;
+      Combat.paint();
+      document.dispatchEvent(new CustomEvent('combat:phase', {detail: {phase: phase}}));
+    },
+    /* show the phase on whatever fight is on the page now: the lock, the dimmed buttons, whose turn it is */
+    paint: function () {
+      var main = document.querySelector('main.battle');
+      if (!main) return;
+      var open = Combat.can();
+      main.dataset.phase = Combat.phase;
+      main.querySelectorAll('.fightform button').forEach(function (b) {
+        if (open) { if (b.dataset.locked) { b.disabled = false; delete b.dataset.locked; } }
+        else if (!b.disabled) { b.disabled = true; b.dataset.locked = '1'; }      // ones the server greyed out stay as they are
+      });
+      if (!open) main.querySelectorAll('details.techmenu[open]').forEach(function (d) { d.open = false; });
+      var chip = main.querySelector('.turnchip');
+      if (chip) chip.textContent = TURN_TEXT[Combat.phase] || '';
+    }
+  };
+  var TURN_TEXT = {player_turn: 'Your turn', submitting: 'Sending…', player_acting: 'You act', beast_acting: 'The beast acts',
+                   dying: '', finished: 'The fight is over'};
+  var SETTLE = 220;            // ms a turn with nothing to act out stays locked: one press is one turn, never two
+  var ANSWER_LIMIT = 12000;    // ms to wait for the server before asking it what happened
+  window.MACombat = Combat;
 
   function init() {
     var main = document.querySelector('main.battle');
@@ -20,15 +66,19 @@
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
     drawDeath(main);                                           // a won fight on a fresh page: the body already down
-    if (main.classList.contains('slain')) showVictory(main);
+    if (main.classList.contains('slain')) { Combat.set('finished'); showVictory(main); }      // a won fight: nothing to act in
     main.querySelectorAll('form.fightform').forEach(function (form) {
       form.addEventListener('submit', function (ev) {
         ev.preventDefault();
         var button = ev.submitter;
-        if (busy || !button || button.disabled) return;
+        if (!Combat.can() || !button || button.disabled) return;
         send(form, button);
       });
     });
+    main.querySelectorAll('details.techmenu').forEach(function (d) {        // the menu can't be opened while locked
+      d.addEventListener('toggle', function () { if (d.open && !Combat.can()) d.open = false; });
+    });
+    Combat.paint();
   }
 
   function showVictory(main) {                                 // the panel is up: Continue is in reach (and on screen on a phone)
@@ -91,29 +141,69 @@
   window.addEventListener('resize', function () { drawDeath(document.querySelector('main.battle')); });
 
   function send(form, button) {
-    busy = true;
+    Combat.set('submitting');                                   // before anything else: a second press finds the lock
+    var token = ++Combat.token, sent = +document.querySelector('main.battle').dataset.turn;
     var data = new FormData(form);
     data.set(button.name, button.value);
-    document.querySelectorAll('main.battle button').forEach(function (b) { b.disabled = true; });
-    fetch(form.action, {method: 'POST', body: new URLSearchParams(data), credentials: 'same-origin'})
-      .then(function (r) { return r.text().then(function (html) { return {url: r.url, html: html}; }); })
-      .then(function (res) {
-        var doc = new DOMParser().parseFromString(res.html, 'text/html');
-        var next = doc.querySelector('main.battle'), now = document.querySelector('main.battle');
-        if (next && now) {
-          var before = bars(now);
-          if (playing) playing.finish();
-          var fresh = document.importNode(next, true);
-          keepHistory(now, fresh);
-          now.replaceWith(fresh);                             // same scroll position: nothing jumps
-          busy = false;
-          init();
-          playing = act(fresh, before);                       // act the turn out: dash, swing, hit, the beast's answer
-        } else {
-          location.replace('/explore/play');                  // the fight is over: the next page of the expedition
-        }
-      })
-      .catch(function () { location.replace('/explore/play'); });
+    load(form.action, {method: 'POST', body: new URLSearchParams(data)})
+      .then(function (html) { if (token === Combat.token) show(html, sent); })
+      .catch(function () {
+        /* No answer (connection dropped, timed out). The move may or may not have reached the server, and
+           sending it again could never play it twice (the server takes one action per turn), but the server
+           knows which: ask it for the fight as it stands and go on from there. */
+        if (token !== Combat.token) return;
+        load('/explore/play', {method: 'GET'})
+          .then(function (html) { if (token === Combat.token) show(html, sent, true); })
+          .catch(function () { location.replace('/explore/play'); });
+      });
+  }
+
+  /* a page from the server, or a rejected promise when it does not answer in time */
+  function load(url, options) {
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, ANSWER_LIMIT) : null;
+    options.credentials = 'same-origin';
+    if (ctl) options.signal = ctl.signal;
+    return fetch(url, options).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    }).then(function (html) { clearTimeout(timer); return html; }, function (err) { clearTimeout(timer); throw err; });
+  }
+
+  /* Swap in the fight the server answered with, and act the turn out if it is a new one. `sent` is the turn the
+     move was sent for; `recovered` means this page was asked for after a lost answer. */
+  function show(html, sent, recovered) {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    var next = doc.querySelector('main.battle'), now = document.querySelector('main.battle');
+    if (!next || !now) {                                        // the fight is over: the next page of the expedition
+      Combat.set('finished');
+      location.replace('/explore/play');
+      return;
+    }
+    var before = bars(now);
+    if (playing) playing.finish(true);
+    var fresh = document.importNode(next, true);
+    var moved = +fresh.dataset.turn !== sent;                   // the server took the move (or refused it with a notice)
+    var played = fresh.dataset.round !== now.dataset.round      // a turn of the fight was played: there is something to act out
+      || (!!fresh.dataset.end && !now.dataset.end);             // ... or it was the winning turn (the round count stops there)
+    keepHistory(now, fresh);
+    now.replaceWith(fresh);                                     // same scroll position: nothing jumps
+    init();                                                     // still locked: the new buttons are painted as such
+    if (!moved) {                                               // the move never arrived: nothing happened, pick again
+      if (recovered) notice(fresh, 'The connection dropped before your move arrived. Nothing was spent: choose again.');
+      Combat.set('player_turn');
+      return;
+    }
+    playing = played ? act(fresh, before) : null;               // act the turn out: dash, swing, hit, the beast's answer
+    if (!playing) setTimeout(function () { if (Combat.phase !== 'player_turn' && Combat.phase !== 'finished' && fresh.isConnected) Combat.set('player_turn'); }, SETTLE);
+  }
+
+  function notice(main, text) {
+    var feed = main.querySelector('.bfeed');
+    if (!feed) return;
+    var p = document.createElement('p');
+    p.className = 'toast li-warn'; p.textContent = text;
+    feed.appendChild(p);
   }
 
   /* Battle History stays open (and scrolled to the top, where the newest turn is) when the next turn comes in */
@@ -445,16 +535,18 @@
     }
 
     var steps = [], kinds = {};
+    function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'pounce') { steps.push(pounce(ev)); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
-      else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { steps.push(attack(ev)); kinds.me = 1; }
-      else if (ev.who === 'me' && ev.act === 'guard') { steps.push(charge(ev)); kinds.guard = 1; }
-      else if (ev.who === 'enemy') { steps.push(charge(ev)); kinds.enemy = 1; }
-      else if (ev.act === 'tech') steps.push({end: RECIPES.tech.end, render: function () {}});
+      if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
+      else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
+      else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
+      else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;
-    if (dying) { steps.push(dying); main.classList.remove('slain'); }      // .slain (the finished picture) returns in finish()
+    if (dying) { add(dying, 'dying'); main.classList.remove('slain'); }      // .slain (the finished picture) returns in finish()
     if (!steps.length) return null;
+    Combat.set(steps[0].phase);
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
     main.classList.add('tl-hold', 'playing'); fighter.classList.add('acting');
     main.offsetWidth;                                           // the held bars are in place before transitions return
@@ -463,34 +555,47 @@
     var i = 0, start = null, stopped = false;
     function reset() { bpose(home); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
       trail.style.opacity = 0; claws.setAttribute('opacity', 0); }
-    function finish() {
+    /* the turn has been acted out (or `cut`: another fight replaced this one): hand the turn back to the player */
+    function finish(cut) {
       if (stopped) return;
       stopped = true;
+      clearTimeout(guard);
       reset(); drop('me'); drop('enemy'); fighter.classList.remove('acting'); main.classList.remove('playing');
       if (dying) {
         dying.clear(); main.classList.remove('dying'); main.classList.add('slain');
         showVictory(main);
+        if (cut !== true) Combat.set('finished');               // the fight is won: only the Victory panel's button is left
       }
       if (playing && playing.finish === finish) playing = null;
+      if (cut !== true && Combat.phase !== 'dying' && Combat.phase !== 'finished') Combat.set('player_turn');
     }
     function frame(now) {
       if (stopped || !main.isConnected) return;
       if (start === null) start = now;
       var t = now - start, step = steps[i];
-      if (t >= step.end + GAP) { step.render(step.end + 2000); reset(); i += 1; start = null; if (i >= steps.length) return finish(); }
+      if (t >= step.end + GAP) {
+        step.render(step.end + 2000); reset(); i += 1; start = null;
+        if (i >= steps.length) return finish();
+        Combat.set(steps[i].phase);                             // your action is done: now the beast's (or the other way round)
+      }
       else step.render(Math.min(t, step.end));
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
-    scene.addEventListener('click', finish, {once: true});      // click the scene to skip
+    /* Frames stop while the tab is hidden. The controls must never stay locked because of that: once the
+       turn has had its time (and a little more), it ends even if no frame was drawn. */
+    var total = steps.reduce(function (sum, st) { return sum + st.end + GAP; }, 0);
+    var guard = setTimeout(finish, total + 1500);
     return {finish: finish};
   }
 
   document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey || e.metaKey || e.altKey || busy) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     var main = document.querySelector('main.battle');
     if (!main) return;
     if (e.key === 'Escape') { main.querySelectorAll('details[open]').forEach(function (d) { d.open = false; }); return; }
+    if (e.key === 'H' || e.key === 'h') { var h = main.querySelector('.bhist'); if (h) h.open = !h.open; return; }   // reading is always allowed
+    if (!Combat.can() || e.repeat) return;                      // a held key is not a string of moves
     var k = e.key.toUpperCase(), el = main.querySelector('[data-key="' + k + '"]');
     if (!el) return;
     if (el.tagName === 'DETAILS') { el.open = !el.open; if (el.open) { var f = el.querySelector('.techbtn:not(:disabled)'); if (f) f.focus(); } return; }
@@ -499,5 +604,6 @@
   document.addEventListener('click', function (e) {          // close the techniques menu when clicking elsewhere
     document.querySelectorAll('details.techmenu[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
   });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });   // never a stale, locked page from the back button
   init();
 })();
