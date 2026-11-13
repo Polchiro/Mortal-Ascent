@@ -264,6 +264,19 @@ def test_the_male_sword_attack_plays_frame_by_frame(client):
     assert looks.attack_sheet({"gender": "female"}) is None                  # she still swings through her three poses
 
 
+def test_the_male_guard_plays_frame_by_frame(client):
+    import os
+    import looks
+    from PIL import Image
+    fight(client)
+    page = client.get("/explore/play").text
+    sheet = looks.GUARD_SHEETS["male"]
+    assert 'class="sheetfx gsheet"' in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
+    im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
+    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert looks.guard_sheet({"gender": "female"}) is None
+
+
 def test_battle_history_keeps_every_turn(client):
     s = fight(client)
     b = s.battle

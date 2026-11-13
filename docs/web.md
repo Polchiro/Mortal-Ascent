@@ -193,7 +193,10 @@ a lair is fought with `bot/hunt.py`.
    he raises the sword behind him, spins it in a blue Qi arc while closing in, lifts it overhead and cuts down
    through the beast (the blue slash trail and the hit land on that cut), then settles back on guard (`BLADE` in
    `fight.js`; Break plays it a little slower with the gold slash and a shake). His idle, wind-up and strike stills
-   come from the same video; the beast is knocked back, flashes, and its HP bar and the damage number change at the
+   come from the same video. His **Guard** is frame by frame too (`looks.GUARD_SHEETS`, `hero_male_guard.webp`,
+   from SHOAIB's second video, robes recoloured to match): he stands with the blade raised as the beast comes in,
+   the blow bursts into a gold flash and sparks on the blade, he leans back under it and steadies (`block()` in
+   `fight.js`; also used when he guards the Mountain Tiger's pounce); the beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
