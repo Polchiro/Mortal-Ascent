@@ -171,7 +171,7 @@ a lair is fought with `bot/hunt.py`.
    leap, timed from when the page shows it), herbs, ore, chests and so on. Go deeper or return safely.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
-   (`looks.fighter`: the male in three sword poses, the female in one painting for now) facing the beast's painting (`art/beasts/`), the beast's warning in the
+   (`looks.fighter`: the player's cultivator in three sword poses) facing the beast's painting (`art/beasts/`), the beast's warning in the
    plate, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
    small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
