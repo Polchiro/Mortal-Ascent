@@ -736,3 +736,83 @@ def test_events_for_blocked_missed_guard_and_techniques():
     assert ev[0] == {"who": "me", "act": "tech"}
     ev, _ = events_after("guard", "guard")
     assert ev == []
+
+
+# ── Unique beast skills (battle.UNIQUE_SKILLS) ────────────────────────
+
+def tiger_pounce_planned(n=1):
+    b = make_battle(("Mountain Tiger", "beast_king", "hunter"), n=n)
+    for f in b.fighters:
+        f.max_hp = f.hp = 10 ** 6
+    b.enemy_turns, b.charges = 2, 0
+    b.enemy["statuses"].clear()
+    b._plan()
+    return b
+
+
+def test_the_mountain_tiger_winds_up_its_pounce_on_its_first_charged_attack():
+    b = tiger_pounce_planned()
+    assert b.intent["kind"] == "charged" and b.intent["skill"] == "Mountain-Splitting Pounce"
+    assert "golden Qi" in b.warning[0] and "Stunned" in b.warning[1] and "charged" in b.enemy["statuses"]
+    b.enemy_turns = 5                       # its next charged attack is the element move again
+    b._plan()
+    assert b.intent["skill"] is None and b.intent["name"] == "Rending Fangs"
+    b.enemy_turns = 8
+    b._plan()
+    assert b.intent["skill"] == "Mountain-Splitting Pounce"
+
+
+def test_other_beasts_keep_their_element_move():
+    b = make_battle(("Grey Wolf", "elite", "hunter"))
+    b.enemy_turns = 2
+    b._plan()
+    assert b.intent["kind"] == "charged" and b.intent["skill"] is None and b.intent["name"] == "Frost Breath"
+
+
+def test_the_pounce_stuns_whoever_did_not_guard_and_rouses_the_tiger():
+    b = tiger_pounce_planned(n=2)
+    b.choose(1, "strike")
+    b.choose(2, "guard")
+    b.resolve()
+    f1, f2 = b.fighters
+    assert f1.stunned and not f2.stunned and "bleeding" not in f1.statuses
+    assert f1.hp < f1.max_hp and f2.hp < f2.max_hp                  # the whole party, the Guard only blocks part
+    assert b.enemy["statuses"].get("roused") == 2
+    assert any(icon == "roar" and "Roused" in text for icon, text in b.log)
+
+
+def test_roused_hits_harder_and_wears_off():
+    b = tiger_pounce_planned()
+    f = b.fighters[0]
+    b.rng = random.Random(1)
+    calm = b._enemy_hit(f, "normal")
+    b.enemy["statuses"]["roused"] = 2
+    b.rng = random.Random(1)
+    assert b._enemy_hit(f, "normal") == pytest.approx(calm * 1.2, rel=0.02)
+    b.enemy["statuses"] = {"roused": 1}
+    b.intent = {"move": "guard", "kind": "normal", "target": f, "name": "Guard", "skill": None}
+    b.choose(1, "guard")
+    b.resolve()
+    assert "roused" not in b.enemy["statuses"]
+
+
+def test_break_interrupts_the_pounce_and_nothing_is_roused():
+    b = tiger_pounce_planned()
+    b.choose(1, "break")
+    b.resolve()
+    assert "roused" not in b.enemy["statuses"] and not b.fighters[0].stunned
+    assert any("broken off" in text for _, text in b.log)
+
+
+def test_the_discord_card_shows_the_unique_skill():
+    from cards.beast_fight import H as EH, W as EW, render_beast_fight
+    b = tiger_pounce_planned()
+    b.enemy["slug"] = beasts.slug("Mountain Tiger")
+    d = card_data(b, "x")
+    assert d["skill"] == "Mountain-Splitting Pounce" and d["danger"] == "charged"
+    assert render_beast_fight(d).size == (EW, EH)
+    b.choose(1, "strike")
+    b.resolve()
+    d = card_data(b, "x")
+    assert d["skill"] is None and "Roused" in d["enemy"]["statuses"]
+    assert render_beast_fight(d).size == (EW, EH)

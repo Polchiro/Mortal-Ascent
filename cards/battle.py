@@ -588,7 +588,7 @@ LOG_STYLE = {   # kind -> (icon, colour)
     "strike": ("sword", (246, 196, 96)), "sword": ("sword", (246, 196, 96)), "fist": ("fist", (240, 150, 80)),
     "skull": ("skull", (236, 90, 76)), "shield": ("shield", (130, 186, 246)), "pill": ("pill", (110, 220, 160)),
     "herb": ("herb", (110, 220, 160)), "flame": ("flame", (246, 140, 70)), "flee": ("star", (180, 182, 196)),
-    "hourglass": ("hourglass", (200, 190, 170)), "star": ("star", (236, 210, 140)),
+    "hourglass": ("hourglass", (200, 190, 170)), "star": ("star", (236, 210, 140)), "roar": ("star", (255, 196, 80)),
 }
 NUMBER = None
 

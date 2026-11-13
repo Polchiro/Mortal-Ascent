@@ -470,6 +470,7 @@ def fight_view(conn, s, b, p, now):
     head, hint = b.warning if getattr(b, "warning", None) else ("", "")
     intent = getattr(b, "intent", None) or {}
     danger = intent.get("kind") if intent.get("kind") in ("charged", "signature") else None
+    skill = battle_rules.UNIQUE_SKILLS.get(e["name"]) if beast else None
     log = [(icon, rich(text)) for icon, text in (b.log or [])]
     fx = effects(b.log or [], f.name)
     prev = s.prev or {}
@@ -491,7 +492,9 @@ def fight_view(conn, s, b, p, now):
                   "statuses": statuses(e["statuses"]),
                   "art": f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
-        "warning": {"head": rich(head), "hint": rich(hint), "danger": danger},
+        "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
+                    "skill": skill["fx"] if skill and intent.get("skill") and not b.over else None},
+        "roused": "roused" in e["statuses"],
         "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": ARENA,
         "result": {"word": word, "sub": sub} if word else None,
     }
@@ -520,8 +523,12 @@ def events(log, f):
     {"who": "me", "act": "guard", "counter": n}       the beast struck and your Guard stopped it (n = counter damage)
     {"who": "me", "act": "tech"}                      a technique: it plays its own animation
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
+    {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
+                                                      a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
+                                                      it replaces your Guard's own event this turn
     """
     out = []
+    skills = {v["name"]: v["fx"] for v in battle_rules.UNIQUE_SKILLS.values()}
     techs = {t["name"] for t in (f.atk_t, f.def_t) if t}
     for icon, text in log:
         mine = text.startswith(f.name + " — ")
@@ -533,6 +540,19 @@ def events(log, f):
             out.append({"who": "me", "act": "guard", "counter": _number(text, r"counters for ([\d,]+)")})
         elif move in techs:
             out.append({"who": "me", "act": "tech"})
+        elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):
+            name = next(n for n in skills if f" — {n} on " in text)
+            dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
+            guard = [x for x in out if x["act"] == "guard"]
+            out = [x for x in out if x["act"] != "guard"]
+            out.append({"who": "enemy", "act": skills[name], "dmg": dmg, "guard": bool(guard),
+                        "stun": f"{f.name} −{dmg:,} (Stunned)" in text})
+        elif icon == "roar" and not any(x["act"] in skills.values() for x in out):
+            name = next((n for n in skills if f" — {n}:" in text), None)    # it landed but did you no harm
+            if name:
+                guard = [x for x in out if x["act"] == "guard"]
+                out = [x for x in out if x["act"] != "guard"]
+                out.append({"who": "enemy", "act": skills[name], "dmg": 0, "guard": bool(guard), "stun": False})
         elif icon == "skull" and not mine:
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
             if dmg:

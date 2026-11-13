@@ -355,7 +355,7 @@ form.inline{display:inline}
 .blog{grid-area:log;align-self:stretch;padding:12px 14px;border-radius:14px;background:rgba(10,12,20,.82);border:1px solid rgba(232,194,122,.3);overflow:auto;max-height:420px}
 .blog .kicker{margin:0 0 6px}
 .li{margin:0 0 6px;font-size:14px;line-height:1.4}
-.li-sword,.li-fist{color:#FFE7A8}.li-skull{color:#FF9A90}.li-shield{color:#9FD0FF}.li-pill{color:#7CF0BE}.li-flame{color:#F7B267}.li-warn{color:#F5D04A}
+.li-sword,.li-fist{color:#FFE7A8}.li-skull{color:#FF9A90}.li-shield{color:#9FD0FF}.li-pill{color:#7CF0BE}.li-flame{color:#F7B267}.li-roar{color:#FFD46A}.li-warn{color:#F5D04A}
 .bbar{grid-area:bar;min-width:0}
 .btimer{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-bottom:8px}.btimer div{height:100%;background:#6FD9B0}
 .acts{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
@@ -736,3 +736,43 @@ body:has(main.battle)>.topbar,body:has(main.battle)>header,body:has(main.battle)
 /* the male in his three sword poses stands mid-canvas: the slash follows his blade, and he is drawn a little larger */
 .fighter.sworded img.trailfx{left:4%;top:1%}
 @media (min-width:901px){.bscene .fighter.sworded{width:min(44%,76vh);left:0}}
+
+/* ── Unique beast skills (battle.UNIQUE_SKILLS, docs/combat.md). The Mountain Tiger's Mountain-Splitting Pounce:
+   while it winds up, golden Qi swirls around its paws; fight.js acts out the crouch, the leap with golden
+   afterimages, the ground-splitting landing (art/fx/crater.webp, shockwave, stones) and the roar. Roused: a gold aura. ── */
+.bwarn.skill{background:rgba(40,26,6,.72);border:1px solid rgba(255,196,90,.55)}
+.bwarn.skill .whead{color:#FFD46A;text-shadow:0 0 14px rgba(255,180,60,.85)}
+.beast .qiring{position:absolute;left:50%;bottom:-3%;width:96%;aspect-ratio:3/1;border-radius:50%;pointer-events:none;transform:translateX(-50%);
+  border:3px solid rgba(255,206,110,.9);box-shadow:0 0 18px rgba(255,170,50,.9),inset 0 0 18px rgba(255,170,50,.7);animation:qiring 1.6s ease-in-out infinite}
+.beast .qiring.q2{width:70%;animation-delay:-.8s;border-style:dashed}
+@keyframes qiring{0%{opacity:.2;transform:translateX(-50%) scale(.75) rotate(0)}50%{opacity:1}100%{opacity:.2;transform:translateX(-50%) scale(1.08) rotate(30deg)}}
+main.battle.skill-pounce:not(.playing) .beast img{transform:scale(1.03,.92);transition:transform .5s ease-out;
+  filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,186,64,.85))}
+main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out infinite}
+@keyframes roused{0%,100%{filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 10px rgba(255,186,64,.55))}
+  50%{filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 26px rgba(255,200,80,.95)) brightness(1.12)}}
+.pghost{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;transform-origin:50% 100%;pointer-events:none;
+  filter:sepia(1) saturate(4) hue-rotate(-12deg) brightness(1.5) blur(1px);mix-blend-mode:screen;animation:pghost .3s ease-out forwards}
+@keyframes pghost{from{opacity:.32}to{opacity:0}}
+.pqring,.pwave,.proar{position:absolute;z-index:3;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)}
+.pqring{width:26%;aspect-ratio:3/1;border:3px solid #FFD27A;box-shadow:0 0 22px #FFAA33,inset 0 0 16px #FFAA33;animation:pqring .9s ease-out forwards}
+.pqring.q2{width:18%;animation-delay:.25s;opacity:0}
+@keyframes pqring{0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(0)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25) rotate(40deg)}}
+.pcrater{position:absolute;z-index:1;width:46%;height:auto;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:screen;animation:pcrater 3.4s ease-out forwards}
+@keyframes pcrater{0%{opacity:0;transform:translate(-50%,-50%) scale(.35)}6%{opacity:1;transform:translate(-50%,-50%) scale(1.05);filter:brightness(1.8)}
+  20%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}70%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+.pwave{width:20%;aspect-ratio:3.2/1;border:6px solid rgba(255,214,120,.95);box-shadow:0 0 40px #FFAA33,inset 0 0 30px rgba(255,170,50,.8);animation:pwave .9s ease-out forwards}
+.pwave.w2{border-width:3px;animation-duration:1.1s;animation-delay:.08s;opacity:0}
+@keyframes pwave{0%{opacity:1;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(3.2)}}
+.pflash{position:absolute;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle at 30% 80%,rgba(255,236,180,.6),rgba(255,180,60,.18) 35%,transparent 65%);
+  animation:flash .5s ease-out forwards;left:0!important;top:0!important}
+.pdebris{position:absolute;z-index:4;width:var(--sz);height:var(--sz);border-radius:30%;background:#4A3A2C;box-shadow:0 0 2px #000;pointer-events:none;
+  animation:pdebris .9s cubic-bezier(.2,.7,.4,1) forwards}
+.pdebris.hot{background:#FFC25A;box-shadow:0 0 8px #FF9A2A}
+@keyframes pdebris{0%{opacity:1;transform:translate(-50%,-50%)}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy) + 60px)) rotate(var(--rot))}}
+.proar{width:12%;aspect-ratio:1;border:4px solid rgba(255,214,120,.9);box-shadow:0 0 26px #FFAA33;animation:proar .9s ease-out forwards}
+.proar.r2{animation-delay:.18s;opacity:0}
+@keyframes proar{0%{opacity:1;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
+.tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
+.tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
+@media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}

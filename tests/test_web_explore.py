@@ -263,3 +263,43 @@ def test_battle_history_keeps_every_turn(client):
         turns = len(b.history)
         assert turns >= 2 and all(f"Turn {n}" in page for n in range(1, turns + 1))
         assert page.index(f"Turn {turns}") < page.index("Turn 1<")          # newest turn first
+
+
+def tiger_fight(client):
+    import beasts
+    from bot import combat
+    from bot import fight as engine
+    s = fight(client)
+    b = s.battle
+    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Mountain Tiger", "beast_king", "hunter")),
+                                      "Mountain Tiger")
+    b.enemy.update(realm="Martial Apprentice", slug=beasts.slug("Mountain Tiger"))
+    b.fighters[0].max_hp = b.fighters[0].hp = 10 ** 6
+    b.enemy_turns, b.charges = 2, 0
+    b.enemy["statuses"].clear()
+    b._plan()
+    return s, b
+
+
+def test_the_tiger_pounce_winds_up_and_is_acted_out(client):
+    s, b = tiger_fight(client)
+    page = client.get("/explore/play").text
+    assert "skill-pounce" in page and 'class="qiring"' in page and "bwarn danger skill" in page
+    assert client.get("/art/fx/crater.webp").status_code == 200
+    act(client, "move", "strike")
+    page = client.get("/explore/play").text
+    assert '"act": "pounce"' in page and '"stun": true' in page and " roused" in page
+    assert "skill-pounce" not in page
+
+
+def test_a_guarded_pounce_is_one_event():
+    from bot.fight import Fighter  # noqa: F401
+    from web.explore_play import events
+
+    class F:
+        name, atk_t, def_t = "Shoaib", None, None
+    log = [("shield", "Shoaib — Guard: blocked 50%"),
+           ("skull", "Tiger — Mountain-Splitting Pounce on Shoaib −40"),
+           ("roar", "Tiger — Mountain-Splitting Pounce: it roars...")]
+    assert events(log, F) == [{"who": "enemy", "act": "pounce", "dmg": 40, "guard": True, "stun": False}]
+    assert events(log[:1] + log[2:], F) == [{"who": "enemy", "act": "pounce", "dmg": 0, "guard": True, "stun": False}]

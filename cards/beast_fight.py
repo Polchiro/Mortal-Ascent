@@ -44,6 +44,7 @@ WARM = (244, 236, 222)
 MUTED = (176, 166, 156)
 DIM = (120, 112, 106)
 DANGER = (226, 70, 52)
+GOLD_QI = (255, 200, 96)       # unique beast skills (battle.UNIQUE_SKILLS): the wind-up and the Roused aura
 TIER_LABEL_COLOR = {"Normal": (176, 166, 156), "Elite": (206, 212, 232), "Beast King": (236, 198, 120),
                     "Bandits": (214, 120, 96), "Master": (186, 206, 236)}
 ATMOS = {"Flame": "embers", "Frost": "snow", "Shadow": "wisps", "Thunder": "sparks", "Venom": "spores",
@@ -317,12 +318,13 @@ def _intent(img, data, acc):
     danger = data.get("danger")
     d = ImageDraw.Draw(img)
     y = 418
-    col = DANGER if danger else mix(acc.rim, (255, 255, 255), 0.35)
+    skill = data.get("skill")
+    col = GOLD_QI if skill else DANGER if danger else mix(acc.rim, (255, 255, 255), 0.35)
     if danger:
-        T.soft_glow(img, (20, y - 30, 660, y + 120), (160, 20, 10, 120), 30)
+        T.soft_glow(img, (20, y - 30, 660, y + 120), (150, 96, 10, 120) if skill else (160, 20, 10, 120), 30)
         d = ImageDraw.Draw(img)
     d.line(P(48, y - 14, 48, y + 104), fill=col, width=round(5 * S))
-    label = {"charged": "POWERFUL ATTACK", "signature": "SIGNATURE MOVE"}.get(danger, "NEXT MOVE")
+    label = "UNIQUE SKILL" if skill else {"charged": "POWERFUL ATTACK", "signature": "SIGNATURE MOVE"}.get(danger, "NEXT MOVE")
     _spaced(d, (68, y), label, 21, col, weight="Black", tracking=3)
     f = font("Inter.ttf", 33, "Bold")
     for i, line in enumerate(T.wrap(d, head, f, 620, lines=2)):
@@ -448,11 +450,29 @@ def _backdrop(palette, body, slug, tier, scene=None):
     return img
 
 
+def _skill_aura(img, data):
+    """Golden Qi at the beast's feet while it winds up a unique skill; a golden glow while it is Roused."""
+    winding, roused = data.get("skill") and not data.get("result"), "Roused" in data["enemy"]["statuses"]
+    if not (winding or roused) or data.get("result"):
+        return
+    _, bw, _, cx, feet = STAGING.get(data["enemy"]["body"], STAGING["cat"])
+    T.soft_glow(img, (cx - bw * 0.45, feet - 110, cx + bw * 0.45, feet + 10), (255, 170, 50, 110 if winding else 70), 40)
+    if winding:
+        layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        d = ImageDraw.Draw(layer)
+        y = feet - 50
+        for k, a in ((0.40, 230), (0.28, 170)):
+            d.ellipse(P(cx - bw * k, y - 90 * k, cx + bw * k, y + 90 * k), outline=GOLD_QI + (a,), width=round(4 * S))
+        img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(5 * S)))
+        img.alpha_composite(layer)
+
+
 def render_beast_fight(data):
     acc = T.ELEMENT_ACCENTS[data["palette"]]
     tier = _tier(data)
     e = data["enemy"]
     img = _backdrop(data["palette"], e["body"], e.get("slug"), tier, data.get("scene")).copy()
+    _skill_aura(img, data)
     if data.get("result"):
         _result(img, data, acc, tier)
     else:

@@ -105,6 +105,20 @@ Every beast announces its element move **one turn ahead** in the warning bar.
 | Elite, Beast King | **Charged attack** every 3rd turn | 1.5× damage, **ignores the 30% cap**, hits the **whole party**. Guard blocks 50% (+ your defense technique's block, max 80%); **Break interrupts it** for everyone |
 | Normal | **Signature strike** every 4th turn | 1.2× damage (capped). Guard blocks it. If it lands, its element status always applies |
 
+### Unique skills
+
+Some beasts have a skill of their own (`battle.UNIQUE_SKILLS`). It takes the place of some of their charged attacks,
+is announced one turn ahead ("UNIQUE SKILL" on the Discord card, a gold warning on the website), and is answered
+like any charged attack: **Guard** blocks part of it, **Break** interrupts it.
+
+| Beast | Skill | When | Rule |
+|---|---|---|---|
+| Mountain Tiger | **Mountain-Splitting Pounce** | its 1st, 3rd, 5th... charged attack (the others stay Rending Fangs) | Leaps and splits the ground: **1.75×** damage (charged attacks are 1.5×), no 30% cap, the whole party. Anyone who did **not Guard** is **Stunned** (instead of Bleeding). If it lands, the tiger is **Roused** for 2 turns: its attacks hit **20% harder** |
+
+The website acts it out (`web/static/fight.js`, `pounce`): golden Qi swirls at its paws while it winds up, then it
+crouches, leaps with golden afterimages, lands on you in a golden shockwave that splits the ground
+(`art/fx/crater.webp`, drawn by `scripts/make_crater.py`), bounds back and roars. While Roused it glows gold.
+
 ## Elements
 
 Every beast has one of eight elements. The element sets the scene's colours (sky, moon, mist,
