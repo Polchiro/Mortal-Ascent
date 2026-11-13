@@ -54,6 +54,8 @@
         <img class="trailfx" src="/art/fx/slash.webp" alt="" width="1024" height="559">
         {% if F.me.sheet %}<div class="sheetfx" data-frames="{{ F.me.sheet.frames }}" data-cols="{{ F.me.sheet.cols }}" data-rows="{{ F.me.sheet.rows }}"
           style="background-image: url({{ F.me.sheet.src }}); background-size: {{ F.me.sheet.cols * 100 }}% {{ F.me.sheet.rows * 100 }}%"></div>{% endif %}
+        {% if F.me.gsheet %}<div class="sheetfx gsheet" data-frames="{{ F.me.gsheet.frames }}" data-cols="{{ F.me.gsheet.cols }}" data-rows="{{ F.me.gsheet.rows }}"
+          style="background-image: url({{ F.me.gsheet.src }}); background-size: {{ F.me.gsheet.cols * 100 }}% {{ F.me.gsheet.rows * 100 }}%"></div>{% endif %}
       </div>
       <svg class="clawsfx" viewBox="0 0 1024 559"><defs>
         <linearGradient id="clawg" x1="1" x2="0"><stop offset="0" stop-color="#FF3B4E" stop-opacity="0"/><stop offset=".45" stop-color="#FF4A5C" stop-opacity=".85"/><stop offset="1" stop-color="#FFE3E0"/></linearGradient>

@@ -109,7 +109,8 @@
     var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
     function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
-    var sheet = fighter.querySelector('.sheetfx');              // a frame-by-frame attack, when this look has one
+    var sheet = fighter.querySelector('.sheetfx:not(.gsheet)'); // a frame-by-frame attack, when this look has one
+    var gsheet = fighter.querySelector('.gsheet');              // and a frame-by-frame Guard (looks.GUARD_SHEETS)
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
     var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
@@ -233,11 +234,26 @@
       }};
     }
 
+    /* your Guard, frame by frame from the video: `h` is ms since the blow landed. He stands with the blade raised as
+       the beast comes in (frames 0-3), the blow bursts into a gold flash and sparks on the blade (from frame 4), he
+       leans back under it and steadies. False when this look has no Guard frames. */
+    var GUARD = {ready: 320, first: 4, ms: 34};
+    function block(h) {
+      if (!gsheet) return false;
+      var n = +gsheet.dataset.frames, cols = +gsheet.dataset.cols, rows = +gsheet.dataset.rows;
+      var f = h < 0 ? Math.floor((GUARD.first - 1) * span(h, -GUARD.ready, 0)) : GUARD.first + Math.floor(h / GUARD.ms);
+      if (h < -GUARD.ready || f >= n) { pose('idle'); return true; }
+      gsheet.style.backgroundPosition = (f % cols) / (cols - 1) * 100 + '% ' + Math.floor(f / cols) / (rows - 1) * 100 + '%';
+      pose('guard');
+      return true;
+    }
+    function blockTime() { return gsheet ? (+gsheet.dataset.frames - GUARD.first) * GUARD.ms : 0; }
+
     /* the beast's attack: rears back, charges, claws; you are hit, or your Guard stops it (and may counter) */
     function charge(ev) {
       var R = RECIPES.beast, guard = ev.act === 'guard', done = false, countered = false;
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
-      return {end: R.end + (guard && ev.counter ? 200 : 0), render: function (t) {
+      return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
         var x = 0, y = 0, rot = 0;
         if (t < R.charge) { var q = ease(span(t, 0, R.charge)); x = 0.015 * W * q; rot = 4 * q; }
         else if (t < R.back) { var c = span(t, R.charge, R.hit); x = 0.015 * W - (reachBeast + 0.015 * W) * c * c; rot = -6 * c; }
@@ -254,12 +270,13 @@
           clawClip.setAttribute('x', 1320 - cw); clawClip.setAttribute('width', cw);
           claws.setAttribute('opacity', t < R.hit - 70 ? 0 : 1 - span(t, R.hit + 40, R.hit + 260));
         } else {
-          pose(ev.counter && h >= 110 && h < 380 ? 'strike' : 'idle'); hero(0, 0);
+          if (!block(h)) pose(ev.counter && h >= 110 && h < 380 ? 'strike' : 'idle');
+          hero(0, 0);
         }
         if (h >= 0 && !done) {
           done = true;
           var p = at(fr, 0.52, 0.5);
-          if (guard) { burst('tring', p[0], p[1]); pop(fighter, 'word', 'Blocked'); }
+          if (guard) { if (!gsheet) burst('tring', p[0], p[1]); pop(fighter, 'word', 'Blocked'); }
           else { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1], '#FFC2B8'); }
         }
         if (guard && ev.counter && h >= 130 && !countered) { countered = true; drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter); }
@@ -314,7 +331,7 @@
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-14px,9px)'}, {transform: 'translate(13px,-8px)'},
             {transform: 'translate(-9px,5px)'}, {transform: 'translate(6px,-3px)'}, {transform: 'none'}], {duration: 560});
           var p = at(fr, 0.52, 0.5);
-          if (ev.guard) { burst('tring', p[0], p[1]); pop(fighter, 'word', 'Guarded'); }
+          if (ev.guard) { if (!gsheet) burst('tring', p[0], p[1]); pop(fighter, 'word', 'Guarded'); }
           if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
         }
         if (ev.stun && h >= 260 && once('stun')) pop(fighter, 'word stun', 'Stunned!');
@@ -322,7 +339,7 @@
           var k = knocked(h, R.knock * W);
           pose('idle'); hero(-k[0], 0, -k[0] / 5);
           poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
-        } else { pose('idle'); hero(0, 0); }
+        } else { if (!(ev.guard && block(h))) pose('idle'); hero(0, 0); }
         if (t >= R.home && once('roar')) {
           var m = at(br, 0.16, 0.36);
           fx('proar', m[0], m[1], 900); fx('proar r2', m[0], m[1], 1100);
