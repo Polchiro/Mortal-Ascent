@@ -65,6 +65,9 @@ SWORD_POSES = {"male": 0.66, "female": 0.82}   # genders painted in the sword po
 # a grid of 320 x 360 frames that web/static/fight.js steps through; the stills above come from the same video.
 ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6}}
 
+# the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video)
+GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5}}
+
 
 def fighter(look, pose="idle"):
     """The fighter on the 1024 x 559 fight canvas, facing right, in one of POSES (web/static/fight.js swaps them)."""
@@ -82,6 +85,11 @@ def sword_tip(look):
 def attack_sheet(look):
     """The frame-by-frame sword attack for this look (ATTACK_SHEETS), or None to swing through the three poses."""
     return ATTACK_SHEETS.get(gender_of(look))
+
+
+def guard_sheet(look):
+    """The frame-by-frame sword block for this look (GUARD_SHEETS), or None to stand in the idle pose behind the ring."""
+    return GUARD_SHEETS.get(gender_of(look))
 
 
 def face(look):
