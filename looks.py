@@ -4,9 +4,8 @@ Character appearance: male or female. docs/appearance.md.
 The look is only a picture. It never touches stats, fights or anything else in the game.
 
 Each gender has one painting of the cultivator in white and blue robes (art/portraits/hero_<gender>.webp,
-see-through background) and a round face (art/portraits/hero_<gender>_face.webp). In website fights the male
-has three sword poses (art/portraits/fight/hero_male_{idle,windup,strike}.webp); the female has one painting
-for now (art/portraits/fight/hero_female.webp). A player who hasn't chosen a look shows the male painting.
+see-through background) and a round face (art/portraits/hero_<gender>_face.webp). In website fights each has
+three sword poses (art/portraits/fight/hero_<gender>_{idle,windup,strike}.webp). A player who hasn't chosen a look shows the male painting.
 """
 import json
 
@@ -61,7 +60,7 @@ def portrait(look):
 
 
 POSES = ("idle", "windup", "strike")
-SWORD_POSES = {"male"}              # genders painted in all three sword poses; the others use one painting
+SWORD_POSES = {"male": 0.91, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
 
 
 def fighter(look, pose="idle"):
@@ -74,7 +73,7 @@ def fighter(look, pose="idle"):
 
 def sword_tip(look):
     """How far across the fight canvas the weapon reaches in the strike pose (0-1), or None for a single painting."""
-    return 0.91 if gender_of(look) in SWORD_POSES else None
+    return SWORD_POSES.get(gender_of(look))
 
 
 def face(look):
