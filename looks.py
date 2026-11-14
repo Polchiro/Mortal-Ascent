@@ -75,12 +75,14 @@ GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "fr
 # "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
 # two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
 # `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
-# The female cultivator plays the same movements, frame for frame (scripts/make_heroine_moves.py): his frames in her
-# colours, at her height, with her own head and hair, so the timing marks are his; only `shift` and `hand` differ.
+# The female cultivator's punch is her own (scripts/make_heroine_fist.py); her other movements are his frames in her
+# colours, at her height, with her own head and hair (scripts/make_heroine_moves.py), so their timing marks are his.
 MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
                                    "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]},
-                          "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 36, "cols": 8, "rows": 5,
-                                     "jab": 5, "release": 12, "back": 21, "shift": 41 / 320, "hand": [0.719, 0.397]}},
+                          # hers is her own, from SHOAIB's video of her (scripts/make_heroine_fist.py): on guard (0-4),
+                          # a jab (out at `jab`), drawn back (`windup`), a lunging punch held from `release`
+                          "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 40, "cols": 8, "rows": 5,
+                                     "jab": 10, "windup": 14, "release": 18, "back": 38, "shift": 30 / 320, "hand": [0.695, 0.386]}},
                  "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
                                    "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]},
                           "female": {"src": "/art/portraits/fight/hero_female_palm.webp", "frames": 48, "cols": 8, "rows": 6,
@@ -91,7 +93,17 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 48, "cols": 8, "rows": 6,
                                      "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 21 / 320, "hand": [0.689, 0.315]},
                             "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 48, "cols": 8, "rows": 6,
-                                       "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 44 / 320, "hand": [0.723, 0.428]}}}
+                                       "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 44 / 320, "hand": [0.723, 0.428]}},
+                 # "brace": SHOAIB's brace video (scripts/make_hero_brace.py): standing (0-4), reaching out, the arms
+                 # crossed up into guard, settled in a wide stance at `release` and held to the end, where the
+                 # beast's blow is taken. `hand` is the crossed forearms; `body` the braced figure (middle, top of the
+                 # head, feet, width), as shares of the fighter's box: the effects are placed and sized around it.
+                 "brace": {"male": {"src": "/art/portraits/fight/hero_male_brace.webp", "frames": 33, "cols": 8, "rows": 5,
+                                    "jab": 5, "release": 16, "back": 32, "shift": 0, "hand": [0.49, 0.29],
+                                    "body": [0.462, 0.094, 0.902, 0.239]},
+                           "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 33, "cols": 8, "rows": 5,
+                                      "jab": 5, "release": 16, "back": 32, "shift": 0, "hand": [0.55, 0.42],
+                                      "body": [0.53, 0.247, 0.939, 0.205]}}}
 
 
 def fighter(look, pose="idle"):

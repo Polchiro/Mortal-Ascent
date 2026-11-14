@@ -661,7 +661,8 @@ def events(log, f):
     {"who": "me", "act": "strike" | "break", "hit": bool, "dmg": n, "blocked": bool}   your weapon attack
     {"who": "me", "act": "guard", "counter": n}       the beast struck and your Guard stopped it (n = counter damage)
     {"who": "me", "act": "tech", "hit": bool, "dmg": n}  a technique: it plays its own animation (an attack
-                                                      technique's damage, 0 for a defense one)
+                                                      technique's damage, 0 for a defense one; a defense one
+                                                      also has "blocked", "hold" (% of a Break), "heal", "counter")
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
@@ -680,7 +681,11 @@ def events(log, f):
             out.append({"who": "me", "act": "guard", "counter": _number(text, r"counters for ([\d,]+)")})
         elif move in techs:
             dmg = _number(text, r"([\d,]+) dmg")
-            out.append({"who": "me", "act": "tech", "hit": dmg > 0, "dmg": dmg})
+            ev = {"who": "me", "act": "tech", "hit": dmg > 0, "dmg": dmg}
+            if f.def_t and move == f.def_t["name"]:          # a defense technique: what it did with the beast's blow
+                ev.update(blocked="blocked" in text, hold=_number(text, r"holds (\d+)%"), heal=_number(text, r"recovered ([\d,]+)"),
+                          counter=_number(text, r"countered for ([\d,]+)") + _number(text, r"counters for ([\d,]+)"))
+            out.append(ev)
         elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):
             name = next(n for n in skills if f" — {n} on " in text)
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
