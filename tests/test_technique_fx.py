@@ -55,16 +55,18 @@ def test_a_look_carries_its_grade_length_and_art_urls():
     assert technique_fx.of("Horse Stance Guard", "Mortal") is None            # no look yet: keeps its CSS one
 
 
-def test_the_movement_frames_exist_for_the_male_cultivator():
+def test_the_movement_frames_exist_for_both_cultivators():
     from PIL import Image
     for motion in looks.MOTION_SHEETS:
-        sheet = looks.motion_sheet({"gender": "male"}, motion)
-        path = os.path.join(ROOT, sheet["src"].lstrip("/"))
-        assert Image.open(path).size == (320 * sheet["cols"], 360 * sheet["rows"])
-        assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
-        assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
-        assert all(0 < q < 1 for q in sheet["hand"])
-        assert looks.motion_sheet({"gender": "female"}, motion) is None       # she plays it through her poses
+        for gender in ("male", "female"):
+            sheet = looks.motion_sheet({"gender": gender}, motion)
+            path = os.path.join(ROOT, sheet["src"].lstrip("/"))
+            assert gender in sheet["src"] and Image.open(path).size == (320 * sheet["cols"], 360 * sheet["rows"])
+            assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
+            assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
+            assert all(0 < q < 1 for q in sheet["hand"])
+        him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
+        assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # the same movement, frame for frame
 
 
 def test_a_technique_event_carries_its_damage():
