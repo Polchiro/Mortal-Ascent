@@ -243,6 +243,21 @@ a lair is fought with `bot/hunt.py`.
      autumn leaves round it, one pulse per hit; Meteor-Falling Kick, the Heaven one, brings a blazing meteor down
      onto it and leaves the golden crater. Their designs were drawn over a painted scene with the name across the
      top; `scripts/make_kick_fx.py` keys them out of it.
+   - `finger` (`hero_male_finger.webp`, `scripts/make_hero_finger.py`): a lunge with two fingers thrust out. Every
+     Finger technique: its beam's tail stays on the fingertip (`hand`) and stretches to the beast, angled to it.
+     Viper Fang Finger strikes out an emerald viper; River-Splitting Finger shoots a blue beam and then opens two
+     walls of water around it. Designs cleaned by `scripts/make_finger_fx.py`.
+   - `brace` (`hero_male_brace.webp`, `scripts/make_hero_brace.py`): arms crossed up into guard, sinking into a wide
+     stance. The Body defense techniques that stand their ground (all but the two evades), played **inside the
+     beast's attack** (`braced` in `fight.js`): the fighter braces while the beast winds up, the technique's effect
+     forms around them as they settle, and the beast's blow lands on it; then what really happened, from the log
+     (Blocked, Held N% of a Break, Unbreakable, HP recovered, a counter; part of a Break still hurts). The effects are
+     placed and sized around the braced figure (`body` in `looks.MOTION_SHEETS`), so they fit either look: Horse
+     Stance Guard's dust ring at the feet, Calm Breath Stance's mist spiral, Iron Cloth Body's woven iron sheen laid
+     over the fighter's own frame, Rooted Mountain Stance's roots and mountain, Golden Bell Cover's bell dropping over
+     them, Ancient Turtle Shell Art's dome (the man painted inside it erased), Immortal Lotus Body's lotus opening
+     beneath. Parrying Arm, with no design, braces with sparks and its counter. Designs cleaned by
+     `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you, and nothing plays.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms
@@ -254,9 +269,9 @@ a lair is fought with `bot/hunt.py`.
    Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
    hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
    are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
-   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator plays the punch and the palm push frame for frame: his frames in her colours, at her
-   height, with her own head and hair placed on every frame (`hero_female_{fist,palm}.webp`,
-   `scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator's punch and brace are her own, from SHOAIB's videos of her (`hero_female_fist.webp`,
+   `hero_female_brace.webp`, `scripts/make_heroine_fist.py`, `scripts/make_heroine_brace.py`). Her palm push and finger jab are his frames in her colours, at her
+   height, with her own head and hair on every frame (`scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
    same pictures through its own three poses. The
    action buttons stay locked until the whole cast has played, so extra clicks never cut it short.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is

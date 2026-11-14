@@ -1,4 +1,4 @@
-"""Give the female cultivator the punch and the palm push the male plays (looks.MOTION_SHEETS), made from his frames:
+"""Give the female cultivator the punch, the palm push, the finger jab and the brace the male plays (looks.MOTION_SHEETS), made from his frames:
 the same movement and timing, so every Fist and Palm technique lines up the same for her (docs/web.md "Techniques").
 
 For each of his frames: his robes take her colours (her idle picture's mean and spread, scripts/make_hero_attack.py
@@ -8,7 +8,7 @@ her face and hair.
 
     python -m scripts.make_heroine_moves
 
-Writes art/portraits/fight/hero_female_{fist,palm}.webp in the same 320 x 360 cells as his, and prints where her
+Writes art/portraits/fight/hero_female_{palm,finger}.webp in the same 320 x 360 cells as his, and prints where her
 hand is at the release, for looks.MOTION_SHEETS.
 """
 import os
@@ -90,12 +90,13 @@ def build(motion, n, her, patch, her_face, hbox, s):
     his = frames(os.path.join(OUT, f"hero_male_{motion}.webp"), n)
     ref_cx = (hbox[0] + hbox[2]) / 2
     mbox = his[0].getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
-    his = match_colours(his, her)
     his = [scaled(im, s, hbox[3], (mbox[0] + mbox[2]) / 2, ref_cx) for im in his]
-    # where the face sits under the top of his head, from the frames where his face shows; then every frame
-    # places her face there, so a turned or shadowed face still gets her head
+    # where the face sits under the top of his head, from the frames where his face shows (before his colours
+    # change, which can hide his skin); then every frame places her face there, so a turned face still gets her head
     seen = [(face_of(im), top_of(im)) for im in his]
-    off = np.median([(f[0] - t[0], f[1] - t[1]) for f, t in seen if f], axis=0)
+    found = [(f[0] - t[0], f[1] - t[1]) for f, t in seen if f]
+    off = np.median(found, axis=0)
+    his = match_colours(his, her)
     out = []
     for im, (f, t) in zip(his, seen):
         fx, fy = f if f else (t[0] + off[0], t[1] + off[1])
@@ -120,7 +121,7 @@ def main():
     male = in_cells(os.path.join(OUT, "hero_male_idle.webp"))
     mbox = male.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
     s = (hbox[3] - hbox[1]) / (mbox[3] - mbox[1])                    # her height against his
-    for motion, n in (("fist", 36), ("palm", 48)):
+    for motion, n in (("palm", 48), ("finger", 48)):   # her punch and brace are her own: make_heroine_{fist,brace}.py
         images, shift = build(motion, n, her, patch, her_face, hbox, s)
         rows = -(-len(images) // COLS)
         sheet = Image.new("RGBA", (CELL[0] * COLS, CELL[1] * rows), (0, 0, 0, 0))
