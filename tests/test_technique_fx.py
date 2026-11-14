@@ -13,7 +13,7 @@ def test_every_look_is_an_existing_technique_with_its_art():
     for tid, fx in technique_fx.TECH_FX.items():
         assert tid in technique.TECHNIQUES, tid
         assert fx["play"] in technique_fx.PLAYS
-        assert fx["motion"] in looks.MOTION_SHEETS
+        assert fx["motion"] in technique_fx.MOTIONS
         for name in fx["art"]:
             assert os.path.exists(os.path.join(ROOT, "art", "fx", "tech", name + ".webp")), name
 
@@ -34,6 +34,18 @@ def test_the_palm_attack_techniques_share_the_palm_push():
 def test_nine_dragons_looses_nine_dragons_one_to_three_a_punch():
     punches = technique_fx.TECH_FX["nine_dragons_ascending_fist"]["punches"]
     assert sum(punches) == 9 and all(1 <= n <= 3 for n in punches)
+
+
+def test_the_kick_techniques_share_one_kick_for_both_genders():
+    leg = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Leg"}
+    assert leg == {"crescent_sweep", "swift_swallow_kick", "autumn_wind_kick", "meteor_falling_kick"}
+    assert all(technique_fx.TECH_FX[t]["motion"] == "kick" for t in leg)
+    for gender in ("male", "female"):                      # one kick, the same effects and timing for each look
+        for t in leg:
+            fx = technique_fx.of(technique.TECHNIQUES[t]["name"], technique.TECHNIQUES[t]["grade"])
+            assert fx["motion"] == "kick" and fx["art"]
+        sheet = looks.motion_sheet({"gender": gender}, "kick")
+        assert sheet is None or sheet["src"].endswith(f"hero_{gender}_kick.webp")   # frames, when added, are per look
 
 
 def test_a_look_carries_its_grade_length_and_art_urls():

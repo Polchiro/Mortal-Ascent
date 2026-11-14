@@ -4,7 +4,9 @@ engine, and the engine's damage, Battle Qi, cooldowns and effects (technique.py,
 read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missing here keeps its CSS look.
 
     motion   the shared movement (looks.MOTION_SHEETS): "fist" is SHOAIB's punch video, a jab then a lunging punch;
-             "palm" his palm video, a lunging two-handed palm push
+             "palm" his palm video, a lunging two-handed palm push; "kick" a kick, shared by both genders: its
+             timing and effects are defined once, and each look plays it with its own frames (looks.MOTION_SHEETS)
+             or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`)
     play     how fight.js `technique` plays the pictures (PLAYS)
     art      its pictures in art/fx/tech/ (scripts/make_fist_fx.py), the first being its main one
     punches  how many dragons fly from each punch, one punch after another (Nine Dragons Ascending Fist only)
@@ -12,7 +14,9 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
 """
 import technique as techniques
 
-PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend")
+PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend",
+         "sweep", "streak", "whirl", "meteor")
+MOTIONS = ("fist", "palm", "kick")
 
 TECH_FX = {
     # the punch techniques, from SHOAIB's designs (Gemini)
@@ -28,6 +32,11 @@ TECH_FX = {
     "rolling_thunder_palm": {"motion": "palm", "play": "vortex", "art": ["rolling_thunder_palm"]},
     "thousand_shadow_palm": {"motion": "palm", "play": "fan", "art": ["thousand_shadow_palm"]},
     "heaven_rending_palm": {"motion": "palm", "play": "descend", "art": ["heaven_rending_palm"]},
+    # the kick techniques, from SHOAIB's designs (Gemini, scripts/make_kick_fx.py), all played with the kick
+    "crescent_sweep": {"motion": "kick", "play": "sweep", "art": ["crescent_sweep"]},
+    "swift_swallow_kick": {"motion": "kick", "play": "streak", "art": ["swift_swallow_kick"], "mirror": True},
+    "autumn_wind_kick": {"motion": "kick", "play": "whirl", "art": ["autumn_wind_kick"]},
+    "meteor_falling_kick": {"motion": "kick", "play": "meteor", "art": ["meteor_falling_kick"]},
 }
 
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle
