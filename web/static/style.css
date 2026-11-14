@@ -805,7 +805,7 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
    Around them, by grade: Qi rings (Mystic+), a pillar of Qi and a dimmed scene (Earth+), a dark Heaven sky. ── */
 .fighter .msheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}   /* moved back by the share it was moved left in its cells */
 .fighter[data-pose=motion] .msheet{visibility:visible}
-.cast-fx .tfx{display:none}
+.cast-fx .tfx,.cast-fx .ringfx{display:none}      /* its own look replaces the CSS shapes and the Guard ring */
 .cast-fx.cast-landed .bscene,.cast-fx.cast-landed .beast img{animation:none}
 .cast-fx .fighter img{animation:none}
 .tart{position:absolute;z-index:4;height:auto;pointer-events:none;transform:translate(-50%,-50%);opacity:0}
@@ -819,6 +819,14 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tpierce{position:absolute;z-index:5;width:30%;height:5px;border-radius:3px;pointer-events:none;transform:translateY(-50%);transform-origin:left;
   background:linear-gradient(90deg,#fff,var(--tc) 40%,transparent);box-shadow:0 0 14px var(--tc);animation:tpierce .7s ease-out forwards}
 @keyframes tpierce{0%{opacity:0;transform:translateY(-50%) scaleX(0)}25%{opacity:1;transform:translateY(-50%) scaleX(1)}100%{opacity:0;transform:translateY(-50%) scaleX(1.15)}}
+.tart.tbrace{opacity:0}
+.tart.tsoft{filter:drop-shadow(0 0 8px rgba(230,240,255,.6))}
+.tart.tscreen{mix-blend-mode:screen;filter:drop-shadow(0 0 16px #FFD978) brightness(1.15)}   /* Golden Bell: its light, see-through inside */
+.tart.tdome{filter:drop-shadow(0 0 10px rgba(90,255,170,.5))}
+.fighter .tsheen{visibility:visible;background-repeat:repeat;background-size:14% auto;opacity:0;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;filter:brightness(2.6) contrast(1.4) saturate(.3)}   /* Iron Cloth: the weave on the fighter */
+.fighter .tsheen.tlit{background:linear-gradient(115deg,rgba(220,230,240,.0) 20%,rgba(220,230,240,.75) 50%,rgba(220,230,240,0) 80%);filter:none}
+.tnum.word.heal{color:#7CF0BE}
 .tart.tbeam{transform-origin:0 50%;filter:drop-shadow(0 0 10px var(--tc)) brightness(1.15)}   /* finger beams: from the fingertip */
 .tart.tbeam.twater{filter:drop-shadow(0 0 12px #3FC8FF) brightness(1.1)}
 .tart.tarc{filter:drop-shadow(0 0 12px rgba(220,240,255,.8)) brightness(1.15)}       /* Crescent Sweep: pale moonlight */

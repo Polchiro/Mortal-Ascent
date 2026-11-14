@@ -56,11 +56,29 @@ def test_the_finger_techniques_share_the_jab_and_beam_from_the_fingertip():
         assert looks.motion_sheet({"gender": gender}, "finger")["hand"]           # where the beam leaves
 
 
+def test_the_bracing_body_techniques_share_the_brace():
+    body = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Body" and t["effect"] and t["effect"][0] != "evade"}
+    assert body == {tid for tid, fx in technique_fx.TECH_FX.items() if fx["motion"] == "brace"}
+    for gender in ("male", "female"):
+        assert len(looks.motion_sheet({"gender": gender}, "brace")["body"]) == 4    # effects are placed around it
+
+
+def test_a_defense_technique_event_says_what_it_did():
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Golden Bell Cover", "type": "defense", "grade": "Earth"}
+    ev = explore_play.events([("shield", "Shoaib — Golden Bell Cover: holds 70% of the Break")], F)
+    assert ev[0]["hold"] == 70 and not ev[0]["blocked"]
+    ev = explore_play.events([("shield", "Shoaib — Golden Bell Cover: blocked 100%, recovered 9, counters for 12")], F)
+    assert ev[0]["blocked"] and ev[0]["heal"] == 9 and ev[0]["counter"] == 12
+
+
 def test_a_look_carries_its_grade_length_and_art_urls():
     fx = technique_fx.of("Raging Bull Fist", "Yellow")
     assert fx["ms"] == technique_fx.GRADE_MS["Yellow"] and fx["mirror"]
     assert fx["art"] == ["/art/fx/tech/raging_bull_fist.webp"]
-    assert technique_fx.of("Horse Stance Guard", "Mortal") is None            # no look yet: keeps its CSS one
+    assert technique_fx.of("Drifting Mist Steps", "Mystic") is None           # an evade: keeps its CSS look
 
 
 def test_the_movement_frames_exist_for_both_cultivators():
@@ -74,7 +92,8 @@ def test_the_movement_frames_exist_for_both_cultivators():
             assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
             assert all(0 < q < 1 for q in sheet["hand"])
         him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
-        assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # the same movement, frame for frame
+        if motion != "fist":                              # made from his frames: the same movement, frame for frame
+            assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch is her own video)
 
 
 def test_a_technique_event_carries_its_damage():
