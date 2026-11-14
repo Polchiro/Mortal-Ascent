@@ -51,6 +51,27 @@ POSES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 _poses_cache = {}
 
 
+_heads = None
+
+
+def beast_roar(e):
+    """What a beast's roar needs on the page (fight.js `roar`): where its mouth is on its picture
+    (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, and its element's colour."""
+    global _heads
+    if _heads is None:
+        try:
+            with open(os.path.join(os.path.dirname(POSES_DIR), "heads.json")) as fh:
+                _heads = json.load(fh)
+        except (OSError, ValueError):
+            _heads = {}
+    from cards.theme import ELEMENT_ACCENTS
+    head = _heads.get(e.get("slug") or "")
+    accent = ELEMENT_ACCENTS.get(e.get("element") or "")
+    return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
+            "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
+            "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0"}
+
+
 def beast_poses(slug):
     """A beast's cut-out fight poses (art/beasts/poses/<slug>/: idle, crouch, leap, slam, roar + poses.json), or None.
     Each pose: its picture and where it sits, in % of the idle pose (fight.js swaps them as the beast moves)."""
@@ -565,6 +586,15 @@ def motion_of(b, f, p):
     return looks.motion_sheet(looks.of_player(p), c["fx"]["motion"]) if c and c["fx"] else None
 
 
+def roared(evs, b, danger, beast):
+    """The beast roars as it winds up a charged attack or its signature strike (the turn it is announced), after
+    what it did this turn: presentation only, nothing in the fight changes. Its own roars (a skill's `roar` line,
+    the Mountain Tiger's Roused) are played by that skill's own animation."""
+    if beast and danger in ("charged", "signature") and b.log and not any(x["act"] == "roar" for x in evs):
+        evs = evs + [{"who": "enemy", "act": "roar", "why": "windup"}]
+    return evs
+
+
 def victory(s, b):
     """The end of a won fight, for the fight page: how the enemy goes down (web/death.py) and the Victory panel
     (what the win paid, in the game's own words). None while the fight is still going or was not won."""
@@ -629,12 +659,13 @@ def fight_view(conn, s, b, p, now):
                   "statuses": statuses(e["statuses"]),
                   "art": poses["poses"]["idle"]["src"] if poses else
                          f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
+                  "roar": beast_roar(e) if beast else None,
                   "poses": poses, "pose": "crouch" if poses and winding and "crouch" in poses["poses"] else "idle",
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},
         "roused": "roused" in e["statuses"] and not end, "end": end,
-        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": roared(events(b.log or [], f), b, danger, beast and not end), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }
 

@@ -479,6 +479,54 @@
       return n;
     }
 
+    /* A beast's roar (art/fx/roar_*.webp, scripts/make_roar_fx.py): one shockwave for every beast, played over its own
+       picture, never in place of it. It bursts from the beast's mouth (art/beasts/heads.json, read off each picture),
+       sized by how tall the beast stands on screen, squashed towards the way it faces, tinted with its element's
+       colour; normal beasts get the ring, Elites the double ring, Beast Kings the spiky burst. Only one roar is ever
+       on screen: a new one clears the last. `at`: where it bursts, when the beast's own animation knows better (the
+       Mountain Tiger's roar pose). */
+    var ROAR = null;
+    try { ROAR = JSON.parse(beastBox.dataset.roar || 'null'); } catch (e) {}
+    var ROAR_MS = 1100, ROAR_FRAMES = 16;
+    function roar(where) {
+      if (!ROAR) return null;
+      var old = scene.querySelector('.broar');
+      if (old) old.remove();
+      var box = beast.getBoundingClientRect(), pic = box;         // the picture as drawn inside its box (object-fit: contain)
+      if (beast.naturalWidth && beast.naturalHeight) {
+        var ar = beast.naturalWidth / beast.naturalHeight, w = Math.min(box.width, box.height * ar), h = w / ar;
+        pic = {left: box.left + (box.width - w) / 2, top: box.top + (box.height - h) / 2, width: w, height: h};
+      }
+      var p = where || (ROAR.head ? at(pic, ROAR.head[0], ROAR.head[1]) : at(pic, 0.15, 0.35));
+      var size = Math.max(90, Math.min(520, pic.height * ROAR.height * (ROAR.wave === 'ring' ? 0.75 : ROAR.wave === 'double' ? 0.9 : 1.05)));
+      var n = document.createElement('div');
+      n.className = 'broar';
+      n.style.left = p[0] + '%'; n.style.top = p[1] + '%';
+      n.style.width = n.style.height = size + 'px';
+      n.style.backgroundImage = 'url(/art/fx/roar_' + ROAR.wave + '.webp)';
+      n.style.setProperty('--rc', ROAR.color);
+      scene.appendChild(n);
+      var t0 = performance.now();
+      (function frame(now) {
+        if (!n.isConnected) return;
+        var k = Math.min(1, (now - t0) / ROAR_MS), f = Math.min(ROAR_FRAMES - 1, Math.floor(k * ROAR_FRAMES));
+        n.style.backgroundPosition = (f % 8) / 7 * 100 + '% ' + Math.floor(f / 8) * 100 + '%';
+        n.style.opacity = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+        if (k < 1) requestAnimationFrame(frame); else n.remove();
+      })(t0);
+      return n;
+    }
+    /* a beast winding up its charged attack or signature strike roars before it (fight_view `roared`) */
+    function roaring() {
+      var done = false;
+      return {end: ROAR_MS + 150, render: function (t) {
+        if (t < 0) return;
+        var k = span(t, 0, 260), back = k < 1 ? Math.sin(Math.PI * k) : 0;     // it rears back a little as it roars
+        animal(0.008 * W * back, -0.006 * W * back, 3 * back, 0);
+        if (t >= 120 && !done) { done = true; roar(); }
+      }, clear: function () { var n = scene.querySelector('.broar'); if (n) n.remove(); }};
+    }
+
     /* the Mountain Tiger's Mountain-Splitting Pounce (battle.UNIQUE_SKILLS): it sinks low with golden Qi swirling at
        its paws, leaps high across the arena, comes down on you and splits the ground in a golden shockwave, bounds
        back and roars, Roused. The damage, the stun and the block come from the server like any other hit. */
@@ -526,8 +574,8 @@
           poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
         } else { if (!(ev.guard && block(h))) pose('idle'); hero(0, 0); }
         if (t >= R.home && once('roar')) {
-          var m = at(br, 0.16, 0.36);
-          fx('proar', m[0], m[1], 900); fx('proar r2', m[0], m[1], 1100);
+          var m = at(br, 0.16, 0.36);                                // the mouth in its roar pose
+          if (!roar(m)) { fx('proar', m[0], m[1], 900); fx('proar r2', m[0], m[1], 1100); }
           pop(beastBox, 'word roused', 'Roused!');
         }
       }};
@@ -973,7 +1021,8 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }

@@ -1,0 +1,337 @@
+{
+"abyss_crocodile": [
+0.07,
+0.65,
+0.975
+],
+"ancient_flame_lion": [
+0.13,
+0.33,
+0.996
+],
+"ancient_golden_ape": [
+0.23,
+0.3,
+0.997
+],
+"armored_boar_chief": [
+0.13,
+0.55,
+0.997
+],
+"azure_dragon": [
+0.12,
+0.28,
+0.997
+],
+"bifang_fire_crane": [
+0.08,
+0.2,
+0.997
+],
+"black_tortoise_xuanwu": [
+0.16,
+0.14,
+0.996
+],
+"black_water_serpent": [
+0.2,
+0.12,
+0.998
+],
+"bloodfang_wolf": [
+0.15,
+0.38,
+0.995
+],
+"bone_vulture": [
+0.05,
+0.47,
+0.995
+],
+"cave_bat_swarm": [
+0.18,
+0.45,
+0.996
+],
+"cloud_leopard": [
+0.06,
+0.33,
+0.995
+],
+"crimson_fire_hawk": [
+0.05,
+0.48,
+0.995
+],
+"earth_splitting_rhino": [
+0.22,
+0.52,
+0.996
+],
+"ember_lizard": [
+0.08,
+0.33,
+0.997
+],
+"field_viper": [
+0.33,
+0.13,
+0.997
+],
+"fire_hoof_steed": [
+0.06,
+0.33,
+0.996
+],
+"flame_maned_lion": [
+0.24,
+0.42,
+0.997
+],
+"flood_dragon_jiao": [
+0.12,
+0.33,
+0.997
+],
+"frost_python": [
+0.19,
+0.3,
+0.997
+],
+"frost_wolf": [
+0.08,
+0.47,
+0.996
+],
+"ghost_fire_wolf": [
+0.11,
+0.47,
+0.994
+],
+"golden_eyed_ape_king": [
+0.3,
+0.22,
+0.997
+],
+"golden_silk_spider": [
+0.32,
+0.5,
+0.998
+],
+"grey_wolf": [
+0.06,
+0.42,
+0.993
+],
+"horned_stag": [
+0.05,
+0.3,
+0.997
+],
+"iron_feather_crow": [
+0.07,
+0.27,
+0.997
+],
+"iron_hide_boar": [
+0.13,
+0.52,
+0.996
+],
+"ironbark_bear": [
+0.09,
+0.37,
+0.988
+],
+"jade_scaled_crocodile": [
+0.15,
+0.22,
+0.996
+],
+"kun_peng_fish_of_the_northern_sea": [
+0.05,
+0.3,
+0.996
+],
+"lightning_weasel": [
+0.1,
+0.37,
+0.995
+],
+"mountain_tiger": [
+0.1,
+0.5,
+0.995
+],
+"nine_tailed_fox": [
+0.1,
+0.43,
+0.997
+],
+"old_black_bear": [
+0.17,
+0.22,
+0.997
+],
+"pixiu": [
+0.13,
+0.3,
+0.994
+],
+"poison_toad": [
+0.12,
+0.4,
+0.996
+],
+"primordial_dragon_turtle": [
+0.12,
+0.42,
+0.996
+],
+"qilin": [
+0.15,
+0.3,
+0.997
+],
+"qiongqi_the_winged_tiger": [
+0.12,
+0.65,
+0.996
+],
+"red_fox": [
+0.06,
+0.33,
+0.996
+],
+"rock_python": [
+0.3,
+0.17,
+0.997
+],
+"shadow_panther": [
+0.08,
+0.37,
+0.995
+],
+"shadow_wolf": [
+0.08,
+0.47,
+0.995
+],
+"shanxiao_mountain_spirit": [
+0.26,
+0.18,
+0.997
+],
+"silver_monkey": [
+0.12,
+0.2,
+0.996
+],
+"sky_lynx": [
+0.13,
+0.48,
+0.996
+],
+"spear_beak_crane": [
+0.28,
+0.12,
+0.996
+],
+"steel_horn_bull": [
+0.15,
+0.25,
+0.996
+],
+"stone_shell_tortoise": [
+0.06,
+0.48,
+0.996
+],
+"storm_eagle": [
+0.23,
+0.4,
+0.996
+],
+"stray_dog_pack": [
+0.1,
+0.42,
+0.996
+],
+"taotie_the_devourer": [
+0.3,
+0.2,
+0.997
+],
+"the_master": [
+0.45,
+0.2,
+0.995
+],
+"thornback_lizard": [
+0.06,
+0.48,
+0.995
+],
+"thousand_year_centipede": [
+0.18,
+0.2,
+0.994
+],
+"thunder_hawk": [
+0.1,
+0.7,
+0.997
+],
+"thunder_rhino": [
+0.25,
+0.65,
+0.997
+],
+"tiangou_the_heavenly_hound": [
+0.18,
+0.37,
+0.996
+],
+"venom_scorpion": [
+0.25,
+0.55,
+0.996
+],
+"vermilion_bird": [
+0.15,
+0.25,
+0.996
+],
+"void_serpent": [
+0.3,
+0.33,
+0.997
+],
+"white_browed_tiger_king": [
+0.1,
+0.33,
+0.994
+],
+"white_tiger": [
+0.13,
+0.4,
+0.997
+],
+"wild_boar": [
+0.08,
+0.6,
+0.986
+],
+"wild_ox": [
+0.15,
+0.43,
+0.996
+],
+"wind_leopard": [
+0.08,
+0.38,
+0.996
+]
+}

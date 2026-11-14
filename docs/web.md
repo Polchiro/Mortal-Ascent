@@ -274,6 +274,13 @@ a lair is fought with `bot/hunt.py`.
    height, with her own head and hair on every frame (`scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
    same pictures through its own three poses. The
    action buttons stay locked until the whole cast has played, so extra clicks never cut it short.
+   **A beast's roar** is one shared shockwave for every beast (`roar` in `fight.js`, `art/fx/roar_{ring,double,burst}.webp`
+   from SHOAIB's roar video by `scripts/make_roar_fx.py`): the ring for normal beasts, the double ring for Elites, the
+   spiky burst for Beast Kings, tinted with the beast's element colour. It plays over the beast's own picture,
+   never in place of it, from its mouth (`art/beasts/heads.json`, read off each picture by eye; a new beast gets an
+   outline guess by re-running the script), sized by how tall the beast stands on screen. A beast roars as it winds
+   up a charged attack or its signature strike (the turn it is announced: `roared` in `web/explore_play.py`), and the
+   Mountain Tiger's Roused roar uses it from its roar pose. Only one is ever on screen. Presentation only.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.

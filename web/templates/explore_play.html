@@ -69,7 +69,7 @@
           <path d="M 1290 270 C 1000 295, 660 360, 360 485 C 640 425, 1000 355, 1290 270 Z"/></g></svg>
       {% if F.me.delta %}<span class="dmg {{ 'heal' if F.me.delta > 0 else 'hurt' }}{{ ' big' if -F.me.delta >= F.me.max_hp * 0.2 }}">{{ "+" if F.me.delta > 0 }}{{ F.me.delta }}</span>{% endif %}</div>
     {% set BP = F.enemy.poses %}
-    <div class="beast{% if BP %} posed{% endif %}{% if F.end %} death-{{ F.end.death.kind }}{% endif %}" aria-hidden="true"{% if BP %} data-poses='{{ BP.poses | tojson }}' style="--bar: {{ BP.aspect[0] }} / {{ BP.aspect[1] }}"{% endif %}>
+    <div class="beast{% if BP %} posed{% endif %}{% if F.end %} death-{{ F.end.death.kind }}{% endif %}" {% if F.enemy.roar %}data-roar='{{ F.enemy.roar | tojson }}' {% endif %}aria-hidden="true"{% if BP %} data-poses='{{ BP.poses | tojson }}' style="--bar: {{ BP.aspect[0] }} / {{ BP.aspect[1] }}"{% endif %}>
       {%- if BP %}{% set P = BP.poses[F.enemy.pose] %}<img src="{{ P.src }}" alt="" data-pose="{{ F.enemy.pose }}" style="width: {{ P.w }}%; left: {{ P.left }}%; bottom: {{ P.bottom }}%">
       {%- else %}<img src="{{ F.enemy.art }}" alt="" width="900" height="890">{% endif %}
       {% if F.end and F.end.death.kind == "warp" %}<canvas class="deathfx"></canvas>{% endif %}

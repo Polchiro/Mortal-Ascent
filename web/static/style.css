@@ -849,6 +849,9 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tdizzy{position:absolute;z-index:4;width:9%;aspect-ratio:1;border-radius:50%;border:4px dotted var(--tc);pointer-events:none;transform:translate(-50%,-50%) scaleY(.4);animation:tdizzy 1.3s linear forwards}
 @keyframes tdizzy{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(540deg)}}
 .casting.cast-fx[data-cast*='"Heaven"'] .castcall{transform:translateX(-50%) scale(1.25);box-shadow:0 0 30px rgba(226,168,255,.7)}
+.broar{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%) scaleX(.72);
+  background-size:800% 200%;background-repeat:no-repeat;mix-blend-mode:screen;
+  filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) sepia(.5) saturate(2.2)}   /* a beast's roar */
 .tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
 .tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
 @media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}
