@@ -266,7 +266,10 @@
     var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
     function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
-    var sheet = fighter.querySelector('.sheetfx:not(.gsheet)'); // a frame-by-frame attack, when this look has one
+    var sheet = fighter.querySelector('.sheetfx:not(.gsheet):not(.msheet)');   // a frame-by-frame attack, when this look has one
+    var msheet = fighter.querySelector('.msheet');              // this turn's technique movement (looks.MOTION_SHEETS)
+    var cast = null;                                            // this turn's technique, when it has its own look (web/technique_fx.py)
+    try { cast = JSON.parse(main.dataset.cast || 'null'); } catch (e) {}
     var gsheet = fighter.querySelector('.gsheet');              // and a frame-by-frame Guard (looks.GUARD_SHEETS)
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
@@ -530,6 +533,181 @@
       }};
     }
 
+    /* A technique with its own look (web/technique_fx.py, docs/web.md "Techniques"). The cultivator plays the shared
+       movement (`fist`: SHOAIB's punch video, a jab then a lunging punch, looks.MOTION_SHEETS) and the technique's own
+       pictures fly or burst from his fist, everything timed from the release, the frame the fist is furthest out.
+       The grade sets how long the cast lasts (technique_fx.GRADE_MS) and how much spectacle surrounds it: Yellow and
+       up glow, Mystic and up gather Qi rings, Earth and up raise a pillar of Qi and dim the scene, Heaven darkens the
+       sky. The damage comes from the server like any other hit, and the HP bar drops when the blow lands. */
+    var TIER = {Mortal: 0, Yellow: 1, Mystic: 2, Earth: 3, Heaven: 4};
+    var FIST = {jab: [0.66, 0.28], lunge: [0.685, 0.287]};       // the fist at its furthest, as shares of the fighter's box
+    function technique(ev) {
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
+      var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
+      var JAB = msheet ? +msheet.dataset.jab : 5, OUT = msheet ? +msheet.dataset.release : 12, BACK = msheet ? +msheet.dataset.back : 21;
+      var dragons = X.play === 'dragons', end = X.ms;
+      /* the punches: each lands at `at` (ms), a jab or the lunge. One lunge for most; Nine Dragons throws four,
+         jab-lunge-jab-lunge, each loosing X.punches[i] dragons (1-2-3-3: nine). */
+      var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
+                            : [{at: Math.round(end * 0.45), kind: 'lunge'}];
+      var R = punches[punches.length - 1].at;                       // the last release
+      var LAND = dragons ? R + 420 : X.play === 'charge' || X.play === 'vortex' ? R + 40 : R;   // when the blow lands on the beast
+      var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
+      var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
+        ? [[0, 0], [300, JAB - 1], [360, JAB], [440, 7], [560, 9], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
+           [900, JAB - 1], [960, JAB], [1040, 7], [1160, 9], [1240, OUT], [1400, OUT + 4]].concat(settle)
+        : [[0, 0], [R - 90, 9], [R, OUT], [R + 120, OUT + 2]].concat(settle);
+      if (ev.hit) hold('enemy');
+
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function show(f) {
+        f = Math.max(0, Math.min(mn - 1, Math.round(f)));
+        msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
+      }
+      function fist(kind) { var q = FIST[kind]; return at(fr, q[0], q[1]); }
+      function pic(src, cls, p, w, life, mirror) {                   // one of the technique's pictures, centred on p
+        var n = document.createElement('img');
+        n.className = 'tart ' + cls; n.src = src; n.alt = '';
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%';
+        n.style.setProperty('--tc', tc);
+        scene.appendChild(n); made.push(n);
+        setTimeout(function () { n.remove(); }, life);
+        return n;
+      }
+      function T(dx, dy, s, r, mirror) {
+        return 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + (r || 0) + 'deg) scale(' + (mirror ? -s : s) + ',' + s + ')';
+      }
+      function behind(n) { scene.insertBefore(n, fighter); }           // a dimmed scene or Heaven sky: over the arena, under everyone
+      function px(a, b) { return [(b[0] - a[0]) / 100 * W, (b[1] - a[1]) / 100 * scene.clientHeight]; }
+      function shake(k) {
+        if (!scene.animate) return;
+        var a = 4 + 3 * k;
+        scene.animate([{transform: 'none'}, {transform: 'translate(' + -a + 'px,' + a * 0.6 + 'px)'}, {transform: 'translate(' + a + 'px,' + -a * 0.5 + 'px)'},
+          {transform: 'translate(' + -a * 0.6 + 'px,' + a * 0.3 + 'px)'}, {transform: 'none'}], {duration: 320 + 50 * k});
+      }
+      function lands() {                                              // the blow lands: number, knock, flash, shake by grade
+        if (ev.hit) { drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); }
+        else pop(beastBox, 'word', 'Missed');
+        var b = at(br, 0.3, 0.45);
+        burst('tspark', b[0], b[1], tc);
+        shake(tier + (cast.effect === 'heavy' ? 2 : 0));
+        if (cast.effect === 'stagger') setTimeout(function () { var d = at(br, 0.42, 0.12); fx('tdizzy', d[0], d[1], 1300, {'--tc': tc}); }, 150);
+        if (cast.effect === 'heavy') { var g = at(br, 0.36, 0.97); fx('pcrater', g[0], g[1], 1800); fx('pwave', g[0], g[1], 800); }   // the golden crater
+      }
+
+      // what each technique does with its pictures (technique_fx.PLAYS), h = ms since the last release
+      var PLAY = {
+        burst: function (h) {                                        // Iron Fist: a burst of iron Qi on the beast
+          if (h >= 0 && once('burst')) {
+            var n = pic(X.art[0], 'tglow', at(br, 0.3, 0.42), 30, 800);
+            n.animate([{transform: T(0, 0, 0.3), opacity: 0}, {transform: T(0, 0, 1.08), opacity: 1, offset: 0.25}, {transform: T(0, 0, 1.18), opacity: 0}],
+              {duration: 760, easing: 'ease-out', fill: 'forwards'});
+            lands();
+          }
+        },
+        claw: function (h) {                                         // Fierce Tiger Claw: three golden rakes torn across it
+          if (h >= -40 && once('claw')) {
+            var n = pic(X.art[0], 'tglow tclaw', at(br, 0.36, 0.3), 26, 1100);
+            n.animate([{clipPath: 'inset(0 0 100% 100%)', transform: T(0, 0, 0.9), opacity: 1}, {clipPath: 'inset(0 0 0 0)', transform: T(0, 0, 1), opacity: 1, offset: 0.2},
+              {clipPath: 'inset(0 0 0 0)', transform: T(0, 0, 1.02), opacity: 1, offset: 0.6}, {clipPath: 'inset(0 0 0 0)', transform: T(0, 0, 1.05), opacity: 0}],
+              {duration: 1050, easing: 'ease-out', fill: 'forwards'});
+          }
+          if (h >= 60 && once('land')) lands();
+        },
+        charge: function (h) {                                       // Raging Bull Fist: the bull's head charges from the fist
+          if (h >= -300 && once('bull')) {
+            var from = fist('lunge'), to = at(br, 0.3, 0.45), d = px(to, from);
+            var n = pic(X.art[0], 'tglow', to, 34, 1100);
+            n.animate([{transform: T(d[0], d[1], 0.35, 0, X.mirror), opacity: 0.2}, {transform: T(d[0] * 0.6, d[1] * 0.6, 0.6, 0, X.mirror), opacity: 1, offset: 0.25},
+              {transform: T(0, 0, 1.05, 0, X.mirror), opacity: 1, offset: 0.33}, {transform: T(0.02 * W, 0, 1.2, 0, X.mirror), opacity: 0}],
+              {duration: 1040, easing: 'ease-in', fill: 'forwards'});
+          }
+          if (h >= 40 && once('land')) lands();
+        },
+        vortex: function (h) {                                       // Rolling Thunder: a thunder vortex rolls onto it and spins
+          if (h >= -320 && once('ball')) {
+            var from = fist('lunge'), to = at(br, 0.32, 0.42), d = px(to, from);
+            var n = pic(X.art[0], 'tglow tflicker', to, 30, 1300);
+            n.animate([{transform: T(d[0], d[1], 0.2, 0), opacity: 0.4}, {transform: T(0, 0, 0.9, 300), opacity: 1, offset: 0.27},
+              {transform: T(0, 0, 1.15, 760), opacity: 1, offset: 0.7}, {transform: T(0, 0, 1.25, 1000), opacity: 0}],
+              {duration: 1250, easing: 'ease-out', fill: 'forwards'});
+          }
+          if (h >= 40 && once('land')) lands();
+        },
+        rise: function (h) {                                         // Mountain-Shattering Fist: a mountain bursts up under it
+          if (h >= 0 && once('mountain')) {
+            var n = pic(X.art[0], 'trock', at(br, 0.4, 0.99), 46, 1700);
+            n.animate([{transform: 'translate(-50%,-100%) translateY(55%) scale(0.9,0.25)', opacity: 0}, {transform: 'translate(-50%,-100%) translateY(-4%) scale(1.04,1.08)', opacity: 1, offset: 0.13},
+              {transform: 'translate(-50%,-100%) scale(1)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-100%) translateY(2%) scale(1.02)', opacity: 1, offset: 0.7},
+              {transform: 'translate(-50%,-100%) translateY(10%) scale(1.04)', opacity: 0}], {duration: 1650, easing: 'ease-out', fill: 'forwards'});
+            var g = at(br, 0.4, 0.97);
+            for (var i = 0; i < 12; i++) {
+              var a = Math.PI * (1.08 + 0.84 * i / 11), dd = 60 + Math.random() * 150;
+              fx('pdebris' + (i % 3 ? '' : ' hot'), g[0], g[1] - 2, 1000, {'--dx': Math.cos(a) * dd + 'px', '--dy': Math.sin(a) * dd + 'px',
+                '--rot': (Math.random() * 540 - 270) + 'deg', '--sz': (4 + Math.random() * 6) + 'px'});
+            }
+            lands();
+          }
+        },
+        dragons: function () {}                                      // Nine Dragons: see `loose` below
+      };
+
+      /* Nine Dragons Ascending Fist: each punch looses its dragons (1, 2, 3, 3), golden heads streaking from the fist
+         to the beast; when the ninth arrives all nine rise around it in one coil of light (the Heaven finale). */
+      var flown = 0;
+      function loose(i, t) {
+        var p = punches[i], n = X.punches[i] || 1;
+        if (t < p.at || !once('punch' + i)) return;
+        var from = fist(p.kind);
+        for (var k = 0; k < n; k++) {
+          var to = at(br, 0.28 + 0.06 * k, 0.24 + 0.2 * ((flown + k) % 3)), d = px(to, from);
+          var dg = pic(X.art[1 + (flown + k) % 3], 'tglow tdragon', to, 13, 520);
+          dg.animate([{transform: T(d[0], d[1], 0.45, -8), opacity: 0}, {transform: T(d[0] * 0.55, d[1] * 0.55 - 14, 0.8, 4), opacity: 1, offset: 0.35},
+            {transform: T(0, 0, 1, 0), opacity: 1, offset: 0.8}, {transform: T(10, 0, 1.15, 0), opacity: 0}],
+            {duration: 480, delay: 70 * k, easing: 'ease-in', fill: 'both'});
+          (function (q) { setTimeout(function () { burst('tspark', q[0], q[1], '#FFD978'); }, 400 + 70 * k); })(to);
+        }
+        flown += n;
+      }
+
+      return {end: end, render: function (t) {
+        if (t < 0) return;
+        if (once('start')) {                                          // the grade's spectacle around the whole cast
+          var feet = at(fr, msheet ? 0.44 : 0.46, 0.96);
+          if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
+          if (tier >= 3) { behind(fx('tdim', 50, 50, end, {'--life': end + 'ms'})); fx('tpillar', feet[0], feet[1], Math.round(end * 0.6), {'--tc': tc}); }
+          if (tier >= 4) behind(fx('theaven', 50, 50, end, {'--life': end + 'ms'}));
+        }
+        var x = 0;
+        if (msheet) {
+          var f = keys[keys.length - 1][1];
+          for (var j = 1; j < keys.length; j++) {
+            if (t < keys[j][0]) { var a = keys[j - 1], b = keys[j]; f = a[1] + (b[1] - a[1]) * span(t, a[0], b[0]); break; }
+          }
+          if (t >= end * 0.95) pose('idle'); else { pose('motion'); show(f); }
+        } else {                                                      // no frames for this look: the three poses
+          var p = punches.filter(function (q) { return t >= q.at - 200 && t < q.at + 180; })[0];
+          pose(!p ? 'idle' : t < p.at ? 'windup' : 'strike');
+        }
+        x = 0.025 * W * Math.sin(Math.PI * span(t, punches[0].at - 260, R + 380));        // a step in behind the punches
+        hero(x, 0);
+        poses.style.filter = tier >= 1 && t < R + 200 ? 'drop-shadow(0 0 ' + (4 + 4 * tier) + 'px ' + tc + ')' : '';
+        var k2 = ev.hit ? knocked(t - LAND, (0.02 + 0.006 * tier) * W) : [0, 0];
+        animal(k2[0], 0, k2[0] / (0.03 * W) * 4, k2[1]);
+        if (dragons) {
+          punches.forEach(function (_, i) { loose(i, t); });
+          if (t >= LAND && once('finale')) {
+            var n = pic(X.art[0], 'tglow tcoil', at(br, 0.42, 0.6), 34, 1400);
+            n.animate([{transform: T(0, 0.12 * W, 0.6), opacity: 0}, {transform: T(0, 0, 1), opacity: 1, offset: 0.3},
+              {transform: T(0, -0.04 * W, 1.06), opacity: 1, offset: 0.75}, {transform: T(0, -0.1 * W, 1.12), opacity: 0}],
+              {duration: 1360, easing: 'ease-out', fill: 'forwards'});
+            fx('bflash', 50, 50, 450);
+            lands();
+          }
+        } else PLAY[X.play](t - R);
+      }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
+    }
+
     /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
        picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
        over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
@@ -571,6 +749,7 @@
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { add(technique(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;

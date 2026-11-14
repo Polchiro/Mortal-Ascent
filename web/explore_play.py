@@ -28,7 +28,7 @@ from bot.fight_view import GRACE_SECONDS as TURN_GRACE, TIER_LABEL, describe
 from cards.scenes import REGION
 from bot.explore_card import REGION_BY_TIER
 
-from . import death
+from . import death, technique_fx
 from .forge_play import rich
 from .profile import number
 
@@ -553,9 +553,16 @@ def cast(b, f):
         school = "body" if info.get("school") == "Body" else "palmdef"
     from bot.sheet.data import tech_kind
     from .profile import art_url
-    return {"name": t["name"], "kind": t["type"], "school": school, "effect": shown, "landed": landed,
-            "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
+    return {"name": t["name"], "id": technique_fx.technique_id(t["name"]), "kind": t["type"], "school": school,
+            "effect": shown, "landed": landed, "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
+            "fx": technique_fx.of(t["name"], t["grade"]),
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
+
+
+def motion_of(b, f, p):
+    """The frame-by-frame movement this turn's technique plays (web/technique_fx.py, looks.MOTION_SHEETS), or None."""
+    c = cast(b, f)
+    return looks.motion_sheet(looks.of_player(p), c["fx"]["motion"]) if c and c["fx"] else None
 
 
 def victory(s, b):
@@ -612,6 +619,7 @@ def fight_view(conn, s, b, p, now):
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
                "face": look_face(p), "poses": look_poses(p), "tip": looks.sword_tip(looks.of_player(p)),
                "sheet": looks.attack_sheet(looks.of_player(p)), "gsheet": looks.guard_sheet(looks.of_player(p)),
+               "msheet": motion_of(b, f, p),
                "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
@@ -652,7 +660,8 @@ def events(log, f):
 
     {"who": "me", "act": "strike" | "break", "hit": bool, "dmg": n, "blocked": bool}   your weapon attack
     {"who": "me", "act": "guard", "counter": n}       the beast struck and your Guard stopped it (n = counter damage)
-    {"who": "me", "act": "tech"}                      a technique: it plays its own animation
+    {"who": "me", "act": "tech", "hit": bool, "dmg": n}  a technique: it plays its own animation (an attack
+                                                      technique's damage, 0 for a defense one)
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
@@ -670,7 +679,8 @@ def events(log, f):
         elif move == "Guard" and "blocked" in text:
             out.append({"who": "me", "act": "guard", "counter": _number(text, r"counters for ([\d,]+)")})
         elif move in techs:
-            out.append({"who": "me", "act": "tech"})
+            dmg = _number(text, r"([\d,]+) dmg")
+            out.append({"who": "me", "act": "tech", "hit": dmg > 0, "dmg": dmg})
         elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):
             name = next(n for n in skills if f" — {n} on " in text)
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")

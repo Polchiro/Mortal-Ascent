@@ -15,8 +15,8 @@
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
 {% set C = F.cast %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}{% if F.end %} slain{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-round="{{ F.turn_no }}" data-phase="{{ F.phase }}" data-events='{{ F.events | tojson }}'
-  data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}"{% if F.end %} data-end='{{ F.end.death | tojson }}'{% endif %}{% if F.warning.skill or F.roused %} data-crater="/art/fx/crater.webp"{% endif %}>
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% if C.fx %} cast-fx{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}{% if F.end %} slain{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-round="{{ F.turn_no }}" data-phase="{{ F.phase }}" data-events='{{ F.events | tojson }}'
+  data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}"{% if F.end %} data-end='{{ F.end.death | tojson }}'{% endif %}{% if C and C.fx %} data-cast='{{ C | tojson }}'{% endif %}{% if F.warning.skill or F.roused %} data-crater="/art/fx/crater.webp"{% endif %}>
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
     <img class="bface" src="{{ F.me.face }}" alt="" width="84" height="84">
@@ -56,6 +56,9 @@
           style="background-image: url({{ F.me.sheet.src }}); background-size: {{ F.me.sheet.cols * 100 }}% {{ F.me.sheet.rows * 100 }}%"></div>{% endif %}
         {% if F.me.gsheet %}<div class="sheetfx gsheet" data-frames="{{ F.me.gsheet.frames }}" data-cols="{{ F.me.gsheet.cols }}" data-rows="{{ F.me.gsheet.rows }}"
           style="background-image: url({{ F.me.gsheet.src }}); background-size: {{ F.me.gsheet.cols * 100 }}% {{ F.me.gsheet.rows * 100 }}%"></div>{% endif %}
+        {% if F.me.msheet %}<div class="sheetfx msheet" data-frames="{{ F.me.msheet.frames }}" data-cols="{{ F.me.msheet.cols }}" data-rows="{{ F.me.msheet.rows }}"
+          data-jab="{{ F.me.msheet.jab }}" data-release="{{ F.me.msheet.release }}" data-back="{{ F.me.msheet.back }}"
+          style="background-image: url({{ F.me.msheet.src }}); background-size: {{ F.me.msheet.cols * 100 }}% {{ F.me.msheet.rows * 100 }}%; --shift: {{ F.me.msheet.shift | round(4) }}"></div>{% endif %}
       </div>
       <svg class="clawsfx" viewBox="0 0 1024 559"><defs>
         <linearGradient id="clawg" x1="1" x2="0"><stop offset="0" stop-color="#FF3B4E" stop-opacity="0"/><stop offset=".45" stop-color="#FF4A5C" stop-opacity=".85"/><stop offset="1" stop-color="#FFE3E0"/></linearGradient>

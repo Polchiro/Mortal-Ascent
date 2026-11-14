@@ -567,7 +567,7 @@ form.inline{display:inline}
 .fighter[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1)}   /* Break: the same slash in gold */
 /* the frame-by-frame sword attack (looks.ATTACK_SHEETS): the video cell sits where the stills put him on the 1024 x 559 canvas */
 .fighter .sheetfx{position:absolute;left:20.3125%;top:.54%;width:46.875%;height:96.6%;visibility:hidden;background-repeat:no-repeat;background-position:0 0;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.fighter[data-pose=sheet] .sheetfx:not(.gsheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
+.fighter[data-pose=sheet] .sheetfx:not(.gsheet):not(.msheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
 .fighter.sworded.sheeted img.trailfx{left:12%;top:-4%;width:66%;height:66%;filter:drop-shadow(0 0 8px rgba(80,230,255,.7)) brightness(1.15)}
 .fighter.sworded.sheeted[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1) drop-shadow(0 0 8px rgba(255,200,80,.7))}
 .clawsfx{filter:drop-shadow(0 0 8px #FF2A3C) drop-shadow(0 0 18px rgba(255,40,60,.6))}
@@ -800,6 +800,35 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   animation:bdust 1.7s ease-out forwards}
 @keyframes bdust{0%{opacity:0;transform:translate(-50%,-50%) scale(calc(var(--s) * .35))}15%{opacity:.95}
   100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-95%) scale(calc(var(--s) * 1.6))}}
+/* ── Techniques with their own look (fight.js `technique`, web/technique_fx.py): the punch frames (.msheet) and the
+   technique's own pictures (.tart, art/fx/tech/), moved by the script; the CSS shapes below step aside for them.
+   Around them, by grade: Qi rings (Mystic+), a pillar of Qi and a dimmed scene (Earth+), a dark Heaven sky. ── */
+.fighter .msheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}   /* moved back by the share it was moved left in its cells */
+.fighter[data-pose=motion] .msheet{visibility:visible}
+.cast-fx .tfx{display:none}
+.cast-fx.cast-landed .bscene,.cast-fx.cast-landed .beast img{animation:none}
+.cast-fx .fighter img{animation:none}
+.tart{position:absolute;z-index:4;height:auto;pointer-events:none;transform:translate(-50%,-50%);opacity:0}
+.tart.tglow{filter:drop-shadow(0 0 10px var(--tc)) brightness(1.08)}
+.tart.trock{z-index:3;transform-origin:50% 100%;filter:drop-shadow(0 0 14px rgba(255,190,80,.55))}
+.tart.tflicker{animation:tflicker .16s steps(2) infinite}
+@keyframes tflicker{50%{filter:drop-shadow(0 0 16px var(--tc)) brightness(1.45)}}
+.tart.tdragon{filter:drop-shadow(0 0 8px #FFD24A) brightness(1.15)}
+.tart.tcoil{z-index:5;filter:drop-shadow(0 0 18px #FFD24A) drop-shadow(0 0 40px rgba(255,210,90,.6)) brightness(1.1)}
+.tqring{position:absolute;z-index:3;width:18%;aspect-ratio:3.4/1;border-radius:50%;pointer-events:none;border:3px solid var(--tc);
+  box-shadow:0 0 20px var(--tc),inset 0 0 14px var(--tc);transform:translate(-50%,-50%);animation:bqring .76s ease-out forwards}
+.tqring.q2{width:12%;animation-delay:.16s;opacity:0}
+.tpillar{position:absolute;z-index:1;width:16%;height:110%;pointer-events:none;transform:translate(-50%,-100%);transform-origin:50% 100%;opacity:0;
+  background:linear-gradient(to top,color-mix(in srgb,var(--tc) 70%,transparent),color-mix(in srgb,var(--tc) 25%,transparent) 55%,transparent);
+  filter:blur(6px);animation:tpillar 1.2s ease-out forwards}
+@keyframes tpillar{0%{opacity:0;transform:translate(-50%,-100%) scaleY(.1)}25%{opacity:.85;transform:translate(-50%,-100%) scaleY(1)}100%{opacity:0;transform:translate(-50%,-100%) scaleY(1.05)}}
+.tdim,.theaven{position:absolute;inset:0;left:0!important;top:0!important;pointer-events:none;opacity:0;animation:tdim var(--life,2000ms) ease-in-out forwards}
+.tdim{background:radial-gradient(ellipse at 50% 60%,transparent 30%,rgba(0,0,0,.45))}
+.theaven{background:radial-gradient(ellipse at 62% 30%,rgba(255,214,120,.28),transparent 40%),linear-gradient(to bottom,rgba(10,6,24,.82),rgba(20,12,30,.4) 60%,transparent)}
+@keyframes tdim{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.tdizzy{position:absolute;z-index:4;width:9%;aspect-ratio:1;border-radius:50%;border:4px dotted var(--tc);pointer-events:none;transform:translate(-50%,-50%) scaleY(.4);animation:tdizzy 1.3s linear forwards}
+@keyframes tdizzy{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(540deg)}}
+.casting.cast-fx[data-cast*='"Heaven"'] .castcall{transform:translateX(-50%) scale(1.25);box-shadow:0 0 30px rgba(226,168,255,.7)}
 .tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
 .tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
 @media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}

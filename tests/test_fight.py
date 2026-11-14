@@ -733,7 +733,7 @@ def test_events_for_blocked_missed_guard_and_techniques():
     ev, _ = events_after("guard", "strike")
     assert len(ev) == 1 and ev[0]["who"] == "me" and ev[0]["act"] == "guard" and "counter" in ev[0]
     ev, _ = events_after("attack_tech", "break")
-    assert ev[0] == {"who": "me", "act": "tech"}
+    assert ev[0] == {"who": "me", "act": "tech", "hit": ev[0]["dmg"] > 0, "dmg": ev[0]["dmg"]}   # its damage, for the page
     ev, _ = events_after("guard", "guard")
     assert ev == []
 
