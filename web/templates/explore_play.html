@@ -57,7 +57,7 @@
         {% if F.me.gsheet %}<div class="sheetfx gsheet" data-frames="{{ F.me.gsheet.frames }}" data-cols="{{ F.me.gsheet.cols }}" data-rows="{{ F.me.gsheet.rows }}"
           style="background-image: url({{ F.me.gsheet.src }}); background-size: {{ F.me.gsheet.cols * 100 }}% {{ F.me.gsheet.rows * 100 }}%"></div>{% endif %}
         {% if F.me.msheet %}<div class="sheetfx msheet" data-frames="{{ F.me.msheet.frames }}" data-cols="{{ F.me.msheet.cols }}" data-rows="{{ F.me.msheet.rows }}"
-          data-jab="{{ F.me.msheet.jab }}" data-release="{{ F.me.msheet.release }}" data-back="{{ F.me.msheet.back }}" data-hand="{{ F.me.msheet.hand | join(',') }}"{% if F.me.msheet.windup %} data-windup="{{ F.me.msheet.windup }}"{% endif %}
+          data-jab="{{ F.me.msheet.jab }}" data-release="{{ F.me.msheet.release }}" data-back="{{ F.me.msheet.back }}" data-hand="{{ F.me.msheet.hand | join(',') }}"{% if F.me.msheet.windup %} data-windup="{{ F.me.msheet.windup }}"{% endif %}{% if F.me.msheet.body %} data-body="{{ F.me.msheet.body | join(',') }}"{% endif %}
           style="background-image: url({{ F.me.msheet.src }}); background-size: {{ F.me.msheet.cols * 100 }}% {{ F.me.msheet.rows * 100 }}%; --shift: {{ F.me.msheet.shift | round(4) }}"></div>{% endif %}
       </div>
       <svg class="clawsfx" viewBox="0 0 1024 559"><defs>

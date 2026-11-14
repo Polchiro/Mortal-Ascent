@@ -551,11 +551,13 @@
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
+      var PULL = Math.round((JAB + WIND) / 2);                       // on the way back from the jab
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
       var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
-        ? [[0, 0], [300, JAB - 1], [360, JAB], [440, 7], [560, 9], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
-           [900, JAB - 1], [960, JAB], [1040, 7], [1160, 9], [1240, OUT], [1400, OUT + 4]].concat(settle)
+        ? [[0, 0], [300, JAB - 1], [360, JAB], [440, PULL], [560, WIND], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
+           [900, JAB - 1], [960, JAB], [1040, PULL], [1160, WIND], [1240, OUT], [1400, OUT + 4]].concat(settle)
         : [[0, 0], [R - 90, WIND], [R, OUT], [R + 120, OUT + 2]].concat(settle);
       if (ev.hit) hold('enemy');
 
@@ -567,7 +569,6 @@
       var BIG = Math.max(1, Math.min(2, br.width / (0.25 * W)));     // sized to the beast: phones draw it larger in the scene
       var KICK = [0.6, 0.62];                                         // the kicking foot, when this look has no kick frames
       var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : X.motion === 'kick' ? KICK : FIST.lunge;
-      var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       function fist(kind) { var q = kind === 'jab' ? FIST.jab : HAND; return at(fr, q[0], q[1]); }   // where the blow leaves him
       function pic(src, cls, p, w, life, mirror) {                   // one of the technique's pictures, centred on p
         var n = document.createElement('img');
@@ -655,6 +656,26 @@
           }
         },
         dragons: function () {},                                     // Nine Dragons: see `loose` below
+        beam: function (h) {                                         // Viper Fang / River-Splitting: a beam from the fingertip
+          if (h >= 0 && once('beam')) {                              // tail pinned to the fingertip, head on the beast
+            var from = fist('lunge'), to = at(br, 0.5, 0.42), d = px(from, to);   // finger to beast
+            var len = Math.hypot(d[0], d[1]), ang = Math.atan2(d[1], d[0]) * 180 / Math.PI;
+            var n = document.createElement('img');
+            n.className = 'tart tglow tbeam' + (X.part ? ' twater' : ''); n.src = X.art[0]; n.alt = '';
+            n.style.left = from[0] + '%'; n.style.top = from[1] + '%'; n.style.width = len / W * 100 + '%';
+            n.style.setProperty('--tc', tc);
+            scene.appendChild(n); made.push(n);
+            setTimeout(function () { n.remove(); }, 1300);
+            var B = function (sx, sy) { return 'translate(0,-50%) rotate(' + ang + 'deg) scale(' + sx + ',' + sy + ')'; };
+            n.animate(X.part                                        // River: the beam shoots out, then the two walls of water open
+              ? [{transform: B(0, 0.25), opacity: 1}, {transform: B(1, 0.3), opacity: 1, offset: 0.13},
+                 {transform: B(1, 1.08), opacity: 1, offset: 0.35}, {transform: B(1.02, 1), opacity: 1, offset: 0.75}, {transform: B(1.04, 1.06), opacity: 0}]
+              : [{transform: B(0, 1), opacity: 1}, {transform: B(1, 1), opacity: 1, offset: 0.14},       // Viper: the head strikes out
+                 {transform: B(1.03, 1.05), opacity: 1, offset: 0.7}, {transform: B(1.05, 1.08), opacity: 0}],
+              {duration: 1250, easing: 'ease-out', fill: 'forwards'});
+          }
+          if (h >= 160 && once('land')) lands();
+        },
         sweep: function (h) {                                        // Crescent Sweep: a pale crescent swept across it
           if (h >= -60 && once('arc')) {
             var n = pic(X.art[0], 'tglow tarc', at(br, 0.36, 0.44), 30, 900);
@@ -797,6 +818,118 @@
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
+    /* A Body defense technique that braces (web/technique_fx.py "brace"), played inside the beast's attack: the fighter
+       crosses the arms up and sinks into a wide stance (looks.MOTION_SHEETS "brace", their own frames) while the beast
+       winds up; the technique's own effect forms around them as they settle, and the beast's blow lands on it. Then
+       what really happened, read from the server's log: Blocked, a Break held (part of it still hurts), HP recovered,
+       a counter. `hitEv`: the beast's blow, when part of it got through. The effects are placed around the braced
+       figure (`body`), so they fit either look. */
+    function braced(ev, hitEv) {
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = RECIPES.beast;
+      var attacked = !!(hitEv || ev.blocked || ev.hold);
+      var HIT = attacked ? R.hit : 900, END = attacked ? Math.max(R.end + (ev.counter ? 220 : 0), R.hit + 1000) : 1700;
+      var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
+      var SET = msheet ? +msheet.dataset.release : 16;
+      var Bd = msheet && msheet.dataset.body ? msheet.dataset.body.split(',').map(Number) : [0.46, 0.12, 0.92, 0.24];
+      var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : [0.5, 0.32];
+      var bodyW = fr.width * Bd[3] / W * 100, bodyH = fr.height * (Bd[2] - Bd[1]);   // % of the scene, and px
+      var feet = at(fr, Bd[0], Bd[2]), mid = at(fr, Bd[0], (Bd[1] + Bd[2]) / 2);
+      if (hitEv && hitEv.dmg || ev.heal) hold('me');
+      if (ev.counter) hold('enemy');
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function show(f) {
+        f = Math.max(0, Math.min(mn - 1, Math.round(f)));
+        msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
+        return msheet.style.backgroundPosition;
+      }
+      function art(cls, p, w, behind) {                             // the technique's picture at p, w% of the scene wide
+        var n = document.createElement('img');
+        n.className = 'tart tbrace ' + cls; n.src = X.art[0]; n.alt = '';
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%'; n.style.setProperty('--tc', tc);
+        if (behind) scene.insertBefore(n, fighter); else scene.appendChild(n);
+        made.push(n);
+        return n;
+      }
+      var wide = function (aspect, share) { return bodyH * share / aspect / W * 100; };   // wide enough to stand `share` of the body tall
+      var FX = null, sheen = null, sheenLit = null;
+      var FORM = {                                                  // the effect forms as the stance settles, and stays to the end
+        dust: function () { FX = art('', feet, bodyW * 3.4, true);
+          FX.animate([{transform: 'translate(-50%,-60%) scale(0.25)', opacity: 0}, {transform: 'translate(-50%,-60%) scale(1)', opacity: 1, offset: 0.3},
+            {transform: 'translate(-50%,-62%) scale(1.15)', opacity: 0.8, offset: 0.8}, {transform: 'translate(-50%,-64%) scale(1.25)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        mist: function () { FX = art('tsoft', mid, wide(472 / 330, 1.15));
+          FX.animate([{transform: 'translate(-50%,-40%) rotate(-6deg)', opacity: 0}, {transform: 'translate(-50%,-50%) rotate(0)', opacity: 0.85, offset: 0.3},
+            {transform: 'translate(-50%,-56%) rotate(4deg)', opacity: 0.75, offset: 0.8}, {transform: 'translate(-50%,-62%) rotate(6deg)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        sheen: function () {                                        // the weave, laid over the fighter's own frame
+          if (!msheet) return;
+          sheen = msheet.cloneNode(false); sheen.className = 'sheetfx tsheen';
+          sheen.style.backgroundImage = 'url(' + X.art[0] + ')';
+          sheen.style.webkitMaskImage = sheen.style.maskImage = msheet.style.backgroundImage;
+          sheen.style.webkitMaskSize = sheen.style.maskSize = msheet.style.backgroundSize;
+          msheet.parentNode.insertBefore(sheen, msheet.nextSibling); made.push(sheen);
+          var lit = sheen.cloneNode(false); lit.className = 'sheetfx tsheen tlit'; lit.style.backgroundImage = 'none';   // a steel rim of light on the body
+          msheet.parentNode.insertBefore(lit, sheen.nextSibling); made.push(lit); sheenLit = lit;
+          lit.animate([{opacity: 0}, {opacity: 0.55, offset: 0.2}, {opacity: 0.4, offset: 0.85}, {opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'});
+          sheen.animate([{opacity: 0}, {opacity: 1, offset: 0.2}, {opacity: 0.85, offset: 0.85}, {opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        roots: function () { FX = art('', [feet[0], feet[1] + 2], wide(534 / 758, 1.35), true);
+          FX.animate([{transform: 'translate(-50%,-100%) scaleY(0.05)', opacity: 0}, {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 1, offset: 0.25},
+            {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 1, offset: 0.85}, {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        bell: function () { FX = art('tscreen', [feet[0], feet[1] + 1], wide(533 / 941, 1.3));
+          FX.animate([{transform: 'translate(-50%,-160%)', opacity: 0}, {transform: 'translate(-50%,-100%)', opacity: 1, offset: 0.2},
+            {transform: 'translate(-50%,-100%)', opacity: 0.95, offset: 0.85}, {transform: 'translate(-50%,-100%)', opacity: 0}], {duration: END - FORM_AT, easing: 'ease-in', fill: 'forwards'}); },
+        shell: function () { FX = art('tdome', [feet[0], feet[1] + 2], wide(509 / 828, 1.3));
+          FX.animate([{transform: 'translate(-50%,-100%) scale(0.2)', opacity: 0}, {transform: 'translate(-50%,-100%) scale(1)', opacity: 0.8, offset: 0.25},
+            {transform: 'translate(-50%,-100%) scale(1)', opacity: 0.75, offset: 0.85}, {transform: 'translate(-50%,-100%) scale(1.04)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        lotus: function () { FX = art('', [feet[0], feet[1] + 3], bodyW * 2.6, true);
+          FX.animate([{transform: 'translate(-50%,-80%) scale(0.15)', opacity: 0}, {transform: 'translate(-50%,-80%) scale(1)', opacity: 1, offset: 0.3},
+            {transform: 'translate(-50%,-84%) scale(1.04)', opacity: 1, offset: 0.85}, {transform: 'translate(-50%,-88%) scale(1.08)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
+        parry: function () {}
+      };
+      var FORM_AT = Math.max(200, HIT - 420);
+      function struck() {                                           // the beast's blow meets the brace
+        var h = at(fr, HAND[0], HAND[1]);
+        burst('tspark', h[0], h[1], X.play === 'parry' ? '#FFE6A0' : tc);
+        if (X.play === 'parry') { burst('tspark', h[0] + 2, h[1] - 3, '#FFE6A0'); fx('tring', h[0], h[1], 500); }
+        if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(1.8)'}, {filter: 'brightness(1)'}], {duration: 320});
+        if (FX && (X.play === 'bell' || X.play === 'roots' || X.play === 'shell'))
+          FX.animate([{rotate: '0deg'}, {rotate: '-3deg'}, {rotate: '2.5deg'}, {rotate: '-1.5deg'}, {rotate: '0deg'}], {duration: 520, composite: 'add'});
+        if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-5px,3px)'}, {transform: 'translate(4px,-2px)'}, {transform: 'none'}], {duration: 300});
+        if (hitEv && hitEv.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', hitEv.dmg), '−' + hitEv.dmg); }
+        pop(fighter, 'word', ev.hold ? (cast.effect === 'unbreakable' ? 'Unbreakable!' : 'Held ' + ev.hold + '%') : 'Blocked');
+      }
+      return {end: END, render: function (t) {
+        if (t < 0) return;
+        if (once('start')) {                                        // the grade's spectacle, as for every technique
+          if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
+          if (tier >= 3) { scene.insertBefore(fx('tdim', 50, 50, END, {'--life': END + 'ms'}), fighter); fx('tpillar', feet[0], feet[1], Math.round(END * 0.6), {'--tc': tc}); }
+          if (tier >= 4) scene.insertBefore(fx('theaven', 50, 50, END, {'--life': END + 'ms'}), fighter);
+        }
+        if (attacked) {                                             // the beast, as in its own attack
+          var x = 0, y = 0, rot = 0;
+          if (t < R.charge) { var q = ease(span(t, 0, R.charge)); x = 0.015 * W * q; rot = 4 * q; }
+          else if (t < R.back) { var c = span(t, R.charge, R.hit); x = 0.015 * W - (reachBeast + 0.015 * W) * c * c; rot = -6 * c; }
+          else if (t < R.end) { var r = inout(span(t, R.back, R.end)); x = -reachBeast * (1 - r); y = -0.024 * W * Math.sin(Math.PI * r); }
+          bpose(t < R.charge ? 'crouch' : t < R.back ? 'leap' : 'idle');
+          var ck = ev.counter ? knocked(t - HIT - 130, 0.03 * W) : [0, 0];
+          animal(x + ck[0], y, rot, ck[1]);
+        }
+        if (msheet) {                                               // into the stance by FORM_AT, then held
+          var f = t < FORM_AT ? 4 + (SET - 4) * span(t, 0, FORM_AT) : SET + (mn - 1 - SET) * span(t, FORM_AT, END);
+          if (t >= END - 60) pose('idle'); else { pose('motion'); var bp = show(f); if (sheen) sheen.style.webkitMaskPosition = sheen.style.maskPosition = bp; if (sheenLit) sheenLit.style.webkitMaskPosition = sheenLit.style.maskPosition = bp; }
+        } else pose(t < END - 60 ? 'windup' : 'idle');
+        var kb = hitEv && hitEv.dmg ? knocked(t - HIT, 0.012 * W) : [0, 0];
+        hero(-kb[0], 0);
+        poses.style.filter = tier >= 1 && t < END - 200 ? 'drop-shadow(0 0 ' + (4 + 3 * tier) + 'px ' + tc + ')' : '';
+        if (t >= FORM_AT && once('form')) FORM[X.play]();
+        if (attacked && t >= HIT && once('hit')) struck();
+        if (ev.heal && t >= HIT + 260 && once('heal')) { drop('me'); pop(fighter, 'word heal', '+' + ev.heal); fx('tqring', feet[0], feet[1], 700, {'--tc': '#7CF0BE'}); }
+        if (ev.counter && t >= HIT + 130 && once('counter')) {
+          var h2 = at(fr, HAND[0], HAND[1]); fx('tpierce', h2[0], h2[1], 600, {'--tc': X.play === 'parry' ? '#FFE6A0' : tc});
+          drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter);
+        }
+        if (!attacked && t >= HIT && once('steady')) pop(fighter, 'word', 'Steady');
+      }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
+    }
+
     /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
        picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
        over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
@@ -833,8 +966,15 @@
 
     var steps = [], kinds = {};
     function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
+    var braceHit = null;                                         // a brace technique takes the beast's blow itself
+    if (cast && cast.fx && cast.fx.motion === 'brace') {
+      var bi = events.findIndex(function (e) { return e.act === 'tech'; });
+      var hi = events.findIndex(function (e, i) { return i > bi && e.who === 'enemy' && e.act === 'attack'; });
+      if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
+    }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
+      if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
