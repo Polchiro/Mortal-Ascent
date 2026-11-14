@@ -551,12 +551,12 @@
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
       var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
         ? [[0, 0], [300, JAB - 1], [360, JAB], [440, 7], [560, 9], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
            [900, JAB - 1], [960, JAB], [1040, 7], [1160, 9], [1240, OUT], [1400, OUT + 4]].concat(settle)
-        : [[0, 0], [R - 90, 9], [R, OUT], [R + 120, OUT + 2]].concat(settle);
+        : [[0, 0], [R - 90, WIND], [R, OUT], [R + 120, OUT + 2]].concat(settle);
       if (ev.hit) hold('enemy');
 
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
@@ -565,7 +565,9 @@
         msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
       }
       var BIG = Math.max(1, Math.min(2, br.width / (0.25 * W)));     // sized to the beast: phones draw it larger in the scene
-      var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : FIST.lunge;
+      var KICK = [0.6, 0.62];                                         // the kicking foot, when this look has no kick frames
+      var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : X.motion === 'kick' ? KICK : FIST.lunge;
+      var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       function fist(kind) { var q = kind === 'jab' ? FIST.jab : HAND; return at(fr, q[0], q[1]); }   // where the blow leaves him
       function pic(src, cls, p, w, life, mirror) {                   // one of the technique's pictures, centred on p
         var n = document.createElement('img');
@@ -653,6 +655,48 @@
           }
         },
         dragons: function () {},                                     // Nine Dragons: see `loose` below
+        sweep: function (h) {                                        // Crescent Sweep: a pale crescent swept across it
+          if (h >= -60 && once('arc')) {
+            var n = pic(X.art[0], 'tglow tarc', at(br, 0.36, 0.44), 30, 900);
+            n.animate([{clipPath: 'inset(0 100% 0 0)', transform: T(-0.02 * W, 0, 0.92, -10), opacity: 1},
+              {clipPath: 'inset(0 0 0 0)', transform: T(0, 0, 1, 0), opacity: 1, offset: 0.3},
+              {clipPath: 'inset(0 0 0 0)', transform: T(0.01 * W, 0, 1.03, 4), opacity: 0.9, offset: 0.6},
+              {clipPath: 'inset(0 0 0 0)', transform: T(0.02 * W, 0, 1.06, 6), opacity: 0}], {duration: 880, easing: 'ease-out', fill: 'forwards'});
+          }
+          if (h >= 40 && once('land')) lands();
+        },
+        streak: function (h) {                                       // Swift Swallow Kick: the swallow flies from the foot through it
+          if (h >= -250 && once('bird')) {
+            var from = fist('lunge'), to = at(br, 0.34, 0.42), d = px(to, from);
+            var n = pic(X.art[0], 'tglow tbird', to, 40, 800);
+            n.animate([{transform: T(d[0], d[1], 0.5, 0, X.mirror), opacity: 0}, {transform: T(d[0] * 0.5, d[1] * 0.5, 0.85, 0, X.mirror), opacity: 1, offset: 0.25},
+              {transform: T(0, 0, 1, 0, X.mirror), opacity: 1, offset: 0.5}, {transform: T(0.14 * W, -0.01 * W, 1.05, 0, X.mirror), opacity: 0}],
+              {duration: 700, easing: 'linear', fill: 'forwards'});
+          }
+          if (h >= 100 && once('land')) lands();
+        },
+        whirl: function (h) {                                        // Autumn Wind Kick: a whirl of autumn leaves spins round it
+          if (h >= -80 && once('whirl')) {
+            var n = pic(X.art[0], 'tglow tleaf', at(br, 0.36, 0.5), 38, 1300);
+            n.animate([{transform: T(-0.03 * W, 0, 0.5, -20), opacity: 0}, {transform: T(0, 0, 1, 0), opacity: 1, offset: 0.2},
+              {transform: T(0, -0.01 * W, 1.05, 12), opacity: 1, offset: 0.65}, {transform: T(0.02 * W, -0.03 * W, 1.12, 24), opacity: 0}],
+              {duration: 1250, easing: 'ease-out', fill: 'forwards'});
+          }
+          [0, 1, 2].forEach(function (k) {                           // its three hits
+            if (h >= 40 + 140 * k && once('hit' + k)) {
+              if (k === 0) lands(); else { var b = at(br, 0.26 + 0.08 * k, 0.32 + 0.1 * k); burst('tspark', b[0], b[1], tc); shake(1); }
+            }
+          });
+        },
+        meteor: function (h) {                                       // Meteor-Falling Kick: a blazing meteor falls onto it from the sky
+          if (h >= -450 && once('meteor')) {
+            var to = at(br, 0.36, 0.5), n = pic(X.art[0], 'tglow tfire', to, 26, 1200);
+            n.animate([{transform: T(-0.3 * W, -0.42 * W, 0.7, 180), opacity: 0}, {transform: T(-0.22 * W, -0.31 * W, 0.8, 180), opacity: 1, offset: 0.1},
+              {transform: T(0, 0, 1, 180), opacity: 1, offset: 0.38}, {transform: T(0.01 * W, 0.01 * W, 1.15, 180), opacity: 0}],
+              {duration: 1180, easing: 'ease-in', fill: 'forwards'});
+          }
+          if (h >= 0 && once('land')) { fx('bflash', 50, 50, 450); lands(); }
+        },
         prints: function (h) {                                       // Twin Palm Strike: one print for each of its two hits
           [0, 1].forEach(function (k) {
             if (h >= -260 + 140 * k && once('print' + k)) {
@@ -724,12 +768,18 @@
             if (t < keys[j][0]) { var a = keys[j - 1], b = keys[j]; f = a[1] + (b[1] - a[1]) * span(t, a[0], b[0]); break; }
           }
           if (t >= end * 0.95) pose('idle'); else { pose('motion'); show(f); }
-        } else {                                                      // no frames for this look: the three poses
+        } else {                                                      // no frames for this look: its own three poses
           var p = punches.filter(function (q) { return t >= q.at - 200 && t < q.at + 180; })[0];
           pose(!p ? 'idle' : t < p.at ? 'windup' : 'strike');
         }
         x = 0.025 * W * Math.sin(Math.PI * span(t, punches[0].at - 260, R + 380));        // a step in behind the punches
-        hero(x, 0);
+        var y = 0;
+        if (X.motion === 'kick' && !msheet) {                        // a kick without frames: a hop into it (Meteor: a leap)
+          var big = X.play === 'meteor', jump = span(t, R - (big ? 420 : 260), R + (big ? 140 : 160));
+          y = -(big ? 0.09 : 0.035) * W * Math.sin(Math.PI * jump);
+          x += (big ? 0.05 : 0.02) * W * Math.sin(Math.PI * jump);
+        }
+        hero(x, y);
         poses.style.filter = tier >= 1 && t < R + 200 ? 'drop-shadow(0 0 ' + (4 + 4 * tier) + 'px ' + tc + ')' : '';
         var k2 = ev.hit ? knocked(t - LAND, (0.02 + 0.006 * tier) * W) : [0, 0];
         animal(k2[0], 0, k2[0] / (0.03 * W) * 4, k2[1]);

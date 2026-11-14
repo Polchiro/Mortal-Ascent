@@ -235,6 +235,14 @@ a lair is fought with `bot/hunt.py`.
      Fist's bull charges from the fist; Mountain-Shattering Fist bursts a mountain up under it. Nine Dragons
      Ascending Fist, the Heaven one, throws four punches (jab, lunge, jab, lunge) loosing 1, 2, 3 and 3 golden
      dragons, nine in all, then all nine rise around the beast in one coil as the damage lands.
+   - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
+     frames (`hero_<gender>_kick.webp` in `looks.MOTION_SHEETS`, made from that look's own picture so it keeps
+     its appearance) or, until it has them (neither does yet), with its own three poses and a hop into the kick
+     (Meteor-Falling Kick: a leap). Every Leg technique. Crescent Sweep sweeps a pale crescent across the beast;
+     Swift Swallow Kick sends a golden swallow from the foot straight through it; Autumn Wind Kick spins a whirl of
+     autumn leaves round it, one pulse per hit; Meteor-Falling Kick, the Heaven one, brings a blazing meteor down
+     onto it and leaves the golden crater. Their designs were drawn over a painted scene with the name across the
+     top; `scripts/make_kick_fx.py` keys them out of it.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms
@@ -246,8 +254,9 @@ a lair is fought with `bot/hunt.py`.
    Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
    hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
    are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
-   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator, with no fist or palm
-   frames yet, plays the same pictures through her three poses.
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. A look with no frames for a movement (the female
+   cultivator for all three, the male for the kick) plays the same pictures through its own three poses. The
+   action buttons stay locked until the whole cast has played, so extra clicks never cut it short.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.

@@ -819,6 +819,10 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tpierce{position:absolute;z-index:5;width:30%;height:5px;border-radius:3px;pointer-events:none;transform:translateY(-50%);transform-origin:left;
   background:linear-gradient(90deg,#fff,var(--tc) 40%,transparent);box-shadow:0 0 14px var(--tc);animation:tpierce .7s ease-out forwards}
 @keyframes tpierce{0%{opacity:0;transform:translateY(-50%) scaleX(0)}25%{opacity:1;transform:translateY(-50%) scaleX(1)}100%{opacity:0;transform:translateY(-50%) scaleX(1.15)}}
+.tart.tarc{filter:drop-shadow(0 0 12px rgba(220,240,255,.8)) brightness(1.15)}       /* Crescent Sweep: pale moonlight */
+.tart.tbird{filter:drop-shadow(0 0 14px #FFD978) drop-shadow(0 0 4px #FFF2C8) sepia(.4) brightness(1.3)}        /* Swift Swallow: golden wind */
+.tart.tleaf{filter:drop-shadow(0 0 8px rgba(255,170,60,.7))}
+.tart.tfire{z-index:4;filter:drop-shadow(0 0 18px #FF8A2A) drop-shadow(0 0 40px rgba(255,140,40,.5))}
 .tart.tdragon{filter:drop-shadow(0 0 8px #FFD24A) brightness(1.15)}
 .tart.tcoil{z-index:5;filter:drop-shadow(0 0 18px #FFD24A) drop-shadow(0 0 40px rgba(255,210,90,.6)) brightness(1.1)}
 .tqring{position:absolute;z-index:3;width:18%;aspect-ratio:3.4/1;border-radius:50%;pointer-events:none;border:3px solid var(--tc);
