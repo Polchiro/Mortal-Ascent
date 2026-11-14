@@ -68,6 +68,13 @@ ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "
 # the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video)
 GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5}}
 
+# the shared movements techniques play (web/technique_fx.py "motion"), frame by frame, in the same 320 x 360 cells.
+# "fist": SHOAIB's punch video (scripts/make_hero_fist.py): on guard (0-1), a jab (out at `jab`), the fist drawn
+# back (7-8), a lunging punch (out at `release`), held, drawn back (21-27), on guard again (28-35). `shift`: he was
+# moved left inside his cells so the lunge isn't cut off, by this share of a cell; the page moves him back.
+MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
+                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320}}}
+
 
 def fighter(look, pose="idle"):
     """The fighter on the 1024 x 559 fight canvas, facing right, in one of POSES (web/static/fight.js swaps them)."""
@@ -90,6 +97,11 @@ def attack_sheet(look):
 def guard_sheet(look):
     """The frame-by-frame sword block for this look (GUARD_SHEETS), or None to stand in the idle pose behind the ring."""
     return GUARD_SHEETS.get(gender_of(look))
+
+
+def motion_sheet(look, motion):
+    """The frame-by-frame movement a technique plays (MOTION_SHEETS), or None to play it through the three poses."""
+    return MOTION_SHEETS.get(motion, {}).get(gender_of(look))
 
 
 def face(look):
