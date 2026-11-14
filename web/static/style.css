@@ -813,6 +813,12 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tart.trock{z-index:3;transform-origin:50% 100%;filter:drop-shadow(0 0 14px rgba(255,190,80,.55))}
 .tart.tflicker{animation:tflicker .16s steps(2) infinite}
 @keyframes tflicker{50%{filter:drop-shadow(0 0 16px var(--tc)) brightness(1.45)}}
+.tart.tprint{filter:drop-shadow(0 0 10px #FFE7A8) brightness(1.1)}                /* Twin Palm: silver prints, a warm glow */
+.tart.tfan{transform-origin:50% 100%;filter:drop-shadow(0 0 10px rgba(120,220,200,.5)) brightness(1.2)}
+.tart.tsky{z-index:4;filter:drop-shadow(0 0 22px #FFD978) drop-shadow(0 0 50px rgba(255,214,120,.55))}
+.tpierce{position:absolute;z-index:5;width:30%;height:5px;border-radius:3px;pointer-events:none;transform:translateY(-50%);transform-origin:left;
+  background:linear-gradient(90deg,#fff,var(--tc) 40%,transparent);box-shadow:0 0 14px var(--tc);animation:tpierce .7s ease-out forwards}
+@keyframes tpierce{0%{opacity:0;transform:translateY(-50%) scaleX(0)}25%{opacity:1;transform:translateY(-50%) scaleX(1)}100%{opacity:0;transform:translateY(-50%) scaleX(1.15)}}
 .tart.tdragon{filter:drop-shadow(0 0 8px #FFD24A) brightness(1.15)}
 .tart.tcoil{z-index:5;filter:drop-shadow(0 0 18px #FFD24A) drop-shadow(0 0 40px rgba(255,210,90,.6)) brightness(1.1)}
 .tqring{position:absolute;z-index:3;width:18%;aspect-ratio:3.4/1;border-radius:50%;pointer-events:none;border:3px solid var(--tc);

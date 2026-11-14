@@ -72,8 +72,13 @@ GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "fr
 # "fist": SHOAIB's punch video (scripts/make_hero_fist.py): on guard (0-1), a jab (out at `jab`), the fist drawn
 # back (7-8), a lunging punch (out at `release`), held, drawn back (21-27), on guard again (28-35). `shift`: he was
 # moved left inside his cells so the lunge isn't cut off, by this share of a cell; the page moves him back.
+# "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
+# two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
+# `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
 MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
-                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320}}}
+                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]}},
+                 "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
+                                   "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]}}}
 
 
 def fighter(look, pose="idle"):
