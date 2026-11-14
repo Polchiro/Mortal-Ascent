@@ -254,8 +254,10 @@ a lair is fought with `bot/hunt.py`.
    Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
    hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
    are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
-   `tech` event's `dmg`) and the HP bar drops when the blow lands. A look with no frames for a movement (the female
-   cultivator for all three, the male for the kick) plays the same pictures through its own three poses. The
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator plays the punch and the palm push frame for frame: his frames in her colours, at her
+   height, with her own head and hair placed on every frame (`hero_female_{fist,palm}.webp`,
+   `scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
+   same pictures through its own three poses. The
    action buttons stay locked until the whole cast has played, so extra clicks never cut it short.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,

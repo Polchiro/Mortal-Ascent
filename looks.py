@@ -75,10 +75,16 @@ GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "fr
 # "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
 # two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
 # `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
+# The female cultivator plays the same movements, frame for frame (scripts/make_heroine_moves.py): his frames in her
+# colours, at her height, with her own head and hair, so the timing marks are his; only `shift` and `hand` differ.
 MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
-                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]}},
+                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]},
+                          "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 36, "cols": 8, "rows": 5,
+                                     "jab": 5, "release": 12, "back": 21, "shift": 41 / 320, "hand": [0.719, 0.397]}},
                  "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
-                                   "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]}}}
+                                   "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]},
+                          "female": {"src": "/art/portraits/fight/hero_female_palm.webp", "frames": 48, "cols": 8, "rows": 6,
+                                     "jab": 12, "release": 14, "back": 40, "shift": 33 / 320, "hand": [0.707, 0.416]}}}
 
 
 def fighter(look, pose="idle"):
