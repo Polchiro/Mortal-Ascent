@@ -23,7 +23,8 @@ DESIGNS = ("iron_fist", "fierce_tiger_claw", "raging_bull_fist", "rolling_thunde
            "nine_dragons_ascending_fist")
 SOLID = ("iron_fist", "mountain_shattering_fist")   # designs no brighter than the checker: cut out with rembg
 PERIOD = 17                               # the painted checker repeats every 17 px (two squares)
-SPARKLE = (890, 425, 985, 515)            # Gemini's mark, x0 y0 x1 y1 on the 1024 x 559 pictures
+SPARKLE = (134, 134, 39, 44)              # Gemini's mark: its box's left, top, right, bottom edges, in px from the
+                                          # picture's right and bottom edges (the same on every picture size)
 DRAGON_HEADS = (                          # boxes on the nine-dragon picture around one dragon's head and neck
     ((520, 108, 712, 238), False),        # right side, upper: already faces right (towards the beast)
     ((548, 240, 718, 350), False),        # right side, lower
@@ -101,7 +102,8 @@ def dark_rock(im, model):
 
 
 def finish(rgb, alpha, trim=True):
-    x0, y0, x1, y1 = SPARKLE
+    h, w = alpha.shape
+    x0, y0, x1, y1 = w - SPARKLE[0], h - SPARKLE[1], w - SPARKLE[2], h - SPARKLE[3]
     alpha = np.where(alpha < 0.12, 0, alpha)        # faint specks of checker left far from the design
     alpha[y0:y1, x0:x1] = 0
     out = Image.fromarray(np.dstack([rgb.clip(0, 255), alpha * 255]).astype(np.uint8), "RGBA")

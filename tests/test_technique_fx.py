@@ -21,7 +21,14 @@ def test_every_look_is_an_existing_technique_with_its_art():
 def test_the_punch_techniques_have_their_looks():
     fist = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Fist"}
     assert fist <= set(technique_fx.TECH_FX)
-    assert "rolling_thunder_palm" in technique_fx.TECH_FX
+    assert all(technique_fx.TECH_FX[t]["motion"] == "fist" for t in fist)
+
+
+def test_the_palm_attack_techniques_share_the_palm_push():
+    palm = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Palm" and t["type"] == "attack"}
+    assert palm == {"twin_palm_strike", "rolling_thunder_palm", "thousand_shadow_palm", "heaven_rending_palm"}
+    assert all(technique_fx.TECH_FX[t]["motion"] == "palm" for t in palm)
+    assert len(technique_fx.TECH_FX["twin_palm_strike"]["art"]) == 2          # one print for each of its two hits
 
 
 def test_nine_dragons_looses_nine_dragons_one_to_three_a_punch():
@@ -36,11 +43,16 @@ def test_a_look_carries_its_grade_length_and_art_urls():
     assert technique_fx.of("Horse Stance Guard", "Mortal") is None            # no look yet: keeps its CSS one
 
 
-def test_the_punch_frames_exist_for_the_male_cultivator():
-    sheet = looks.motion_sheet({"gender": "male"}, "fist")
-    assert os.path.exists(os.path.join(ROOT, sheet["src"].lstrip("/")))
-    assert 0 < sheet["jab"] < sheet["release"] < sheet["back"] < sheet["frames"]
-    assert looks.motion_sheet({"gender": "female"}, "fist") is None           # she plays it through her poses
+def test_the_movement_frames_exist_for_the_male_cultivator():
+    from PIL import Image
+    for motion in looks.MOTION_SHEETS:
+        sheet = looks.motion_sheet({"gender": "male"}, motion)
+        path = os.path.join(ROOT, sheet["src"].lstrip("/"))
+        assert Image.open(path).size == (320 * sheet["cols"], 360 * sheet["rows"])
+        assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
+        assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
+        assert all(0 < q < 1 for q in sheet["hand"])
+        assert looks.motion_sheet({"gender": "female"}, motion) is None       # she plays it through her poses
 
 
 def test_a_technique_event_carries_its_damage():

@@ -3,7 +3,8 @@ which of its own effect pictures fly. Presentation only (docs/web.md "Techniques
 engine, and the engine's damage, Battle Qi, cooldowns and effects (technique.py, battle.py, bot/fight.py) never
 read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missing here keeps its CSS look.
 
-    motion   the shared movement (looks.MOTION_SHEETS): "fist" is SHOAIB's punch video, a jab then a lunging punch
+    motion   the shared movement (looks.MOTION_SHEETS): "fist" is SHOAIB's punch video, a jab then a lunging punch;
+             "palm" his palm video, a lunging two-handed palm push
     play     how fight.js `technique` plays the pictures (PLAYS)
     art      its pictures in art/fx/tech/ (scripts/make_fist_fx.py), the first being its main one
     punches  how many dragons fly from each punch, one punch after another (Nine Dragons Ascending Fist only)
@@ -11,18 +12,22 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
 """
 import technique as techniques
 
-PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons")
+PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend")
 
 TECH_FX = {
     # the punch techniques, from SHOAIB's designs (Gemini)
     "iron_fist": {"motion": "fist", "play": "burst", "art": ["iron_fist"]},
     "fierce_tiger_claw": {"motion": "fist", "play": "claw", "art": ["fierce_tiger_claw"]},
     "raging_bull_fist": {"motion": "fist", "play": "charge", "art": ["raging_bull_fist"], "mirror": True},
-    "rolling_thunder_palm": {"motion": "fist", "play": "vortex", "art": ["rolling_thunder_palm"]},   # a Palm technique, thrown with the punch
     "mountain_shattering_fist": {"motion": "fist", "play": "rise", "art": ["mountain_shattering_fist"]},
     "nine_dragons_ascending_fist": {"motion": "fist", "play": "dragons", "punches": [1, 2, 3, 3],    # nine in all
                                     "art": ["nine_dragons_ascending_fist", "nine_dragons_head_1", "nine_dragons_head_2",
                                             "nine_dragons_head_3"]},
+    # the palm techniques, from SHOAIB's designs (Gemini), all played with the palm push
+    "twin_palm_strike": {"motion": "palm", "play": "prints", "art": ["twin_palm_strike_1", "twin_palm_strike_2"]},
+    "rolling_thunder_palm": {"motion": "palm", "play": "vortex", "art": ["rolling_thunder_palm"]},
+    "thousand_shadow_palm": {"motion": "palm", "play": "fan", "art": ["thousand_shadow_palm"]},
+    "heaven_rending_palm": {"motion": "palm", "play": "descend", "art": ["heaven_rending_palm"]},
 }
 
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle

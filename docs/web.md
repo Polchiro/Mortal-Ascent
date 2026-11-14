@@ -227,20 +227,27 @@ a lair is fought with `bot/hunt.py`.
    bell, evade afterimage). A blocked attack shows only the callout. All of it is off for reduced motion.
    **Techniques with their own look** replace that CSS look (`web/technique_fx.py`, `technique` in `fight.js`;
    presentation only, the engine never reads it). Each names a shared **movement** and the technique's own
-   **pictures**. The movement so far is `fist`, SHOAIB's punch video (`looks.MOTION_SHEETS`,
-   `hero_male_fist.webp`, built by `scripts/make_hero_fist.py`): a jab, then a lunging punch. His colours match his
-   sword frames and his feet stand where they do; he fights bare-handed, as in the video. The pictures are
-   SHOAIB's Gemini designs, cleaned of their painted checkerboard and Gemini mark by `scripts/make_fist_fx.py`
-   (`art/fx/tech/<id>.webp`). Everything is timed from the release, the frame the fist is furthest out:
-   Iron Fist bursts on the beast; Fierce Tiger Claw tears three golden rakes across it; Raging Bull Fist's bull
-   charges from the fist; Rolling Thunder Palm (a Palm technique, thrown with the punch) rolls a thunder vortex
-   onto it; Mountain-Shattering Fist bursts a mountain up under it. Nine Dragons Ascending Fist, the Heaven one,
-   throws four punches (jab, lunge, jab, lunge) loosing 1, 2, 3 and 3 golden dragons, nine in all, then all nine
-   rise around the beast in one coil as the damage lands. The **grade** sets the length (`GRADE_MS`: Mortal 1.1 s
-   to Heaven 2.7 s) and the spectacle: a glow from Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a
-   dimmed scene from Earth, a dark Heaven sky. Heavy hits leave the golden crater, Stagger the dizzy ring. The
-   damage comes from the server (the `tech` event's `dmg`) and the HP bar drops when the blow lands. The female
-   cultivator, with no punch frames yet, plays the same pictures through her three poses.
+   **pictures**, all timed from the release, the frame the blow is furthest out (`looks.MOTION_SHEETS`, with
+   where the hand is then, so effects leave from it). Two movements, from SHOAIB's videos, bare-handed as in them,
+   colours matched to his sword frames and feet where they stand:
+   - `fist` (`hero_male_fist.webp`, `scripts/make_hero_fist.py`): a jab, then a lunging punch. Every Fist
+     technique. Iron Fist bursts on the beast; Fierce Tiger Claw tears three golden rakes across it; Raging Bull
+     Fist's bull charges from the fist; Mountain-Shattering Fist bursts a mountain up under it. Nine Dragons
+     Ascending Fist, the Heaven one, throws four punches (jab, lunge, jab, lunge) loosing 1, 2, 3 and 3 golden
+     dragons, nine in all, then all nine rise around the beast in one coil as the damage lands.
+   - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
+     push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
+     Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms
+     over it, one pulse per hit; Heaven-Rending Palm brings a giant celestial palm down onto it from the sky.
+   The pictures are SHOAIB's Gemini designs (`art/fx/tech/<id>.webp`), cleaned of their painted checkerboard and
+   Gemini mark by `scripts/make_fist_fx.py` and `scripts/make_palm_fx.py` (Thousand Shadow Palm, dim and
+   see-through on a checker that flips light-for-dark in patches, has the checker rebuilt square by square).
+   The **grade** sets the length (`GRADE_MS`: Mortal 1.1 s to Heaven 2.7 s) and the spectacle: a glow from
+   Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
+   hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
+   are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator, with no fist or palm
+   frames yet, plays the same pictures through her three poses.
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.

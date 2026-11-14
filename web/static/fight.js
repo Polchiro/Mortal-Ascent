@@ -551,7 +551,7 @@
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'charge' || X.play === 'vortex' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
       var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
         ? [[0, 0], [300, JAB - 1], [360, JAB], [440, 7], [560, 9], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
@@ -564,11 +564,13 @@
         f = Math.max(0, Math.min(mn - 1, Math.round(f)));
         msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
       }
-      function fist(kind) { var q = FIST[kind]; return at(fr, q[0], q[1]); }
+      var BIG = Math.max(1, Math.min(2, br.width / (0.25 * W)));     // sized to the beast: phones draw it larger in the scene
+      var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : FIST.lunge;
+      function fist(kind) { var q = kind === 'jab' ? FIST.jab : HAND; return at(fr, q[0], q[1]); }   // where the blow leaves him
       function pic(src, cls, p, w, life, mirror) {                   // one of the technique's pictures, centred on p
         var n = document.createElement('img');
         n.className = 'tart ' + cls; n.src = src; n.alt = '';
-        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%';
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w * BIG + '%';
         n.style.setProperty('--tc', tc);
         scene.appendChild(n); made.push(n);
         setTimeout(function () { n.remove(); }, life);
@@ -593,6 +595,7 @@
         shake(tier + (cast.effect === 'heavy' ? 2 : 0));
         if (cast.effect === 'stagger') setTimeout(function () { var d = at(br, 0.42, 0.12); fx('tdizzy', d[0], d[1], 1300, {'--tc': tc}); }, 150);
         if (cast.effect === 'heavy') { var g = at(br, 0.36, 0.97); fx('pcrater', g[0], g[1], 1800); fx('pwave', g[0], g[1], 800); }   // the golden crater
+        if (cast.effect === 'pierce') { var q = at(br, 0.1, 0.45); fx('tpierce', q[0], q[1], 700, {'--tc': tc}); }      // a line of light through it
       }
 
       // what each technique does with its pictures (technique_fx.PLAYS), h = ms since the last release
@@ -625,14 +628,14 @@
           if (h >= 40 && once('land')) lands();
         },
         vortex: function (h) {                                       // Rolling Thunder: a thunder vortex rolls onto it and spins
-          if (h >= -320 && once('ball')) {
+          if (h >= -160 && once('ball')) {                           // launched by the push itself
             var from = fist('lunge'), to = at(br, 0.32, 0.42), d = px(to, from);
             var n = pic(X.art[0], 'tglow tflicker', to, 30, 1300);
             n.animate([{transform: T(d[0], d[1], 0.2, 0), opacity: 0.4}, {transform: T(0, 0, 0.9, 300), opacity: 1, offset: 0.27},
               {transform: T(0, 0, 1.15, 760), opacity: 1, offset: 0.7}, {transform: T(0, 0, 1.25, 1000), opacity: 0}],
               {duration: 1250, easing: 'ease-out', fill: 'forwards'});
           }
-          if (h >= 40 && once('land')) lands();
+          if (h >= 180 && once('land')) lands();
         },
         rise: function (h) {                                         // Mountain-Shattering Fist: a mountain bursts up under it
           if (h >= 0 && once('mountain')) {
@@ -649,7 +652,43 @@
             lands();
           }
         },
-        dragons: function () {}                                      // Nine Dragons: see `loose` below
+        dragons: function () {},                                     // Nine Dragons: see `loose` below
+        prints: function (h) {                                       // Twin Palm Strike: one print for each of its two hits
+          [0, 1].forEach(function (k) {
+            if (h >= -260 + 140 * k && once('print' + k)) {
+              var from = fist('lunge'), to = at(br, 0.3 + 0.04 * k, 0.36 + 0.1 * k), d = px(to, from);
+              var n = pic(X.art[k], 'tglow tprint', to, 15, 900);
+              n.animate([{transform: T(d[0], d[1], 0.35), opacity: 0}, {transform: T(d[0] * 0.4, d[1] * 0.4, 0.8), opacity: 1, offset: 0.25},
+                {transform: T(0, 0, 1), opacity: 1, offset: 0.3}, {transform: T(0.01 * W, 0, 1.12), opacity: 0}],
+                {duration: 860, easing: 'ease-in', fill: 'forwards'});
+            }
+            if (h >= 140 * k && once('hit' + k)) { if (k === 0) lands(); else { var b = at(br, 0.34, 0.46); burst('tspark', b[0], b[1], tc); shake(0); } }
+          });
+        },
+        fan: function (h) {                                          // Thousand Shadow Palm: a fan of shadow palms opens over it
+          if (h >= -120 && once('fan')) {                            // from its root on the ground in front of the beast
+            var n = pic(X.art[0], 'tglow tfan', at(br, 0.34, 0.98), 46, 1500);
+            n.animate([{transform: 'translate(-50%,-100%) scale(0.15,0.1)', opacity: 0},
+              {transform: 'translate(-50%,-100%) scale(0.9,0.95)', opacity: 0.95, offset: 0.12},
+              {transform: 'translate(-50%,-100%) scale(1)', opacity: 1, offset: 0.25},
+              {transform: 'translate(-50%,-100%) scale(1.04,1.06)', opacity: 0.9, offset: 0.75},
+              {transform: 'translate(-50%,-100%) scale(1.08,1.12)', opacity: 0}], {duration: 1450, easing: 'ease-out', fill: 'forwards'});
+          }
+          [0, 1, 2].forEach(function (k) {                           // its three hits
+            if (h >= 60 + 140 * k && once('hit' + k)) {
+              if (k === 0) lands(); else { var b = at(br, 0.24 + 0.08 * k, 0.3 + 0.12 * k); burst('tspark', b[0], b[1], tc); shake(1); }
+            }
+          });
+        },
+        descend: function (h) {                                      // Heaven-Rending Palm: a giant palm comes down through the clouds
+          if (h >= -420 && once('palm')) {
+            var to = at(br, 0.4, 0.4), n = pic(X.art[0], 'tglow tsky', to, 21, 1500);
+            n.animate([{transform: T(0, -0.42 * W, 0.8, 180), opacity: 0}, {transform: T(0, -0.3 * W, 0.92, 180), opacity: 1, offset: 0.12},
+              {transform: T(0, 0, 1, 180), opacity: 1, offset: 0.25}, {transform: T(0, 0.006 * W, 1.03, 180), opacity: 1, offset: 0.7},
+              {transform: T(0, 0.01 * W, 1.06, 180), opacity: 0}], {duration: 1450, easing: 'ease-in', fill: 'forwards'});
+          }
+          if (h >= 0 && once('land')) { fx('bflash', 50, 50, 450); var g = at(br, 0.4, 0.97); fx('pwave', g[0], g[1], 900); lands(); }
+        }
       };
 
       /* Nine Dragons Ascending Fist: each punch looses its dragons (1, 2, 3, 3), golden heads streaking from the fist
