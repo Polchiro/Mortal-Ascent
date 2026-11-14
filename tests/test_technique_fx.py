@@ -92,8 +92,8 @@ def test_the_movement_frames_exist_for_both_cultivators():
             assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
             assert all(0 < q < 1 for q in sheet["hand"])
         him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
-        if motion != "fist":                              # made from his frames: the same movement, frame for frame
-            assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch is her own video)
+        if motion in ("palm", "finger"):                  # made from his frames: the same movement, frame for frame
+            assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch and brace are her own)
 
 
 def test_a_technique_event_carries_its_damage():
