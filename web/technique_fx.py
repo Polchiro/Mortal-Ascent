@@ -6,7 +6,8 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
     motion   the shared movement (looks.MOTION_SHEETS): "fist" is SHOAIB's punch video, a jab then a lunging punch;
              "palm" his palm video, a lunging two-handed palm push; "kick" a kick, shared by both genders: its
              timing and effects are defined once, and each look plays it with its own frames (looks.MOTION_SHEETS)
-             or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`)
+             or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`);
+             "finger" his finger-jab video, a lunge with two fingers thrust out
     play     how fight.js `technique` plays the pictures (PLAYS)
     art      its pictures in art/fx/tech/ (scripts/make_fist_fx.py), the first being its main one
     punches  how many dragons fly from each punch, one punch after another (Nine Dragons Ascending Fist only)
@@ -15,8 +16,8 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
 import technique as techniques
 
 PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend",
-         "sweep", "streak", "whirl", "meteor")
-MOTIONS = ("fist", "palm", "kick")
+         "sweep", "streak", "whirl", "meteor", "beam")
+MOTIONS = ("fist", "palm", "kick", "finger")
 
 TECH_FX = {
     # the punch techniques, from SHOAIB's designs (Gemini)
@@ -37,6 +38,10 @@ TECH_FX = {
     "swift_swallow_kick": {"motion": "kick", "play": "streak", "art": ["swift_swallow_kick"], "mirror": True},
     "autumn_wind_kick": {"motion": "kick", "play": "whirl", "art": ["autumn_wind_kick"]},
     "meteor_falling_kick": {"motion": "kick", "play": "meteor", "art": ["meteor_falling_kick"]},
+    # the finger techniques, from SHOAIB's designs (Gemini, scripts/make_finger_fx.py), both played with the jab:
+    # a beam whose tail stays on the fingertip and whose head reaches the beast
+    "viper_fang_finger": {"motion": "finger", "play": "beam", "art": ["viper_fang_finger"]},
+    "river_splitting_finger": {"motion": "finger", "play": "beam", "art": ["river_splitting_finger"], "part": True},
 }
 
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle
@@ -55,6 +60,6 @@ def of(name, grade):
     fx = TECH_FX.get(tid)
     if not fx:
         return None
-    return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")),
+    return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),
             "punches": fx.get("punches", [1]), "ms": GRADE_MS.get(grade, 1100),
             "art": [f"/art/fx/tech/{a}.webp" for a in fx["art"]]}

@@ -243,6 +243,10 @@ a lair is fought with `bot/hunt.py`.
      autumn leaves round it, one pulse per hit; Meteor-Falling Kick, the Heaven one, brings a blazing meteor down
      onto it and leaves the golden crater. Their designs were drawn over a painted scene with the name across the
      top; `scripts/make_kick_fx.py` keys them out of it.
+   - `finger` (`hero_male_finger.webp`, `scripts/make_hero_finger.py`): a lunge with two fingers thrust out. Every
+     Finger technique: its beam's tail stays on the fingertip (`hand`) and stretches to the beast, angled to it.
+     Viper Fang Finger strikes out an emerald viper; River-Splitting Finger shoots a blue beam and then opens two
+     walls of water around it. Designs cleaned by `scripts/make_finger_fx.py`.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms
@@ -254,8 +258,8 @@ a lair is fought with `bot/hunt.py`.
    Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
    hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
    are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
-   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator plays the punch and the palm push frame for frame: his frames in her colours, at her
-   height, with her own head and hair placed on every frame (`hero_female_{fist,palm}.webp`,
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator plays the punch, the palm push and the finger jab frame for frame: his frames in her colours, at her
+   height, with her own head and hair placed on every frame (`hero_female_{fist,palm,finger}.webp`,
    `scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
    same pictures through its own three poses. The
    action buttons stay locked until the whole cast has played, so extra clicks never cut it short.

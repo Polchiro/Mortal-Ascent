@@ -551,7 +551,7 @@
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
       var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
         ? [[0, 0], [300, JAB - 1], [360, JAB], [440, 7], [560, 9], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
@@ -655,6 +655,26 @@
           }
         },
         dragons: function () {},                                     // Nine Dragons: see `loose` below
+        beam: function (h) {                                         // Viper Fang / River-Splitting: a beam from the fingertip
+          if (h >= 0 && once('beam')) {                              // tail pinned to the fingertip, head on the beast
+            var from = fist('lunge'), to = at(br, 0.5, 0.42), d = px(from, to);   // finger to beast
+            var len = Math.hypot(d[0], d[1]), ang = Math.atan2(d[1], d[0]) * 180 / Math.PI;
+            var n = document.createElement('img');
+            n.className = 'tart tglow tbeam' + (X.part ? ' twater' : ''); n.src = X.art[0]; n.alt = '';
+            n.style.left = from[0] + '%'; n.style.top = from[1] + '%'; n.style.width = len / W * 100 + '%';
+            n.style.setProperty('--tc', tc);
+            scene.appendChild(n); made.push(n);
+            setTimeout(function () { n.remove(); }, 1300);
+            var B = function (sx, sy) { return 'translate(0,-50%) rotate(' + ang + 'deg) scale(' + sx + ',' + sy + ')'; };
+            n.animate(X.part                                        // River: the beam shoots out, then the two walls of water open
+              ? [{transform: B(0, 0.25), opacity: 1}, {transform: B(1, 0.3), opacity: 1, offset: 0.13},
+                 {transform: B(1, 1.08), opacity: 1, offset: 0.35}, {transform: B(1.02, 1), opacity: 1, offset: 0.75}, {transform: B(1.04, 1.06), opacity: 0}]
+              : [{transform: B(0, 1), opacity: 1}, {transform: B(1, 1), opacity: 1, offset: 0.14},       // Viper: the head strikes out
+                 {transform: B(1.03, 1.05), opacity: 1, offset: 0.7}, {transform: B(1.05, 1.08), opacity: 0}],
+              {duration: 1250, easing: 'ease-out', fill: 'forwards'});
+          }
+          if (h >= 160 && once('land')) lands();
+        },
         sweep: function (h) {                                        // Crescent Sweep: a pale crescent swept across it
           if (h >= -60 && once('arc')) {
             var n = pic(X.art[0], 'tglow tarc', at(br, 0.36, 0.44), 30, 900);

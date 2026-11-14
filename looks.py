@@ -84,7 +84,14 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
                                    "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]},
                           "female": {"src": "/art/portraits/fight/hero_female_palm.webp", "frames": 48, "cols": 8, "rows": 6,
-                                     "jab": 12, "release": 14, "back": 40, "shift": 33 / 320, "hand": [0.707, 0.416]}}}
+                                     "jab": 12, "release": 14, "back": 40, "shift": 33 / 320, "hand": [0.707, 0.416]}},
+                 # "finger": SHOAIB's finger-jab video (scripts/make_hero_finger.py): on guard (0-4), a first reach
+                 # (`jab`), the lunge with two fingers thrust out (`release`, where the beam leaves the fingertip),
+                 # held, drawing back (`back` on). `hand` is the fingertip.
+                 "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 48, "cols": 8, "rows": 6,
+                                     "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 21 / 320, "hand": [0.689, 0.315]},
+                            "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 48, "cols": 8, "rows": 6,
+                                       "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 44 / 320, "hand": [0.723, 0.428]}}}
 
 
 def fighter(look, pose="idle"):

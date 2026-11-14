@@ -48,6 +48,14 @@ def test_the_kick_techniques_share_one_kick_for_both_genders():
         assert sheet is None or sheet["src"].endswith(f"hero_{gender}_kick.webp")   # frames, when added, are per look
 
 
+def test_the_finger_techniques_share_the_jab_and_beam_from_the_fingertip():
+    finger = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Finger"}
+    assert finger == {"viper_fang_finger", "river_splitting_finger"}
+    assert all(technique_fx.TECH_FX[t]["motion"] == "finger" and technique_fx.TECH_FX[t]["play"] == "beam" for t in finger)
+    for gender in ("male", "female"):
+        assert looks.motion_sheet({"gender": gender}, "finger")["hand"]           # where the beam leaves
+
+
 def test_a_look_carries_its_grade_length_and_art_urls():
     fx = technique_fx.of("Raging Bull Fist", "Yellow")
     assert fx["ms"] == technique_fx.GRADE_MS["Yellow"] and fx["mirror"]
