@@ -554,6 +554,14 @@ DEFENSE_SHOWS = {"counter": "countered", "recover": "recovered", "evade": "slipp
 SLIPPED = " slipped away from"      # the engine's line when an evade technique dodges a Break (bot/fight.py)
 
 
+def untouched(t, text):
+    """An evade technique (Drifting Mist Steps, Cloud-Walking Shadow) that left the cultivator untouched this turn, read
+    from its log line(s): it slipped the beast's Break, or took a Strike with a full block ("blocked 100%"). Either way
+    the page plays the sidestep (technique_fx "sidestep"). A Break that got through, held in part, is not this."""
+    effect = (rules.TECH_BY_NAME.get(t["name"], {}).get("effect") or ("",))[0]
+    return effect == "evade" and (SLIPPED.strip() in text or "blocked 100%" in text)
+
+
 def cast(b, f, gender=None):
     """The technique you used this turn, for its own animation (docs/web.md): which school and effect it has,
     its grade colour, and whether it landed; its look as the cultivator of this gender plays it (technique_fx.of).
@@ -579,7 +587,7 @@ def cast(b, f, gender=None):
     from .profile import art_url
     return {"name": t["name"], "id": technique_fx.technique_id(t["name"]), "kind": t["type"], "school": school,
             "effect": shown, "landed": landed, "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
-            "fx": technique_fx.of(t["name"], t["grade"], gender, shown),
+            "fx": technique_fx.of(t["name"], t["grade"], gender, "evade" if untouched(t, mine) else shown),
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
@@ -698,7 +706,8 @@ def events(log, f):
     {"who": "me", "act": "tech", "hit": bool, "dmg": n}  a technique: it plays its own animation (an attack
                                                       technique's damage, 0 for a defense one; a defense one
                                                       also has "blocked", "hold" (% of a Break), "heal", "counter",
-                                                      and "evaded" when an evade technique slipped the Break)
+                                                      and "evaded" when an evade technique left you untouched:
+                                                      "slipped" the Break, or took a Strike with a full block)
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
@@ -721,10 +730,12 @@ def events(log, f):
             if f.def_t and move == f.def_t["name"]:          # a defense technique: what it did with the beast's blow
                 ev.update(blocked="blocked" in text, hold=_number(text, r"holds (\d+)%"), heal=_number(text, r"recovered ([\d,]+)"),
                           counter=_number(text, r"countered for ([\d,]+)") + _number(text, r"counters for ([\d,]+)"))
+                if untouched(f.def_t, text):                 # an evade technique took the Strike untouched: sidestep
+                    ev["evaded"] = True
             out.append(ev)
         elif f.def_t and text.startswith(f.name + SLIPPED):   # an evade technique dodged the Break: no damage at all
             out.append({"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
-                        "counter": 0, "evaded": True})
+                        "counter": 0, "evaded": True, "slipped": True})
         elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):
             name = next(n for n in skills if f" — {n} on " in text)
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
@@ -732,6 +743,8 @@ def events(log, f):
             out = [x for x in out if x["act"] != "guard"]
             out.append({"who": "enemy", "act": skills[name], "dmg": dmg, "guard": bool(guard),
                         "stun": f"{f.name} −{dmg:,} (Stunned)" in text})
+        elif icon == "roar" and any(x.get("evaded") for x in out):
+            pass                                             # sidestepped: the sidestep acts out the beast's lunge
         elif icon == "roar" and not any(x["act"] in skills.values() for x in out):
             name = next((n for n in skills if f" — {n}:" in text), None)    # it landed but did you no harm
             if name:
