@@ -106,7 +106,17 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                            # hands rising into guard, settled in a wide stance at `release`, both palms up
                            "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 39, "cols": 8, "rows": 5,
                                       "jab": 5, "release": 16, "back": 38, "shift": 7 / 320, "hand": [0.6, 0.39],
-                                      "body": [0.523, 0.209, 0.937, 0.232]}}}
+                                      "body": [0.523, 0.209, 0.937, 0.232]}},
+                 # "deflect": hers only, from SHOAIB's video of her (scripts/make_heroine_deflect.py), the movement every
+                 # deflection technique shares (web/technique_fx.py HER_FX; fight.js `deflected`): on guard, palm raised
+                 # (0-5); from `jab` she turns into the blow and reaches out to meet it at `release` (where `hand` is); she
+                 # carries it round and aside with a swirl of her sleeve, furthest behind her at `sweep` (where `tip` is);
+                 # from `back` she settles on guard again. No guarding stance: she never stands to take the blow.
+                 # The male cultivator has none: his looks for these techniques stay as they are.
+                 "deflect": {"female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 36, "cols": 8, "rows": 5,
+                                        "jab": 6, "release": 12, "sweep": 23, "back": 26, "shift": 4 / 320,
+                                        "hand": [0.663, 0.330], "tip": [0.329, 0.708],
+                                        "body": [0.520, 0.196, 0.937, 0.233]}}}
 
 
 def fighter(look, pose="idle"):

@@ -553,9 +553,10 @@ GRADE_COLOR = {"Mortal": "#D8D4CC", "Yellow": "#F0C566", "Mystic": "#7FB4FF", "E
 DEFENSE_SHOWS = {"counter": "countered", "recover": "recovered", "evade": "slipped away", "unbreakable": "of the Break"}
 
 
-def cast(b, f):
+def cast(b, f, gender=None):
     """The technique you used this turn, for its own animation (docs/web.md): which school and effect it has,
-    its grade colour, and whether it landed. None when the turn used no technique."""
+    its grade colour, and whether it landed; its look as the cultivator of this gender plays it (technique_fx.of).
+    None when the turn used no technique."""
     t = next((x for x in (f.atk_t, f.def_t) if x and b.log and f.last_move == x["name"]), None)
     if t is None:
         return None
@@ -576,14 +577,15 @@ def cast(b, f):
     from .profile import art_url
     return {"name": t["name"], "id": technique_fx.technique_id(t["name"]), "kind": t["type"], "school": school,
             "effect": shown, "landed": landed, "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
-            "fx": technique_fx.of(t["name"], t["grade"]),
+            "fx": technique_fx.of(t["name"], t["grade"], gender),
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
 def motion_of(b, f, p):
     """The frame-by-frame movement this turn's technique plays (web/technique_fx.py, looks.MOTION_SHEETS), or None."""
-    c = cast(b, f)
-    return looks.motion_sheet(looks.of_player(p), c["fx"]["motion"]) if c and c["fx"] else None
+    look = looks.of_player(p)
+    c = cast(b, f, looks.gender_of(look))
+    return looks.motion_sheet(look, c["fx"]["motion"]) if c and c["fx"] else None
 
 
 def roared(evs, b, danger, beast):
@@ -665,7 +667,7 @@ def fight_view(conn, s, b, p, now):
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},
         "roused": "roused" in e["statuses"] and not end, "end": end,
-        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f), "events": roared(events(b.log or [], f), b, danger, beast and not end), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f, looks.gender_of(looks.of_player(p))), "events": roared(events(b.log or [], f), b, danger, beast and not end), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }
 

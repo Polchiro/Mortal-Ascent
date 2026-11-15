@@ -256,8 +256,25 @@ a lair is fought with `bot/hunt.py`.
      Stance Guard's dust ring at the feet, Calm Breath Stance's mist spiral, Iron Cloth Body's woven iron sheen laid
      over the fighter's own frame, Rooted Mountain Stance's roots and mountain, Golden Bell Cover's bell dropping over
      them, Ancient Turtle Shell Art's dome (the man painted inside it erased), Immortal Lotus Body's lotus opening
-     beneath. Parrying Arm, with no design, braces with sparks and its counter. Designs cleaned by
-     `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you, and nothing plays.
+     beneath. Parrying Arm, with no design, braces with sparks and its counter (the male cultivator's; hers deflects,
+     below). Designs cleaned by `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you,
+     and nothing plays.
+   - `deflect` (`hero_female_deflect.webp`, `scripts/make_heroine_deflect.py`, from SHOAIB's video of her): the
+     **female cultivator's** deflection, hers only (`technique_fx.HER_FX`; the male keeps his looks for these
+     techniques: Parrying Arm's brace, the CSS jade barrier for the rest). The six deflection techniques: Parrying
+     Arm and the five Palm defenses (Flowing Stream Palm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
+     Deflection, Void Mirror Stance). Played **inside the beast's attack** like a brace (`deflected` in `fight.js`),
+     but with no guarding stance: on guard, palm raised, while the beast winds up; she turns into the blow and meets it
+     with her hand as it lands (`release`), carries it round and aside with a swirl of her sleeve (`sweep`) and
+     settles back on guard (`back`), then idle. The beast is turned aside past her rather than stopped. Its lunge is
+     a little slower than its own attack (`DEFLECT`), so there is time to see her read it. Each technique's picture
+     follows the contact (`hand`) and the sleeve (`tip`): Parrying Arm's streak of light runs along her arm and is
+     carried down with the blow; Flowing Stream Palm's ring of water spins up at her palm and rolls it away along
+     her sleeve; Crane Wing Deflection's white wing opens across the blow and sweeps it down; Moon Mirror Palm's moon
+     mirror rises before her palm, turned to the beast, and the blow glances off it; Thousand Hands Deflection's ring
+     of jade hands opens behind her and turns it round her; Void Mirror Stance's dark mirror forms before her palm and
+     cracks as the blow hits it. Then what really happened, from the log: Deflected, a Break held, HP recovered, a
+     counter. Designs cleaned by `scripts/make_deflect_fx.py`.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms

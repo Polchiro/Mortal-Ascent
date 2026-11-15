@@ -978,6 +978,139 @@
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
+    /* A deflection technique, as the female cultivator plays it (web/technique_fx.py HER_FX, "deflect"), inside the
+       beast's attack like a brace, but she never stands to take the blow: on guard, palm raised, while the beast
+       winds up; she turns into it as it comes (`jab`), meets it with her hand at the moment it lands (`release`, the
+       hit), carries it round and aside with a swirl of her sleeve (furthest behind her at `sweep`) and settles back
+       on guard (`back` on), then idle. The beast is turned aside, not stopped: it slides off past her and drops, then
+       goes home. The technique's own picture follows the contact and the sleeve (`hand`, `tip` in
+       looks.MOTION_SHEETS). Then what really happened, read from the server's log: Deflected, a Break held (part of
+       it still hurts), HP recovered, a counter. The beast's lunge is slower than its own attack (RECIPES.beast) so
+       there is time to read it: DEFLECT below. */
+    var DEFLECT = {charge: 380, hit: 600, glance: 780, home: 1180, turn: 320, sweep: 430, back: 560};
+    function deflected(ev, hitEv) {
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, D = DEFLECT;
+      var attacked = !!(hitEv || ev.blocked || ev.hold);
+      var HIT = D.hit, END = Math.max(HIT + 1150 + (ev.counter ? 200 : 0), attacked ? D.home + 300 : 0);
+      var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
+      var JAB = msheet ? +msheet.dataset.jab : 6, REL = msheet ? +msheet.dataset.release : 12;
+      var SWEEP = msheet && msheet.dataset.sweep ? +msheet.dataset.sweep : 23, BACK = msheet ? +msheet.dataset.back : 26;
+      var num = function (k, d) { return msheet && msheet.dataset[k] ? msheet.dataset[k].split(',').map(Number) : d; };
+      var Bd = num('body', [0.52, 0.2, 0.94, 0.23]), HAND = num('hand', [0.66, 0.33]), TIP = num('tip', [0.33, 0.71]);
+      var bodyW = fr.width * Bd[3] / W * 100, bodyH = fr.height * (Bd[2] - Bd[1]);
+      var feet = at(fr, Bd[0], Bd[2]), mid = at(fr, Bd[0], (Bd[1] + Bd[2]) / 2);
+      var C = at(fr, HAND[0], HAND[1]), S = at(fr, TIP[0], TIP[1]);            // where she meets the blow; her sleeve's tip
+      var sr = scene.getBoundingClientRect();
+      var toS = [(S[0] - C[0]) / 100 * sr.width, (S[1] - C[1]) / 100 * sr.height];   // the way the blow is carried, px
+      var KEYS = [[0, 0], [HIT - D.turn, JAB], [HIT, REL], [HIT + D.sweep, SWEEP], [HIT + D.back, BACK], [END - 140, mn - 1]];
+      if (hitEv && hitEv.dmg || ev.heal) hold('me');
+      if (ev.counter) hold('enemy');
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function frame(t) {                                           // her frame at t: eased between the keys
+        for (var i = 1; i < KEYS.length; i++) if (t < KEYS[i][0])
+          return KEYS[i - 1][1] + (KEYS[i][1] - KEYS[i - 1][1]) * inout(span(t, KEYS[i - 1][0], KEYS[i][0]));
+        return mn - 1;
+      }
+      function show(f) {
+        f = Math.max(0, Math.min(mn - 1, Math.round(f)));
+        msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
+      }
+      function art(cls, p, w, behind) {                             // the technique's picture at p, w% of the scene wide
+        var n = document.createElement('img');
+        n.className = 'tart tbrace ' + cls; n.src = X.art[0]; n.alt = '';
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%'; n.style.setProperty('--tc', tc);
+        if (behind) scene.insertBefore(n, fighter); else scene.appendChild(n);
+        made.push(n);
+        return n;
+      }
+      var wide = function (aspect, share) { return bodyH * share / aspect / W * 100; };   // aspect: height / width, as `braced`
+      var mv = function (q, extra) { return 'translate(calc(-50% + ' + toS[0] * q + 'px), calc(-50% + ' + toS[1] * q + 'px)) ' + (extra || ''); };
+      var toward = [C[0] + 3.5, C[1] - 1];                          // just in front of her palm, toward the beast
+      var FX = null;
+      var FORM = {                                                  // [when it forms, how it plays to the end]
+        // Parrying Arm: a streak of light runs along her arm as she meets the blow and is carried down with it
+        glance: [HIT - 90, function (life) { FX = art('tglance', C, bodyW * 2.3);
+          FX.style.transformOrigin = '88% 22%';
+          FX.animate([{transform: 'translate(-88%,-22%) scale(0.5) rotate(-8deg)', opacity: 0},
+            {transform: 'translate(-88%,-22%) scale(1) rotate(0)', opacity: 1, offset: 0.18},
+            {transform: 'translate(calc(-88% + ' + toS[0] * 0.5 + 'px), calc(-22% + ' + toS[1] * 0.5 + 'px)) scale(1.05) rotate(28deg)', opacity: 0.9, offset: 0.55},
+            {transform: 'translate(calc(-88% + ' + toS[0] + 'px), calc(-22% + ' + toS[1] + 'px)) scale(1.1) rotate(48deg)', opacity: 0}],
+            {duration: life, easing: 'ease-out', fill: 'forwards'}); }],
+        // Flowing Stream Palm: a ring of water spins up at her palm and rolls the blow away along her sleeve
+        stream: [HIT - 220, function (life) { FX = art('twater', C, wide(514 / 578, 0.5));
+          FX.animate([{transform: mv(0, 'scale(0.3) rotate(0)'), opacity: 0}, {transform: mv(0, 'scale(1) rotate(-160deg)'), opacity: 0.95, offset: 0.3},
+            {transform: mv(0.6, 'scale(0.95) rotate(-330deg)'), opacity: 0.85, offset: 0.7}, {transform: mv(1, 'scale(0.7) rotate(-470deg)'), opacity: 0}],
+            {duration: life, fill: 'forwards'}); }],
+        // Crane Wing Deflection: a white wing opens from her sleeve across the blow and sweeps it down
+        crane: [HIT - 160, function (life) { FX = art('tcrane', C, bodyW * 2.5);
+          FX.style.transformOrigin = '15% 80%';
+          FX.animate([{transform: 'translate(-15%,-80%) scale(0.25,0.6) rotate(-25deg)', opacity: 0},
+            {transform: 'translate(-15%,-80%) scale(1) rotate(-6deg)', opacity: 1, offset: 0.25},
+            {transform: 'translate(calc(-15% + ' + toS[0] * 0.55 + 'px), calc(-80% + ' + toS[1] * 0.55 + 'px)) scale(1) rotate(30deg)', opacity: 0.9, offset: 0.65},
+            {transform: 'translate(calc(-15% + ' + toS[0] * 0.8 + 'px), calc(-80% + ' + toS[1] * 0.8 + 'px)) scale(0.9) rotate(52deg)', opacity: 0}],
+            {duration: life, easing: 'ease-out', fill: 'forwards'}); }],
+        // Moon Mirror Palm: a moon mirror rises before her palm, turned toward the beast; the blow glances off it
+        moon: [HIT - 260, function (life) { FX = art('tmoon', toward, wide(505 / 524, 0.55));
+          FX.animate([{transform: 'translate(-50%,-50%) scale(0.15,0.4)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(0.62,1)', opacity: 0.9, offset: 0.3},
+            {transform: mv(0.15, 'scale(0.62,1) rotate(-10deg)'), opacity: 0.85, offset: 0.65}, {transform: mv(0.35, 'scale(0.5,0.9) rotate(-18deg)'), opacity: 0}],
+            {duration: life, fill: 'forwards'}); }],
+        // Thousand Hands Deflection: a ring of jade hands opens around her and turns the blow round her
+        hands: [HIT - 300, function (life) { FX = art('thands', mid, wide(1, 1.15), true);
+          FX.animate([{transform: 'translate(-50%,-50%) scale(0.2) rotate(-40deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 0.9, offset: 0.3},
+            {transform: 'translate(-50%,-50%) scale(1.04) rotate(45deg)', opacity: 0.85, offset: 0.75}, {transform: 'translate(-50%,-50%) scale(1.1) rotate(70deg)', opacity: 0}],
+            {duration: life, fill: 'forwards'}); }],
+        // Void Mirror Stance: a dark mirror of the void forms before her palm; the blow cracks it and is lost in it
+        void: [HIT - 320, function (life) { FX = art('tvoid', toward, wide(511 / 756, 0.72));
+          FX.animate([{transform: 'translate(-50%,-50%) scale(0.5) rotate(-12deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 0.95, offset: 0.3},
+            {transform: 'translate(-50%,-50%) scale(1.02) rotate(2deg)', opacity: 0.9, offset: 0.65}, {transform: 'translate(-50%,-50%) scale(1.12) rotate(4deg)', opacity: 0}],
+            {duration: life, fill: 'forwards'}); }]
+      };
+      var F = FORM[X.play] || [HIT, function () {}];
+      var FORM_AT = Math.max(0, F[0]), FX_END = X.play === 'hands' ? END - 160 : HIT + 640;
+      function struck() {                                           // her hand meets the blow and turns it aside
+        var spark = X.play === 'glance' ? '#FFE6A0' : tc;
+        burst('tspark', C[0], C[1], spark);
+        burst('tspark', C[0] - 3, C[1] + 5, spark);                 // carried off down her sleeve
+        if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(2)'}, {filter: 'brightness(1)'}], {duration: 340});
+        if (FX && X.play === 'void') FX.animate([{translate: '0 0'}, {translate: '-5px 2px'}, {translate: '4px -2px'}, {translate: '0 0'}], {duration: 360});
+        if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(3px,2px)'}, {transform: 'translate(-2px,-1px)'}, {transform: 'none'}], {duration: 260});
+        if (hitEv && hitEv.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', hitEv.dmg), '−' + hitEv.dmg); }
+        pop(fighter, 'word', ev.hold ? 'Held ' + ev.hold + '%' : 'Deflected');
+      }
+      return {end: END, render: function (t) {
+        if (t < 0) return;
+        if (once('start')) {                                        // the grade's spectacle, as for every technique
+          if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
+          if (tier >= 3) { scene.insertBefore(fx('tdim', 50, 50, END, {'--life': END + 'ms'}), fighter); fx('tpillar', feet[0], feet[1], Math.round(END * 0.6), {'--tc': tc}); }
+          if (tier >= 4) scene.insertBefore(fx('theaven', 50, 50, END, {'--life': END + 'ms'}), fighter);
+        }
+        if (attacked) {                                             // the beast lunges, is turned aside past her, goes home
+          var x = 0, y = 0, rot = 0, lunge = reachBeast + 0.015 * W;
+          if (t < D.charge) { var q = ease(span(t, 0, D.charge)); x = 0.015 * W * q; rot = 4 * q; }
+          else if (t < HIT) { var c = span(t, D.charge, HIT); x = 0.015 * W - lunge * c * c; rot = -6 * c; }
+          else if (t < D.glance) { var g = ease(span(t, HIT, D.glance)); x = -reachBeast - 0.012 * W * g; y = 0.03 * W * g; rot = -6 + 16 * g; }
+          else if (t < D.home) { var r = inout(span(t, D.glance, D.home)); x = (-reachBeast - 0.012 * W) * (1 - r); y = 0.03 * W * (1 - r) - 0.02 * W * Math.sin(Math.PI * r); rot = 10 * (1 - r); }
+          bpose(t < D.charge ? 'crouch' : t < D.glance ? 'leap' : 'idle');
+          var ck = ev.counter ? knocked(t - HIT - 260, 0.03 * W) : [0, 0];
+          animal(x + ck[0], y, rot, ck[1]);
+        }
+        if (msheet) {
+          if (t >= END - 60) pose('idle'); else { pose('motion'); show(frame(t)); }
+        } else pose(t < END - 60 ? 'windup' : 'idle');
+        var kb = hitEv && hitEv.dmg ? knocked(t - HIT, 0.008 * W) : [0, 0];
+        hero(-kb[0], 0);
+        poses.style.filter = tier >= 1 && t < END - 200 ? 'drop-shadow(0 0 ' + (4 + 3 * tier) + 'px ' + tc + ')' : '';
+        if (t >= FORM_AT && once('form')) F[1](FX_END - FORM_AT);
+        if (attacked && t >= HIT && once('hit')) struck();
+        if (ev.heal && t >= HIT + 300 && once('heal')) { drop('me'); pop(fighter, 'word heal', '+' + ev.heal); fx('tqring', feet[0], feet[1], 700, {'--tc': '#7CF0BE'}); }
+        if (ev.counter && t >= HIT + 260 && once('counter')) {     // the blow sent back as she turns it
+          fx('tpierce', C[0], C[1], 600, {'--tc': X.play === 'glance' ? '#FFE6A0' : tc});
+          drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter);
+        }
+        if (!attacked && t >= HIT && once('steady')) pop(fighter, 'word', 'Steady');
+      }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
+    }
+
     /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
        picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
        over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
@@ -1014,8 +1147,9 @@
 
     var steps = [], kinds = {};
     function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
-    var braceHit = null;                                         // a brace technique takes the beast's blow itself
-    if (cast && cast.fx && cast.fx.motion === 'brace') {
+    var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
+    var inside = cast && cast.fx && (cast.fx.motion === 'brace' || cast.fx.motion === 'deflect');
+    if (inside) {
       var bi = events.findIndex(function (e) { return e.act === 'tech'; });
       var hi = events.findIndex(function (e, i) { return i > bi && e.who === 'enemy' && e.act === 'attack'; });
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
@@ -1023,6 +1157,7 @@
     events.forEach(function (ev) {
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
