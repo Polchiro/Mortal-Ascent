@@ -18,7 +18,7 @@ TIER_REALM_REQUIREMENT = {
     "ordinary": "Mortal",
     "refined":  "Martial Apprentice",
     "spirit":   "Martial Expert",
-    "treasure": "Grand Martial Master",
+    "treasure": "Grandmaster",
     "divine":   "Martial King",
 }
 

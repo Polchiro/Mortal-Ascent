@@ -55,8 +55,8 @@ TALENT_COLORS = {
 }
 REALM_CHINESE = {
     "Mortal": "凡人", "Martial Apprentice": "武徒", "Martial Warrior": "武者",
-    "Martial Expert": "武师", "Martial Master": "武宗", "Grand Martial Master": "大武宗",
-    "Martial Grandmaster": "武尊", "Martial King": "武王", "Martial Emperor": "武帝",
+    "Martial Expert": "武师", "Martial Master": "武宗", "Grandmaster": "大武宗",
+    "Martial Lord": "武尊", "Martial King": "武王", "Martial Emperor": "武帝",
     "Martial Ancestor": "武祖", "Martial Saint": "武圣",
 }
 MASTERY_STAGES = ["Glimpsing the Gate", "Entering the Hall", "Pure Flame",

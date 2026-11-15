@@ -13,7 +13,7 @@ and has a small chance of a surprise event. Nothing is the same twice.
 |---|---|---|
 | 1 | Glimpsing the Gate | Mortal, Martial Apprentice, Martial Warrior |
 | 2 | Entering the Hall | Martial Expert, Martial Master |
-| 3 | Pure Flame | Grand Martial Master, Martial Grandmaster |
+| 3 | Pure Flame | Grandmaster, Martial Lord |
 | 4 | Divine Transformation | Martial King, Martial Emperor |
 | 5 | Return to Simplicity | Martial Ancestor, Martial Saint |
 

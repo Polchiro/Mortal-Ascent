@@ -43,7 +43,7 @@ MAT = {
 GRADES = ["Mortal", "Yellow", "Mystic", "Earth", "Heaven"]
 RARITIES = ["ordinary", "refined", "spirit", "treasure", "divine"]
 REALMS = ["Mortal", "Martial Apprentice", "Martial Warrior", "Martial Expert", "Martial Master",
-          "Grand Martial Master", "Martial Grandmaster", "Martial King", "Martial Emperor", "Martial Ancestor",
+          "Grandmaster", "Martial Lord", "Martial King", "Martial Emperor", "Martial Ancestor",
           "Martial Saint"]
 BEAST_TIERS = ["normal", "elite", "beast_king"]
 ELEMENTS = ["Blood", "Frost", "Flame", "Shadow", "Thunder", "Venom", "Earth", "Jade"]

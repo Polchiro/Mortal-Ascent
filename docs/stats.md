@@ -9,8 +9,8 @@ Martial Apprentice	100
 Martial Warrior	200
 Martial Expert	380
 Martial Master	700
-Grand Martial Master	1,100
-Martial Grandmaster	1,800
+Grandmaster	1,100
+Martial Lord	1,800
 Martial King	3,000
 Martial Emperor	5,000
 Martial Ancestor	8,500

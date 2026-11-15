@@ -201,7 +201,27 @@ def connect(path):
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
     replace_old_herbs(conn)
     rename_old_chests(conn)
+    rename_old_realms(conn)
     return conn
+
+
+# Realms 6 and 7 were renamed: Grand Martial Master became Grandmaster and Martial Grandmaster became Martial Lord.
+# Rank 7 is renamed first, so "Martial Grandmaster" never turns into "Martial Grandmaster"-with-a-new-tail.
+OLD_REALMS = (("Martial Grandmaster", "Martial Lord"), ("Grand Martial Master", "Grandmaster"))
+REALM_TEXT = {"players": ("realm", "king_kills"), "duels": ("p1_realm", "p2_realm", "fair_realm"),
+              "items": ("name", "data"), "pending_chests": ("items", "notes"), "ledger": ("reason",),
+              "settings": ("value",)}
+
+
+def rename_old_realms(conn):
+    """Saved realm names (a player's realm, the Beast Kings they helped slay, duel records, item text) take the
+    new names, so nobody loses their place."""
+    with conn:
+        for table, cols in REALM_TEXT.items():
+            for col in cols:
+                for old, new in OLD_REALMS:
+                    conn.execute(f"UPDATE {table} SET {col} = REPLACE({col}, ?, ?) WHERE {col} LIKE ?",
+                                 (old, new, f"%{old}%"))
 
 
 OLD_CHESTS = {"wooden": ("common", "Common Chest"), "bronze": ("uncommon", "Uncommon Chest"),

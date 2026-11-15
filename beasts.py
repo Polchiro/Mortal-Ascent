@@ -95,7 +95,7 @@ BEASTS = {
         ("Wind Leopard", "elite", "swift"),
         ("Flame-Maned Lion", "beast_king", "hunter"),
     ],
-    "Grand Martial Master": [
+    "Grandmaster": [
         ("Stone-Shell Tortoise", "normal", "armored"),
         ("Lightning Weasel", "normal", "swift"),
         ("Bone Vulture", "normal", "hunter"),
@@ -103,7 +103,7 @@ BEASTS = {
         ("Jade-Scaled Crocodile", "elite", "armored"),
         ("Black Water Serpent", "beast_king", "brute"),
     ],
-    "Martial Grandmaster": [
+    "Martial Lord": [
         ("Earth-Splitting Rhino", "normal", "armored"),
         ("Shadow Panther", "normal", "swift"),
         ("Iron-Feather Crow", "normal", "hunter"),

@@ -4,8 +4,8 @@ Martial Apprentice
 Martial Warrior
 Martial Expert
 Martial Master
-Grand Martial Master
-Martial Grandmaster
+Grandmaster
+Martial Lord
 Martial King
 Martial Emperor
 Martial Ancestor
