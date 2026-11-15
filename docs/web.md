@@ -209,7 +209,11 @@ a lair is fought with `bot/hunt.py`.
    hits or misses; the female plays the same effects over her three poses (`RECIPES.break`). His **Guard** is frame by frame too (`looks.GUARD_SHEETS`, `hero_male_guard.webp`,
    from SHOAIB's second video, robes recoloured to match): he stands with the blade raised as the beast comes in,
    the blow bursts into a gold flash and sparks on the blade, he leans back under it and steadies (`block()` in
-   `fight.js`; also used when he guards the Mountain Tiger's pounce); the beast is knocked back, flashes, and its HP bar and the damage number change at the
+   `fight.js`; also used when he guards the Mountain Tiger's pounce). **Hers** is her own, bare-handed, from SHOAIB's
+   video of her (`hero_female_guard.webp`, `scripts/make_heroine_guard.py`): her arms close into a crossed, side-on
+   guard as the beast comes in, the blow lands on them in a white flash with her sleeves whipping round, and she
+   steadies behind her crossed arms. Each sheet carries its own timing (`ready`, `first`, `ms` in
+   `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). The beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one

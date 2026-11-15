@@ -417,20 +417,24 @@
       }};
     }
 
-    /* your Guard, frame by frame from the video: `h` is ms since the blow landed. He stands with the blade raised as
-       the beast comes in (frames 0-3), the blow bursts into a gold flash and sparks on the blade (from frame 4), he
-       leans back under it and steadies. False when this look has no Guard frames. */
+    /* your Guard, frame by frame from the video (looks.GUARD_SHEETS): `h` is ms since the blow landed. He stands with
+       the blade raised as the beast comes in (frames 0-3), the blow bursts into a gold flash and sparks on the blade
+       (from frame 4), he leans back under it and steadies. She closes her arms into a crossed guard as it comes in
+       (0-11), takes the blow on them in a white flash (12) with her sleeves whipping round, and steadies. Each sheet
+       may carry its own timing (data-ready, -first, -ms); his are the defaults. False when this look has none. */
     var GUARD = {ready: 320, first: 4, ms: 34};
+    var GT = gsheet ? {ready: +gsheet.dataset.ready || GUARD.ready, first: +gsheet.dataset.first || GUARD.first,
+                       ms: +gsheet.dataset.ms || GUARD.ms} : GUARD;
     function block(h) {
       if (!gsheet) return false;
       var n = +gsheet.dataset.frames, cols = +gsheet.dataset.cols, rows = +gsheet.dataset.rows;
-      var f = h < 0 ? Math.floor((GUARD.first - 1) * span(h, -GUARD.ready, 0)) : GUARD.first + Math.floor(h / GUARD.ms);
-      if (h < -GUARD.ready || f >= n) { pose('idle'); return true; }
+      var f = h < 0 ? Math.floor((GT.first - 1) * span(h, -GT.ready, 0)) : GT.first + Math.floor(h / GT.ms);
+      if (h < -GT.ready || f >= n) { pose('idle'); return true; }
       gsheet.style.backgroundPosition = (f % cols) / (cols - 1) * 100 + '% ' + Math.floor(f / cols) / (rows - 1) * 100 + '%';
       pose('guard');
       return true;
     }
-    function blockTime() { return gsheet ? (+gsheet.dataset.frames - GUARD.first) * GUARD.ms : 0; }
+    function blockTime() { return gsheet ? (+gsheet.dataset.frames - GT.first) * GT.ms : 0; }
 
     /* the beast's attack: rears back, charges, claws; you are hit, or your Guard stops it (and may counter) */
     function charge(ev) {

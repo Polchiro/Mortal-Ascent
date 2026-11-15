@@ -894,7 +894,7 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 /* ── Techniques with their own look (fight.js `technique`, web/technique_fx.py): the punch frames (.msheet) and the
    technique's own pictures (.tart, art/fx/tech/), moved by the script; the CSS shapes below step aside for them.
    Around them, by grade: Qi rings (Mystic+), a pillar of Qi and a dimmed scene (Earth+), a dark Heaven sky. ── */
-.fighter .msheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}   /* moved back by the share it was moved left in its cells */
+.fighter .msheet,.fighter .gsheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}   /* moved back by the share it was moved left in its cells */
 .fighter[data-pose=motion] .msheet{visibility:visible}
 .cast-fx .tfx,.cast-fx .ringfx{display:none}      /* its own look replaces the CSS shapes and the Guard ring */
 .cast-fx.cast-landed .bscene,.cast-fx.cast-landed .beast img{animation:none}

@@ -282,7 +282,26 @@ def test_the_male_guard_plays_frame_by_frame(client):
     assert 'class="sheetfx gsheet"' in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
     assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
-    assert looks.guard_sheet({"gender": "female"}) is None
+    assert 'data-first=' not in page and '--shift' not in page.split('gsheet', 1)[1].split('</div>', 1)[0]   # his defaults
+
+
+def test_the_female_guard_plays_frame_by_frame_with_its_own_timing(client):
+    import json
+    import os
+    import looks
+    from PIL import Image
+    c = db.connect(client.path)
+    db.update_player(c, UID, appearance=json.dumps({"gender": "female"}))
+    c.close()
+    fight(client)
+    page = client.get("/explore/play").text
+    sheet = looks.GUARD_SHEETS["female"]
+    assert looks.guard_sheet({"gender": "female"}) == sheet and sheet["src"].endswith("hero_female_guard.webp")
+    assert 'class="sheetfx gsheet"' in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
+    assert f'data-first="{sheet["first"]}"' in page and f'data-ms="{sheet["ms"]}"' in page and "--shift: 0.0312" in page
+    im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
+    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert 0 < sheet["first"] < sheet["frames"] and 0 < sheet["ready"] <= 370      # raised before the beast's blow lands
 
 
 def test_battle_history_keeps_every_turn(client):

@@ -65,8 +65,15 @@ SWORD_POSES = {"male": 0.66, "female": 0.82}   # genders painted in the sword po
 # a grid of 320 x 360 frames that web/static/fight.js steps through; the stills above come from the same video.
 ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6}}
 
-# the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video)
-GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5}}
+# the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video).
+# She blocks bare-handed, from SHOAIB's video of her (scripts/make_heroine_guard.py): her arms close into a crossed,
+# side-on guard (0-11), the blow lands on them in a white flash (`first`, 12) and her sleeves whip round with it,
+# then she steadies behind her crossed arms. Each sheet's timing (fight.js `block`): `ready` ms to raise the guard
+# before the blow, `first` the frame it lands on, `ms` per frame after; `shift` as in MOTION_SHEETS. His are the
+# page's defaults (fight.js GUARD).
+GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5},
+                "female": {"src": "/art/portraits/fight/hero_female_guard.webp", "frames": 33, "cols": 8, "rows": 5,
+                           "ready": 360, "first": 12, "ms": 55, "shift": 10 / 320}}
 
 # the shared movements techniques play (web/technique_fx.py "motion"), frame by frame, in the same 320 x 360 cells.
 # "fist": SHOAIB's punch video (scripts/make_hero_fist.py): on guard (0-1), a jab (out at `jab`), the fist drawn
