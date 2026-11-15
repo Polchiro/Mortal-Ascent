@@ -37,10 +37,10 @@ IDLE_SECONDS = 120                      # like the bot's expedition panel (views
 # gets the bot's timed-out move (Guard; three in a row: flee), so a forgotten fight still ends.
 TURN_LIMIT = 600
 MAX_TIMEOUTS = 200
-ACTIONS = ("strike", "attack_tech", "defense_tech", "pill", "guard", "break", "flee")
+ACTIONS = ("strike", "attack_tech", "defense_tech", "flex_tech", "pill", "guard", "break", "flee")
 MAIN = ("strike", "techniques", "guard", "break")             # the four big buttons, keys 1-4
 SIDE = ("pill", "flee")                                       # small buttons on the side: P and F
-ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique",
+ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique", "flex_tech": "Flex technique",
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
 POSES = looks.POSES                  # the fight script swaps these (docs/web.md)
@@ -485,7 +485,7 @@ def action_info(b, f, key):
     t = f.tech(key)
     if not t:
         return "No technique in this slot yet."
-    as_ = "a Strike" if key == "attack_tech" else "a Guard"
+    as_ = "a Strike" if t["type"] == "attack" else "a Guard"
     return f"{t['name']}: {describe(t)}. Counts as {as_}. Costs {f.qi_cost(key)} Battle Qi."
 
 
@@ -504,19 +504,19 @@ def action(b, f, key):
         icon = art_url(tech_kind(t["name"], rules.TECH_BY_NAME.get(t["name"], {}).get("school", "Body"))) or icon
     return {"key": key, "label": t["name"] if t else ACTION_LABEL[key], "icon": icon,
             "ready": f.ready(key) and not b.over, "state": state, "info": action_info(b, f, key),
-            "kind": "Attack technique" if key == "attack_tech" else "Defense technique" if key == "defense_tech" else ""}
+            "kind": ACTION_LABEL[key] if key.endswith("_tech") else ""}
 
 
 def actions(b, f):
     """The four big buttons (Strike, Techniques, Guard, Break) and the two small ones (Pill, Flee)."""
-    techs = [action(b, f, k) for k in ("attack_tech", "defense_tech")]
+    techs = [action(b, f, k) for k in ("attack_tech", "defense_tech") + (("flex_tech",) if f.flex_t else ())]
     main = []
     for i, key in enumerate(MAIN):
         if key == "techniques":
             ready = [t for t in techs if t["ready"]]
             main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/attack_tech.webp",
                          "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Need Battle Qi",
-                         "info": "Your attack technique counts as a Strike, your defense technique as a Guard. "
+                         "info": "An attack technique counts as a Strike, a defense technique as a Guard (your Flex slot's too). "
                                  f"They spend Battle Qi: +{battle_rules.BATTLE_QI_PER_TURN} comes back every turn, "
                                  f"+{battle_rules.BATTLE_QI_GOOD_GUARD} more on a good Guard.", "techs": techs})
         else:
@@ -566,12 +566,12 @@ def cast(b, f, gender=None):
     """The technique you used this turn, for its own animation (docs/web.md): which school and effect it has,
     its grade colour, and whether it landed; its look as the cultivator of this gender plays it (technique_fx.of).
     None when the turn used no technique."""
-    t = next((x for x in (f.atk_t, f.def_t) if x and b.log and f.last_move == x["name"]), None)
+    t = next((x for x in (f.atk_t, f.def_t, getattr(f, "flex_t", None)) if x and b.log and f.last_move == x["name"]), None)
     if t is None:
         return None
     info = rules.TECH_BY_NAME.get(t["name"], {})
     mine = " ".join(text for _, text in b.log if text.startswith(f.name + " — " + t["name"])
-                    or (t is f.def_t and text.startswith(f.name + SLIPPED)))     # an evade: its own line, no " — "
+                    or (t["type"] == "defense" and text.startswith(f.name + SLIPPED)))     # an evade: its own line, no " — "
     effect = (info.get("effect") or ("",))[0]
     if t["type"] == "attack":
         landed = "dmg" in mine
@@ -715,7 +715,9 @@ def events(log, f):
     """
     out = []
     skills = {v["name"]: v["fx"] for v in battle_rules.UNIQUE_SKILLS.values()}
-    techs = {t["name"] for t in (f.atk_t, f.def_t) if t}
+    flex = getattr(f, "flex_t", None)
+    techs = {t["name"] for t in (f.atk_t, f.def_t, flex) if t}
+    guards = {t["name"] for t in (f.def_t, flex) if t and t.get("type", "defense") == "defense"}
     for icon, text in log:
         mine = text.startswith(f.name + " — ")
         move = text[len(f.name) + 3:].split(":")[0] if mine else ""
@@ -727,13 +729,13 @@ def events(log, f):
         elif move in techs:
             dmg = _number(text, r"([\d,]+) dmg")
             ev = {"who": "me", "act": "tech", "hit": dmg > 0, "dmg": dmg}
-            if f.def_t and move == f.def_t["name"]:          # a defense technique: what it did with the beast's blow
+            if move in guards:                                 # a defense technique: what it did with the beast's blow
                 ev.update(blocked="blocked" in text, hold=_number(text, r"holds (\d+)%"), heal=_number(text, r"recovered ([\d,]+)"),
                           counter=_number(text, r"countered for ([\d,]+)") + _number(text, r"counters for ([\d,]+)"))
                 if untouched(f.def_t, text):                 # an evade technique took the Strike untouched: sidestep
                     ev["evaded"] = True
             out.append(ev)
-        elif f.def_t and text.startswith(f.name + SLIPPED):   # an evade technique dodged the Break: no damage at all
+        elif guards and text.startswith(f.name + SLIPPED):   # an evade technique dodged the Break: no damage at all
             out.append({"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
                         "counter": 0, "evaded": True, "slipped": True})
         elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):

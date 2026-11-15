@@ -892,7 +892,7 @@ def training_reveal():
 # ── /spar ─────────────────────────────────────────────────────────────
 
 SPAR_EMOJI = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "attack_tech",
-              "defense_tech": "defense_tech"}
+              "defense_tech": "defense_tech", "flex_tech": "flex_tech"}
 
 
 def spar_log(text):
@@ -976,8 +976,8 @@ class SparView(FightMixin, OwnedView):
         self._spar_prev = (round(sp.hp), round(sp.m_hp))
         tags = ["Master", f"Trial ×{sp.strength:g}" if self.trial else "Sparring", self.player["realm"]]
         loadout = []
-        for key in ("attack_tech", "defense_tech"):
-            t = sp.atk_t if key == "attack_tech" else sp.def_t
+        for key in ("attack_tech", "defense_tech", "flex_tech"):
+            t = sp.tech(key)
             if not t:
                 continue
             left = sp.cooldowns[key]
@@ -1022,7 +1022,7 @@ class SparView(FightMixin, OwnedView):
                 style = discord.ButtonStyle.secondary
             em = SPAR_EMOJI[key]
             if key.endswith("_tech"):
-                t = self.spar.atk_t if key == "attack_tech" else self.spar.def_t
+                t = self.spar.tech(key)
                 from cards.battle_icons import tech_emoji_key
                 em = tech_emoji_key(t["name"])
             from .fight_view import emoji as fight_emoji
@@ -1099,7 +1099,7 @@ class SparView(FightMixin, OwnedView):
         self.last = self.spar.play(key)
         if timed_out:
             self.last = "⏳ You hesitated and raised your guard. " + self.last
-        self.last_move = {"attack_tech": self.spar.atk_t, "defense_tech": self.spar.def_t}.get(key)
+        self.last_move = self.spar.tech(key)
         self.last_move = self.last_move["name"] if self.last_move else key.title()
         if self.spar.over:
             async with self.bot.db_lock:

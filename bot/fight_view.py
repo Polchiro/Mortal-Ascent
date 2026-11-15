@@ -20,7 +20,7 @@ import technique
 
 from . import mastery
 from . import render as card_render
-from .fight import Battle
+from .fight import TECH_KEY_LABEL, TECH_KEYS, Battle
 from cards import battle_icons
 from cards.beast_fight import render_beast_fight as render_battle   # the encounter screen (cards/beast_fight.py)
 from cards.technique_icons import tech_kind
@@ -117,7 +117,7 @@ def card_data(b, header, prev=None):
     loadout = []
     if not b.team:
         f = b.fighters[0]
-        for key in ("attack_tech", "defense_tech"):
+        for key in TECH_KEYS:
             t = f.tech(key)
             if not t:
                 continue
@@ -236,7 +236,9 @@ class FightMixin:
         for key in ("strike", "guard", "break"):
             self._fight_button(key.title(), key, discord.ButtonStyle.primary, 0,
                                disabled=stunned and key != "guard")
-        for key in ("attack_tech", "defense_tech"):
+        for key in TECH_KEYS:
+            if key == "flex_tech" and team and not any(x.flex_t for x in b.fighters):
+                continue
             if solo:
                 t = solo.tech(key)
                 if not t:
@@ -246,8 +248,7 @@ class FightMixin:
                 self._fight_button(label, key, discord.ButtonStyle.secondary if short else discord.ButtonStyle.success,
                                    1, disabled=short or stunned, icon=battle_icons.tech_emoji_key(t["name"]))
             else:
-                self._fight_button("Attack technique" if key == "attack_tech" else "Defense technique", key,
-                                   discord.ButtonStyle.success, 1)
+                self._fight_button(TECH_KEY_LABEL[key], key, discord.ButtonStyle.success, 1)
         if solo:
             n = solo.pill_count()
             self._fight_button(f"Mending pill ×{n}" if n else "No Mending pills", "pill", discord.ButtonStyle.secondary, 2,

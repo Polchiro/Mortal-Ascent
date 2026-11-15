@@ -47,13 +47,12 @@ class Spar:
         self.m_hp = self.m_max = round(mhp * strength)
         self.m_attack, self.m_defense = matk * strength, mdef * strength
         self.strength = strength
-        self.atk_t = next((t for t in techniques if t["type"] == "attack"), None)
-        self.def_t = next((t for t in techniques if t["type"] == "defense"), None)
+        self.atk_t, self.def_t, self.flex_t = rules.split_techniques(techniques)
         self.pattern = [self.rng.choice(STANCES) for _ in range(self.rng.randint(3, 4))]
         self.turn = 0
         self.blocked_strike = False      # last turn you Guarded the master's Strike
         self.timed = {}                  # technique id → well-timed uses
-        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}   # exchanges until ready
+        self.cooldowns = {"attack_tech": 0, "defense_tech": 0, "flex_tech": 0}   # exchanges until ready
         self.fx = gear.combat_fx(player)     # combat artifact effects
         self.m_staggered = False             # Thunder artifact: the master takes more from the next hit
         self.fx_notes = []                   # artifact lines for this exchange
@@ -86,7 +85,12 @@ class Spar:
             out.append(("attack_tech", self.atk_t["name"]))
         if self.def_t:
             out.append(("defense_tech", self.def_t["name"]))
+        if self.flex_t:
+            out.append(("flex_tech", self.flex_t["name"]))
         return out
+
+    def tech(self, key):
+        return {"attack_tech": self.atk_t, "defense_tech": self.def_t, "flex_tech": self.flex_t}.get(key)
 
     def ready(self, choice):
         """True if this choice can be played now (techniques may be cooling down)."""
@@ -96,7 +100,7 @@ class Spar:
         for key in self.cooldowns:
             self.cooldowns[key] = max(0, self.cooldowns[key] - 1)
         if used in self.cooldowns:
-            tech = self.atk_t if used == "attack_tech" else self.def_t
+            tech = self.tech(used)
             self.cooldowns[used] = combat.cooldown_turns(tech)
             reset = self.fx.get("cooldown_reset_chance")
             if reset and self.rng.random() < reset:                             # Focus artifact
@@ -134,25 +138,27 @@ class Spar:
         if not self.ready(choice):
             return f"⏳ That technique is still recovering ({self.cooldowns[choice]} more exchange(s))."
         m = self.master
-        me = {"attack_tech": "strike", "defense_tech": "guard"}.get(choice, choice)
-        use_atk = choice == "attack_tech"
-        use_def = choice == "defense_tech"
+        t = self.tech(choice)                       # the technique played (any slot), or None
+        at = t if t and t["type"] == "attack" else None
+        dt = t if t and t["type"] == "defense" else None
+        me = "strike" if at else "guard" if dt else choice
+        use_atk, use_def = at is not None, dt is not None
         was_blocked = self.blocked_strike
         self.blocked_strike = False
         notes = []
         self.fx_notes = []
 
         if use_atk and was_blocked:
-            self._timed(self.atk_t)
-            notes.append(f"🎯 Perfect timing with **{self.atk_t['name']}**!")
+            self._timed(at)
+            notes.append(f"🎯 Perfect timing with **{at['name']}**!")
         if use_def and m == "strike":
-            self._timed(self.def_t)
-            notes.append(f"🎯 **{self.def_t['name']}** meets his Strike at the right moment!")
+            self._timed(dt)
+            notes.append(f"🎯 **{dt['name']}** meets his Strike at the right moment!")
 
         skill, pierce, hits = 1.0, 0.0, 1
         if use_atk:
-            skill = technique.ATTACK_TECHNIQUE[self.atk_t["grade"]][0] * rules.mastery_mult(self.atk_t)
-            eff = rules.TECH_BY_NAME.get(self.atk_t["name"], {}).get("effect")
+            skill = technique.ATTACK_TECHNIQUE[at["grade"]][0] * rules.mastery_mult(at)
+            eff = rules.TECH_BY_NAME.get(at["name"], {}).get("effect")
             if eff and eff[0] == "combo":
                 hits, skill = eff[1][0], skill * eff[1][1]
             elif eff and eff[0] == "pierce":
@@ -177,7 +183,7 @@ class Spar:
                     self.m_hp = max(0, self.m_hp - back)
                     line += f" Your Mirror reflects {back:.0f}."
                 if use_def:
-                    eff = rules.TECH_BY_NAME.get(self.def_t["name"], {}).get("effect")
+                    eff = rules.TECH_BY_NAME.get(dt["name"], {}).get("effect")
                     if eff and eff[0] == "counter":
                         self.m_hp = max(0, self.m_hp - self.m_attack * eff[1])
                         line += " Your counter stings him."
@@ -193,7 +199,7 @@ class Spar:
         else:                                       # he wins
             scale = 1.0
             if m == "break" and use_def:
-                eff = rules.TECH_BY_NAME.get(self.def_t["name"], {}).get("effect")
+                eff = rules.TECH_BY_NAME.get(dt["name"], {}).get("effect")
                 if eff and eff[0] == "unbreakable":
                     scale = 0.5
             if m == "guard":
