@@ -49,6 +49,7 @@ SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right 
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
 STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
+ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped
 
@@ -69,7 +70,7 @@ def cut(path, name, session):
     lab, n = ndimage.label(ndimage.binary_dilation(alpha, iterations=3))
     if n > 1:
         sizes = ndimage.sum(alpha, lab, range(1, n + 1))
-        keep = np.isin(lab, 1 + np.flatnonzero(sizes >= sizes.max() * 0.03))
+        keep = np.isin(lab, 1 + np.flatnonzero(sizes >= sizes.max() * (1.0 if name in ONE_PIECE else 0.03)))
         a[..., 3] = np.where(keep, a[..., 3], 0)
     out = Image.fromarray(a, "RGBA")
     a = np.asarray(out).copy()
@@ -172,6 +173,7 @@ def main(src, roar=False):
             continue
         if roar:
             SLAB.clear(); SLAB.update(ROAR_SLAB)
+            STONE.clear()                                   # the roar pictures are drawn with nothing underfoot
             FACES_RIGHT.symmetric_difference_update(ROAR_FLIP & {name})
         out = cut(path, name, session)
         if roar:
