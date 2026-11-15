@@ -47,7 +47,9 @@ def view(enemy):
     cat = beasts.death_category(enemy["name"])
     path = picture(enemy.get("slug"))
     if not cat or not path:
-        return {"kind": "fall", "linger": LINGER_MS}
+        # it falls onto its side, head end (1) or hindquarters (-1) down first, the same way every time for one beast
+        side = 1 if sum(map(ord, enemy.get("name") or "")) % 2 else -1
+        return {"kind": "fall", "side": side, "linger": LINGER_MS}
     anim = beasts.DEATH_ANIMATIONS[cat]
     return {"kind": "warp", "category": cat, "ms": anim["ms"], "impact": anim["impact"],
             "motion": [{"w": w, "h": list(h)} for w, h in anim["motion"]],
