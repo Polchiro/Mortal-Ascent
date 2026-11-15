@@ -35,6 +35,8 @@ from . import player as rules
 
 MOVES = ("strike", "guard", "break")
 BASE_MOVE = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "strike", "defense_tech": "guard"}
+TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")   # flex_tech: the Flex slot's technique, a Strike or a Guard by its kind
+TECH_KEY_LABEL = {"attack_tech": "Attack technique", "defense_tech": "Defense technique", "flex_tech": "Flex technique"}
 MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break", "pill": "Pill", "flee": "Flee"}
 
 TELLS = {
@@ -86,9 +88,9 @@ class Fighter:
         self.realm, self.layer = player["realm"], player["layer"]
         self.hp, self.max_hp, self.attack, self.defense = hp, max_hp, attack, defense
         self.techs = techniques
-        self.atk_t = next((t for t in techniques if t["type"] == "attack"), None)
-        self.def_t = next((t for t in techniques if t["type"] == "defense"), None)
-        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}   # always 0 here: Battle Qi limits techniques
+        self.atk_t, self.def_t, self.flex_t = rules.split_techniques(techniques)
+        self.cooldowns = {k: 0 for k in TECH_KEYS}   # always 0 here: Battle Qi limits techniques
+        self.turn_tech = None             # the technique played this turn (any slot), or None
         self.max_bqi = battle.BATTLE_QI_START + (player.get("spirit") or 0) * stats.SPIRIT_BATTLE_QI
         self.bqi = self.max_bqi           # Battle Qi: full at the start of every fight
         self.free_cast = False            # Sword Heart: the next technique costs nothing
@@ -99,7 +101,8 @@ class Fighter:
         self.last_move = None             # label of the move played last turn
         self.timeouts = 0
         self.fled = False
-        self.atk_uses = self.guard_uses = 0
+        self.atk_uses = self.guard_uses = 0   # attack / defense techniques played (any slot)
+        self.tech_uses = {}               # technique id -> times played (mastery)
         self.dealt = 0.0
         self.fx = gear.combat_fx(player)  # combat artifact effects {effect: value}
         self.kit = passives.kit_for(player)   # forged weapon / armor passives (bot/passives.py)
@@ -108,12 +111,23 @@ class Fighter:
     def active(self):
         return self.hp > 0 and not self.fled
 
+    def guard_tech(self):
+        """The defense technique this fighter Guarded with this turn (the Defense or the Flex slot's), or None."""
+        t = getattr(self, "turn_tech", None)
+        return t if t and t["type"] == "defense" else None
+
     @property
     def stunned(self):
         return "stunned" in self.statuses
 
     def tech(self, key):
-        return self.atk_t if key == "attack_tech" else self.def_t
+        return {"attack_tech": self.atk_t, "defense_tech": self.def_t, "flex_tech": self.flex_t}.get(key)
+
+    def base(self, choice):
+        """The plain move a choice plays as: a technique is a Strike or a Guard by its kind."""
+        if choice == "flex_tech":
+            return "strike" if self.flex_t and self.flex_t["type"] == "attack" else "guard"
+        return BASE_MOVE[choice]
 
     def qi_cost(self, key):
         """Battle Qi this technique costs now: by grade, more while Chilled, nothing after Sword Heart."""
@@ -137,14 +151,14 @@ class Fighter:
         """Can this move be played now? Techniques rest after use; a stunned fighter can only Guard."""
         if self.stunned and choice != "guard":
             return False
-        if choice in ("attack_tech", "defense_tech"):
+        if choice in TECH_KEYS:
             return self.tech(choice) is not None and self.bqi >= self.qi_cost(choice)
         if choice == "pill":
             return self.can_pill()
         return choice in MOVES or choice == "flee"
 
     def move_label(self, choice):
-        if choice in ("attack_tech", "defense_tech"):
+        if choice in TECH_KEYS:
             return self.tech(choice)["name"]
         return MOVE_LABEL[choice]
 
@@ -318,11 +332,10 @@ class Battle:
         f.dealt += total
         return total
 
-    def _attack_skill(self, f, use_tech):
-        """(skill, pierce, hits, stagger) for a Strike (with the attack technique if use_tech)."""
-        if not use_tech:
+    def _attack_skill(self, f, t):
+        """(skill, pierce, hits, stagger) for a Strike (with attack technique t, if any)."""
+        if not t:
             return stats.BASIC_ATTACK_MULTIPLIER, 0.0, 1, 0.0
-        t = f.atk_t
         skill = technique.ATTACK_TECHNIQUE[t["grade"]][0] * rules.mastery_mult(t)
         eff = tech_effect(t)
         pierce, hits, stagger = 0.0, 1, 0.0
@@ -382,6 +395,7 @@ class Battle:
             if f.stunned:
                 choice = "guard"
             f.pick = None
+            f.turn_tech = None
             f.last_move = f.move_label(choice) if choice not in ("pill", "flee") else MOVE_LABEL[choice]
 
             if choice == "flee":
@@ -404,13 +418,17 @@ class Battle:
                 played[f] = None
                 continue
 
-            base = BASE_MOVE[choice]
+            base = f.base(choice)
             played[f] = base
-            used = choice if choice.endswith("_tech") else None
-            if used == "attack_tech":
-                f.atk_uses += 1
-            elif used == "defense_tech":
-                f.guard_uses += 1
+            used = choice if choice in TECH_KEYS else None
+            tt = f.tech(used) if used else None
+            f.turn_tech = tt
+            if tt:
+                if tt["type"] == "attack":
+                    f.atk_uses += 1
+                else:
+                    f.guard_uses += 1
+                f.tech_uses[tt["id"]] = f.tech_uses.get(tt["id"], 0) + 1
             if used:
                 cost = f.qi_cost(used)
                 f.free_cast = False
@@ -423,8 +441,9 @@ class Battle:
             if base == "guard":
                 f.kit.moved(base)
                 continue                  # resolved with the enemy's attack below
-            skill, pierce, hits, stagger = self._attack_skill(f, used == "attack_tech")
-            combo = used == "attack_tech" and (tech_effect(f.atk_t) or ("",))[0] == "combo"
+            at = tt if tt and tt["type"] == "attack" else None
+            skill, pierce, hits, stagger = self._attack_skill(f, at)
+            combo = at is not None and (tech_effect(at) or ("",))[0] == "combo"
             label = f.move_label(choice)
             if base == "break":
                 skill = battle.BREAK_SKILL
@@ -510,8 +529,9 @@ class Battle:
                     if mine == "guard" and m == "strike":
                         if kind == "charged":
                             block = battle.CHARGE_GUARD_BLOCK
-                            if t.def_t and t.last_move == t.def_t["name"]:
-                                block += technique.DEFENSE_TECHNIQUE[t.def_t["grade"]][0] * rules.mastery_mult(t.def_t)
+                            dt = t.guard_tech()
+                            if dt:
+                                block += technique.DEFENSE_TECHNIQUE[dt["grade"]][0] * rules.mastery_mult(dt)
                             block = min(technique.MAX_DAMAGE_BLOCKED, block + t.kit.guard_block())   # Bulwark
                         else:
                             block = 1.0
@@ -524,8 +544,8 @@ class Battle:
                             back = min(e["hp"], blocked * mirror)
                             e["hp"] = max(0, e["hp"] - back)
                             blocked_note += f", Mirror reflects {back:,.0f}"
-                        if t.def_t and t.last_move == t.def_t["name"]:
-                            eff = tech_effect(t.def_t)
+                        if t.guard_tech():
+                            eff = tech_effect(t.guard_tech())
                             if eff and eff[0] == "counter":
                                 back = min(e["hp"], blocked * eff[1])
                                 e["hp"] = max(0, e["hp"] - back)
@@ -546,13 +566,13 @@ class Battle:
                         dmg = 0
                     elif mine == m and kind != "charged":
                         dmg *= battle.CLASH_DAMAGE
-                    elif mine == "guard" and m == "break" and t.def_t and t.last_move == t.def_t["name"]:
-                        eff = tech_effect(t.def_t)
+                    elif mine == "guard" and m == "break" and t.guard_tech():
+                        eff = tech_effect(t.guard_tech())
                         if eff and eff[0] == "evade" and self.rng.random() < eff[1]:
                             dmg = 0
                             log.append(("shield", f"{t.name} slipped away from the {en}'s Break"))
                         else:
-                            held = break_held(t.def_t, eff)
+                            held = break_held(t.guard_tech(), eff)
                             if held:
                                 dmg *= 1 - held
                                 log.append(("shield", f"{t.name} — {t.last_move}: holds {held:.0%} of the Break"))
@@ -675,12 +695,7 @@ class Battle:
     @staticmethod
     def mastery_uses(f):
         """{technique id: uses} for COMBAT_EXP_PER_USE."""
-        out = {}
-        if f.atk_t and f.atk_uses:
-            out[f.atk_t["id"]] = f.atk_uses
-        if f.def_t and f.guard_uses:
-            out[f.def_t["id"]] = f.guard_uses
-        return out
+        return dict(getattr(f, "tech_uses", {}))
 
 
 def counters():

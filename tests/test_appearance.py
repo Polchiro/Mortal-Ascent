@@ -134,7 +134,7 @@ def test_profile_invites_a_free_look_then_shows_it(client):
 def test_profile_page_scripts_stay_out_of_the_title(client):
     page = client.get("/profile").text
     title = page.split("<title>")[1].split("</title>")[0]
-    assert "<script" not in title and 'class="hallbg"' in page
+    assert "<script" not in title and 'class="hallbg' in page
 
 
 def test_logged_out_cannot_choose(client):

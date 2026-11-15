@@ -23,6 +23,7 @@ ICONS = {
     "flee": ("flee", (180, 182, 196), False),
     "attack_tech": ("star", (240, 200, 100), False),
     "defense_tech": ("lotus", (96, 196, 160), False),
+    "flex_tech": ("star", (176, 140, 236), False),           # the Flex slot's technique (team buttons)
     # technique schools: the drawn base shapes (cards/technique_icons.py)
     "fist": ("school:Fist", (226, 84, 72), False),
     "palm": ("school:Palm", (110, 150, 232), False),
@@ -31,7 +32,7 @@ ICONS = {
     "body": ("school:Body", (96, 196, 160), False),
 }
 FALLBACK = {"strike": "⚔️", "guard": "🛡️", "break": "💥", "pill": "❤️", "flee": "🏃", "attack_tech": "✨",
-            "defense_tech": "🔰", "fist": "👊", "palm": "🖐️", "finger": "☝️", "leg": "🦵", "body": "🧘"}
+            "defense_tech": "🔰", "flex_tech": "🌀", "fist": "👊", "palm": "🖐️", "finger": "☝️", "leg": "🦵", "body": "🧘"}
 
 # every technique has its own button icon, "t_<technique key>", in its grade colour
 TECH_SCHOOL = {}

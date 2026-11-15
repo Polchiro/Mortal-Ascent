@@ -27,7 +27,8 @@ from .fight import break_held
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
-CHOICES = MOVES + ("attack_tech", "defense_tech")
+TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")     # flex_tech: the Flex slot's technique (technique.md)
+CHOICES = MOVES + TECH_KEYS
 BASE_MOVE = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "strike", "defense_tech": "guard"}
 MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break"}
 
@@ -69,9 +70,8 @@ class Duelist:
         self.techs = techniques
         self.weapon = weapon
         self.fx = fx if fx is not None else gear.combat_fx(player)   # combat artifact effects (bot/gear.py)
-        self.atk_t = next((t for t in techniques if t["type"] == "attack"), None)
-        self.def_t = next((t for t in techniques if t["type"] == "defense"), None)
-        self.cooldowns = {"attack_tech": 0, "defense_tech": 0}
+        self.atk_t, self.def_t, self.flex_t = rules.split_techniques(techniques)
+        self.cooldowns = {k: 0 for k in TECH_KEYS}
         self.pick = None                 # this turn's choice (secret until both have picked)
         self.last_move = None            # label of the move played last turn
         self.last_dealt = 0              # damage dealt last turn
@@ -85,17 +85,34 @@ class Duelist:
         self.no_guard = False            # Thunder Edge: can't Guard this turn
 
     def tech(self, key):
-        return self.atk_t if key == "attack_tech" else self.def_t
+        return {"attack_tech": self.atk_t, "defense_tech": self.def_t, "flex_tech": self.flex_t}.get(key)
+
+    def base(self, choice):
+        """The plain move a choice plays as: a technique is a Strike or a Guard by its kind."""
+        if choice == "flex_tech":
+            return "strike" if self.flex_t and self.flex_t["type"] == "attack" else "guard"
+        return BASE_MOVE[choice]
+
+    def recorded(self, choice):
+        """The move as the duel records keep it: a Flex technique counts as the attack or defense technique it is."""
+        if choice == "flex_tech" and self.flex_t:
+            return "attack_tech" if self.flex_t["type"] == "attack" else "defense_tech"
+        return choice
+
+    def tech_as(self, choice, kind):
+        """The technique this choice plays, if it is one of this kind ("attack" / "defense"), else None."""
+        t = self.tech(choice) if choice in TECH_KEYS else None
+        return t if t and t["type"] == kind else None
 
     def ready(self, choice):
-        if self.no_guard and BASE_MOVE.get(choice) == "guard":
+        if self.no_guard and self.base(choice) == "guard":
             return False
-        if choice in ("attack_tech", "defense_tech"):
+        if choice in TECH_KEYS:
             return self.tech(choice) is not None and self.cooldowns[choice] == 0
         return choice in MOVES
 
     def move_label(self, choice):
-        if choice in ("attack_tech", "defense_tech"):
+        if choice in TECH_KEYS:
             return self.tech(choice)["name"]
         return MOVE_LABEL[choice]
 
@@ -172,7 +189,7 @@ class Duel:
         if d.pick is not None:
             return f"You already locked in **{d.move_label(d.pick)}** this turn."
         if not d.ready(choice):
-            if d.no_guard and BASE_MOVE.get(choice) == "guard":
+            if d.no_guard and d.base(choice) == "guard":
                 return "You are stunned (Thunder Edge): you can't Guard this turn."
             if d.tech(choice) is None:
                 return "You have no technique of that kind equipped."
@@ -198,9 +215,9 @@ class Duel:
         """(skill, pierce, hits, stagger) for this player's attacking move."""
         if choice == "break":
             return pvp.BREAK_SKILL, 0.0, 1, 0.0
-        if choice != "attack_tech":
+        t = d.tech_as(choice, "attack")
+        if not t:
             return stats.BASIC_ATTACK_MULTIPLIER, 0.0, 1, 0.0
-        t = d.atk_t
         skill = technique.ATTACK_TECHNIQUE[t["grade"]][0] * rules.mastery_mult(t)
         eff = tech_effect(t)
         pierce, hits, stagger = 0.0, 1, 0.0
@@ -226,14 +243,15 @@ class Duel:
 
     def _attack(self, att, a_choice, dfn, d_choice, notes):
         """What att's move does to dfn. Returns (damage to dfn, damage back to att, a log line or None)."""
-        mine, theirs = BASE_MOVE[a_choice], BASE_MOVE[d_choice]
+        mine, theirs = att.base(a_choice), dfn.base(d_choice)
         label = att.move_label(a_choice)
         if mine == "guard":
             return 0, 0, None
         skill, pierce, hits, stagger = self._skill(att, a_choice)
-        combo = a_choice == "attack_tech" and (tech_effect(att.atk_t) or ("",))[0] == "combo"
-        def_tech = d_choice == "defense_tech"
-        eff = tech_effect(dfn.def_t) if def_tech else None
+        combo = (tech_effect(att.tech_as(a_choice, "attack")) or ("",))[0] == "combo"
+        dt = dfn.tech_as(d_choice, "defense")                     # the defense technique Guarded with (any slot)
+        def_tech = dt is not None
+        eff = tech_effect(dt) if def_tech else None
         share, note = 1.0, ""
         if mine == "strike":
             if theirs == "strike":
@@ -281,7 +299,7 @@ class Duel:
                     if self.turn - dfn.evaded_turn > pvp.EVADE_COOLDOWN_TURNS and self.rng.random() < eff[1]:
                         dfn.evaded_turn = self.turn
                         return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} slips away (Evade)")
-                held = break_held(dfn.def_t, eff) if def_tech else 0
+                held = break_held(dt, eff) if def_tech else 0
                 if held:
                     share, note = 1 - held, f"the guard still holds {held:.0%}"
                 notes.append(("stagger", dfn, 0))
@@ -357,8 +375,8 @@ class Duel:
         dmg_ba, back_b, line_b = self._attack(b, picks[b], a, picks[a], notes)
         log += [line for line in (line_a, line_b) if line] + self.kit_lines
         for d in self.sides:
-            d.kit.moved(BASE_MOVE[picks[d]])
-        if BASE_MOVE[picks[a]] == BASE_MOVE[picks[b]] == "guard":
+            d.kit.moved(d.base(picks[d]))
+        if a.base(picks[a]) == b.base(picks[b]) == "guard":
             log.append(("shield", "Both hold their guard. Nothing happens."))
         to_a = round(dmg_ba + back_a)                   # counters (and Mirror) land on the attacker
         to_b = round(dmg_ab + back_b)
@@ -441,7 +459,8 @@ class Duel:
 
     def _record(self, picks, timed, dealt):
         self.history.append({"turn": self.turn, "moves": [
-            {"user_id": d.uid, "move": picks[d], "technique": d.tech(picks[d])["name"] if picks[d].endswith("_tech") else None,
+            {"user_id": d.uid, "move": d.recorded(picks[d]),
+             "technique": d.tech(picks[d])["name"] if picks[d].endswith("_tech") else None,
              "timed_out": timed[d], "damage": dealt[d], "hp_after": max(0, d.hp)} for d in self.sides]})
 
     # ── after the duel ────────────────────────────────────────────────

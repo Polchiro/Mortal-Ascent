@@ -92,6 +92,11 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 | Martial Warrior | 3: adds 1 flex slot (attack or defense) |
 
 - Flex slot lets players build aggressive (2 attack + 1 defense) or tank (1 attack + 2 defense)
+- The Flex technique is a **third technique in every fight** (beast fights, duels, sparring), with its own button
+  (`flex_tech`): an attack technique there plays as a Strike, a defense one as a Guard, with its own effect,
+  Battle Qi cost (beast fights) or rest turns (duels, sparring), and its own mastery EXP. Each slot rests on its own.
+- Which one is Flex: the first attack and the first defense technique equipped hold the Attack and Defense slots;
+  the next one of either kind is Flex (`bot.player.split_techniques`)
 - Techniques can only be swapped **outside** of fights
 
 ## Schools

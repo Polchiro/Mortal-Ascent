@@ -42,6 +42,16 @@ def technique_slots(realm):
     return 3 if realm_index(realm) >= realm_index("Martial Warrior") else 2
 
 
+def split_techniques(techniques):
+    """(attack, defense, flex) technique from the equipped ones (technique.md): the first attack and the first
+    defense (in the order they were equipped) hold the Attack and Defense slots; one more of either kind is the
+    Flex slot, a third technique of its own in a fight. Any may be None."""
+    atk = [t for t in techniques if t["type"] == "attack"]
+    dfn = [t for t in techniques if t["type"] == "defense"]
+    extra = atk[1:] + dfn[1:]
+    return (atk[0] if atk else None, dfn[0] if dfn else None, extra[0] if extra else None)
+
+
 def realm_index(realm):
     return REALM_ORDER.index(realm)
 
