@@ -551,6 +551,7 @@ def result_banner(log, me):
 
 GRADE_COLOR = {"Mortal": "#D8D4CC", "Yellow": "#F0C566", "Mystic": "#7FB4FF", "Earth": "#6FD99A", "Heaven": "#E2A8FF"}
 DEFENSE_SHOWS = {"counter": "countered", "recover": "recovered", "evade": "slipped away", "unbreakable": "of the Break"}
+SLIPPED = " slipped away from"      # the engine's line when an evade technique dodges a Break (bot/fight.py)
 
 
 def cast(b, f, gender=None):
@@ -561,7 +562,8 @@ def cast(b, f, gender=None):
     if t is None:
         return None
     info = rules.TECH_BY_NAME.get(t["name"], {})
-    mine = " ".join(text for _, text in b.log if text.startswith(f.name + " — " + t["name"]))
+    mine = " ".join(text for _, text in b.log if text.startswith(f.name + " — " + t["name"])
+                    or (t is f.def_t and text.startswith(f.name + SLIPPED)))     # an evade: its own line, no " — "
     effect = (info.get("effect") or ("",))[0]
     if t["type"] == "attack":
         landed = "dmg" in mine
@@ -577,7 +579,7 @@ def cast(b, f, gender=None):
     from .profile import art_url
     return {"name": t["name"], "id": technique_fx.technique_id(t["name"]), "kind": t["type"], "school": school,
             "effect": shown, "landed": landed, "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
-            "fx": technique_fx.of(t["name"], t["grade"], gender),
+            "fx": technique_fx.of(t["name"], t["grade"], gender, shown),
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
@@ -695,7 +697,8 @@ def events(log, f):
     {"who": "me", "act": "guard", "counter": n}       the beast struck and your Guard stopped it (n = counter damage)
     {"who": "me", "act": "tech", "hit": bool, "dmg": n}  a technique: it plays its own animation (an attack
                                                       technique's damage, 0 for a defense one; a defense one
-                                                      also has "blocked", "hold" (% of a Break), "heal", "counter")
+                                                      also has "blocked", "hold" (% of a Break), "heal", "counter",
+                                                      and "evaded" when an evade technique slipped the Break)
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
@@ -719,6 +722,9 @@ def events(log, f):
                 ev.update(blocked="blocked" in text, hold=_number(text, r"holds (\d+)%"), heal=_number(text, r"recovered ([\d,]+)"),
                           counter=_number(text, r"countered for ([\d,]+)") + _number(text, r"counters for ([\d,]+)"))
             out.append(ev)
+        elif f.def_t and text.startswith(f.name + SLIPPED):   # an evade technique dodged the Break: no damage at all
+            out.append({"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
+                        "counter": 0, "evaded": True})
         elif icon == "skull" and not mine and any(f" — {n} on " in text for n in skills):
             name = next(n for n in skills if f" — {n} on " in text)
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")

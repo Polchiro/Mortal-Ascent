@@ -22,8 +22,8 @@ import technique as techniques
 PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend",
          "sweep", "streak", "whirl", "meteor", "beam",
          "dust", "mist", "sheen", "roots", "bell", "shell", "lotus", "parry",
-         "glance", "stream", "crane", "moon", "hands", "void")
-MOTIONS = ("fist", "palm", "kick", "finger", "brace", "deflect")
+         "glance", "stream", "crane", "moon", "hands", "void", "mist_steps", "cloud_steps")
+MOTIONS = ("fist", "palm", "kick", "finger", "brace", "deflect", "sidestep")
 
 TECH_FX = {
     # the punch techniques, from SHOAIB's designs (Gemini)
@@ -73,6 +73,12 @@ HER_FX = {
     "moon_mirror_palm": {"motion": "deflect", "play": "moon", "art": ["moon_mirror_palm"]},
     "thousand_hands_deflection": {"motion": "deflect", "play": "hands", "art": ["thousand_hands_deflection"]},
     "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance"]},
+    # her sidesteps, from SHOAIB's designs (Gemini, scripts/make_sidestep_fx.py), both played with her one sidestep
+    # (looks.MOTION_SHEETS "sidestep"; fight.js `sidestepped`), and only `on` a turn the evade worked: she slips
+    # the beast's Break, which passes through her afterimages. When it doesn't (the Break is held, or the beast
+    # only struck), the technique keeps its CSS look, as for the male cultivator.
+    "drifting_mist_steps": {"motion": "sidestep", "play": "mist_steps", "art": ["drifting_mist_steps"], "on": "evade"},
+    "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow"], "on": "evade"},
 }
 BY_GENDER = {"female": HER_FX}
 
@@ -86,11 +92,15 @@ def technique_id(name):
     return _BY_NAME.get(name)
 
 
-def of(name, grade, gender=None):
+def of(name, grade, gender=None, happened=None):
     """The look of the technique with this name, for the page, as the cultivator of this gender plays it (looks.GENDERS);
-    None to keep the CSS look."""
+    None to keep the CSS look. `happened`: the effect it had this turn (explore_play.cast); a look that plays only
+    `on` one effect (her sidesteps: "evade") gives way to the shared look, or the CSS one, on any other turn."""
     tid = technique_id(name)
-    fx = BY_GENDER.get(gender, {}).get(tid) or TECH_FX.get(tid)
+    fx = BY_GENDER.get(gender, {}).get(tid)
+    if fx and fx.get("on") and fx["on"] != happened:
+        fx = None
+    fx = fx or TECH_FX.get(tid)
     if not fx:
         return None
     return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),

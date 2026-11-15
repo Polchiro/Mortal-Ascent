@@ -126,7 +126,15 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  "deflect": {"female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 36, "cols": 8, "rows": 5,
                                         "jab": 6, "release": 12, "sweep": 23, "back": 26, "shift": 4 / 320,
                                         "hand": [0.663, 0.330], "tip": [0.329, 0.708],
-                                        "body": [0.520, 0.196, 0.937, 0.233]}}}
+                                        "body": [0.520, 0.196, 0.937, 0.233]}},
+                 # "sidestep": hers only, from SHOAIB's video of her (scripts/make_heroine_sidestep.py), what Drifting
+                 # Mist Steps and Cloud-Walking Shadow play when they slip the beast's Break (fight.js `sidestepped`):
+                 # on guard, palm raised (0-2); from `jab` she sweeps her sleeve and drops into a deep side lunge, out
+                 # of the blow's line at `release`; from `back` she rises into the same guard (by 22) and holds it.
+                 # Played frame for frame at the video's own pace (`fps`), never sped up or stretched.
+                 "sidestep": {"female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 27, "cols": 8, "rows": 4,
+                                         "jab": 3, "release": 10, "back": 14, "fps": 12, "shift": 47 / 320,
+                                         "hand": [0.719, 0.414], "body": [0.521, 0.196, 0.936, 0.243]}}}
 
 
 def fighter(look, pose="idle"):

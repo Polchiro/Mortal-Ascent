@@ -286,6 +286,20 @@ a lair is fought with `bot/hunt.py`.
      of jade hands opens behind her and turns it round her; Void Mirror Stance's dark mirror forms before her palm and
      cracks as the blow hits it. Then what really happened, from the log: Deflected, a Break held, HP recovered, a
      counter. Designs cleaned by `scripts/make_deflect_fx.py`.
+   - `sidestep` (`hero_female_sidestep.webp`, `scripts/make_heroine_sidestep.py`, from SHOAIB's video of her): the
+     **female cultivator's** sidestep, hers only, for the two evade techniques, Drifting Mist Steps and Cloud-Walking
+     Shadow (`technique_fx.HER_FX`, `"on": "evade"`). It plays **only on a turn the evade worked**: the engine rolls
+     the evade against the beast's Break (`bot/fight.py`, unchanged) and logs "slipped away from the ... Break", which
+     `explore_play.events` reads as the technique's event (`evaded`) and `cast` as its effect. On any other turn
+     (the Break is held instead, or the beast only struck) the technique keeps its CSS look, as for the male
+     cultivator. Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
+     own pace (`fps`, 12 a second), never sped up, stretched or cropped. On guard, she sweeps her sleeve and drops
+     into a deep side lunge, out of the Break's line as it arrives, then rises into the same guard and idles; she
+     gives a little ground and takes it back. Her afterimages (the technique's picture, cleaned by
+     `scripts/make_sidestep_fx.py`) are left on the spot she left, and the Break passes through them: Drifting Mist
+     Steps' mist figures, Cloud-Walking Shadow's cloud figures, streaming off behind her and dissolving. "Slipped away",
+     no damage. The engine's log was never read for an evade before (its line has no " — "), so until now a worked
+     evade played nothing on the website; it now plays her sidestep, or his CSS afterimage.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms

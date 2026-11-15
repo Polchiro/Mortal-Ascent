@@ -1115,6 +1115,82 @@
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
+    /* An evade technique that worked, as the female cultivator plays it (web/technique_fx.py HER_FX, "sidestep"): the
+       beast's Break comes in and she slips it. Her frames play one for one at the video's own pace (`fps` in
+       looks.MOTION_SHEETS), never sped up or stretched: on guard, then from `jab` she sweeps her sleeve and drops into
+       a deep side lunge, out of the blow's line at `release`, when the Break arrives where she stood; from `back` she
+       rises into the same guard she started in, then idle. She also gives a little ground and takes it back (moved,
+       not distorted), so the Break passes clear of her. The technique's afterimages are left where she stood and the
+       Break goes through them: they stream off behind her and dissolve. Nothing is hit and no number drops: the
+       engine's log says she took no damage. Only played on such a turn (`ev.evaded`); otherwise the technique keeps
+       its CSS look. */
+    function sidestepped(ev) {
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
+      var mn = msheet ? +msheet.dataset.frames : 27, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
+      var FPS = msheet && msheet.dataset.fps ? +msheet.dataset.fps : 12, MS = 1000 / FPS;
+      var JAB = msheet ? +msheet.dataset.jab : 3, REL = msheet ? +msheet.dataset.release : 10, BACK = msheet ? +msheet.dataset.back : 14;
+      var Bd = msheet && msheet.dataset.body ? msheet.dataset.body.split(',').map(Number) : [0.52, 0.2, 0.94, 0.24];
+      var HIT = REL * MS, PLAYED = mn * MS, END = PLAYED + 120;          // the Break arrives as she is out of its line
+      var STEP_IN = JAB * MS, STEP_OUT = BACK * MS, HOME = Math.min(PLAYED, (BACK + 8) * MS);
+      var GIVE = 0.06 * W;                                            // the ground she gives, px
+      var bodyH = fr.height * (Bd[2] - Bd[1]);
+      var stood = at(fr, Bd[0], (Bd[1] + Bd[2]) / 2);                // where she stood: the lead afterimage stays there
+      var charge = HIT - 340;                                         // the beast crouches, then leaps for the Break
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function show(f) {
+        f = Math.max(0, Math.min(mn - 1, Math.floor(f)));
+        msheet.style.backgroundPosition = (f % mcols) / (mcols - 1) * 100 + '% ' + Math.floor(f / mcols) / (mrows - 1) * 100 + '%';
+      }
+      var wide = function (aspect, share) { return bodyH * share / aspect / W * 100; };   // aspect: height / width
+      var ASPECT = {mist_steps: 331 / 828, cloud_steps: 275 / 919};
+      var FX = null;
+      function afterimages() {                                       // left where she stood, behind her
+        var n = document.createElement('img');
+        n.className = 'tart tbrace tsidestep ' + (X.play === 'cloud_steps' ? 'tcloudsteps' : 'tmiststeps');
+        n.src = X.art[0]; n.alt = '';
+        n.style.left = stood[0] + '%'; n.style.top = stood[1] + '%'; n.style.width = wide(ASPECT[X.play] || 0.38, 0.95) + '%';
+        n.style.setProperty('--tc', tc);
+        scene.insertBefore(n, fighter); made.push(n); FX = n;
+        var life = PLAYED - STEP_IN;
+        n.style.transformOrigin = '85% 50%';                          // the lead figure, on the spot she left
+        n.animate([{transform: 'translate(-85%,-50%) scale(0.9,0.96)', opacity: 0},
+          {transform: 'translate(-85%,-50%) scale(1)', opacity: 0.9, offset: (HIT - STEP_IN) / life * 0.8},
+          {transform: 'translate(-90%,-50%) scale(1.04,1)', opacity: 0.85, offset: (HIT - STEP_IN) / life},
+          {transform: 'translate(-104%,-52%) scale(1.12,1)', opacity: 0.35, offset: Math.min(0.9, (HIT + 600 - STEP_IN) / life)},
+          {transform: 'translate(-112%,-53%) scale(1.15,1)', opacity: 0}], {duration: life, easing: 'ease-out', fill: 'forwards'});
+      }
+      function slipped() {                                           // the Break goes through the afterimages
+        if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(1.7)'}, {filter: 'brightness(1)'}], {duration: 380});
+        var p = stood;
+        burst('tspark', p[0], p[1], X.play === 'cloud_steps' ? '#FFF1C8' : '#CFE6FF');
+        pop(fighter, 'word', 'Slipped away');
+      }
+      return {end: END, render: function (t) {
+        if (t < 0) return;
+        if (once('start')) {                                        // the grade's spectacle, as for every technique
+          var feet = at(fr, Bd[0], Bd[2]);
+          if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
+          if (tier >= 3) { scene.insertBefore(fx('tdim', 50, 50, END, {'--life': END + 'ms'}), fighter); fx('tpillar', feet[0], feet[1], Math.round(END * 0.6), {'--tc': tc}); }
+          if (tier >= 4) scene.insertBefore(fx('theaven', 50, 50, END, {'--life': END + 'ms'}), fighter);
+        }
+        // the beast's Break: a crouch, a leap to where she stood, through the afterimages and a little past, then home
+        var x = 0, y = 0, rot = 0, lunge = reachBeast - 0.03 * W + 0.02 * W, past = 0.012 * W, land = reachBeast - 0.03 * W;
+        if (t < charge) { var q = ease(span(t, 0, charge)); x = 0.02 * W * q; rot = 5 * q; }
+        else if (t < HIT) { var c = span(t, charge, HIT); x = 0.02 * W - lunge * c * c; rot = -7 * c; }
+        else if (t < HIT + 220) { var g = ease(span(t, HIT, HIT + 220)); x = -land - past * g; y = 0.012 * W * g; rot = -7 + 4 * g; }
+        else if (t < HIT + 820) { var r = inout(span(t, HIT + 220, HIT + 820)); x = (-land - past) * (1 - r); y = 0.012 * W * (1 - r) - 0.02 * W * Math.sin(Math.PI * r); rot = -3 * (1 - r); }
+        bpose(t < charge ? 'crouch' : t < HIT + 220 ? 'leap' : 'idle');
+        animal(x, y, rot, 0);
+        // her: the video's frames one for one, and the ground she gives and takes back
+        if (msheet && t < END - 60) { pose('motion'); show(t / MS); } else pose(msheet ? 'idle' : t < END - 60 ? 'windup' : 'idle');
+        var away = t < STEP_IN ? 0 : t < HIT ? ease(span(t, STEP_IN, HIT)) : t < STEP_OUT ? 1 : 1 - inout(span(t, STEP_OUT, HOME));
+        hero(-GIVE * away, 0);
+        poses.style.filter = tier >= 1 && t < END - 200 ? 'drop-shadow(0 0 ' + (4 + 3 * tier) + 'px ' + tc + ')' : '';
+        if (t >= STEP_IN && once('form')) afterimages();
+        if (t >= HIT && once('slip')) slipped();
+      }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
+    }
+
     /* The victory sequence's middle part (docs/web.md): after the last blow the beast goes down. "warp": its own
        picture goes down through its category's shared movement (drawDeath), then the body stays down. "fall": a beast with no category tips
        over. "rout": bandits scatter. Then the body lies there a moment (linger) before the Victory panel comes up.
@@ -1162,6 +1238,7 @@
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
