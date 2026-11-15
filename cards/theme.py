@@ -59,7 +59,7 @@ TALENT = {
 }
 REALM_CHAR = {
     "Mortal": "凡", "Martial Apprentice": "徒", "Martial Warrior": "者", "Martial Expert": "师",
-    "Martial Master": "宗", "Grand Martial Master": "宗", "Martial Grandmaster": "尊",
+    "Martial Master": "宗", "Grandmaster": "宗", "Martial Lord": "尊",
     "Martial King": "王", "Martial Emperor": "帝", "Martial Ancestor": "祖", "Martial Saint": "圣",
 }
 

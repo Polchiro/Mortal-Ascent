@@ -169,7 +169,7 @@ File: `art/beasts/flame_maned_lion.png`
 
 > A great lion whose mane is living fire, golden fur, roaring, with a subtle orange fire elemental aura. It is a Beast King: the most powerful of its realm, regal, enormous and awe-inspiring. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed fur and claws, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 
-## Grand Martial Master
+## Grandmaster
 
 **Stone-Shell Tortoise** · Normal · Earth
 File: `art/beasts/stone_shell_tortoise.png`
@@ -201,7 +201,7 @@ File: `art/beasts/black_water_serpent.png`
 
 > An enormous black serpent rising from dark water, ominous, coils vanishing into mist, with a subtle violet shadow elemental aura. It is a Beast King: the most powerful of its realm, regal, enormous and awe-inspiring. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed scales, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 
-## Martial Grandmaster
+## Martial Lord
 
 **Earth-Splitting Rhino** · Normal · Earth
 File: `art/beasts/earth_splitting_rhino.png`

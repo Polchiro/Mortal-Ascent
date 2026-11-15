@@ -25,8 +25,8 @@ Every herb grade can be found at every realm. What you find is rolled by rarity,
 | Martial Warrior | 1.2 | 75.6% | 17.0% | 4.8% | 1.8% | 0.8% |
 | Martial Expert | 1.35 | 72.3% | 18.3% | 5.8% | 2.5% | 1.2% |
 | Martial Master | 1.5 | 68.9% | 19.4% | 6.8% | 3.2% | 1.7% |
-| Grand Martial Master | 1.7 | 64.3% | 20.5% | 8.1% | 4.4% | 2.7% |
-| Martial Grandmaster | 1.9 | 59.8% | 21.3% | 9.4% | 5.6% | 3.9% |
+| Grandmaster | 1.7 | 64.3% | 20.5% | 8.1% | 4.4% | 2.7% |
+| Martial Lord | 1.9 | 59.8% | 21.3% | 9.4% | 5.6% | 3.9% |
 | Martial King | 2.15 | 54.1% | 21.8% | 10.9% | 7.4% | 5.8% |
 | Martial Emperor | 2.4 | 48.6% | 21.9% | 12.3% | 9.2% | 8.1% |
 | Martial Ancestor | 2.7 | 42.4% | 21.4% | 13.5% | 11.5% | 11.3% |
@@ -43,7 +43,7 @@ Every herb grade can be found at every realm. What you find is rolled by rarity,
 | 凡 Mortal | Mortal |
 | 黄 Yellow | Martial Apprentice, Martial Warrior |
 | 玄 Mystic | Martial Expert, Martial Master |
-| 地 Earth | Grand Martial Master, Martial Grandmaster |
+| 地 Earth | Grandmaster, Martial Lord |
 | 天 Heaven | Martial King and above |
 
 ### Herb types
@@ -230,7 +230,7 @@ All herbs in a recipe must be of the pill's grade.
 | 凡 Mortal | Ember Dantian Pill | 2 Spirit Grass + 1 Dew Leaf | Any | 1st | Mortal | ×1.3 |
 | 黄 Yellow | Clear Meridian Pill | 2 Sun Ginseng + 1 Silver Moss | Any | 3rd | Martial Apprentice | ×1.5 |
 | 玄 Mystic | Jade Marrow Pill | 2 Moon Mushroom + 1 Jade Lily | Any | 5th | Martial Expert | ×1.8 |
-| 地 Earth | Thousand Rivers Pill | 2 Golden Ginseng + 1 Snow Lily | 50-year | 7th | Grand Martial Master | ×2.2 |
+| 地 Earth | Thousand Rivers Pill | 2 Golden Ginseng + 1 Snow Lily | 50-year | 7th | Grandmaster | ×2.2 |
 | 天 Heaven | Heaven-Devouring Pill | 2 Heaven Lotus + 1 Star Dew | 50-year | 9th | Martial King | ×2.8 |
 
 - Only one Qi pill active at a time

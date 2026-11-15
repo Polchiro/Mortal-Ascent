@@ -620,10 +620,10 @@ def test_team_hunt_elite_and_king(conn):
 
 
 def test_king_kill_unlocks_realm_requirement():
-    p = {"realm": "Martial Grandmaster", "king_kills": ""}
+    p = {"realm": "Martial Lord", "king_kills": ""}
     techs = [{"grade": "Mystic", "mastery_exp": 0, "stage": 2}]
     assert "Beast King" in rules.realm_requirement_missing(p, techs, "Martial King")
-    p["king_kills"] = "Martial Grandmaster"
+    p["king_kills"] = "Martial Lord"
     assert rules.realm_requirement_missing(p, techs, "Martial King") is None
 
 
@@ -654,7 +654,7 @@ def test_low_realm_beasts_are_eased(conn):
     boar = combat.beast_stats(p, ("Wild Boar", "normal", "brute"))
     full = rules.base_stats("Mortal", 1)[0] * 1.2
     assert boar["max_hp"] == round(full * 0.55) and boar["hit_cap"] == 0.40
-    late = dict(p, realm="Grand Martial Master")
+    late = dict(p, realm="Grandmaster")
     assert "hit_cap" not in combat.beast_stats(late, ("Stone-Shell Tortoise", "normal", "armored"))
     wolf = hunt.team_beast({"beast": ("Grey Wolf", "elite", "hunter")}, [p])
     assert wolf["max_hp"] == round(rules.base_stats("Mortal", 1)[0] * 5 * 0.85 * 0.35)
@@ -683,3 +683,19 @@ def test_shop_card_shows_every_item():
     assert [i["key"] for i in d["items"][:-1]] == list(SHOP_ITEMS) and d["items"][-1]["soon"]
     assert d["items"][0]["price"] == f"{economy.PEARL_SHOP['heavenly_fate_reroll']:,}"
     assert render_shop(d).size[0] == 1200
+
+
+def test_saved_players_at_the_renamed_realms_keep_their_place(tmp_path):
+    from bot import db as dbm
+    import realms
+    assert realms.REALMS[4:6] == ["Grandmaster", "Martial Lord"]
+    path = str(tmp_path / "old.db")
+    conn = dbm.connect(path)
+    conn.execute("INSERT INTO players (user_id, name, talent, created_at, realm, king_kills) VALUES (1, 'A', 'Average', 0, 'Grand Martial Master', "
+                 "'Martial Master,Grand Martial Master,Martial Grandmaster')")
+    conn.execute("INSERT INTO players (user_id, name, talent, created_at, realm) VALUES (2, 'B', 'Average', 0, 'Martial Grandmaster')")
+    conn.commit(); conn.close()
+    conn = dbm.connect(path)
+    a, b = dbm.get_player(conn, 1), dbm.get_player(conn, 2)
+    assert a["realm"] == "Grandmaster" and b["realm"] == "Martial Lord"
+    assert a["king_kills"] == "Martial Master,Grandmaster,Martial Lord"

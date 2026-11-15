@@ -20,7 +20,7 @@ Each realm has **3 Normal, 2 Elite and 1 Beast King** — 66 beasts in total.
 
 Early beasts felt too slow to kill and Elites were near impossible, so the first
 realms get weaker beasts (`beasts.LOW_REALM_EASE`). Multipliers on HP and Attack;
-Beast Kings and realms from Grand Martial Master on are unchanged.
+Beast Kings and realms from Grandmaster on are unchanged.
 
 | Realm | Normal HP / Attack | Elite HP / Attack |
 |---|---|---|
@@ -117,7 +117,7 @@ legendary beasts → creatures of Chinese mythology.
 | Elite | Wind Leopard | Swift |
 | King | Flame-Maned Lion | Hunter |
 
-### Grand Martial Master
+### Grandmaster
 | Tier | Beast | Role |
 |---|---|---|
 | Normal | Stone-Shell Tortoise | Armored |
@@ -127,7 +127,7 @@ legendary beasts → creatures of Chinese mythology.
 | Elite | Jade-Scaled Crocodile | Armored |
 | King | Black Water Serpent | Brute |
 
-### Martial Grandmaster
+### Martial Lord
 | Tier | Beast | Role |
 |---|---|---|
 | Normal | Earth-Splitting Rhino | Armored |

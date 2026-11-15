@@ -10,7 +10,7 @@ One weapon, one armor and two artifacts equipped at a time.
 | 1 | ⚪ Ordinary | Mortal |
 | 2 | 🟢 Refined | Martial Apprentice |
 | 3 | 🔵 Spirit | Martial Expert |
-| 4 | 🟣 Treasure | Grand Martial Master |
+| 4 | 🟣 Treasure | Grandmaster |
 | 5 | 🟠 Divine | Martial King |
 
 ## Types

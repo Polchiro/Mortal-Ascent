@@ -25,8 +25,8 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 | Martial Warrior | 10 |
 | Martial Expert | 20 |
 | Martial Master | 40 |
-| Grand Martial Master | 80 |
-| Martial Grandmaster | 160 |
+| Grandmaster | 80 |
+| Martial Lord | 160 |
 | Martial King | 320 |
 | Martial Emperor | 640 |
 | Martial Ancestor | 1,280 |
@@ -102,8 +102,8 @@ Qi needed for one layer in the **Early phase**:
 | Martial Warrior | 64 |
 | Martial Expert | 260 |
 | Martial Master | 900 |
-| Grand Martial Master | 2,850 |
-| Martial Grandmaster | 9,300 |
+| Grandmaster | 2,850 |
+| Martial Lord | 9,300 |
 | Martial King | 29,000 |
 | Martial Emperor | 89,000 |
 | Martial Ancestor | 265,000 |
@@ -127,8 +127,8 @@ Gates get much harder the higher you climb (numbers live in `training.py`):
 | Martial Warrior | 70% | 50% |
 | Martial Expert | 60% | 35% |
 | Martial Master | 50% | 25% |
-| Grand Martial Master | 42% | 18% |
-| Martial Grandmaster | 35% | 12% |
+| Grandmaster | 42% | 18% |
+| Martial Lord | 35% | 12% |
 | Martial King | 28% | 8% |
 | Martial Emperor | 22% | 5% |
 | Martial Ancestor | 17% | 3% |

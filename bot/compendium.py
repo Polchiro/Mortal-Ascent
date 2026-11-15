@@ -61,8 +61,8 @@ TIER_SEAL = {t: f"emblem:rarity:{t}" for t in ("ordinary", "refined", "spirit", 
 OVERVIEW_SEAL = "emblem:book"
 
 REALM_SHORT = {"Mortal": "Mortal", "Martial Apprentice": "Apprentice", "Martial Warrior": "Warrior",
-               "Martial Expert": "Expert", "Martial Master": "Master", "Grand Martial Master": "Grand Master",
-               "Martial Grandmaster": "Grandmaster", "Martial King": "King", "Martial Emperor": "Emperor",
+               "Martial Expert": "Expert", "Martial Master": "Master", "Grandmaster": "Grandmaster",
+               "Martial Lord": "Lord", "Martial King": "King", "Martial Emperor": "Emperor",
                "Martial Ancestor": "Ancestor", "Martial Saint": "Saint"}
 REALM_COLOR = dict(zip(rules.REALM_ORDER, [
     (170, 160, 150), (150, 190, 120), (96, 196, 110), (82, 186, 170), (90, 160, 240), (120, 130, 240),

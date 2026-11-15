@@ -209,7 +209,7 @@ Plus, if you want: 1 essence, 1 fuel, 1 quench liquid.
 ## 4. Where materials drop
 
 The material tier follows your realm, the same way Beast Cores and herbs do (Mortal → tier 1, Martial
-Apprentice/Warrior → 2, Expert/Master → 3, Grand Master/Grandmaster → 4, Martial King and above → 5).
+Apprentice/Warrior → 2, Expert/Master → 3, Grandmaster/Martial Lord → 4, Martial King and above → 5).
 In chests, the tier is rolled like a weapon's tier in that chest.
 
 | Source | Drops |

@@ -5,7 +5,7 @@ GRADES = {
     "Mortal": "Mortal",
     "Yellow": "Martial Apprentice",
     "Mystic": "Martial Expert",
-    "Earth":  "Grand Martial Master",
+    "Earth":  "Grandmaster",
     "Heaven": "Martial King",
 }
 
