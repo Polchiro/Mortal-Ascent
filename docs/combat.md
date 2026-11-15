@@ -121,7 +121,8 @@ crouches, leaps with golden afterimages, lands on you in a golden shockwave that
 
 ### The roar
 
-The 29 four-legged beasts (`beasts.QUADRUPEDS`) and the 10 flying beasts (`beasts.FLYING`, their roar a screech) can
+The 29 four-legged beasts (`beasts.QUADRUPEDS`) the 10 flying beasts (`beasts.FLYING`, their roar a screech) and the 5 serpents
+(`beasts.SERPENTS`, their roar a hiss) can
 **roar** instead of their ordinary move (`battle.ROAR`,
 `Battle._roars` / `_roar` in `bot/fight.py`). It is never a charged attack or signature strike, and it comes as a
 **surprise**: the warning bar gives no tell that turn.

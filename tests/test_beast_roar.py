@@ -57,7 +57,7 @@ def test_every_quadruped_roars_as_itself_with_the_shared_movement():
 
 
 def test_other_beasts_keep_the_plain_roar():
-    for name in ("Venom Scorpion", "Rock Python", "Azure Dragon"):
+    for name in ("Venom Scorpion", "Azure Dragon"):
         assert beasts.roar_category(name) is None
         assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["motion"] is None
 
@@ -83,7 +83,7 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
-    assert explore_play.beast_roar({"name": "Rock Python", "slug": "rock_python", "tier": "normal"})["art"] is None
+    assert explore_play.beast_roar({"name": "Venom Scorpion", "slug": "venom_scorpion", "tier": "normal"})["art"] is None
 
 
 def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
@@ -126,3 +126,26 @@ def test_every_flying_beast_screeches_as_itself_with_its_open_beak():
         assert Image.open(roar).size == Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).size
     birds = {n for n, (_, body) in beasts.TRAITS.items() if body == "bird"}
     assert birds == set(beasts.FLYING)                                      # every bird screeches
+
+
+def test_the_redesigned_serpents_have_their_standing_and_open_mouthed_pictures():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    serpents = {beasts.slug(n) for n, (_, body) in beasts.TRAITS.items() if body == "serpent"}
+    assert serpents == set(art.SERPENTS)
+    for slug in art.SERPENTS:
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        assert heads[slug][0] < 0.3 and slug + "@roar" in heads, slug             # faces left; open mouth on file
+
+
+def test_every_serpent_hisses_with_the_serpent_movement_and_its_open_mouthed_picture():
+    move = beasts.ROAR_ANIMATIONS["serpent"]
+    assert move["style"] == "hiss" and len(move["ms"]) == len(move["keys"]) - 1
+    for name in beasts.SERPENTS:
+        assert beasts.roar_category(name) == "serpent"
+        slug = beasts.slug(name)
+        r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
+        assert r["motion"]["style"] == "hiss" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]

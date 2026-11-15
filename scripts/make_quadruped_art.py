@@ -39,7 +39,9 @@ DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "wild_boar
 # the flying beasts (SHOAIB's redesign of the birds), cut the same way
 FLYING = ("spear_beak_crane", "thunder_hawk", "bone_vulture", "storm_eagle", "iron_feather_crow", "crimson_fire_hawk",
           "bifang_fire_crane", "vermilion_bird", "kun_peng_fish_of_the_northern_sea", "wind_feather_falcon")
-FACES_RIGHT = {"wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+# the serpents (SHOAIB's redesign), cut the same way
+SERPENTS = ("field_viper", "rock_python", "frost_python", "black_water_serpent", "void_serpent")
+FACES_RIGHT = {"field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
@@ -166,7 +168,7 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS + FLYING:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING + SERPENTS:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)

@@ -284,6 +284,18 @@ ROAR_ANIMATIONS = {
         (0.034, -0.045, -3.0),      # held, trembling, blasting
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.06},
+    # The serpents' hiss, from SHOAIB's serpent roar video (a viper): it coils back, head low, then rears its head high
+    # while Qi of its element swirls round its neck and a circle of runes with spinning golden rings flares up behind
+    # it; then it lunges, jaws wide, and breathes a roaring stream of its element at you (fight.js `hiss`), mist rolling
+    # out along the ground, holds it, and settles.
+    "serpent": {"ms": [420, 640, 140, 1450, 520], "burst": 3, "hold": 3, "style": "hiss", "pivot": 0.55, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (-0.030, 0.020, -4.0),      # coiled back, head low, gathering itself
+        (-0.030, -0.020, 9.0),      # reared high, Qi swirling round its neck
+        (0.045, 0.000, -3.0),       # the hiss: lunged at you, jaws wide, breathing its element
+        (0.040, 0.000, -2.0),       # held, trembling, breathing
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.07},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -295,7 +307,10 @@ QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mounta
 # The 10 flying beasts (SHOAIB's redesign of the birds), all screeching with the flying movement.
 FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Iron-Feather Crow", "Crimson Fire Hawk",
           "Bifang Fire Crane", "Vermilion Bird", "Kun-Peng, Fish of the Northern Sea", "Wind-Feather Falcon")
-ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING}}
+# The 5 serpents (SHOAIB's redesign), all hissing with the serpent movement.
+SERPENTS = ("Field Viper", "Rock Python", "Frost Python", "Black Water Serpent", "Void Serpent")
+ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
+                 **{name: "serpent" for name in SERPENTS}}
 
 
 def roar_category(name):
