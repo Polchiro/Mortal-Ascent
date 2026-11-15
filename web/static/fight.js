@@ -736,6 +736,46 @@
       }
       camera(p, 1 + 0.07 * big, 1500);
     }
+    /* A primate's roar (beasts.ROAR_ANIMATIONS["primate"], from SHOAIB's primate roar video). As it rises and pounds
+       its chest, a whirlwind of its element spirals round it (`vortex`) and each blow sends a ring off its chest
+       (`beat`). As it roars (`pound`): a flash at its jaws, a sphere of its element bursting round its body with
+       rings, streaks shooting out every way, shards flying, dust, and the camera punching in. */
+    function vortex(pic, ms) {
+      var c = at(pic, 0.5, 0.5);
+      for (var i = 0; i < 6; i++) {
+        fx('bcoil', c[0], c[1] + 10 - i * 4, ms, {'--rc': ROAR.color, '--w': pic.width * (1.15 - 0.1 * i) + 'px',
+          '--h': pic.height * (0.22 + 0.03 * i) + 'px', '--life': ms + 'ms', '--r0': (i * 55) + 'deg', 'animation-delay': (i * 70) + 'ms'});
+      }
+    }
+    function beat(pic) {
+      var c = at(pic, 0.5, 0.42);
+      wave(c, 'ring', Math.min(500, pic.width * 0.6), 420, 0, 'broarbig', 0, 0.55);
+      camera(c, 1.025, 260);
+    }
+    function pound(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      var c = at(pic, 0.5, 0.48), sz = Math.min(900, Math.max(pic.width, pic.height) * 0.95 * big);
+      fx('bnova', c[0], c[1], 1650, {'--rc': ROAR.color, '--s': sz * 0.85 + 'px', 'animation-delay': '200ms'});
+      wave(c, 'ring', sz * 1.15, 650, 120, 'broarbig', 0, 0.5);
+      wave(c, 'double', sz * 1.4, 800, 380, 'broarbig', 0, 0.3);
+      for (var j = 0; j < 14; j++) {                           // streaks shooting out every way
+        fx('bstreak', c[0], c[1], 1100, {'--rc': ROAR.color, '--len': sz * (0.45 + Math.random() * 0.45) + 'px',
+          '--ang': (j * 360 / 14 + Math.random() * 12) + 'deg', 'animation-delay': (80 + Math.random() * 260) + 'ms'});
+      }
+      for (var k = 0; k < 26; k++) {                           // shards flying
+        var a = Math.random() * Math.PI * 2, r = sz * (0.4 + Math.random() * 0.6);
+        fx('bdrop', c[0], c[1], 1400, {'--rc': ROAR.color, '--dx': Math.cos(a) * r + 'px', '--dy': Math.sin(a) * r * 0.7 + 'px',
+          '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (100 + Math.random() * 300) + 'ms'});
+      }
+      var f = at(pic, 0.5, 0.98);
+      for (var m = 0; m < 10; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 1800, {'--dx': side * (60 + 28 * m) + 'px',
+          '--s': (0.8 + Math.random() * 0.6).toFixed(2), 'animation-delay': (150 + 30 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1450);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -790,6 +830,9 @@
         if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'quake' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'storm' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); coil(pic, BURST - at0[1] + 200); }
+        if (M.style === 'pound' && t >= at0[1] && once('gather')) vortex(pic, BURST - at0[1] + 250);
+        if (M.style === 'pound' && t >= at0[3] && once('beat1')) beat(pic);
+        if (M.style === 'pound' && t >= at0[5] && once('beat2')) beat(pic);
         if (M.style === 'hiss' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); runes(pic, HOLD1 + 300 - at0[1]); }
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
@@ -809,6 +852,7 @@
           else if (M.style === 'hiss') hiss(mouth(p), pic, ev.final);
           else if (M.style === 'quake') quake(mouth(p), pic, ev.final);
           else if (M.style === 'storm') storm(mouth(p), pic, ev.final);
+          else if (M.style === 'pound') pound(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});

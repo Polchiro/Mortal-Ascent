@@ -53,7 +53,7 @@ def test_every_quadruped_roars_as_itself_with_the_shared_movement():
         assert slug in heads
         r = explore_play.beast_roar({"name": name, "slug": slug, "element": beasts.element_of(name), "tier": "normal"})
         assert r["motion"]["keys"][move["burst"]] == list(move["keys"][move["burst"]]) and r["head"] == heads[slug][:2]
-    assert len(pics) == len(beasts.QUADRUPEDS) == 29
+    assert len(pics) == len(beasts.QUADRUPEDS) == 28
 
 
 def test_other_beasts_keep_the_plain_roar():
@@ -191,3 +191,20 @@ def test_both_dragons_roar_with_the_dragon_movement_and_their_open_mouthed_pictu
         slug = beasts.slug(name)
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "storm" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_every_primate_roars_with_the_primate_movement_and_its_open_mouthed_picture():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    move = beasts.ROAR_ANIMATIONS["primate"]
+    assert move["style"] == "pound" and len(move["ms"]) == len(move["keys"]) - 1
+    assert "Ancient Golden Ape" not in beasts.QUADRUPEDS
+    for name in beasts.PRIMATES:
+        assert beasts.roar_category(name) == "primate"
+        slug = beasts.slug(name)
+        assert slug in art.PRIMATES
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
+        assert r["motion"]["style"] == "pound" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]

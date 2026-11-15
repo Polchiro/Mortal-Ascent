@@ -320,13 +320,29 @@ ROAR_ANIMATIONS = {
         (0.035, -0.008, -1.0),      # held, trembling
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.06},
+    # The primates' roar, from SHOAIB's primate roar video (the Silver Monkey): it crouches, rises onto its hind legs and
+    # pounds its chest twice while a whirlwind of its element spirals round it, then roars, a sphere of its element
+    # bursting round its body with streaks shooting out every way and shards flying (fight.js `vortex`, `beat`,
+    # `pound`), holds, and settles.
+    "primate": {"ms": [380, 420, 150, 150, 150, 160, 1450, 520], "burst": 6, "hold": 6, "style": "pound", "pivot": 0.8,
+                "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (0.000, 0.030, -2.0),       # crouched
+        (-0.015, -0.035, 5.0),      # risen on its hind legs, whirlwind spiralling round it
+        (-0.010, -0.015, 2.0),      # first chest blow
+        (-0.015, -0.035, 5.0),      # risen
+        (-0.010, -0.015, 2.0),      # second chest blow
+        (0.030, -0.025, -3.0),      # the roar: thrust at you, the sphere bursting
+        (0.025, -0.022, -2.0),      # held, trembling
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.07},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
               "Wild Ox", "Old Black Bear", "Bloodfang Wolf", "Armored Boar Chief", "White-Browed Tiger King",
               "Steel-Horn Bull", "Ironbark Bear", "Frost Wolf", "Wind Leopard", "Flame-Maned Lion",
               "Earth-Splitting Rhino", "Shadow Panther", "Cloud Leopard",
-              "Nine-Tailed Fox", "Thunder Rhino", "Fire-Hoof Steed", "Sky Lynx", "Ancient Golden Ape",
+              "Nine-Tailed Fox", "Thunder Rhino", "Fire-Hoof Steed", "Sky Lynx",
               "Ghost-Fire Wolf", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger")
 # The 10 flying beasts (SHOAIB's redesign of the birds), all screeching with the flying movement.
 FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Iron-Feather Crow", "Crimson Fire Hawk",
@@ -337,9 +353,12 @@ SERPENTS = ("Field Viper", "Rock Python", "Frost Python", "Black Water Serpent",
 AMPHIBIANS = ("Thornback Lizard", "Poison Toad", "Ember Lizard")
 # The 2 dragons (SHOAIB's redesign), both roaring with the dragon movement.
 DRAGONS = ("Flood Dragon (Jiao)", "Azure Dragon")
+# The 4 primates (SHOAIB's redesign; the Ancient Golden Ape moved here from the four-legged beasts), all roaring with
+# the primate movement.
+PRIMATES = ("Silver Monkey", "Golden-Eyed Ape King", "Ancient Golden Ape", "Shanxiao Mountain Spirit")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
                  **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS},
-                 **{name: "dragon" for name in DRAGONS}}
+                 **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES}}
 
 
 def roar_category(name):
