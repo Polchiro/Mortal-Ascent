@@ -14,5 +14,5 @@ dropped, facing left). After adding or replacing a picture, set its mouth in `sc
 `heads.json` so the roar bursts from the right place; a four-legged beast also goes in `beasts.QUADRUPEDS` to roar
 with the shared movement.
 
-The redesigned flying beasts (the birds; the Cave Bat Swarm keeps its art) are made the same way,
+The redesigned flying beasts (the birds) are made the same way,
 `scripts/make_quadruped_art.py` `FLYING`: pedestals and rocks dropped (`STONE`), facing left.

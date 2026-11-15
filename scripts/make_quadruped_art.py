@@ -36,10 +36,10 @@ DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "wild_boar
            "cloud_leopard",
            "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "sky_lynx", "ancient_golden_ape", "ghost_fire_wolf",
            "qiongqi_the_winged_tiger", "ancient_flame_lion", "white_tiger")
-# the flying beasts (SHOAIB's redesign of the birds; the Cave Bat Swarm keeps its art), cut the same way
+# the flying beasts (SHOAIB's redesign of the birds), cut the same way
 FLYING = ("spear_beak_crane", "thunder_hawk", "bone_vulture", "storm_eagle", "iron_feather_crow", "crimson_fire_hawk",
-          "bifang_fire_crane", "vermilion_bird", "kun_peng_fish_of_the_northern_sea")
-FACES_RIGHT = {"bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+          "bifang_fire_crane", "vermilion_bird", "kun_peng_fish_of_the_northern_sea", "wind_feather_falcon")
+FACES_RIGHT = {"wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
@@ -48,7 +48,7 @@ SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_st
 SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right corner, px
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
-STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76}
+STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped
 

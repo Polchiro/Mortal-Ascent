@@ -66,7 +66,7 @@ BEASTS = {
     "Martial Apprentice": [
         ("Iron-Hide Boar", "normal", "armored"),
         ("Red Fox", "normal", "swift"),
-        ("Cave Bat Swarm", "normal", "swift"),
+        ("Wind-Feather Falcon", "normal", "swift"),
         ("Shadow Wolf", "elite", "hunter"),
         ("Horned Stag", "elite", "brute"),
         ("Mountain Tiger", "beast_king", "hunter"),
@@ -163,7 +163,7 @@ TRAITS = {
     "Old Black Bear": ("Blood", "ape"),
     "Iron-Hide Boar": ("Earth", "wolf"),
     "Red Fox": ("Flame", "wolf"),
-    "Cave Bat Swarm": ("Shadow", "bird"),
+    "Wind-Feather Falcon": ("Shadow", "bird"),
     "Shadow Wolf": ("Shadow", "wolf"),
     "Horned Stag": ("Jade", "wolf"),
     "Mountain Tiger": ("Blood", "cat"),
