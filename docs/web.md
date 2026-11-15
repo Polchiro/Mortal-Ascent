@@ -353,6 +353,11 @@ a lair is fought with `bot/hunt.py`.
    (`art/beasts/roar/`) and blasts a cone of great sound bells at you along a glowing beam, bells pulsing from its
    beak while it holds, feathers scattering across the scene and the camera punching in, then settles. Same rules,
    damage and log line ("Roar") as the quadrupeds' roar.
+   **The serpents hiss** (`ROAR_ANIMATIONS["serpent"]`, from SHOAIB's serpent roar video of a viper; `gather`, `runes`
+   and `hiss` in `fight.js`): each coils back with its head low, then rears high while Qi of its element swirls into its
+   jaws and a circle of glowing runes with spinning golden rings flares up behind it; then it lunges with its
+   open-mouthed picture and breathes a roaring stream of its element at you, droplets spraying through it and mist
+   rolling out along the ground, the camera punching in, and settles. Same rules, damage and log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

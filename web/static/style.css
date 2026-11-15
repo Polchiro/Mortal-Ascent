@@ -990,6 +990,40 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   box-shadow:0 0 6px var(--rc);animation:bfeather 2.3s cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes bfeather{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(var(--s))}8%{opacity:1}
   70%{opacity:.9}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(var(--s))}}
+/* a serpent's hiss (fight.js `runes`, `hiss`) */
+.brune{position:absolute;pointer-events:none;transform:translate(-50%,-50%);mix-blend-mode:screen;
+  animation:brune var(--life) ease-out forwards}
+@keyframes brune{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}14%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  80%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(1.08)}}
+.brune i{position:absolute;inset:0;border-radius:50%}
+.brune .r1{border:3px solid rgba(255,214,120,.95);box-shadow:0 0 14px rgba(255,200,90,.8),0 0 30px var(--rc),inset 0 0 26px var(--rc);
+  background:radial-gradient(circle,transparent 58%,color-mix(in srgb,var(--rc) 35%,transparent) 62%,transparent 64%,transparent 76%,rgba(255,220,140,.35) 78%,transparent 80%);
+  animation:bspin 4s linear infinite}
+.brune .r2{inset:9%;background:repeating-conic-gradient(rgba(255,226,150,.95) 0 1.6deg,transparent 1.6deg 4deg,rgba(255,226,150,.7) 4deg 5deg,transparent 5deg 11deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 80%,#000 81% 92%,transparent 93%);mask:radial-gradient(circle,transparent 0 80%,#000 81% 92%,transparent 93%);
+  filter:drop-shadow(0 0 6px var(--rc));animation:bspin 6s linear infinite reverse}
+.brune .o1,.brune .o2{inset:-6%;border:3px solid rgba(255,214,120,.9);box-shadow:0 0 12px rgba(255,200,90,.8);transform:rotate(25deg) scaleY(.32);
+  animation:borbit 1.4s linear infinite}
+.brune .o2{transform:rotate(-35deg) scaleY(.3);animation-duration:1.9s;animation-direction:reverse}
+@keyframes bspin{to{rotate:360deg}}
+@keyframes borbit{to{rotate:360deg}}
+.bbreath{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;mix-blend-mode:screen;opacity:0;
+  transform-origin:0 50%;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0);
+  clip-path:polygon(0 46%,100% 0,100% 100%,0 54%);
+  background:linear-gradient(90deg,#fff 0,color-mix(in srgb,var(--rc) 60%,#fff) 10%,var(--rc) 35%,color-mix(in srgb,var(--rc) 55%,transparent) 75%,transparent),
+    repeating-linear-gradient(80deg,rgba(255,255,255,.25) 0 6px,transparent 6px 22px);
+  background-size:100% 100%,240px 100%;filter:blur(2px) drop-shadow(0 0 18px var(--rc));
+  animation:bbreath 1.65s ease-out forwards,bchurn .35s linear infinite}
+.bbreath.b2{filter:blur(8px) drop-shadow(0 0 30px var(--rc));clip-path:polygon(0 40%,100% 0,100% 100%,0 60%);opacity:0}
+@keyframes bbreath{0%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0)}10%{opacity:.95;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1)}
+  75%{opacity:.8}100%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1) scaleY(1.2)}}
+@keyframes bchurn{to{background-position:0 0,-240px 0}}
+.bdrop{position:absolute;z-index:5;width:9px;height:9px;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,#fff,var(--rc) 60%,transparent 70%);box-shadow:0 0 8px var(--rc);
+  animation:bdrop 1.4s ease-out forwards}
+@keyframes bdrop{0%{opacity:0;transform:translate(-50%,-50%) scale(var(--s))}10%{opacity:1}80%{opacity:.8}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--s))}}
+.bdust.bmist{filter:drop-shadow(0 0 10px var(--rc));opacity:.55}
 .broar{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%) scaleX(.72);
   background-size:800% 200%;background-repeat:no-repeat;mix-blend-mode:screen;
   filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) sepia(.5) saturate(2.2)}   /* a beast's roar */

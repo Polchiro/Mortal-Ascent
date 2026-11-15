@@ -632,6 +632,47 @@
       }
       camera(p, 1 + 0.07 * big, 1400);
     }
+    /* A serpent's hiss (beasts.ROAR_ANIMATIONS["serpent"], from SHOAIB's serpent roar video). As it rears up, Qi swirls
+       into its jaws (`gather`) and a circle of glowing runes with two spinning golden rings flares up behind it
+       (`runes`). As it lunges, jaws wide (`hiss`): a flash at its mouth and a roaring stream of its element breathed
+       at you, widening as it goes and churning while it holds, droplets spraying through it, mist rolling out along
+       the ground both ways, and the camera punching in. A final hiss is bigger. */
+    function runes(pic, ms) {
+      var c = at(pic, 0.5, 0.48), size = Math.min(1000, pic.height * 1.55);
+      var n = document.createElement('div');
+      n.className = 'brune';
+      n.style.left = c[0] + '%'; n.style.top = c[1] + '%'; n.style.width = n.style.height = size + 'px';
+      n.style.setProperty('--rc', ROAR.color); n.style.setProperty('--life', ms + 'ms');
+      n.innerHTML = '<i class="r1"></i><i class="r2"></i><i class="o1"></i><i class="o2"></i>';
+      scene.insertBefore(n, beastBox);                          // behind the serpent
+      setTimeout(function () { n.remove(); }, ms + 50);
+    }
+    function hiss(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
+      var you = at(fr, 0.5, 0.45);
+      var dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
+      var len = Math.sqrt(dx * dx + dy * dy) * 1.08, ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      wave(p, 'burst', Math.min(800, tall * 0.9 * big), 460, 0, 'broarbig star', 0, 0.9);
+      ['', ' b2'].forEach(function (k, i) {                    // the stream, two churning layers
+        fx('bbreath' + k, p[0], p[1], 1650, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg',
+          '--h': Math.min(700, tall * (0.95 + 0.25 * i) * big) + 'px', 'animation-delay': (60 * i) + 'ms'});
+      });
+      for (var j = 0; j < 46; j++) {                           // droplets spraying through it
+        var q = 0.25 + Math.random() * 0.85, spread = (Math.random() - 0.5) * tall * 0.75 * q * big;
+        var a = ang * Math.PI / 180;
+        fx('bdrop', p[0], p[1], 1400, {'--rc': ROAR.color,
+          '--dx': (Math.cos(a) * len * q - Math.sin(a) * spread) + 'px', '--dy': (Math.sin(a) * len * q + Math.cos(a) * spread) + 'px',
+          '--s': (0.6 + Math.random()).toFixed(2), 'animation-delay': (Math.random() * 900) + 'ms'});
+      }
+      var f = at(pic, 0.5, 0.97);                              // mist rolling out along the ground
+      for (var m = 0; m < 12; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust bmist', f[0] + side * (3 + 2.5 * m), f[1] + 1 - Math.random() * 2, 2000, {'--rc': ROAR.color,
+          '--dx': side * (90 + 35 * m) + 'px', '--s': (0.8 + Math.random() * 0.6).toFixed(2), 'animation-delay': (30 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1450);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -684,6 +725,7 @@
         if (t < 0) return;
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
         if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
+        if (M.style === 'hiss' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); runes(pic, HOLD1 + 300 - at0[1]); }
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
         var sw = 1 + (M.swell || 0) * (t < BURST ? span(t, BURST - 150, BURST) : 1 - span(t, HOLD1, TOTAL));   // thrown toward you
@@ -698,13 +740,15 @@
           if (open !== opened) { opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill); }
         }
         if (t >= BURST && once('burst')) {
-          if (M.style === 'screech') screech(mouth(p), pic, ev.final); else bigRoar(mouth(p), pic, ev.final);
+          if (M.style === 'screech') screech(mouth(p), pic, ev.final);
+          else if (M.style === 'hiss') hiss(mouth(p), pic, ev.final);
+          else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
