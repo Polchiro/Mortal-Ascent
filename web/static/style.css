@@ -1135,7 +1135,9 @@ main.battle.slain .deathfx,main.battle.dying .deathfx{opacity:1}
 main.battle.slain .deathfx{filter:drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(.72) saturate(.75)}
 main.battle.slain .beast img,main.battle.dying .beast img{animation:none!important;transition:none!important}
 main.battle.slain .beast.death-warp>img,main.battle.dying .beast.death-warp>img{opacity:0}
-main.battle.slain .beast.death-fall>img{transform:translateY(-30%) rotate(82deg);filter:brightness(.55) saturate(.6)}
+main.battle.slain .beast.death-fall>img{transform:perspective(900px) translateY(2%) rotateZ(-4deg) rotateX(60deg);transform-origin:50% 100%;filter:brightness(.75) saturate(.7)}
+main.battle.slain .beast.death-fall[data-side="-1"]>img{transform:perspective(900px) translateY(2%) rotateZ(4deg) rotateX(60deg)}
+main.battle.dying .beast.death-fall>img{transform-origin:50% 100%}
 main.battle.slain .beast.death-rout>img{opacity:0}
 main.battle.slain .beast .qiring,main.battle.slain .bresult,main.battle.slain .bfeed,main.battle.slain .beast .dmg,main.battle.slain .fighter .dmg{display:none}
 main.battle.slain .bbar,main.battle.slain .bside,main.battle.slain .binfo{opacity:.35;pointer-events:none}
