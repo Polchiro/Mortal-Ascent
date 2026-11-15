@@ -24,6 +24,13 @@ def test_the_punch_techniques_have_their_looks():
     assert all(technique_fx.TECH_FX[t]["motion"] == "fist" for t in fist)
 
 
+def test_her_palm_push_is_her_own():
+    her = looks.motion_sheet({"gender": "female"}, "palm")
+    assert her["src"].endswith("hero_female_palm.webp") and her["frames"] == 40
+    assert 0 < her["windup"] < her["release"] < her["back"] < her["frames"]
+    assert all(0 < q < 1 for q in her["hand"])
+
+
 def test_the_palm_attack_techniques_share_the_palm_push():
     palm = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Palm" and t["type"] == "attack"}
     assert palm == {"twin_palm_strike", "rolling_thunder_palm", "thousand_shadow_palm", "heaven_rending_palm"}
@@ -96,8 +103,10 @@ def test_the_movement_frames_exist_for_both_cultivators():
         if motion == "deflect":
             continue
         him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
-        if motion in ("palm", "finger"):                  # made from his frames: the same movement, frame for frame
-            assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch and brace are her own)
+        if motion == "finger":                            # made from his frames: the same movement, frame for frame
+            assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch, palm, brace: her own)
+        if "windup" in sheet:
+            assert sheet["jab"] <= sheet["windup"] < sheet["release"] or motion == "finger"   # drawn back, then out
 
 
 def test_a_technique_event_carries_its_damage():

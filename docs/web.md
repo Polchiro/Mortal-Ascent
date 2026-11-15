@@ -297,9 +297,11 @@ a lair is fought with `bot/hunt.py`.
    Yellow, Qi rings at the feet from Mystic, a pillar of Qi and a dimmed scene from Earth, a dark Heaven sky. Heavy
    hits leave the golden crater, Stagger the dizzy ring, Pierce a line of light through the beast. The pictures
    are sized by the beast's box, so they keep their proportions on phones. The damage comes from the server (the
-   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator's punch and brace are her own, from SHOAIB's videos of her (`hero_female_fist.webp`,
-   `hero_female_brace.webp`, `scripts/make_heroine_fist.py`, `scripts/make_heroine_brace.py`). Her palm push and finger jab are his frames in her colours, at her
-   height, with her own head and hair on every frame (`scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
+   `tech` event's `dmg`) and the HP bar drops when the blow lands. The female cultivator's punch, palm push and brace are her own, from SHOAIB's videos of her (`hero_female_fist.webp`,
+   `hero_female_palm.webp`, `hero_female_brace.webp`, `scripts/make_heroine_fist.py`, `scripts/make_heroine_palm.py`,
+   `scripts/make_heroine_brace.py`): her palm push sweeps both arms and sleeves back, then lunges forward with both
+   palms pushed out and holds them there before she rises back to standing. Her finger jab is his frames in her
+   colours, at her height, with her own head and hair on every frame (`scripts/make_heroine_moves.py`). A look with no frames for a movement (both, for the kick so far) plays the
    same pictures through its own three poses. The
    action buttons stay locked until the whole cast has played, so extra clicks never cut it short.
    **A beast's roar** is one shared shockwave for every beast (`roar` in `fight.js`, `art/fx/roar_{ring,double,burst}.webp`
