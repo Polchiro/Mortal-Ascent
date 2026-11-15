@@ -82,7 +82,7 @@ legendary beasts → creatures of Chinese mythology.
 |---|---|---|
 | Normal | Iron-Hide Boar | Armored |
 | Normal | Red Fox | Swift |
-| Normal | Cave Bat Swarm | Swift |
+| Normal | Wind-Feather Falcon | Swift |
 | Elite | Shadow Wolf | Hunter |
 | Elite | Horned Stag | Brute |
 | King | Mountain Tiger | Hunter |

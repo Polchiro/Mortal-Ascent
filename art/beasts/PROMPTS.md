@@ -53,10 +53,10 @@ File: `art/beasts/red_fox.png`
 
 > A sleek crimson fox with ember-tipped fur and a tail trailing faint flame, with a subtle orange fire elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed fur, teeth and claws, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 
-**Cave Bat Swarm** · Normal · Shadow
-File: `art/beasts/cave_bat_swarm.png`
+**Wind-Feather Falcon** · Normal · Shadow
+File: `art/beasts/wind_feather_falcon.png`
 
-> A swirling swarm of black cave bats with glowing violet eyes, one huge bat leading, with a subtle violet shadow elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed feathers and talons, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
+> SHOAIB's design (Gemini): a dark brown falcon streaked with white, long trailing tail feathers, wings raised. Cut out by `scripts/make_quadruped_art.py` (`FLYING`).
 
 **Shadow Wolf** · Elite · Shadow
 File: `art/beasts/shadow_wolf.png`

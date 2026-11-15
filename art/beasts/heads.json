@@ -40,9 +40,14 @@
 0.997
 ],
 "bifang_fire_crane": [
-0.08,
-0.2,
-0.997
+0.04,
+0.12,
+0.996
+],
+"bifang_fire_crane@roar": [
+0.05,
+0.31,
+0.996
 ],
 "black_tortoise_xuanwu": [
 0.16,
@@ -65,14 +70,14 @@
 0.996
 ],
 "bone_vulture": [
-0.05,
+0.04,
 0.47,
-0.995
+0.998
 ],
-"cave_bat_swarm": [
-0.18,
-0.45,
-0.996
+"bone_vulture@roar": [
+0.07,
+0.46,
+0.998
 ],
 "cloud_leopard": [
 0.05,
@@ -85,9 +90,14 @@
 0.995
 ],
 "crimson_fire_hawk": [
-0.05,
-0.48,
-0.995
+0.3,
+0.23,
+0.996
+],
+"crimson_fire_hawk@roar": [
+0.33,
+0.15,
+0.996
 ],
 "earth_splitting_rhino": [
 0.13,
@@ -190,9 +200,14 @@
 0.996
 ],
 "iron_feather_crow": [
-0.07,
-0.27,
-0.997
+0.06,
+0.15,
+0.998
+],
+"iron_feather_crow@roar": [
+0.23,
+0.36,
+0.998
 ],
 "iron_hide_boar": [
 0.12,
@@ -220,9 +235,14 @@
 0.996
 ],
 "kun_peng_fish_of_the_northern_sea": [
-0.05,
-0.3,
-0.996
+0.02,
+0.45,
+0.995
+],
+"kun_peng_fish_of_the_northern_sea@roar": [
+0.27,
+0.48,
+0.995
 ],
 "lightning_weasel": [
 0.1,
@@ -340,8 +360,13 @@
 0.991
 ],
 "spear_beak_crane": [
-0.28,
-0.12,
+0.19,
+0.47,
+0.996
+],
+"spear_beak_crane@roar": [
+0.32,
+0.34,
 0.996
 ],
 "steel_horn_bull": [
@@ -360,8 +385,13 @@
 0.996
 ],
 "storm_eagle": [
-0.23,
-0.4,
+0.04,
+0.37,
+0.996
+],
+"storm_eagle@roar": [
+0.08,
+0.33,
 0.996
 ],
 "stray_dog_pack": [
@@ -390,9 +420,14 @@
 0.994
 ],
 "thunder_hawk": [
-0.1,
-0.7,
-0.997
+0.03,
+0.47,
+0.998
+],
+"thunder_hawk@roar": [
+0.26,
+0.31,
+0.998
 ],
 "thunder_rhino": [
 0.12,
@@ -415,9 +450,14 @@
 0.996
 ],
 "vermilion_bird": [
-0.15,
-0.25,
-0.996
+0.17,
+0.27,
+0.994
+],
+"vermilion_bird@roar": [
+0.36,
+0.24,
+0.994
 ],
 "void_serpent": [
 0.3,
@@ -463,6 +503,16 @@
 0.155,
 0.37,
 0.993
+],
+"wind_feather_falcon": [
+0.02,
+0.34,
+0.996
+],
+"wind_feather_falcon@roar": [
+0.1,
+0.3,
+0.996
 ],
 "wind_leopard": [
 0.05,

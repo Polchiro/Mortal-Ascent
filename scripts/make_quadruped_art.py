@@ -36,13 +36,21 @@ DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "wild_boar
            "cloud_leopard",
            "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "sky_lynx", "ancient_golden_ape", "ghost_fire_wolf",
            "qiongqi_the_winged_tiger", "ancient_flame_lion", "white_tiger")
-FACES_RIGHT = {"nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+# the flying beasts (SHOAIB's redesign of the birds), cut the same way
+FLYING = ("spear_beak_crane", "thunder_hawk", "bone_vulture", "storm_eagle", "iron_feather_crow", "crimson_fire_hawk",
+          "bifang_fire_crane", "vermilion_bird", "kun_peng_fish_of_the_northern_sea", "wind_feather_falcon")
+FACES_RIGHT = {"wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
         "grey_wolf": 0.80, "wild_ox": 0.81, "old_black_bear": 0.80, "cloud_leopard": 0.73,
         "nine_tailed_fox": 0.80, "thunder_rhino": 0.80, "fire_hoof_steed": 0.80, "ancient_golden_ape": 0.80}
 SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right corner, px
+# stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
+# picture's height) the grey stone is dropped and the talons kept
+STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
+ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
+WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped
 
 
@@ -54,13 +62,15 @@ def cut(path, name, session):
     a[h - SPARKLE[1]:, w - SPARKLE[0]:, 3] = 0
     if name in SLAB:
         a = off_the_slab(a, SLAB[name])
+    if name in STONE:
+        a = off_the_stone(a, np.asarray(im).astype(np.float32), STONE[name], name in WARM)
     if name in HAZE:
         a = no_haze(a, np.asarray(im).astype(np.float32))
     alpha = a[..., 3] > 24                                   # the beast itself: its largest piece and what touches it
     lab, n = ndimage.label(ndimage.binary_dilation(alpha, iterations=3))
     if n > 1:
         sizes = ndimage.sum(alpha, lab, range(1, n + 1))
-        keep = np.isin(lab, 1 + np.flatnonzero(sizes >= sizes.max() * 0.03))
+        keep = np.isin(lab, 1 + np.flatnonzero(sizes >= sizes.max() * (1.0 if name in ONE_PIECE else 0.03)))
         a[..., 3] = np.where(keep, a[..., 3], 0)
     out = Image.fromarray(a, "RGBA")
     a = np.asarray(out).copy()
@@ -73,6 +83,25 @@ def cut(path, name, session):
     out = out.crop((0, 0, out.width, int(solid.max()) + 1))     # paws on the bottom edge, not a faint shadow below them
     out.thumbnail((MAX, MAX), Image.LANCZOS)
     return out
+
+
+def off_the_stone(a, src, top, warm=False):
+    """Below `top`, drop the stone (unsaturated grey, and what the cut-out left of it half-transparent) and anything
+    no longer joined to the beast above the line: the talons are solid and joined to the legs."""
+    h = a.shape[0]
+    y = int(h * top)
+    sat = src.max(-1) - src.min(-1)
+    stone = (sat < 38) & (src[..., 2] - src[..., 0] < 25)                 # grey, not the blue of lightning or flame
+    if warm:
+        stone |= src[..., 0] - src[..., 1] < 45                           # beige stone: red and green alike
+    below = np.zeros(a.shape[:2], bool)
+    below[y:] = True
+    a[..., 3] = np.where(below & (stone | (a[..., 3] < 200)), 0, a[..., 3])   # the stone, and its half-cut shading
+    keep = a[..., 3] > 60
+    lab, n = ndimage.label(keep)
+    above = set(np.unique(lab[:y][keep[:y]]))                              # pieces that reach above the line: the beast
+    a[..., 3] = np.where(np.isin(lab, list(above - {0})), a[..., 3], 0)
+    return a
 
 
 def no_haze(a, src):
@@ -137,13 +166,14 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)
             continue
         if roar:
             SLAB.clear(); SLAB.update(ROAR_SLAB)
+            STONE.clear()                                   # the roar pictures are drawn with nothing underfoot
             FACES_RIGHT.symmetric_difference_update(ROAR_FLIP & {name})
         out = cut(path, name, session)
         if roar:
