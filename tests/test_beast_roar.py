@@ -96,3 +96,15 @@ def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
         roar = os.path.join(ROOT, "art", "beasts", "roar", slug + ".png")
         assert os.path.exists(roar) and slug + "@roar" in heads, name
         assert Image.open(roar).size == Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).size, name
+
+
+def test_the_redesigned_flying_beasts_face_left_and_stand_on_their_feet():
+    from PIL import Image
+    import numpy as np
+    import scripts.make_quadruped_art as art
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    for slug in art.FLYING:
+        a = np.asarray(Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).convert("RGBA"))[..., 3]
+        assert max(a.shape) <= 900 and a[-3:].max() > 128, slug                # trimmed: feet on the bottom edge
+        assert heads[slug][0] < 0.35, slug                                     # its beak at the left: it faces left
+    assert "cave_bat_swarm" not in art.FLYING                                  # keeps its own art
