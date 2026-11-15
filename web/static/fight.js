@@ -606,27 +606,68 @@
       }
       return throat;
     }
+    /* The two greatest birds screech in their own way (SHOAIB: the strongest beasts in the game should be unique).
+       The Vermilion Bird breathes a phoenix-fire blast, crimson with a golden heart, embers streaming along it and a
+       ring of fire bursting off its wings. The Kun-Peng, the fish of the northern sea, darkens the sky and screeches a
+       tide: a deep-sea blast with a pale heart, a whirlpool turning round it, spray flying and great waves rolling
+       out along the ground from it and from where the tide strikes you. */
+    var SCREECH_KINDS = {
+      vermilion_bird: {tint: '#ff3d1f', core: '#ffc23a', feather: '#ff6a2a', scale: 1.15, special: function (p, you, pic, len, ang, big) {
+        var c = at(pic, 0.5, 0.45), sz = Math.min(900, pic.width * 0.9 * big);
+        fx('bnova', c[0], c[1], 1500, {'--rc': '#ff5a1f', '--s': sz + 'px', 'animation-delay': '120ms'});
+        wave(c, 'ring', sz * 1.2, 700, 160, 'broarbig', 0, 0.5);
+        var a = ang * Math.PI / 180;
+        for (var j = 0; j < 60; j++) {                         // embers streaming along the blast
+          var q = Math.random(), spread = (Math.random() - 0.5) * pic.height * 0.7 * (0.3 + q);
+          fx('bdrop', p[0], p[1], 1500, {'--rc': j % 3 ? '#ff7a1a' : '#ffd25a',
+            '--dx': (Math.cos(a) * len * q - Math.sin(a) * spread) + 'px', '--dy': (Math.sin(a) * len * q + Math.cos(a) * spread - 40 * Math.random()) + 'px',
+            '--s': (0.4 + Math.random() * 0.8).toFixed(2), 'animation-delay': (Math.random() * 1000) + 'ms'});
+        }
+      }},
+      kun_peng_fish_of_the_northern_sea: {tint: '#1b8fd6', core: '#9ff4ff', feather: '#4fc8e8', scale: 1.4, special: function (p, you, pic, len, ang, big) {
+        fx('bdeep', 0, 0, 2400, {});                           // the sky darkens
+        var c = at(pic, 0.5, 0.5);
+        for (var i = 0; i < 6; i++) {                          // a whirlpool turning round it
+          fx('bcoil', c[0], c[1] + 10 - i * 4, 1800, {'--rc': i % 2 ? '#9ff4ff' : '#1b8fd6', '--w': pic.width * (1.3 - 0.12 * i) + 'px',
+            '--h': pic.height * 0.3 + 'px', '--life': '1800ms', '--r0': (i * 60) + 'deg', 'animation-delay': (i * 60) + 'ms'});
+        }
+        var f = at(pic, 0.5, 0.98), h = at(fr, 0.5, 0.98);
+        [[f, 0], [h, 380]].forEach(function (w) {              // great waves rolling out along the ground
+          [0, 240].forEach(function (d, i) {
+            fx('bquake', w[0][0], w[0][1], 1700, {'--rc': '#2fb4ff', '--s': Math.min(1500, pic.width * (2.2 - 0.5 * i) * big) + 'px',
+              'animation-delay': (w[1] + d) + 'ms'});
+          });
+        });
+        for (var k = 0; k < 70; k++) {                         // spray flying where the tide strikes
+          var r = Math.random() * Math.PI * 2, dd = 60 + Math.random() * 260;
+          fx('bdrop', you[0], you[1], 1500, {'--rc': k % 2 ? '#9ff4ff' : '#2fb4ff', '--dx': Math.cos(r) * dd + 'px',
+            '--dy': (Math.sin(r) * dd * 0.7 - 30) + 'px', '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (250 + Math.random() * 700) + 'ms'});
+        }
+      }},
+    };
     function screech(p, pic, final) {
       var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
       var you = at(fr, 0.5, 0.42);                             // where it is aimed: your middle
       var dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
       var len = Math.sqrt(dx * dx + dy * dy), ang = Math.atan2(dy, dx) * 180 / Math.PI;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
-      var beam = fx('bbeam', p[0], p[1], 1500, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg', '--h': Math.max(16, tall * 0.11 * big) + 'px'});
-      wave(p, 'burst', Math.min(900, tall * 1.1 * big), 480, 0, 'broarbig star', 0, 0.9);    // the blast at its beak
-      for (var i = 0; i < 6; i++) {                            // the cone: great bells of sound fired along the beam
-        var q = 0.06 + 0.15 * i, size = Math.min(1300, tall * (0.8 + 0.42 * i) * big);
-        var w = wave([p[0] + (you[0] - p[0]) * q, p[1] + (you[1] - p[1]) * q], i % 2 ? 'double' : 'ring', size, 760, 30 + 60 * i, 'broarbig cone', 4, 1);
-        w.style.setProperty('--ang', ang + 'deg');
-      }
-      [360, 640, 920, 1200].forEach(function (d, i) {         // and bells pulsing out of its beak while it holds
-        wave(p, i % 2 ? 'double' : 'ring', Math.min(1300, tall * (1.4 + 0.3 * i) * big), 820, d, 'broarbig cone', 2, 0.9)
+      var kind = SCREECH_KINDS[ROAR.slug] || {tint: ROAR.color}, scale = (kind.scale || 1) * big;
+      wave(p, 'burst', Math.min(700, tall * 0.8 * big), 460, 0, 'broarbig star', 9, 0.55);    // the blast at its beak
+      var fy = Math.abs(ang) > 90 ? -1 : 1, wh = Math.min(560, Math.max(200, len * 0.42)) * scale;
+      ['bwind glow', 'bwind', 'bwind tint'].forEach(function (k) {   // the screech: a spiralling blast of wind, from SHOAIB's picture
+        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--rc': kind.tint, '--h': wh + 'px'});
+      });
+      if (kind.core) fx('bwind tint core', p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy,
+        '--rc': kind.core, '--h': wh * 0.55 + 'px'});      // a hotter heart down its middle
+      [420, 900].forEach(function (d, i) {                     // bells pulsing out of its beak while it holds
+        wave(p, i % 2 ? 'double' : 'ring', Math.min(1100, tall * (1.2 + 0.3 * i) * big), 820, d, 'broarbig cone', 2, 0.6)
           .style.setProperty('--ang', ang + 'deg');
       });
+      if (kind.special) kind.special(p, you, pic, len, ang, big);
       var c = at(pic, 0.5, 0.45);                              // its feathers torn loose, scattering across the scene
       for (var j = 0; j < 40; j++) {
         var a = Math.random() * Math.PI * 2, d = (120 + Math.random() * 320) * big;
-        fx('bfeather', c[0] + (Math.random() - 0.5) * 8, c[1] + (Math.random() - 0.5) * 10, 2300, {'--rc': ROAR.color,
+        fx('bfeather', c[0] + (Math.random() - 0.5) * 8, c[1] + (Math.random() - 0.5) * 10, 2300, {'--rc': kind.feather || kind.tint,
           '--dx': Math.cos(a) * d + 'px', '--dy': (Math.sin(a) * d * 0.6 + 60 + Math.random() * 90) + 'px',
           '--rot': (Math.random() * 900 - 450) + 'deg', '--s': (0.7 + Math.random() * 0.8).toFixed(2), 'animation-delay': (Math.random() * 260) + 'ms'});
       }
@@ -869,7 +910,7 @@
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
