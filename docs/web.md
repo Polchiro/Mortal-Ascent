@@ -365,7 +365,8 @@ a lair is fought with `bot/hunt.py`.
    damage and log line.
    **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
    `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
-   then rears and roars with its open-mouthed picture, a blazing blast of its element at you with lightning streaks
+   then rears and roars with its open-mouthed picture, a torrent of blue and gold Qi and spirit dragons blasting at you
+   (`art/fx/dragon_blast.webp`, from SHOAIB's picture) with lightning streaks
    fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
    punching in, and settles. Same rules, damage and log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by

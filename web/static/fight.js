@@ -699,10 +699,11 @@
        element coil up round its body (`coil`) and Qi swirls into its jaws (`gather`). As it roars (`storm`): a flash
        and a blazing blast of its element at you, lightning streaks fanning out round it, then its whole body bursting
        into a sphere of light with spikes and rings, mist pooling at its base, and the camera punching in. */
+    var DRAGON_BLUE = '#5fd0ff', DRAGON_GOLD = '#ffd98a';      // the palette of SHOAIB's dragon blast picture
     function coil(pic, ms) {
       var c = at(pic, 0.45, 0.5);
       for (var i = 0; i < 4; i++) {
-        fx('bcoil', c[0], c[1] + 8 - i * 6, ms, {'--rc': ROAR.color, '--w': pic.width * (0.95 - 0.12 * i) + 'px',
+        fx('bcoil', c[0], c[1] + 8 - i * 6, ms, {'--rc': i % 2 ? DRAGON_GOLD : DRAGON_BLUE, '--w': pic.width * (0.95 - 0.12 * i) + 'px',
           '--h': pic.height * 0.32 + 'px', '--life': ms + 'ms', '--r0': (i * 70) + 'deg', 'animation-delay': (i * 90) + 'ms'});
       }
     }
@@ -713,19 +714,24 @@
       var len = Math.sqrt(dx * dx + dy * dy) * 1.08, ang = Math.atan2(dy, dx) * 180 / Math.PI;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(700, tall * 0.8 * big), 480, 0, 'broarbig star', 9, 0.6);
-      fx('bbreath', p[0], p[1], 1400, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg', '--h': Math.min(420, tall * 0.55 * big) + 'px'});
-      for (var j = 0; j < 9; j++) {                            // lightning streaks fanning out round the blast
-        fx('bstreak', p[0], p[1], 1300, {'--rc': ROAR.color, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
+      var fy = Math.abs(ang) > 90 ? -1 : 1;                    // keep the blast picture the right way up
+      ['bblast glow', 'bblast'].forEach(function (k) {         // the blast: a torrent of blue and gold Qi and spirit dragons
+        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy,
+          '--h': Math.min(620, Math.max(260, len * 0.5)) * big + 'px'});
+      });
+      for (var j = 0; j < 12; j++) {                           // lightning streaks fanning out round the blast
+        fx('bstreak', p[0], p[1], 1300, {'--rc': j % 2 ? DRAGON_GOLD : DRAGON_BLUE, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
           '--ang': (ang + (Math.random() - 0.5) * 50) + 'deg', 'animation-delay': (40 + Math.random() * 500) + 'ms'});
       }
-      var c = at(pic, 0.45, 0.5), sz = Math.min(950, pic.width * 1.05 * big);
-      fx('bnova', c[0], c[1], 1850, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '520ms'});
-      wave(c, 'ring', sz * 1.1, 700, 520, 'broarbig', 0, 0.8);
-      wave(c, 'double', sz * 1.3, 800, 760, 'broarbig', 0, 0.6);
+      var c = at(pic, 0.45, 0.5), sz = Math.min(800, pic.width * 0.8 * big);
+      fx('bnova', c[0], c[1], 1850, {'--rc': DRAGON_BLUE, '--s': sz + 'px', 'animation-delay': '520ms'});
+      fx('bnova', c[0], c[1], 1650, {'--rc': DRAGON_GOLD, '--s': sz * 0.55 + 'px', 'animation-delay': '620ms'});
+      wave(c, 'ring', sz * 1.2, 700, 520, 'broarbig', 0, 0.45);
+      wave(c, 'double', sz * 1.4, 800, 760, 'broarbig', 0, 0.3);
       var f = at(pic, 0.5, 0.98);                              // mist pooling at its base
       for (var m = 0; m < 10; m++) {
         var side = m % 2 ? 1 : -1;
-        fx('bdust bmist', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 2000, {'--rc': ROAR.color,
+        fx('bdust bmist', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 2000, {'--rc': DRAGON_BLUE,
           '--dx': side * (40 + 22 * m) + 'px', '--s': (0.9 + Math.random() * 0.6).toFixed(2), 'animation-delay': (600 + 30 * m) + 'ms'});
       }
       camera(p, 1 + 0.07 * big, 1500);
@@ -809,7 +815,7 @@
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
