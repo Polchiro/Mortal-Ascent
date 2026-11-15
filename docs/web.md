@@ -336,7 +336,10 @@ a lair is fought with `bot/hunt.py`.
    body (`beasts.ROAR_ANIMATIONS["quadruped"]`, measured from SHOAIB's quadruped roar video of a boar, then shortened
    to a turn), played by every beast in `beasts.QUADRUPEDS` with its **own picture**: it dips its head and crouches,
    rears its head up as the roar bursts from its own mouth (with dust kicked up at its feet and a shake of the scene),
-   holds it trembling, and settles back. The picture is moved whole about its hind feet (turned and shifted, never
+   holds it trembling, and settles back. The burst fills the scene as the roar video's does (`bigRoar`): a white flash,
+   a spiky starburst bigger than the beast, two hollow rings rolling out past its whole body (it stays in view inside
+   them), speed lines radiating across the scene, the camera punching in on it with a hard shake, heavy dust, the
+   beast swelling toward you and you pushed back by the blast; a final roar is bigger still. The picture is moved whole about its hind feet (turned and shifted, never
    bent, stretched or cropped), so any body shape or size works; the wave follows the mouth as the head comes up. A
    beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds; every other quadruped swaps
    to its own **open-mouthed roar picture** (`art/beasts/roar/<slug>.png`, SHOAIB's, cut by

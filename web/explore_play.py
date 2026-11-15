@@ -81,7 +81,7 @@ def beast_roar(e):
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",
-            "motion": {"ms": move["ms"], "burst": move["burst"], "hold": move["hold"],
+            "motion": {"ms": move["ms"], "burst": move["burst"], "hold": move["hold"], "swell": move.get("swell", 0),
                        "keys": [list(k) for k in move["keys"]]} if move else None}
 
 

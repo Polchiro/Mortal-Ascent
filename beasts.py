@@ -259,18 +259,19 @@ DEATH_CATEGORY = {
 # moved whole (never bent, stretched or cropped) about its hind feet, with the shared roar wave from its own mouth
 # (art/beasts/heads.json). Measured from SHOAIB's quadruped roar video (a boar, scripts/make_roar_fx.py): it dips its
 # head and crouches into the ground, rears its head up as the roar bursts out, holds it there trembling with its jaws
-# wide, and settles back, then shortened to fit a turn. Keys, from rest:
+# wide, and settles back. The burst fills the scene as the video's does (fight.js `bigRoar`): a starburst and rings
+# spreading past the whole beast, speed lines, a white flash, the camera punching in, dust rolling out. Keys, from rest:
 #   ms: how long each key takes to reach the next.  burst: the key the roar wave and the dust go out on.
 #   hold: the key held trembling.  keys: per key (lean toward the cultivator, as a share of the picture's width;
 #   drop, a share of its height, down is +; tilt in degrees, head up is +).
 ROAR_ANIMATIONS = {
-    "quadruped": {"ms": [360, 170, 900, 450], "burst": 2, "hold": 2, "keys": [
+    "quadruped": {"ms": [450, 150, 1500, 550], "burst": 2, "hold": 2, "keys": [
         (0.000, 0.000, 0.0),        # standing
-        (0.025, 0.025, -4.0),       # the dip: head down, weight on the forelegs
-        (-0.015, -0.015, 10.0),     # the roar: head flung up, rocked back on the hind legs
-        (-0.012, -0.012, 8.5),      # held, trembling
+        (0.030, 0.030, -5.0),       # the dip: head down, weight on the forelegs, gathering itself
+        (-0.025, -0.020, 11.0),     # the roar: head flung up, thrown forward at you, jaws wide
+        (-0.020, -0.016, 9.5),      # held, trembling, for as long as the video holds it
         (0.000, 0.000, 0.0),        # settled
-    ]},
+    ], "swell": 0.08},              # it swells this much bigger as it roars (thrown toward you, as in the video)
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",

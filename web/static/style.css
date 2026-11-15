@@ -952,6 +952,21 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tdizzy{position:absolute;z-index:4;width:9%;aspect-ratio:1;border-radius:50%;border:4px dotted var(--tc);pointer-events:none;transform:translate(-50%,-50%) scaleY(.4);animation:tdizzy 1.3s linear forwards}
 @keyframes tdizzy{0%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(0)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scaleY(.4) rotate(540deg)}}
 .casting.cast-fx[data-cast*='"Heaven"'] .castcall{transform:translateX(-50%) scale(1.25);box-shadow:0 0 30px rgba(226,168,255,.7)}
+/* the quadruped roar's burst (fight.js `bigRoar`), as big as the roar video's */
+.broarbig{position:absolute;z-index:5;pointer-events:none;transform:translate(-50%,-50%);background-size:800% 200%;
+  background-repeat:no-repeat;mix-blend-mode:screen;filter:drop-shadow(0 0 10px var(--rc)) drop-shadow(0 0 30px var(--rc))}
+.broarbig.star{filter:drop-shadow(0 0 14px #fff) drop-shadow(0 0 34px var(--rc))}
+.broarflash{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.8),rgba(255,255,255,.3) 14%,rgba(255,255,255,.06) 38%,transparent 65%);
+  animation:broarflash .52s ease-out forwards}
+@keyframes broarflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+.broarlines{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
+  background:repeating-conic-gradient(from 3deg at var(--x) var(--y),rgba(255,255,255,.5) 0deg .45deg,transparent .45deg 6.3deg),
+    repeating-conic-gradient(from 1deg at var(--x) var(--y),rgba(255,255,255,.32) 0deg .3deg,transparent .3deg 9.7deg);
+  -webkit-mask:radial-gradient(circle at var(--x) var(--y),transparent 0 14%,#000 26%,#000 50%,transparent 85%);
+  mask:radial-gradient(circle at var(--x) var(--y),transparent 0 14%,#000 26%,#000 50%,transparent 85%);
+  filter:drop-shadow(0 0 4px var(--rc));animation:broarlines 1.3s ease-out forwards}
+@keyframes broarlines{0%{opacity:0;transform:scale(.8) rotate(-2deg)}12%{opacity:.85}45%{opacity:.6}100%{opacity:0;transform:scale(1.25) rotate(3deg)}}
 .broar{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%) scaleX(.72);
   background-size:800% 200%;background-repeat:no-repeat;mix-blend-mode:screen;
   filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) sepia(.5) saturate(2.2)}   /* a beast's roar */

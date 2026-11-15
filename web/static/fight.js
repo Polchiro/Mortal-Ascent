@@ -527,6 +527,59 @@
        the shared keys (eased between): it dips its head and crouches, rears its head up as the roar bursts from its
        own mouth (the wave, tinted with its element, and dust kicked up at its feet), holds it there trembling, and
        settles. A beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds. */
+    /* The roar's burst, as big as SHOAIB's roar video: it fills the scene, not just the beast's head. At its mouth
+       (p, % of the scene) a blinding white flash, a spiky starburst bigger than the beast, two rings rolling out past
+       its whole body, speed lines radiating across the scene, the camera punching in on it with a hard shake, and dust
+       rolling out along the ground. The rings and lines take a glow of its element. A final roar is bigger still. */
+    function wave(p, file, size, ms, delay, cls, from, alpha) {     // from: the first frame (a ring already open)
+      from = from || 0; alpha = alpha || 1;
+      var n = document.createElement('div');
+      n.className = cls || 'broarbig';
+      n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = n.style.height = size + 'px';
+      n.style.backgroundImage = 'url(/art/fx/roar_' + file + '.webp)'; n.style.opacity = 0;
+      n.style.setProperty('--rc', ROAR.color);
+      scene.appendChild(n);
+      var t0 = performance.now() + (delay || 0);
+      (function frame(now) {
+        if (!n.isConnected) return;
+        var k = (now - t0) / ms;
+        if (k >= 0) {
+          k = Math.min(1, k);
+          var f = Math.min(ROAR_FRAMES - 1, from + Math.floor(k * (ROAR_FRAMES - from)));
+          n.style.backgroundPosition = (f % 8) / 7 * 100 + '% ' + Math.floor(f / 8) * 100 + '%';
+          n.style.opacity = (k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4) * alpha;
+        }
+        if (k < 1) requestAnimationFrame(frame); else n.remove();
+      })(performance.now());
+      return n;
+    }
+    function bigRoar(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
+      var at2 = function (n) { n.style.setProperty('--x', p[0] + '%'); n.style.setProperty('--y', p[1] + '%'); n.style.setProperty('--rc', ROAR.color); };
+      var flash = fx('broarflash', 0, 0, 520); at2(flash);
+      var lines = fx('broarlines', 0, 0, 1300); at2(lines);
+      var ahead = tall * 0.25 / sr.width * 100;                // centred just in front of the jaws, so they stay in view
+      var q = [p[0] - ahead, p[1]];
+      wave(q, 'burst', Math.min(1100, tall * 1.6 * big), 520, 0, 'broarbig star', 0, 0.85);
+      wave(q, 'double', Math.min(1500, tall * 2.6 * big), 900, 140, 'broarbig', 7, 0.8);    // hollow rings: the beast
+      wave(q, 'ring', Math.min(1800, tall * 3.4 * big), 1000, 320, 'broarbig', 7, 0.7);     // stays in view inside them
+      var f = at(pic, 0.5, 0.97);                              // dust rolling out along the ground, both ways
+      for (var j = 0; j < 12; j++) {
+        var side = j % 2 ? 1 : -1;
+        fx('bdust', f[0] + side * (3 + 2.5 * j), f[1] - 1 - Math.random() * 3, 1900, {'--dx': side * (50 + 26 * j) + 'px',
+          '--s': (1.4 + Math.random() * 0.9).toFixed(2), 'animation-delay': (25 * j) + 'ms'});
+      }
+      if (scene.animate) {                                     // the camera punches in on it and shakes
+        scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
+        var z = 1 + 0.09 * big, k = [];
+        [[0, 1, 0, 0], [0.08, z, -10, 7], [0.16, z, 9, -6], [0.24, z, -8, 5], [0.34, z, 6, -4], [0.46, z * 0.995, -4, 3],
+         [0.6, z * 0.99, 3, -2], [0.75, 1 + (z - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
+          k.push({offset: a[0], transform: 'translate(' + a[2] + 'px,' + a[3] + 'px) scale(' + a[1] + ')'});
+        });
+        var anim = scene.animate(k, {duration: 1500, easing: 'ease-out'});
+        anim.onfinish = function () { scene.style.transformOrigin = ''; };
+      }
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -580,18 +633,25 @@
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
-        beast.style.transform = 'translate(' + (-p[0] * pic.width + shake) + 'px,' + (p[1] * pic.height) + 'px) rotate(' + p[2] + 'deg)';   // clockwise: a left-facing head goes up
+        var sw = 1 + (M.swell || 0) * (t < BURST ? span(t, BURST - 150, BURST) : 1 - span(t, HOLD1, TOTAL));   // thrown toward you
+        beast.style.transform = 'translate(' + (-p[0] * pic.width + shake) + 'px,' + (p[1] * pic.height) + 'px) rotate(' + p[2] + 'deg) scale(' + sw + ')';   // clockwise: a left-facing head goes up
+        if (t >= BURST && t < TOTAL) {                         // the blast pushes you back, then you find your feet
+          var push = t < HOLD1 ? ease(span(t, BURST, BURST + 220)) : 1 - span(t, HOLD1, TOTAL);
+          hero(-0.022 * W * push + (t < HOLD1 ? Math.sin(t / 23) * 1.2 : 0), 0);
+        }
         if (bposes && bposes.roar) bpose(t >= BURST - 60 && t < HOLD1 ? 'roar' : home);
         else if (roarPic && roarPic.complete && roarPic.naturalWidth) {      // its own open-mouthed roar picture
           var open = t >= BURST - 60 && t < HOLD1;
           if (open !== opened) { opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill); }
         }
         if (t >= BURST && once('burst')) {
-          roar(mouth(p), ev.final); dust();
+          bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
+        hero(0, 0);
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
