@@ -57,7 +57,9 @@ _heads = None
 def beast_roar(e):
     """What a beast's roar needs on the page (fight.js `roar`, `roaring`): where its mouth is on its picture
     (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, its element's colour, and its body's
-    shared roar movement (beasts.ROAR_ANIMATIONS; None: it only rears back a little)."""
+    shared roar movement (beasts.ROAR_ANIMATIONS; None: it only rears back a little). `art`: its own open-mouthed
+    roar picture (art/beasts/roar/<slug>.png, scripts/make_quadruped_art.py --roar), shown while it roars, with
+    its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture."""
     global _heads
     if _heads is None:
         try:
@@ -71,7 +73,12 @@ def beast_roar(e):
     import beasts
     cat = beasts.roar_category(e.get("name") or "")
     move = beasts.ROAR_ANIMATIONS[cat] if cat else None
+    slug = e.get("slug") or ""
+    roar_pic = os.path.join(os.path.dirname(POSES_DIR), "roar", slug + ".png") if move and slug else None
+    opened = _heads.get(slug + "@roar")
     return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
+            "art": f"/art/beasts/roar/{slug}.png" if roar_pic and os.path.exists(roar_pic) else None,
+            "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",
             "motion": {"ms": move["ms"], "burst": move["burst"], "hold": move["hold"],

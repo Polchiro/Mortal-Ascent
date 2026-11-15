@@ -72,3 +72,15 @@ def test_the_redesigned_quadrupeds_face_left_and_stand_on_their_feet():
         assert a[-3:].max() > 128 and a[:, :3].max() > 0, name                 # trimmed: paws on the bottom edge
         x, y = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))[beasts.slug(name)][:2]
         assert x < 0.3, name                                                   # the mouth is at the left: it faces left
+
+
+def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
+    name = "Wild Boar"
+    slug = beasts.slug(name)
+    r = explore_play.beast_roar({"name": name, "slug": slug, "element": "Earth", "tier": "normal"})
+    path = os.path.join(ROOT, "art", "beasts", "roar", slug + ".png")
+    assert (r["art"] == f"/art/beasts/roar/{slug}.png") == os.path.exists(path)
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
+        assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
+    assert explore_play.beast_roar({"name": "Storm Eagle", "slug": "storm_eagle", "tier": "normal"})["art"] is None
