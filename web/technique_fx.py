@@ -9,8 +9,10 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
              or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`);
              "finger" his finger-jab video, a lunge with two fingers thrust out; "brace" his brace video, arms
              crossed up into guard in a wide stance: the Body defense techniques that stand their ground, played
-             inside the beast's attack (fight.js `braced`)
-    play     how fight.js `technique` plays the pictures (PLAYS)
+             inside the beast's attack (fight.js `braced`); "deflect" her deflection video (HER_FX below, hers
+             only): she turns into the blow, meets it and carries it aside with her sleeve, inside the beast's
+             attack (fight.js `deflected`)
+    play    how fight.js `technique` plays the pictures (PLAYS)
     art      its pictures in art/fx/tech/ (scripts/make_fist_fx.py), the first being its main one
     punches  how many dragons fly from each punch, one punch after another (Nine Dragons Ascending Fist only)
     mirror   the main picture faces left and is turned to face the beast
@@ -19,8 +21,9 @@ import technique as techniques
 
 PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend",
          "sweep", "streak", "whirl", "meteor", "beam",
-         "dust", "mist", "sheen", "roots", "bell", "shell", "lotus", "parry")
-MOTIONS = ("fist", "palm", "kick", "finger", "brace")
+         "dust", "mist", "sheen", "roots", "bell", "shell", "lotus", "parry",
+         "glance", "stream", "crane", "moon", "hands", "void")
+MOTIONS = ("fist", "palm", "kick", "finger", "brace", "deflect")
 
 TECH_FX = {
     # the punch techniques, from SHOAIB's designs (Gemini)
@@ -58,6 +61,21 @@ TECH_FX = {
     "immortal_lotus_body": {"motion": "brace", "play": "lotus", "art": ["immortal_lotus_body"]},
 }
 
+# Looks one cultivator has in place of the above (or where the above has none). The female cultivator's deflections,
+# from SHOAIB's designs (Gemini, scripts/make_deflect_fx.py), all played with her one deflection (looks.MOTION_SHEETS
+# "deflect"; fight.js `deflected`): inside the beast's attack she turns into the blow, meets it and carries it aside
+# with her sleeve, then settles back on guard; no guarding stance. The male cultivator keeps his looks for them:
+# Parrying Arm's brace, and the CSS jade barrier of the five Palm deflections.
+HER_FX = {
+    "parrying_arm": {"motion": "deflect", "play": "glance", "art": ["parrying_arm"]},
+    "flowing_stream_palm": {"motion": "deflect", "play": "stream", "art": ["flowing_stream_palm"]},
+    "crane_wing_deflection": {"motion": "deflect", "play": "crane", "art": ["crane_wing_deflection"]},
+    "moon_mirror_palm": {"motion": "deflect", "play": "moon", "art": ["moon_mirror_palm"]},
+    "thousand_hands_deflection": {"motion": "deflect", "play": "hands", "art": ["thousand_hands_deflection"]},
+    "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance"]},
+}
+BY_GENDER = {"female": HER_FX}
+
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle
 GRADE_MS = {"Mortal": 1100, "Yellow": 1300, "Mystic": 1600, "Earth": 2100, "Heaven": 2700}
 
@@ -68,10 +86,11 @@ def technique_id(name):
     return _BY_NAME.get(name)
 
 
-def of(name, grade):
-    """The look of the technique with this name, for the page; None to keep the CSS look."""
+def of(name, grade, gender=None):
+    """The look of the technique with this name, for the page, as the cultivator of this gender plays it (looks.GENDERS);
+    None to keep the CSS look."""
     tid = technique_id(name)
-    fx = TECH_FX.get(tid)
+    fx = BY_GENDER.get(gender, {}).get(tid) or TECH_FX.get(tid)
     if not fx:
         return None
     return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),

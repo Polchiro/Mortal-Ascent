@@ -84,13 +84,17 @@ def test_a_look_carries_its_grade_length_and_art_urls():
 def test_the_movement_frames_exist_for_both_cultivators():
     from PIL import Image
     for motion in looks.MOTION_SHEETS:
-        for gender in ("male", "female"):
+        genders = ("female",) if motion == "deflect" else ("male", "female")      # the deflection is hers only
+        assert set(looks.MOTION_SHEETS[motion]) == set(genders)
+        for gender in genders:
             sheet = looks.motion_sheet({"gender": gender}, motion)
             path = os.path.join(ROOT, sheet["src"].lstrip("/"))
             assert gender in sheet["src"] and Image.open(path).size == (320 * sheet["cols"], 360 * sheet["rows"])
             assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
             assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
             assert all(0 < q < 1 for q in sheet["hand"])
+        if motion == "deflect":
+            continue
         him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
         if motion in ("palm", "finger"):                  # made from his frames: the same movement, frame for frame
             assert all(him[k] == her[k] for k in ("frames", "jab", "release", "back"))   # (her punch and brace are her own)
@@ -109,5 +113,40 @@ def test_a_technique_event_carries_its_damage():
 
 def test_technique_data_is_untouched_by_the_looks():
     """The looks add nothing to the game's technique data (names, grades, schools, effects stay as they are)."""
-    for tid in technique_fx.TECH_FX:
+    for tid in list(technique_fx.TECH_FX) + list(technique_fx.HER_FX):
         assert set(technique.TECHNIQUES[tid]) == {"name", "type", "grade", "school", "effect"}
+
+
+DEFLECTIONS = {"parrying_arm", "flowing_stream_palm", "crane_wing_deflection", "moon_mirror_palm",
+               "thousand_hands_deflection", "void_mirror_stance"}
+
+
+def test_her_deflections_are_the_six_deflection_techniques_with_their_art():
+    assert set(technique_fx.HER_FX) == DEFLECTIONS
+    for tid, fx in technique_fx.HER_FX.items():
+        assert technique.TECHNIQUES[tid]["type"] == "defense"
+        assert fx["motion"] == "deflect" and fx["play"] in technique_fx.PLAYS
+        assert fx["art"] == [tid]                                     # her own picture for each, no placeholder
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "tech", tid + ".webp")), tid
+
+
+def test_she_deflects_and_he_keeps_his_looks():
+    for tid in DEFLECTIONS:
+        t = technique.TECHNIQUES[tid]
+        her = technique_fx.of(t["name"], t["grade"], "female")
+        assert her["motion"] == "deflect" and her["art"] == [f"/art/fx/tech/{tid}.webp"]
+        assert technique_fx.of(t["name"], t["grade"], "male") == technique_fx.of(t["name"], t["grade"])
+    assert technique_fx.of("Parrying Arm", "Mortal", "male")["motion"] == "brace"       # his brace and sparks
+    assert technique_fx.of("Moon Mirror Palm", "Mystic", "male") is None              # his CSS jade barrier
+    assert looks.motion_sheet({"gender": "male"}, "deflect") is None
+    # every other technique looks the same for both
+    for tid, t in technique.TECHNIQUES.items():
+        if tid not in DEFLECTIONS:
+            assert technique_fx.of(t["name"], t["grade"], "female") == technique_fx.of(t["name"], t["grade"], "male")
+
+
+def test_her_deflection_meets_the_blow_then_carries_it_aside_and_recovers():
+    d = looks.motion_sheet({"gender": "female"}, "deflect")
+    assert 0 < d["jab"] < d["release"] < d["sweep"] < d["back"] < d["frames"]
+    assert all(0 < q < 1 for q in d["hand"] + d["tip"]) and len(d["body"]) == 4
+    assert d["hand"][0] > d["body"][0] > d["tip"][0]                  # meets it in front, carries it behind her
