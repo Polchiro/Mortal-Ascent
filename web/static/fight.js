@@ -695,6 +695,41 @@
       }
       camera(p, 1 + 0.07 * big, 1450);
     }
+    /* A dragon's roar (beasts.ROAR_ANIMATIONS["dragon"], from SHOAIB's dragon roar video). As it rears, ribbons of its
+       element coil up round its body (`coil`) and Qi swirls into its jaws (`gather`). As it roars (`storm`): a flash
+       and a blazing blast of its element at you, lightning streaks fanning out round it, then its whole body bursting
+       into a sphere of light with spikes and rings, mist pooling at its base, and the camera punching in. */
+    function coil(pic, ms) {
+      var c = at(pic, 0.45, 0.5);
+      for (var i = 0; i < 4; i++) {
+        fx('bcoil', c[0], c[1] + 8 - i * 6, ms, {'--rc': ROAR.color, '--w': pic.width * (0.95 - 0.12 * i) + 'px',
+          '--h': pic.height * 0.32 + 'px', '--life': ms + 'ms', '--r0': (i * 70) + 'deg', 'animation-delay': (i * 90) + 'ms'});
+      }
+    }
+    function storm(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
+      var you = at(fr, 0.5, 0.45);
+      var dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
+      var len = Math.sqrt(dx * dx + dy * dy) * 1.08, ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      wave(p, 'burst', Math.min(700, tall * 0.8 * big), 480, 0, 'broarbig star', 9, 0.6);
+      fx('bbreath', p[0], p[1], 1400, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg', '--h': Math.min(420, tall * 0.55 * big) + 'px'});
+      for (var j = 0; j < 9; j++) {                            // lightning streaks fanning out round the blast
+        fx('bstreak', p[0], p[1], 1300, {'--rc': ROAR.color, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
+          '--ang': (ang + (Math.random() - 0.5) * 50) + 'deg', 'animation-delay': (40 + Math.random() * 500) + 'ms'});
+      }
+      var c = at(pic, 0.45, 0.5), sz = Math.min(950, pic.width * 1.05 * big);
+      fx('bnova', c[0], c[1], 1850, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '520ms'});
+      wave(c, 'ring', sz * 1.1, 700, 520, 'broarbig', 0, 0.8);
+      wave(c, 'double', sz * 1.3, 800, 760, 'broarbig', 0, 0.6);
+      var f = at(pic, 0.5, 0.98);                              // mist pooling at its base
+      for (var m = 0; m < 10; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust bmist', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 2000, {'--rc': ROAR.color,
+          '--dx': side * (40 + 22 * m) + 'px', '--s': (0.9 + Math.random() * 0.6).toFixed(2), 'animation-delay': (600 + 30 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1500);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -748,6 +783,7 @@
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
         if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'quake' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
+        if (M.style === 'storm' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); coil(pic, BURST - at0[1] + 200); }
         if (M.style === 'hiss' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); runes(pic, HOLD1 + 300 - at0[1]); }
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
@@ -766,13 +802,14 @@
           if (M.style === 'screech') screech(mouth(p), pic, ev.final);
           else if (M.style === 'hiss') hiss(mouth(p), pic, ev.final);
           else if (M.style === 'quake') quake(mouth(p), pic, ev.final);
+          else if (M.style === 'storm') storm(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);

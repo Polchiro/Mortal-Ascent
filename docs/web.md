@@ -363,6 +363,11 @@ a lair is fought with `bot/hunt.py`.
    head up with its open-mouthed picture: a starburst at its jaws, its body erupting in a spiky nova of its element,
    two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
    damage and log line.
+   **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
+   `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
+   then rears and roars with its open-mouthed picture, a blazing blast of its element at you with lightning streaks
+   fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
+   punching in, and settles. Same rules, damage and log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

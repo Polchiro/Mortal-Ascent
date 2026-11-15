@@ -990,6 +990,19 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   box-shadow:0 0 6px var(--rc);animation:bfeather 2.3s cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes bfeather{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(var(--s))}8%{opacity:1}
   70%{opacity:.9}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(var(--s))}}
+/* a dragon's roar (fight.js `coil`, `storm`) */
+.bcoil{position:absolute;z-index:4;width:var(--w);height:var(--h);border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:0;
+  border:4px solid transparent;border-top-color:color-mix(in srgb,var(--rc) 70%,#fff);border-right-color:color-mix(in srgb,var(--rc) 50%,transparent);
+  filter:blur(1px) drop-shadow(0 0 10px var(--rc));transform:translate(-50%,-50%) rotate(var(--r0));
+  animation:bcoil var(--life,1s) ease-in-out forwards}
+@keyframes bcoil{0%{opacity:0;transform:translate(-50%,-30%) rotate(var(--r0)) scale(1.2)}25%{opacity:1}
+  85%{opacity:.9}100%{opacity:0;transform:translate(-50%,-70%) rotate(calc(var(--r0) + 300deg)) scale(.85)}}
+.bstreak{position:absolute;z-index:5;width:var(--len);height:3px;pointer-events:none;mix-blend-mode:screen;opacity:0;
+  transform-origin:0 50%;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0);
+  background:linear-gradient(90deg,#fff,color-mix(in srgb,var(--rc) 70%,#fff) 40%,transparent);box-shadow:0 0 10px var(--rc);
+  animation:bstreak .7s ease-out forwards}
+@keyframes bstreak{0%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0)}20%{opacity:1;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1)}
+  100%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1.1)}}
 /* an amphibian's roar (fight.js `quake`) */
 .bnova{position:absolute;z-index:4;width:var(--s);height:var(--s);pointer-events:none;mix-blend-mode:screen;opacity:0;
   transform:translate(-50%,-50%) scale(.2);

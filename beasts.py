@@ -308,6 +308,18 @@ ROAR_ANIMATIONS = {
         (0.020, -0.008, 9.0),       # held, trembling
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.06},
+    # The dragons' roar, from SHOAIB's dragon roar video (the Flood Dragon): it draws its head back while ribbons of
+    # Qi of its element coil up round its body, then rears and roars a blazing blast of its element at you, lightning
+    # streaks fanning out round it; its whole body bursts into a sphere of light with spikes and rings, mist pools
+    # at its base (fight.js `coil`, `storm`), holds, and settles.
+    "dragon": {"ms": [460, 620, 150, 1500, 560], "burst": 3, "hold": 3, "style": "storm", "pivot": 0.6, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (-0.020, 0.010, -3.0),      # head drawn back
+        (-0.030, -0.015, 6.0),      # reared high, Qi coiling round it
+        (0.040, -0.010, -2.0),      # the roar: thrust at you, jaws wide, blast
+        (0.035, -0.008, -1.0),      # held, trembling
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.06},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -323,8 +335,11 @@ FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Ir
 SERPENTS = ("Field Viper", "Rock Python", "Frost Python", "Black Water Serpent", "Void Serpent")
 # The 3 amphibians (SHOAIB's redesign), all roaring with the amphibian movement.
 AMPHIBIANS = ("Thornback Lizard", "Poison Toad", "Ember Lizard")
+# The 2 dragons (SHOAIB's redesign), both roaring with the dragon movement.
+DRAGONS = ("Flood Dragon (Jiao)", "Azure Dragon")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
-                 **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS}}
+                 **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS},
+                 **{name: "dragon" for name in DRAGONS}}
 
 
 def roar_category(name):

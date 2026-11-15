@@ -20,3 +20,5 @@ The redesigned flying beasts (the birds) are made the same way,
 The redesigned serpents are made the same way (`SERPENTS`), with their open-mouthed roar pictures in `roar/`.
 
 The redesigned amphibians (Thornback Lizard, Poison Toad, Ember Lizard) are made the same way (`AMPHIBIANS`), with their open-mouthed roar pictures in `roar/`.
+
+The redesigned dragons (Flood Dragon (Jiao), Azure Dragon) are made the same way (`DRAGONS`), with their open-mouthed roar pictures in `roar/`.
