@@ -5,7 +5,7 @@ The website is the same game as the Discord bot, in a browser. It shares the bot
 website, and later the other way round.
 
 **Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy**, **gathering**
-and **exploring with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
+and **exploring (hunting alone or in parties of up to 4, docs/hunting.md) with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
 **Next:** using items (Open, Take) from the inventory, training, and team hunts.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
@@ -167,6 +167,12 @@ page times out. Old or repeated pages and unknown choices are ignored. One trip 
 the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
 
 ## Explore
+
+**Since Nov 16 the Explore tab is hunting (docs/hunting.md):** Solo Hunt, Create a Team, Find a Team, the team
+lobby, six realm-based hunting grounds and team fights for up to 4 players, on the same fight screen described
+below (`data-play`, `data-team`: the screen polls `/hunt` in a team fight and shows the party's chips and turn bar).
+What follows describes the single-player expedition it grew from, still served on `/explore/play` for an
+expedition already under way and `/admin web_fight` tests.
 
 `/explore` is the bot's `/explore` (docs/explore.md) in the browser, with the same engines: `bot/expedition.py` runs
 the steps, encounters, loot and the walk home; every fight turn is `bot/fight.py` (the rules in docs/combat.md);

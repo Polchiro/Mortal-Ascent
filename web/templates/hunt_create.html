@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Create a Team · Mortal Ascent{% endblock %}
+{% block body_class %}huntbg{% endblock %}
+{% block body %}
+<style>body.huntbg{--scene:url(/art/scenes/region_red_cliff_gorge.jpg)}</style>
+{% with page="explore", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="hunt" style="max-width:720px">
+  <section>
+    <p class="kicker"><a href="/explore" style="color:inherit;text-decoration:none">EXPLORE</a> · NEW PARTY</p>
+    <h1>Create a Team</h1>
+    <p class="sub">You lead: you choose where to hunt and when to set out. Up to {{ v.max }} hunters, you included.</p>
+  </section>
+  {% if error %}<p class="hnote" role="alert">{{ error | rich | safe }}</p>{% endif %}
+  <form class="hpanel" method="post" action="/party/create">
+    <div class="hfield">
+      <label for="tname">Team name</label>
+      <input class="hinput" id="tname" name="name" required minlength="3" maxlength="24" autocomplete="off"
+        placeholder="e.g. Moon Wolves">
+      <span class="hhint">3 to 24 characters.</span>
+    </div>
+    <div class="hfield" role="radiogroup" aria-labelledby="vislab">
+      <span class="lab" id="vislab">Visibility</span>
+      <div class="hseg">
+        <label><input type="radio" name="visibility" value="public" checked><b>Public</b>Shown in the team browser. Any hunter of the right realm can join.</label>
+        <label><input type="radio" name="visibility" value="private"><b>Private</b>Hidden. Friends join with the invitation ID you give them.</label>
+      </div>
+    </div>
+    <div class="hrow">
+      <button class="hbtn" type="submit">Create team</button>
+      <a class="hbtn ghost" href="/explore">Back</a>
+    </div>
+  </form>
+</main>
+{% endblock %}

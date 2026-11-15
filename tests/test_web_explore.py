@@ -64,7 +64,7 @@ def begin(client):
 
 def test_explore_page_and_setting_out_starts_the_rest(client):
     page = client.get("/explore").text
-    assert "Set out" in page and "Explore the Wilds" in page and 'href="/explore"' in page
+    assert "Solo Hunt" in page and "Find a Team" in page and 'href="/explore"' in page     # the hunting entry
     begin(client)
     page = client.get("/explore/play").text
     assert "THREE PATHS LIE AHEAD" in page and "Return safely" in page
@@ -78,7 +78,7 @@ def test_rest_or_injury_blocks_setting_out(client):
     c = db.connect(client.path)
     db.set_cooldown(c, UID, "explore", 600)
     c.close()
-    assert "legs still ache" in client.get("/explore").text
+    assert "resting from the last expedition" in client.get("/explore").text
     r = client.post("/explore/begin")
     assert r.headers["location"] == "/explore" and run(client) is None
 
@@ -180,7 +180,7 @@ def test_return_home_banks_and_back_clears(client, db_path):
     assert client.get("/explore").headers.get("location") is None          # finished: the start page again
     client.post("/explore/done")
     assert run(client) is None
-    assert "legs still ache" in client.get("/explore").text
+    assert "resting from the last expedition" in client.get("/explore").text
 
 
 def test_a_hazard_is_timed_from_when_it_is_seen(client):
@@ -423,7 +423,7 @@ def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path)
     assert admin.take_web_fight(c, UID) is None           # used up
     c.close()
     client.post("/explore/done")
-    assert "Set out" in client.get("/explore").text        # back to normal
+    assert "Solo Hunt" in client.get("/explore").text        # back to normal
 
 
 # ── The victory sequence (docs/web.md) ──────────────────────────────────────────────────────────────────
@@ -527,7 +527,7 @@ def test_a_won_test_fight_ends_with_finish_and_pays_nothing(client, db_path):
     c = db.connect(db_path)
     assert db.get_player(c, UID)["lotus_coins"] == coins
     c.close()
-    assert "Set out" in client.get("/explore").text
+    assert "Solo Hunt" in client.get("/explore").text
 
 
 # ── one action per turn (docs/web.md) ────────────────────────────────────────────────────────────────

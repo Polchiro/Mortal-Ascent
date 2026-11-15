@@ -3,6 +3,8 @@
 
 Players venture into the wild, choose paths, and decide how far to push their luck.
 
+*This is Discord's `/explore`. On the website, Explore is a realm-based hunt for one to four players: see hunting.md.*
+
 ## Basics
 
 - Command: **/explore**

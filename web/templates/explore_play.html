@@ -6,7 +6,7 @@
 {% with page="explore" %}{% include "_topbar.html" %}{% endwith %}
 
 {% macro act(what, arg, label, cls="btn btn-gold", extra="") %}
-<form method="post" action="/explore/act" class="inline">
+<form method="post" action="{{ g.act_url or '/explore/act' }}" class="inline">
   <input type="hidden" name="what" value="{{ what }}"><input type="hidden" name="arg" value="{{ arg }}">
   <input type="hidden" name="turn" value="{{ g.turn }}">
   <button class="{{ cls }}" type="submit"{{ extra | safe }}>{{ label }}</button>
@@ -15,7 +15,7 @@
 
 {% if g.mode == "fight" %}{% set F = g.fight %}
 {% set C = F.cast %}
-<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% if C.fx %} cast-fx{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}{% if F.end %} slain{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-round="{{ F.turn_no }}" data-phase="{{ F.phase }}" data-events='{{ F.events | tojson }}'
+<main class="battle{% for x in F.fx %} fx-{{ x }}{% endfor %}{% if C %} casting cast-{{ C.kind }} cast-{{ C.school }}{% if C.effect %} cast-{{ C.effect }}{% endif %}{% if C.landed %} cast-landed{% endif %}{% if C.fx %} cast-fx{% endif %}{% endif %}{% if F.warning.skill %} skill-{{ F.warning.skill }}{% endif %}{% if F.roused %} roused{% endif %}{% if F.end %} slain{% endif %}{% if F.team and F.team.waiting %} waiting{% endif %}" style="--arena: url({{ F.arena }}){% if C %}; --tc: {{ C.color }}{% endif %}" aria-label="{{ F.title }}" data-turn="{{ g.turn }}" data-round="{{ F.turn_no }}" data-play="{{ g.play_url or '/explore/play' }}"{% if F.team %} data-team="1"{% if F.team.waiting %} data-waiting="1"{% endif %}{% endif %} data-phase="{{ F.phase }}" data-events='{{ F.events | tojson }}'
   data-max-me="{{ F.me.max_hp }}" data-max-enemy="{{ F.enemy.max_hp }}"{% if F.end %} data-end='{{ F.end.death | tojson }}'{% endif %}{% if C and C.fx %} data-cast='{{ C | tojson }}'{% endif %}{% if F.warning.skill or F.roused %} data-crater="/art/fx/crater.webp"{% endif %}>
   <!-- you -->
   <section class="bme{% if F.me.stunned %} stunned{% endif %}">
@@ -46,6 +46,11 @@
 
   <!-- the scene -->
   <section class="bscene">
+    {% if F.team %}
+    <div class="allies" aria-label="Your party" aria-live="polite">{% for a in F.team.allies %}
+      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
+        <span>{{ a.name }}<span class="ah"><div style="width: {{ a.hp_pct }}%"></div></span></span><em>{{ a.state }}</em></span>{% endfor %}</div>
+    {% endif %}
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
     {% if F.enemy.statuses %}<p class="chips sover senemy" aria-label="Beast statuses">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
     <div class="fighter{% if F.me.tip %} sworded{% endif %}{% if F.me.sheet %} sheeted{% endif %}" aria-hidden="true" data-pose="idle"{% if F.me.tip %} data-tip="{{ F.me.tip }}"{% endif %}>
@@ -96,9 +101,9 @@
       <p class="vsub">{{ F.end.sub }} · {{ F.end.hp }}</p>
       <div class="vlines">{% for l in F.end.lines %}<p>{{ l | safe }}</p>{% endfor %}</div>
       {% if F.end.next == "done" %}
-      <form method="post" action="/explore/done"><button class="btn btn-gold vgo" type="submit">{{ F.end.button }}</button></form>
+      <form method="post" action="{{ g.done_url or '/explore/done' }}"><button class="btn btn-gold vgo" type="submit">{{ F.end.button }}</button></form>
       {% else %}
-      <form method="post" action="/explore/act">
+      <form method="post" action="{{ g.act_url or '/explore/act' }}">
         <input type="hidden" name="what" value="continue"><input type="hidden" name="arg" value=""><input type="hidden" name="turn" value="{{ g.turn }}">
         <button class="btn btn-gold vgo" type="submit">{{ F.end.button }}</button>
       </form>
@@ -125,7 +130,7 @@
   </details>
 
   <!-- small options: pill and flee -->
-  <form method="post" action="/explore/act" class="bside fightform">
+  <form method="post" action="{{ g.act_url or '/explore/act' }}" class="bside fightform">
     <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
     {% for a in F.side %}
     <button class="sidebtn{% if not a.ready %} off{% endif %}" type="submit" name="arg" value="{{ a.key }}" data-key="{{ a.hotkey }}"
@@ -137,7 +142,7 @@
   </form>
 
   <!-- the four moves -->
-  <form method="post" action="/explore/act" class="bbar fightform" id="acts">
+  <form method="post" action="{{ g.act_url or '/explore/act' }}" class="bbar fightform" id="acts">
     <input type="hidden" name="what" value="move"><input type="hidden" name="turn" value="{{ g.turn }}">
     {% for a in F.main %}
     {% if a.key == "techniques" %}
@@ -166,10 +171,11 @@
     {% endfor %}
   </form>
   <aside class="binfo" aria-live="polite">
-    <p class="turnchip" role="status">Your turn</p>
+    <p class="turnchip" role="status"{% if F.team and F.team.fallen %} data-wait="You have fallen"{% endif %}>{% if F.team and F.team.fallen %}You have fallen{% elif F.team and F.team.waiting %}Waiting for your party{% else %}Your turn{% endif %}</p>
+    {% if F.team %}<div class="teamtimer" data-left="{{ F.team.left }}" data-total="{{ F.team.total }}"><div style="width: {{ (F.team.left / F.team.total * 100) | round(1) }}%"></div></div>{% endif %}
     <p class="ititle">{{ F.main[0].label }}</p>
     <p class="itext">{{ F.main[0].info }}</p>
-    <p class="sub">Keys 1–4 · P pill · F flee. Take your time: there's no turn timer.</p>
+    <p class="sub">Keys 1–4 · P pill · F flee. {% if F.team %}{{ F.team.total }} seconds a turn: whoever hasn't picked Guards.{% else %}Take your time: there's no turn timer.{% endif %}</p>
   </aside>
 </main>
 <script src="/static/fight.js" defer></script>
@@ -192,7 +198,7 @@
       <p class="kicker">STEP {{ g.step }} OF {{ g.steps }} · THREE PATHS LIE AHEAD</p>
       <div class="paths">
         {% for p in g.paths %}
-        <form method="post" action="/explore/act" class="pathform">
+        <form method="post" action="{{ g.act_url or '/explore/act' }}" class="pathform">
           <input type="hidden" name="what" value="path"><input type="hidden" name="arg" value="{{ p.key }}"><input type="hidden" name="turn" value="{{ g.turn }}">
           <button class="pathcard" type="submit"><span class="kicker">{{ p.label | upper }}</span><i>{{ p.clue }}</i></button>
         </form>
@@ -245,12 +251,12 @@
           {% else %}{{ act("hunt", "", "Hunt it alone", "btn btn-jade") }}{% endif %}</div>
       </div>
       {% endif %}
-      <form method="post" action="/explore/done"><button class="btn btn-gold" type="submit">Back</button></form>
+      <form method="post" action="{{ g.done_url or '/explore/done' }}"><button class="btn btn-gold" type="submit">Back</button></form>
 
     {% elif g.mode == "lair_over" %}
       <h1 class="title">{{ g.lair.title }}</h1>
       {% for l in g.lair.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
-      <form method="post" action="/explore/done"><button class="btn btn-gold" type="submit">Back</button></form>
+      <form method="post" action="{{ g.done_url or '/explore/done' }}"><button class="btn btn-gold" type="submit">Back</button></form>
     {% endif %}
   </section>
 </main>

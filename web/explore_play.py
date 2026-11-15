@@ -614,13 +614,14 @@ def motion_of(b, f, p):
     return looks.motion_sheet(look, c["fx"]["motion"]) if c and c["fx"] else None
 
 
-def victory(s, b):
+def victory(s, b, f=None):
     """The end of a won fight, for the fight page: how the enemy goes down (web/death.py) and the Victory panel
-    (what the win paid, in the game's own words). None while the fight is still going or was not won."""
+    (what the win paid, in the game's own words). None while the fight is still going or was not won.
+    `f` is whose page this is (a hunt has several fighters); by default the only one."""
     end = s.ended
     if not end or end["battle"] is not b:
         return None
-    f = b.fighters[0]
+    f = f or b.fighters[0]
     name = b.enemy["name"]
     return {"death": death.view(b.enemy), "title": "Victory!",
             "sub": f"{name} defeated in {b.turn} turn{'s' if b.turn != 1 else ''}",
@@ -639,8 +640,10 @@ def look_poses(player):
     return {pose: looks.fighter(look, pose) for pose in POSES}
 
 
-def fight_view(conn, s, b, p, now):
-    f = b.fighters[0]
+def fight_view(conn, s, b, p, now, me=None):
+    """The fight screen's data for one player: `me` is their uid in a team fight (web/hunt_play.py); by default
+    the only fighter. `s` may carry its own `title` and `arena` (a hunt's location)."""
+    f = b.fighter(me) if me is not None else b.fighters[0]
     e = b.enemy
     beast = e["kind"] == "beast"
     head, hint = b.warning if getattr(b, "warning", None) else ("", "")
@@ -654,15 +657,15 @@ def fight_view(conn, s, b, p, now):
     prev = s.prev or {}
     main, side = actions(b, f)
     word, sub = result_banner(b.log or [], f.name)
-    end = victory(s, b)
+    end = victory(s, b, f)
     if end:
         head, hint, danger = "Defeated", "", None
     return {
         "lair": b is s.lair_battle,
         "phase": phase(s),
-        "title": "Admin test fight" if s.test else
+        "title": getattr(s, "title", None) or ("Admin test fight" if s.test else
                  ("Beast King's den" if e["tier"] == "beast_king" else "Elite lair") if b is s.lair_battle else
-                 ("Bandits" if not beast else "Wild beast") + f" · Step {s.exp.step} of {explore_rules.MAX_STEPS}",
+                 ("Bandits" if not beast else "Wild beast") + f" · Step {s.exp.step} of {explore_rules.MAX_STEPS}"),
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
@@ -684,7 +687,7 @@ def fight_view(conn, s, b, p, now):
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},
         "roused": "roused" in e["statuses"] and not end, "end": end,
-        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f, looks.gender_of(looks.of_player(p))), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f, looks.gender_of(looks.of_player(p))), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": getattr(s, "arena", None) or arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }
 

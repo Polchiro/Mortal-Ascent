@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ g.location }} · Mortal Ascent{% endblock %}
+{% block body_class %}huntbg" data-p="" data-h="{{ g.turn }}{% endblock %}
+{% block body %}
+<style>body.huntbg{--scene:url({{ g.scene }})}</style>
+{% with page="explore", coins=g.coins, pearls=g.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+{% macro act(what, label, cls="hbtn") %}
+<form method="post" action="/hunt/act">
+  <input type="hidden" name="what" value="{{ what }}"><input type="hidden" name="arg" value="">
+  <input type="hidden" name="turn" value="{{ g.turn }}">
+  <button class="{{ cls }}" type="submit">{{ label }}</button>
+</form>
+{% endmacro %}
+
+<main class="hunt">
+  <section class="hhero">
+    <div class="lead">
+      <p class="kicker">{{ g.location | upper }}</p>
+      {% if g.mode == "home" %}<h1>{{ g.result.title }}</h1>
+      {% else %}<h1>Beast {{ g.step }} of {{ g.steps }}</h1>{% endif %}
+    </div>
+    <span class="steps5" aria-label="Beast {{ g.step }} of {{ g.steps }}">{% for i in range(1, g.steps + 1) %}<i class="{{ 'now' if i == g.step and g.mode != 'home' else 'on' if i <= g.step }}"></i>{% endfor %}</span>
+  </section>
+  {% if error %}<p class="hnote" role="alert">{{ error | rich | safe }}</p>{% endif %}
+
+  {% if g.mode == "home" %}
+  <section class="hpanel" style="max-width:760px">
+    {% for l in g.result.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+    <form method="post" action="/hunt/done" style="margin-top:16px">
+      <button class="hbtn" type="submit">{{ "Back to Explore" if g.solo else "Back to the lobby" }}</button></form>
+  </section>
+
+  {% else %}
+  <div class="hplay">
+    <section class="hpanel" aria-live="polite">
+      {% for l in g.story %}<p class="pline">{{ l | safe }}</p>{% endfor %}
+      {% if g.mine %}<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(201,164,92,.2)">
+        <p class="kicker" style="margin-bottom:8px">YOUR SPOILS</p>
+        {% for l in g.mine %}<p class="pline">{{ l | safe }}</p>{% endfor %}</div>{% endif %}
+      <div class="hrow" style="margin-top:18px">
+        {% if g.lead %}
+          {% if g.deeper %}{{ act("deeper", "Hunt the next beast", "hbtn jade") }}{% endif %}
+          {{ act("return", "Return home", "hbtn ghost") }}
+        {% else %}
+          <p class="hhint">The leader decides whether to hunt on or head home.</p>
+          {{ act("leave", "Leave the hunt", "hbtn ghost small") }}
+        {% endif %}
+      </div>
+      <p class="hhint" style="margin-top:10px">{{ g.next_note }} The party heads home on its own in {{ g.idle }}s if nobody decides.</p>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:22px">
+      <section class="hpanel">
+        <div class="hhead"><h2>The party</h2></div>
+        <div class="mlist">
+          {% for m in g.members %}
+          <div class="mrow" style="flex-wrap:wrap">
+            <div class="who"><b>{{ m.name }}{% if m.leader %}<span class="crown">◆</span>{% endif %}</b><span>{{ m.realm }}</span></div>
+            <span class="tag {{ 'ok' if not m.out else 'dim' }}">{{ m.state }}</span>
+            {% if not m.out %}<div style="flex-basis:100%"><div class="hp2"><div style="width: {{ m.hp_pct }}%"></div></div>
+              <span class="hhint">{{ m.hp }} / {{ m.max_hp }} HP</span></div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+      <section class="hpanel">
+        <div class="hhead"><h2>You carry</h2><span class="hhint">banked when you get home</span></div>
+        {% for f in g.found %}<p class="sub" style="margin:0 0 4px">{{ f }}</p>{% else %}<p class="sub">Nothing yet.</p>{% endfor %}
+        <p class="hhint" style="margin-top:8px">Fall in battle and you lose half the coins and herbs you carry. Elite and Beast King rewards go straight to your bag.</p>
+      </section>
+    </aside>
+  </div>
+  {% endif %}
+</main>
+<script src="/static/party.js" defer></script>
+{% endblock %}
