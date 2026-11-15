@@ -82,9 +82,7 @@ GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "fr
 # "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
 # two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
 # `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
-# The female cultivator's punch, palm push and brace are her own (make_heroine_fist.py, make_heroine_palm.py,
-# make_heroine_brace.py); her finger jab is his frames in her
-# colours, at her height, with her own head and hair (scripts/make_heroine_moves.py), so its timing marks are his.
+# The female cultivator's movements are all her own, from SHOAIB's videos of her (scripts/make_heroine_*.py).
 MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
                                    "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]},
                           # hers is her own, from SHOAIB's video of her (scripts/make_heroine_fist.py): on guard (0-4),
@@ -103,8 +101,11 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # held, drawing back (`back` on). `hand` is the fingertip.
                  "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 48, "cols": 8, "rows": 6,
                                      "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 21 / 320, "hand": [0.689, 0.315]},
-                            "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 48, "cols": 8, "rows": 6,
-                                       "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 44 / 320, "hand": [0.723, 0.428]}},
+                            # hers is her own, from SHOAIB's video of her (scripts/make_heroine_finger.py): on guard (0-7),
+                            # two fingers pointed (`jab`), the arm swung (`windup`), a deep lunge thrusting them forward
+                            # (`release`, where the beam leaves), held, rising with the arm drawn in (`back` on), on guard
+                            "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 28, "cols": 8, "rows": 4,
+                                       "jab": 8, "windup": 12, "release": 15, "back": 21, "shift": 43 / 320, "hand": [0.708, 0.392]}},
                  # "brace": SHOAIB's brace video (scripts/make_hero_brace.py): standing (0-4), reaching out, the arms
                  # crossed up into guard, settled in a wide stance at `release` and held to the end, where the
                  # beast's blow is taken. `hand` is the crossed forearms; `body` the braced figure (middle, top of the
