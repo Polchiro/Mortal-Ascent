@@ -492,7 +492,7 @@
     var ROAR = null;
     try { ROAR = JSON.parse(beastBox.dataset.roar || 'null'); } catch (e) {}
     var ROAR_MS = 1100, ROAR_FRAMES = 16;
-    function roar(where) {
+    function roar(where, big) {
       if (!ROAR) return null;
       var old = scene.querySelector('.broar');
       if (old) old.remove();
@@ -502,12 +502,12 @@
         pic = {left: box.left + (box.width - w) / 2, top: box.top + (box.height - h) / 2, width: w, height: h};
       }
       var p = where || (ROAR.head ? at(pic, ROAR.head[0], ROAR.head[1]) : at(pic, 0.15, 0.35));
-      var size = Math.max(90, Math.min(520, pic.height * ROAR.height * (ROAR.wave === 'ring' ? 0.75 : ROAR.wave === 'double' ? 0.9 : 1.05)));
+      var size = Math.max(90, Math.min(520, pic.height * ROAR.height * (ROAR.wave === 'ring' ? 0.75 : ROAR.wave === 'double' ? 0.9 : 1.05) * (big ? 1.4 : 1)));
       var n = document.createElement('div');
       n.className = 'broar';
       n.style.left = p[0] + '%'; n.style.top = p[1] + '%';
       n.style.width = n.style.height = size + 'px';
-      n.style.backgroundImage = 'url(/art/fx/roar_' + ROAR.wave + '.webp)';
+      n.style.backgroundImage = 'url(/art/fx/roar_' + (big ? 'burst' : ROAR.wave) + '.webp)';     // a final roar: the biggest wave
       n.style.setProperty('--rc', ROAR.color);
       scene.appendChild(n);
       var t0 = performance.now();
@@ -520,14 +520,88 @@
       })(t0);
       return n;
     }
-    /* a beast winding up its charged attack or signature strike roars before it (fight_view `roared`) */
-    function roaring() {
+    /* a beast's roar (battle.ROAR, a move of its own): a beast without a roar movement just rears back a little */
+    /* A beast with a roar movement (beasts.ROAR_ANIMATIONS, by body: "quadruped") roars as ITSELF: its own picture,
+       moved whole about its hind feet (no bending, stretching or cropping, so every body shape and size works), through
+       the shared keys (eased between): it dips its head and crouches, rears its head up as the roar bursts from its
+       own mouth (the wave, tinted with its element, and dust kicked up at its feet), holds it there trembling, and
+       settles. A beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds. */
+    function roaringMoved(M, ev) {
+      ev = ev || {};
+      var did = {}, keys = M.keys, at0 = [0], pic = null, pivot = null;
+      for (var i = 0; i < M.ms.length; i++) at0.push(at0[i] + M.ms[i]);
+      var BURST = at0[M.burst], HOLD0 = at0[M.hold], HOLD1 = at0[M.hold + 1], TOTAL = at0[at0.length - 1];
+      function once(k) { if (did[k]) return false; did[k] = true; return true; }
+      function measure() {                                     // the picture as drawn (object-fit: contain, feet down)
+        beast.style.transform = '';
+        var box = beast.getBoundingClientRect();
+        var w = box.width, h = box.height;
+        if (beast.naturalWidth && beast.naturalHeight) {
+          var ar = beast.naturalWidth / beast.naturalHeight;
+          w = Math.min(box.width, box.height * ar); h = w / ar;
+        }
+        pic = {left: box.left + (box.width - w) / 2, top: box.top + box.height - h, width: w, height: h, box: box};
+        pivot = [pic.left + pic.width * 0.85 - box.left, pic.top + pic.height - box.top];   // its hind feet, in the box
+        beast.style.transformOrigin = pivot[0] + 'px ' + pivot[1] + 'px';
+      }
+      function pose3(t) {                                      // lean, drop, tilt at t, eased between the keys
+        for (var k = 1; k < keys.length; k++) if (t < at0[k]) {
+          var q = inout(span(t, at0[k - 1], at0[k])), A = keys[k - 1], B = keys[k];
+          return [A[0] + (B[0] - A[0]) * q, A[1] + (B[1] - A[1]) * q, A[2] + (B[2] - A[2]) * q];
+        }
+        return keys[keys.length - 1];
+      }
+      function mouth(p) {                                      // its mouth where the move has carried it, in % of the scene
+        var s = scene.getBoundingClientRect(), hd = ROAR.head || [0.15, 0.35];
+        var mx = pic.left + pic.width * hd[0], my = pic.top + pic.height * hd[1];
+        var ox = pic.box.left + pivot[0], oy = pic.box.top + pivot[1], a = p[2] * Math.PI / 180;   // as the picture turns
+        var dx = mx - ox, dy = my - oy;
+        var rx = ox + dx * Math.cos(a) - dy * Math.sin(a) - p[0] * pic.width, ry = oy + dx * Math.sin(a) + dy * Math.cos(a) + p[1] * pic.height;
+        return [(rx - s.left) / s.width * 100, (ry - s.top) / s.height * 100];
+      }
+      function dust() {                                        // kicked up at its feet as it roars
+        var f = at(pic, 0.5, 0.97);
+        for (var j = 0; j < 6; j++) {
+          var side = j % 2 ? 1 : -1;
+          fx('bdust', f[0] + side * (2 + 3 * j), f[1] - 1 - Math.random() * 2, 1500, {'--dx': side * (26 + 16 * j) + 'px',
+            '--s': (0.7 + Math.random() * 0.6).toFixed(2), 'animation-delay': (30 * j) + 'ms'});
+        }
+      }
+      return {end: Math.max(TOTAL, BURST + ROAR_MS) + 150, render: function (t) {
+        if (t < 0) return;
+        if (once('start')) { measure(); if (ev.dmg) hold('me'); }
+        var p = pose3(t), shake = 0;
+        if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
+        beast.style.transform = 'translate(' + (-p[0] * pic.width + shake) + 'px,' + (p[1] * pic.height) + 'px) rotate(' + p[2] + 'deg)';   // clockwise: a left-facing head goes up
+        if (bposes && bposes.roar) bpose(t >= BURST - 60 && t < HOLD1 ? 'roar' : home);
+        if (t >= BURST && once('burst')) {
+          roar(mouth(p), ev.final); dust();
+          struck(ev);
+          if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
+        }
+      }, clear: function () {
+        beast.style.transform = ''; beast.style.transformOrigin = '';
+        if (bposes) bpose(home);
+        var n = scene.querySelector('.broar'); if (n) n.remove();
+      }};
+    }
+    /* what the roar did to you, as the engine logged it (battle.ROAR): the damage, "Guarded" when your Guard
+       halved it, and the debuffs it left (Shaken, Exposed, Stunned) */
+    function struck(ev) {
+      if (!ev || ev.why) return;
+      if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
+      var words = (ev.final ? ['Final Roar'] : []).concat(ev.guard ? ['Guarded'] : (ev.status || []).concat(ev.stun ? ['Stunned'] : []));
+      words.forEach(function (w, i) { setTimeout(function () { pop(fighter, 'word', w); }, 220 * i); });
+      if (!ev.guard && scene.animate) fighter.animate([{transform: 'none'}, {transform: 'translate(-6px,0)'}, {transform: 'translate(4px,0)'}, {transform: 'none'}], {duration: 320});
+    }
+    function roaring(ev) {
+      if (ROAR && ROAR.motion) return roaringMoved(ROAR.motion, ev);
       var done = false;
       return {end: ROAR_MS + 150, render: function (t) {
         if (t < 0) return;
         var k = span(t, 0, 260), back = k < 1 ? Math.sin(Math.PI * k) : 0;     // it rears back a little as it roars
         animal(0.008 * W * back, -0.006 * W * back, 3 * back, 0);
-        if (t >= 120 && !done) { done = true; roar(); }
+        if (t >= 120 && !done) { done = true; roar(); struck(ev); }
       }, clear: function () { var n = scene.querySelector('.broar'); if (n) n.remove(); }};
     }
 
@@ -1244,7 +1318,7 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(), 'beast_acting'); kinds.enemy = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting'); kinds.enemy = 1; }

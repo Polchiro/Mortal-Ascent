@@ -55,8 +55,9 @@ _heads = None
 
 
 def beast_roar(e):
-    """What a beast's roar needs on the page (fight.js `roar`): where its mouth is on its picture
-    (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, and its element's colour."""
+    """What a beast's roar needs on the page (fight.js `roar`, `roaring`): where its mouth is on its picture
+    (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, its element's colour, and its body's
+    shared roar movement (beasts.ROAR_ANIMATIONS; None: it only rears back a little)."""
     global _heads
     if _heads is None:
         try:
@@ -67,9 +68,14 @@ def beast_roar(e):
     from cards.theme import ELEMENT_ACCENTS
     head = _heads.get(e.get("slug") or "")
     accent = ELEMENT_ACCENTS.get(e.get("element") or "")
+    import beasts
+    cat = beasts.roar_category(e.get("name") or "")
+    move = beasts.ROAR_ANIMATIONS[cat] if cat else None
     return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
-            "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0"}
+            "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",
+            "motion": {"ms": move["ms"], "burst": move["burst"], "hold": move["hold"],
+                       "keys": [list(k) for k in move["keys"]]} if move else None}
 
 
 def beast_poses(slug):
@@ -598,15 +604,6 @@ def motion_of(b, f, p):
     return looks.motion_sheet(look, c["fx"]["motion"]) if c and c["fx"] else None
 
 
-def roared(evs, b, danger, beast):
-    """The beast roars as it winds up a charged attack or its signature strike (the turn it is announced), after
-    what it did this turn: presentation only, nothing in the fight changes. Its own roars (a skill's `roar` line,
-    the Mountain Tiger's Roused) are played by that skill's own animation."""
-    if beast and danger in ("charged", "signature") and b.log and not any(x["act"] == "roar" for x in evs):
-        evs = evs + [{"who": "enemy", "act": "roar", "why": "windup"}]
-    return evs
-
-
 def victory(s, b):
     """The end of a won fight, for the fight page: how the enemy goes down (web/death.py) and the Victory panel
     (what the win paid, in the game's own words). None while the fight is still going or was not won."""
@@ -677,7 +674,7 @@ def fight_view(conn, s, b, p, now):
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},
         "roused": "roused" in e["statuses"] and not end, "end": end,
-        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f, looks.gender_of(looks.of_player(p))), "events": roared(events(b.log or [], f), b, danger, beast and not end), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
+        "log": log, "history": history(b), "fx": fx, "cast": cast(b, f, looks.gender_of(looks.of_player(p))), "events": events(b.log or [], f), "turn_no": b.turn, "main": main, "side": side, "arena": arena(getattr(s, "exp", None)),
         "result": {"word": word, "sub": sub} if word else None,
     }
 
@@ -709,6 +706,8 @@ def events(log, f):
                                                       and "evaded" when an evade technique left you untouched:
                                                       "slipped" the Break, or took a Strike with a full block)
     {"who": "enemy", "act": "attack", "dmg": n}       the beast hit you
+    {"who": "enemy", "act": "roar", "dmg": n, "guard": bool, "final": bool, "stun": bool, "status": [names]}
+                                                      the beast roared (battle.ROAR): what it did to you
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
                                                       it replaces your Guard's own event this turn
@@ -745,6 +744,13 @@ def events(log, f):
             out = [x for x in out if x["act"] != "guard"]
             out.append({"who": "enemy", "act": skills[name], "dmg": dmg, "guard": bool(guard),
                         "stun": f"{f.name} −{dmg:,} (Stunned)" in text})
+        elif icon == "roar" and re.search(r" — (Final )?Roar on ", text):   # the beast's roar (battle.ROAR)
+            dmg = _number(text, r"[ ,]" + re.escape(f.name) + r" −([\d,]+)")
+            who = re.search(re.escape(f.name) + r" −[\d,]+([^,]*(?:\([^)]*\))*)", text)
+            tail = who.group(0) if who else ""
+            out.append({"who": "enemy", "act": "roar", "dmg": dmg, "guard": "(guarded)" in tail,
+                        "final": " — Final Roar on " in text, "stun": "(Stunned)" in tail,
+                        "status": [n for n in ("Shaken", "Exposed") if f"({n})" in tail]})
         elif icon == "roar" and any(x.get("evaded") for x in out):
             pass                                             # sidestepped: the sidestep acts out the beast's lunge
         elif icon == "roar" and not any(x["act"] in skills.values() for x in out):

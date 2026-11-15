@@ -328,9 +328,21 @@ a lair is fought with `bot/hunt.py`.
    from SHOAIB's roar video by `scripts/make_roar_fx.py`): the ring for normal beasts, the double ring for Elites, the
    spiky burst for Beast Kings, tinted with the beast's element colour. It plays over the beast's own picture,
    never in place of it, from its mouth (`art/beasts/heads.json`, read off each picture by eye; a new beast gets an
-   outline guess by re-running the script), sized by how tall the beast stands on screen. A beast roars as it winds
-   up a charged attack or its signature strike (the turn it is announced: `roared` in `web/explore_play.py`), and the
-   Mountain Tiger's Roused roar uses it from its roar pose. Only one is ever on screen. Presentation only.
+   outline guess by re-running the script), sized by how tall the beast stands on screen. It plays when a four-legged
+   beast **roars** (a move of its own, docs/combat.md "The roar": `events` reads it from the log as `act: "roar"`,
+   with the damage, Guarded, Shaken / Exposed / Stunned popped over you as the wave bursts; a final roar bursts the
+   biggest wave, larger), and the Mountain Tiger's Roused roar uses it from its roar pose. Only one is ever on screen.
+   **The four-legged beasts roar with their bodies too** (`roaringMoved` in `fight.js`): one shared movement for the
+   body (`beasts.ROAR_ANIMATIONS["quadruped"]`, measured from SHOAIB's quadruped roar video of a boar, then shortened
+   to a turn), played by every beast in `beasts.QUADRUPEDS` with its **own picture**: it dips its head and crouches,
+   rears its head up as the roar bursts from its own mouth (with dust kicked up at its feet and a shake of the scene),
+   holds it trembling, and settles back. The picture is moved whole about its hind feet (turned and shifted, never
+   bent, stretched or cropped), so any body shape or size works; the wave follows the mouth as the head comes up. A
+   beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds. Other beasts keep the plain
+   rear-back. A new body category is one more row in `ROAR_ANIMATIONS` and its beasts in `ROAR_CATEGORY`.
+   The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
+   `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
+   to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
 4. **Lairs:** an Elite lair or Beast King den found on the website can't be posted to a Discord channel, so it is
    hunted **alone**, exactly like a lair found in a DM with the bot (`hunt.start_battle` with one fighter,
    `hunt.pay`), from the end screen while it is open.

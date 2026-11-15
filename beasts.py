@@ -254,6 +254,40 @@ DEATH_CATEGORY = {
 }
 
 
+# ── The roar (website fight screen; web/static/fight.js `roaring`, docs/web.md "The beast roar") ─────────────────────
+# One shared MOVEMENT per body category, as the deaths above, and no artwork: every beast roars as its own picture,
+# moved whole (never bent, stretched or cropped) about its hind feet, with the shared roar wave from its own mouth
+# (art/beasts/heads.json). Measured from SHOAIB's quadruped roar video (a boar, scripts/make_roar_fx.py): it dips its
+# head and crouches into the ground, rears its head up as the roar bursts out, holds it there trembling with its jaws
+# wide, and settles back, then shortened to fit a turn. Keys, from rest:
+#   ms: how long each key takes to reach the next.  burst: the key the roar wave and the dust go out on.
+#   hold: the key held trembling.  keys: per key (lean toward the cultivator, as a share of the picture's width;
+#   drop, a share of its height, down is +; tilt in degrees, head up is +).
+ROAR_ANIMATIONS = {
+    "quadruped": {"ms": [360, 170, 900, 450], "burst": 2, "hold": 2, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (0.025, 0.025, -4.0),       # the dip: head down, weight on the forelegs
+        (-0.015, -0.015, 10.0),     # the roar: head flung up, rocked back on the hind legs
+        (-0.012, -0.012, 8.5),      # held, trembling
+        (0.000, 0.000, 0.0),        # settled
+    ]},
+}
+# The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
+QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
+              "Wild Ox", "Old Black Bear", "Bloodfang Wolf", "Armored Boar Chief", "White-Browed Tiger King",
+              "Steel-Horn Bull", "Ironbark Bear", "Frost Wolf", "Wind Leopard", "Flame-Maned Lion",
+              "Earth-Splitting Rhino", "Shadow Panther", "Cloud Leopard",
+              "Nine-Tailed Fox", "Thunder Rhino", "Fire-Hoof Steed", "Sky Lynx", "Ancient Golden Ape",
+              "Ghost-Fire Wolf", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger")
+ROAR_CATEGORY = {name: "quadruped" for name in QUADRUPEDS}
+
+
+def roar_category(name):
+    """The beast's roar movement (a ROAR_ANIMATIONS key), or None for the plain roar (it rears back a little)."""
+    cat = ROAR_CATEGORY.get(name)
+    return cat if cat in ROAR_ANIMATIONS else None
+
+
 def death_category(name):
     """The beast's death animation category (a DEATH_ANIMATIONS key), or None for the plain fall."""
     cat = DEATH_CATEGORY.get(name)
