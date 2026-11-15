@@ -1642,7 +1642,7 @@
     function death(d) {
       var cv = d.kind === 'warp' ? beastBox.querySelector('canvas.deathfx') : null, did = {}, total = 0, hitAt = 0;
       if (cv) d.ms.forEach(function (m, n) { if (n < d.impact) hitAt += m; total += m; });
-      else total = d.kind === 'rout' ? 600 : 900;
+      else total = d.kind === 'rout' ? 600 : 1000;
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
       function thud() {
         [0.2, 0.5, 0.8].forEach(function (q, n) { var p = at(br, q, 0.97); fx('ddust', p[0], p[1], 720, {'--dx': (n - 1) * 26 + 'px'}); });
@@ -1661,9 +1661,14 @@
           var g = ease(span(t, 0, total));
           beast.style.opacity = 1 - g; beast.style.transform = 'translateX(' + 0.06 * W * g + 'px)';
         } else {
-          var a = span(t, 0, 260), b = span(t, 260, total), bb = b * b;
-          beast.style.transform = 'translateY(' + -30 * bb + '%) rotate(' + (b > 0 ? 82 * bb : -8 * Math.sin(Math.PI * a)) + 'deg)';
-          beast.style.filter = 'brightness(' + (1 - 0.45 * bb) + ') saturate(' + (1 - 0.4 * bb) + ')';
+          // it staggers, its legs give, then it rolls over onto its side (away into the scene, or toward you) and lands
+          var a = span(t, 0, 320), b = span(t, 320, total), bb = b * b, side = d.side || 1;
+          var land = span(t, total, total + 220), bounce = Math.sin(Math.PI * land) * (1 - land);
+          // always onto its far flank (falling toward you would sink it under the ground); `side` sets which end
+          // touches down first, the head (1) or the hindquarters (-1)
+          var roll = 60 * bb - 6 * bounce, sway = b > 0 ? side * 4 * bb : 4 * Math.sin(Math.PI * 2 * a);
+          beast.style.transform = 'perspective(900px) translateY(' + (2.5 * Math.sin(Math.PI * a) + 2 * bb) + '%) rotateZ(' + -sway + 'deg) rotateX(' + roll + 'deg) scaleY(' + (1 - 0.08 * Math.sin(Math.PI * a)) + ')';
+          beast.style.filter = 'brightness(' + (1 - 0.25 * bb) + ') saturate(' + (1 - 0.3 * bb) + ')';
           if (b >= 1 && once('thud')) thud();
         }
       }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } beast.style.opacity = ''; }};

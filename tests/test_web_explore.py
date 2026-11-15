@@ -497,6 +497,7 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["kind"] == "fall"
+    assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["side"] in (1, -1)
     assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
 
 

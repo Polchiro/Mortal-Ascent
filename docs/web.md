@@ -456,7 +456,9 @@ from an old page, and pressing it twice does nothing. Fights that are lost, fled
 - `fight.js` (`drawDeath`) draws the beast's own picture on a canvas in thin upright strips and lowers each strip to
   the height the movement gives that part of the body: the legs fold, the body comes down, the head end lowest.
   `web/death.py` says where the body is inside the picture, so the same movement fits every beast's size and place.
-- A beast with no category tips over where it stands; bandits scatter.
+- A beast with no category staggers, its legs give, and it rolls over onto its side where it stands (`death-fall`:
+  a 3D roll onto its far flank, head end or hindquarters down first by `side`, `web/death.py`), never backwards;
+  bandits scatter.
 
 To add a category (flying, serpentine ...): measure a reference sheet with
 `python -m scripts.make_death_motion <video.mp4>`, add a row to `DEATH_ANIMATIONS` with the rows it prints, and list
