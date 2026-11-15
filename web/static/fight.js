@@ -637,6 +637,15 @@
        (`runes`). As it lunges, jaws wide (`hiss`): a flash at its mouth and a roaring stream of its element breathed
        at you, widening as it goes and churning while it holds, droplets spraying through it, mist rolling out along
        the ground both ways, and the camera punching in. A final hiss is bigger. */
+    function hueOf(hex) {                                        // the hue of a #rrggbb colour, in degrees
+      var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+      if (!m) return 150;
+      var r = parseInt(m[1], 16) / 255, g = parseInt(m[2], 16) / 255, b = parseInt(m[3], 16) / 255;
+      var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+      if (!d) return 150;
+      var h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      return (h * 60 + 360) % 360;
+    }
     function runes(pic, ms) {
       var c = at(pic, 0.5, 0.48), size = Math.min(1000, pic.height * 1.55);
       var n = document.createElement('div');
@@ -654,9 +663,10 @@
       var len = Math.sqrt(dx * dx + dy * dy) * 1.08, ang = Math.atan2(dy, dx) * 180 / Math.PI;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(800, tall * 0.9 * big), 460, 0, 'broarbig star', 0, 0.9);
-      ['', ' b2'].forEach(function (k, i) {                    // the stream, two churning layers
-        fx('bbreath' + k, p[0], p[1], 1650, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg',
-          '--h': Math.min(700, tall * (0.95 + 0.25 * i) * big) + 'px', 'animation-delay': (60 * i) + 'ms'});
+      var fy = Math.abs(ang) > 90 ? -1 : 1, hue = hueOf(ROAR.color), tint = (hue > 60 && hue < 170 ? 0 : hue - 150) + 'deg';   // the picture is venom green
+      ['bsblast glow', 'bsblast'].forEach(function (k) {       // the stream: a twisting torrent from SHOAIB's picture
+        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--tint': tint,
+          '--h': Math.min(520, Math.max(220, len * 0.45)) * big + 'px'});
       });
       for (var j = 0; j < 46; j++) {                           // droplets spraying through it
         var q = 0.25 + Math.random() * 0.85, spread = (Math.random() - 0.5) * tall * 0.75 * q * big;
@@ -699,11 +709,11 @@
        element coil up round its body (`coil`) and Qi swirls into its jaws (`gather`). As it roars (`storm`): a flash
        and a blazing blast of its element at you, lightning streaks fanning out round it, then its whole body bursting
        into a sphere of light with spikes and rings, mist pooling at its base, and the camera punching in. */
-    var DRAGON_BLUE = '#5fd0ff', DRAGON_GOLD = '#ffd98a';      // the palette of SHOAIB's dragon blast picture
+    var DRAGON_GOLD = '#fff1d0';                                 // the blast picture's own pale light, beside the element's colour
     function coil(pic, ms) {
       var c = at(pic, 0.45, 0.5);
       for (var i = 0; i < 4; i++) {
-        fx('bcoil', c[0], c[1] + 8 - i * 6, ms, {'--rc': i % 2 ? DRAGON_GOLD : DRAGON_BLUE, '--w': pic.width * (0.95 - 0.12 * i) + 'px',
+        fx('bcoil', c[0], c[1] + 8 - i * 6, ms, {'--rc': i % 2 ? DRAGON_GOLD : ROAR.color, '--w': pic.width * (0.95 - 0.12 * i) + 'px',
           '--h': pic.height * 0.32 + 'px', '--life': ms + 'ms', '--r0': (i * 70) + 'deg', 'animation-delay': (i * 90) + 'ms'});
       }
     }
@@ -715,23 +725,23 @@
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(700, tall * 0.8 * big), 480, 0, 'broarbig star', 9, 0.6);
       var fy = Math.abs(ang) > 90 ? -1 : 1;                    // keep the blast picture the right way up
-      ['bblast glow', 'bblast'].forEach(function (k) {         // the blast: a torrent of blue and gold Qi and spirit dragons
-        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy,
+      ['bblast glow', 'bblast', 'bblast tint'].forEach(function (k) {   // the blast, from SHOAIB's picture, in its element's colour
+        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--rc': ROAR.color,
           '--h': Math.min(620, Math.max(260, len * 0.5)) * big + 'px'});
       });
       for (var j = 0; j < 12; j++) {                           // lightning streaks fanning out round the blast
-        fx('bstreak', p[0], p[1], 1300, {'--rc': j % 2 ? DRAGON_GOLD : DRAGON_BLUE, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
+        fx('bstreak', p[0], p[1], 1300, {'--rc': j % 2 ? DRAGON_GOLD : ROAR.color, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
           '--ang': (ang + (Math.random() - 0.5) * 50) + 'deg', 'animation-delay': (40 + Math.random() * 500) + 'ms'});
       }
       var c = at(pic, 0.45, 0.5), sz = Math.min(800, pic.width * 0.8 * big);
-      fx('bnova', c[0], c[1], 1850, {'--rc': DRAGON_BLUE, '--s': sz + 'px', 'animation-delay': '520ms'});
+      fx('bnova', c[0], c[1], 1850, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '520ms'});
       fx('bnova', c[0], c[1], 1650, {'--rc': DRAGON_GOLD, '--s': sz * 0.55 + 'px', 'animation-delay': '620ms'});
       wave(c, 'ring', sz * 1.2, 700, 520, 'broarbig', 0, 0.45);
       wave(c, 'double', sz * 1.4, 800, 760, 'broarbig', 0, 0.3);
       var f = at(pic, 0.5, 0.98);                              // mist pooling at its base
       for (var m = 0; m < 10; m++) {
         var side = m % 2 ? 1 : -1;
-        fx('bdust bmist', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 2000, {'--rc': DRAGON_BLUE,
+        fx('bdust bmist', f[0] + side * (2 + 2.5 * m), f[1] - Math.random() * 2, 2000, {'--rc': ROAR.color,
           '--dx': side * (40 + 22 * m) + 'px', '--s': (0.9 + Math.random() * 0.6).toFixed(2), 'animation-delay': (600 + 30 * m) + 'ms'});
       }
       camera(p, 1 + 0.07 * big, 1500);
@@ -859,7 +869,7 @@
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
