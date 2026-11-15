@@ -998,19 +998,21 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 @keyframes bcoil{0%{opacity:0;transform:translate(-50%,-30%) rotate(var(--r0)) scale(1.2)}25%{opacity:1}
   85%{opacity:.9}100%{opacity:0;transform:translate(-50%,-70%) rotate(calc(var(--r0) + 300deg)) scale(.85)}}
 .bblast{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
-  background:url(/art/fx/dragon_blast.webp) 0 50%/100% 100% no-repeat;transform-origin:0 47%;
-  transform:translate(0,-47%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0);
-  filter:brightness(1.15) drop-shadow(0 0 16px rgba(110,200,255,.7));animation:bblast 1.7s cubic-bezier(.2,.7,.3,1) forwards}
-.bblast.glow{mix-blend-mode:screen;filter:blur(14px) brightness(1.4);animation-name:bblastglow}
-@keyframes bblast{0%{opacity:0;transform:translate(0,-47%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
-  14%{opacity:1;transform:translate(0,-47%) rotate(var(--ang)) scaleY(calc(var(--fy) * .9)) scaleX(1)}
-  40%{transform:translate(0,-47%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.05)) scaleX(1.02)}
-  60%{transform:translate(0,-47%) rotate(var(--ang)) scaleY(calc(var(--fy) * .97)) scaleX(1)}
-  78%{opacity:.9}100%{opacity:0;transform:translate(0,-47%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.15)) scaleX(1.06)}}
-@keyframes bblastglow{0%{opacity:0;transform:translate(0,-47%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
-  14%{opacity:.8;transform:translate(0,-47%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(1)}
+  background:url(/art/fx/dragon_blast.webp) 0 50%/100% 100% no-repeat;transform-origin:0 51%;
+  transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0);
+  filter:brightness(1.1) drop-shadow(0 0 16px var(--rc));animation:bblast 1.7s cubic-bezier(.2,.7,.3,1) forwards}
+.bblast.tint{background:var(--rc);mix-blend-mode:color;filter:none;
+  -webkit-mask:url(/art/fx/dragon_blast.webp) 0 50%/100% 100% no-repeat;mask:url(/art/fx/dragon_blast.webp) 0 50%/100% 100% no-repeat}
+.bblast.glow{mix-blend-mode:screen;filter:blur(14px) brightness(1.2) drop-shadow(0 0 30px var(--rc));animation-name:bblastglow}
+@keyframes bblast{0%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:1;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * .9)) scaleX(1)}
+  40%{transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.05)) scaleX(1.02)}
+  60%{transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * .97)) scaleX(1)}
+  78%{opacity:.9}100%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.15)) scaleX(1.06)}}
+@keyframes bblastglow{0%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:.8;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(1)}
   30%{opacity:.45}45%{opacity:.75}60%{opacity:.4}75%{opacity:.6}
-  100%{opacity:0;transform:translate(0,-47%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.2)) scaleX(1.06)}}
+  100%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.2)) scaleX(1.06)}}
 .bstreak{position:absolute;z-index:5;width:var(--len);height:3px;pointer-events:none;mix-blend-mode:screen;opacity:0;
   transform-origin:0 50%;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0);
   background:linear-gradient(90deg,#fff,color-mix(in srgb,var(--rc) 70%,#fff) 40%,transparent);box-shadow:0 0 10px var(--rc);
@@ -1059,6 +1061,40 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 @keyframes bbreath{0%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(0)}10%{opacity:.95;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1)}
   75%{opacity:.8}100%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleX(1) scaleY(1.2)}}
 @keyframes bchurn{to{background-position:0 0,-240px 0}}
+.bwind{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
+  background:url(/art/fx/wind_blast.webp) 0 50%/100% 100% no-repeat;transform-origin:0 50%;
+  transform:translate(0,-50%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0);
+  filter:brightness(1.1) drop-shadow(0 0 14px var(--rc));animation:bwind 1.7s cubic-bezier(.2,.7,.3,1) forwards}
+.bwind.tint{background:var(--rc);mix-blend-mode:color;filter:none;
+  -webkit-mask:url(/art/fx/wind_blast.webp) 0 50%/100% 100% no-repeat;mask:url(/art/fx/wind_blast.webp) 0 50%/100% 100% no-repeat}
+.bwind.tint.core{mix-blend-mode:screen;opacity:0;filter:blur(3px)}
+.bwind.glow{mix-blend-mode:screen;filter:blur(12px) brightness(1.2) drop-shadow(0 0 26px var(--rc));animation-name:bwindglow}
+@keyframes bwind{0%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:1;transform:translate(0,-50%) rotate(var(--ang)) scaleY(calc(var(--fy) * .9)) scaleX(1)}
+  40%{transform:translate(0,-50%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.05)) scaleX(1.02)}
+  60%{transform:translate(0,-50%) rotate(var(--ang)) scaleY(calc(var(--fy) * .96)) scaleX(1)}
+  78%{opacity:.9}100%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.15)) scaleX(1.05)}}
+@keyframes bwindglow{0%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:.7;transform:translate(0,-50%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(1)}
+  30%{opacity:.4}45%{opacity:.7}60%{opacity:.35}75%{opacity:.55}
+  100%{opacity:0;transform:translate(0,-50%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.2)) scaleX(1.05)}}
+.bdeep{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at 70% 50%,rgba(10,40,80,.15),rgba(2,10,30,.7));animation:bdeep 2.4s ease-in-out forwards}
+@keyframes bdeep{0%{opacity:0}20%{opacity:1}75%{opacity:.9}100%{opacity:0}}
+.bsblast{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
+  background:url(/art/fx/serpent_blast.webp) 0 50%/100% 100% no-repeat;transform-origin:0 51%;
+  transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0);
+  filter:hue-rotate(var(--tint)) saturate(1.2) brightness(1.15);animation:bsblast 1.7s cubic-bezier(.2,.7,.3,1) forwards}
+.bsblast.glow{mix-blend-mode:screen;filter:hue-rotate(var(--tint)) blur(12px) brightness(1.5);animation-name:bsblastglow}
+@keyframes bsblast{0%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:1;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * .9)) scaleX(1)}
+  40%{transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.05)) scaleX(1.02)}
+  60%{transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * .96)) scaleX(1)}
+  78%{opacity:.9}100%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.15)) scaleX(1.05)}}
+@keyframes bsblastglow{0%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(0)}
+  14%{opacity:.7;transform:translate(0,-51%) rotate(var(--ang)) scaleY(var(--fy)) scaleX(1)}
+  30%{opacity:.4}45%{opacity:.7}60%{opacity:.35}75%{opacity:.55}
+  100%{opacity:0;transform:translate(0,-51%) rotate(var(--ang)) scaleY(calc(var(--fy) * 1.2)) scaleX(1.05)}}
 .bdrop{position:absolute;z-index:5;width:9px;height:9px;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(circle,#fff,var(--rc) 60%,transparent 70%);box-shadow:0 0 8px var(--rc);
   animation:bdrop 1.4s ease-out forwards}

@@ -350,13 +350,16 @@ a lair is fought with `bot/hunt.py`.
    **The flying beasts screech** (`ROAR_ANIMATIONS["flying"]`, from SHOAIB's flying roar video of a crane; `gather` and
    `screech` in `fight.js`): each, as its own picture, rears up off the ground with its head thrown back while Qi motes
    of its element swirl into its glowing throat, then snaps its head forward with its open-beaked picture
-   (`art/beasts/roar/`) and blasts a cone of great sound bells at you along a glowing beam, bells pulsing from its
-   beak while it holds, feathers scattering across the scene and the camera punching in, then settles. Same rules,
+   (`art/beasts/roar/`) and screeches a spiralling blast of wind at you (`art/fx/wind_blast.webp`, from SHOAIB's picture, coloured
+   by its element), bells pulsing from its beak while it holds. The two greatest birds are unique (`SCREECH_KINDS`): the
+   Vermilion Bird breathes crimson phoenix fire with a golden heart, embers and a ring of fire; the Kun-Peng darkens
+   the sky and screeches a deep-sea tide, a whirlpool round it, spray and great waves rolling along the ground, feathers scattering across the scene and the camera punching in, then settles. Same rules,
    damage and log line ("Roar") as the quadrupeds' roar.
    **The serpents hiss** (`ROAR_ANIMATIONS["serpent"]`, from SHOAIB's serpent roar video of a viper; `gather`, `runes`
    and `hiss` in `fight.js`): each coils back with its head low, then rears high while Qi of its element swirls into its
    jaws and a circle of glowing runes with spinning golden rings flares up behind it; then it lunges with its
-   open-mouthed picture and breathes a roaring stream of its element at you, droplets spraying through it and mist
+   open-mouthed picture and breathes a twisting torrent of venom at you (`art/fx/serpent_blast.webp`, from SHOAIB's
+   picture, tinted to its element's colour), droplets spraying through it and mist
    rolling out along the ground, the camera punching in, and settles. Same rules, damage and log line.
    **The amphibians roar** (`ROAR_ANIMATIONS["amphibian"]`, from SHOAIB's amphibian roar video of the Thornback
    Lizard; `gather` and `quake` in `fight.js`): each crouches low while Qi of its element swirls in, then throws its
@@ -365,8 +368,8 @@ a lair is fought with `bot/hunt.py`.
    damage and log line.
    **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
    `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
-   then rears and roars with its open-mouthed picture, a torrent of blue and gold Qi and spirit dragons blasting at you
-   (`art/fx/dragon_blast.webp`, from SHOAIB's picture) with lightning streaks
+   then rears and roars with its open-mouthed picture, an orb of crackling energy blasting at you
+   (`art/fx/dragon_blast.webp`, from SHOAIB's picture, coloured by its element) with lightning streaks
    fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
    punching in, and settles. Same rules, damage and log line.
    **The primates roar** (`ROAR_ANIMATIONS["primate"]`, from SHOAIB's primate roar video of the Silver Monkey;
