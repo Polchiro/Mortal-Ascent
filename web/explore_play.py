@@ -79,6 +79,7 @@ def beast_roar(e):
     return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
             "art": f"/art/beasts/roar/{slug}.png" if roar_pic and os.path.exists(roar_pic) else None,
             "slug": slug,
+            "claws": beasts.has_claws(e.get("name") or ""),
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",

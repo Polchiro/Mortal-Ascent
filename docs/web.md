@@ -214,7 +214,12 @@ a lair is fought with `bot/hunt.py`.
    guard as the beast comes in, the blow lands on them in a white flash with her sleeves whipping round, and she
    steadies behind her crossed arms. Each sheet carries its own timing (`ready`, `first`, `ms` in
    `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). The beast is knocked back, flashes, and its HP bar and the damage number change at the
-   moment of impact. Then the beast charges in turn: red claw marks, you are knocked back, your HP drops then.
+   moment of impact. Then the beast attacks in turn (its M1, `charge` with `RECIPES.gore`, from SHOAIB's beast attack
+   video): it lowers its head, rears, charges in kicking up dust and gores, tossing its head up with its jaws open (its
+   open-mouthed roar picture, where it has one); its mark torn across you as it hits, three red claw marks for a
+   clawed beast (`beasts.CLAWED`, `art/fx/claw_marks.webp`) or a single bright slash for the rest
+   (`art/fx/beast_slash.webp`), both SHOAIB's pictures, and dust where it hits, you are knocked back, your HP
+   drops then, and it trots home.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
