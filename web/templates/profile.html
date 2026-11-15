@@ -13,6 +13,7 @@
       <span class="aura" aria-hidden="true"></span>
       <span class="seal" aria-hidden="true">{{ t.seal }}</span>
       <img src="{{ p.portrait }}" alt="" width="550" height="445">
+      <span class="wisps" aria-hidden="true"></span>
     </div>
     <h1 class="xname">{{ p.name }}</h1>
     <p class="xrealm">{{ p.realm }} · {{ p.layer }} Layer</p>
@@ -45,7 +46,7 @@
       </div>
       <div class="qibar">
         <div class="row"><span><img src="/art/icons/attr/qi.webp" alt="" width="22" height="22"> Internal Qi</span><b>{{ p.qi }} / {{ p.qi_cap }}</b></div>
-        <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100"><div class="{% if not p.qi_pct %}none{% endif %}" style="width: {{ p.qi_pct }}%"></div></div>
+        <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100" style="--qi: {{ p.qi_pct }}%"><div class="{% if not p.qi_pct %}none{% endif %}" style="width: {{ p.qi_pct }}%"></div></div>
         <div class="row sub"><span>+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</span><span class="tone-{{ p.qi_tone }}">{{ p.qi_status }}</span></div>
       </div>
       <div class="nextbt">

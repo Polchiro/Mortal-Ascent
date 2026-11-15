@@ -195,8 +195,8 @@ body.hallbg{--ag:#C9A45C;--ag2:#EBCB86;--ag3:#F6E2B0;--char:#101114;--spirit:#7F
    which left the page black below the first screen), under a light blue-teal night mist instead of near-black */
 body.hallbg.profilebg{background:#0A1A22}
 body.hallbg.profilebg::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 40%,rgba(40,90,100,.10),rgba(6,16,24,.55) 80%),
-    linear-gradient(180deg,rgba(12,34,44,.25),rgba(8,24,32,.45) 55%,rgba(6,16,22,.7)),
+  background:radial-gradient(ellipse at 50% 40%,rgba(60,120,140,.12),rgba(6,16,26,.45) 85%),
+    linear-gradient(180deg,rgba(20,50,66,.18),rgba(10,30,42,.35) 55%,rgba(6,18,26,.62)),
     url(/art/scenes/profile_hall.jpg) center top/cover no-repeat,#0A1A22}
 body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50% 0%,rgba(201,164,92,.07),transparent 60%),linear-gradient(180deg,rgba(14,28,36,.86),rgba(9,18,24,.9));
   box-shadow:inset 0 0 0 5px rgba(9,18,24,.9),inset 0 0 0 6px rgba(201,164,92,.22),inset 0 1px 30px rgba(0,0,0,.4),0 18px 40px rgba(0,0,0,.45)}
@@ -238,16 +238,19 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
   filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .dragon.l{left:6px}.dragon.r{right:6px;transform:scaleX(-1)}
 .portrait{position:relative;width:100%;max-width:330px;aspect-ratio:550/560;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;border-radius:3px;
-  background:radial-gradient(ellipse at 50% 42%,rgba(160,240,210,.42),rgba(47,180,134,.2) 34%,transparent 64%),radial-gradient(ellipse at 50% 100%,rgba(201,164,92,.2),transparent 50%),linear-gradient(180deg,#0E2722,#0A1714 60%,#0B1110);
-  border:1px solid rgba(201,164,92,.55);box-shadow:inset 0 0 0 4px rgba(10,16,14,.85),inset 0 0 0 5px rgba(111,217,176,.25),inset 0 0 40px rgba(111,217,176,.18),0 0 24px rgba(47,180,134,.18)}
-.portrait .aura{position:absolute;inset:-30%;border-radius:50%;pointer-events:none;filter:blur(16px);opacity:.8;
-  background:conic-gradient(from 0deg,transparent 0 8%,rgba(127,240,195,.5) 14%,transparent 24% 40%,rgba(191,243,223,.35) 48%,transparent 58% 72%,rgba(111,217,176,.45) 80%,transparent 90%);
-  -webkit-mask:radial-gradient(circle,transparent 18%,#000 30%,#000 52%,transparent 66%);mask:radial-gradient(circle,transparent 18%,#000 30%,#000 52%,transparent 66%);
-  animation:auraspin 26s linear infinite}
+  background:url(/art/ui/qi_aura_back.svg) center/cover no-repeat,#0E2A30;
+  border:1px solid rgba(201,164,92,.6);box-shadow:inset 0 0 0 4px rgba(10,22,24,.75),inset 0 0 0 5px rgba(127,240,195,.3),inset 0 0 30px rgba(0,0,0,.35),0 0 26px rgba(47,180,134,.25)}
+.portrait .aura{position:absolute;inset:-25%;pointer-events:none;opacity:.5;filter:blur(14px);
+  background:conic-gradient(from 0deg,transparent 0 10%,rgba(191,248,226,.45) 16%,transparent 26% 46%,rgba(127,240,195,.35) 54%,transparent 64% 80%,rgba(191,248,226,.35) 86%,transparent 94%);
+  -webkit-mask:radial-gradient(circle,transparent 22%,#000 34%,#000 50%,transparent 64%);mask:radial-gradient(circle,transparent 22%,#000 34%,#000 50%,transparent 64%);
+  animation:auraspin 30s linear infinite}
 @keyframes auraspin{to{transform:rotate(360deg)}}
-.portrait::after{content:"";position:absolute;left:14%;right:14%;bottom:3%;height:18px;border-radius:50%;background:radial-gradient(rgba(127,240,195,.4),transparent 70%)}
-.portrait img{position:relative;z-index:1;width:100%;height:92%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 16px rgba(111,217,176,.35)) drop-shadow(0 10px 18px rgba(0,0,0,.6))}
-.portrait .seal{position:absolute;top:6%;left:50%;transform:translateX(-50%);font:700 150px/1 "Noto Serif SC",serif;color:rgba(191,243,223,.08)}
+.portrait .wisps{position:absolute;inset:-4% -8%;z-index:2;pointer-events:none;background:url(/art/ui/qi_aura_front.svg) center/cover no-repeat;
+  mix-blend-mode:screen;animation:wispdrift 9s ease-in-out infinite alternate}
+@keyframes wispdrift{from{transform:translate(-3%,1%)}to{transform:translate(3%,-1.5%)}}
+.portrait::after{content:"";position:absolute;left:16%;right:16%;bottom:3%;height:20px;border-radius:50%;background:radial-gradient(rgba(200,255,236,.55),transparent 70%)}
+.portrait img{position:relative;z-index:1;width:100%;height:92%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 14px rgba(200,255,236,.45)) drop-shadow(0 10px 16px rgba(0,0,0,.45))}
+.portrait .seal{display:none}
 .xname{margin:8px 0 0;font:800 34px/1.1 Cinzel,Georgia,serif;letter-spacing:3px;text-transform:uppercase;
   background:linear-gradient(180deg,#FFF1C9 10%,#EBCB86 45%,#B98A3E 90%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
 .xrealm{margin:0;font:700 16px Cinzel,Georgia,serif;letter-spacing:.5px;color:var(--cream)}
@@ -274,28 +277,24 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
 .cultmain .sub{margin:0}
 /* the layers: jade spirit gems on a leaf, lit up to the layer reached */
 .pips{display:flex;gap:clamp(4px,1.2vw,8px);margin:12px 6px 10px}
-.pips i{position:relative;flex:1 1 0;min-width:0;max-width:30px;aspect-ratio:4/5;
-  border-radius:50% 50% 46% 46%/60% 60% 40% 40%;background:radial-gradient(ellipse at 38% 28%,rgba(255,255,255,.14),transparent 30%),radial-gradient(ellipse at 50% 60%,#1C2925,#0B1110);
-  border:1px solid rgba(111,217,176,.25);box-shadow:inset 0 -3px 6px rgba(0,0,0,.6)}
-.pips i::after{content:"";position:absolute;left:-14%;right:-14%;bottom:-5px;height:9px;border-radius:0 0 50% 50%;border:2px solid rgba(201,164,92,.45);border-top:0}
-.pips i.on{background:radial-gradient(ellipse at 36% 26%,#F2FFF9 0 7%,transparent 22%),radial-gradient(ellipse at 50% 58%,#86F2C8,#2FB486 46%,#0E5A43 88%);
-  border-color:rgba(191,243,223,.75);box-shadow:0 0 12px rgba(111,217,176,.55),inset 0 -4px 8px rgba(0,40,28,.55)}
-.pips i.on::after{border-color:rgba(127,240,195,.65)}
+.pips i{position:relative;flex:1 1 0;min-width:0;max-width:32px;aspect-ratio:60/72;background:url(/art/ui/jade_gem_off.svg) center/contain no-repeat}
+.pips i.on{background-image:url(/art/ui/jade_gem_on.svg);filter:drop-shadow(0 0 7px rgba(127,240,195,.75))}
 .pips i.now{animation:gemglow 2.6s ease-in-out infinite}
-@keyframes gemglow{50%{box-shadow:0 0 22px rgba(127,240,195,.95),inset 0 -4px 8px rgba(0,40,28,.55)}}
+@keyframes gemglow{50%{filter:drop-shadow(0 0 14px rgba(160,255,215,1)) brightness(1.15)}}
 /* Internal Qi: a jade current in a gold-trimmed channel */
 .qibar{margin-top:22px;display:flex;flex-direction:column;gap:8px}
 .qibar .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .qibar .row span{display:inline-flex;align-items:center;gap:7px;font:700 15px Cinzel,Georgia,serif}.qibar .row b{font:800 17px Cinzel,Georgia,serif;color:var(--cream)}
 .qibar .row.sub span{font:400 14px Inter,Arial,sans-serif}
-.qibar .bar{position:relative;height:16px;padding:2px;border-radius:999px;background:linear-gradient(180deg,#0A0F0E,#141B19);border:1px solid rgba(201,164,92,.6);
-  box-shadow:inset 0 2px 5px rgba(0,0,0,.7),0 0 0 3px rgba(11,12,14,.9),0 0 0 4px rgba(201,164,92,.18)}
-.qibar .bar div{position:relative;height:100%;min-width:12px;border-radius:999px;
+.qibar .bar{position:relative;height:40px;margin:-4px 0 -2px;border:0;border-radius:0;overflow:visible;padding:0;
+  background:linear-gradient(180deg,transparent 14px,rgba(201,164,92,.65) 14px 15px,#0A1112 15px 25px,rgba(201,164,92,.65) 25px 26px,transparent 26px)}
+.qibar .bar div{position:absolute;left:0;top:15px;height:10px;border-radius:0 6px 6px 0;
   background:repeating-linear-gradient(115deg,rgba(255,255,255,.16) 0 7px,transparent 7px 18px),linear-gradient(90deg,#11604A,#2FB486 45%,#7FF0C3 85%,#D9FFF0);
   background-size:36px 100%,100% 100%;box-shadow:0 0 14px rgba(111,217,176,.65);animation:qiflow 1.6s linear infinite}
-.qibar .bar div::after{content:"";position:absolute;right:-5px;top:50%;width:16px;height:16px;border-radius:50%;transform:translateY(-50%);
-  background:radial-gradient(circle,#FFFFFF,#9FF5D3 40%,rgba(111,217,176,0) 72%);filter:blur(.5px)}
-.qibar .bar div.none{min-width:0;box-shadow:none}.qibar .bar div.none::after{display:none}
+.qibar .bar::before,.qibar .bar::after{content:"";position:absolute;inset:0 0 0 0;z-index:1;pointer-events:none;background:url(/art/ui/qi_ribbon.svg) center/100% 100% no-repeat}
+.qibar .bar::before{opacity:.6;filter:saturate(.8) brightness(.75)}
+.qibar .bar::after{clip-path:inset(0 calc(100% - var(--qi,0%)) 0 0);filter:drop-shadow(0 0 8px rgba(127,240,195,.6))}
+.qibar .bar div.none{box-shadow:none}
 @keyframes qiflow{to{background-position:36px 0,0 0}}
 .nextbt{margin-top:18px;padding:13px 16px;border-left:3px solid var(--ag2);background:linear-gradient(90deg,rgba(201,164,92,.12),rgba(201,164,92,.03) 70%,transparent);
   box-shadow:inset 0 1px 0 rgba(201,164,92,.15),inset 0 -1px 0 rgba(201,164,92,.1)}
@@ -374,7 +373,7 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
 .plaque span{font-size:13px;font-weight:600;color:#EAD9B6;text-align:center}
 @media (max-width:900px){.portrait{max-width:320px}.portrait .seal{font-size:110px}}
 @media (max-width:560px){.realmseal{width:62px;height:62px;font-size:30px}.cult{gap:14px}.xprofile .xpanel{padding:22px 16px}.xprofile .phead.orn::before{width:140px}.xname{font-size:28px}.dragon{width:48px;height:48px}}
-@media (prefers-reduced-motion:reduce){.portrait .aura,.pips i.now,.qibar .bar div{animation:none}}
+@media (prefers-reduced-motion:reduce){.portrait .aura,.portrait .wisps,.pips i.now,.qibar .bar div{animation:none}}
 /* E. Strength & Vitality */
 .devform{display:flex;flex-direction:column;gap:12px}
 .devrow{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:3px;background:radial-gradient(ellipse at 0% 0%,rgba(111,217,176,.07),transparent 55%),linear-gradient(160deg,rgba(26,34,32,.7),rgba(10,12,13,.85));border:1px solid rgba(201,164,92,.3);box-shadow:inset 0 0 0 3px rgba(10,12,13,.7),inset 0 0 0 4px rgba(201,164,92,.1)}
