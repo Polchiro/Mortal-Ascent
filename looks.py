@@ -117,23 +117,36 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                            "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 39, "cols": 8, "rows": 5,
                                       "jab": 5, "release": 16, "back": 38, "shift": 7 / 320, "hand": [0.6, 0.39],
                                       "body": [0.523, 0.209, 0.937, 0.232]}},
-                 # "deflect": hers only, from SHOAIB's video of her (scripts/make_heroine_deflect.py), the movement every
-                 # deflection technique shares (web/technique_fx.py HER_FX; fight.js `deflected`): on guard, palm raised
+                 # "deflect": hers from SHOAIB's video of her (scripts/make_heroine_deflect.py), the movement every
+                 # deflection technique shares (web/technique_fx.py MOVES_FX; fight.js `deflected`): on guard, palm raised
                  # (0-5); from `jab` she turns into the blow and reaches out to meet it at `release` (where `hand` is); she
                  # carries it round and aside with a swirl of her sleeve, furthest behind her at `sweep` (where `tip` is);
                  # from `back` she settles on guard again. No guarding stance: she never stands to take the blow.
-                 # The male cultivator has none: his looks for these techniques stay as they are.
-                 "deflect": {"female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 36, "cols": 8, "rows": 5,
+                 # His is his own, from SHOAIB's video of him (scripts/make_hero_deflect.py): on guard, he reaches back
+                 # (`jab`), sweeps a blue Qi arc round in front of him to turn the blow (`release`, `hand`), carries it
+                 # down and across (`sweep`, `tip`) and settles on guard again (`back` on). The arc is painted in.
+                 "deflect": {"male": {"src": "/art/portraits/fight/hero_male_deflect.webp", "frames": 32, "cols": 8, "rows": 4,
+                                      "jab": 6, "release": 13, "sweep": 17, "back": 20, "shift": 2 / 320,
+                                      "hand": [0.663, 0.479], "tip": [0.338, 0.690],
+                                      "body": [0.454, 0.059, 0.918, 0.264]},
+                             "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 36, "cols": 8, "rows": 5,
                                         "jab": 6, "release": 12, "sweep": 23, "back": 26, "shift": 4 / 320,
                                         "hand": [0.663, 0.330], "tip": [0.329, 0.708],
                                         "body": [0.520, 0.196, 0.937, 0.233]}},
-                 # "sidestep": hers only, from SHOAIB's video of her (scripts/make_heroine_sidestep.py), what Drifting
+                 # "sidestep": hers from SHOAIB's video of her (scripts/make_heroine_sidestep.py), what Drifting
                  # Mist Steps and Cloud-Walking Shadow play when they slip the beast's Break (fight.js `sidestepped`):
                  # on guard, palm raised (0-2); from `jab` she sweeps her sleeve and drops into a deep side lunge, out
                  # of the blow's line at `release`; from `back` she rises into the same guard (by 22) and holds it.
-                 # Played frame for frame at the video's own pace (`fps`), never sped up or stretched.
-                 "sidestep": {"female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 27, "cols": 8, "rows": 4,
-                                         "jab": 3, "release": 10, "back": 14, "fps": 12, "shift": 47 / 320,
+                 # Played frame for frame at the video's own pace (`fps`), never sped up or stretched. `give`: the ground
+                 # she gives and takes back, as a share of the scene's width.
+                 # His, from SHOAIB's video of him (scripts/make_hero_sidestep.py): from standing he launches (`jab`)
+                 # into a low dash in swirls of blue Qi (`release`), then rises out of it (`back` on: his launch played
+                 # back, as the video holds the dash to its end). He dashes in place: no ground given.
+                 "sidestep": {"male": {"src": "/art/portraits/fight/hero_male_sidestep.webp", "frames": 24, "cols": 8, "rows": 3,
+                                       "jab": 5, "release": 8, "back": 17, "fps": 12, "shift": 0, "give": 0,
+                                       "hand": [0.637, 0.360], "body": [0.453, 0.059, 0.915, 0.248]},
+                              "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 27, "cols": 8, "rows": 4,
+                                         "jab": 3, "release": 10, "back": 14, "fps": 12, "shift": 47 / 320, "give": 0.06,
                                          "hand": [0.719, 0.414], "body": [0.521, 0.196, 0.936, 0.243]}}}
 
 

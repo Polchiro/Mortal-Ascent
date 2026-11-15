@@ -9,9 +9,9 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
              or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`);
              "finger" his finger-jab video, a lunge with two fingers thrust out; "brace" his brace video, arms
              crossed up into guard in a wide stance: the Body defense techniques that stand their ground, played
-             inside the beast's attack (fight.js `braced`); "deflect" her deflection video (HER_FX below, hers
-             only): she turns into the blow, meets it and carries it aside with her sleeve, inside the beast's
-             attack (fight.js `deflected`)
+             inside the beast's attack (fight.js `braced`); "deflect" the deflection videos (MOVES_FX below, hers
+             and his): meeting the blow and turning it aside, inside the beast's attack (fight.js `deflected`);
+             "sidestep" (MOVES_FX): slipping the beast's Break (fight.js `sidestepped`)
     play    how fight.js `technique` plays the pictures (PLAYS)
     art      its pictures in art/fx/tech/ (scripts/make_fist_fx.py), the first being its main one
     punches  how many dragons fly from each punch, one punch after another (Nine Dragons Ascending Fist only)
@@ -61,26 +61,24 @@ TECH_FX = {
     "immortal_lotus_body": {"motion": "brace", "play": "lotus", "art": ["immortal_lotus_body"]},
 }
 
-# Looks one cultivator has in place of the above (or where the above has none). The female cultivator's deflections,
-# from SHOAIB's designs (Gemini, scripts/make_deflect_fx.py), all played with her one deflection (looks.MOTION_SHEETS
-# "deflect"; fight.js `deflected`): inside the beast's attack she turns into the blow, meets it and carries it aside
-# with her sleeve, then settles back on guard; no guarding stance. The male cultivator keeps his looks for them:
-# Parrying Arm's brace, and the CSS jade barrier of the five Palm deflections.
-HER_FX = {
+# The deflections and sidesteps, from SHOAIB's designs (Gemini, scripts/make_deflect_fx.py, make_sidestep_fx.py), for
+# both cultivators, each with their own movement (looks.MOTION_SHEETS "deflect" and "sidestep", hers and his). The
+# deflections play with the deflection (fight.js `deflected`): inside the beast's attack the cultivator meets the
+# blow and turns it aside, then settles back on guard; no guarding stance.
+MOVES_FX = {
     "parrying_arm": {"motion": "deflect", "play": "glance", "art": ["parrying_arm"]},
     "flowing_stream_palm": {"motion": "deflect", "play": "stream", "art": ["flowing_stream_palm"]},
     "crane_wing_deflection": {"motion": "deflect", "play": "crane", "art": ["crane_wing_deflection"]},
     "moon_mirror_palm": {"motion": "deflect", "play": "moon", "art": ["moon_mirror_palm"]},
     "thousand_hands_deflection": {"motion": "deflect", "play": "hands", "art": ["thousand_hands_deflection"]},
     "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance"]},
-    # her sidesteps, from SHOAIB's designs (Gemini, scripts/make_sidestep_fx.py), both played with her one sidestep
-    # (looks.MOTION_SHEETS "sidestep"; fight.js `sidestepped`), and only `on` a turn the evade worked: she slips
-    # the beast's Break, which passes through her afterimages. When it doesn't (the Break is held, or the beast
-    # only struck), the technique keeps its CSS look, as for the male cultivator.
+    # the sidesteps, both played with the sidestep (fight.js `sidestepped`), and only `on` a turn the evade worked:
+    # the cultivator slips the beast's Break, which passes through the afterimages. When it doesn't (the Break is
+    # held, or the beast only struck), the technique keeps its CSS look.
     "drifting_mist_steps": {"motion": "sidestep", "play": "mist_steps", "art": ["drifting_mist_steps"], "on": "evade"},
     "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow"], "on": "evade"},
 }
-BY_GENDER = {"female": HER_FX}
+BY_GENDER = {"female": MOVES_FX, "male": MOVES_FX}   # looks one cultivator could have in place of TECH_FX
 
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle
 GRADE_MS = {"Mortal": 1100, "Yellow": 1300, "Mystic": 1600, "Earth": 2100, "Heaven": 2700}
