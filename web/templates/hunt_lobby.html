@@ -53,7 +53,7 @@
         {% if v.location %}{% set L = v.location %}
         <div class="dest"><img src="{{ L.art }}" alt="">
           <div><p class="pline" style="margin:0;font:700 19px Cinzel,Georgia,serif;color:var(--ag3)">{{ L.name }}</p>
-            <p class="sub" style="margin:2px 0 0">For {{ L.requirement }}</p>
+            <p class="sub" style="margin:2px 0 0">{{ L.requirement }} or higher</p>
             <a class="sub" href="/hunt/locations">Beasts and rewards</a></div></div>
         {% else %}
         <p class="sub">{{ "Choose where the party hunts." if v.lead else "The leader hasn't chosen where to hunt yet." }}</p>

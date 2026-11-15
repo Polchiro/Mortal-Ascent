@@ -106,16 +106,17 @@ def test_private_team_joins_by_invitation_id_only(site):
     assert app.state.parties.of(B) is app.state.parties.of(A)
 
 
-def test_wrong_realm_cannot_join_and_leader_can_remove(site):
+def test_realm_rules_and_leader_can_remove(site):
     app, login, _ = site
     a, b, c = login(A), login(B), login(C)
     a.post("/party/create", data={"name": "Moon Wolves", "visibility": "public"})
     a.post("/party/location", data={"key": "moon_forest"})
     pid = app.state.parties.of(A).id
-    teams = c.get("/explore/teams").text
-    assert "For Mortal – Martial Apprentice" in teams
-    c.post("/party/join", data={"id": pid})
-    assert app.state.parties.of(C) is None
+    c.post("/party/join", data={"id": pid})                                      # a Saint may join a Moon Forest hunt
+    assert app.state.parties.of(C) is app.state.parties.of(A)
+    a.post("/party/kick", data={"uid": str(C)})
+    a.post("/party/location", data={"key": "crimson_gorge"})                      # Shoaib is too low to lead here
+    assert app.state.parties.of(A).location == "moon_forest"
     b.post("/party/join", data={"id": pid})
     a.post("/party/kick", data={"uid": str(B)})
     assert app.state.parties.of(B) is None

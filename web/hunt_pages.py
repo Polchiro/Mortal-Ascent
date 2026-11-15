@@ -10,7 +10,6 @@ import forge
 import hunting
 
 from bot import db, loot, materials
-from bot import player as rules
 
 from .forge_play import rich
 from .profile import number
@@ -59,7 +58,7 @@ def teams_view(conn, uid, parties):
         if party.full:
             why = "Full"
         elif loc and hunting.eligible(p, loc):
-            why = f"For {hunting.requirement(loc)}"
+            why = f"Needs {hunting.requirement(loc)}+"
         rows.append({"id": party.id, "name": party.name, "leader": name, "realm": realm,
                      "members": len(party.members), "max": hunting.MAX_PARTY,
                      "location": loc["name"] if loc else None, "full": party.full, "blocked": why})
@@ -75,7 +74,7 @@ def lobby_view(conn, uid, party, hunts):
         pl = db.get_player(conn, m.uid)
         bad = None
         if pl and loc:
-            bad = "Wrong realm" if hunting.eligible(pl, loc) else None
+            bad = "Realm too low" if hunting.eligible(pl, loc) else None
         rest = hunts.blocked(conn, m.uid)
         members.append({"uid": m.uid, "name": pl["name"] if pl else "?", "realm": pl["realm"] if pl else "",
                         "layer": pl["layer"] if pl else 0, "leader": m.uid == party.leader, "me": m.uid == uid,
@@ -102,10 +101,10 @@ def location_card(loc, player):
     elements = sorted({beasts.element_of(n) for n, *_ in pool if beasts.element_of(n)})
     why = hunting.eligible(player, loc)
     here = player["realm"] in loc["realms"]
-    above = not here and rules.realm_index(player["realm"]) > rules.realm_index(loc["realms"][-1])
     return {"key": loc["key"], "name": loc["name"], "text": loc["text"], "art": f"/art/scenes/{loc['card']}.jpg",
             "requirement": hunting.requirement(loc), "ok": why is None,
-            "state": "Your realm" if here else "Beyond your realm" if above else "Realm too low",
+            "state": "Your realm" if here else "Open" if why is None else "Realm too low",
+            "home": hunting.home_realms(loc),
             "beasts": [{"name": n, "tier": TIER_LABEL[t], "tkey": t, "role": r.title(), "realm": home,
                         "short": SHORT_TIER[t], "icon": beast_icon(n)} for n, t, r, home in pool],
             "rewards": ["Lotus Coins", "Beast Cores", "Chests (from beasts)"] + mats

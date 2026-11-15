@@ -25,7 +25,7 @@ An expedition already under way from the old flow (or an `/admin web_fight` test
 - **Private:** not listed. It has a 6-character **invitation ID** (no 0/O or 1/I). The leader can make a new
   one, and the old ID stops working at once. Ten wrong IDs in 10 minutes and a player must wait.
 - You can't join a full party, a party already out hunting (nobody joins halfway), or a party whose chosen
-  ground is outside your realm.
+  ground needs a higher realm than yours.
 
 | | Leader | Member |
 |---|---|---|
@@ -45,7 +45,7 @@ lost, because loot is only ever banked in the database.
 
 ## Hunting grounds
 
-| # | Location | Realms | Arena |
+| # | Location | Beasts of (entry: the first realm or higher) | Arena |
 |---|---|---|---|
 | 1 | Moon Forest | Mortal – Martial Apprentice | Bamboo forest |
 | 2 | Crimson Gorge | Martial Warrior – Martial Expert | Red cliffs |
@@ -56,8 +56,11 @@ lost, because loot is only ever banked in the database.
 
 - A ground's beasts are the **existing roster** of its realms (`beasts.BEASTS`), so 12 beasts each, 6 for the
   Saints. No beast is new or renamed.
-- **Every member must be inside the range** to set out (a Saint can't hunt the Moon Forest).
-- Each card shows its art, text, requirement (Your realm / Realm too low / Beyond your realm), its beasts with
+- **Entry needs the ground's lowest realm or higher.** Higher realms may hunt anywhere below them: a Martial Saint
+  can go to every ground. Every member must meet it to set out.
+- The beasts are always as strong as the party's **strongest** member (below), and rewards follow each hunter's own
+  realm, so a high realm hunting a low ground fights and earns at its own level: only the beasts' names and kinds change.
+- Each card shows its art, text, requirement (Your realm / Open / Realm too low), its beasts with
   Elite and King marked, and its rewards: Lotus Coins, Beast Cores, chests, the forge materials of its realm
   tiers and the essences of its beasts' elements.
 - To change a ground's realms, text or art, edit `LOCATIONS` in `hunting.py`.
@@ -98,6 +101,6 @@ bot's own. A hunter who fled gets nothing for that beast.
 
 ## Server-side checks
 
-Membership, invitation IDs, leader rights, realm requirements, readiness, rests, injuries, one move per turn,
+Membership, invitation IDs, leader rights, minimum realms, readiness, rests, injuries, one move per turn,
 turn deadlines and every reward are decided in `web/parties.py` and `web/hunt_play.py`, under one lock. The pages
 only show what those allow. The browser never sees which beast is coming or how a turn will go.

@@ -1,8 +1,9 @@
 """
 Hunting locations and team hunt numbers (docs/hunting.md).
 
-A location covers a range of realms. Its beasts are the existing roster of those realms (beasts.BEASTS): nothing
-new is invented and no beast is renamed. Every member of a party must be inside the range to enter.
+A location is home to a range of realms: its beasts are the existing roster of those realms (beasts.BEASTS), so nothing
+new is invented and no beast is renamed. Entry only needs the location's lowest realm: anyone at or above it may
+hunt there (a Martial Saint can go anywhere). Beasts are always as strong as the party's strongest member.
 
 Change a location's realms, art or text here; nothing else needs to change.
 """
@@ -59,17 +60,23 @@ def location_for(realm):
 
 
 def requirement(loc):
-    """'Mortal – Martial Apprentice' or 'Martial Saint'."""
+    """The lowest realm that may enter, e.g. 'Martial Warrior'."""
+    return loc["realms"][0]
+
+
+def home_realms(loc):
+    """'Mortal – Martial Apprentice' or 'Martial Saint': the realms whose beasts live here."""
     a, b = loc["realms"][0], loc["realms"][-1]
     return a if a == b else f"{a} – {b}"
 
 
 def eligible(player, loc):
-    """None if this player may hunt here, else why not."""
+    """None if this player may hunt here (their realm is the location's lowest realm or higher), else why not."""
+    from bot import player as rules
     if player is None:
         return "No character yet."
-    if player["realm"] not in loc["realms"]:
-        return f"{player['name']} is {player['realm']}: {loc['name']} is for {requirement(loc)}."
+    if rules.realm_index(player["realm"]) < rules.realm_index(requirement(loc)):
+        return f"{player['name']} is {player['realm']}: {loc['name']} needs {requirement(loc)} or higher."
     return None
 
 
