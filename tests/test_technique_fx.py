@@ -203,7 +203,7 @@ def test_a_slipped_break_is_the_evade_techniques_event():
         def_t = {"name": "Drifting Mist Steps", "type": "defense", "grade": "Mystic"}
     ev = explore_play.events([("shield", "Shoaib slipped away from the Leopard's Break")], F)
     assert ev == [{"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
-                   "counter": 0, "evaded": True}]
+                   "counter": 0, "evaded": True, "slipped": True}]
     held = explore_play.events([("shield", "Shoaib — Drifting Mist Steps: holds 30% of the Break"),
                                 ("skull", "Leopard — Break on Shoaib −120")], F)
     assert "evaded" not in held[0] and held[0]["hold"] == 30 and held[1]["dmg"] == 120
@@ -226,3 +226,40 @@ def test_a_slipped_break_lands_the_cast_with_her_sidestep():
     B.log = [("shield", "Shoaib — Cloud-Walking Shadow: holds 50% of the Break"), ("skull", "Leopard — Break on Shoaib −80")]
     held = explore_play.cast(B, F, "female")
     assert held["effect"] == "hold" and held["fx"] is None
+
+
+def test_a_strike_taken_untouched_by_an_evade_technique_sidesteps_too():
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Drifting Mist Steps", "type": "defense", "grade": "Mystic"}
+        last_move = "Drifting Mist Steps"
+    line = "Shoaib — Drifting Mist Steps: blocked 100%, counters for 41, +25 Battle Qi"
+    ev = explore_play.events([("shield", line)], F)
+    assert ev[0]["evaded"] and not ev[0].get("slipped") and ev[0]["counter"] == 41
+    class B:
+        log = [("shield", line)]
+    for gender in ("female", "male"):
+        c = explore_play.cast(B, F, gender)
+        assert c["fx"]["motion"] == "sidestep" and c["effect"] == ""            # the engine's effect, unchanged
+    # a charged Strike is only partly blocked: it gets through, so no sidestep
+    part = [("shield", "Shoaib — Drifting Mist Steps: blocked 65%"), ("skull", "Leopard — Charged Pounce on Shoaib −90")]
+    assert "evaded" not in explore_play.events(part, F)[0]
+    B.log = part
+    assert explore_play.cast(B, F, "female")["fx"] is None
+    # other defense techniques that block 100% keep their own looks
+    F.def_t = {"name": "Golden Bell Cover", "type": "defense", "grade": "Earth"}
+    assert "evaded" not in explore_play.events([("shield", "Shoaib — Golden Bell Cover: blocked 100%")], F)[0]
+
+
+def test_a_sidestepped_unique_skill_is_acted_out_by_the_sidestep_alone():
+    import battle
+    beast, skill = next(iter(battle.UNIQUE_SKILLS.items()))
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Cloud-Walking Shadow", "type": "defense", "grade": "Heaven"}
+    log = [("shield", f"Shoaib slipped away from the {beast}'s Break"),
+           ("roar", f"{beast} — {skill['name']}: {skill['roused']}")]
+    ev = explore_play.events(log, F)
+    assert [e["act"] for e in ev] == ["tech"] and ev[0]["slipped"]            # no second, harmless pounce on her

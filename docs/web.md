@@ -291,10 +291,13 @@ a lair is fought with `bot/hunt.py`.
      sidestep, for **both cultivators** (his: `hero_male_sidestep.webp`, `scripts/make_hero_sidestep.py`: a low dash
      in place, wrapped in swirls of blue Qi, then his own launch frames played back to rise out of it, as his video
      holds the dash to its end; no ground given, `give` 0). Told below as she plays it. For the two evade techniques, Drifting Mist Steps and Cloud-Walking
-     Shadow (`technique_fx.MOVES_FX`, `"on": "evade"`). It plays **only on a turn the evade worked**: the engine rolls
-     the evade against the beast's Break (`bot/fight.py`, unchanged) and logs "slipped away from the ... Break", which
-     `explore_play.events` reads as the technique's event (`evaded`) and `cast` as its effect. On any other turn
-     (the Break is held instead, or the beast only struck) the technique keeps its CSS look. Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
+     Shadow (`technique_fx.MOVES_FX`, `"on": "evade"`). It plays **whenever the technique leaves the cultivator
+     untouched** (`explore_play.untouched`): the engine rolls the evade against the beast's Break (`bot/fight.py`,
+     unchanged) and logs "slipped away from the ... Break" ("Slipped away"), or the technique takes a Strike with a
+     full block, as a Guard does ("blocked 100%": "Evaded", with the Guard's counter). `explore_play.events` marks the
+     technique's event `evaded` (and `slipped` for the Break). When a Break gets through instead, held in part, the
+     technique keeps its CSS look. A beast's unique skill that is sidestepped is acted out by the sidestep alone (no
+     second, harmless pounce). Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
      own pace (`fps`, 12 a second), never sped up, stretched or cropped. On guard, she sweeps her sleeve and drops
      into a deep side lunge, out of the Break's line as it arrives, then rises into the same guard and idles; she
      gives a little ground and takes it back. Her afterimages (the technique's picture, cleaned by

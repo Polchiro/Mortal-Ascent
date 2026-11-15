@@ -72,9 +72,9 @@ MOVES_FX = {
     "moon_mirror_palm": {"motion": "deflect", "play": "moon", "art": ["moon_mirror_palm"]},
     "thousand_hands_deflection": {"motion": "deflect", "play": "hands", "art": ["thousand_hands_deflection"]},
     "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance"]},
-    # the sidesteps, both played with the sidestep (fight.js `sidestepped`), and only `on` a turn the evade worked:
-    # the cultivator slips the beast's Break, which passes through the afterimages. When it doesn't (the Break is
-    # held, or the beast only struck), the technique keeps its CSS look.
+    # the sidesteps, both played with the sidestep (fight.js `sidestepped`), and only `on` a turn the technique left
+    # the cultivator untouched (explore_play.untouched): the Break slipped, or a Strike taken with a full block; the
+    # blow passes through the afterimages. When a Break gets through (held in part), the technique keeps its CSS look.
     "drifting_mist_steps": {"motion": "sidestep", "play": "mist_steps", "art": ["drifting_mist_steps"], "on": "evade"},
     "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow"], "on": "evade"},
 }

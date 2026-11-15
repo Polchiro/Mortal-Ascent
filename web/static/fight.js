@@ -1124,8 +1124,9 @@
        rises into the same guard she started in, then idle. She also gives a little ground and takes it back (moved,
        not distorted), so the Break passes clear of her. The technique's afterimages are left where she stood and the
        Break goes through them: they stream off behind her and dissolve. Nothing is hit and no number drops: the
-       engine's log says she took no damage. Only played on such a turn (`ev.evaded`); otherwise the technique keeps
-       its CSS look. */
+       engine's log says she took no damage. Only played on such a turn (`ev.evaded`, `ev.slipped`); otherwise the technique keeps
+       its CSS look. The same when an evade technique takes a Strike with a full block (no roll: she is untouched),
+       "Evaded", with the Guard's counter if the engine logged one. */
     function sidestepped(ev) {
       var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
       var mn = msheet ? +msheet.dataset.frames : 27, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
@@ -1138,6 +1139,8 @@
       var bodyH = fr.height * (Bd[2] - Bd[1]);
       var stood = at(fr, Bd[0], (Bd[1] + Bd[2]) / 2);                // where she stood: the lead afterimage stays there
       var charge = HIT - 340;                                         // the beast crouches, then leaps for the Break
+      var HAND = msheet && msheet.dataset.hand ? msheet.dataset.hand.split(',').map(Number) : [0.64, 0.4];
+      if (ev.counter) hold('enemy');                                  // a full block of a Strike may still counter
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
       function show(f) {
         f = Math.max(0, Math.min(mn - 1, Math.floor(f)));
@@ -1165,7 +1168,7 @@
         if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(1.7)'}, {filter: 'brightness(1)'}], {duration: 380});
         var p = stood;
         burst('tspark', p[0], p[1], X.play === 'cloud_steps' ? '#FFF1C8' : '#CFE6FF');
-        pop(fighter, 'word', 'Slipped away');
+        pop(fighter, 'word', ev.slipped ? 'Slipped away' : 'Evaded');
       }
       return {end: END, render: function (t) {
         if (t < 0) return;
@@ -1190,6 +1193,10 @@
         poses.style.filter = tier >= 1 && t < END - 200 ? 'drop-shadow(0 0 ' + (4 + 3 * tier) + 'px ' + tc + ')' : '';
         if (t >= STEP_IN && once('form')) afterimages();
         if (t >= HIT && once('slip')) slipped();
+        if (ev.counter && t >= HIT + 260 && once('counter')) {         // the Guard's counter, as the engine logged it
+          var h = at(fr, HAND[0], HAND[1]); fx('tpierce', h[0], h[1], 600, {'--tc': tc});
+          drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter);
+        }
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
