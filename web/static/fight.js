@@ -982,7 +982,8 @@
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
-    /* A deflection technique, as the female cultivator plays it (web/technique_fx.py HER_FX, "deflect"), inside the
+    /* A deflection technique (web/technique_fx.py MOVES_FX, "deflect"), played by either cultivator with their own frames; told
+       here as she plays it (he reaches back and sweeps a Qi arc round instead of her sleeve). Inside the
        beast's attack like a brace, but she never stands to take the blow: on guard, palm raised, while the beast
        winds up; she turns into it as it comes (`jab`), meets it with her hand at the moment it lands (`release`, the
        hit), carries it round and aside with a swirl of her sleeve (furthest behind her at `sweep`) and settles back
@@ -1115,7 +1116,8 @@
       }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
     }
 
-    /* An evade technique that worked, as the female cultivator plays it (web/technique_fx.py HER_FX, "sidestep"): the
+    /* An evade technique that worked (web/technique_fx.py MOVES_FX, "sidestep"), played by either cultivator with their own
+       frames; told here as she plays it (he dashes low in place, wrapped in Qi, `give` 0, and rises out of it): the
        beast's Break comes in and she slips it. Her frames play one for one at the video's own pace (`fps` in
        looks.MOTION_SHEETS), never sped up or stretched: on guard, then from `jab` she sweeps her sleeve and drops into
        a deep side lunge, out of the blow's line at `release`, when the Break arrives where she stood; from `back` she
@@ -1132,7 +1134,7 @@
       var Bd = msheet && msheet.dataset.body ? msheet.dataset.body.split(',').map(Number) : [0.52, 0.2, 0.94, 0.24];
       var HIT = REL * MS, PLAYED = mn * MS, END = PLAYED + 120;          // the Break arrives as she is out of its line
       var STEP_IN = JAB * MS, STEP_OUT = BACK * MS, HOME = Math.min(PLAYED, (BACK + 8) * MS);
-      var GIVE = 0.06 * W;                                            // the ground she gives, px
+      var GIVE = (msheet && msheet.dataset.give ? +msheet.dataset.give : 0.06) * W;   // the ground given and taken back (looks `give`), px
       var bodyH = fr.height * (Bd[2] - Bd[1]);
       var stood = at(fr, Bd[0], (Bd[1] + Bd[2]) / 2);                // where she stood: the lead afterimage stays there
       var charge = HIT - 340;                                         // the beast crouches, then leaps for the Break

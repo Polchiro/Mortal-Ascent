@@ -267,12 +267,13 @@ a lair is fought with `bot/hunt.py`.
      Stance Guard's dust ring at the feet, Calm Breath Stance's mist spiral, Iron Cloth Body's woven iron sheen laid
      over the fighter's own frame, Rooted Mountain Stance's roots and mountain, Golden Bell Cover's bell dropping over
      them, Ancient Turtle Shell Art's dome (the man painted inside it erased), Immortal Lotus Body's lotus opening
-     beneath. Parrying Arm, with no design, braces with sparks and its counter (the male cultivator's; hers deflects,
-     below). Designs cleaned by `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you,
+     beneath. Parrying Arm deflects now (below), with both looks. Designs cleaned by `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you,
      and nothing plays.
    - `deflect` (`hero_female_deflect.webp`, `scripts/make_heroine_deflect.py`, from SHOAIB's video of her): the
-     **female cultivator's** deflection, hers only (`technique_fx.HER_FX`; the male keeps his looks for these
-     techniques: Parrying Arm's brace, the CSS jade barrier for the rest). The six deflection techniques: Parrying
+     deflection, for **both cultivators** (`technique_fx.MOVES_FX`), each with their own frames: hers sweeps her
+     sleeve; his (`hero_male_deflect.webp`, `scripts/make_hero_deflect.py`, from SHOAIB's video of him) reaches back
+     and sweeps a painted blue Qi arc round in front of him, his robes matched to his sword frames. Told below as she
+     plays it. The six deflection techniques: Parrying
      Arm and the five Palm defenses (Flowing Stream Palm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
      Deflection, Void Mirror Stance). Played **inside the beast's attack** like a brace (`deflected` in `fight.js`),
      but with no guarding stance: on guard, palm raised, while the beast winds up; she turns into the blow and meets it
@@ -287,19 +288,20 @@ a lair is fought with `bot/hunt.py`.
      cracks as the blow hits it. Then what really happened, from the log: Deflected, a Break held, HP recovered, a
      counter. Designs cleaned by `scripts/make_deflect_fx.py`.
    - `sidestep` (`hero_female_sidestep.webp`, `scripts/make_heroine_sidestep.py`, from SHOAIB's video of her): the
-     **female cultivator's** sidestep, hers only, for the two evade techniques, Drifting Mist Steps and Cloud-Walking
-     Shadow (`technique_fx.HER_FX`, `"on": "evade"`). It plays **only on a turn the evade worked**: the engine rolls
+     sidestep, for **both cultivators** (his: `hero_male_sidestep.webp`, `scripts/make_hero_sidestep.py`: a low dash
+     in place, wrapped in swirls of blue Qi, then his own launch frames played back to rise out of it, as his video
+     holds the dash to its end; no ground given, `give` 0). Told below as she plays it. For the two evade techniques, Drifting Mist Steps and Cloud-Walking
+     Shadow (`technique_fx.MOVES_FX`, `"on": "evade"`). It plays **only on a turn the evade worked**: the engine rolls
      the evade against the beast's Break (`bot/fight.py`, unchanged) and logs "slipped away from the ... Break", which
      `explore_play.events` reads as the technique's event (`evaded`) and `cast` as its effect. On any other turn
-     (the Break is held instead, or the beast only struck) the technique keeps its CSS look, as for the male
-     cultivator. Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
+     (the Break is held instead, or the beast only struck) the technique keeps its CSS look. Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
      own pace (`fps`, 12 a second), never sped up, stretched or cropped. On guard, she sweeps her sleeve and drops
      into a deep side lunge, out of the Break's line as it arrives, then rises into the same guard and idles; she
      gives a little ground and takes it back. Her afterimages (the technique's picture, cleaned by
      `scripts/make_sidestep_fx.py`) are left on the spot she left, and the Break passes through them: Drifting Mist
      Steps' mist figures, Cloud-Walking Shadow's cloud figures, streaming off behind her and dissolving. "Slipped away",
      no damage. The engine's log was never read for an evade before (its line has no " — "), so until now a worked
-     evade played nothing on the website; it now plays her sidestep, or his CSS afterimage.
+     evade played nothing on the website; it now plays the sidestep.
    - `palm` (`hero_male_palm.webp`, `scripts/make_hero_palm.py`): both arms drawn back, a lunging two-handed palm
      push, held. Every Palm attack technique. Twin Palm Strike sends one palm print for each of its two hits;
      Rolling Thunder Palm rolls a thunder vortex onto the beast; Thousand Shadow Palm opens a fan of shadow palms
