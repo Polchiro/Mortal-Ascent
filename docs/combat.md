@@ -127,14 +127,14 @@ The 29 four-legged beasts (`beasts.QUADRUPEDS`) can **roar** instead of their or
 
 | When | Roar chance (per ordinary turn) |
 |---|---|
-| The beast's first 2 turns | never: a fight opens with ordinary moves |
-| Any other turn | Normal 5%, Elite 8%, Beast King 12% |
+| The beast's first turn | never: a fight opens with an ordinary move |
+| Any other turn | Normal 25%, Elite 28%, Beast King 32% |
 | You (anyone in the fight) attacked 2+ turns in a row | +15% |
 | It has lost 30–50% of its HP | +20%, until it has roared in that stretch once |
 | It is at 20% HP or less | 50% each turn for its **final roar**, once a fight |
-| After a roar | not again for 3 of its turns (the final roar may break this) |
+| After a roar | not again for 2 of its turns (the final roar may break this) |
 
-Chances never go above 60%. The roar hits **everyone** in the fight:
+Chances never go above 60%. In play about two in three Normal fights see a roar, and nearly every Elite and Beast King fight sees two or three. The roar hits **everyone** in the fight:
 
 | Tier | Damage (share of a normal hit) | On anyone caught off guard |
 |---|---|---|

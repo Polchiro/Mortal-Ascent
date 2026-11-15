@@ -140,12 +140,12 @@ UNIQUE_SKILLS = {
 #   mult: its damage, as a share of a normal hit
 #   statuses: put on whoever it hits off guard; stun: the chance it also Stuns them (Guard only next turn)
 ROAR = {
-    "normal":     {"chance": 0.05, "mult": 0.5, "statuses": ("shaken",), "stun": 0.0},
-    "elite":      {"chance": 0.08, "mult": 0.9, "statuses": ("shaken",), "stun": 0.4},
-    "beast_king": {"chance": 0.12, "mult": 1.3, "statuses": ("exposed",), "stun": 1.0},
+    "normal":     {"chance": 0.25, "mult": 0.5, "statuses": ("shaken",), "stun": 0.0},
+    "elite":      {"chance": 0.28, "mult": 0.9, "statuses": ("shaken",), "stun": 0.4},
+    "beast_king": {"chance": 0.32, "mult": 1.3, "statuses": ("exposed",), "stun": 1.0},
 }
-ROAR_QUIET_TURNS = 2           # a fight starts with ordinary moves: no roar on the beast's first 2 turns
-ROAR_COOLDOWN = 3              # and not again for 3 of its turns after one
+ROAR_QUIET_TURNS = 1           # a fight starts with an ordinary move: no roar on the beast's first turn
+ROAR_COOLDOWN = 2              # and not again for 2 of its turns after one
 ROAR_STREAK = 2                # you (anyone) attacked this many turns in a row ...
 ROAR_STREAK_BONUS = 0.15       # ... it is more likely to roar back
 ROAR_WOUNDED = (0.30, 0.50)    # once it has lost this share of its HP ...
