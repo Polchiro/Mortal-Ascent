@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ v.name }} · Mortal Ascent{% endblock %}
+{% block body_class %}huntbg" data-p="{{ v.version }}" data-h="{% endblock %}
+{% block body %}
+<style>body.huntbg{--scene:url({{ v.scene }})}</style>
+{% with page="explore", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="hunt">
+  <section class="hhero">
+    <div class="lead">
+      <p class="kicker">EXPLORE · TEAM LOBBY</p>
+      <h1>{{ v.name }}</h1>
+      <div class="hrow">
+        <span class="tag">{{ "Public" if v.public else "Private" }}</span>
+        <span class="tag {{ 'dim' if v.open == 0 else 'ok' }}">{{ "Full" if v.open == 0 else "Recruiting" }} · {{ v.members | length }} / {{ v.max }}</span>
+        {% if v.lead %}<span class="tag">You lead</span>{% endif %}
+      </div>
+    </div>
+    <form method="post" action="/party/leave"><button class="hbtn ghost small" type="submit">Leave party</button></form>
+  </section>
+  {% if error %}<p class="hnote" role="alert">{{ error | rich | safe }}</p>{% endif %}
+
+  <div class="lobby">
+    <section class="hpanel" aria-label="Members">
+      <div class="hhead"><h2>Hunters</h2><span class="hhint">{{ v.open }} open slot{{ '' if v.open == 1 else 's' }}</span></div>
+      <div class="mlist">
+        {% for m in v.members %}
+        <div class="mrow{% if m.me %} me{% endif %}">
+          <div class="who"><b>{{ m.name }}</b>
+            <span>{{ m.realm }} · Layer {{ m.layer }}{% if m.rest %} · <span class="warn">{{ m.rest }}</span>{% endif %}</span></div>
+          {% if m.bad %}<span class="tag bad">{{ m.bad }}</span>{% endif %}
+          {% if m.leader %}<span class="tag">Leader</span>
+          {% elif m.ready %}<span class="tag ok">Ready</span>{% else %}<span class="tag dim">Not ready</span>{% endif %}
+          {% if v.lead and not m.me %}
+          <form method="post" action="/party/kick"><input type="hidden" name="uid" value="{{ m.uid }}">
+            <button class="hbtn danger small" type="submit" title="Remove {{ m.name }}">Remove</button></form>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% for i in range(v.open) %}<div class="mrow slot">Open slot</div>{% endfor %}
+      </div>
+      {% if not v.lead %}
+      <form method="post" action="/party/ready" style="margin-top:16px">
+        <input type="hidden" name="ready" value="{{ '0' if v.me_ready else '1' }}">
+        <button class="hbtn {{ 'ghost' if v.me_ready else 'jade' }}" type="submit">{{ "Not ready" if v.me_ready else "I'm ready" }}</button>
+      </form>
+      {% endif %}
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <section class="hpanel" aria-label="Destination">
+        <div class="hhead"><h2>Destination</h2>{% if v.lead %}<a class="hbtn ghost small" href="/hunt/locations">{{ "Change" if v.location else "Choose" }}</a>{% endif %}</div>
+        {% if v.location %}{% set L = v.location %}
+        <div class="dest"><img src="{{ L.art }}" alt="">
+          <div><p class="pline" style="margin:0;font:700 19px Cinzel,Georgia,serif;color:var(--ag3)">{{ L.name }}</p>
+            <p class="sub" style="margin:2px 0 0">For {{ L.requirement }}</p>
+            <a class="sub" href="/hunt/locations">Beasts and rewards</a></div></div>
+        {% else %}
+        <p class="sub">{{ "Choose where the party hunts." if v.lead else "The leader hasn't chosen where to hunt yet." }}</p>
+        {% endif %}
+      </section>
+
+      <section class="hpanel" aria-label="Setting out">
+        <div class="hhead"><h2>Set out</h2></div>
+        {% if v.problems %}<ul class="problems">{% for p in v.problems %}<li>{{ p }}</li>{% endfor %}</ul>
+        {% else %}<p class="sub jade">Everyone is ready.</p>{% endif %}
+        {% if v.lead %}
+        <form method="post" action="/party/start" style="margin-top:14px">
+          <button class="hbtn jade" type="submit" style="width:100%"{% if not v.can_start %} disabled{% endif %}>Start expedition</button></form>
+        <p class="hhint" style="margin-top:8px">Setting out starts everyone's 30-minute explore rest.</p>
+        {% else %}<p class="hhint" style="margin-top:12px">Only the leader can start the expedition.</p>{% endif %}
+      </section>
+
+      {% if v.lead %}
+      <section class="hpanel" aria-label="Invitations">
+        <div class="hhead"><h2>Invitations</h2>
+          <form method="post" action="/party/visibility"><input type="hidden" name="public" value="{{ '0' if v.public else '1' }}">
+            <button class="hbtn ghost small" type="submit">Make {{ "private" if v.public else "public" }}</button></form></div>
+        {% if v.public %}
+        <p class="sub">Your party is listed in the team browser. Hunters of the right realm can join until it is full.</p>
+        {% else %}
+        <div class="codebox"><span class="code" aria-label="Invitation ID">{{ v.code }}</span>
+          <form method="post" action="/party/code"><button class="hbtn ghost small" type="submit">New ID</button></form></div>
+        <p class="hhint" style="margin-top:8px">Give this ID to friends: they enter it under Find a Team. A new ID stops the old one working.</p>
+        {% endif %}
+      </section>
+      <form method="post" action="/party/disband"><button class="hbtn danger small" type="submit">Disband party</button></form>
+      {% elif not v.public %}
+      <section class="hpanel"><div class="hhead"><h2>Invitation ID</h2></div>
+        <div class="codebox"><span class="code">{{ v.code }}</span></div></section>
+      {% endif %}
+    </div>
+  </div>
+</main>
+<script src="/static/party.js" defer></script>
+{% endblock %}

@@ -9,7 +9,7 @@ Pages:
   /inventory  their bag: every tab, item and its details; Equip / Unequip for weapons, armor and artifacts
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
-  /explore    an expedition: five steps, encounters and turn-based fights (bot/expedition.py, bot/fight.py)
+  /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
@@ -32,7 +32,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, explore_play, forge_play, gather_play
+from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -419,22 +419,9 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     explores = app.state.explores = explore_play.Explores()
 
-    @app.get("/explore", response_class=HTMLResponse)
-    def explore_page(request: Request):
-        user = current_user(request)
-        if not user:
-            return RedirectResponse("/", status_code=303)
-        s = with_conn(explores.catch_up, user["id"])
-        if s and not explores._finished(s):
-            return RedirectResponse("/explore/play", status_code=303)
-        if with_conn(explores.start_test, user["id"]):              # /admin web_fight queued a test fight
-            return RedirectResponse("/explore/play", status_code=303)
-        view = with_conn(explore_play.home_view, user["id"], explores)
-        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
-        if view is None:
-            return page(request, "no_character.html", user=user, avatar=avatar)
-        return page(request, "explore.html", v=view, user=user, avatar=avatar,
-                    error=request.session.pop("explore_error", None))
+    # Explore: hunting alone or as a party (web/hunt_routes.py); /explore/play below still runs an expedition
+    # already under way and the /admin web_fight test fights.
+    hunt_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

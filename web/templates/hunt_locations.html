@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Hunting Grounds · Mortal Ascent{% endblock %}
+{% block body_class %}huntbg{% endblock %}
+{% block body %}
+{% with page="explore", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="hunt">
+  <section class="hhero">
+    <div class="lead">
+      <p class="kicker">EXPLORE · {{ "SOLO HUNT" if v.solo else "HUNTING GROUNDS" }}</p>
+      <h1>Choose where to hunt</h1>
+      <p class="sub">Each ground is home to the beasts of its realms. Every hunter in the party must be of the ground's realm.
+        You are <b style="color:var(--ag2)">{{ v.realm }}</b>.</p>
+    </div>
+    {% if v.solo %}
+    <form method="post" action="/party/leave"><button class="hbtn ghost small" type="submit">Cancel</button></form>
+    {% else %}<a class="hbtn ghost small" href="/hunt">Back to the lobby</a>{% endif %}
+  </section>
+  {% if error %}<p class="hnote" role="alert">{{ error | rich | safe }}</p>{% endif %}
+  {% if not v.lead %}<p class="hnote info">Only the leader chooses the destination. You can look around.</p>{% endif %}
+
+  <section class="locs">
+    {% for L in v.cards %}
+    <article class="hpanel loc{% if not L.ok %} locked{% endif %}{% if v.chosen == L.key %} chosen{% endif %}" aria-labelledby="loc-{{ L.key }}">
+      <div class="art" style="--img: url({{ L.art }})">
+        <span class="no">{{ "%02d" | format(loop.index) }}</span>
+        <div class="over"><h2 id="loc-{{ L.key }}">{{ L.name }}</h2>
+          <span class="tag {{ 'ok' if L.ok else 'bad' }}">{{ L.state }}</span></div>
+      </div>
+      <div class="body">
+        <p class="sub" style="margin:0">{{ L.text }}</p>
+        <div class="req"><span>Requires <b>{{ L.requirement }}</b></span></div>
+        <div><p class="lab" style="margin:0 0 6px">Beasts</p>
+          <div class="bpool">{% for B in L.beasts %}
+            <figure class="{{ B.tkey }}" title="{{ B.name }} · {{ B.tier }} {{ B.role }} · {{ B.realm }}">
+              <img src="{{ B.icon }}" alt="{{ B.name }}" loading="lazy" width="64" height="64">
+              {% if B.short %}<figcaption>{{ B.short }}</figcaption>{% endif %}
+            </figure>{% endfor %}</div></div>
+        <div><p class="lab" style="margin:0 0 6px">Rewards</p>
+          <div class="chips2">{% for r in L.rewards %}<span>{{ r }}</span>{% endfor %}</div></div>
+        <div class="go">
+          {% if v.lead and L.ok %}
+          <form method="post" action="/party/location"><input type="hidden" name="key" value="{{ L.key }}">
+            <button class="hbtn{{ ' jade' if v.chosen == L.key else '' }}" type="submit">
+              {{ "Enter " ~ L.name if v.solo else ("Chosen" if v.chosen == L.key else "Hunt here") }}</button></form>
+          {% elif not L.ok %}
+          <button class="hbtn ghost" type="button" disabled>Locked</button>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}

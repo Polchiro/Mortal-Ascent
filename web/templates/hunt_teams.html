@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Find a Team · Mortal Ascent{% endblock %}
+{% block body_class %}huntbg{% endblock %}
+{% block body %}
+<style>body.huntbg{--scene:url(/art/scenes/region_thunder_peaks.jpg)}</style>
+{% with page="explore", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="hunt">
+  <section class="hhero">
+    <div class="lead">
+      <p class="kicker"><a href="/explore" style="color:inherit;text-decoration:none">EXPLORE</a> · TEAM BROWSER</p>
+      <h1>Find a Team</h1>
+      <p class="sub">Public parties looking for hunters. You can join any party that has room and whose hunting ground fits your realm ({{ v.realm }}).</p>
+    </div>
+    <a class="hbtn ghost small" href="/explore/teams">Refresh</a>
+  </section>
+  {% if error %}<p class="hnote" role="alert">{{ error | rich | safe }}</p>{% endif %}
+
+  <section class="hpanel">
+    <div class="hhead"><h2>Join with an invitation ID</h2><span class="hhint">For private parties</span></div>
+    <form class="hrow" method="post" action="/party/join">
+      <label class="visually-hidden" for="code" style="position:absolute;left:-9999px">Invitation ID</label>
+      <input class="hinput code" id="code" name="code" required maxlength="8" autocomplete="off" spellcheck="false" placeholder="ABC123">
+      <button class="hbtn" type="submit">Join</button>
+    </form>
+  </section>
+
+  <section class="hpanel">
+    <div class="hhead"><h2>Public parties</h2><span class="hhint">{{ v.teams | length }} open</span></div>
+    {% if v.teams %}
+    <div class="tlist">
+      {% for t in v.teams %}
+      <div class="trow{% if t.full %} full{% endif %}">
+        <div class="tn"><p class="tname" style="margin:0">{{ t.name }}</p></div>
+        <div class="tlead"><span class="tmeta">Leader</span><br>{{ t.leader }} <span class="tmeta">· {{ t.realm }}</span></div>
+        <div class="tloc"><span class="tmeta">Hunting</span><br>{{ t.location or "Not chosen yet" }}</div>
+        <div class="tseats"><span class="seats" aria-label="{{ t.members }} of {{ t.max }} hunters">{% for i in range(t.max) %}<i class="{{ 'on' if i < t.members }}"></i>{% endfor %}</span>
+          <span class="tmeta">&nbsp;{{ t.members }} / {{ t.max }}</span></div>
+        <div class="tact">
+          {% if t.full %}<span class="tag dim">Full</span>
+          {% elif t.blocked %}<span class="tag bad">{{ t.blocked }}</span>
+          {% else %}
+          <form method="post" action="/party/join"><input type="hidden" name="id" value="{{ t.id }}">
+            <span class="tag ok" style="margin-right:8px">Recruiting</span><button class="hbtn small" type="submit">Join</button></form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">No public parties are recruiting right now. <a href="/explore/create">Create one</a> and others will find it here.</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

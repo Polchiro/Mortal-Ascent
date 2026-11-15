@@ -39,11 +39,15 @@
       });
       if (!open) main.querySelectorAll('details.techmenu[open]').forEach(function (d) { d.open = false; });
       var chip = main.querySelector('.turnchip');
-      if (chip) chip.textContent = TURN_TEXT[Combat.phase] || '';
+      var waiting = Combat.phase === 'player_turn' && main.dataset.waiting;          // a team fight: you have moved
+      if (chip) chip.textContent = waiting ? (chip.dataset.wait || 'Waiting for your party') : (TURN_TEXT[Combat.phase] || '');
     }
   };
   var TURN_TEXT = {player_turn: 'Your turn', submitting: 'Sending…', player_acting: 'You act', beast_acting: 'The beast acts',
                    dying: '', finished: 'The fight is over'};
+  /* the page this fight lives on: /explore/play, or /hunt for a party's hunt (data-play) */
+  var PLAY_URL = (document.querySelector('main.battle') || {dataset: {}}).dataset.play || '/explore/play';
+  function PLAY() { return PLAY_URL; }
   var SETTLE = 220;            // ms a turn with nothing to act out stays locked: one press is one turn, never two
   var ANSWER_LIMIT = 12000;    // ms to wait for the server before asking it what happened
   window.MACombat = Combat;
@@ -153,9 +157,9 @@
            sending it again could never play it twice (the server takes one action per turn), but the server
            knows which: ask it for the fight as it stands and go on from there. */
         if (token !== Combat.token) return;
-        load('/explore/play', {method: 'GET'})
+        load(PLAY(), {method: 'GET'})
           .then(function (html) { if (token === Combat.token) show(html, sent, true); })
-          .catch(function () { location.replace('/explore/play'); });
+          .catch(function () { location.replace(PLAY()); });
       });
   }
 
@@ -178,7 +182,7 @@
     var next = doc.querySelector('main.battle'), now = document.querySelector('main.battle');
     if (!next || !now) {                                        // the fight is over: the next page of the expedition
       Combat.set('finished');
-      location.replace('/explore/play');
+      location.replace(PLAY());
       return;
     }
     var before = bars(now);
@@ -1756,6 +1760,37 @@
   document.addEventListener('click', function (e) {          // close the techniques menu when clicking elsewhere
     document.querySelectorAll('details.techmenu[open]').forEach(function (d) { if (!d.contains(e.target)) d.open = false; });
   });
+  /* ── A team fight (a party's hunt, data-team) ──────────────────────────────────────────────────────
+     Your move may be waiting on the others, and a turn can also end when its 30 seconds run out. So while it is
+     your turn to look at, the page asks the server for the fight every so often: a new turn is acted out exactly
+     like an answer to your own move; otherwise only the party's picks and the turn timer are brought up to date. */
+  var POLL = 1500;
+  function poll() {
+    var main = document.querySelector('main.battle');
+    if (!main || !main.dataset.team || main.classList.contains('slain')) return;
+    if (Combat.phase !== 'player_turn' || document.hidden) { setTimeout(poll, POLL); return; }
+    var token = Combat.token, sent = +main.dataset.turn;
+    load(PLAY(), {method: 'GET'}).then(function (html) {
+      if (token !== Combat.token || Combat.phase !== 'player_turn') return;
+      var doc = new DOMParser().parseFromString(html, 'text/html'), next = doc.querySelector('main.battle');
+      var now = document.querySelector('main.battle');
+      if (!now) return;
+      if (!next || next.dataset.turn !== now.dataset.turn) { Combat.set('submitting'); show(html, sent); return; }
+      var a = now.querySelector('.allies'), b = next.querySelector('.allies');
+      if (a && b) a.replaceWith(document.importNode(b, true));
+      var t = now.querySelector('.teamtimer'), u = next.querySelector('.teamtimer');
+      if (t && u) { t.dataset.left = u.dataset.left; }
+    }).catch(function () {}).then(function () { setTimeout(poll, POLL); });
+  }
+  setInterval(function () {                                    // the turn timer bar counts down between polls
+    var t = document.querySelector('main.battle .teamtimer');
+    if (!t) return;
+    var left = Math.max(0, (+t.dataset.left || 0) - 1);
+    t.dataset.left = left;
+    t.firstElementChild.style.width = (left / (+t.dataset.total || 30) * 100) + '%';
+  }, 1000);
+  setTimeout(poll, POLL);
+
   window.addEventListener('pageshow', function (e) { if (e.persisted) location.reload(); });   // never a stale, locked page from the back button
   init();
 })();
