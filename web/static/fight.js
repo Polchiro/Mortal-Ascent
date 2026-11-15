@@ -220,7 +220,9 @@
   var RECIPES = {
     strike: {dash: 200, swing: 300, hit: 370, recover: 640, end: 960, knock: 0.024},
     break:  {dash: 300, swing: 440, hit: 520, recover: 900, end: 1320, knock: 0.042, slam: true},   // the ground slam (`slam`)
-    beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},
+    beast:  {charge: 220, hit: 370, back: 510, end: 900, knock: 0.022},   // (timing the defense techniques play against)
+    // the beast's own attack, from SHOAIB's beast attack video (a boar): head lowered, a rear, the charge, the goring toss
+    gore:   {gather: 300, rear: 460, hit: 720, toss: 860, back: 960, end: 1480, knock: 0.03},
     tech:   {end: 1100},                                        // techniques play their own animation (style.css)
     pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2800, knock: 0.05}   // Mountain-Splitting Pounce
   };
@@ -436,16 +438,37 @@
     }
     function blockTime() { return gsheet ? (+gsheet.dataset.frames - GT.first) * GT.ms : 0; }
 
-    /* the beast's attack: rears back, charges, claws; you are hit, or your Guard stops it (and may counter) */
+    /* the beast's attack (its M1), from SHOAIB's beast attack video: it lowers its head and gathers itself, rears,
+       charges in kicking up dust and gores, tossing its head up with its jaws open (its open-mouthed roar picture, where
+       it has one) as it strikes; a tearing slash and dust burst where it hits, then it trots back home. You are hit, or
+       your Guard stops it (and may counter). */
     function charge(ev) {
-      var R = RECIPES.beast, guard = ev.act === 'guard', done = false, countered = false;
+      var R = RECIPES.gore, guard = ev.act === 'guard', done = false, countered = false, dusted = false, opened = false;
+      var still = beast.src, open = !bposes && ROAR && ROAR.art;
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
       return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
         var x = 0, y = 0, rot = 0;
-        if (t < R.charge) { var q = ease(span(t, 0, R.charge)); x = 0.015 * W * q; rot = 4 * q; }
-        else if (t < R.back) { var c = span(t, R.charge, R.hit); x = 0.015 * W - (reachBeast + 0.015 * W) * c * c; rot = -6 * c; }
-        else if (t < R.end) { var r = inout(span(t, R.back, R.end)); x = -reachBeast * (1 - r); y = -0.024 * W * Math.sin(Math.PI * r); }
-        bpose(t < R.charge ? 'crouch' : t < R.back ? 'leap' : 'idle');
+        if (t < R.gather) { var q = inout(span(t, 0, R.gather)); x = 0.012 * W * q; y = 0.006 * W * q; rot = -5 * q; }      // head down
+        else if (t < R.rear) { var q2 = inout(span(t, R.gather, R.rear)); x = 0.012 * W + 0.006 * W * q2; y = 0.006 * W - 0.026 * W * q2; rot = -5 + 13 * q2; }   // rears
+        else if (t < R.hit) {                                                     // the charge
+          var c = span(t, R.rear, R.hit), e2 = c * c;
+          x = 0.018 * W - (reachBeast + 0.018 * W) * e2; y = -0.02 * W * (1 - c) + Math.abs(Math.sin(c * Math.PI * 2)) * -0.006 * W; rot = 8 - 15 * Math.min(1, c * 1.6);
+        } else if (t < R.back) {                                                  // the goring toss
+          var g = span(t, R.hit, R.toss); x = -reachBeast - 0.006 * W * Math.sin(Math.PI * g); y = -0.012 * W * Math.sin(Math.PI * g); rot = -7 + 19 * Math.sin(Math.PI * 0.5 * Math.min(1, g * 1.2));
+        } else if (t < R.end) {                                                   // trots home in two hops
+          var r = inout(span(t, R.back, R.end)); x = -reachBeast * (1 - r); y = -0.02 * W * Math.abs(Math.sin(Math.PI * 2 * r)); rot = 12 * (1 - r) * (1 - r);
+        }
+        bpose(t < R.rear ? 'crouch' : t < R.back ? 'leap' : 'idle');
+        if (open) {                                                               // jaws open for the gore
+          var wide = t >= R.hit - 90 && t < R.back + 60;
+          if (wide !== opened) { opened = wide; beast.src = wide ? ROAR.art : still; }
+        }
+        if (t >= R.rear && !dusted) {                                             // dust kicked up as it charges
+          dusted = true;
+          var f = at(br, 0.55, 0.97);
+          for (var j = 0; j < 7; j++) fx('bdust', f[0] + 2 + 2 * j, f[1] - Math.random() * 2, 1300,
+            {'--dx': (40 + 22 * j) + 'px', '--s': (0.6 + Math.random() * 0.5).toFixed(2), 'animation-delay': (30 * j) + 'ms'});
+        }
         var ck = guard && ev.counter ? knocked(t - R.hit - 130, 0.03 * W) : [0, 0];
         animal(x + ck[0], y, rot, ck[1]);
         var h = t - R.hit;
@@ -453,20 +476,23 @@
           var k = knocked(h, R.knock * W);
           pose('idle'); hero(-k[0], 0, -k[0] / 6);
           poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
-          var cw = span(t, R.hit - 70, R.hit + 15) * 1100;
+          var cw = span(t, R.hit - 70, R.hit + 30) * 1100;
           clawClip.setAttribute('x', 1320 - cw); clawClip.setAttribute('width', cw);
-          claws.setAttribute('opacity', t < R.hit - 70 ? 0 : 1 - span(t, R.hit + 40, R.hit + 260));
+          claws.setAttribute('opacity', t < R.hit - 70 ? 0 : 1 - span(t, R.hit + 60, R.hit + 320));
         } else {
           if (!block(h)) pose(ev.counter && h >= 110 && h < 380 ? 'strike' : 'idle');
           hero(0, 0);
         }
         if (h >= 0 && !done) {
           done = true;
-          var p = at(fr, 0.52, 0.5);
+          var p = at(fr, 0.52, 0.5), fl = at(fr, 0.5, 0.97);
+          for (var m = 0; m < 6; m++) { var sd = m % 2 ? 1 : -1;                  // dust burst where it hits
+            fx('bdust', fl[0] + sd * (1 + 2 * m), fl[1] - Math.random() * 2, 1200, {'--dx': sd * (30 + 20 * m) + 'px', '--s': (0.5 + Math.random() * 0.5).toFixed(2)}); }
           if (guard) { if (!gsheet) burst('tring', p[0], p[1]); pop(fighter, 'word', 'Blocked'); }
           else { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1], '#FFC2B8'); }
         }
         if (guard && ev.counter && h >= 130 && !countered) { countered = true; drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter); }
+        if (t >= R.end - 20 && opened) { opened = false; beast.src = still; }
       }};
     }
 
