@@ -156,6 +156,8 @@ def profile_view(conn, user_id, username=None):
         "stats": [("Beasts slain", number(d["beasts"])), ("Herbs gathered", number(d["herbs"])),
                   ("Breakthroughs", number(d["breakthroughs"])),
                   ("Duels won", number(d["duels_won"]))],
+        # the Journey plaques' icons, in the same order as "stats" (existing index art)
+        "stat_icons": [fresh(f"/art/icons/index/{k}.webp") for k in ("ov_toxicity", "ov_types", "ov_insight", "ov_elite")],
         "status": d["status"],
         "portrait": looks.portrait(look),
         "look": looks.describe(look) if look else None,
