@@ -208,3 +208,12 @@ def test_every_primate_roars_with_the_primate_movement_and_its_open_mouthed_pict
         assert still.size == roar.size and max(still.size) <= 900, slug
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "pound" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_clawed_beasts_leave_claw_marks_and_the_rest_a_slash():
+    assert beasts.CLAWED <= set(beasts.TRAITS)
+    for name, claws in (("Grey Wolf", True), ("Mountain Tiger", True), ("Thunder Hawk", True), ("Azure Dragon", True),
+                        ("Wild Boar", False), ("Field Viper", False), ("Spear-Beak Crane", False), ("Venom Scorpion", False)):
+        assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["claws"] is claws
+    for f in ("claw_marks", "beast_slash"):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", f + ".webp"))

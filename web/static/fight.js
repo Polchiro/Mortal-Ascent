@@ -443,7 +443,7 @@
        it has one) as it strikes; a tearing slash and dust burst where it hits, then it trots back home. You are hit, or
        your Guard stops it (and may counter). */
     function charge(ev) {
-      var R = RECIPES.gore, guard = ev.act === 'guard', done = false, countered = false, dusted = false, opened = false;
+      var R = RECIPES.gore, guard = ev.act === 'guard', done = false, countered = false, dusted = false, opened = false, marked = false;
       var still = beast.src, open = !bposes && ROAR && ROAR.art;
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
       return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
@@ -476,9 +476,11 @@
           var k = knocked(h, R.knock * W);
           pose('idle'); hero(-k[0], 0, -k[0] / 6);
           poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
-          var cw = span(t, R.hit - 70, R.hit + 30) * 1100;
-          clawClip.setAttribute('x', 1320 - cw); clawClip.setAttribute('width', cw);
-          claws.setAttribute('opacity', t < R.hit - 70 ? 0 : 1 - span(t, R.hit + 60, R.hit + 320));
+          if (t >= R.hit - 70 && !marked) {                                      // its mark torn across you
+            marked = true;
+            var mp = at(fr, 0.5, 0.46), clawed = ROAR && ROAR.claws;
+            fx(clawed ? 'bclawm' : 'bslashm', mp[0], mp[1], 900, {'--s': Math.min(560, fr.height * (clawed ? 0.95 : 1.0)) + 'px'});
+          }
         } else {
           if (!block(h)) pose(ev.counter && h >= 110 && h < 380 ? 'strike' : 'idle');
           hero(0, 0);
@@ -497,7 +499,8 @@
     }
 
     /* a fleeting effect over the scene at (x%, y%): removed after `life` ms */
-    var PICTURES = {pcrater: main.dataset.crater || '/art/fx/crater.webp', bcrater: '/art/fx/break_crater.webp', bburst: '/art/fx/break_burst.webp'};
+    var PICTURES = {pcrater: main.dataset.crater || '/art/fx/crater.webp', bcrater: '/art/fx/break_crater.webp', bburst: '/art/fx/break_burst.webp',
+                    bclawm: '/art/fx/claw_marks.webp', bslashm: '/art/fx/beast_slash.webp'};   // a beast's M1 marks (SHOAIB's pictures)
     function fx(cls, xPct, yPct, life, style) {
       var src = PICTURES[cls.split(' ')[0]];
       var n = document.createElement(src ? 'img' : 'span');

@@ -361,6 +361,24 @@ ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying"
                  **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES}}
 
 
+# Beasts that attack with claws: their M1 leaves three red claw marks (art/fx/claw_marks.webp); every other beast
+# (hooves, horns, tusks, beaks, fangs, a weapon) cuts a single bright slash (art/fx/beast_slash.webp). SHOAIB's pictures.
+CLAWED = frozenset((
+    "Mountain Tiger", "White-Browed Tiger King", "Wind Leopard", "Flame-Maned Lion", "Shadow Panther", "Cloud Leopard",
+    "Sky Lynx", "Pixiu", "Taotie, the Devourer", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger",
+    "Stray Dog Pack", "Grey Wolf", "Red Fox", "Shadow Wolf", "Bloodfang Wolf", "Frost Wolf", "Lightning Weasel",
+    "Nine-Tailed Fox", "Tiangou, the Heavenly Hound", "Ghost-Fire Wolf",
+    "Old Black Bear", "Ironbark Bear", "Silver Monkey", "Ancient Golden Ape",
+    "Wind-Feather Falcon", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Iron-Feather Crow", "Crimson Fire Hawk",
+    "Vermilion Bird", "Kun-Peng, Fish of the Northern Sea",
+    "Thornback Lizard", "Ember Lizard", "Flood Dragon (Jiao)", "Azure Dragon",
+))
+
+
+def has_claws(name):
+    return name in CLAWED
+
+
 def roar_category(name):
     """The beast's roar movement (a ROAR_ANIMATIONS key), or None for the plain roar (it rears back a little)."""
     cat = ROAR_CATEGORY.get(name)
