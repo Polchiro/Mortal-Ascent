@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
-{% block body_class %}hallbg{% endblock %}
+{% block body_class %}hallbg profilebg{% endblock %}
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
