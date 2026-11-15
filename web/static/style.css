@@ -1106,6 +1106,8 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   animation:bdrop 1.4s ease-out forwards}
 @keyframes bdrop{0%{opacity:0;transform:translate(-50%,-50%) scale(var(--s))}10%{opacity:1}80%{opacity:.8}
   100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--s))}}
+.bdust.bmist.bvmist{opacity:.35}
+.bnova.bvnova{opacity:.8}
 .bdust.bmist{filter:drop-shadow(0 0 10px var(--rc));opacity:.55}
 .broar{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%) scaleX(.72);
   background-size:800% 200%;background-repeat:no-repeat;mix-blend-mode:screen;

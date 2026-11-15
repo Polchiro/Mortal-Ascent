@@ -389,6 +389,10 @@ a lair is fought with `bot/hunt.py`.
    open-mouthed picture, a sphere of its element bursting round its body with rings, streaks shooting out every way,
    shards flying and dust, the camera punching in, and settles. The Ancient Golden Ape moved here from the four-legged
    beasts. Same rules, damage and log line.
+   **The insects hiss** (`ROAR_ANIMATIONS["insect"]`, from SHOAIB's insect roar video of the Venom Scorpion; `seep`
+   and `venom` in `fight.js`): each crouches and rears with venom dripping and poison smoke gathering, then hisses with
+   its open-mouthed picture: purple and green venom flames rising round its body, a sphere of poison bursting out with
+   rings and droplets, and a low cloud of poison smoke left over the ground. Same rules, damage and log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

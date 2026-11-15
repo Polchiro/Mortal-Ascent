@@ -860,6 +860,49 @@
       }
       camera(p, 1 + 0.07 * big, 1450);
     }
+    /* An insect's threat display (beasts.ROAR_ANIMATIONS["insect"], from SHOAIB's insect roar video). As it rears,
+       venom drips and puffs of poison smoke gather round it (`seep`). As it hisses (`venom`): a flash at its jaws, a
+       ring of purple and green venom flames rising round its body, a sphere of poison bursting out with rings and
+       droplets, and a cloud of poison smoke left hanging low over the ground. Its element's colour, with purple. */
+    var VENOM_PURPLE = '#b04dff';
+    function seep(pic, ms) {
+      for (var i = 0; i < 10; i++) {
+        var c = at(pic, 0.2 + Math.random() * 0.6, 0.35 + Math.random() * 0.4);
+        fx('bdrop', c[0], c[1], ms + 200, {'--rc': i % 2 ? VENOM_PURPLE : ROAR.color, '--dx': (Math.random() - 0.5) * 30 + 'px',
+          '--dy': (30 + Math.random() * 50) + 'px', '--s': (0.5 + Math.random() * 0.6).toFixed(2), 'animation-delay': (Math.random() * ms * 0.7) + 'ms'});
+      }
+      var f = at(pic, 0.5, 0.95);
+      for (var m = 0; m < 4; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust bmist bvmist', f[0] + side * (6 + 4 * m), f[1] + 1, ms + 400, {'--rc': VENOM_PURPLE,
+          '--dx': side * (30 + 14 * m) + 'px', '--s': (0.5 + Math.random() * 0.3).toFixed(2), 'animation-delay': (80 * m) + 'ms'});
+      }
+    }
+    function venom(p, pic, final) {
+      var big = final ? 1.3 : 1;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      var c = at(pic, 0.5, 0.55), sz = Math.min(700, Math.max(pic.width, pic.height) * 0.7 * big);
+      for (var i = 0; i < 6; i++) {                            // venom flames rising round its body
+        fx('bcoil', c[0], c[1] + 14 - i * 6, 1500, {'--rc': i % 2 ? VENOM_PURPLE : ROAR.color, '--w': pic.width * (1.05 - 0.08 * i) + 'px',
+          '--h': pic.height * 0.28 + 'px', '--life': '1500ms', '--r0': (i * 60) + 'deg', 'animation-delay': (i * 50) + 'ms'});
+      }
+      fx('bnova bvnova', c[0], c[1], 1600, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '180ms'});
+      fx('bnova', c[0], c[1], 1400, {'--rc': VENOM_PURPLE, '--s': sz * 0.6 + 'px', 'animation-delay': '260ms'});
+      wave(c, 'ring', sz * 1.15, 650, 220, 'broarbig', 0, 0.5);
+      wave(c, 'double', sz * 1.35, 800, 420, 'broarbig', 0, 0.3);
+      for (var k = 0; k < 36; k++) {                           // poison droplets bursting out
+        var a = Math.random() * Math.PI * 2, r = sz * (0.35 + Math.random() * 0.55);
+        fx('bdrop', c[0], c[1], 1400, {'--rc': k % 3 ? ROAR.color : VENOM_PURPLE, '--dx': Math.cos(a) * r + 'px',
+          '--dy': Math.sin(a) * r * 0.7 + 'px', '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (200 + Math.random() * 300) + 'ms'});
+      }
+      var f = at(pic, 0.5, 0.97);                              // a cloud of poison smoke left hanging over the ground
+      for (var m = 0; m < 8; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust bmist bvmist', f[0] + side * (5 + 3 * m), f[1] + 1, 2600, {'--rc': m % 3 ? VENOM_PURPLE : ROAR.color,
+          '--dx': side * (60 + 26 * m) + 'px', '--s': (0.6 + Math.random() * 0.4).toFixed(2), 'animation-delay': (300 + 40 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1450);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -915,6 +958,7 @@
         if (M.style === 'quake' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'storm' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); coil(pic, BURST - at0[1] + 200); }
         if (M.style === 'pound' && t >= at0[1] && once('gather')) vortex(pic, BURST - at0[1] + 250);
+        if (M.style === 'venom' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); seep(pic, BURST - at0[1]); }
         if (M.style === 'pound' && t >= at0[3] && once('beat1')) beat(pic);
         if (M.style === 'pound' && t >= at0[5] && once('beat2')) beat(pic);
         if (M.style === 'hiss' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); runes(pic, HOLD1 + 300 - at0[1]); }
@@ -937,6 +981,7 @@
           else if (M.style === 'quake') quake(mouth(p), pic, ev.final);
           else if (M.style === 'storm') storm(mouth(p), pic, ev.final);
           else if (M.style === 'pound') pound(mouth(p), pic, ev.final);
+          else if (M.style === 'venom') venom(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
