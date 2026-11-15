@@ -61,11 +61,13 @@ def test_tier_odds_match_explore_rare_encounters():
         assert sum(o.values()) == pytest.approx(1)
 
 
-def test_realm_range_is_checked(conn):
-    forest = hunting.location("moon_forest")
+def test_entry_needs_the_lowest_realm_and_higher_realms_go_anywhere(conn):
+    forest, gorge = hunting.location("moon_forest"), hunting.location("crimson_gorge")
     assert hunting.eligible(db.get_player(conn, 2), forest) is None             # Mortal
     assert hunting.eligible(db.get_player(conn, 1), forest) is None             # Martial Apprentice
-    assert "Moon Forest is for" in hunting.eligible(db.get_player(conn, 9), forest)
+    assert "needs Martial Warrior or higher" in hunting.eligible(db.get_player(conn, 1), gorge)
+    for loc in hunting.LOCATIONS:                                               # a Martial Saint goes anywhere
+        assert hunting.eligible(db.get_player(conn, 9), loc) is None
 
 
 # ── parties ──────────────────────────────────────────────────────────
@@ -128,12 +130,22 @@ def test_leader_rights_and_succession(conn, world):
     assert parties.disband(2) is None and parties.of(2) is None and parties.get(p.id) is None
 
 
-def test_location_needs_the_leaders_realm_and_blocks_wrong_joiners(conn, world):
+def test_location_needs_the_leaders_realm_and_blocks_low_joiners(conn, world):
     parties, _, _ = world
-    p, _ = parties.create(conn, 9, "Saints", True)
-    assert "Moon Forest is for" in parties.set_location(conn, 9, "moon_forest")
+    p, _ = parties.create(conn, 1, "Wolves", True)
+    assert "needs Martial Warrior or higher" in parties.set_location(conn, 1, "crimson_gorge")
+    q, _ = parties.create(conn, 9, "Saints", True)
+    assert parties.set_location(conn, 9, "moon_forest") is None                 # a Saint may lead a Moon Forest hunt
     assert parties.set_location(conn, 9, "celestial_forbidden_lands") is None
-    assert "Celestial Forbidden Lands is for" in parties.join_public(conn, 1, p.id)[1]
+    assert "needs Martial Saint or higher" in parties.join_public(conn, 3, q.id)[1]
+
+
+def test_a_saint_hunts_moon_forest_beasts_at_its_own_strength(conn, world):
+    from bot import combat
+    p, h = _party(conn, world, uids=(9, 1))
+    b = h.battle
+    assert b.enemy["name"] in {n for n, *_ in hunting.pool(hunting.location("moon_forest"))}
+    assert b.enemy["realm"] == "Martial Saint"                                  # measured on the strongest member
 
 
 def test_silent_members_leave_the_lobby(conn, world):
