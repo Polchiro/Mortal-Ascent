@@ -84,3 +84,15 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
     assert explore_play.beast_roar({"name": "Storm Eagle", "slug": "storm_eagle", "tier": "normal"})["art"] is None
+
+
+def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
+    from PIL import Image
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    for name in beasts.QUADRUPEDS:
+        slug = beasts.slug(name)
+        if name == "Mountain Tiger":
+            continue                                          # roars from its own cut-out pose
+        roar = os.path.join(ROOT, "art", "beasts", "roar", slug + ".png")
+        assert os.path.exists(roar) and slug + "@roar" in heads, name
+        assert Image.open(roar).size == Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).size, name
