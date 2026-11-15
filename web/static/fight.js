@@ -580,6 +580,58 @@
         anim.onfinish = function () { scene.style.transformOrigin = ''; };
       }
     }
+    function camera(p, zoom, ms) {                              // the camera punches in on p (% of the scene) and shakes
+      if (!scene.animate) return;
+      scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
+      var k = [];
+      [[0, 1, 0, 0], [0.08, zoom, -10, 7], [0.16, zoom, 9, -6], [0.24, zoom, -8, 5], [0.34, zoom, 6, -4], [0.46, zoom * 0.995, -4, 3],
+       [0.6, zoom * 0.99, 3, -2], [0.75, 1 + (zoom - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
+        k.push({offset: a[0], transform: 'translate(' + a[2] + 'px,' + a[3] + 'px) scale(' + a[1] + ')'});
+      });
+      var anim = scene.animate(k, {duration: ms, easing: 'ease-out'});
+      anim.onfinish = function () { scene.style.transformOrigin = ''; };
+    }
+
+    /* A flying beast's screech (beasts.ROAR_ANIMATIONS["flying"], from SHOAIB's flying roar video). While it rears up
+       Qi gathers: glowing motes of its element swirl in from all round and its throat glows brighter (`gather`). As its
+       head snaps forward, beak wide (`screech`): a flash at the beak, a cone of sound rings fired along a beam straight
+       at you, each ring bigger than the last, then rings pulsing out of its beak while it holds, the camera punching in
+       with a hard shake, and its feathers torn loose and scattering across the scene. A final screech is bigger. */
+    function gather(p, ms) {
+      var throat = fx('bthroat', p[0], p[1], ms + 260, {'--rc': ROAR.color, '--life': ms + 'ms'});
+      for (var i = 0; i < 34; i++) {                           // a tight swirl of Qi pulled into its throat
+        var a = Math.random() * Math.PI * 2, d = 45 + Math.random() * 95;
+        fx('bmote', p[0], p[1], ms, {'--rc': ROAR.color, '--dx': Math.cos(a) * d + 'px', '--dy': Math.sin(a) * d + 'px',
+          '--life': (ms * (0.55 + Math.random() * 0.4)) + 'ms', 'animation-delay': (Math.random() * ms * 0.35) + 'ms'});
+      }
+      return throat;
+    }
+    function screech(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
+      var you = at(fr, 0.5, 0.42);                             // where it is aimed: your middle
+      var dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
+      var len = Math.sqrt(dx * dx + dy * dy), ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      var beam = fx('bbeam', p[0], p[1], 1500, {'--rc': ROAR.color, '--len': len + 'px', '--ang': ang + 'deg', '--h': Math.max(16, tall * 0.11 * big) + 'px'});
+      wave(p, 'burst', Math.min(900, tall * 1.1 * big), 480, 0, 'broarbig star', 0, 0.9);    // the blast at its beak
+      for (var i = 0; i < 6; i++) {                            // the cone: great bells of sound fired along the beam
+        var q = 0.06 + 0.15 * i, size = Math.min(1300, tall * (0.8 + 0.42 * i) * big);
+        var w = wave([p[0] + (you[0] - p[0]) * q, p[1] + (you[1] - p[1]) * q], i % 2 ? 'double' : 'ring', size, 760, 30 + 60 * i, 'broarbig cone', 4, 1);
+        w.style.setProperty('--ang', ang + 'deg');
+      }
+      [360, 640, 920, 1200].forEach(function (d, i) {         // and bells pulsing out of its beak while it holds
+        wave(p, i % 2 ? 'double' : 'ring', Math.min(1300, tall * (1.4 + 0.3 * i) * big), 820, d, 'broarbig cone', 2, 0.9)
+          .style.setProperty('--ang', ang + 'deg');
+      });
+      var c = at(pic, 0.5, 0.45);                              // its feathers torn loose, scattering across the scene
+      for (var j = 0; j < 40; j++) {
+        var a = Math.random() * Math.PI * 2, d = (120 + Math.random() * 320) * big;
+        fx('bfeather', c[0] + (Math.random() - 0.5) * 8, c[1] + (Math.random() - 0.5) * 10, 2300, {'--rc': ROAR.color,
+          '--dx': Math.cos(a) * d + 'px', '--dy': (Math.sin(a) * d * 0.6 + 60 + Math.random() * 90) + 'px',
+          '--rot': (Math.random() * 900 - 450) + 'deg', '--s': (0.7 + Math.random() * 0.8).toFixed(2), 'animation-delay': (Math.random() * 260) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1400);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -602,7 +654,7 @@
         }
         pic = {left: box.left + (box.width - w) / 2, top: box.top + box.height - h, width: w, height: h, box: box};
         if (pivot && img !== beast) return;                    // a picture swapped mid-roar turns about the same feet
-        pivot = [pic.left + pic.width * 0.85 - box.left, pic.top + pic.height - box.top];   // its hind feet, in the box
+        pivot = [pic.left + pic.width * (M.pivot || 0.85) - box.left, pic.top + pic.height - box.top];   // its (hind) feet, in the box
         beast.style.transformOrigin = pivot[0] + 'px ' + pivot[1] + 'px';
       }
       function pose3(t) {                                      // lean, drop, tilt at t, eased between the keys
@@ -631,6 +683,7 @@
       return {end: Math.max(TOTAL, BURST + ROAR_MS) + 150, render: function (t) {
         if (t < 0) return;
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
+        if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
         var sw = 1 + (M.swell || 0) * (t < BURST ? span(t, BURST - 150, BURST) : 1 - span(t, HOLD1, TOTAL));   // thrown toward you
@@ -645,13 +698,13 @@
           if (open !== opened) { opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill); }
         }
         if (t >= BURST && once('burst')) {
-          bigRoar(mouth(p), pic, ev.final);
+          if (M.style === 'screech') screech(mouth(p), pic, ev.final); else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
@@ -664,7 +717,7 @@
       if (!ev || ev.why) return;
       if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
       var words = (ev.final ? ['Final Roar'] : []).concat(ev.guard ? ['Guarded'] : (ev.status || []).concat(ev.stun ? ['Stunned'] : []));
-      words.forEach(function (w, i) { setTimeout(function () { pop(fighter, 'word', w); }, 220 * i); });
+      words.forEach(function (w, i) { setTimeout(function () { pop(fighter, 'word', w); }, 380 + 300 * i); });   // after the damage number
       if (!ev.guard && scene.animate) fighter.animate([{transform: 'none'}, {transform: 'translate(-6px,0)'}, {transform: 'translate(4px,0)'}, {transform: 'none'}], {duration: 320});
     }
     function roaring(ev) {

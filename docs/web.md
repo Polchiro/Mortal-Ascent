@@ -347,6 +347,12 @@ a lair is fought with `bot/hunt.py`.
    roar bursts, and back as it settles. Its open mouth (`heads.json` "<slug>@roar") is where the wave starts, and the
    wave goes out just in front of the jaws so they stay in view. Other beasts keep the plain
    rear-back. A new body category is one more row in `ROAR_ANIMATIONS` and its beasts in `ROAR_CATEGORY`.
+   **The flying beasts screech** (`ROAR_ANIMATIONS["flying"]`, from SHOAIB's flying roar video of a crane; `gather` and
+   `screech` in `fight.js`): each, as its own picture, rears up off the ground with its head thrown back while Qi motes
+   of its element swirl into its glowing throat, then snaps its head forward with its open-beaked picture
+   (`art/beasts/roar/`) and blasts a cone of great sound bells at you along a glowing beam, bells pulsing from its
+   beak while it holds, feathers scattering across the scene and the camera punching in, then settles. Same rules,
+   damage and log line ("Roar") as the quadrupeds' roar.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

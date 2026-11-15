@@ -57,7 +57,7 @@ def test_every_quadruped_roars_as_itself_with_the_shared_movement():
 
 
 def test_other_beasts_keep_the_plain_roar():
-    for name in ("Storm Eagle", "Rock Python", "Azure Dragon"):
+    for name in ("Venom Scorpion", "Rock Python", "Azure Dragon"):
         assert beasts.roar_category(name) is None
         assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["motion"] is None
 
@@ -83,7 +83,7 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
-    assert explore_play.beast_roar({"name": "Storm Eagle", "slug": "storm_eagle", "tier": "normal"})["art"] is None
+    assert explore_play.beast_roar({"name": "Rock Python", "slug": "rock_python", "tier": "normal"})["art"] is None
 
 
 def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
@@ -108,3 +108,21 @@ def test_the_redesigned_flying_beasts_face_left_and_stand_on_their_feet():
         assert max(a.shape) <= 900 and a[-3:].max() > 128, slug                # trimmed: feet on the bottom edge
         assert heads[slug][0] < 0.35, slug                                     # its beak at the left: it faces left
     assert "Cave Bat Swarm" not in beasts.TRAITS and "Wind-Feather Falcon" in beasts.TRAITS   # replaced
+
+
+def test_every_flying_beast_screeches_as_itself_with_its_open_beak():
+    from PIL import Image
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    move = beasts.ROAR_ANIMATIONS["flying"]
+    assert move["style"] == "screech" and len(move["ms"]) == len(move["keys"]) - 1
+    assert move["keys"][0] == move["keys"][-1] == (0.0, 0.0, 0.0)
+    assert move["keys"][1][1] < 0 and move["keys"][1][2] > 0 > move["keys"][move["burst"]][2]   # rears up, then snaps forward
+    for name in beasts.FLYING:
+        slug = beasts.slug(name)
+        assert beasts.roar_category(name) == "flying" and name in beasts.TRAITS and beasts.TRAITS[name][1] == "bird"
+        r = explore_play.beast_roar({"name": name, "slug": slug, "element": beasts.element_of(name), "tier": "normal"})
+        assert r["motion"]["style"] == "screech" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+        roar = os.path.join(ROOT, "art", "beasts", "roar", slug + ".png")
+        assert Image.open(roar).size == Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).size
+    birds = {n for n, (_, body) in beasts.TRAITS.items() if body == "bird"}
+    assert birds == set(beasts.FLYING)                                      # every bird screeches

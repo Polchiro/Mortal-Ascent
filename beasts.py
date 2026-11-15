@@ -272,6 +272,18 @@ ROAR_ANIMATIONS = {
         (-0.020, -0.016, 9.5),      # held, trembling, for as long as the video holds it
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.08},              # it swells this much bigger as it roars (thrown toward you, as in the video)
+    # The flying beasts' screech, from SHOAIB's flying roar video (a crane): it rears up off the ground with its wings
+    # spread and head thrown back, gathers glowing Qi into its throat, then snaps its head forward, beak wide, and
+    # blasts a cone of sound rings at you along a beam (fight.js `screech`), holds it with feathers scattering, and
+    # settles. style: which burst it plays; pivot: where its feet are, as a share of its picture's width.
+    "flying": {"ms": [380, 620, 140, 1400, 520], "burst": 3, "hold": 3, "style": "screech", "pivot": 0.6, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (-0.020, -0.060, 12.0),     # reared up off the ground, head thrown back, wings spread
+        (-0.024, -0.070, 13.0),     # gathering, Qi swirling into its throat
+        (0.040, -0.045, -4.0),      # the screech: head snapped forward at you, beak wide
+        (0.034, -0.045, -3.0),      # held, trembling, blasting
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.06},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -280,7 +292,10 @@ QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mounta
               "Earth-Splitting Rhino", "Shadow Panther", "Cloud Leopard",
               "Nine-Tailed Fox", "Thunder Rhino", "Fire-Hoof Steed", "Sky Lynx", "Ancient Golden Ape",
               "Ghost-Fire Wolf", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger")
-ROAR_CATEGORY = {name: "quadruped" for name in QUADRUPEDS}
+# The 10 flying beasts (SHOAIB's redesign of the birds), all screeching with the flying movement.
+FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Iron-Feather Crow", "Crimson Fire Hawk",
+          "Bifang Fire Crane", "Vermilion Bird", "Kun-Peng, Fish of the Northern Sea", "Wind-Feather Falcon")
+ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING}}
 
 
 def roar_category(name):
