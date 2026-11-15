@@ -126,3 +126,16 @@ def test_every_flying_beast_screeches_as_itself_with_its_open_beak():
         assert Image.open(roar).size == Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png")).size
     birds = {n for n, (_, body) in beasts.TRAITS.items() if body == "bird"}
     assert birds == set(beasts.FLYING)                                      # every bird screeches
+
+
+def test_the_redesigned_serpents_have_their_standing_and_open_mouthed_pictures():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    serpents = {beasts.slug(n) for n, (_, body) in beasts.TRAITS.items() if body == "serpent"}
+    assert serpents == set(art.SERPENTS)
+    for slug in art.SERPENTS:
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        assert heads[slug][0] < 0.3 and slug + "@roar" in heads, slug             # faces left; open mouth on file

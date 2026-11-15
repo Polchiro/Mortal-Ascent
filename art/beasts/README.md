@@ -16,3 +16,5 @@ with the shared movement.
 
 The redesigned flying beasts (the birds) are made the same way,
 `scripts/make_quadruped_art.py` `FLYING`: pedestals and rocks dropped (`STONE`), facing left.
+
+The redesigned serpents are made the same way (`SERPENTS`), with their open-mouthed roar pictures in `roar/`.
