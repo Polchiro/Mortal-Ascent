@@ -673,6 +673,28 @@
       }
       camera(p, 1 + 0.07 * big, 1450);
     }
+    /* An amphibian's roar (beasts.ROAR_ANIMATIONS["amphibian"], from SHOAIB's amphibian roar video). As it crouches,
+       Qi of its element swirls into its body (`gather`). As it throws its head up (`quake`): a golden starburst at its
+       jaws, its whole body erupting in a spiky nova of its element, two shockwave rings racing out along the ground,
+       dust rolling both ways, and the camera punching in. A final roar is bigger. */
+    function quake(p, pic, final) {
+      var big = final ? 1.3 : 1, tall = pic.height;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      wave(p, 'burst', Math.min(700, tall * 0.75 * big), 480, 0, 'broarbig star', 9, 0.5);
+      var c = at(pic, 0.45, 0.45);
+      fx('bnova', c[0], c[1], 1300, {'--rc': ROAR.color, '--s': Math.min(900, pic.width * 1.25 * big) + 'px', 'animation-delay': '120ms'});
+      var f = at(pic, 0.5, 0.98);
+      [0, 260].forEach(function (d, i) {                       // shockwave rings along the ground
+        fx('bquake', f[0], f[1], 1500, {'--rc': ROAR.color, '--s': Math.min(1300, pic.width * (1.9 - 0.4 * i) * big) + 'px',
+          'animation-delay': (200 + d) + 'ms'});
+      });
+      for (var m = 0; m < 12; m++) {                           // dust rolling out both ways
+        var side = m % 2 ? 1 : -1;
+        fx('bdust', f[0] + side * (3 + 2.5 * m), f[1] - 1 - Math.random() * 2, 1900, {'--dx': side * (70 + 30 * m) + 'px',
+          '--s': (0.9 + Math.random() * 0.7).toFixed(2), 'animation-delay': (200 + 30 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1450);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -725,6 +747,7 @@
         if (t < 0) return;
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
         if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
+        if (M.style === 'quake' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'hiss' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); runes(pic, HOLD1 + 300 - at0[1]); }
         var p = pose3(t), shake = 0;
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
@@ -742,13 +765,14 @@
         if (t >= BURST && once('burst')) {
           if (M.style === 'screech') screech(mouth(p), pic, ev.final);
           else if (M.style === 'hiss') hiss(mouth(p), pic, ev.final);
+          else if (M.style === 'quake') quake(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
         hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);

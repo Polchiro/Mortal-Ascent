@@ -296,6 +296,18 @@ ROAR_ANIMATIONS = {
         (0.040, 0.000, -2.0),       # held, trembling, breathing
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.07},
+    # The amphibians' roar, from SHOAIB's amphibian roar video (the Thornback Lizard): it crouches low while Qi of its
+    # element swirls round it, then throws its head up and roars, a golden starburst flaring at its jaws, its whole
+    # body erupting in a nova of its element and a shockwave ring racing out along the ground with dust (fight.js
+    # `quake`), holds, trembling, and settles.
+    "amphibian": {"ms": [520, 560, 150, 1450, 520], "burst": 3, "hold": 3, "style": "quake", "pivot": 0.7, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (0.000, 0.030, -2.0),       # crouched low, gathering itself
+        (-0.015, 0.035, -4.0),      # crouched lower, head down, Qi swirling round it
+        (0.025, -0.010, 10.0),      # the roar: head thrown up, body erupting
+        (0.020, -0.008, 9.0),       # held, trembling
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.06},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -309,8 +321,10 @@ FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Ir
           "Bifang Fire Crane", "Vermilion Bird", "Kun-Peng, Fish of the Northern Sea", "Wind-Feather Falcon")
 # The 5 serpents (SHOAIB's redesign), all hissing with the serpent movement.
 SERPENTS = ("Field Viper", "Rock Python", "Frost Python", "Black Water Serpent", "Void Serpent")
+# The 3 amphibians (SHOAIB's redesign), all roaring with the amphibian movement.
+AMPHIBIANS = ("Thornback Lizard", "Poison Toad", "Ember Lizard")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
-                 **{name: "serpent" for name in SERPENTS}}
+                 **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS}}
 
 
 def roar_category(name):

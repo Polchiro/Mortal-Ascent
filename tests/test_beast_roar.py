@@ -149,3 +149,24 @@ def test_every_serpent_hisses_with_the_serpent_movement_and_its_open_mouthed_pic
         slug = beasts.slug(name)
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "hiss" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_the_redesigned_amphibians_have_their_standing_and_open_mouthed_pictures():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    for slug in art.AMPHIBIANS:
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        assert heads[slug][0] < 0.3 and slug + "@roar" in heads, slug
+
+
+def test_every_amphibian_roars_with_the_amphibian_movement_and_its_open_mouthed_picture():
+    move = beasts.ROAR_ANIMATIONS["amphibian"]
+    assert move["style"] == "quake" and len(move["ms"]) == len(move["keys"]) - 1
+    for name in beasts.AMPHIBIANS:
+        assert beasts.roar_category(name) == "amphibian"
+        slug = beasts.slug(name)
+        r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
+        assert r["motion"]["style"] == "quake" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
