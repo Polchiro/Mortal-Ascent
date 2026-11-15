@@ -505,7 +505,8 @@
       var size = Math.max(90, Math.min(520, pic.height * ROAR.height * (ROAR.wave === 'ring' ? 0.75 : ROAR.wave === 'double' ? 0.9 : 1.05) * (big ? 1.4 : 1)));
       var n = document.createElement('div');
       n.className = 'broar';
-      n.style.left = p[0] + '%'; n.style.top = p[1] + '%';
+      var ahead = ROAR.art ? size * 0.38 / scene.getBoundingClientRect().width * 100 : 0;   // an open-mouthed roar:
+      n.style.left = (p[0] - ahead) + '%'; n.style.top = p[1] + '%';                     // the wave goes out in front, the jaws stay in view
       n.style.width = n.style.height = size + 'px';
       n.style.backgroundImage = 'url(/art/fx/roar_' + (big ? 'burst' : ROAR.wave) + '.webp)';     // a final roar: the biggest wave
       n.style.setProperty('--rc', ROAR.color);
@@ -526,21 +527,28 @@
        the shared keys (eased between): it dips its head and crouches, rears its head up as the roar bursts from its
        own mouth (the wave, tinted with its element, and dust kicked up at its feet), holds it there trembling, and
        settles. A beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds. */
+    var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
+    if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
       ev = ev || {};
-      var did = {}, keys = M.keys, at0 = [0], pic = null, pivot = null;
+      var did = {}, keys = M.keys, at0 = [0], pic = null, pivot = null, still = beast.src, opened = false;
+      var beastStill = {naturalWidth: beast.naturalWidth, naturalHeight: beast.naturalHeight};
       for (var i = 0; i < M.ms.length; i++) at0.push(at0[i] + M.ms[i]);
       var BURST = at0[M.burst], HOLD0 = at0[M.hold], HOLD1 = at0[M.hold + 1], TOTAL = at0[at0.length - 1];
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
-      function measure() {                                     // the picture as drawn (object-fit: contain, feet down)
+      function measure(img) {                                  // the picture as drawn (object-fit: contain, feet down)
+        img = img || beast;
+        var keep = beast.style.transform;
         beast.style.transform = '';
         var box = beast.getBoundingClientRect();
+        beast.style.transform = keep;
         var w = box.width, h = box.height;
-        if (beast.naturalWidth && beast.naturalHeight) {
-          var ar = beast.naturalWidth / beast.naturalHeight;
+        if (img.naturalWidth && img.naturalHeight) {
+          var ar = img.naturalWidth / img.naturalHeight;
           w = Math.min(box.width, box.height * ar); h = w / ar;
         }
         pic = {left: box.left + (box.width - w) / 2, top: box.top + box.height - h, width: w, height: h, box: box};
+        if (pivot && img !== beast) return;                    // a picture swapped mid-roar turns about the same feet
         pivot = [pic.left + pic.width * 0.85 - box.left, pic.top + pic.height - box.top];   // its hind feet, in the box
         beast.style.transformOrigin = pivot[0] + 'px ' + pivot[1] + 'px';
       }
@@ -552,7 +560,7 @@
         return keys[keys.length - 1];
       }
       function mouth(p) {                                      // its mouth where the move has carried it, in % of the scene
-        var s = scene.getBoundingClientRect(), hd = ROAR.head || [0.15, 0.35];
+        var s = scene.getBoundingClientRect(), hd = (opened && ROAR.head_open) || ROAR.head || [0.15, 0.35];
         var mx = pic.left + pic.width * hd[0], my = pic.top + pic.height * hd[1];
         var ox = pic.box.left + pivot[0], oy = pic.box.top + pivot[1], a = p[2] * Math.PI / 180;   // as the picture turns
         var dx = mx - ox, dy = my - oy;
@@ -574,12 +582,17 @@
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
         beast.style.transform = 'translate(' + (-p[0] * pic.width + shake) + 'px,' + (p[1] * pic.height) + 'px) rotate(' + p[2] + 'deg)';   // clockwise: a left-facing head goes up
         if (bposes && bposes.roar) bpose(t >= BURST - 60 && t < HOLD1 ? 'roar' : home);
+        else if (roarPic && roarPic.complete && roarPic.naturalWidth) {      // its own open-mouthed roar picture
+          var open = t >= BURST - 60 && t < HOLD1;
+          if (open !== opened) { opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill); }
+        }
         if (t >= BURST && once('burst')) {
           roar(mouth(p), ev.final); dust();
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
       }, clear: function () {
+        if (opened) { beast.src = still; opened = false; }
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
         var n = scene.querySelector('.broar'); if (n) n.remove();

@@ -338,7 +338,11 @@ a lair is fought with `bot/hunt.py`.
    rears its head up as the roar bursts from its own mouth (with dust kicked up at its feet and a shake of the scene),
    holds it trembling, and settles back. The picture is moved whole about its hind feet (turned and shifted, never
    bent, stretched or cropped), so any body shape or size works; the wave follows the mouth as the head comes up. A
-   beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds. Other beasts keep the plain
+   beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds; every other quadruped swaps
+   to its own **open-mouthed roar picture** (`art/beasts/roar/<slug>.png`, SHOAIB's, cut by
+   `scripts/make_quadruped_art.py --roar` onto the standing picture's canvas so it keeps its size and footing) as the
+   roar bursts, and back as it settles. Its open mouth (`heads.json` "<slug>@roar") is where the wave starts, and the
+   wave goes out just in front of the jaws so they stay in view. Other beasts keep the plain
    rear-back. A new body category is one more row in `ROAR_ANIMATIONS` and its beasts in `ROAR_CATEGORY`.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored

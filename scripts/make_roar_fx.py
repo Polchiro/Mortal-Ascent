@@ -106,6 +106,40 @@ MOUTHS = {
 VARIANTS = {"roar_ring": (1, 0, 0.3, 0.85, 3.6), "roar_double": (3, 0, 0.3, 1.15, 3.0), "roar_burst": (0, 1, 1.0, 2.3, 4.6)}
 
 
+# the open mouths of the roar pictures (art/beasts/roar/<slug>.png, on the standing picture's canvas), read by eye;
+# saved in heads.json as "<slug>@roar"
+ROAR_MOUTHS = {
+    "ancient_flame_lion": (0.08, 0.22),
+    "ancient_golden_ape": (0.29, 0.23),
+    "armored_boar_chief": (0.1, 0.42),
+    "bloodfang_wolf": (0.1, 0.22),
+    "cloud_leopard": (0.3, 0.24),
+    "earth_splitting_rhino": (0.12, 0.47),
+    "fire_hoof_steed": (0.08, 0.12),
+    "flame_maned_lion": (0.07, 0.3),
+    "frost_wolf": (0.08, 0.25),
+    "ghost_fire_wolf": (0.08, 0.15),
+    "grey_wolf": (0.1, 0.21),
+    "horned_stag": (0.19, 0.35),
+    "iron_hide_boar": (0.1, 0.36),
+    "ironbark_bear": (0.1, 0.22),
+    "nine_tailed_fox": (0.15, 0.19),
+    "old_black_bear": (0.1, 0.24),
+    "qiongqi_the_winged_tiger": (0.06, 0.25),
+    "red_fox": (0.19, 0.22),
+    "shadow_panther": (0.08, 0.22),
+    "shadow_wolf": (0.1, 0.26),
+    "sky_lynx": (0.06, 0.34),
+    "steel_horn_bull": (0.17, 0.27),
+    "thunder_rhino": (0.24, 0.5),
+    "white_browed_tiger_king": (0.1, 0.2),
+    "white_tiger": (0.17, 0.25),
+    "wild_boar": (0.1, 0.33),
+    "wild_ox": (0.155, 0.37),
+    "wind_leopard": (0.08, 0.28),
+}
+
+
 def grab(video, t, col, row):
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "f.png")
@@ -159,6 +193,9 @@ def main(video):
                 if f[:-4] in MOUTHS:
                     h[:2] = MOUTHS[f[:-4]]
                 heads[f[:-4]] = h
+    for name, xy in ROAR_MOUTHS.items():
+        if os.path.exists(os.path.join(BEASTS, "roar", name + ".png")) and name in heads:
+            heads[name + "@roar"] = [*xy, heads[name][2]]
     with open(os.path.join(BEASTS, "heads.json"), "w") as fh:
         json.dump(heads, fh, indent=0, sort_keys=True)
     print(len(heads), "heads")

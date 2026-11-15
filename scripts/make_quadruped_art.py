@@ -2,6 +2,12 @@
 each beast keeps its own picture, cut out of its plain backdrop, standing on its paws.
 
     python -m scripts.make_quadruped_art art_dir
+    python -m scripts.make_quadruped_art --roar roar_dir
+
+`--roar`: the same beasts' open-mouthed roar pictures (SHOAIB's, Gemini: the same design and side view, mouth wide
+open), cut the same way into art/beasts/roar/<slug>.png, on the standing picture's own canvas (`like_standing`) so the
+fight shows it at the same size and place. The fight shows one while its beast roars (web/static/fight.js
+`roaringMoved`); its mouth goes in heads.json as "<slug>@roar" (scripts/make_roar_fx.py MOUTHS).
 
 `art_dir` holds the designs named by beast (`<slug>.png`, e.g. `iron_hide_boar.png`), any of DESIGNS. Each is
 1024 x 559 on a pale backdrop. Several stand on a painted slab of stone or rock (`SLAB`): the cut-out model drops most
@@ -96,20 +102,58 @@ def off_the_slab(a, top):
     return a
 
 
-def main(src):
+# the roar pictures drawn on a slab (its top edge, as SLAB), and drawn facing the other way from the standing design
+ROAR_SLAB = {}
+ROAR_FLIP = set()
+
+
+def like_standing(roar, still):
+    """The roar picture on the standing picture's own canvas, so the fight draws it at the same size and place: scaled
+    to the same amount of body (alpha area), its feet on the same ground line under the same spot (the middle of its
+    paws), shrunk if it would not fit."""
+    def feet_x(im):
+        a = np.asarray(im.getchannel("A")) > 128
+        rows = np.flatnonzero(a.any(1))
+        low = a[rows.max() - max(2, int(len(rows) * 0.08)):rows.max() + 1]
+        return np.flatnonzero(low.any(0)).mean()
+    W, H = still.size
+    area = lambda im: (np.asarray(im.getchannel("A")) > 128).sum()
+    s = (area(still) / max(1, area(roar))) ** 0.5
+    fx = feet_x(still)
+    for _ in range(40):
+        w, h = max(1, round(roar.width * s)), max(1, round(roar.height * s))
+        x = round(fx - feet_x(roar) * s)
+        if h <= H and w <= W:
+            x = min(max(x, 0), W - w)
+            break
+        s *= 0.97
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    canvas.alpha_composite(roar.resize((w, h), Image.LANCZOS), (x, H - h))
+    return canvas
+
+
+def main(src, roar=False):
     from rembg import new_session
     session = new_session("isnet-general-use")
-    for name in DESIGNS:
+    dest = os.path.join(BEASTS, "roar") if roar else BEASTS
+    os.makedirs(dest, exist_ok=True)
+    for name in DESIGNS:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)
             continue
+        if roar:
+            SLAB.clear(); SLAB.update(ROAR_SLAB)
+            FACES_RIGHT.symmetric_difference_update(ROAR_FLIP & {name})
         out = cut(path, name, session)
-        out.save(os.path.join(BEASTS, name + ".png"), optimize=True)
+        if roar:
+            out = like_standing(out, Image.open(os.path.join(BEASTS, name + ".png")).convert("RGBA"))
+        out.save(os.path.join(dest, name + ".png"), optimize=True)
         print(name, out.size)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    args = [a for a in sys.argv[1:] if a != "--roar"]
+    if len(args) != 1:
         sys.exit(__doc__)
-    main(sys.argv[1])
+    main(args[0], roar="--roar" in sys.argv)
