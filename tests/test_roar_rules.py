@@ -52,7 +52,9 @@ def test_pressing_or_wounding_it_makes_a_roar_likelier():
             n += b._roars()
         return n / tries
     base, pressed, wounded = rate(), rate(streak=2), rate(hp=0.6)
-    assert abs(base - 0.05) < 0.02 and abs(pressed - 0.20) < 0.03 and abs(wounded - 0.25) < 0.03
+    n = battle.ROAR["normal"]["chance"]
+    assert abs(base - n) < 0.03 and abs(pressed - (n + battle.ROAR_STREAK_BONUS)) < 0.03
+    assert abs(wounded - (n + battle.ROAR_WOUNDED_BONUS)) < 0.03
 
 
 def test_the_final_roar_comes_once_near_death_and_hits_harder():
@@ -116,3 +118,22 @@ def test_a_beast_that_cannot_roar_fights_exactly_as_before():
     b2.enemy_turns = 20
     b2._roars()
     assert [b2.rng.random() for _ in range(5)] == rolls                      # its own dice: the fight's untouched
+
+
+def test_most_fights_see_a_roar():
+    """Not a rare sight: two in three Normal fights, nearly every Elite and Beast King fight (several times)."""
+    def share(tier, n=150):
+        seen = roars = 0
+        for seed in range(n):
+            b = make_battle(beast=("Sky Lynx", tier, "hunter"), seed=seed)
+            f = b.fighters[0]
+            f.hp = f.max_hp = f.max_hp * 5
+            got = 0
+            while not b.over and b.turn < 40:
+                b.choose(f.uid, random.Random(seed * 99 + b.turn).choice(["strike", "strike", "break", "guard"]))
+                got += sum("Roar on" in t for _, t in b.resolve())
+            seen += got > 0
+            roars += got
+        return seen / n, roars / n
+    assert share("normal")[0] > 0.55
+    assert share("elite")[0] > 0.9 and share("beast_king")[1] > 2
