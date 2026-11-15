@@ -15,14 +15,14 @@
 0.984
 ],
 "ancient_golden_ape": [
-0.06,
-0.28,
-0.993
+0.41,
+0.25,
+0.996
 ],
 "ancient_golden_ape@roar": [
+0.37,
 0.29,
-0.23,
-0.993
+0.996
 ],
 "armored_boar_chief": [
 0.12,
@@ -200,9 +200,14 @@
 0.953
 ],
 "golden_eyed_ape_king": [
-0.3,
-0.22,
-0.997
+0.51,
+0.26,
+0.995
+],
+"golden_eyed_ape_king@roar": [
+0.51,
+0.28,
+0.995
 ],
 "golden_silk_spider": [
 0.32,
@@ -380,14 +385,24 @@
 0.989
 ],
 "shanxiao_mountain_spirit": [
+0.47,
 0.26,
-0.18,
-0.997
+0.996
+],
+"shanxiao_mountain_spirit@roar": [
+0.46,
+0.29,
+0.996
 ],
 "silver_monkey": [
-0.12,
-0.2,
-0.996
+0.04,
+0.25,
+0.99
+],
+"silver_monkey@roar": [
+0.04,
+0.28,
+0.99
 ],
 "sky_lynx": [
 0.06,

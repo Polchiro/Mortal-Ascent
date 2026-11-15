@@ -34,7 +34,7 @@ DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "wild_boar
            "old_black_bear", "bloodfang_wolf", "armored_boar_chief", "white_browed_tiger_king", "steel_horn_bull",
            "ironbark_bear", "frost_wolf", "wind_leopard", "flame_maned_lion", "earth_splitting_rhino", "shadow_panther",
            "cloud_leopard",
-           "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "sky_lynx", "ancient_golden_ape", "ghost_fire_wolf",
+           "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "sky_lynx", "ghost_fire_wolf",
            "qiongqi_the_winged_tiger", "ancient_flame_lion", "white_tiger")
 # the flying beasts (SHOAIB's redesign of the birds), cut the same way
 FLYING = ("spear_beak_crane", "thunder_hawk", "bone_vulture", "storm_eagle", "iron_feather_crow", "crimson_fire_hawk",
@@ -45,16 +45,19 @@ SERPENTS = ("field_viper", "rock_python", "frost_python", "black_water_serpent",
 AMPHIBIANS = ("thornback_lizard", "poison_toad", "ember_lizard")
 # the dragons (SHOAIB's redesign)
 DRAGONS = ("flood_dragon_jiao", "azure_dragon")
-FACES_RIGHT = {"flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+# the primates (SHOAIB's redesign; the Ancient Golden Ape moved here from the four-legged beasts)
+PRIMATES = ("silver_monkey", "golden_eyed_ape_king", "ancient_golden_ape", "shanxiao_mountain_spirit")
+FACES_RIGHT = {"golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
         "grey_wolf": 0.80, "wild_ox": 0.81, "old_black_bear": 0.80, "cloud_leopard": 0.73,
-        "nine_tailed_fox": 0.80, "thunder_rhino": 0.80, "fire_hoof_steed": 0.80, "ancient_golden_ape": 0.80}
+        "nine_tailed_fox": 0.80, "thunder_rhino": 0.80, "fire_hoof_steed": 0.80}
 SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right corner, px
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
 STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
+SOLID = {"shanxiao_mountain_spirit"}  # its thin staff and crystal: kept whole against the plain backdrop
 ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped
@@ -65,6 +68,12 @@ def cut(path, name, session):
     im = Image.open(path).convert("RGB")
     a = np.asarray(remove(im, session=session)).copy()
     h, w = a.shape[:2]
+    if name in SOLID:                                        # thin parts the cutter fades: whatever isn't the grey backdrop
+        px = np.asarray(im).astype(np.float32)
+        bg = np.median(np.concatenate([px[:20].reshape(-1, 3), px[:, :20].reshape(-1, 3)]), axis=0)
+        keep = np.abs(px - bg).max(axis=2) > 34
+        a[..., :3] = np.where(keep[..., None], px, a[..., :3]).astype(np.uint8)      # with its own colours
+        a[..., 3] = np.maximum(a[..., 3], keep * 255).astype(np.uint8)
     a[h - SPARKLE[1]:, w - SPARKLE[0]:, 3] = 0
     if name in SLAB:
         a = off_the_slab(a, SLAB[name])
@@ -172,7 +181,7 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)
