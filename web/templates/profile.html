@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ p.name }} · Mortal Ascent{% endblock %}
-{% block body_class %}hallbg{% endblock %}
+{% block body_class %}hallbg profilebg{% endblock %}
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
@@ -8,9 +8,12 @@
 <main class="xprofile">
   <!-- A. Identity -->
   <section class="xpanel identity" aria-label="Your cultivator">
+    <span class="dragon l" aria-hidden="true"></span><span class="dragon r" aria-hidden="true"></span>
     <div class="portrait">
+      <span class="aura" aria-hidden="true"></span>
       <span class="seal" aria-hidden="true">{{ t.seal }}</span>
       <img src="{{ p.portrait }}" alt="" width="550" height="445">
+      <span class="wisps" aria-hidden="true"></span>
     </div>
     <h1 class="xname">{{ p.name }}</h1>
     <p class="xrealm">{{ p.realm }} · {{ p.layer }} Layer</p>
@@ -30,7 +33,7 @@
   <div class="xcol">
     <!-- D. Cultivation -->
     <section class="xpanel" aria-labelledby="cult-h">
-      <div class="phead"><h2 id="cult-h">Cultivation</h2><span class="sub">Realm {{ t.no }} of {{ t.of }}</span></div>
+      <div class="phead orn"><h2 id="cult-h">Cultivation</h2><span class="sub">Realm {{ t.no }} of {{ t.of }}</span></div>
       <div class="cult">
         <span class="realmseal" aria-hidden="true">{{ t.seal }}</span>
         <div class="cultmain">
@@ -43,7 +46,7 @@
       </div>
       <div class="qibar">
         <div class="row"><span><img src="/art/icons/attr/qi.webp" alt="" width="22" height="22"> Internal Qi</span><b>{{ p.qi }} / {{ p.qi_cap }}</b></div>
-        <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100"><div style="width: {{ p.qi_pct }}%"></div></div>
+        <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100" style="--qi: {{ p.qi_pct }}%"><div class="{% if not p.qi_pct %}none{% endif %}" style="width: {{ p.qi_pct }}%"></div></div>
         <div class="row sub"><span>+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</span><span class="tone-{{ p.qi_tone }}">{{ p.qi_status }}</span></div>
       </div>
       <div class="nextbt">
@@ -55,10 +58,10 @@
 
     <!-- B. Attributes -->
     <section class="xpanel" aria-labelledby="attr-h">
-      <div class="phead"><h2 id="attr-h">Attributes</h2>{% if p.injured %}<span class="sub warn">Injured</span>{% endif %}</div>
+      <div class="phead orn"><h2 id="attr-h">Attributes</h2>{% if p.injured %}<span class="sub warn">Injured</span>{% endif %}</div>
       <div class="attrs">
         {% for a in p.attributes %}
-        <div class="attr">
+        <div class="attr a-{{ a.key }}">
           <img src="{{ a.icon }}" alt="" width="56" height="56">
           <div class="aval">
             <span class="alabel">{{ a.label }}</span>
@@ -74,7 +77,7 @@
     <!-- E. Character development -->
     {% set dv = p.dev %}
     <section class="xpanel" id="develop" aria-labelledby="dev-h">
-      <div class="phead"><h2 id="dev-h">Strength, Vitality &amp; Spirit</h2><span class="sub">{{ dv.free }} point{{ "s" if dv.free != 1 }} to place</span></div>
+      <div class="phead orn"><h2 id="dev-h">Strength, Vitality &amp; Spirit</h2><span class="sub">{{ dv.free }} point{{ "s" if dv.free != 1 }} to place</span></div>
       {% if points_notice %}<p class="gnotice" role="status">{{ points_notice | rich | safe }}</p>{% endif %}
       <form method="post" action="/profile/attributes" class="devform" id="devform">
         <div class="devrow">
@@ -151,7 +154,7 @@
 
     <!-- C. Equipment -->
     <section class="xpanel" id="gear" aria-labelledby="gear-h">
-      <div class="phead"><h2 id="gear-h">Equipment</h2><a class="sub" href="/inventory?tab=weapons">Open bag</a></div>
+      <div class="phead orn"><h2 id="gear-h">Equipment</h2><a class="sub" href="/inventory?tab=weapons">Open bag</a></div>
       {% if notice %}<p class="gnotice" role="status">{{ notice | rich | safe }}</p>{% endif %}
       <div class="xgear">
         {% for w in worn %}
@@ -181,7 +184,7 @@
       <h3 class="subh">Techniques</h3>
       <div class="xtech">
         {% for s in p.slots %}
-        <div class="tslot{% if s.locked %} locked{% endif %}">
+        <div class="tslot t-{{ s.slot | lower }}{% if s.locked %} locked{% endif %}">
           {% if s.icon %}<img src="{{ s.icon }}" alt="" width="56" height="56">{% else %}<span class="ring" aria-hidden="true"></span>{% endif %}
           <div>
             <span class="kicker">{{ s.slot | upper }}</span>
@@ -195,10 +198,12 @@
     </section>
 
     <!-- Journey -->
-    <section class="xpanel" aria-labelledby="jour-h">
-      <div class="phead"><h2 id="jour-h">Journey</h2></div>
-      <div class="xjourney">
-        {% for label, value in p.stats %}<div><b>{{ value }}</b><span>{{ label }}</span></div>{% endfor %}
+    <section class="journeyp" aria-labelledby="jour-h">
+      <h2 id="jour-h">Journey</h2>
+      <div class="scroll">
+        <div class="xjourney">
+          {% for label, value in p.stats %}<div class="plaque">{% if p.stat_icons[loop.index0] %}<img src="{{ p.stat_icons[loop.index0] }}" alt="" width="56" height="56">{% endif %}<b>{{ value }}</b><span>{{ label }}</span></div>{% endfor %}
+        </div>
       </div>
     </section>
   </div>

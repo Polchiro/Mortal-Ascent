@@ -46,6 +46,13 @@ realm, layer and phase, talent, realm rank, Internal Qi (with rate and time to f
 Lotus Coins and Moon Pearls, the technique slots with their painted icons, beasts slain, herbs gathered,
 breakthroughs, duels won and the weapon.
 
+**Look.** A xianxia hall: gold-trimmed lacquer panels with a cloud crest on top (`.xprofile .xpanel`, `.phead.orn`),
+the portrait in a jade aura with the dragon corners (`art/ui/dragon_corner_top_sm.webp`, a small copy of
+`dragon_corner_top.png`), layers as jade gems, Internal Qi as a jade current, gear in jade cards under a gold
+diamond, and the Journey as a parchment scroll with a wooden plaque per deed (icons from `art/icons/index/ov_*`,
+`stat_icons` in `web/profile.py`). It is all CSS over the same template and data: nothing in the numbers,
+forms or links changed. The appearance page keeps the plain panels (`.xpanel` without `.xprofile`).
+
 Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
 
 - **Identity:** the player's painting (docs/appearance.md): `art/portraits/hero_female.webp` or

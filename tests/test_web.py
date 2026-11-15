@@ -77,6 +77,20 @@ def test_login_shows_the_real_character(client):
     assert client.get("/").headers["location"] == "/profile"          # already logged in
 
 
+def test_profile_redesign_keeps_every_section_and_its_pictures_load(client):
+    """The xianxia redesign: every section, form and link is still there, and the pictures it adds (Journey
+    plaques, the dragon corner) are real files the site serves."""
+    log_in(client)
+    page = client.get("/profile").text
+    for part in ('id="cult-h"', 'id="attr-h"', 'id="develop"', 'id="gear"', 'id="jour-h"', 'class="pips"',
+                 'role="progressbar"', 'href="/appearance"', 'action="/profile/attributes"', 'id="devcalc"'):
+        assert part in page, part
+    icons = [u.split('"')[0] for u in page.split('<div class="plaque"><img src="')[1:]]
+    assert len(icons) == 4
+    for url in icons + ["/art/ui/dragon_corner_top_sm.webp"]:
+        assert client.get(url).status_code == 200, url
+
+
 def test_profile_needs_a_login(client):
     r = client.get("/profile")
     assert r.status_code == 303 and r.headers["location"] == "/"
