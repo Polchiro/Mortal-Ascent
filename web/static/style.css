@@ -920,6 +920,9 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .tart.tcrane{filter:drop-shadow(0 0 12px rgba(220,235,255,.8)) brightness(1.1)}             /* Crane Wing Deflection */
 .tart.tmoon{mix-blend-mode:screen;filter:drop-shadow(0 0 18px rgba(230,240,255,.9)) brightness(1.1)}   /* Moon Mirror Palm */
 .tart.thands{z-index:auto;filter:drop-shadow(0 0 12px rgba(110,230,170,.6)) brightness(1.15)}           /* Thousand Hands Deflection: behind her (fight.js puts it before the fighter) */
+.tart.tsidestep{z-index:auto}                                                               /* her sidesteps' afterimages: behind her */
+.tart.tmiststeps{filter:drop-shadow(0 0 12px rgba(150,200,255,.6)) brightness(1.1)}        /* Drifting Mist Steps */
+.tart.tcloudsteps{filter:drop-shadow(0 0 12px rgba(255,236,190,.55)) brightness(1.08)}    /* Cloud-Walking Shadow */
 .tart.tvoid{z-index:5;filter:drop-shadow(0 0 16px #9B5CFF) drop-shadow(0 0 40px rgba(130,80,255,.45))}  /* Void Mirror Stance */
 .fighter .tsheen{visibility:visible;background-repeat:repeat;background-size:14% auto;opacity:0;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;filter:brightness(2.6) contrast(1.4) saturate(.3)}   /* Iron Cloth: the weave on the fighter */

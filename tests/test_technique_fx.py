@@ -84,7 +84,7 @@ def test_a_look_carries_its_grade_length_and_art_urls():
 def test_the_movement_frames_exist_for_both_cultivators():
     from PIL import Image
     for motion in looks.MOTION_SHEETS:
-        genders = ("female",) if motion == "deflect" else ("male", "female")      # the deflection is hers only
+        genders = ("female",) if motion in ("deflect", "sidestep") else ("male", "female")   # hers only
         assert set(looks.MOTION_SHEETS[motion]) == set(genders)
         for gender in genders:
             sheet = looks.motion_sheet({"gender": gender}, motion)
@@ -93,7 +93,7 @@ def test_the_movement_frames_exist_for_both_cultivators():
             assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
             assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
             assert all(0 < q < 1 for q in sheet["hand"])
-        if motion == "deflect":
+        if motion in ("deflect", "sidestep"):
             continue
         him, her = (looks.motion_sheet({"gender": g}, motion) for g in ("male", "female"))
         if motion in ("palm", "finger"):                  # made from his frames: the same movement, frame for frame
@@ -121,9 +121,13 @@ DEFLECTIONS = {"parrying_arm", "flowing_stream_palm", "crane_wing_deflection", "
                "thousand_hands_deflection", "void_mirror_stance"}
 
 
+SIDESTEPS = {"drifting_mist_steps", "cloud_walking_shadow"}
+
+
 def test_her_deflections_are_the_six_deflection_techniques_with_their_art():
-    assert set(technique_fx.HER_FX) == DEFLECTIONS
-    for tid, fx in technique_fx.HER_FX.items():
+    assert set(technique_fx.HER_FX) == DEFLECTIONS | SIDESTEPS
+    for tid in DEFLECTIONS:
+        fx = technique_fx.HER_FX[tid]
         assert technique.TECHNIQUES[tid]["type"] == "defense"
         assert fx["motion"] == "deflect" and fx["play"] in technique_fx.PLAYS
         assert fx["art"] == [tid]                                     # her own picture for each, no placeholder
@@ -150,3 +154,58 @@ def test_her_deflection_meets_the_blow_then_carries_it_aside_and_recovers():
     assert 0 < d["jab"] < d["release"] < d["sweep"] < d["back"] < d["frames"]
     assert all(0 < q < 1 for q in d["hand"] + d["tip"]) and len(d["body"]) == 4
     assert d["hand"][0] > d["body"][0] > d["tip"][0]                  # meets it in front, carries it behind her
+
+
+def test_her_sidesteps_are_the_two_evades_and_play_only_when_the_evade_worked():
+    evades = {tid for tid, t in technique.TECHNIQUES.items() if t["effect"] and t["effect"][0] == "evade"}
+    assert evades == SIDESTEPS
+    for tid in SIDESTEPS:
+        t = technique.TECHNIQUES[tid]
+        fx = technique_fx.HER_FX[tid]
+        assert fx["motion"] == "sidestep" and fx["play"] in technique_fx.PLAYS and fx["art"] == [tid]
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "tech", tid + ".webp")), tid
+        her = technique_fx.of(t["name"], t["grade"], "female", "evade")
+        assert her["motion"] == "sidestep" and her["art"] == [f"/art/fx/tech/{tid}.webp"]
+        for other in (None, "", "hold"):                              # held the Break, or the beast only struck
+            assert technique_fx.of(t["name"], t["grade"], "female", other) is None    # the CSS look, as before
+        assert technique_fx.of(t["name"], t["grade"], "male", "evade") is None         # his CSS look
+
+
+def test_her_sidestep_plays_at_the_videos_pace_and_ends_on_guard():
+    d = looks.motion_sheet({"gender": "female"}, "sidestep")
+    assert d["fps"] == 12 and d["frames"] == 27                     # every 2nd frame of the 24 fps video, 2.25 s
+    assert 0 < d["jab"] < d["release"] < d["back"] < d["frames"]
+    assert len(d["body"]) == 4 and all(0 < q < 1 for q in d["hand"])
+    assert looks.motion_sheet({"gender": "male"}, "sidestep") is None
+
+
+def test_a_slipped_break_is_the_evade_techniques_event():
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Drifting Mist Steps", "type": "defense", "grade": "Mystic"}
+    ev = explore_play.events([("shield", "Shoaib slipped away from the Leopard's Break")], F)
+    assert ev == [{"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
+                   "counter": 0, "evaded": True}]
+    held = explore_play.events([("shield", "Shoaib — Drifting Mist Steps: holds 30% of the Break"),
+                                ("skull", "Leopard — Break on Shoaib −120")], F)
+    assert "evaded" not in held[0] and held[0]["hold"] == 30 and held[1]["dmg"] == 120
+    F.def_t = None                                                   # no defense technique: nothing of the kind
+    assert explore_play.events([("shield", "Shoaib slipped away from the Leopard's Break")], F) == []
+
+
+def test_a_slipped_break_lands_the_cast_with_her_sidestep():
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Cloud-Walking Shadow", "type": "defense", "grade": "Heaven"}
+        last_move = "Cloud-Walking Shadow"
+    class B:
+        log = [("shield", "Shoaib slipped away from the Leopard's Break")]
+    her = explore_play.cast(B, F, "female")
+    assert her["landed"] and her["effect"] == "evade" and her["fx"]["motion"] == "sidestep"
+    him = explore_play.cast(B, F, "male")
+    assert him["landed"] and him["effect"] == "evade" and him["fx"] is None       # his CSS afterimage now plays
+    B.log = [("shield", "Shoaib — Cloud-Walking Shadow: holds 50% of the Break"), ("skull", "Leopard — Break on Shoaib −80")]
+    held = explore_play.cast(B, F, "female")
+    assert held["effect"] == "hold" and held["fx"] is None
