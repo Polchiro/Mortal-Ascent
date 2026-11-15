@@ -19,6 +19,11 @@
 0.62,
 0.994
 ],
+"armored_boar_chief@roar": [
+0.1,
+0.42,
+0.994
+],
 "azure_dragon": [
 0.12,
 0.28,
@@ -44,6 +49,11 @@
 0.4,
 0.996
 ],
+"bloodfang_wolf@roar": [
+0.1,
+0.22,
+0.996
+],
 "bone_vulture": [
 0.05,
 0.47,
@@ -59,6 +69,11 @@
 0.45,
 0.995
 ],
+"cloud_leopard@roar": [
+0.3,
+0.24,
+0.995
+],
 "crimson_fire_hawk": [
 0.05,
 0.48,
@@ -67,6 +82,11 @@
 "earth_splitting_rhino": [
 0.13,
 0.6,
+0.991
+],
+"earth_splitting_rhino@roar": [
+0.12,
+0.47,
 0.991
 ],
 "ember_lizard": [
@@ -89,6 +109,11 @@
 0.37,
 0.98
 ],
+"flame_maned_lion@roar": [
+0.07,
+0.3,
+0.98
+],
 "flood_dragon_jiao": [
 0.12,
 0.33,
@@ -102,6 +127,11 @@
 "frost_wolf": [
 0.07,
 0.58,
+0.992
+],
+"frost_wolf@roar": [
+0.08,
+0.25,
 0.992
 ],
 "ghost_fire_wolf": [
@@ -124,9 +154,19 @@
 0.52,
 0.99
 ],
+"grey_wolf@roar": [
+0.1,
+0.21,
+0.99
+],
 "horned_stag": [
 0.07,
 0.44,
+0.996
+],
+"horned_stag@roar": [
+0.19,
+0.35,
 0.996
 ],
 "iron_feather_crow": [
@@ -139,9 +179,19 @@
 0.62,
 0.995
 ],
+"iron_hide_boar@roar": [
+0.1,
+0.36,
+0.995
+],
 "ironbark_bear": [
 0.05,
 0.53,
+0.992
+],
+"ironbark_bear@roar": [
+0.1,
+0.22,
 0.992
 ],
 "jade_scaled_crocodile": [
@@ -174,6 +224,11 @@
 0.56,
 0.993
 ],
+"old_black_bear@roar": [
+0.1,
+0.24,
+0.993
+],
 "pixiu": [
 0.13,
 0.3,
@@ -204,6 +259,11 @@
 0.47,
 0.997
 ],
+"red_fox@roar": [
+0.19,
+0.22,
+0.997
+],
 "rock_python": [
 0.3,
 0.17,
@@ -214,9 +274,19 @@
 0.33,
 0.993
 ],
+"shadow_panther@roar": [
+0.08,
+0.22,
+0.993
+],
 "shadow_wolf": [
 0.05,
 0.53,
+0.989
+],
+"shadow_wolf@roar": [
+0.1,
+0.26,
 0.989
 ],
 "shanxiao_mountain_spirit": [
@@ -242,6 +312,11 @@
 "steel_horn_bull": [
 0.24,
 0.6,
+0.994
+],
+"steel_horn_bull@roar": [
+0.17,
+0.27,
 0.994
 ],
 "stone_shell_tortoise": [
@@ -314,6 +389,11 @@
 0.47,
 0.996
 ],
+"white_browed_tiger_king@roar": [
+0.1,
+0.2,
+0.996
+],
 "white_tiger": [
 0.05,
 0.37,
@@ -324,14 +404,29 @@
 0.58,
 0.995
 ],
+"wild_boar@roar": [
+0.1,
+0.33,
+0.995
+],
 "wild_ox": [
 0.12,
 0.6,
 0.993
 ],
+"wild_ox@roar": [
+0.155,
+0.37,
+0.993
+],
 "wind_leopard": [
 0.05,
 0.34,
+0.989
+],
+"wind_leopard@roar": [
+0.08,
+0.28,
 0.989
 ]
 }

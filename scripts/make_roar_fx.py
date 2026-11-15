@@ -106,6 +106,31 @@ MOUTHS = {
 VARIANTS = {"roar_ring": (1, 0, 0.3, 0.85, 3.6), "roar_double": (3, 0, 0.3, 1.15, 3.0), "roar_burst": (0, 1, 1.0, 2.3, 4.6)}
 
 
+# the open mouths of the roar pictures (art/beasts/roar/<slug>.png, on the standing picture's canvas), read by eye;
+# saved in heads.json as "<slug>@roar"
+ROAR_MOUTHS = {
+    "armored_boar_chief": (0.1, 0.42),
+    "bloodfang_wolf": (0.1, 0.22),
+    "cloud_leopard": (0.3, 0.24),
+    "earth_splitting_rhino": (0.12, 0.47),
+    "flame_maned_lion": (0.07, 0.3),
+    "frost_wolf": (0.08, 0.25),
+    "grey_wolf": (0.1, 0.21),
+    "horned_stag": (0.19, 0.35),
+    "iron_hide_boar": (0.1, 0.36),
+    "ironbark_bear": (0.1, 0.22),
+    "old_black_bear": (0.1, 0.24),
+    "red_fox": (0.19, 0.22),
+    "shadow_panther": (0.08, 0.22),
+    "shadow_wolf": (0.1, 0.26),
+    "steel_horn_bull": (0.17, 0.27),
+    "white_browed_tiger_king": (0.1, 0.2),
+    "wild_boar": (0.1, 0.33),
+    "wild_ox": (0.155, 0.37),
+    "wind_leopard": (0.08, 0.28),
+}
+
+
 def grab(video, t, col, row):
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "f.png")
@@ -159,6 +184,9 @@ def main(video):
                 if f[:-4] in MOUTHS:
                     h[:2] = MOUTHS[f[:-4]]
                 heads[f[:-4]] = h
+    for name, xy in ROAR_MOUTHS.items():
+        if os.path.exists(os.path.join(BEASTS, "roar", name + ".png")) and name in heads:
+            heads[name + "@roar"] = [*xy, heads[name][2]]
     with open(os.path.join(BEASTS, "heads.json"), "w") as fh:
         json.dump(heads, fh, indent=0, sort_keys=True)
     print(len(heads), "heads")

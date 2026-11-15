@@ -505,7 +505,8 @@
       var size = Math.max(90, Math.min(520, pic.height * ROAR.height * (ROAR.wave === 'ring' ? 0.75 : ROAR.wave === 'double' ? 0.9 : 1.05) * (big ? 1.4 : 1)));
       var n = document.createElement('div');
       n.className = 'broar';
-      n.style.left = p[0] + '%'; n.style.top = p[1] + '%';
+      var ahead = ROAR.art ? size * 0.38 / scene.getBoundingClientRect().width * 100 : 0;   // an open-mouthed roar:
+      n.style.left = (p[0] - ahead) + '%'; n.style.top = p[1] + '%';                     // the wave goes out in front, the jaws stay in view
       n.style.width = n.style.height = size + 'px';
       n.style.backgroundImage = 'url(/art/fx/roar_' + (big ? 'burst' : ROAR.wave) + '.webp)';     // a final roar: the biggest wave
       n.style.setProperty('--rc', ROAR.color);
