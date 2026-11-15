@@ -119,6 +119,36 @@ The website acts it out (`web/static/fight.js`, `pounce`): golden Qi swirls at i
 crouches, leaps with golden afterimages, lands on you in a golden shockwave that splits the ground
 (`art/fx/crater.webp`, drawn by `scripts/make_crater.py`), bounds back and roars. While Roused it glows gold.
 
+### The roar
+
+The 29 four-legged beasts (`beasts.QUADRUPEDS`) can **roar** instead of their ordinary move (`battle.ROAR`,
+`Battle._roars` / `_roar` in `bot/fight.py`). It is never a charged attack or signature strike, and it comes as a
+**surprise**: the warning bar gives no tell that turn.
+
+| When | Roar chance (per ordinary turn) |
+|---|---|
+| The beast's first 2 turns | never: a fight opens with ordinary moves |
+| Any other turn | Normal 5%, Elite 8%, Beast King 12% |
+| You (anyone in the fight) attacked 2+ turns in a row | +15% |
+| It has lost 30–50% of its HP | +20%, until it has roared in that stretch once |
+| It is at 20% HP or less | 50% each turn for its **final roar**, once a fight |
+| After a roar | not again for 3 of its turns (the final roar may break this) |
+
+Chances never go above 60%. The roar hits **everyone** in the fight:
+
+| Tier | Damage (share of a normal hit) | On anyone caught off guard |
+|---|---|---|
+| Normal | 0.5× | Shaken |
+| Elite | 0.9× | Shaken, and a 40% chance of Stunned |
+| Beast King | 1.3× | Exposed and Stunned |
+
+The final roar deals 1.5× its tier's roar. **Shaken**: your attacks hit 15% softer for 2 turns. **Exposed**: your
+defense is 20% lower for 2 turns. **Stunned**: Guard only next turn (as everywhere). A **Guard** (or a defense
+technique) halves the roar's damage and shrugs off all of its effects. While it roars the beast neither guards nor
+attacks, so your own move lands in full. Armor, artifacts and Immortal Body work on it as on any hit. The roar rolls
+on its own dice, so beasts that can't roar fight exactly as before. On the website it plays the shared quadruped roar
+(docs/web.md); the visual-only roar beasts used to give when winding up a charged attack is gone.
+
 ## Elements
 
 Every beast has one of eight elements. The element sets the scene's colours (sky, moon, mist,

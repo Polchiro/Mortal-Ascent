@@ -37,7 +37,7 @@ MOVES = ("strike", "guard", "break")
 BASE_MOVE = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "strike", "defense_tech": "guard"}
 TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")   # flex_tech: the Flex slot's technique, a Strike or a Guard by its kind
 TECH_KEY_LABEL = {"attack_tech": "Attack technique", "defense_tech": "Defense technique", "flex_tech": "Flex technique"}
-MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break", "pill": "Pill", "flee": "Flee"}
+MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break", "pill": "Pill", "flee": "Flee", "roar": "Roar"}
 
 TELLS = {
     "strike": ["The {name} bares its fangs, ready to pounce...", "The {name} coils to leap at you..."],
@@ -173,6 +173,14 @@ def enemy_from_bandits(stats_):
                 statuses={}, guard_weak=0.0)
 
 
+def status_mult(f, key):
+    """The product of a fighter's statuses' `key` multipliers (battle.STATUSES: Shaken, Exposed); 1.0 for none."""
+    out = 1.0
+    for k in getattr(f, "statuses", {}):
+        out *= battle.STATUSES[k].get(key, 1.0)
+    return out
+
+
 class Battle:
     """mode: 'beast' (explore wild beast), 'bandit', or 'hunt' (Elite / Beast King team hunt)."""
 
@@ -184,6 +192,11 @@ class Battle:
         self.turn = 1
         self.enemy_turns = 0
         self.charges = 0                  # charged attacks planned so far (unique skills take some of them)
+        self.attack_streak = 0            # turns in a row someone attacked (battle.ROAR_STREAK)
+        # the roar's own dice (battle.ROAR), seeded from the fight's without drawing from it: a beast that cannot
+        # roar fights exactly as before
+        self.roar_rng = random.Random(repr(self.rng.getstate()[1][:4]))
+        self.roared = {"last": -99, "wounded": False, "final": False}
         self.log = [("star", self._intro())]
         self.intent = None
         self.warning = None
@@ -271,6 +284,12 @@ class Battle:
                 e["statuses"][status] = battle.STATUSES[status]["turns"]
             self.warning = (head, hint)
         else:
+            if self._roars():
+                move = "roar"
+                self.warning = (NO_TELL.format(name=nm), "No tell this turn. Trust your instincts.")
+                self.intent = {"move": move, "kind": kind, "target": target, "skill": None, "name": "Roar",
+                               "final": self.roared["final"] == self.enemy_turns}
+                return
             weights = dict(battle.MOVE_WEIGHTS[e["role"]])
             if e["guard_weak"] >= 1.0 or e.pop("no_guard", False):      # no_guard: Thunder Edge passive
                 weights["guard"] = 0
@@ -282,6 +301,69 @@ class Battle:
                 self.warning = (NO_TELL.format(name=nm), "No tell this turn. Trust your instincts.")
         self.intent = {"move": move, "kind": kind, "target": target, "skill": skill["name"] if skill else None,
                        "name": skill["name"] if skill else el["move"] if kind != "normal" else MOVE_LABEL[move]}
+
+    def _roars(self):
+        """Whether the beast roars this turn instead of its ordinary move (battle.ROAR): a four-legged beast, never in
+        its first turns, now and then by its tier, more likely when it is pressed or wounded, and once near death its
+        final roar. Rolled on its own dice (self.roar_rng)."""
+        e, r = self.enemy, self.roared
+        if e["kind"] != "beast" or not beasts.roar_category(e["name"]) or self.enemy_turns <= battle.ROAR_QUIET_TURNS:
+            return False
+        spec = battle.ROAR[e["tier"]]
+        frac = e["hp"] / max(1, e["max_hp"])
+        if frac <= battle.ROAR_FINAL_HP and not r["final"]:
+            if self.roar_rng.random() < battle.ROAR_FINAL_CHANCE:
+                r["final"] = r["last"] = self.enemy_turns
+                return True
+        if self.enemy_turns - r["last"] <= battle.ROAR_COOLDOWN:
+            return False
+        lo, hi = battle.ROAR_WOUNDED
+        wounded = not r["wounded"] and lo <= 1 - frac <= hi
+        chance = spec["chance"] + (battle.ROAR_STREAK_BONUS if self.attack_streak >= battle.ROAR_STREAK else 0) \
+            + (battle.ROAR_WOUNDED_BONUS if wounded else 0)
+        if self.roar_rng.random() < min(battle.ROAR_MAX_CHANCE, chance):
+            r["last"] = self.enemy_turns
+            r["wounded"] = r["wounded"] or wounded
+            return True
+        return False
+
+    def _roar(self, played, en, log):
+        """The beast roars (battle.ROAR): everyone takes a share of a normal hit, and whoever was not on guard is
+        Shaken or Exposed, perhaps Stunned. A Guard halves the damage and shrugs off the rest."""
+        e = self.enemy
+        spec = battle.ROAR[e["tier"]]
+        final = bool(self.intent.get("final"))
+        hits = []
+        for t in self.active():
+            guarded = played.get(t) == "guard"
+            dmg = self._enemy_hit(t, "normal") * spec["mult"] * (battle.ROAR_FINAL_MULT if final else 1.0)
+            if guarded:
+                dmg *= battle.ROAR_GUARD_SHARE
+            dmg, back, kit_lines = t.kit.taken(t, round(dmg), self.turn, from_break=False, charged=False,
+                                               vs_beast=True, aura=self._aura(t), mirror_artifact=0)
+            log += kit_lines
+            if back and e["hp"] > 0:
+                e["hp"] = max(0, e["hp"] - min(back, e["max_hp"] * stats.MAX_HIT_PERCENT))
+            dmg = round(dmg)
+            t.hp = max(0, t.hp - dmg)
+            note = f"{t.name} −{dmg:,}" + (" (guarded)" if guarded else "")
+            if not guarded and t.hp > 0:
+                got = list(spec["statuses"])
+                if spec["stun"] and self.roar_rng.random() < spec["stun"]:
+                    got.append("stunned")
+                for key in got:
+                    if t.kit.immune(key):
+                        continue
+                    if key == "stunned" and t.kit.resists_stun():
+                        note += " (resists the stun)"
+                        continue
+                    self._apply_status(t, key)
+                    note += f" ({battle.STATUSES[key]['name']})"
+            if t.hp <= 0:
+                note += ", knocked out!"
+            hits.append(note)
+            log += t.kit.after_taken(t)
+        log.append(("roar", f"{en} — {'Final Roar' if final else 'Roar'} on " + ", ".join(hits)))
 
     def unique_skill(self):
         """The beast's own skill (battle.UNIQUE_SKILLS), or None."""
@@ -321,7 +403,7 @@ class Battle:
         for _ in range(hits):
             if e["dodge"] and self.rng.random() < e["dodge"]:
                 continue
-            total += combat.damage(f.attack, e["defense"], e["max_hp"], skill * share, pierce, self.rng,
+            total += combat.damage(f.attack * status_mult(f, "attack_mult"), e["defense"], e["max_hp"], skill * share, pierce, self.rng,
                                    cap=combat.hit_cap(e))
         total = min(total, e["max_hp"] * combat.hit_cap(e))            # the 30% cap is per turn (40% low-realm Normals)
         if "staggered" in e["statuses"]:
@@ -355,10 +437,10 @@ class Battle:
         if kind == "charged":
             skill = self.planned_skill()
             mult = skill["mult"] if skill else battle.CHARGE_MULT
-            dmg = combat.damage(atk, f.defense, float("inf"), mult, rng=self.rng)
+            dmg = combat.damage(atk, f.defense * status_mult(f, "defense_mult"), float("inf"), mult, rng=self.rng)
             return dmg * (1 - min(1.0, f.fx.get("charged_damage_reduction", 0)))     # Bell artifact
         mult = battle.SIGNATURE_MULT if kind == "signature" else 1.0
-        return combat.damage(atk, f.defense, f.max_hp, mult, rng=self.rng)
+        return combat.damage(atk, f.defense * status_mult(f, "defense_mult"), f.max_hp, mult, rng=self.rng)
 
     def _apply_status(self, f, key):
         spec = battle.STATUSES[key]
@@ -618,9 +700,12 @@ class Battle:
                     after = uskill["after"]
                     e["statuses"][after] = battle.STATUSES[after]["turns"] + 1       # +1: this turn's tick
                     log.append(("roar", f"{en} — {uskill['name']}: " + uskill["roused"]))
+        elif e["hp"] > 0 and m == "roar":
+            self._roar(played, en, log)
         elif e["hp"] > 0 and m == "guard" and not any(b in ("strike", "break") for b in played.values()):
             log.append(("shield", f"{en} — Guard: it waits behind its guard"))
 
+        self.attack_streak = self.attack_streak + 1 if any(b in ("strike", "break") for b in played.values()) else 0
         self._end_of_turn(log)
         self.history.append(log)
         self.log = log or [("star", "Both sides circle each other.")]

@@ -8,3 +8,8 @@ Drop a picture here to replace a beast's drawn silhouette on the fight screen (d
 - It is scaled to fit the scene window and stands on its bottom edge.
 
 Without a file, the bot draws a silhouette for the beast's body type (`beasts.TRAITS`).
+
+The redesigned four-legged beasts are made from SHOAIB's designs by `scripts/make_quadruped_art.py` (cut out, slab
+dropped, facing left). After adding or replacing a picture, set its mouth in `scripts/make_roar_fx.py` `MOUTHS` and
+`heads.json` so the roar bursts from the right place; a four-legged beast also goes in `beasts.QUADRUPEDS` to roar
+with the shared movement.

@@ -80,6 +80,9 @@ STATUSES = {
     "regrowth":  {"name": "Regrowth",  "on": "enemy",  "turns": 3, "regen": 0.04},
     "charged":   {"name": "Charged",   "on": "enemy",  "turns": 1},     # shown while a charged attack winds up
     "roused":    {"name": "Roused",    "on": "enemy",  "turns": 2, "attack_mult": 1.20},   # after a unique skill lands
+    # a beast's roar (ROAR below). Put on mid-turn, so 3 = this turn's tick + the next 2 turns
+    "shaken":    {"name": "Shaken",    "on": "player", "turns": 3, "attack_mult": 0.85},   # your attacks hit 15% softer
+    "exposed":   {"name": "Exposed",   "on": "player", "turns": 3, "defense_mult": 0.80},  # your defense is 20% lower
 }
 STATUS_ON_HIT_CHANCE = 0.30  # a normal enemy hit that lands applies its element's status this often
 
@@ -127,6 +130,31 @@ UNIQUE_SKILLS = {
         "roused": "it roars over the broken ground, golden Qi blazing. Roused: it hits 20% harder for 2 turns.",
     },
 }
+
+# ── The beast roar ────────────────────────────────────────────────────
+# The four-legged beasts (beasts.QUADRUPEDS) can roar instead of their ordinary move (never in place of a charged
+# attack or a signature strike). It comes as a surprise: the warning bar gives no tell. It hits everyone in the
+# fight; a Guard (or a defense technique) halves its damage and shrugs off its effects. You lose nothing else:
+# while it roars it neither guards nor attacks, so your own move lands in full.
+#   chance: per ordinary turn, by tier, before the bonuses below (never above ROAR_MAX_CHANCE)
+#   mult: its damage, as a share of a normal hit
+#   statuses: put on whoever it hits off guard; stun: the chance it also Stuns them (Guard only next turn)
+ROAR = {
+    "normal":     {"chance": 0.05, "mult": 0.5, "statuses": ("shaken",), "stun": 0.0},
+    "elite":      {"chance": 0.08, "mult": 0.9, "statuses": ("shaken",), "stun": 0.4},
+    "beast_king": {"chance": 0.12, "mult": 1.3, "statuses": ("exposed",), "stun": 1.0},
+}
+ROAR_QUIET_TURNS = 2           # a fight starts with ordinary moves: no roar on the beast's first 2 turns
+ROAR_COOLDOWN = 3              # and not again for 3 of its turns after one
+ROAR_STREAK = 2                # you (anyone) attacked this many turns in a row ...
+ROAR_STREAK_BONUS = 0.15       # ... it is more likely to roar back
+ROAR_WOUNDED = (0.30, 0.50)    # once it has lost this share of its HP ...
+ROAR_WOUNDED_BONUS = 0.20      # ... more likely, until it has roared in that stretch once
+ROAR_FINAL_HP = 0.20           # at or below this share of its HP ...
+ROAR_FINAL_CHANCE = 0.50       # ... each turn it may give its final roar, once a fight, cooldown or not
+ROAR_FINAL_MULT = 1.5          # the final roar: 1.5 x its tier's roar
+ROAR_MAX_CHANCE = 0.60
+ROAR_GUARD_SHARE = 0.5         # what a Guard lets through
 
 # ── Fleeing and pills ─────────────────────────────────────────────────
 

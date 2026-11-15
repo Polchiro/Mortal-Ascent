@@ -25,12 +25,50 @@ def test_a_beast_roars_its_tier_and_colour():
     assert explore_play.beast_roar({"slug": "someday_new", "tier": "normal"})["head"] is None   # a default on the page
 
 
-def test_it_roars_only_when_winding_up_and_only_once():
-    class B:
-        log = [("fist", "x")]
-    assert explore_play.roared([], B, "charged", True)[-1] == {"who": "enemy", "act": "roar", "why": "windup"}
-    assert explore_play.roared([], B, "signature", True)[-1]["act"] == "roar"
-    assert explore_play.roared([], B, None, True) == []                       # an ordinary turn: no roar
-    assert explore_play.roared([], B, "charged", False) == []                 # bandits, or the fight is over
-    once = explore_play.roared([{"who": "enemy", "act": "roar"}], B, "charged", True)
-    assert sum(x["act"] == "roar" for x in once) == 1
+def test_the_page_reads_the_roar_from_the_log_and_no_longer_roars_on_its_own():
+    class F:
+        name = "Shoaib"
+        atk_t = def_t = None
+    ev = explore_play.events([("roar", "Boar — Roar on Shoaib −42 (Shaken) (Stunned)")], F)
+    assert ev == [{"who": "enemy", "act": "roar", "dmg": 42, "guard": False, "final": False, "stun": True,
+                   "status": ["Shaken"]}]
+    ev = explore_play.events([("roar", "Tiger — Final Roar on Ally −90 (Exposed), Shoaib −21 (guarded)")], F)
+    assert ev[0]["final"] and ev[0]["guard"] and ev[0]["dmg"] == 21 and ev[0]["status"] == []
+    assert not hasattr(explore_play, "roared")              # the windup's visual-only roar is gone
+
+
+def test_every_quadruped_roars_as_itself_with_the_shared_movement():
+    heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
+    move = beasts.ROAR_ANIMATIONS["quadruped"]
+    assert len(move["ms"]) == len(move["keys"]) - 1 and 0 < move["burst"] <= move["hold"] < len(move["ms"])
+    assert move["keys"][0] == move["keys"][-1] == (0.0, 0.0, 0.0)          # from standing, back to standing
+    assert move["keys"][move["burst"]][2] > 0 > move["keys"][1][2]           # head down in the dip, up as it roars
+    pics = set()
+    for name in beasts.QUADRUPEDS:
+        assert name in beasts.TRAITS and beasts.roar_category(name) == "quadruped"
+        slug = beasts.slug(name)
+        path = os.path.join(ROOT, "art", "beasts", slug + ".png")
+        assert os.path.exists(path), name
+        pics.add(open(path, "rb").read())                                    # its own picture, not a shared one
+        assert slug in heads
+        r = explore_play.beast_roar({"name": name, "slug": slug, "element": beasts.element_of(name), "tier": "normal"})
+        assert r["motion"]["keys"][move["burst"]] == list(move["keys"][move["burst"]]) and r["head"] == heads[slug][:2]
+    assert len(pics) == len(beasts.QUADRUPEDS) == 29
+
+
+def test_other_beasts_keep_the_plain_roar():
+    for name in ("Storm Eagle", "Rock Python", "Azure Dragon"):
+        assert beasts.roar_category(name) is None
+        assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["motion"] is None
+
+
+def test_the_redesigned_quadrupeds_face_left_and_stand_on_their_feet():
+    from PIL import Image
+    import numpy as np
+    for name in beasts.QUADRUPEDS:
+        a = np.asarray(Image.open(os.path.join(ROOT, "art", "beasts", beasts.slug(name) + ".png")).convert("RGBA"))[..., 3]
+        h, w = a.shape
+        assert max(h, w) <= 900, name
+        assert a[-3:].max() > 128 and a[:, :3].max() > 0, name                 # trimmed: paws on the bottom edge
+        x, y = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))[beasts.slug(name)][:2]
+        assert x < 0.3, name                                                   # the mouth is at the left: it faces left
