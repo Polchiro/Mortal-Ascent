@@ -358,6 +358,17 @@ a lair is fought with `bot/hunt.py`.
    jaws and a circle of glowing runes with spinning golden rings flares up behind it; then it lunges with its
    open-mouthed picture and breathes a roaring stream of its element at you, droplets spraying through it and mist
    rolling out along the ground, the camera punching in, and settles. Same rules, damage and log line.
+   **The amphibians roar** (`ROAR_ANIMATIONS["amphibian"]`, from SHOAIB's amphibian roar video of the Thornback
+   Lizard; `gather` and `quake` in `fight.js`): each crouches low while Qi of its element swirls in, then throws its
+   head up with its open-mouthed picture: a starburst at its jaws, its body erupting in a spiky nova of its element,
+   two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
+   damage and log line.
+   **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
+   `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
+   then rears and roars with its open-mouthed picture, a torrent of blue and gold Qi and spirit dragons blasting at you
+   (`art/fx/dragon_blast.webp`, from SHOAIB's picture) with lightning streaks
+   fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
+   punching in, and settles. Same rules, damage and log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
