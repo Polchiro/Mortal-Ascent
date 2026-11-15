@@ -1,5 +1,6 @@
 """Give the female cultivator the punch, the palm push, the finger jab and the brace the male plays (looks.MOTION_SHEETS), made from his frames:
-the same movement and timing, so every Fist and Palm technique lines up the same for her (docs/web.md "Techniques").
+the same movement and timing, so every technique lines up the same for her (docs/web.md "Techniques"). Only her
+finger jab is still made this way: her punch, palm push and brace are now her own (make_heroine_{fist,palm,brace}.py).
 
 For each of his frames: his robes take her colours (her idle picture's mean and spread, scripts/make_hero_attack.py
 `match_colours`), he is scaled to her height with his feet on her ground line, and his head is replaced by hers,
@@ -8,7 +9,7 @@ her face and hair.
 
     python -m scripts.make_heroine_moves
 
-Writes art/portraits/fight/hero_female_{palm,finger}.webp in the same 320 x 360 cells as his, and prints where her
+Writes art/portraits/fight/hero_female_finger.webp in the same 320 x 360 cells as his, and prints where her
 hand is at the release, for looks.MOTION_SHEETS.
 """
 import os
@@ -121,7 +122,7 @@ def main():
     male = in_cells(os.path.join(OUT, "hero_male_idle.webp"))
     mbox = male.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
     s = (hbox[3] - hbox[1]) / (mbox[3] - mbox[1])                    # her height against his
-    for motion, n in (("palm", 48), ("finger", 48)):   # her punch and brace are her own: make_heroine_{fist,brace}.py
+    for motion, n in (("finger", 48),):   # her punch, palm push and brace are her own: make_heroine_{fist,palm,brace}.py
         images, shift = build(motion, n, her, patch, her_face, hbox, s)
         rows = -(-len(images) // COLS)
         sheet = Image.new("RGBA", (CELL[0] * COLS, CELL[1] * rows), (0, 0, 0, 0))
