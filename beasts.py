@@ -348,6 +348,18 @@ ROAR_ANIMATIONS = {
         (0.020, -0.008, -1.0),      # held, trembling
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.06},
+    # The crocodiles' roar, from SHOAIB's crocodile roar video (the Jade-Scaled Crocodile): it presses low to the ground,
+    # then throws its head up high, jaws gaping, and bellows: rings of sound pulse out of its jaws, a burst of its
+    # element flares round its head with spikes of light, and dust blasts up off the ground (fight.js `bellow`), and it
+    # sinks back down.
+    "crocodile": {"ms": [420, 520, 150, 1450, 560], "burst": 3, "hold": 3, "style": "bellow", "pivot": 0.82, "keys": [
+        (0.000, 0.000, 0.0),        # lying
+        (0.000, 0.020, -3.0),       # pressed low, gathering
+        (-0.010, -0.005, 6.0),      # head lifting
+        (0.015, -0.020, 16.0),      # the bellow: head thrown up high, jaws gaping
+        (0.012, -0.018, 14.0),      # held, trembling
+        (0.000, 0.000, 0.0),        # sinks back down
+    ], "swell": 0.05},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -370,10 +382,12 @@ DRAGONS = ("Flood Dragon (Jiao)", "Azure Dragon")
 PRIMATES = ("Silver Monkey", "Golden-Eyed Ape King", "Ancient Golden Ape", "Shanxiao Mountain Spirit")
 # The 3 insects and arthropods (SHOAIB's redesign), all with the insect threat display.
 INSECTS = ("Venom Scorpion", "Golden Silk Spider", "Thousand-Year Centipede")
+# The 2 crocodiles (SHOAIB's redesign), both bellowing with the crocodile movement.
+CROCODILES = ("Jade-Scaled Crocodile", "Abyss Crocodile")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
                  **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS},
                  **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES},
-                 **{name: "insect" for name in INSECTS}}
+                 **{name: "insect" for name in INSECTS}, **{name: "crocodile" for name in CROCODILES}}
 
 
 # Beasts that attack with claws: their M1 leaves three red claw marks (art/fx/claw_marks.webp); every other beast

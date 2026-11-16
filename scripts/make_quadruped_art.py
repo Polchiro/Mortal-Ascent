@@ -49,7 +49,9 @@ DRAGONS = ("flood_dragon_jiao", "azure_dragon")
 PRIMATES = ("silver_monkey", "golden_eyed_ape_king", "ancient_golden_ape", "shanxiao_mountain_spirit")
 # the insects and arthropods (SHOAIB's redesign)
 INSECTS = ("venom_scorpion", "golden_silk_spider", "thousand_year_centipede")
-FACES_RIGHT = {"thousand_year_centipede", "golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+# the crocodiles (SHOAIB's redesign)
+CROCODILES = ("jade_scaled_crocodile", "abyss_crocodile")
+FACES_RIGHT = {"jade_scaled_crocodile", "abyss_crocodile", "thousand_year_centipede", "golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
@@ -183,7 +185,7 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES + INSECTS:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES + INSECTS + CROCODILES:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)
