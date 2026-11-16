@@ -1333,3 +1333,34 @@ body.huntbg::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:
 .waiting .bbar,.waiting .bside{opacity:.45}
 @media (max-width:700px){.allies{left:6px;top:6px;transform:none;flex-direction:column;align-items:flex-start;gap:4px}
   .ally{padding:3px 8px 3px 3px;gap:5px}.ally>span{display:none}.ally img{width:22px;height:22px}}
+
+/* ── the hunting-ground map (hunt_map.html, huntmap.js, docs/hunting.md "The map") ─────────────────── */
+body.huntmap{--ag:#C9A45C;--ag2:#EBCB86;--ag3:#F6E2B0;--jd:#4FC79B;background:#0B0B0D;overflow:hidden;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body.huntmap .privacy{display:none}
+#map{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+.mhud{position:fixed;left:16px;top:14px;z-index:2;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.mplate{padding:10px 14px;border-radius:6px;background:linear-gradient(180deg,rgba(24,24,28,.86),rgba(12,12,15,.9));border:1px solid rgba(201,164,92,.38);
+  box-shadow:0 10px 26px rgba(0,0,0,.4);color:#E6DFCF}
+.mplate .kicker{margin:0;font:700 11px Inter,sans-serif;letter-spacing:2.4px;color:var(--ag)}
+.mplate h1{margin:2px 0 6px;font:800 22px Cinzel,Georgia,serif;color:var(--ag3);letter-spacing:1px}
+.mhp{width:180px;height:6px;margin-top:8px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.mhp div{height:100%;background:linear-gradient(90deg,#B8443A,#E07A6F)}
+.mhint{font-size:12px;color:#A49E90}
+.mkeys{font-size:12.5px;color:#B8B2A4}
+.mkeys b{display:inline-block;min-width:20px;padding:1px 5px;margin:0 1px;border:1px solid rgba(201,164,92,.45);border-radius:3px;color:var(--ag2);font:700 11px Inter,sans-serif;text-align:center}
+.mtools{position:fixed;right:14px;top:14px;z-index:3;display:flex;gap:8px}
+.mtools .hbtn{background:rgba(12,12,15,.82);color:var(--ag2);border-color:var(--ag)}
+.mlog{position:fixed;right:14px;top:64px;z-index:3;width:min(340px,calc(100vw - 28px));max-height:50vh;overflow:auto;font-size:14px;display:none}
+.mlog.open{display:block}
+.mlog p{margin:0 0 6px}
+.mprompt{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:3;padding:8px 16px;border-radius:4px;display:none;
+  font:700 14px Cinzel,Georgia,serif;letter-spacing:.6px;color:#1A140A;background:linear-gradient(180deg,#F0D398,#C9A45C);border:1px solid var(--ag)}
+.mprompt.on{display:block}
+body.huntmap .stick{position:fixed;left:26px;bottom:26px;width:132px;height:132px;border-radius:50%;z-index:4;display:none;touch-action:none;
+  background:radial-gradient(circle,rgba(201,164,92,.10),rgba(12,12,15,.55) 70%);border:1px solid rgba(201,164,92,.45)}
+body.huntmap .stick.on{display:block}
+body.huntmap .knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#F6E2B0,#C9A45C 60%,#8E6F33);box-shadow:0 4px 12px rgba(0,0,0,.5)}
+body.huntmap .steps5 i{width:11px;height:11px}
+@media (max-width:640px){.mkeys{display:none}.mhud{left:10px;top:10px}.mplate h1{font-size:18px}.mhp{width:140px}}

@@ -151,6 +151,19 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                                          "hand": [0.719, 0.414], "body": [0.521, 0.196, 0.936, 0.243]}}}
 
 
+# walking about the hunting-ground map (web/static/huntmap.js, docs/hunting.md "The map"): the spec sheet, 8 rows
+# S SW W NW N NE E SE x 8 frames of 256 x 256, feet at (128, 232). His is cut from SHOAIB's walk video
+# (scripts/make_hero_walk.py; SW, W, NW are mirrored: he never faced left in it). `stand`: each row's frame with the
+# feet closest together, held while he stands still (no idle sheet yet). A look without a sheet keeps the menus.
+WALK_SHEETS = {"male": {"src": "/art/portraits/map/hero_male_walk.webp", "cell": 256, "feet": [128, 232],
+                        "rows": 8, "cols": 8, "stand": [5, 2, 2, 3, 1, 3, 2, 2]}}
+
+
+def walk_sheet(look):
+    """This look's walking sheet for the map, or None."""
+    return WALK_SHEETS.get(gender_of(look))
+
+
 def fighter(look, pose="idle"):
     """The fighter on the 1024 x 559 fight canvas, facing right, in one of POSES (web/static/fight.js swaps them)."""
     gender = gender_of(look)

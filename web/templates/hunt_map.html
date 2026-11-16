@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ g.location }} · Mortal Ascent{% endblock %}
+{% block body_class %}huntmap{% endblock %}
+{% block body %}
+<canvas id="map" tabindex="0" aria-label="{{ g.location }}. Walk with W A S D or the arrow keys, or the joystick; walk up to the beast to fight it."></canvas>
+<script type="application/json" id="mapdata">{{ g.map_json | safe }}</script>
+
+<div class="mhud">
+  <div class="mplate">
+    <p class="kicker">EXPLORE · SOLO HUNT</p>
+    <h1>{{ g.location }}</h1>
+    <span class="steps5" aria-label="Beast {{ g.step }} of {{ g.steps }}">{% for i in range(1, g.steps + 1) %}<i class="{{ 'now' if i == g.step and g.map.beast else 'on' if i < g.step or (i == g.step and not g.map.beast) }}"></i>{% endfor %}</span>
+    <div class="mhp" title="{{ g.hp }} / {{ g.max_hp }} HP"><div style="width: {{ g.hp_pct }}%"></div></div>
+    <span class="mhint">{{ g.hp }} / {{ g.max_hp }} HP</span>
+  </div>
+  <div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> or arrows to walk · <b>Shift</b> to stroll</div>
+</div>
+
+<div class="mtools">
+  <form method="post" action="/hunt/act">
+    <input type="hidden" name="what" value="return"><input type="hidden" name="arg" value="">
+    <input type="hidden" name="turn" value="{{ g.turn }}">
+    <button class="hbtn ghost small" type="submit">Return home</button>
+  </form>
+  <button class="hbtn ghost small" type="button" id="logBtn" aria-expanded="false" aria-controls="log">Journal</button>
+</div>
+
+<section class="mplate mlog" id="log" aria-live="polite">
+  {% for l in g.story %}<p>{{ l | safe }}</p>{% endfor %}
+  {% if g.mine %}<p class="kicker" style="margin-top:8px">YOUR SPOILS</p>{% for l in g.mine %}<p>{{ l | safe }}</p>{% endfor %}{% endif %}
+  {% if g.found %}<p class="kicker" style="margin-top:8px">YOU CARRY</p>{% for f in g.found %}<p>{{ f }}</p>{% endfor %}{% endif %}
+</section>
+
+<div class="mprompt" id="prompt" role="status"></div>
+<div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+
+<form id="engage" method="post" action="/hunt/act" hidden>
+  <input type="hidden" name="what" value="engage"><input type="hidden" name="arg" id="engageAt" value="">
+  <input type="hidden" name="turn" value="{{ g.turn }}">
+</form>
+<script src="/static/huntmap.js" defer></script>
+{% endblock %}

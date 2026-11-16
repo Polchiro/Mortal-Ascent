@@ -25,12 +25,14 @@ from bot import combat, crafting, db, fight, gear, hunt, loot
 from bot.expedition import Expedition
 
 from . import explore_play as ep
+from . import hunt_map
 from .forge_play import rich
 from .profile import number
 
 TEAM_TURN_SECONDS = 30            # a team turn: everyone picks, or the stragglers Guard
 SOLO_TURN_SECONDS = ep.TURN_LIMIT  # alone, the turn waits for you, as in Explore
 IDLE_SECONDS = ep.IDLE_SECONDS    # between beasts, the leader decides within this or the party heads home
+MAP_IDLE_SECONDS = 600            # on the map, walking about: ten minutes without a step and you head home
 TIER_WORD = {"normal": "", "elite": "Elite ", "beast_king": "Beast King "}
 
 
@@ -55,6 +57,9 @@ class Hunt:
     results: dict = field(default_factory=dict)   # uid → their final summary (title, lines) once they are home
     notice: dict = field(default_factory=dict)    # uid → a refused move's reason
     over: bool = False
+    map: bool = False              # walk the hunting ground (web/hunt_map.py): the next beast waits on the map
+    beast: dict = None             # map: the next beast, rolled already, and where it stands
+    pos: dict = field(default_factory=dict)       # map: uid → (x, y, time) last known
 
     def active(self):
         return [u for u in self.order if u in self.exps]
@@ -86,8 +91,8 @@ class Hunts:
             return f"resting from the last expedition for {rules.fmt_duration(wait)}"
         return None
 
-    def start(self, conn, uid):
-        """The leader sets out. None, or why not."""
+    def start(self, conn, uid, walk=False):
+        """The leader sets out. None, or why not. `walk`: on the walkable map (web/hunt_map.py)."""
         with self.lock:
             party = self.parties.of(uid)
             if party is None:
@@ -106,25 +111,47 @@ class Hunts:
                 db.set_cooldown(conn, m.uid, "explore", explore_rules.EXPLORE_COOLDOWN_MINUTES * 60, now)
                 exps[m.uid] = Expedition(conn, m.uid, rng)
                 m.ready = False
-            h = Hunt(party.id, hunting.location(party.location), rng, exps, party.uids(), touched=now)
+            h = Hunt(party.id, hunting.location(party.location), rng, exps, party.uids(), touched=now, map=walk)
             self._h[party.id] = h
             party.hunting = True
             self.parties._bump(party)
-            self._next(conn, h)
+            if walk:
+                h.pos = {u: (*hunt_map.START, now) for u in exps}
+                self._spawn(h)
+            else:
+                self._next(conn, h)
             return None
 
     # ── the beasts ──────────────────────────────────────────────────
 
     def _next(self, conn, h):
         """Walk on: the next beast of this location comes out."""
+        name, tier, role = self._roll(h)
+        self._battle(conn, h, name, tier, role)
+
+    def _roll(self, h):
+        """The next beast: a step deeper, its kind and which one, from the location's pool."""
         h.step += 1
         h.story, h.lines, h.ended, h.acked, h.notice = [], {}, None, set(), {}
-        uids = h.active()
-        party = [h.exps[u] for u in uids]
-        lead = party[0].player
+        lead = h.exps[h.active()[0]].player
         luck = gear.artifact_bonus(lead, "explore_luck") + gear.artifact_bonus(lead, "rare_encounters")
         tier = loot.pick(hunting.tier_odds(h.step, luck), h.rng)
         name, _, role, _home = h.rng.choice([b for b in hunting.pool(h.loc) if b[1] == tier])
+        return name, tier, role
+
+    def _spawn(self, h):
+        """Map: the next beast is rolled now (exactly as _next would) and stands somewhere on the map."""
+        name, tier, role = self._roll(h)
+        you = h.pos.get(h.active()[0], (*hunt_map.START, 0))
+        x, y = hunt_map.spot(h.rng, you[:2])
+        h.beast = {"name": name, "tier": tier, "role": role, "x": x, "y": y}
+        h.story = [f"🐾 Somewhere in {h.loc['name']}, a {TIER_WORD[tier]}**{name}** ({role.title()}) is hunting too."]
+        h.touched = self.clock()
+        h.v += 1
+
+    def _battle(self, conn, h, name, tier, role):
+        """The fight with this beast, for everyone still out hunting."""
+        party = [h.exps[u] for u in h.active()]
         players = [e.player for e in party]
         fighters = []
         for e in party:
@@ -205,6 +232,14 @@ class Hunts:
         h.v += 1
         if not h.exps:
             self._finish(h)
+        elif h.map:                                            # back on the map: the next beast is already out there
+            ended, lines = h.ended, h.lines
+            if h.step < hunting.MAX_ENCOUNTERS:
+                self._spawn(h)
+            else:
+                h.beast = None
+                h.story = ["That is as deep as a hunt goes. Walk back to the trail head, or head home."]
+            h.ended, h.lines = ended, lines                   # the victory stays on screen until you press Continue
 
     def _home(self, conn, h, uid, defeated=False, why=None):
         """This member's expedition ends: what they carry is banked (halved on defeat), the rest timer is set."""
@@ -250,7 +285,8 @@ class Hunts:
                 if h.battle is not None:
                     h.turn_started = missed + ep.TURN_GRACE
                 n += 1
-            if h.battle is None and not h.over and now > h.touched + IDLE_SECONDS:
+            idle = MAP_IDLE_SECONDS if h.map else IDLE_SECONDS
+            if h.battle is None and not h.over and now > h.touched + idle:
                 for u in list(h.exps):
                     self._home(conn, h, u, why="You lingered too long; night falls and the party heads home.")
                 self._finish(h)
@@ -300,7 +336,18 @@ class Hunts:
             if h.battle is not None or h.over:
                 return h
             lead = party.leader == uid
-            if what == "deeper" and lead and uid in h.exps and h.step < hunting.MAX_ENCOUNTERS:
+            if what == "engage":                               # map: you walked up to the beast
+                if not (h.map and h.beast and uid in h.exps):
+                    return h
+                x, _, y = (arg or "").partition(",")
+                pos = hunt_map.moved(h.pos[uid], x, y, now)
+                if pos is None or not hunt_map.close_enough(pos, h.beast):
+                    return h                                   # too far, or not a place you could have walked to
+                h.pos[uid] = pos
+                b, h.beast = h.beast, None
+                self._battle(conn, h, b["name"], b["tier"], b["role"])
+                return h
+            if what == "deeper" and lead and uid in h.exps and h.step < hunting.MAX_ENCOUNTERS and not h.map:
                 self._next(conn, h)
             elif what == "return" and lead and uid in h.exps:
                 for u in list(h.exps):
@@ -315,6 +362,23 @@ class Hunts:
             h.touched = now
             h.v += 1
             return h
+
+    def report(self, conn, uid, x, y):
+        """Map: where this player says they are now. Kept if they could have walked there; the page gets back
+        where the server has them (so a bad report puts them back where they were)."""
+        h = self.catch_up(conn, uid)
+        with self.lock:
+            if h is None or not h.map or h.over or uid not in h.exps:
+                return None
+            now = self.clock()
+            pos = hunt_map.moved(h.pos[uid], x, y, now)
+            if pos is not None:
+                if pos[:2] != h.pos[uid][:2]:
+                    h.touched = now                            # walking about is not idling
+                h.pos[uid] = pos
+            else:
+                h.pos[uid] = (*h.pos[uid][:2], now)
+            return h.pos[uid][:2]
 
     def leave_party(self, conn, uid):
         """Leaving the party during a hunt: your own walk home first (never in the middle of a fight)."""
@@ -402,6 +466,8 @@ def view(conn, hunts, h, uid):
         out["mode"] = "fight"
         out["fight"] = F
         return out
+    if h.map:
+        return {**out, **map_view(conn, h, uid, p, lead)}
     e = h.exps.get(uid)
     out["mode"] = "between"
     out["story"] = [rich(x) for x in h.story]
@@ -416,6 +482,35 @@ def view(conn, hunts, h, uid):
     out["members"] = [_member_row(conn, h, u, party) for u in h.order]
     out["idle"] = max(0, round(h.touched + IDLE_SECONDS - hunts.clock()))
     return out
+
+
+def walks(conn, uid):
+    """Whether this player walks the hunting-ground map (web/hunt_map.py) on a Solo Hunt: admins only for now,
+    and only with a look that has a walking sheet (looks.WALK_SHEETS). Everyone else keeps the menus."""
+    import looks
+    from bot import admin
+    p = db.get_player(conn, uid)
+    return p is not None and uid in admin.admin_ids_from_env() and looks.walk_sheet(looks.of_player(p)) is not None
+
+
+def map_view(conn, h, uid, p, lead):
+    """The map page's data: the walking sheet, where you are, and the beast waiting out there."""
+    import json
+    import looks
+    e = h.exps.get(uid)
+    beast = None
+    if h.beast:
+        b = h.beast
+        beast = {"name": b["name"], "tier": b["tier"], "tierName": TIER_WORD[b["tier"]].strip() or "Normal",
+                 "role": b["role"].title(), "x": b["x"], "y": b["y"], "src": f"/art/beasts/{beasts.slug(b['name'])}.png"}
+    x, y = h.pos.get(uid, (*hunt_map.START, 0))[:2]
+    data = {"sheet": looks.walk_sheet(looks.of_player(p)), "hero": {"x": x, "y": y}, "beast": beast,
+            "size": hunt_map.SIZE, "edge": hunt_map.EDGE, "reach": hunt_map.REACH, "start": list(hunt_map.START),
+            "turn": None, "step": h.step, "steps": hunting.MAX_ENCOUNTERS}
+    return {"mode": "map", "story": [rich(x) for x in h.story], "mine": [rich(x) for x in h.lines.get(uid, [])],
+            "hp": round(e.hp) if e else 0, "max_hp": round(e.max_hp) if e else 1,
+            "hp_pct": round((e.hp if e else 0) / max(1, e.max_hp if e else 1) * 100),
+            "found": ep.found_list(e) if e else [], "lead": lead, "map": data, "map_json": json.dumps(data).replace("</", "<\\/")}
 
 
 def _member_row(conn, h, u, party):
