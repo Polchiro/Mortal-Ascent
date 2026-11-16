@@ -39,18 +39,41 @@ def _hunt(conn, walk, seed=9):
     return hunts, hunts.get(p.id), clock
 
 
+MAP = hunt_map.plan("moon_forest")
+
+
+def _route(a, b):
+    """A walkable path from a to b around the map's rocks and water (breadth-first on a half-tile grid)."""
+    from collections import deque
+    snap = lambda p: (round(p[0] * 2) / 2, round(p[1] * 2) / 2)
+    start, goal = snap(a), snap(b)
+    prev, todo = {start: None}, deque([start])
+    while todo:
+        c = todo.popleft()
+        if c == goal:
+            break
+        for dx, dy in ((.5, 0), (-.5, 0), (0, .5), (0, -.5), (.5, .5), (-.5, -.5), (.5, -.5), (-.5, .5)):
+            n = (c[0] + dx, c[1] + dy)
+            if n not in prev and hunt_map.walkable(*n, MAP):
+                prev[n] = c
+                todo.append(n)
+    path, c = [], goal
+    while c is not None:
+        path.append(c)
+        c = prev[c]
+    return path[::-1][1:] + [b]
+
+
 def _walk_to(hunts, conn, h, clock, x, y):
-    """Report positions along a straight line at walking pace (as the page would)."""
-    px, py, _ = h.pos[1]
-    n = max(1, int(((x - px) ** 2 + (y - py) ** 2) ** .5 / 0.8) + 1)
-    for i in range(1, n + 1):
+    """Report positions along a walkable route at walking pace (as the page would)."""
+    for px, py in _route(h.pos[1][:2], (x, y)):
         clock.t += 0.3
-        assert hunts.report(conn, 1, px + (x - px) * i / n, py + (y - py) * i / n) is not None
+        assert hunts.report(conn, 1, px, py) == pytest.approx((px, py), abs=1e-3)
 
 
 def _engage(hunts, conn, h, clock):
     b = h.beast
-    tx = b["x"] + 0.5 if b["x"] + 0.5 < hunt_map.SIZE - hunt_map.EDGE else b["x"] - 0.5
+    tx = next(x for x in (b["x"] + 0.5, b["x"] - 0.5, b["x"]) if hunt_map.walkable(x, b["y"], MAP))
     _walk_to(hunts, conn, h, clock, tx, b["y"])
     hunts.act(conn, 1, "engage", f"{tx},{b['y']}", hunts.version(h, 1))
 
@@ -62,7 +85,7 @@ def test_the_map_rolls_the_same_first_beast_as_the_menus(conn):
     _, walked, _ = _hunt(conn, walk=True, seed=21)
     assert walked.battle is None and walked.step == 1
     assert (walked.beast["name"], walked.beast["tier"]) == first
-    assert hunt_map.walkable(walked.beast["x"], walked.beast["y"])
+    assert hunt_map.walkable(walked.beast["x"], walked.beast["y"], MAP)
 
 
 def test_walking_up_to_the_beast_starts_the_usual_fight(conn):
@@ -79,12 +102,12 @@ def test_no_teleporting(conn):
     hunts, h, clock = _hunt(conn, walk=True)
     b = h.beast
     clock.t += 0.3
-    assert hunts.report(conn, 1, b["x"], b["y"]) == pytest.approx(hunt_map.START)          # put back where you were
+    assert hunts.report(conn, 1, b["x"], b["y"]) == pytest.approx(hunt_map.start(MAP))          # put back where you were
     hunts.act(conn, 1, "engage", f"{b['x']},{b['y']}", hunts.version(h, 1))
     assert h.battle is None
     clock.t += 0.3
-    assert hunts.report(conn, 1, 0.5, 0.5) == pytest.approx(hunt_map.START)                # off the map
-    assert hunts.report(conn, 1, "nan", "1") == pytest.approx(hunt_map.START)
+    assert hunts.report(conn, 1, 0.5, 0.5) == pytest.approx(hunt_map.start(MAP))                # off the map
+    assert hunts.report(conn, 1, "nan", "1") == pytest.approx(hunt_map.start(MAP))
 
 
 def test_after_a_win_the_next_beast_is_out_on_the_map_and_rewards_are_unchanged(conn, monkeypatch):
@@ -111,7 +134,7 @@ def test_walking_keeps_you_out_and_standing_still_sends_you_home(conn):
     for _ in range(5):
         clock.t += MAP_IDLE_SECONDS - 60
         x, y, _t = h.pos[1]
-        _walk_to(hunts, conn, h, clock, x + 0.5 if x < 12 else x - 0.5, y)
+        _walk_to(hunts, conn, h, clock, x - 0.5, y)
         hunts.catch_up(conn, 1)
         assert not h.over
     clock.t += MAP_IDLE_SECONDS + 1
@@ -126,6 +149,20 @@ def test_only_admins_with_a_walking_look_walk(conn, monkeypatch):
     assert walks(conn, 1)                                                               # no look chosen yet: male
     db.update_player(conn, 1, appearance=looks.dump({"gender": "female"}))
     assert not walks(conn, 1)                                                           # no walking sheet for her yet
+
+
+def test_the_moon_forest_map_blocks_its_rocks_and_water():
+    assert hunt_map.walkable(*hunt_map.start(MAP), MAP)
+    assert not hunt_map.walkable(14.2, 14.8, MAP)                                       # the pond
+    assert not hunt_map.walkable(2.3, 17.6, MAP)                                        # the shrine
+    assert hunt_map.walkable(12, 20, MAP)                                               # the stepping stones
+    clock = Clock()
+    assert hunt_map.moved((*hunt_map.start(MAP), clock.t), 14.2, 14.8, clock.t + 60, MAP) is None   # can't stand in it
+    import random as r
+    rng = r.Random(3)
+    for _ in range(50):                                                                 # beasts stand with room around them
+        x, y = hunt_map.spot(rng, hunt_map.start(MAP), MAP)
+        assert hunt_map.walkable(x, y, MAP)
 
 
 def test_the_walk_sheet_meets_the_spec():

@@ -14,13 +14,17 @@
   'use strict';
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
-  var SIZE = cfg.size, EDGE = cfg.edge, REACH = cfg.reach;
+  var SIZE = cfg.size, EDGE = cfg.edge, REACH = cfg.reach, BLOCKED = cfg.blocked || [];
   var TW = 128, TH = 64;                       // a tile on screen
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // px/s on screen; px per full stride (at 100%); character size
   var SLOW = 0.45;                              // Shift: a stroll
 
   function toScreen(x, y) { return {x: (x - y) * TW / 2, y: (x + y) * TH / 2}; }
-  function walkable(x, y) { return x > EDGE && y > EDGE && x < SIZE - EDGE && y < SIZE - EDGE; }
+  function walkable(x, y) {                     // the same test as web/hunt_map.walkable: the edge, then rocks, trees, water
+    if (!(x > EDGE && y > EDGE && x < SIZE - EDGE && y < SIZE - EDGE)) return false;
+    for (var i = 0; i < BLOCKED.length; i++) { var c = BLOCKED[i]; if (Math.hypot(x - c[0], y - c[1]) <= c[2]) return false; }
+    return true;
+  }
 
   var cv = document.getElementById('map'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1;
   function resize() {
@@ -29,10 +33,11 @@
   }
   window.addEventListener('resize', resize); resize();
 
-  /* the ground: drawn in code until the location's painted map exists (baked once) */
+  /* the ground: the location's painting (art/maps, its diamond's corners on the image's edges), or drawn in code */
   function rnd(seed) { return function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
-  var ground = document.createElement('canvas'), gx0, gy0;
-  (function bake() {
+  var ground = document.createElement('canvas'), gx0, gy0, painted = null;
+  if (cfg.ground) { painted = new Image(); painted.src = cfg.ground; }
+  else (function bake() {
     var r = rnd(7), pad = 160, w = SIZE * TW, h = SIZE * TH;
     ground.width = w + pad * 2; ground.height = h + pad * 2; gx0 = -w / 2 - pad; gy0 = -pad;
     var g = ground.getContext('2d');
@@ -204,11 +209,36 @@
     cam.x += (hp.x - cam.x) * 0.12; cam.y += (hp.y - 60 - cam.y) * 0.12;
     var ox = Math.round(W / 2 - cam.x), oy = Math.round(H / 2 - cam.y);
     ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, W, H);
-    ctx.drawImage(ground, ox + gx0, oy + gy0);
+    if (painted) { if (painted.complete) ctx.drawImage(painted, ox - SIZE * TW / 2, oy, SIZE * TW, SIZE * TH); }
+    else ctx.drawImage(ground, ox + gx0, oy + gy0);
+    if (debug) drawDebug(ox, oy);
     var list = [{y: hp.y, f: function () { drawHero(ox + hp.x, oy + hp.y); }}], bp = null;
     if (beast) { bp = toScreen(beast.x, beast.y); list.push({y: bp.y, f: function () { drawBeast(ox + bp.x, oy + bp.y, hp.x < bp.x ? -1 : 1); }}); }
     list.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) { o.f(); });
     if (bp) pointer(ox, oy, bp);
+  }
+  /* G: the tile grid, the walkable edge and what blocks the way (to check a map against its painting) */
+  var debug = false;
+  window.addEventListener('keydown', function (e) { if (e.code === 'KeyG' && e.target.tagName !== 'INPUT') debug = !debug; });
+  function drawDebug(ox, oy) {
+    ctx.save(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(235,203,134,.25)';
+    for (var i = 0; i <= SIZE; i++) {
+      var a = toScreen(i, 0), b = toScreen(i, SIZE), c = toScreen(0, i), d = toScreen(SIZE, i);
+      ctx.beginPath(); ctx.moveTo(ox + a.x, oy + a.y); ctx.lineTo(ox + b.x, oy + b.y); ctx.moveTo(ox + c.x, oy + c.y); ctx.lineTo(ox + d.x, oy + d.y); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(79,199,155,.9)'; ctx.lineWidth = 2; ctx.beginPath();
+    [[EDGE, EDGE], [SIZE - EDGE, EDGE], [SIZE - EDGE, SIZE - EDGE], [EDGE, SIZE - EDGE]].forEach(function (q, i) {
+      var p = toScreen(q[0], q[1]); ctx[i ? 'lineTo' : 'moveTo'](ox + p.x, oy + p.y); });
+    ctx.closePath(); ctx.stroke();
+    ctx.fillStyle = 'rgba(224,90,80,.35)'; ctx.strokeStyle = 'rgba(255,140,120,.9)';
+    BLOCKED.forEach(function (c) {                     // a circle on the ground is an ellipse on screen
+      var p = toScreen(c[0], c[1]);
+      ctx.beginPath(); ctx.ellipse(ox + p.x, oy + p.y, c[2] * TW / Math.SQRT2, c[2] * TH / Math.SQRT2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    var h = toScreen(hero.x, hero.y);
+    ctx.fillStyle = '#F6E2B0'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(hero.x.toFixed(1) + ', ' + hero.y.toFixed(1), ox + h.x, oy + h.y + 18);
+    ctx.restore();
   }
   function frame(t) {
     var dt = Math.min(0.1, (t - last) / 1000 || 0); last = t;

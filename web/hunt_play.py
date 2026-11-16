@@ -116,7 +116,7 @@ class Hunts:
             party.hunting = True
             self.parties._bump(party)
             if walk:
-                h.pos = {u: (*hunt_map.START, now) for u in exps}
+                h.pos = {u: (*hunt_map.start(hunt_map.plan(h.loc["key"])), now) for u in exps}
                 self._spawn(h)
             else:
                 self._next(conn, h)
@@ -142,8 +142,9 @@ class Hunts:
     def _spawn(self, h):
         """Map: the next beast is rolled now (exactly as _next would) and stands somewhere on the map."""
         name, tier, role = self._roll(h)
-        you = h.pos.get(h.active()[0], (*hunt_map.START, 0))
-        x, y = hunt_map.spot(h.rng, you[:2])
+        m = hunt_map.plan(h.loc["key"])
+        you = h.pos.get(h.active()[0], (*hunt_map.start(m), 0))
+        x, y = hunt_map.spot(h.rng, you[:2], m)
         h.beast = {"name": name, "tier": tier, "role": role, "x": x, "y": y}
         h.story = [f"🐾 Somewhere in {h.loc['name']}, a {TIER_WORD[tier]}**{name}** ({role.title()}) is hunting too."]
         h.touched = self.clock()
@@ -340,7 +341,7 @@ class Hunts:
                 if not (h.map and h.beast and uid in h.exps):
                     return h
                 x, _, y = (arg or "").partition(",")
-                pos = hunt_map.moved(h.pos[uid], x, y, now)
+                pos = hunt_map.moved(h.pos[uid], x, y, now, hunt_map.plan(h.loc["key"]))
                 if pos is None or not hunt_map.close_enough(pos, h.beast):
                     return h                                   # too far, or not a place you could have walked to
                 h.pos[uid] = pos
@@ -371,7 +372,7 @@ class Hunts:
             if h is None or not h.map or h.over or uid not in h.exps:
                 return None
             now = self.clock()
-            pos = hunt_map.moved(h.pos[uid], x, y, now)
+            pos = hunt_map.moved(h.pos[uid], x, y, now, hunt_map.plan(h.loc["key"]))
             if pos is not None:
                 if pos[:2] != h.pos[uid][:2]:
                     h.touched = now                            # walking about is not idling
@@ -503,9 +504,11 @@ def map_view(conn, h, uid, p, lead):
         b = h.beast
         beast = {"name": b["name"], "tier": b["tier"], "tierName": TIER_WORD[b["tier"]].strip() or "Normal",
                  "role": b["role"].title(), "x": b["x"], "y": b["y"], "src": f"/art/beasts/{beasts.slug(b['name'])}.png"}
-    x, y = h.pos.get(uid, (*hunt_map.START, 0))[:2]
+    m = hunt_map.plan(h.loc["key"])
+    x, y = h.pos.get(uid, (*hunt_map.start(m), 0))[:2]
     data = {"sheet": looks.walk_sheet(looks.of_player(p)), "hero": {"x": x, "y": y}, "beast": beast,
-            "size": hunt_map.SIZE, "edge": hunt_map.EDGE, "reach": hunt_map.REACH, "start": list(hunt_map.START),
+            "size": hunt_map.SIZE, "reach": hunt_map.REACH, "start": list(hunt_map.start(m)),
+            **hunt_map.page_data(h.loc["key"]),
             "turn": None, "step": h.step, "steps": hunting.MAX_ENCOUNTERS}
     return {"mode": "map", "story": [rich(x) for x in h.story], "mine": [rich(x) for x in h.lines.get(uid, [])],
             "hp": round(e.hp) if e else 0, "max_hp": round(e.max_hp) if e else 1,
