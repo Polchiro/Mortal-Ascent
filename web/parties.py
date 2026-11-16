@@ -154,7 +154,7 @@ class Parties:
         if loc:
             why = hunting.eligible(player, loc)
             if why:
-                return None, f"You can't join: {loc['name']} is for {hunting.requirement(loc)}."
+                return None, f"You can't join: {loc['name']} needs {hunting.requirement(loc)} or higher."
         now = self.clock()
         p.members.append(Member(uid, now, now))
         self._of[uid] = p.id
@@ -246,7 +246,7 @@ class Parties:
                 return "No such place."
             why = hunting.eligible(db.get_player(conn, uid), loc)
             if why:
-                return f"You can't lead a hunt there: {loc['name']} is for {hunting.requirement(loc)}."
+                return f"You can't lead a hunt there: {loc['name']} needs {hunting.requirement(loc)} or higher."
             if p.location != key:
                 p.location = key
                 for m in p.members:

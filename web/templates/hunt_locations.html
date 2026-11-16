@@ -9,7 +9,7 @@
     <div class="lead">
       <p class="kicker">EXPLORE · {{ "SOLO HUNT" if v.solo else "HUNTING GROUNDS" }}</p>
       <h1>Choose where to hunt</h1>
-      <p class="sub">Each ground is home to the beasts of its realms. Every hunter in the party must be of the ground's realm.
+      <p class="sub">Each ground is home to the beasts of its realms. Every hunter needs at least the ground's realm; higher realms may hunt anywhere below them, and the beasts rise to match the party's strongest.
         You are <b style="color:var(--ag2)">{{ v.realm }}</b>.</p>
     </div>
     {% if v.solo %}
@@ -29,7 +29,7 @@
       </div>
       <div class="body">
         <p class="sub" style="margin:0">{{ L.text }}</p>
-        <div class="req"><span>Requires <b>{{ L.requirement }}</b></span></div>
+        <div class="req"><span>Requires <b>{{ L.requirement }}</b> or higher</span><span class="hhint">Beasts of {{ L.home }}</span></div>
         <div><p class="lab" style="margin:0 0 6px">Beasts</p>
           <div class="bpool">{% for B in L.beasts %}
             <figure class="{{ B.tkey }}" title="{{ B.name }} · {{ B.tier }} {{ B.role }} · {{ B.realm }}">
