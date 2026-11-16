@@ -6,9 +6,17 @@ the Gemini sparkle dropped). A base's stone is often near the backdrop's colour 
 base diamond is put back from the picture: its left, right and bottom corners as cut, and the top corner they imply.
 Then the base's three lower corners are measured: left, right and bottom. The page fits
 those corners onto the building's footprint on the ground, so the picture's own size doesn't matter. A building used
-mirrored (its door turned from the bottom-right to the bottom-left) is saved mirrored too, as <name>_m.
+is saved both ways round: as drawn, and mirrored (<name>_m: its door turned from the bottom-right to the bottom-left).
 
-Props (the well, the training dummies) come from one picture of several props on a shared stone floor: each is cropped
+Nature and small props (FLUSH: the pond, trees, boulders, the bush, the racks and barrels) were drawn on little
+slabs of ground. Their slab sides are trimmed away, so they sit flush on the ground, their top surface's edge
+feathered into it; their base is measured on the lowest part of the picture only (BAND: a canopy is wider than its roots).
+
+The wall picture is one corner of wall: a long arm and a short return. Only the long arm is kept (WALL: where the
+cut is and its footing's ends, measured by hand), a straight section whose face looks to the bottom-right; mirrored
+it looks to the bottom-left. Repeated end to end they close the town.
+
+The well comes from one picture of several props on a shared stone floor: each is cropped
 by hand (PROP_BOXES, in that picture's pixels), enlarged, cut out with rembg, and the floor's thin grid lines that
 cling to it are opened away.
 
@@ -28,7 +36,11 @@ from scripts import make_town_npcs as npc
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "art", "maps", "town")
-PROP_BOXES = {"well": (455, 150, 580, 330), "dummy1": (195, 100, 285, 305), "dummy2": (305, 75, 395, 250)}
+PROP_BOXES = {"well": (455, 150, 580, 330)}
+FLUSH = {"pond", "pine", "blossom", "boulders", "bush", "rack", "barrels", "herbrack"}
+BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lowest share of the picture (trees: low)
+SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
+WALL = {"cut": 290, "bottom": (293, 505), "end": (880, 228), "thick": 44}   # px in the wall picture
 
 
 def corners(im):
@@ -64,6 +76,50 @@ def building(path, session):
     return im.crop(im.getbbox())
 
 
+def flush(path, session, band=0.65):
+    """A piece drawn on a slab of ground: the slab's sides trimmed away below its top face, the edge feathered."""
+    from PIL import ImageDraw
+    im = npc.cut(path, session, crop=False)       # small gaps only: a rack's open frame stays open
+    a = np.asarray(im)[:, :, 3] > 128
+    ys, xs = np.nonzero(a)
+    low = a.copy()
+    low[: ys.max() - int((ys.max() - ys.min()) * band)] = False         # the base: the picture's lowest part
+    ly, lx = np.nonzero(low)
+    left, right = lx.min(), lx.max()
+    # the top face's side corners: the highest point near each side (Gemini draws a slab a little wider at its foot,
+    # so the outermost pixel is the foot's corner, not the top's)
+    near = int((right - left) * 0.03)
+    L = (left, ly[lx <= left + near].min())
+    R = (right, ly[lx >= right - near].min())
+    # the top face's bottom corner: below the middle of L and R by half their distance times Gemini's tile slope
+    # (about 0.58, measured on the ground tiles), and never below the picture's lowest point
+    B = (float(lx[ly == ly.max()].mean()), min(ly.max(), (L[1] + R[1]) / 2 + (R[0] - L[0]) / 2 * SLOPE))
+    keep = Image.new("L", im.size, 0)
+    ImageDraw.Draw(keep).polygon([(0, 0), (im.width, 0), (im.width, R[1]), R, B, L, (0, L[1])], fill=255)
+    keep = keep.filter(ImageFilter.GaussianBlur(3))
+    alpha = Image.fromarray(np.minimum(np.asarray(im.getchannel("A")), np.asarray(keep)).astype(np.uint8))
+    im.putalpha(alpha)
+    box = im.getbbox()
+    im = im.crop(box)
+    return im, {"l": int(L[0] - box[0]), "r": int(R[0] - box[0]), "bx": round(B[0] - box[0], 1), "by": int(B[1] - box[1])}
+
+
+def wall(path, session):
+    """The straight arm of the wall picture, and its footing's corners as a thin footprint's (left, right, bottom)."""
+    im = npc.cut(path, session, crop=False)
+    im = im.crop((WALL["cut"], 0, im.width, im.height))
+    box = im.getbbox()
+    im = im.crop(box)
+    ox, oy = WALL["cut"] + box[0], box[1]
+    bx, by = WALL["bottom"]
+    return im, {"l": bx - WALL["thick"] - ox, "r": WALL["end"][0] - ox, "bx": bx - ox, "by": by - oy}
+
+
+def mirrored(im, c):
+    w = im.width
+    return ImageOps.mirror(im), {"l": w - 1 - c["r"], "r": w - 1 - c["l"], "bx": round(w - 1 - c["bx"], 1), "by": c["by"]}
+
+
 def prop(src, box, session):
     from rembg import remove
     x0, y0, x1, y1 = box
@@ -79,12 +135,10 @@ def prop(src, box, session):
 
 def main(pairs):
     from rembg import new_session
-    from web import town
     session = new_session("isnet-general-use")
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, "kit.json")
     kit = json.load(open(path)) if os.path.exists(path) else {}
-    mirrored = {b["img"] for b in town.BUILDINGS if b.get("mirror")}
     for pair in pairs:
         name, _, src = pair.partition("=")
         if name == "props":
@@ -92,10 +146,16 @@ def main(pairs):
             for key, box in PROP_BOXES.items():
                 save(key, prop(whole, box, session), kit, base=False)
             continue
+        if name in FLUSH or name == "wall":
+            im, c = wall(src, session) if name == "wall" else flush(src, session, BAND.get(name, 0.65))
+            for n, (pic, cc) in ((name, (im, c)), (name + "_m", mirrored(im, c))):
+                if True:                   # both ways round: the layout can turn any piece
+                    pic.save(os.path.join(OUT, f"{n}.webp"), "WEBP", quality=90, method=6)
+                    kit[n] = {"w": pic.width, "h": pic.height, **cc}
+            continue
         im = building(src, session)
         save(name, im, kit)
-        if name in mirrored:
-            save(name + "_m", ImageOps.mirror(im), kit)
+        save(name + "_m", ImageOps.mirror(im), kit)
     json.dump(kit, open(path, "w"), indent=1, sort_keys=True)
     print(f"wrote {len(kit)} pictures to {OUT}")
 

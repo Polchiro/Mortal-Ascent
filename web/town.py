@@ -24,41 +24,91 @@ NAME = "Azure Cloud Town"
 SIZE = 32
 ART = "/art/maps/town.webp"
 KIT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "maps", "town", "kit.json")
-START = (21.3, 21.3)                 # just inside the gate, facing in
+START = (26.0, 16.3)                 # on the road, just inside the gate
 REACH = 1.5                          # how close (tiles) you must be to someone to talk to them
-SCALE = 1.4                          # the town drawn this much bigger against you than the painting is (town.js K)
+SCALE = 1.4                          # the town drawn this much bigger against you than the ground is (town.js K)
 INSET = 0.2                          # you can step this far onto a footprint's edge (its paved base)
 
-AREA = [                             # the town inside its walls, clockwise from the top corner
-    (1.0, 1.0), (28.6, 1.0), (28.6, 5.0), (27.6, 14.0), (26.6, 21.0), (24.4, 22.8), (23.2, 23.4), (22.0, 23.4),
-    (21.0, 22.6), (20.4, 21.8), (14.2, 21.4), (13.6, 23.0), (13.0, 26.0), (5.0, 26.0), (1.0, 24.0),
-]
-BLOCKED = [                          # (x, y, radius) in tiles
-    (4.7, 6.2, 1.4), (9.4, 5.9, 1.9),   # the pond's two pools
-]
+AREA = [(3.05, 3.05), (28.95, 3.05), (28.95, 28.95), (3.05, 28.95)]   # inside the town walls
+BLOCKED = []                         # (x, y, radius) in tiles: anything round that blocks the way
 
-# Buildings: `img` the picture (art/maps/town/<img>.webp, or <img>_m mirrored), its footprint x0..x0+a, y0..y0+b in
-# tiles. A picture's door faces the bottom-right (+x); `mirror` turns it to the bottom-left (+y), swapping which side
-# is long. The picture's base corners are fitted onto the footprint's left, right and bottom corners.
+
+def _b(key, img, x0, y0, a, b=None, mirror=False):
+    return {"key": key, "img": img, "x0": x0, "y0": y0, "a": a, "b": a if b is None else b, "mirror": mirror}
+
+
+def _wall_run(key, start, end, at, along_x, seg=7.93):
+    """Wall sections end to end from `start` to `end` (tiles) along one side, overlapping where they must: every
+    section is drawn at one size, so the wall is the same height everywhere."""
+    n = max(1, round((end - start) / seg + 0.49))
+    step = (end - start - seg) / (n - 1) if n > 1 else 0
+    out = []
+    for i in range(n):
+        p = start + i * step
+        out.append(_b(f"{key}{i}", "wall", p, at, seg, 0.6, mirror=True) if along_x else
+                   _b(f"{key}{i}", "wall", at, p, 0.6, seg))
+    return out
+
+
+# Buildings, walls, trees and props: `img` the picture (art/maps/town/<img>.webp, or <img>_m mirrored), its footprint
+# x0..x0+a, y0..y0+b in tiles. A picture's door (or face) looks to the bottom-right (+x); `mirror` turns it to the
+# bottom-left (+y), swapping which side is long. The picture's base corners are fitted onto the footprint's.
 BUILDINGS = [
-    {"key": "pavilion", "img": "pavilion", "x0": 3.0, "y0": 3.4, "a": 3.6, "b": 3.6},
-    {"key": "rowhouse", "img": "rowhouse", "x0": 11.4, "y0": 1.2, "a": 8.6, "b": 3.8, "mirror": True},
-    {"key": "house_ne", "img": "house", "x0": 21.0, "y0": 1.4, "a": 3.6, "b": 3.6, "mirror": True},
-    {"key": "house_nw", "img": "house", "x0": 0.8, "y0": 7.2, "a": 3.6, "b": 3.6},
-    {"key": "house_w", "img": "house", "x0": 1.4, "y0": 20.2, "a": 3.6, "b": 3.6},
-    {"key": "forge", "img": "forge", "x0": 6.0, "y0": 10.8, "a": 4.8, "b": 4.8},
-    {"key": "herbshop", "img": "herbshop", "x0": 5.8, "y0": 16.8, "a": 4.0, "b": 4.0, "mirror": True},
-    {"key": "stalls", "img": "stalls", "x0": 11.4, "y0": 6.6, "a": 8.0, "b": 3.4, "mirror": True},
-    {"key": "arena", "img": "arena", "x0": 19.8, "y0": 10.2, "a": 7.2, "b": 7.2},
-    {"key": "stele", "img": "stele", "x0": 20.0, "y0": 18.4, "a": 1.5, "b": 1.5},
+    # the walls: towers at the corners, the gate in the south-east wall
+    _b("tower_n", "tower_low", 1.4, 1.4, 3.0), _b("tower_e", "tower_low", 28.2, 1.4, 3.0),
+    _b("tower_w", "tower_low", 1.4, 28.2, 3.0), _b("tower_s", "tower", 28.2, 28.2, 3.0),
+    *_wall_run("wall_nw", 4.4, 28.2, 2.4, along_x=False), *_wall_run("wall_ne", 4.4, 28.2, 2.4, along_x=True),
+    *_wall_run("wall_sw", 4.4, 28.2, 29.0, along_x=True),
+    *_wall_run("wall_se_n", 4.4, 14.3, 29.0, along_x=False), *_wall_run("wall_se_s", 18.3, 28.2, 29.0, along_x=False),
+    _b("gatehouse", "gatehouse", 27.6, 14.3, 4.0),
+    # the north corner: the pond, the pavilion, rocks and trees
+    _b("pond", "pond", 4.6, 4.6, 5.0),
+    _b("pavilion", "pavilion", 10.0, 3.2, 3.4),
+    _b("blossom_n", "blossom", 13.6, 3.2, 2.6),
+    # along the north-east wall: the row house and a house; the market stalls face the plaza
+    _b("rowhouse", "rowhouse", 16.4, 3.0, 8.0, 3.6, mirror=True),
+    _b("house_ne", "house", 24.6, 3.2, 3.4, mirror=True),
+    _b("stalls", "stalls", 11.2, 7.4, 7.8, 3.4, mirror=True),
+    # the west: the forge, the herb shop and its drying rack
+    _b("forge", "forge", 3.4, 10.4, 4.8),
+    _b("herbrack", "herbrack", 8.4, 15.2, 2.2),
+    _b("herbshop", "herbshop", 3.6, 16.4, 4.0, mirror=True),
+    _b("barrels_w", "barrels", 8.6, 9.8, 1.6),
+    # the south-west: a house, trees and bushes
+    _b("house_w", "house", 3.4, 22.2, 3.4),
+    _b("house_sw", "house", 8.8, 25.0, 3.4, mirror=True),
+    _b("blossom_sw", "blossom", 12.6, 21.4, 2.6),
+    _b("pine_sw", "pine", 3.6, 26.0, 2.2), _b("bush_sw", "bush", 13.0, 26.6, 2.0),
+    _b("boulders_sw", "boulders", 16.0, 26.0, 2.4),
+    # the east: the training yard
+    _b("rack_1", "rack", 21.6, 7.6, 1.4), _b("rack_2", "rack", 26.2, 7.6, 1.4, mirror=True),
+    _b("dummy_1", "dummy", 22.6, 10.4, 0.55), _b("dummy_2", "dummy", 24.4, 9.6, 0.55), _b("dummy_3", "dummy", 25.8, 11.0, 0.55),
+    _b("barrels_e", "barrels", 26.8, 12.0, 1.8),
+    _b("bush_e", "bush", 19.6, 7.4, 1.6),
+    # the south: the arena, the stele by the plaza
+    _b("arena", "arena", 19.8, 20.2, 7.0),
+    _b("stele", "stele", 18.4, 18.4, 1.5),
+    _b("pine_s", "pine", 16.8, 22.6, 2.0), _b("bush_s", "bush", 18.4, 26.8, 1.4),
+    # lantern posts along the road and at the plaza's corners
+    *[_b(f"lantern_{i}", "lantern", x, y, 0.4) for i, (x, y) in enumerate(
+        [(21.4, 13.8), (24.8, 13.8), (21.4, 18.0), (24.8, 18.0), (10.2, 10.2), (20.0, 10.2), (10.2, 20.0)])],
 ]
 # Props stand on one point (x, y), the bottom middle of the picture, drawn `h` world px tall; `r` blocks the way.
 PROPS = [
-    {"img": "well", "x": 16.2, "y": 16.2, "h": 190, "r": 0.8},
-    {"img": "dummy1", "x": 21.6, "y": 7.4, "h": 120, "r": 0.3},
-    {"img": "dummy2", "x": 23.2, "y": 8.2, "h": 120, "r": 0.3},
-    {"img": "dummy1", "x": 24.6, "y": 6.8, "h": 120, "r": 0.3},
+    {"img": "well", "x": 15.5, "y": 15.5, "h": 200, "r": 0.8},
 ]
+# The ground (scripts/make_town_ground.py paints art/maps/town.webp from these): grass inside the walls, forest
+# floor outside, the plaza paved and dirt roads, paths and yards; rectangles x0, y0, x1, y1 in tiles.
+GROUND = {
+    "stone": [(11.4, 11.4, 19.6, 19.6)],
+    "dirt": [(19.6, 15.0, 32.0, 17.6),                          # the road from the gate
+             (10.2, 10.2, 20.8, 20.8),                          # round the plaza
+             (8.2, 10.4, 11.4, 21.0),                           # in front of the forge and the herb shop
+             (8.6, 6.8, 12.6, 10.4), (12.6, 10.6, 19.6, 11.4),  # to the pavilion; in front of the stalls
+             (20.8, 7.0, 28.6, 14.0),                           # the training yard
+             (19.0, 19.6, 28.4, 28.6)],                         # round the arena
+    "walls": (2.4, 2.4, 29.6, 29.6),                            # outside this: forest floor
+}
 
 # The townsfolk: where each stands (x, y, the feet), who they are, what they say, and where they send you (label,
 # page). No `go`: what they look after isn't open on the website yet, and they say so. `src`: their picture
@@ -66,31 +116,31 @@ PROPS = [
 # glow and their name. `h`: how tall it is drawn, in world px (the cultivator is about 120); `flip`: the picture faces
 # left (the page turns everyone toward you). scripts/make_town_npcs.py cuts them out.
 NPCS = [
-    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 23.8, "y": 21.5,
+    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 26.4, "y": 18.7,
      "src": "/art/portraits/town/gate.webp", "h": 135, "flip": True,
      "line": "The wilds are restless tonight. Beasts prowl the forest, and the herbs out there won't pick themselves.",
      "go": [["Hunt beasts", "/explore"], ["Gather herbs", "/gather"]]},
-    {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 11.6, "y": 13.6,
+    {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 8.9, "y": 12.6,
      "src": "/art/portraits/town/blacksmith.webp", "h": 132,
      "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging.",
      "go": [["Enter the forge", "/forge"]]},
-    {"key": "alchemist", "name": "Herbalist Lan", "title": "Pills and herbs", "x": 10.6, "y": 19.4,
+    {"key": "alchemist", "name": "Herbalist Lan", "title": "Pills and herbs", "x": 8.6, "y": 19.6,
      "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
      "go": [["Enter the alchemy hall", "/alchemy"]]},
-    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 15.4, "y": 10.8,
+    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 15.0, "y": 12.0,
      "line": "A cultivator should look the part. New robes, a new face to the world: I have it all.",
      "go": [["Change your look", "/appearance"]]},
-    {"key": "elder", "name": "Village Elder", "title": "Your cultivation", "x": 7.2, "y": 7.8,
+    {"key": "elder", "name": "Village Elder", "title": "Your cultivation", "x": 11.6, "y": 7.4,
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
      "go": [["Show my cultivation", "/profile"], ["Check my bag", "/inventory"]]},
-    {"key": "master", "name": "Martial Master", "title": "Training", "x": 22.2, "y": 9.4,
+    {"key": "master", "name": "Martial Master", "title": "Training", "x": 23.0, "y": 13.0,
      "src": "/art/portraits/town/master.webp", "h": 128,
      "line": "The training yard isn't open to you yet. Train through the bot for now; my doors open soon."},
-    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 23.4, "y": 18.3,
+    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 23.3, "y": 28.2,
      "src": "/art/portraits/town/arena.webp", "h": 134, "flip": True,
      "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
-    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 20.7, "y": 20.4, "prop": True,
+    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 19.2, "y": 20.6, "prop": True,
      "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
 ]
 

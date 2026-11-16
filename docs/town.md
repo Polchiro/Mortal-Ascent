@@ -15,14 +15,14 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
 
 ## The map
 
-- **Built from pieces.** The ground is one painting (`art/maps/town.webp`, 4096 x 2048: a 32 x 32 tile diamond, 2:1,
-  128 x 64 px tiles, its corners on the image's edges): the plaza, paths, grass, the pond, and the walls, houses
-  and gate along the south edge, painted in. SHOAIB painted it in Gemini (1024 px) from the first town painting
-  with its buildings taken out; it was cropped to 2:1, the Gemini marks painted out and upscaled 4x with
-  Real-ESRGAN. On it stand the **buildings** and **props**, each its own Gemini picture (`art/maps/town/`), so each
-  is as sharp as it was drawn: the forge, herb shop, market stalls, pavilion, arena, stele, three houses and a row
-  house; the well and the training dummies.
-- **Placing a building:** `town.BUILDINGS` gives each its footprint in tiles (x0, y0, a, b). Each picture is one
+- **Built from pieces.** Nothing is a stretched painting. The ground (`art/maps/town.webp`, 6144 x 3072 for the
+  32 x 32 tile diamond, 2:1, 128 x 64 world px a tile) is painted in code by `scripts/make_town_ground.py` from
+  four textures (`art/maps/town/tex/`: grass, dirt, stone paving, forest floor; the top faces of SHOAIB's Gemini
+  ground tiles, lifted flat and blended into seamless tiles) and `town.GROUND`: grass inside the walls, forest floor
+  outside, the paved plaza, dirt roads and yards, a soft shadow at each building's foot, dimmed to dusk. On it stand
+  the walls, towers and gate, the buildings, trees, the pond, rocks and props, each its own Gemini picture
+  (`art/maps/town/`, cut by `scripts/make_town_kit.py`), so each is as sharp as it was drawn.
+- **Placing a building:** `town.BUILDINGS` gives each its footprint in tiles (x0, y0, a, b). Each building picture is one
   building on a square stone base at the map's angle; `scripts/make_town_kit.py` cuts it out (making sure the base
   is whole), measures the base's left, right and bottom corners (`art/maps/town/kit.json`) and the page fits
   those onto the footprint's corners, so a picture's size doesn't matter. A picture's door faces the bottom-right;
