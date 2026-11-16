@@ -47,7 +47,9 @@ AMPHIBIANS = ("thornback_lizard", "poison_toad", "ember_lizard")
 DRAGONS = ("flood_dragon_jiao", "azure_dragon")
 # the primates (SHOAIB's redesign; the Ancient Golden Ape moved here from the four-legged beasts)
 PRIMATES = ("silver_monkey", "golden_eyed_ape_king", "ancient_golden_ape", "shanxiao_mountain_spirit")
-FACES_RIGHT = {"golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+# the insects and arthropods (SHOAIB's redesign)
+INSECTS = ("venom_scorpion", "golden_silk_spider", "thousand_year_centipede")
+FACES_RIGHT = {"thousand_year_centipede", "golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "field_viper", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, "wild_boar": 0.81,
@@ -57,7 +59,7 @@ SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right 
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
 STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
-SOLID = {"shanxiao_mountain_spirit"}  # its thin staff and crystal: kept whole against the plain backdrop
+SOLID = {"shanxiao_mountain_spirit", "venom_scorpion", "golden_silk_spider", "thousand_year_centipede"}  # its thin staff and crystal: kept whole against the plain backdrop
 ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped
@@ -181,7 +183,7 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES + INSECTS:                                     # (the Mountain Tiger roars from its own cut-out poses)
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)

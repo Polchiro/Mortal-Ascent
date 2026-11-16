@@ -336,6 +336,18 @@ ROAR_ANIMATIONS = {
         (0.025, -0.022, -2.0),      # held, trembling
         (0.000, 0.000, 0.0),        # settled
     ], "swell": 0.07},
+    # The insects' threat display, from SHOAIB's insect roar video (the Venom Scorpion): it crouches, then rears up with
+    # its tail and pincers raised while venom drips and poison smoke gathers round it; then it hisses, jaws wide, and
+    # erupts: a ring of purple and green venom flames round its body, a sphere of poison bursting out, and a cloud of
+    # poison smoke left hanging over the ground (fight.js `venom`), and settles.
+    "insect": {"ms": [380, 600, 150, 1450, 520], "burst": 3, "hold": 3, "style": "venom", "pivot": 0.7, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (0.000, 0.025, -2.0),       # crouched, gathering
+        (-0.015, -0.030, 7.0),      # reared up, tail and pincers raised, venom gathering
+        (0.025, -0.010, -2.0),      # the hiss: thrust at you, jaws wide, the venom erupts
+        (0.020, -0.008, -1.0),      # held, trembling
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.06},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -356,9 +368,12 @@ DRAGONS = ("Flood Dragon (Jiao)", "Azure Dragon")
 # The 4 primates (SHOAIB's redesign; the Ancient Golden Ape moved here from the four-legged beasts), all roaring with
 # the primate movement.
 PRIMATES = ("Silver Monkey", "Golden-Eyed Ape King", "Ancient Golden Ape", "Shanxiao Mountain Spirit")
+# The 3 insects and arthropods (SHOAIB's redesign), all with the insect threat display.
+INSECTS = ("Venom Scorpion", "Golden Silk Spider", "Thousand-Year Centipede")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
                  **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS},
-                 **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES}}
+                 **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES},
+                 **{name: "insect" for name in INSECTS}}
 
 
 # Beasts that attack with claws: their M1 leaves three red claw marks (art/fx/claw_marks.webp); every other beast
