@@ -33,6 +33,8 @@ MAPS = {
             (4.6, 22.4, 1.4),       # rocks by the stream (south-west)
             (14.2, 14.8, 1.5),      # the pond (the stream below it is shallow: stepping stones)
         ],
+        # lights painted on the map (x, y in tiles where the lamp is on the painting; a colour): they glow
+        "lights": [(1.77, 18.72, "#7FD3FF"), (1.59, 16.14, "#7FD3FF"), (2.65, 16.14, "#FFB45A")],
     },
 }
 
@@ -44,12 +46,19 @@ def plan(key):
 
 def page_data(key):
     m = MAPS.get(key) or {}
-    return {"ground": m.get("art"), "edge": m.get("edge", EDGE), "blocked": [list(c) for c in m.get("blocked", [])]}
+    return {"ground": m.get("art"), "edge": m.get("edge", EDGE), "blocked": [list(c) for c in m.get("blocked", [])],
+            "lights": [list(c) for c in m.get("lights", [])], "wander": WANDER, "notice": NOTICE}
 SPEED = 3.4                                 # the page's fastest walk, in tiles a second (150 screen px/s, straight up)
 SLACK = 1.6                                 # leeway for network jitter on that speed ...
 JUMP = 1.0                                  # ... plus this many tiles
 REACH = 1.6                                 # how close (tiles) you must be to the beast to start the fight
-SPAWN_GAP = 7.0                             # a new beast appears at least this far from you
+
+# How a beast behaves on the map (the page acts it out; huntmap.js): it wanders this far from where it stands,
+# notices you this close and charges. Elites and Beast Kings roam wider and see further. The server lets the fight
+# start anywhere the charge could have met you: within WANDER + NOTICE + REACH of where the beast stands.
+WANDER = {"normal": 1.6, "elite": 2.4, "beast_king": 3.0}
+NOTICE = {"normal": 3.2, "elite": 4.2, "beast_king": 5.2}
+SPAWN_GAP = 10.5                            # a new beast appears beyond the reach of any charge: you go to it
 
 
 def walkable(x, y, m=None):
@@ -92,4 +101,6 @@ def moved(prev, x, y, now, m=None):
 
 
 def close_enough(pos, beast):
-    return math.dist(pos[:2], (beast["x"], beast["y"])) <= REACH
+    """Whether the beast, wandering about its spot and charging when it saw you, could have reached you here."""
+    tier = beast.get("tier", "normal")
+    return math.dist(pos[:2], (beast["x"], beast["y"])) <= WANDER.get(tier, 0) + NOTICE.get(tier, 0) + REACH

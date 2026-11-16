@@ -125,9 +125,16 @@ same random numbers; `_battle` builds the same fight).
   is shallow and the stepping stones cross it). Server and page share one walkable test. Other locations keep the
   ground drawn in code. Press **G** on the map for the tile grid, the walkable edge and the blocked circles, with your
   position, to check a map against its painting.
+- **The beasts hunt too:** a beast wanders about the spot the server put it on, notices you (a **!**) and charges;
+  the fight starts when it reaches you. Normal / Elite / Beast King: roams 1.6 / 2.4 / 3 tiles, sees 3.2 / 4.2 /
+  5.2 tiles, charges a little faster each (`hunt_map.WANDER`, `NOTICE`). Run out of its reach and it gives up and
+  goes back. A new beast appears beyond any charge's reach (10.5 tiles), so you always go to it.
+- **The night:** fireflies, drifting mist, falling bamboo leaves, dust where feet land, the painted lamps glowing
+  (`MAPS[...]["lights"]`), the view's edges in shadow. Fewer particles and no leaves with reduced motion.
 - **The server referees:** the page reports where you are a few times a second (`POST /hunt/pos`); a position off
   the map or further than you could have walked since the last one is refused and you are put back. The fight
-  starts only if the server has you within 1.6 tiles of the beast (`what=engage`). After a fight the next beast is
+  starts only where the beast's charge could have met you: within its roam + sight + 1.6 tiles of its spot
+  (`what=engage`). After a fight the next beast is
   already out on the map; after the fifth, walk on or **Return home**. Ten minutes without a step and you head home.
 - **The walking sheet** (spec): one PNG per animation, transparent, 8 rows **S SW W NW N NE E SE**, cells
   **256 x 256**, the point between the feet at **(128, 232)**, about 200 px tall, walking in place; walk 8 frames,
