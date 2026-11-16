@@ -25,7 +25,9 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   the walkable outline, the circles and your position. The page and `town.walkable` share the one test.
 - **Feeling big:** the painting is drawn at full size and the camera is zoomed so a wide screen shows about **12
   tiles** across (`VIEW` in town.js); a tall phone zooms less, so the cultivator stays readable. The camera stops
-  at the painting's edges. A night vignette darkens everything away from you.
+  at the painting's edges. A night vignette darkens everything away from you. And the town is drawn **1.4x**
+  bigger against you than the painting's own scale (`town.SCALE`): you, the townsfolk and your walking speed on
+  screen stay the same, so the streets are longer and the buildings tower over you.
 - **Coming in:** at the gate (`town.START`). After you leave through someone's dialogue, coming back puts you in
   front of them (the page remembers it for the browser tab).
 - **The server doesn't follow you.** Nothing on the map changes the game, so unlike the hunting map there are no

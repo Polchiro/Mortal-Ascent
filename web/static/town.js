@@ -6,6 +6,8 @@
 
    What makes the town feel big: the painting is drawn at full size (32 x 32 tiles of 128 x 64 px) and the camera
    is zoomed so a screen shows about VIEW tiles across, whatever its size, so you never see the whole town at once;
+   the town is drawn K times bigger than the painting's own scale against you (cfg.scale: you, the townsfolk and
+   your walking speed on screen stay the same, the streets get longer);
    the camera stops at the painting's edges; and a night vignette darkens everything away from you.
 
    Walk up to someone and press E (or tap the button) to talk: a dialogue says who they are and offers the pages
@@ -17,7 +19,8 @@
   var SIZE = cfg.size, AREA = cfg.area, BLOCKED = cfg.blocked || [], REACH = cfg.reach, NPCS = cfg.npcs;
   var TW = 128, TH = 64;                       // a tile, in the painting's pixels (the world)
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // world px/s; px per full stride (at 100%); character size
-  var SLOW = 0.45, VIEW = 12;                   // Shift: a stroll; tiles across the screen
+  var SLOW = 0.45, VIEW = 12;                   // Shift: a stroll; tiles across the screen (at K = 1)
+  var K = cfg.scale || 1;                       // how much bigger the town is drawn than you
 
   function toScreen(x, y) { return {x: (x - y) * TW / 2, y: (x + y) * TH / 2}; }
   function inside(x, y) {                       // point in AREA (even-odd), as web/town.inside
@@ -39,9 +42,10 @@
     DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
     // VIEW tiles across a wide screen; a tall phone keeps the cultivator a readable size instead
-    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72)));
+    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72))) * K;
   }
   window.addEventListener('resize', resize); resize();
+  window.addEventListener('townscale', function (e) { K = e.detail; resize(); });   // the demo's size buttons
 
   var painted = new Image(); painted.src = cfg.ground;
   var sheet = new Image(); sheet.src = SH.src;
@@ -132,12 +136,12 @@
     if (hero.moving) {
       var ang = Math.atan2(v.y, v.x), deg = (ang * 180 / Math.PI + 360) % 360;
       if (angDiff(deg, ROW_ANGLE[hero.dir]) > 28.5) hero.dir = sectorRow(ang);         // 22.5° + a little hysteresis
-      var sp = SPEED * m, vx = v.x / m * sp, vy = v.y / m * sp;
+      var sp = SPEED * m / K, vx = v.x / m * sp, vy = v.y / m * sp;
       var nx = hero.x + (vx / (TW / 2) + vy / (TH / 2)) / 2 * dt, ny = hero.y + (vy / (TH / 2) - vx / (TW / 2)) / 2 * dt;
       if (walkable(nx, hero.y)) hero.x = nx;
       if (walkable(hero.x, ny)) hero.y = ny;
       if (!was) hero.phase = STAND[hero.dir];
-      hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM) * 8) % 8;
+      hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM / K) * 8) % 8;
       hero.frame = Math.floor(hero.phase);
     } else hero.frame = STAND[hero.dir];
     var best = null, bd = REACH;
@@ -187,19 +191,20 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, W, H);
     var hp = toScreen(hero.x, hero.y), vw = W / S, vh = H / S, half = SIZE * TW / 2, full = SIZE * TH;
-    var tx = hp.x, ty = hp.y - 50;
+    var tx = hp.x, ty = hp.y - 50 / K;
     tx = vw >= SIZE * TW ? 0 : Math.max(-half + vw / 2, Math.min(half - vw / 2, tx));       // stop at the painting's edges
     ty = vh >= full ? full / 2 : Math.max(vh / 2, Math.min(full - vh / 2, ty));
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12;
     ctx.setTransform(DPR * S, 0, 0, DPR * S, DPR * (W / 2 - cam.x * S), DPR * (H / 2 - cam.y * S));
     if (painted.complete) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
     if (debug) drawDebug();
-    var list = [{y: hp.y, f: function () { drawHero(hp.x, hp.y); }}];
-    NPCS.forEach(function (n) { var p = toScreen(n.x, n.y); list.push({y: p.y, f: function () { drawNpc(n, p.x, p.y); }}); });
+    function at(x, y, f) { ctx.save(); ctx.translate(x, y); ctx.scale(1 / K, 1 / K); f(); ctx.restore(); }   // you and they at your size
+    var list = [{y: hp.y, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
+    NPCS.forEach(function (n) { var p = toScreen(n.x, n.y); list.push({y: p.y, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }}); });
     list.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) { o.f(); });
     // night: everything away from you sinks into the dark
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    var cx = W / 2 + (hp.x - cam.x) * S, cy = H / 2 + (hp.y - 60 - cam.y) * S, R = Math.max(W, H);
+    var cx = W / 2 + (hp.x - cam.x) * S, cy = H / 2 + (hp.y - 60 / K - cam.y) * S, R = Math.max(W, H);
     var v = ctx.createRadialGradient(cx, cy, R * 0.12, cx, cy, R * 0.66);
     v.addColorStop(0, 'rgba(6,8,18,0)'); v.addColorStop(0.5, 'rgba(6,8,18,.45)'); v.addColorStop(1, 'rgba(4,5,12,.9)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
@@ -229,7 +234,7 @@
     acc += dt; while (acc >= STEP) { update(STEP); acc -= STEP; }
     draw(); requestAnimationFrame(frame);
   }
-  var p0 = toScreen(hero.x, hero.y); cam.x = p0.x; cam.y = p0.y - 50;
+  var p0 = toScreen(hero.x, hero.y); cam.x = p0.x; cam.y = p0.y - 50 / K;
   cv.addEventListener('pointerdown', function () { cv.focus(); });
   cv.focus();
   requestAnimationFrame(frame);

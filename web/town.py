@@ -20,6 +20,7 @@ SIZE = 32
 ART = "/art/maps/town.webp"
 START = (21.3, 21.3)                 # just inside the gate, facing in
 REACH = 1.5                          # how close (tiles) you must be to someone to talk to them
+SCALE = 1.4                          # the town drawn this much bigger against you than the painting is (town.js K)
 
 AREA = [                             # walkable ground, clockwise from the lane to the pond (north)
     (9.0, 8.6), (10.9, 10.6), (17.4, 11.0), (17.6, 6.4), (26.4, 5.6), (27.0, 11.5), (27.2, 16.5),
@@ -90,7 +91,7 @@ def page_data(sheet):
             {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
              "flip": n.get("flip", False)} for n in NPCS]
     return {"sheet": sheet, "size": SIZE, "ground": ART, "area": [list(p) for p in AREA],
-            "blocked": [list(c) for c in BLOCKED], "reach": REACH, "hero": {"x": START[0], "y": START[1]},
+            "blocked": [list(c) for c in BLOCKED], "reach": REACH, "scale": SCALE, "hero": {"x": START[0], "y": START[1]},
             "npcs": npcs}
 
 
