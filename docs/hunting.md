@@ -104,3 +104,28 @@ bot's own. A hunter who fled gets nothing for that beast.
 Membership, invitation IDs, leader rights, minimum realms, readiness, rests, injuries, one move per turn,
 turn deadlines and every reward are decided in `web/parties.py` and `web/hunt_play.py`, under one lock. The pages
 only show what those allow. The browser never sees which beast is coming or how a turn will go.
+
+## The map (Solo Hunt, admins only for now)
+
+A Solo Hunt can be walked: instead of the next fight starting from a button, the beast waits on a walkable
+isometric map of the hunting ground, and the fight starts when you walk up to it. **Only when** changes: which
+beast it is, how strong and what it pays are the same as above (`Hunts._roll` rolls it exactly as before, from the
+same random numbers; `_battle` builds the same fight).
+
+- **Who:** admins (`ADMIN_IDS`) on a Solo Hunt, with a look that has a walking sheet (`looks.WALK_SHEETS`: the male
+  cultivator for now). Everyone else keeps the menus. Code: `web/hunt_map.py`, `Hunt.map` in `web/hunt_play.py`,
+  `web/templates/hunt_map.html`, `web/static/huntmap.js`. Tests: `tests/test_hunt_map.py`.
+- **Walking:** W A S D or the arrow keys (Shift: stroll), or the on-screen joystick on touch screens; both feed one
+  movement vector in screen space. The sheet row follows the direction (8 sectors with a little hysteresis); the
+  frames advance with distance walked (one stride per 96 px at 120%), so the feet don't slide; standing still holds
+  each row's feet-together frame.
+- **The map:** a 24 x 24 tile diamond (2:1, 128 x 64 px tiles), the outer 2.2 tiles forest. The ground is drawn in
+  code until each location has its painted map.
+- **The server referees:** the page reports where you are a few times a second (`POST /hunt/pos`); a position off
+  the map or further than you could have walked since the last one is refused and you are put back. The fight
+  starts only if the server has you within 1.6 tiles of the beast (`what=engage`). After a fight the next beast is
+  already out on the map; after the fifth, walk on or **Return home**. Ten minutes without a step and you head home.
+- **The walking sheet** (spec): one PNG per animation, transparent, 8 rows **S SW W NW N NE E SE**, cells
+  **256 x 256**, the point between the feet at **(128, 232)**, about 200 px tall, walking in place; walk 8 frames,
+  idle 4. `scripts/make_hero_walk.py` builds his from SHOAIB's walk video and refuses a sheet that breaks the spec.
+  His video never faced left, so SW, W, NW are mirrored; there is no idle sheet yet.

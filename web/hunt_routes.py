@@ -7,6 +7,7 @@ Explore's hunting pages (docs/hunting.md):
   /hunt               your party: the lobby, the hunt (its fight screen) or the hunt's result
   /hunt/locations     the location cards (the leader picks one)
   /hunt/v             a small JSON version number the lobby and hunt pages poll to know when to reload
+  /hunt/pos           the map page reporting where you walk (web/hunt_map.py)
 
 Every POST only asks web/parties.py or web/hunt_play.py; they decide.
 """
@@ -155,7 +156,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             if why:
                 back = "/hunt/locations"
             elif party.solo:                                     # alone: choosing the place is setting out
-                why = await run_in_threadpool(with_conn, hunts.start, uid)
+                why = await run_in_threadpool(with_conn, lambda c: hunts.start(c, uid, walk=hunt_play.walks(c, uid)))
                 if why:
                     back = "/hunt/locations"
         elif what == "start":
@@ -190,6 +191,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/hunt/locations")
         if kind == "lobby":
             return no_store(page(request, "hunt_lobby.html", v=v, user=user, avatar=avatar(user), error=error(request)))
+        if v["mode"] == "map":                                   # walking the hunting ground (web/hunt_map.py)
+            return no_store(page(request, "hunt_map.html", g=v, user=user, avatar=avatar(user), error=error(request)))
         if v["mode"] == "fight":                                 # the shared fight screen
             return no_store(page(request, "explore_play.html", g=v, user=user, avatar=avatar(user),
                                  coins=v["coins"], pearls=v["pearls"]))
@@ -229,6 +232,17 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return out
 
         return no_store(JSONResponse(with_conn(read)))
+
+    @app.post("/hunt/pos")
+    async def hunt_pos(request: Request):
+        """The map page saying where you are (a few times a second while you walk). Answers where the server has
+        you: the page puts you back there if it doesn't agree."""
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"gone": True})
+        form = await form_of(request)
+        at = await run_in_threadpool(with_conn, hunts.report, user["id"], form.get("x"), form.get("y"))
+        return no_store(JSONResponse({"gone": True} if at is None else {"x": at[0], "y": at[1]}))
 
     @app.post("/hunt/act")
     async def hunt_act(request: Request):
