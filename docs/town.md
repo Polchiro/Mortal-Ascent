@@ -65,5 +65,4 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 grey-green backdrop) by `scripts/make_town_npcs.py`: rembg plus a colour key for thin things like the warden's spear,
 the cast shadow and Gemini's sparkle dropped, cropped tight with the feet at the bottom middle. In `town.NPCS`,
 `src` is the picture, `h` how tall it is drawn in world px (the cultivator is about 120), and `flip` marks a picture
-that faces left; the page turns everyone toward you. The Gate Warden, Blacksmith, Herbalist, Martial Master and Arena
-Keeper have theirs; the Silk Merchant and Village Elder still show a lantern glow, a floating marker and their name.
+that faces left; the page turns everyone toward you. Every townsperson has theirs; one without a picture shows a lantern glow, a floating marker and their name.
