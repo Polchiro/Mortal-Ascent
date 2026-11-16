@@ -19,7 +19,7 @@ def plan_until_roar(b, turns=60):
 
 
 def test_only_four_legged_flying_and_serpent_beasts_roar_and_never_in_their_first_turns():
-    b = make_battle(beast=("Stone-Shell Tortoise", "normal", "armored"))
+    b = make_battle(beast=("Stray Dog Pack", "normal", "hunter"))
     assert plan_until_roar(b, 200) is None
     for seed in range(40):
         b = make_battle(beast=("Wild Boar", "normal", "brute"), seed=seed)
@@ -112,9 +112,9 @@ def test_shaken_and_exposed_change_damage():
 
 
 def test_a_beast_that_cannot_roar_fights_exactly_as_before():
-    b1 = make_battle(beast=("Stone-Shell Tortoise", "normal", "armored"), seed=9)
+    b1 = make_battle(beast=("Stray Dog Pack", "normal", "hunter"), seed=9)
     rolls = [b1.rng.random() for _ in range(5)]
-    b2 = make_battle(beast=("Stone-Shell Tortoise", "normal", "armored"), seed=9)
+    b2 = make_battle(beast=("Stray Dog Pack", "normal", "hunter"), seed=9)
     b2.enemy_turns = 20
     b2._roars()
     assert [b2.rng.random() for _ in range(5)] == rolls                      # its own dice: the fight's untouched
