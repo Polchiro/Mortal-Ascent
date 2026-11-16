@@ -57,7 +57,7 @@ def test_every_quadruped_roars_as_itself_with_the_shared_movement():
 
 
 def test_other_beasts_keep_the_plain_roar():
-    for name in ("Stone-Shell Tortoise", "Primordial Dragon Turtle"):
+    for name in ("Stray Dog Pack", "Lightning Weasel"):
         assert beasts.roar_category(name) is None
         assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["motion"] is None
 
@@ -83,7 +83,7 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
-    assert explore_play.beast_roar({"name": "Stone-Shell Tortoise", "slug": "stone_shell_tortoise", "tier": "normal"})["art"] is None
+    assert explore_play.beast_roar({"name": "Stray Dog Pack", "slug": "stray_dog_pack", "tier": "normal"})["art"] is None
 
 
 def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
@@ -254,3 +254,19 @@ def test_both_crocodiles_bellow_with_the_crocodile_movement_and_their_open_mouth
         assert still.size == roar.size and max(still.size) <= 900, slug
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "bellow" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_every_tortoise_roars_with_the_tortoise_movement_and_its_open_mouthed_picture():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    move = beasts.ROAR_ANIMATIONS["tortoise"]
+    assert move["style"] == "shell" and len(move["ms"]) == len(move["keys"]) - 1
+    for name in beasts.TORTOISES:
+        assert beasts.roar_category(name) == "tortoise"
+        slug = beasts.slug(name)
+        assert slug in art.TORTOISES
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
+        assert r["motion"]["style"] == "shell" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]

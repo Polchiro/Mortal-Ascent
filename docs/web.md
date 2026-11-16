@@ -388,6 +388,11 @@ a lair is fought with `bot/hunt.py`.
    picture and bellows: rings of sound pulse out of its jaws, a burst of its element with a golden heart and spikes of
    light flares round its head, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
    rules, damage and log line.
+   **The tortoises roar** (`ROAR_ANIMATIONS["tortoise"]`, from SHOAIB's tortoise roar video; `charged` and `shell` in
+   `fight.js`): each braces while its shell's runes light up and crackle with energy of its element, then lifts its head
+   with its open-mouthed picture (the Xuanwu's serpent opens its jaws too) and roars: a cone of sound rings blasts at
+   you, a great dome of its element swells round its whole body like a shield, mist rolls along the ground, the camera
+   punches in, and it settles. Same rules, damage and log line.
    **The primates roar** (`ROAR_ANIMATIONS["primate"]`, from SHOAIB's primate roar video of the Silver Monkey;
    `vortex`, `beat` and `pound` in `fight.js`): each crouches, rises onto its hind legs and pounds its chest twice, a
    ring flying off its chest at each blow, while a whirlwind of its element spirals round it; then it roars with its

@@ -990,6 +990,20 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   box-shadow:0 0 6px var(--rc);animation:bfeather 2.3s cubic-bezier(.2,.7,.4,1) forwards}
 @keyframes bfeather{0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(var(--s))}8%{opacity:1}
   70%{opacity:.9}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot)) scale(var(--s))}}
+/* a tortoise's roar (fight.js `charged`, `shell`) */
+.bshellglow{position:absolute;z-index:5;width:var(--w);height:var(--h);border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:0;
+  transform:translate(-50%,-50%);background:radial-gradient(ellipse,color-mix(in srgb,var(--rc) 55%,transparent),transparent 68%);
+  filter:blur(6px);animation:bshellglow var(--life,1s) ease-in forwards}
+@keyframes bshellglow{0%{opacity:0}35%{opacity:.6}55%{opacity:.35}75%{opacity:.8}92%{opacity:1}100%{opacity:0}}
+.bdome{position:absolute;z-index:5;width:var(--s);height:calc(var(--s) * .78);pointer-events:none;mix-blend-mode:screen;opacity:0;
+  transform:translate(-50%,-50%) scale(.3);border-radius:50% 50% 46% 46%/60% 60% 40% 40%;
+  border:3px solid color-mix(in srgb,var(--rc) 60%,#fff);
+  background:radial-gradient(ellipse at 50% 55%,transparent 45%,color-mix(in srgb,var(--rc) 22%,transparent) 70%,color-mix(in srgb,var(--rc) 55%,transparent) 92%,transparent 100%),
+    repeating-radial-gradient(ellipse at 50% 60%,transparent 0 22px,color-mix(in srgb,var(--rc) 18%,transparent) 23px 25px);
+  box-shadow:0 0 30px var(--rc),inset 0 0 50px color-mix(in srgb,var(--rc) 60%,transparent);
+  animation:bdome 1.9s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes bdome{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}18%{opacity:.95;transform:translate(-50%,-50%) scale(1)}
+  60%{opacity:.75;transform:translate(-50%,-50%) scale(1.03)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.12)}}
 /* a dragon's roar (fight.js `coil`, `storm`) */
 .bcoil{position:absolute;z-index:4;width:var(--w);height:var(--h);border-radius:50%;pointer-events:none;mix-blend-mode:screen;opacity:0;
   border:4px solid transparent;border-top-color:color-mix(in srgb,var(--rc) 70%,#fff);border-right-color:color-mix(in srgb,var(--rc) 50%,transparent);

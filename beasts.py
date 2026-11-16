@@ -360,6 +360,18 @@ ROAR_ANIMATIONS = {
         (0.012, -0.018, 14.0),      # held, trembling
         (0.000, 0.000, 0.0),        # sinks back down
     ], "swell": 0.05},
+    # The tortoises' roar, from SHOAIB's tortoise roar video (the Stone-Shell Tortoise): it braces, its shell's runes
+    # light up and crackle with energy of its element, then it lifts its head and roars: a cone of sound rings blasts
+    # out of its jaws at you, a great dome of its element swells up round its whole body like a shield, and mist rolls
+    # out along the ground (fight.js `charged`, `shell`), and it settles.
+    "tortoise": {"ms": [420, 700, 150, 1550, 560], "burst": 3, "hold": 3, "style": "shell", "pivot": 0.75, "keys": [
+        (0.000, 0.000, 0.0),        # standing
+        (0.000, 0.015, -1.0),       # braced, its shell's runes lighting up
+        (-0.010, 0.005, 4.0),       # head drawn up, the shell crackling
+        (0.015, -0.008, 7.0),       # the roar: head up and out, jaws wide, the dome swelling
+        (0.012, -0.006, 6.0),       # held
+        (0.000, 0.000, 0.0),        # settled
+    ], "swell": 0.04},
 }
 # The 29 four-legged beasts (SHOAIB's redesign), all roaring with the quadruped movement.
 QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger", "Wild Boar", "Grey Wolf",
@@ -384,10 +396,13 @@ PRIMATES = ("Silver Monkey", "Golden-Eyed Ape King", "Ancient Golden Ape", "Shan
 INSECTS = ("Venom Scorpion", "Golden Silk Spider", "Thousand-Year Centipede")
 # The 2 crocodiles (SHOAIB's redesign), both bellowing with the crocodile movement.
 CROCODILES = ("Jade-Scaled Crocodile", "Abyss Crocodile")
+# The 3 tortoises (SHOAIB's redesign), all roaring with the tortoise movement.
+TORTOISES = ("Stone-Shell Tortoise", "Black Tortoise (Xuanwu)", "Primordial Dragon Turtle")
 ROAR_CATEGORY = {**{name: "quadruped" for name in QUADRUPEDS}, **{name: "flying" for name in FLYING},
                  **{name: "serpent" for name in SERPENTS}, **{name: "amphibian" for name in AMPHIBIANS},
                  **{name: "dragon" for name in DRAGONS}, **{name: "primate" for name in PRIMATES},
-                 **{name: "insect" for name in INSECTS}, **{name: "crocodile" for name in CROCODILES}}
+                 **{name: "insect" for name in INSECTS}, **{name: "crocodile" for name in CROCODILES},
+                 **{name: "tortoise" for name in TORTOISES}}
 
 
 # Beasts that attack with claws: their M1 leaves three red claw marks (art/fx/claw_marks.webp); every other beast
