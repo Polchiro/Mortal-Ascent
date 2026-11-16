@@ -903,6 +903,34 @@
       }
       camera(p, 1 + 0.07 * big, 1450);
     }
+    /* A crocodile's roar (beasts.ROAR_ANIMATIONS["crocodile"], from SHOAIB's crocodile roar video). It presses low as Qi
+       gathers into its jaws (`gather`), then throws its head up and bellows (`bellow`): rings of sound pulsing out of
+       its gaping jaws toward you, a burst of its element flaring round its head with a golden heart and spikes of light,
+       dust blasting up off the ground on both sides, and the camera punching in. A final roar is bigger. */
+    function bellow(p, pic, final) {
+      var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
+      var you = at(fr, 0.5, 0.45), ang = Math.atan2((you[1] - p[1]) * sr.height, (you[0] - p[0]) * sr.width) * 180 / Math.PI;
+      var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
+      var sz = Math.min(820, Math.max(pic.height * 2.2, pic.width * 0.7) * big);
+      fx('bnova', p[0], p[1], 1500, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '60ms'});
+      fx('bnova', p[0], p[1], 1300, {'--rc': '#ffd98a', '--s': sz * 0.5 + 'px', 'animation-delay': '120ms'});
+      wave(p, 'ring', sz * 1.05, 650, 100, 'broarbig', 0, 0.55);
+      [0, 280, 560, 840].forEach(function (d, i) {             // rings of sound pulsing out of its jaws
+        wave(p, i % 2 ? 'double' : 'ring', Math.min(1100, tall * (1.1 + 0.35 * i) * big), 760, d, 'broarbig cone', 2, 0.75)
+          .style.setProperty('--ang', ang + 'deg');
+      });
+      for (var j = 0; j < 16; j++) {                           // spikes of light
+        fx('bstreak', p[0], p[1], 1100, {'--rc': j % 3 ? ROAR.color : '#ffe3a0', '--len': sz * (0.35 + Math.random() * 0.4) + 'px',
+          '--ang': (j * 360 / 16 + Math.random() * 10) + 'deg', 'animation-delay': (60 + Math.random() * 300) + 'ms'});
+      }
+      var f = at(pic, 0.3, 0.98);                              // dust blasting up off the ground
+      for (var m = 0; m < 14; m++) {
+        var side = m % 2 ? 1 : -1;
+        fx('bdust', f[0] + side * (2 + 2.2 * m), f[1] - Math.random() * 2, 1800, {'--dx': side * (60 + 26 * m) + 'px',
+          '--s': (0.9 + Math.random() * 0.7).toFixed(2), 'animation-delay': (120 + 25 * m) + 'ms'});
+      }
+      camera(p, 1 + 0.07 * big, 1450);
+    }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
     function roaringMoved(M, ev) {
@@ -958,6 +986,7 @@
         if (M.style === 'quake' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'storm' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); coil(pic, BURST - at0[1] + 200); }
         if (M.style === 'pound' && t >= at0[1] && once('gather')) vortex(pic, BURST - at0[1] + 250);
+        if (M.style === 'bellow' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
         if (M.style === 'venom' && t >= at0[1] && once('gather')) { gather(mouth(pose3(at0[2])), BURST - at0[1]); seep(pic, BURST - at0[1]); }
         if (M.style === 'pound' && t >= at0[3] && once('beat1')) beat(pic);
         if (M.style === 'pound' && t >= at0[5] && once('beat2')) beat(pic);
@@ -982,6 +1011,7 @@
           else if (M.style === 'storm') storm(mouth(p), pic, ev.final);
           else if (M.style === 'pound') pound(mouth(p), pic, ev.final);
           else if (M.style === 'venom') venom(mouth(p), pic, ev.final);
+          else if (M.style === 'bellow') bellow(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           struck(ev);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});

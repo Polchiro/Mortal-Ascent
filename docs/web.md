@@ -383,6 +383,11 @@ a lair is fought with `bot/hunt.py`.
    (`art/fx/dragon_blast.webp`, from SHOAIB's picture, coloured by its element) with lightning streaks
    fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
    punching in, and settles. Same rules, damage and log line.
+   **The crocodiles bellow** (`ROAR_ANIMATIONS["crocodile"]`, from SHOAIB's crocodile roar video; `gather` and
+   `bellow` in `fight.js`): each presses low as Qi gathers into its jaws, then throws its head up with its open-mouthed
+   picture and bellows: rings of sound pulse out of its jaws, a burst of its element with a golden heart and spikes of
+   light flares round its head, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
+   rules, damage and log line.
    **The primates roar** (`ROAR_ANIMATIONS["primate"]`, from SHOAIB's primate roar video of the Silver Monkey;
    `vortex`, `beat` and `pound` in `fight.js`): each crouches, rises onto its hind legs and pounds its chest twice, a
    ring flying off its chest at each blow, while a whirlwind of its element spirals round it; then it roars with its

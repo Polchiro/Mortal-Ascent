@@ -238,3 +238,19 @@ def test_every_insect_roars_with_the_insect_movement_and_its_open_mouthed_pictur
         slug = beasts.slug(name)
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "venom" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_both_crocodiles_bellow_with_the_crocodile_movement_and_their_open_mouthed_pictures():
+    from PIL import Image
+    import scripts.make_quadruped_art as art
+    move = beasts.ROAR_ANIMATIONS["crocodile"]
+    assert move["style"] == "bellow" and len(move["ms"]) == len(move["keys"]) - 1
+    for name in beasts.CROCODILES:
+        assert beasts.roar_category(name) == "crocodile"
+        slug = beasts.slug(name)
+        assert slug in art.CROCODILES
+        still = Image.open(os.path.join(ROOT, "art", "beasts", slug + ".png"))
+        roar = Image.open(os.path.join(ROOT, "art", "beasts", "roar", slug + ".png"))
+        assert still.size == roar.size and max(still.size) <= 900, slug
+        r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
+        assert r["motion"]["style"] == "bellow" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]

@@ -26,3 +26,5 @@ The redesigned dragons (Flood Dragon (Jiao), Azure Dragon) are made the same way
 The redesigned primates (Silver Monkey, Golden-Eyed Ape King, Ancient Golden Ape, Shanxiao Mountain Spirit) are made the same way (`PRIMATES`; the Shanxiao's thin staff kept whole by `SOLID`), with their open-mouthed roar pictures in `roar/`.
 
 The redesigned insects and arthropods (Venom Scorpion, Golden Silk Spider, Thousand-Year Centipede) are made the same way (`INSECTS`; their thin legs kept whole by `SOLID`), with their open-mouthed roar pictures in `roar/`.
+
+The redesigned crocodiles (Jade-Scaled Crocodile, Abyss Crocodile) are made the same way (`CROCODILES`), with their open-mouthed roar pictures in `roar/`.

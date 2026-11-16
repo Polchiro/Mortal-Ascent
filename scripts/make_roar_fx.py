@@ -35,7 +35,7 @@ CELL_W, CELL_H = 320, 360
 SIZE, FRAMES, COLS = 256, 16, 8
 # name: (cell column, cell row, the empty frame's time, the wave's start and end times in s)
 MOUTHS = {
-    "abyss_crocodile": (0.07, 0.65),
+    "abyss_crocodile": (0.05, 0.33),
     "ancient_flame_lion": (0.05, 0.47),
     "ancient_golden_ape": (0.41, 0.25),
     "armored_boar_chief": (0.12, 0.62),
@@ -63,7 +63,7 @@ MOUTHS = {
     "iron_feather_crow": (0.06, 0.15),
     "iron_hide_boar": (0.12, 0.62),
     "ironbark_bear": (0.05, 0.53),
-    "jade_scaled_crocodile": (0.15, 0.22),
+    "jade_scaled_crocodile": (0.05, 0.3),
     "kun_peng_fish_of_the_northern_sea": (0.02, 0.45),
     "lightning_weasel": (0.1, 0.37),
     "mountain_tiger": (0.1, 0.5),
@@ -109,6 +109,7 @@ VARIANTS = {"roar_ring": (1, 0, 0.3, 0.85, 3.6), "roar_double": (3, 0, 0.3, 1.15
 # the open mouths of the roar pictures (art/beasts/roar/<slug>.png, on the standing picture's canvas), read by eye;
 # saved in heads.json as "<slug>@roar"
 ROAR_MOUTHS = {
+    "abyss_crocodile": (0.13, 0.39),
     "ancient_flame_lion": (0.08, 0.22),
     "ancient_golden_ape": (0.37, 0.29),
     "armored_boar_chief": (0.1, 0.42),
@@ -135,6 +136,7 @@ ROAR_MOUTHS = {
     "iron_feather_crow": (0.23, 0.36),
     "iron_hide_boar": (0.1, 0.36),
     "ironbark_bear": (0.1, 0.22),
+    "jade_scaled_crocodile": (0.13, 0.38),
     "kun_peng_fish_of_the_northern_sea": (0.27, 0.48),
     "nine_tailed_fox": (0.15, 0.19),
     "old_black_bear": (0.1, 0.24),
