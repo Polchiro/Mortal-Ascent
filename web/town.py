@@ -18,7 +18,7 @@ import math
 NAME = "Azure Cloud Town"
 SIZE = 32
 ART = "/art/maps/town.webp"
-START = (20.9, 20.9)                 # just inside the gate, facing in
+START = (21.3, 21.3)                 # just inside the gate, facing in
 REACH = 1.5                          # how close (tiles) you must be to someone to talk to them
 
 AREA = [                             # walkable ground, clockwise from the lane to the pond (north)
@@ -40,7 +40,7 @@ BLOCKED = [                          # (x, y, radius) in tiles
 # glow and their name. `h`: how tall it is drawn, in world px (the cultivator is about 120); `flip`: the picture faces
 # left (the page turns everyone toward you). scripts/make_town_npcs.py cuts them out.
 NPCS = [
-    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 22.4, "y": 22.4,
+    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 23.8, "y": 21.5,
      "src": "/art/portraits/town/gate.webp", "h": 135, "flip": True,
      "line": "The wilds are restless tonight. Beasts prowl the forest, and the herbs out there won't pick themselves.",
      "go": [["Hunt beasts", "/explore"], ["Gather herbs", "/gather"]]},
