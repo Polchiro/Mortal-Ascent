@@ -76,18 +76,14 @@ BUILDINGS = [
     # the south-west: a house, trees and bushes
     _b("house_w", "house", 3.4, 22.2, 3.4),
     _b("house_sw", "house", 8.8, 25.0, 3.4, mirror=True),
-    _b("blossom_sw", "blossom", 12.6, 21.4, 2.6),
-    _b("pine_sw", "pine", 3.6, 26.0, 2.2), _b("bush_sw", "bush", 13.0, 26.6, 2.0),
     _b("boulders_sw", "boulders", 16.0, 26.0, 2.4),
     # the east: the training yard
-    _b("rack_1", "rack", 21.6, 7.6, 1.4), _b("rack_2", "rack", 26.2, 7.6, 1.4, mirror=True),
+    _b("rack_1", "rack", 22.4, 8.0, 1.4), _b("rack_2", "rack", 26.2, 7.6, 1.4, mirror=True),
     _b("dummy_1", "dummy", 22.6, 10.4, 0.55), _b("dummy_2", "dummy", 24.4, 9.6, 0.55), _b("dummy_3", "dummy", 25.8, 11.0, 0.55),
     _b("barrels_e", "barrels", 26.8, 12.0, 1.8),
-    _b("blossom_e", "blossom", 18.8, 7.0, 2.4),
     # the south: the arena, the stele by the plaza
     _b("arena", "arena", 19.8, 20.2, 7.0),
     _b("stele", "stele", 18.4, 18.4, 1.5),
-    _b("pine_s", "pine", 16.8, 22.6, 2.0),
     # lantern posts along the road and at the plaza's corners
     *[_b(f"lantern_{i}", "lantern", x, y, 0.4) for i, (x, y) in enumerate(
         [(21.4, 13.8), (24.8, 13.8), (21.4, 18.0), (24.8, 18.0), (10.4, 10.4), (20.0, 10.2), (10.2, 20.0)])],
@@ -95,6 +91,11 @@ BUILDINGS = [
 # Props stand on one point (x, y), the bottom middle of the picture, drawn `h` world px tall; `r` blocks the way.
 PROPS = [
     {"img": "well", "x": 15.5, "y": 15.5, "h": 200, "r": 0.8},
+    # trees stand by the trunk: a crown is far wider than its roots, so each is where its crown hangs over nothing
+    {"img": "blossom", "x": 21.6, "y": 7.0, "h": 380, "r": 0.4},     # by the training yard
+    {"img": "blossom", "x": 15.2, "y": 25.6, "h": 380, "r": 0.4},    # in the south-west garden
+    {"img": "pine", "x": 4.8, "y": 27.0, "h": 420, "r": 0.35},
+    {"img": "pine", "x": 17.6, "y": 23.4, "h": 400, "r": 0.35},
 ]
 # The ground (scripts/make_town_ground.py paints art/maps/town.webp from these): grass inside the walls, forest
 # floor outside, the plaza paved and dirt roads, paths and yards; rectangles x0, y0, x1, y1 in tiles.
@@ -138,10 +139,10 @@ NPCS = [
     {"key": "master", "name": "Martial Master", "title": "Training", "x": 23.0, "y": 13.0,
      "src": "/art/portraits/town/master.webp", "h": 128,
      "line": "The training yard isn't open to you yet. Train through the bot for now; my doors open soon."},
-    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 23.3, "y": 28.2,
+    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 24.6, "y": 16.4,
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
-    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 19.2, "y": 20.6, "prop": True,
+    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 17.6, "y": 19.6, "prop": True,
      "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
 ]
 

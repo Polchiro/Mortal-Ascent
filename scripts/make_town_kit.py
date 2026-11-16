@@ -43,6 +43,7 @@ FLUSH = {"pond", "pine", "blossom", "boulders", "bush", "rack", "barrels", "herb
 BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lowest share of the picture (trees: low)
 # a base whose stone is so close to the backdrop that the cut-out loses most of it: its corners in the picture
 # (left, right, bottom), measured by hand, so the floor is put back whole and where it really is
+OPEN = {"arena"}                          # buildings whose gaps are background (between banner poles): not filled
 BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
 WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3}   # px, measured
@@ -63,7 +64,8 @@ def save(name, im, kit, base=True):
 def building(path, session, corners_at=None):
     from PIL import ImageDraw
     old = npc.HOLE
-    npc.HOLE = 2500                         # gaps a building shuts in (between its posts) are bigger than a person's
+    if os.path.basename(path).split(".")[0] not in OPEN:
+        npc.HOLE = 2500                     # gaps a building shuts in (between its posts) are bigger than a person's
     try:
         im = npc.cut(path, session, crop=False)
     finally:

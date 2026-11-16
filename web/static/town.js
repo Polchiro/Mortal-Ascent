@@ -60,7 +60,7 @@
   var painted = new Image(); painted.src = cfg.ground;
   PIECES.forEach(function (p) {
     p.img = new Image(); p.img.src = p.src;
-    p.depth = p.fp ? p.fp[0] + p.fp[2] + p.fp[1] + p.fp[3] : p.at[0] + p.at[1];
+    p.depth = p.fp ? p.fp[0] + p.fp[2] / 2 + p.fp[1] + p.fp[3] / 2 : p.at[0] + p.at[1];   // a footprint's middle
   });
   PIECES.sort(function (a, b) { return a.depth - b.depth; });
   var sheet = new Image(); sheet.src = SH.src;
