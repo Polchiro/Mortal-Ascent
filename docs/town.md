@@ -1,6 +1,6 @@
 # The town hub
 
-**Mistpine Town** (`/town`, the **Town** tab) is a walkable 2.5D isometric town. You walk the cultivator about it
+**Azure Cloud Town** (`/town`, the **Town** tab) is a walkable 2.5D isometric town. You walk the cultivator about it
 and up to the townsfolk; each, after a word, sends you on to a page the website already has. The town itself
 decides nothing: no fights, rewards or costs happen in it.
 

@@ -15,7 +15,7 @@ Measured on the painting with the tile grid laid over it (press G on the page).
 import json
 import math
 
-NAME = "Mistpine Town"
+NAME = "Azure Cloud Town"
 SIZE = 32
 ART = "/art/maps/town.webp"
 START = (20.9, 20.9)                 # just inside the gate, facing in
