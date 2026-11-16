@@ -10,6 +10,10 @@
    your walking speed on screen stay the same, the streets get longer);
    the camera stops at the painting's edges; and a night vignette darkens everything away from you.
 
+   The town is built from pieces (web/town.py): the ground, then each building and prop as its own picture, drawn in
+   depth order with you and the townsfolk: you are hidden by a building when you stand behind it (beyond its
+   footprint's back edges), and drawn over it in front.
+
    Walk up to someone and press E (or tap the button) to talk: a dialogue says who they are and offers the pages
    they send you to. Nothing here changes the game, so the server doesn't follow where you walk. */
 (function () {
@@ -17,6 +21,7 @@
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
   var SIZE = cfg.size, AREA = cfg.area, BLOCKED = cfg.blocked || [], REACH = cfg.reach, NPCS = cfg.npcs;
+  var PIECES = cfg.pieces || [], INSET = cfg.inset || 0;
   var TW = 128, TH = 64;                       // a tile, in the painting's pixels (the world)
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // world px/s; px per full stride (at 100%); character size
   var SLOW = 0.45, VIEW = 12;                   // Shift: a stroll; tiles across the screen (at K = 1)
@@ -34,6 +39,10 @@
   function walkable(x, y) {                     // the same test as web/town.walkable
     if (!(x > 0 && y > 0 && x < SIZE && y < SIZE) || !inside(x, y)) return false;
     for (var i = 0; i < BLOCKED.length; i++) { var c = BLOCKED[i]; if (Math.hypot(x - c[0], y - c[1]) <= c[2]) return false; }
+    for (var j = 0; j < PIECES.length; j++) {
+      var f = PIECES[j].fp;
+      if (f && x > f[0] + INSET && x < f[0] + f[2] - INSET && y > f[1] + INSET && y < f[1] + f[3] - INSET) return false;
+    }
     return true;
   }
 
@@ -48,6 +57,11 @@
   window.addEventListener('townscale', function (e) { K = e.detail; resize(); });   // the demo's size buttons
 
   var painted = new Image(); painted.src = cfg.ground;
+  PIECES.forEach(function (p) {
+    p.img = new Image(); p.img.src = p.src;
+    p.depth = p.fp ? p.fp[0] + p.fp[2] + p.fp[1] + p.fp[3] : p.at[0] + p.at[1];
+  });
+  PIECES.sort(function (a, b) { return a.depth - b.depth; });
   var sheet = new Image(); sheet.src = SH.src;
   NPCS.forEach(function (n) { if (n.src) { n.img = new Image(); n.img.src = n.src; } n.t = Math.random() * 6; });
 
@@ -199,15 +213,43 @@
     if (painted.complete) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
     if (debug) drawDebug();
     function at(x, y, f) { ctx.save(); ctx.translate(x, y); ctx.scale(1 / K, 1 / K); f(); ctx.restore(); }   // you and they at your size
-    var list = [{y: hp.y, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
-    NPCS.forEach(function (n) { var p = toScreen(n.x, n.y); list.push({y: p.y, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }}); });
-    list.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) { o.f(); });
+    var movers = [{x: hero.x, y: hero.y, h: 175, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
+    NPCS.forEach(function (n) {
+      var p = toScreen(n.x, n.y);
+      movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
+    });
+    layered(movers).forEach(function (f) { f(); });
     // night: everything away from you sinks into the dark
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     var cx = W / 2 + (hp.x - cam.x) * S, cy = H / 2 + (hp.y - 60 / K - cam.y) * S, R = Math.max(W, H);
     var v = ctx.createRadialGradient(cx, cy, R * 0.12, cx, cy, R * 0.66);
     v.addColorStop(0, 'rgba(6,8,18,0)'); v.addColorStop(0.5, 'rgba(6,8,18,.45)'); v.addColorStop(1, 'rgba(4,5,12,.9)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  }
+  /* depth order: the pieces back to front; each person goes after every piece they overlap on screen and stand in
+     front of (beyond a footprint's back edge, or nearer than a prop), so the rest are drawn over them */
+  function layered(movers) {
+    var off = {x: SIZE * TW / 2, y: 0};                  // pieces' rects are on the ground picture, its top-left corner at (-half, 0)
+    movers.forEach(function (m) {
+      var p = toScreen(m.x, m.y), w = 60 / K, top = p.y - m.h / K, slot = 0;
+      PIECES.forEach(function (q, i) {
+        var r = q.rect, left = r[0] - off.x;
+        if (p.x + w < left || p.x - w > left + r[2] || p.y < r[1] || top > r[1] + r[3]) return;     // no overlap
+        var front = q.fp ? (m.x >= q.fp[0] + q.fp[2] - 0.25 || m.y >= q.fp[1] + q.fp[3] - 0.25) : m.x + m.y > q.depth;
+        if (front) slot = i + 1;
+      });
+      m.slot = slot;
+    });
+    movers.sort(function (a, b) { return a.slot - b.slot || (a.x + a.y) - (b.x + b.y); });
+    var out = [], k = 0;
+    for (var i = 0; i <= PIECES.length; i++) {
+      while (k < movers.length && movers[k].slot === i) out.push(movers[k++].f);
+      if (i < PIECES.length) out.push(drawPiece.bind(null, PIECES[i], off));
+    }
+    return out;
+  }
+  function drawPiece(q, off) {
+    if (q.img.complete && q.img.naturalWidth) ctx.drawImage(q.img, q.rect[0] - off.x, q.rect[1], q.rect[2], q.rect[3]);
   }
   /* G: the tile grid, the walkable ground and what blocks the way (to check the town against its painting) */
   function drawDebug() {
@@ -223,6 +265,13 @@
     BLOCKED.forEach(function (c) {
       var p = toScreen(c[0], c[1]);
       ctx.beginPath(); ctx.ellipse(p.x, p.y, c[2] * TW / Math.SQRT2, c[2] * TH / Math.SQRT2, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+    ctx.strokeStyle = 'rgba(120,170,255,.9)';
+    PIECES.forEach(function (q) {
+      if (!q.fp) return; var f = q.fp; ctx.beginPath();
+      [[f[0], f[1]], [f[0] + f[2], f[1]], [f[0] + f[2], f[1] + f[3]], [f[0], f[1] + f[3]]].forEach(function (c, i) {
+        var p = toScreen(c[0], c[1]); ctx[i ? 'lineTo' : 'moveTo'](p.x, p.y); });
+      ctx.closePath(); ctx.stroke();
     });
     var h = toScreen(hero.x, hero.y);
     ctx.fillStyle = '#F6E2B0'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';

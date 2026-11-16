@@ -15,19 +15,30 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
 
 ## The map
 
-- **The painting:** `art/maps/town.webp`, 4096 x 2048: a 32 x 32 tile diamond (2:1, 128 x 64 px tiles), its
-  corners on the image's edges, as `art/maps/moon_forest.webp` is for 24 x 24. Painted by SHOAIB in Gemini
-  (1024 px), cropped from 16:9 to 2:1, the Gemini marks painted out, then upscaled 4x with Real-ESRGAN (x4plus).
-  A sharper painting of the same layout can replace the file as it is.
-- **Where you can walk:** `town.AREA`, a polygon in tiles (the plaza, the training yard, the lanes to the forge,
-  the herb shop and the pond), minus `town.BLOCKED` circles (the well, the stele, the arena's ring, the training
-  dummies and racks). Measured on the painting with the grid over it; press **G** on the page to see the grid,
-  the walkable outline, the circles and your position. The page and `town.walkable` share the one test.
-- **Feeling big:** the painting is drawn at full size and the camera is zoomed so a wide screen shows about **12
-  tiles** across (`VIEW` in town.js); a tall phone zooms less, so the cultivator stays readable. The camera stops
-  at the painting's edges. A night vignette darkens everything away from you. And the town is drawn **1.4x**
-  bigger against you than the painting's own scale (`town.SCALE`): you, the townsfolk and your walking speed on
-  screen stay the same, so the streets are longer and the buildings tower over you.
+- **Built from pieces.** The ground is one painting (`art/maps/town.webp`, 4096 x 2048: a 32 x 32 tile diamond, 2:1,
+  128 x 64 px tiles, its corners on the image's edges): the plaza, paths, grass, the pond, and the walls, houses
+  and gate along the south edge, painted in. SHOAIB painted it in Gemini (1024 px) from the first town painting
+  with its buildings taken out; it was cropped to 2:1, the Gemini marks painted out and upscaled 4x with
+  Real-ESRGAN. On it stand the **buildings** and **props**, each its own Gemini picture (`art/maps/town/`), so each
+  is as sharp as it was drawn: the forge, herb shop, market stalls, pavilion, arena, stele, three houses and a row
+  house; the well and the training dummies.
+- **Placing a building:** `town.BUILDINGS` gives each its footprint in tiles (x0, y0, a, b). Each picture is one
+  building on a square stone base at the map's angle; `scripts/make_town_kit.py` cuts it out (making sure the base
+  is whole), measures the base's left, right and bottom corners (`art/maps/town/kit.json`) and the page fits
+  those onto the footprint's corners, so a picture's size doesn't matter. A picture's door faces the bottom-right;
+  `mirror` turns it to face the bottom-left (saved as `<img>_m`). Props (`town.PROPS`) stand on one point, drawn
+  `h` world px tall.
+- **Walking behind things:** the pieces are drawn back to front with you and the townsfolk among them: you are
+  drawn after every piece you overlap on screen and stand in front of (beyond a footprint's back edges, or nearer
+  than a prop), so a building hides you when you walk behind it.
+- **Where you can walk:** inside `town.AREA` (a polygon: the town inside its walls), off every footprint (you can
+  step `INSET` onto its paved edge), props and `town.BLOCKED` (the pond). Press **G** on the page to see the grid,
+  the walkable outline, the footprints and circles, and your position. The page and `town.walkable` share the test.
+- **Feeling big:** the camera shows about **12 tiles** across a wide screen (`VIEW` in town.js); a tall phone zooms
+  less, so the cultivator stays readable. It stops at the ground's edges. A night vignette darkens everything away
+  from you. And the town is drawn **1.4x** bigger against you than the ground's own scale (`town.SCALE`): you, the
+  townsfolk and your walking speed on screen stay the same, so the streets are longer and the buildings tower over
+  you.
 - **Coming in:** at the gate (`town.START`). After you leave through someone's dialogue, coming back puts you in
   front of them (the page remembers it for the browser tab).
 - **The server doesn't follow you.** Nothing on the map changes the game, so unlike the hunting map there are no
@@ -47,7 +58,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Silk Merchant | the silk stalls | `/appearance` |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
 | Martial Master | the training yard | not open on the website yet: says so |
-| Arena Keeper | the arena | not open yet |
+| Arena Keeper | in front of the arena | not open yet |
 | Stone Stele | the plaza (a thing, not a person) | not open yet (the rankings) |
 
 **Pictures:** `art/portraits/town/<key>.webp`, cut from SHOAIB's Gemini pictures (one person, full body, on a plain

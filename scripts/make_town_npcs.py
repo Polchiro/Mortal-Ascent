@@ -45,7 +45,7 @@ def components(mask):
     return lab, sizes
 
 
-def cut(path, session):
+def cut(path, session, crop=True):
     from rembg import remove
     src = Image.open(path).convert("RGB")
     im = remove(src, session=session).convert("RGBA")
@@ -69,7 +69,7 @@ def cut(path, session):
     fill = np.isin(gaps, [i for i, s in enumerate(gap_sizes) if i and i not in edge and s < HOLE])
     a[fill, :3], a[fill, 3] = rgb[fill], 255
     out = Image.fromarray(a)
-    return out.crop(out.getbbox())
+    return out.crop(out.getbbox()) if crop else out
 
 
 def facing(im):

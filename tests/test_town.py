@@ -40,10 +40,30 @@ def test_you_can_walk_up_to_everyone_from_the_gate():
         assert close, f"nobody can reach {n['name']}"
 
 
-def test_the_well_stele_and_arena_block_the_way():
+def test_buildings_props_and_the_pond_block_the_way():
     for cx, cy, r in town.BLOCKED:
         assert not town.walkable(cx, cy)
-    assert not town.walkable(1, 1) and not town.walkable(town.SIZE - 1, town.SIZE / 2)    # the forest outside
+    for b in town.BUILDINGS:
+        assert not town.walkable(b["x0"] + b["a"] / 2, b["y0"] + b["b"] / 2), b["key"]
+    for p in town.PROPS:
+        assert not town.walkable(p["x"], p["y"])
+    assert not town.walkable(1, 30) and not town.walkable(town.SIZE - 1, town.SIZE / 2)    # the forest outside
+
+
+def test_every_piece_has_its_picture_and_sits_on_the_ground():
+    from PIL import Image
+    pieces = town.placed()
+    assert len(pieces) == len(town.BUILDINGS) + len(town.PROPS)
+    for q in pieces:
+        im = Image.open(os.path.join(ROOT, q["src"].lstrip("/")))
+        assert im.mode == "RGBA"
+        left, top, w, h = q["rect"]
+        assert 0 <= left and left + w <= town.SIZE * 128 and top + h <= town.SIZE * 64 and w > 0 and h > 0
+    for a in town.BUILDINGS:                                  # footprints don't overlap
+        for b in town.BUILDINGS:
+            if a is not b:
+                assert (a["x0"] + a["a"] <= b["x0"] or b["x0"] + b["a"] <= a["x0"] or
+                        a["y0"] + a["b"] <= b["y0"] or b["y0"] + b["b"] <= a["y0"]), (a["key"], b["key"])
 
 
 def test_townsfolk_are_complete_and_unique():
