@@ -40,8 +40,9 @@
     if (!(x > 0 && y > 0 && x < SIZE && y < SIZE) || !inside(x, y)) return false;
     for (var i = 0; i < BLOCKED.length; i++) { var c = BLOCKED[i]; if (Math.hypot(x - c[0], y - c[1]) <= c[2]) return false; }
     for (var j = 0; j < PIECES.length; j++) {
-      var f = PIECES[j].fp;
-      if (f && x > f[0] + INSET && x < f[0] + f[2] - INSET && y > f[1] + INSET && y < f[1] + f[3] - INSET) return false;
+      var f = PIECES[j].fp; if (!f) continue;
+      var e = Math.min(INSET, f[2] / 4, f[3] / 4);                // a small piece (a lantern) keeps most of its foot
+      if (x > f[0] + e && x < f[0] + f[2] - e && y > f[1] + e && y < f[1] + f[3] - e) return false;
     }
     return true;
   }

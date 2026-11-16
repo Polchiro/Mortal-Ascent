@@ -155,6 +155,7 @@ def inside(x, y, poly=AREA):
 
 
 def in_footprint(x, y, b, inset=INSET):
+    inset = min(inset, b["a"] / 4, b["b"] / 4)       # a small piece (a lantern) keeps most of its foot
     return b["x0"] + inset < x < b["x0"] + b["a"] - inset and b["y0"] + inset < y < b["y0"] + b["b"] - inset
 
 
