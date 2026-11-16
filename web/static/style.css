@@ -1364,3 +1364,21 @@ body.huntmap .knob{position:absolute;left:50%;top:50%;width:58px;height:58px;mar
   background:radial-gradient(circle at 35% 30%,#F6E2B0,#C9A45C 60%,#8E6F33);box-shadow:0 4px 12px rgba(0,0,0,.5)}
 body.huntmap .steps5 i{width:11px;height:11px}
 @media (max-width:640px){.mkeys{display:none}.mhud{left:10px;top:10px}.mplate h1{font-size:18px}.mhp{width:140px}}
+
+/* ── the town hub (town.html, town.js, docs/town.md): the hunting map's look, plus the dialogue ─────────────── */
+body.town .mprompt{cursor:pointer;font-family:Cinzel,Georgia,serif}
+body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid rgba(26,20,10,.6);border-radius:3px;font:700 11px Inter,sans-serif}
+.tdlg{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;width:min(520px,calc(100vw - 24px));padding:16px 20px 18px}
+.tdlg h2{margin:2px 0 8px;font:800 22px Cinzel,Georgia,serif;color:var(--ag3);letter-spacing:.6px}
+.tline{margin:0 0 14px;font-size:15px;line-height:1.5;color:#E6DFCF;font-style:italic}
+.tgo{display:flex;flex-wrap:wrap;gap:8px}
+.tgo .hbtn{min-height:40px;padding:0 16px}
+.tdlg .hbtn.ghost{background:rgba(12,12,15,.6)}
+.tstill{position:fixed;inset:0;background-size:cover;background-position:center;filter:brightness(.55)}
+.tboard{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:3;width:min(620px,calc(100vw - 24px));max-height:74vh;overflow:auto}
+.tboard .tnpc{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid rgba(201,164,92,.2)}
+.tboard .tnpc b{font-family:Cinzel,Georgia,serif;color:var(--ag2)}
+.tboard .tline{margin:4px 0 0;font-size:13.5px}
+@media (max-width:640px){.tboard .tnpc{flex-direction:column;align-items:flex-start}}
+.tboard .tnpc .tgo{flex-direction:column;align-items:stretch;flex-shrink:0}
+.tgo .hbtn{white-space:nowrap}

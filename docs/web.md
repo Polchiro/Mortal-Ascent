@@ -166,6 +166,11 @@ showing. The time for a pick is measured on the server, so a late right answer i
 page times out. Old or repeated pages and unknown choices are ignored. One trip at a time per player, kept in
 the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
 
+## The town
+
+`/town` (the **Town** tab) is the walkable town hub: walk up to the townsfolk, who send you on to the pages
+below. docs/town.md.
+
 ## Explore
 
 **Since Nov 16 the Explore tab is hunting (docs/hunting.md):** Solo Hunt, Create a Team, Find a Team, the team

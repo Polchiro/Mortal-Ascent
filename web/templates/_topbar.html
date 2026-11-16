@@ -1,6 +1,7 @@
 <header class="topbar">
   <span class="brand">MORTAL ASCENT</span>
   <nav class="tabsnav" aria-label="Main">
+    <a href="/town"{% if page == "town" %} class="on" aria-current="page"{% endif %}>Town</a>
     <a href="/profile"{% if page == "profile" %} class="on" aria-current="page"{% endif %}>Profile</a>
     <a href="/inventory"{% if page == "inventory" %} class="on" aria-current="page"{% endif %}>Inventory</a>
     <a href="/forge"{% if page == "forge" %} class="on" aria-current="page"{% endif %}>Forge</a>

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ town_name }} · Mortal Ascent{% endblock %}
+{% block body_class %}huntmap town{% endblock %}
+{% block body %}
+{% if walking %}
+<canvas id="map" tabindex="0" aria-label="{{ town_name }}. Walk with W A S D or the arrow keys, or the joystick; walk up to someone and press E to talk."></canvas>
+<script type="application/json" id="mapdata">{{ map_json | safe }}</script>
+{% else %}
+<div class="tstill" style="background-image:url('{{ ground }}')" role="img" aria-label="{{ town_name }}"></div>
+{% endif %}
+
+<div class="mhud">
+  <div class="mplate">
+    <p class="kicker">MORTAL ASCENT · TOWN</p>
+    <h1>{{ town_name }}</h1>
+    <span class="mhint">{{ coins }} Lotus · {{ pearls }} Pearls</span>
+  </div>
+  {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to talk · <b>Shift</b> to stroll</div>{% endif %}
+</div>
+
+<div class="mtools">
+  <a class="hbtn ghost small" href="/profile">Leave town</a>
+</div>
+
+{% if walking %}
+<button class="mprompt" id="prompt" type="button"></button>
+<div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+<section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
+  <p class="kicker" id="dlgTitle"></p>
+  <h2 id="dlgName"></h2>
+  <p class="tline" id="dlgLine"></p>
+  <div class="tgo" id="dlgGo"></div>
+</section>
+<script src="/static/town.js" defer></script>
+{% else %}
+<section class="mplate tboard">
+  <p class="kicker">THE TOWNSFOLK</p>
+  <p class="mhint">Your look can't walk the town yet. Its walking pictures are on the way; until then, speak to anyone from here.</p>
+  {% for n in npcs %}
+  <div class="tnpc">
+    <div><b>{{ n.name }}</b> <span class="mhint">· {{ n.title }}</span><p class="tline">{{ n.line }}</p></div>
+    <div class="tgo">{% for label, href in n.go %}<a class="hbtn small" href="{{ href }}">{{ label }}</a>{% endfor %}</div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

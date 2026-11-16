@@ -11,6 +11,7 @@ Pages:
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
   /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
+  /town       the town hub: walk up to the townsfolk, who send you on to the pages above (web/town.py)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -32,11 +33,11 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes
+from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes, town
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
-from .profile import profile_view
+from .profile import number, profile_view
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -163,6 +164,28 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
                     notice=request.session.pop("gear_notice", None),
                     points_notice=request.session.pop("points_notice", None),
                     look_done=request.session.pop("look_done", None))
+
+    @app.get("/town", response_class=HTMLResponse)
+    def town_page(request: Request):
+        """The town hub (web/town.py). Everyone walks it whose look has a walking sheet (looks.WALK_SHEETS); a look
+        without one sees the painting and speaks to the townsfolk from a list."""
+        import looks
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        c = conn()
+        try:
+            p = db.get_player(c, user["id"])
+        finally:
+            c.close()
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if p is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        sheet = looks.walk_sheet(looks.of_player(p))
+        data = town.page_data(sheet) if sheet else None
+        return page(request, "town.html", user=user, avatar=avatar, town_name=town.NAME, ground=town.ART,
+                    walking=sheet is not None, map_json=town.page_json(data) if data else "", npcs=town.NPCS,
+                    coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]))
 
     @app.get("/inventory", response_class=HTMLResponse)
     def inventory(request: Request, tab: str = "weapons", item: int | None = None):
