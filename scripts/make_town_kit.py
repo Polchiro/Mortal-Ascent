@@ -39,6 +39,9 @@ OUT = os.path.join(ROOT, "art", "maps", "town")
 PROP_BOXES = {"well": (455, 150, 580, 330)}
 FLUSH = {"pond", "pine", "blossom", "boulders", "bush", "rack", "barrels", "herbrack"}
 BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lowest share of the picture (trees: low)
+# a base whose stone is so close to the backdrop that the cut-out loses most of it: its corners in the picture
+# (left, right, bottom), measured by hand, so the floor is put back whole and where it really is
+BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
 WALL = {"cut": 290, "bottom": (293, 505), "end": (880, 228), "thick": 44}   # px in the wall picture
 
@@ -55,7 +58,7 @@ def save(name, im, kit, base=True):
     kit[name] = {"w": im.width, "h": im.height, **(corners(im) if base else {})}
 
 
-def building(path, session):
+def building(path, session, corners_at=None):
     from PIL import ImageDraw
     old = npc.HOLE
     npc.HOLE = 2500                         # gaps a building shuts in (between its posts) are bigger than a person's
@@ -63,16 +66,24 @@ def building(path, session):
         im = npc.cut(path, session, crop=False)
     finally:
         npc.HOLE = old
-    a = np.asarray(im)[:, :, 3] > 128
-    ys, xs = np.nonzero(a)
-    left = (xs.min(), ys[xs == xs.min()].mean())
-    right = (xs.max(), ys[xs == xs.max()].mean())
-    bottom = (xs[ys == ys.max()].mean(), ys.max())
+    if corners_at:
+        left, right, bottom = corners_at
+    else:
+        a = np.asarray(im)[:, :, 3] > 128
+        ys, xs = np.nonzero(a)
+        left = (xs.min(), ys[xs == xs.min()].mean())
+        right = (xs.max(), ys[xs == xs.max()].mean())
+        bottom = (xs[ys == ys.max()].mean(), ys.max())
     top = (left[0] + right[0] - bottom[0], left[1] + right[1] - bottom[1])
     base = Image.new("L", im.size, 0)
     ImageDraw.Draw(base).polygon([left, bottom, right, top], fill=255)
     src = Image.open(path).convert("RGBA")
     im = Image.composite(src, im, base)                    # the base diamond as painted, whole
+    if corners_at:                                         # nothing outside the base's own outline below its top
+        a = np.asarray(im).copy()
+        yy, xx = np.mgrid[0:im.height, 0:im.width]
+        a[(yy > min(left[1], right[1])) & ((xx < left[0]) | (xx > right[0]) | (np.asarray(base) == 0)), 3] = 0
+        im = Image.fromarray(a)
     return im.crop(im.getbbox())
 
 
@@ -153,7 +164,7 @@ def main(pairs):
                     pic.save(os.path.join(OUT, f"{n}.webp"), "WEBP", quality=90, method=6)
                     kit[n] = {"w": pic.width, "h": pic.height, **cc}
             continue
-        im = building(src, session)
+        im = building(src, session, BASES.get(name))
         save(name, im, kit)
         save(name + "_m", ImageOps.mirror(im), kit)
     json.dump(kit, open(path, "w"), indent=1, sort_keys=True)

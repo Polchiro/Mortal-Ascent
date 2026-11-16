@@ -68,7 +68,7 @@ BUILDINGS = [
     # along the north-east wall: the row house and a house; the market stalls face the plaza
     _b("rowhouse", "rowhouse", 16.4, 3.0, 8.0, 3.6, mirror=True),
     _b("house_ne", "house", 24.6, 3.2, 3.4, mirror=True),
-    _b("stalls", "stalls", 11.2, 7.4, 7.8, 3.4, mirror=True),
+    _b("stalls", "stalls", 13.4, 6.6, 5.0, mirror=True),
     # the west: the forge, the herb shop and its drying rack
     _b("forge", "forge", 3.4, 10.4, 4.8),
     _b("herbrack", "herbrack", 8.4, 15.2, 2.2),
