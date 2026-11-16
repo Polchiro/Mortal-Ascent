@@ -12,9 +12,11 @@ Nature and small props (FLUSH: the pond, trees, boulders, the bush, the racks an
 slabs of ground. Their slab sides are trimmed away, so they sit flush on the ground, their top surface's edge
 feathered into it; their base is measured on the lowest part of the picture only (BAND: a canopy is wider than its roots).
 
-The wall picture is one corner of wall: a long arm and a short return. Only the long arm is kept (WALL: where the
-cut is and its footing's ends, measured by hand), a straight section whose face looks to the bottom-right; mirrored
-it looks to the bottom-left. Repeated end to end they close the town.
+The wall picture is one corner of wall: a long arm and a short return. The arm is straightened (its footing and
+roof run at WALL["slope"] in the picture; sheared to the map's exact 0.5), and two one-tile slices are cut from it:
+plain (wall_s) and with a lantern (wall_l), their footing's start at their bottom-left. Laid one per tile they make
+a straight, unbroken wall of any length (web/town.py wall_line); their face looks to the bottom-right, mirrored
+(_m) to the bottom-left.
 
 The well comes from one picture of several props on a shared stone floor: each is cropped
 by hand (PROP_BOXES, in that picture's pixels), enlarged, cut out with rembg, and the floor's thin grid lines that
@@ -43,7 +45,7 @@ BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lo
 # (left, right, bottom), measured by hand, so the floor is put back whole and where it really is
 BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
-WALL = {"cut": 290, "bottom": (293, 505), "end": (880, 228), "thick": 44}   # px in the wall picture
+WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3}   # px, measured
 
 
 def corners(im):
@@ -115,15 +117,20 @@ def flush(path, session, band=0.65):
     return im, {"l": int(L[0] - box[0]), "r": int(R[0] - box[0]), "bx": round(B[0] - box[0], 1), "by": int(B[1] - box[1])}
 
 
-def wall(path, session):
-    """The straight arm of the wall picture, and its footing's corners as a thin footprint's (left, right, bottom)."""
+def wall_slices(path, session):
+    """The wall's one-tile slices (name, picture, corners as a 0.6 x 1 tile footprint's)."""
     im = npc.cut(path, session, crop=False)
-    im = im.crop((WALL["cut"], 0, im.width, im.height))
-    box = im.getbbox()
-    im = im.crop(box)
-    ox, oy = WALL["cut"] + box[0], box[1]
-    bx, by = WALL["bottom"]
-    return im, {"l": bx - WALL["thick"] - ox, "r": WALL["end"][0] - ox, "bx": bx - ox, "by": by - oy}
+    k = 0.5 - WALL["slope"]
+    im = im.transform(im.size, Image.AFFINE, (1, 0, 0, k, 1, 0), Image.BICUBIC)   # footing now: foot - 0.5 x
+    out = []
+    for name, x in (("wall_s", WALL["plain"]), ("wall_l", WALL["lantern"])):
+        t = WALL["tile"]
+        strip = im.crop((x, 0, x + t + WALL["overlap"], im.height))
+        box = strip.getbbox()
+        strip = strip.crop((0, box[1], strip.width, box[3]))
+        by = WALL["foot"] - 0.5 * x - box[1]
+        out.append((name, strip, {"l": round(-0.6 * t, 1), "r": t, "bx": 0, "by": round(by, 1)}))
+    return out
 
 
 def mirrored(im, c):
@@ -158,9 +165,9 @@ def main(pairs):
                 save(key, prop(whole, box, session), kit, base=False)
             continue
         if name in FLUSH or name == "wall":
-            im, c = wall(src, session) if name == "wall" else flush(src, session, BAND.get(name, 0.65))
-            for n, (pic, cc) in ((name, (im, c)), (name + "_m", mirrored(im, c))):
-                if True:                   # both ways round: the layout can turn any piece
+            pieces = wall_slices(src, session) if name == "wall" else [(name, *flush(src, session, BAND.get(name, 0.65)))]
+            for base, im, c in pieces:
+                for n, (pic, cc) in ((base, (im, c)), (base + "_m", mirrored(im, c))):   # both ways round
                     pic.save(os.path.join(OUT, f"{n}.webp"), "WEBP", quality=90, method=6)
                     kit[n] = {"w": pic.width, "h": pic.height, **cc}
             continue

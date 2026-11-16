@@ -59,12 +59,13 @@ def test_every_piece_has_its_picture_and_sits_on_the_ground():
         assert im.mode == "RGBA"
         left, top, w, h = q["rect"]
         assert 0 <= left and left + w <= town.SIZE * 128 and top + h <= town.SIZE * 64 and w > 0 and h > 0
-    edge = {"wall", "tower", "tower_low", "gatehouse"}       # wall sections overlap each other and the towers
-    for a in town.BUILDINGS:                                  # footprints don't overlap
+    edge = {"wall_s", "wall_l", "tower", "tower_low", "gatehouse"}   # wall slices tuck under the towers and the gate
+    gap = 0.2                                                 # stone bases never touch: a little ground between
+    for a in town.BUILDINGS:
         for b in town.BUILDINGS:
-            if a is not b and not (a["img"] in edge and b["img"] in edge):
-                assert (a["x0"] + a["a"] <= b["x0"] or b["x0"] + b["a"] <= a["x0"] or
-                        a["y0"] + a["b"] <= b["y0"] or b["y0"] + b["b"] <= a["y0"]), (a["key"], b["key"])
+            if a is not b and not (a["img"] in edge or b["img"] in edge):
+                assert (a["x0"] + a["a"] + gap <= b["x0"] or b["x0"] + b["a"] + gap <= a["x0"] or
+                        a["y0"] + a["b"] + gap <= b["y0"] or b["y0"] + b["b"] + gap <= a["y0"]), (a["key"], b["key"])
 
 
 def test_townsfolk_are_complete_and_unique():

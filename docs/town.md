@@ -20,8 +20,11 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   four textures (`art/maps/town/tex/`: grass, dirt, stone paving, forest floor; the top faces of SHOAIB's Gemini
   ground tiles, lifted flat and blended into seamless tiles) and `town.GROUND`: grass inside the walls, forest floor
   outside, the paved plaza, dirt roads and yards, a soft shadow at each building's foot, dimmed to dusk. On it stand
-  the walls, towers and gate, the buildings, trees, the pond, rocks and props, each its own Gemini picture
+  the walls (one straightened one-tile slice of SHOAIB's wall per tile, so they run straight and
+  unbroken between the towers), the towers and gate, the buildings, trees, the pond, rocks and props, each its own Gemini picture
   (`art/maps/town/`, cut by `scripts/make_town_kit.py`), so each is as sharp as it was drawn.
+- **Spacing:** no two stone bases touch: there is at least a fifth of a tile of ground between footprints
+  (`tests/test_town.py`).
 - **Placing a building:** `town.BUILDINGS` gives each its footprint in tiles (x0, y0, a, b). Each building picture is one
   building on a square stone base at the map's angle; `scripts/make_town_kit.py` cuts it out (making sure the base
   is whole), measures the base's left, right and bottom corners (`art/maps/town/kit.json`) and the page fits

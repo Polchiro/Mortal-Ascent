@@ -37,16 +37,16 @@ def _b(key, img, x0, y0, a, b=None, mirror=False):
     return {"key": key, "img": img, "x0": x0, "y0": y0, "a": a, "b": a if b is None else b, "mirror": mirror}
 
 
-def _wall_run(key, start, end, at, along_x, seg=7.93):
-    """Wall sections end to end from `start` to `end` (tiles) along one side, overlapping where they must: every
-    section is drawn at one size, so the wall is the same height everywhere."""
-    n = max(1, round((end - start) / seg + 0.49))
-    step = (end - start - seg) / (n - 1) if n > 1 else 0
+def _wall_line(key, start, end, at, along_x):
+    """A straight wall from `start` to `end` (tiles) along one side: a one-tile slice per tile (art/maps/town/wall_s,
+    a lantern every fourth: wall_l), 0.6 tiles thick, its face on the footprint's far side. The last slice tucks under
+    the tower or gate at its end."""
     out = []
-    for i in range(n):
-        p = start + i * step
-        out.append(_b(f"{key}{i}", "wall", p, at, seg, 0.6, mirror=True) if along_x else
-                   _b(f"{key}{i}", "wall", at, p, 0.6, seg))
+    for i in range(math.ceil(end - start - 0.05)):
+        img = "wall_l" if i % 4 == 2 else "wall_s"
+        p = start + i
+        out.append(_b(f"{key}{i}", img, p, at, 1.0, 0.6, mirror=True) if along_x else
+                   _b(f"{key}{i}", img, at, p, 0.6, 1.0))
     return out
 
 
@@ -57,23 +57,22 @@ BUILDINGS = [
     # the walls: towers at the corners, the gate in the south-east wall
     _b("tower_n", "tower_low", 1.4, 1.4, 3.0), _b("tower_e", "tower_low", 28.2, 1.4, 3.0),
     _b("tower_w", "tower_low", 1.4, 28.2, 3.0), _b("tower_s", "tower", 28.2, 28.2, 3.0),
-    *_wall_run("wall_nw", 4.4, 28.2, 2.4, along_x=False), *_wall_run("wall_ne", 4.4, 28.2, 2.4, along_x=True),
-    *_wall_run("wall_sw", 4.4, 28.2, 29.0, along_x=True),
-    *_wall_run("wall_se_n", 4.4, 14.3, 29.0, along_x=False), *_wall_run("wall_se_s", 18.3, 28.2, 29.0, along_x=False),
+    *_wall_line("wall_nw", 4.4, 28.2, 2.4, along_x=False), *_wall_line("wall_ne", 4.4, 28.2, 2.4, along_x=True),
+    *_wall_line("wall_sw", 4.4, 28.2, 29.0, along_x=True),
+    *_wall_line("wall_se_n", 4.4, 14.3, 29.0, along_x=False), *_wall_line("wall_se_s", 18.3, 28.2, 29.0, along_x=False),
     _b("gatehouse", "gatehouse", 27.6, 14.3, 4.0, mirror=True),
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
-    _b("pavilion", "pavilion", 10.0, 3.2, 3.4),
-    _b("blossom_n", "blossom", 13.6, 3.2, 2.6),
+    _b("pavilion", "pavilion", 10.2, 3.4, 3.2),
     # along the north-east wall: the row house and a house; the market stalls face the plaza
     _b("rowhouse", "rowhouse", 16.4, 3.0, 8.0, 3.6, mirror=True),
     _b("house_ne", "house", 24.6, 3.2, 3.4, mirror=True),
-    _b("stalls", "stalls", 13.4, 6.6, 5.0, mirror=True),
+    _b("stalls", "stalls", 14.0, 7.2, 4.4, mirror=True),
     # the west: the forge, the herb shop and its drying rack
     _b("forge", "forge", 3.4, 10.4, 4.8),
     _b("herbrack", "herbrack", 8.4, 15.2, 2.2),
     _b("herbshop", "herbshop", 3.6, 16.4, 4.0, mirror=True),
-    _b("barrels_w", "barrels", 8.6, 9.8, 1.6),
+    _b("barrels_w", "barrels", 8.4, 9.8, 1.4),
     # the south-west: a house, trees and bushes
     _b("house_w", "house", 3.4, 22.2, 3.4),
     _b("house_sw", "house", 8.8, 25.0, 3.4, mirror=True),
@@ -84,14 +83,14 @@ BUILDINGS = [
     _b("rack_1", "rack", 21.6, 7.6, 1.4), _b("rack_2", "rack", 26.2, 7.6, 1.4, mirror=True),
     _b("dummy_1", "dummy", 22.6, 10.4, 0.55), _b("dummy_2", "dummy", 24.4, 9.6, 0.55), _b("dummy_3", "dummy", 25.8, 11.0, 0.55),
     _b("barrels_e", "barrels", 26.8, 12.0, 1.8),
-    _b("bush_e", "bush", 19.6, 7.4, 1.6),
+    _b("blossom_e", "blossom", 18.8, 7.0, 2.4),
     # the south: the arena, the stele by the plaza
     _b("arena", "arena", 19.8, 20.2, 7.0),
     _b("stele", "stele", 18.4, 18.4, 1.5),
-    _b("pine_s", "pine", 16.8, 22.6, 2.0), _b("bush_s", "bush", 18.4, 26.8, 1.4),
+    _b("pine_s", "pine", 16.8, 22.6, 2.0),
     # lantern posts along the road and at the plaza's corners
     *[_b(f"lantern_{i}", "lantern", x, y, 0.4) for i, (x, y) in enumerate(
-        [(21.4, 13.8), (24.8, 13.8), (21.4, 18.0), (24.8, 18.0), (10.2, 10.2), (20.0, 10.2), (10.2, 20.0)])],
+        [(21.4, 13.8), (24.8, 13.8), (21.4, 18.0), (24.8, 18.0), (10.4, 10.4), (20.0, 10.2), (10.2, 20.0)])],
 ]
 # Props stand on one point (x, y), the bottom middle of the picture, drawn `h` world px tall; `r` blocks the way.
 PROPS = [
@@ -128,7 +127,7 @@ NPCS = [
      "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
      "go": [["Enter the alchemy hall", "/alchemy"]]},
-    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 15.0, "y": 12.0,
+    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 16.2, "y": 12.2,
      "src": "/art/portraits/town/merchant.webp", "h": 132,
      "line": "A cultivator should look the part. New robes, a new face to the world: I have it all.",
      "go": [["Change your look", "/appearance"]]},
