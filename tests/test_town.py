@@ -53,6 +53,10 @@ def test_townsfolk_are_complete_and_unique():
         assert n["name"] and n["title"] and n["line"]
         for label, href in n.get("go", []):
             assert label and href.startswith("/")
+        if n.get("src"):                                   # a see-through picture, taller than wide, that exists
+            from PIL import Image
+            im = Image.open(os.path.join(ROOT, n["src"].lstrip("/")))
+            assert im.mode == "RGBA" and im.height > im.width and 100 <= n["h"] <= 160
 
 
 # ── the page ───────────────────────────────────────────────────────────────────────────────────────────────────

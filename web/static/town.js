@@ -164,9 +164,9 @@
     ctx.restore();
   }
   function drawNpc(n, x, y) {
-    var close = n === near, bob = Math.sin(n.t * 2) * 1.5, h = 128;
+    var close = n === near, bob = Math.sin(n.t * 2) * 1.5, h = n.h;
     if (n.img && n.img.complete && n.img.naturalWidth) {
-      var w = h * n.img.naturalWidth / n.img.naturalHeight, face = hero.x - hero.y < n.x - n.y ? -1 : 1;
+      var w = h * n.img.naturalWidth / n.img.naturalHeight, face = (hero.x - hero.y < n.x - n.y ? -1 : 1) * (n.flip ? -1 : 1);
       shadow(x, y, 24, 8, .42);
       ctx.save(); ctx.translate(x, y); ctx.scale(face, 1); ctx.drawImage(n.img, -w / 2, -h, w, h); ctx.restore();
       label(n, x, y - h - 18, close);

@@ -48,7 +48,9 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Arena Keeper | the arena | not open yet |
 | Stone Stele | the plaza (a thing, not a person) | not open yet (the rankings) |
 
-**Pictures:** until a townsperson has one, the page draws a lantern glow, a floating marker and their name. Give
-one a picture with `"src": "/art/portraits/town/<key>.webp"` in `town.NPCS`: one full-body painting, see-through,
-facing right, feet at the bottom middle; it is drawn 128 px tall (the cultivator is about 120) and turned to face
-you.
+**Pictures:** `art/portraits/town/<key>.webp`, cut from SHOAIB's Gemini pictures (one person, full body, on a plain
+grey-green backdrop) by `scripts/make_town_npcs.py`: rembg plus a colour key for thin things like the warden's spear,
+the cast shadow and Gemini's sparkle dropped, cropped tight with the feet at the bottom middle. In `town.NPCS`,
+`src` is the picture, `h` how tall it is drawn in world px (the cultivator is about 120), and `flip` marks a picture
+that faces left; the page turns everyone toward you. The Gate Warden, Blacksmith, Herbalist, Martial Master and Arena
+Keeper have theirs; the Silk Merchant and Village Elder still show a lantern glow, a floating marker and their name.

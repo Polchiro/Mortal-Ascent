@@ -23,8 +23,8 @@ REACH = 1.5                          # how close (tiles) you must be to someone 
 
 AREA = [                             # walkable ground, clockwise from the lane to the pond (north)
     (9.0, 8.6), (10.9, 10.6), (17.4, 11.0), (17.6, 6.4), (26.4, 5.6), (27.0, 11.5), (27.2, 16.5),
-    (26.6, 21.2), (24.0, 22.4), (23.0, 23.0), (22.0, 23.0), (21.2, 22.4), (20.6, 21.9), (14.4, 21.2),
-    (13.8, 23.4), (13.2, 27.8), (11.2, 28.4), (10.2, 25.6), (10.4, 21.6), (11.0, 18.8), (10.4, 13.6),
+    (26.6, 21.2), (24.0, 22.4), (23.0, 23.0), (22.0, 23.0), (21.2, 22.4), (20.5, 21.1), (14.3, 20.4),
+    (13.4, 23.4), (13.2, 27.8), (11.2, 28.4), (10.2, 25.6), (10.4, 21.6), (11.0, 18.8), (10.4, 13.6),
 ]
 BLOCKED = [                          # (x, y, radius) in tiles
     (16.4, 16.3, 1.0),               # the well
@@ -36,16 +36,20 @@ BLOCKED = [                          # (x, y, radius) in tiles
 
 # The townsfolk: where each stands (x, y, the feet), who they are, what they say, and where they send you (label,
 # page). No `go`: what they look after isn't open on the website yet, and they say so. `src`: their picture
-# (art/portraits/town/<key>.webp, see-through, feet at the bottom middle); until it exists the page draws a lantern
-# glow and their name. `face`: 1 faces right, -1 left (pictures are painted facing right).
+# (art/portraits/town/<key>.webp, see-through, feet at the bottom middle); without one the page draws a lantern
+# glow and their name. `h`: how tall it is drawn, in world px (the cultivator is about 120); `flip`: the picture faces
+# left (the page turns everyone toward you). scripts/make_town_npcs.py cuts them out.
 NPCS = [
     {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 22.4, "y": 22.4,
+     "src": "/art/portraits/town/gate.webp", "h": 135, "flip": True,
      "line": "The wilds are restless tonight. Beasts prowl the forest, and the herbs out there won't pick themselves.",
      "go": [["Hunt beasts", "/explore"], ["Gather herbs", "/gather"]]},
     {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 11.9, "y": 17.2,
+     "src": "/art/portraits/town/blacksmith.webp", "h": 132,
      "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging.",
      "go": [["Enter the forge", "/forge"]]},
     {"key": "alchemist", "name": "Herbalist Lan", "title": "Pills and herbs", "x": 11.6, "y": 25.4,
+     "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
      "go": [["Enter the alchemy hall", "/alchemy"]]},
     {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 15.6, "y": 12.0,
@@ -55,8 +59,10 @@ NPCS = [
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
      "go": [["Show my cultivation", "/profile"], ["Check my bag", "/inventory"]]},
     {"key": "master", "name": "Martial Master", "title": "Training", "x": 21.6, "y": 8.0,
+     "src": "/art/portraits/town/master.webp", "h": 128,
      "line": "The training yard isn't open to you yet. Train through the bot for now; my doors open soon."},
     {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 22.6, "y": 12.6,
+     "src": "/art/portraits/town/arena.webp", "h": 134, "flip": True,
      "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 22.2, "y": 18.4, "prop": True,
      "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
@@ -81,7 +87,8 @@ def page_data(sheet):
     """The page's data (web/static/town.js): the walking sheet, the map and the townsfolk. You come in at the gate
     (the page puts you back in front of whoever you last left town through)."""
     npcs = [{k: n[k] for k in ("key", "name", "title", "x", "y", "line")} |
-            {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src")} for n in NPCS]
+            {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
+             "flip": n.get("flip", False)} for n in NPCS]
     return {"sheet": sheet, "size": SIZE, "ground": ART, "area": [list(p) for p in AREA],
             "blocked": [list(c) for c in BLOCKED], "reach": REACH, "hero": {"x": START[0], "y": START[1]},
             "npcs": npcs}
