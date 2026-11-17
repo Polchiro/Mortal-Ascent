@@ -184,7 +184,8 @@ NPCS = [
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
-     "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
+     "line": "The names of the town's strongest are carved here: the highest realms, the richest purses, the fiercest duelists.",
+     "go": [["Read the rankings", "/rankings"]]},
 ]
 
 

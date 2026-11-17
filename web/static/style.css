@@ -1382,3 +1382,25 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 @media (max-width:640px){.tboard .tnpc{flex-direction:column;align-items:flex-start}}
 .tboard .tnpc .tgo{flex-direction:column;align-items:stretch;flex-shrink:0}
 .tgo .hbtn{white-space:nowrap}
+
+/* ── the Stone Stele's rankings (rankings.html, web/rankings.py) ──────────────────────────────────────────────── */
+main.rankings{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+.stele .kicker{margin:0 0 4px}
+.rtabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px}
+.rtab{padding:7px 14px;border-radius:999px;border:1px solid rgba(232,194,122,.4);color:var(--gold2);text-decoration:none;font-size:14px}
+.rtab.on{background:linear-gradient(180deg,#F0D398,#C9A45C);color:#1A140A;border-color:transparent;font-weight:700}
+.rlist{list-style:none;margin:0;padding:0}
+.rrow{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:10px 12px;border-radius:12px}
+.rrow+.rrow{border-top:1px solid rgba(232,194,122,.14)}
+.rnum{font:700 18px Cinzel,Georgia,serif;color:var(--mist);text-align:center}
+.r1 .rnum{color:#F6D27A}.r2 .rnum{color:#D9DEE6}.r3 .rnum{color:#D9A06A}
+.rwho{display:flex;flex-direction:column;min-width:0}
+.rwho b{font-family:Cinzel,Georgia,serif;color:#F4ECDA;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rname{display:flex;align-items:center;gap:8px;min-width:0}
+.rwho em{font-style:normal;font-size:11px;font-weight:700;letter-spacing:.06em;color:#1A140A;background:var(--gold2);border-radius:4px;padding:1px 6px;flex:none}
+.rwho small{color:var(--mist);font-size:13px}
+.rval{font-weight:700;color:var(--gold2);white-space:nowrap}
+.rrow.you{background:rgba(232,194,122,.1);outline:1px solid rgba(232,194,122,.35)}
+.rgap{text-align:center;color:var(--mist);margin:2px 0}
+.rfoot{margin-top:14px}
+.rback{text-align:center;margin-top:16px}

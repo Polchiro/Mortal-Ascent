@@ -12,6 +12,7 @@ Pages:
   /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
   /town       the town hub: walk up to the townsfolk, who send you on to the pages above (web/town.py)
+  /rankings   the Stone Stele's rankings: realm, Lotus Coins, Moon Pearls, duels won (web/rankings.py)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -33,7 +34,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes, town
+from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes, rankings, town
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -185,6 +186,24 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         data = town.page_data(sheet) if sheet else None
         return page(request, "town.html", user=user, avatar=avatar, town_name=town.NAME, ground=town.ART,
                     walking=sheet is not None, map_json=town.page_json(data) if data else "", npcs=town.NPCS,
+                    coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]))
+
+    @app.get("/rankings", response_class=HTMLResponse)
+    def rankings_page(request: Request, board: str = "realm"):
+        """The Stone Stele's rankings (web/rankings.py): read from the stele in town."""
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        c = conn()
+        try:
+            p = db.get_player(c, user["id"])
+            v = rankings.view(c, board, user["id"])
+        finally:
+            c.close()
+        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
+        if p is None:
+            return page(request, "no_character.html", user=user, avatar=avatar)
+        return page(request, "rankings.html", v=v, user=user, avatar=avatar,
                     coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]))
 
     @app.get("/inventory", response_class=HTMLResponse)
