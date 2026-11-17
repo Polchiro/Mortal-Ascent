@@ -35,7 +35,7 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   `h` world px tall.
 - **Walking behind things:** the pieces are drawn back to front with you and the townsfolk among them: you are
   drawn after every piece you overlap on screen and stand in front of (beyond a footprint's back edges, or nearer
-  than a prop), so a building hides you when you walk behind it, and whatever hides you fades to see-through.
+  than a prop), so a building hides you when you walk behind it, and your silhouette shows through whatever hides you.
 - **Where you can walk:** inside `town.AREA` (a polygon: the town inside its walls), off every footprint (you can
   step `INSET` onto its paved edge), props and `town.BLOCKED` (the pond). Press **G** on the page to see the grid,
   the walkable outline, the footprints and circles, and your position. The page and `town.walkable` share the test.

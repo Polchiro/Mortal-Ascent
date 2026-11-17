@@ -12,7 +12,7 @@
 
    The town is built from pieces (web/town.py): the ground, then each building and prop as its own picture, drawn in
    depth order with you and the townsfolk: you are hidden by a building when you stand behind it (beyond its
-   footprint's back edges), and drawn over it in front; whatever hides you fades to see-through.
+   footprint's back edges), and drawn over it in front; when something hides you, your silhouette shows through it.
 
    Walk up to someone and press E (or tap the button) to talk: a dialogue says who they are and offers the pages
    they send you to. Nothing here changes the game, so the server doesn't follow where you walk. */
@@ -61,8 +61,9 @@
   PIECES.forEach(function (p) {
     p.img = new Image(); p.img.src = p.src;
     p.depth = p.fp ? p.fp[0] + p.fp[2] / 2 + p.fp[1] + p.fp[3] / 2 : p.at[0] + p.at[1];   // a footprint's middle
+    p.order = p.z != null ? p.z : p.depth;        // a corner is drawn over the walls running in under its arms
   });
-  PIECES.sort(function (a, b) { return a.depth - b.depth; });
+  PIECES.sort(function (a, b) { return a.order - b.order; });
   var sheet = new Image(); sheet.src = SH.src;
   NPCS.forEach(function (n) { if (n.src) { n.img = new Image(); n.img.src = n.src; } n.t = Math.random() * 6; });
 
@@ -143,7 +144,7 @@
   function closeTalk() { dlgOpen = false; dlg.hidden = true; cv.focus(); }
 
   /* the loop: fixed 60 Hz steps, drawn every frame */
-  var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60, debug = false;
+  var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60, debug = false, hiddenHero = false;
   function update(dt) {
     NPCS.forEach(function (n) { n.t += dt; });
     var v = inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
@@ -220,6 +221,9 @@
       movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
     });
     layered(movers).forEach(function (f) { f(); });
+    if (hiddenHero) {                                   // behind a wall or a building: your silhouette shows through
+      ctx.save(); ctx.globalAlpha = 0.45; at(hp.x, hp.y, function () { drawHero(0, 0); }); ctx.restore();
+    }
     // night: everything away from you sinks into the dark
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     var cx = W / 2 + (hp.x - cam.x) * S, cy = H / 2 + (hp.y - 60 / K - cam.y) * S, R = Math.max(W, H);
@@ -240,9 +244,9 @@
         if (front) slot = i + 1;
       });
       m.slot = slot;
-      if (m.hero) PIECES.forEach(function (q, i) {         // anything drawn over you turns see-through
+      if (m.hero) hiddenHero = PIECES.some(function (q, i) {   // is anything drawn over you?
         var r = q.rect, left = r[0] - off.x;
-        q.fade = i >= slot && !(p.x + w < left || p.x - w > left + r[2] || p.y < r[1] || top > r[1] + r[3]);
+        return i >= slot && !(p.x + w < left || p.x - w > left + r[2] || p.y < r[1] || top > r[1] + r[3]);
       });
     });
     movers.sort(function (a, b) { return a.slot - b.slot || (a.x + a.y) - (b.x + b.y); });
@@ -255,10 +259,7 @@
   }
   function drawPiece(q, off) {
     if (!q.img.complete || !q.img.naturalWidth) return;
-    q.alpha = q.alpha == null ? 1 : q.alpha + ((q.fade ? 0.4 : 1) - q.alpha) * 0.15;   // ease in and out
-    ctx.globalAlpha = q.alpha;
     ctx.drawImage(q.img, q.rect[0] - off.x, q.rect[1], q.rect[2], q.rect[3]);
-    ctx.globalAlpha = 1;
   }
   /* G: the tile grid, the walkable ground and what blocks the way (to check the town against its painting) */
   function drawDebug() {
