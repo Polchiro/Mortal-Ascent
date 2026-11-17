@@ -66,7 +66,7 @@ BUILDINGS = [
     *_wall_line("wall_sw", 2.4, 29.4, 29.4 - WALL_T, along_x=True),
     *_wall_line("wall_se_n", 2.4, 14.4, 29.4 - WALL_T, along_x=False),
     *_wall_line("wall_se_s", 17.4, 29.4, 29.4 - WALL_T, along_x=False),
-    _b("gatehouse", "gatehouse", 26.7, 14.1, 4.0, mirror=True),   # its door face on the wall's face line,
+    _b("gatehouse", "gatehouse", 29.0, 14.1, 4.0, mirror=True),   # outside the wall, before its opening,
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
     _b("pavilion", "pavilion", 10.2, 3.4, 3.2),
