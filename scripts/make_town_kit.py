@@ -54,11 +54,12 @@ WALL_HIGH = 165.7
 # on the ground (outer: the outer corner; inner: the inner corner; side: the outer end of the front wall), "high" a
 # wall's height there (foot to roof top, px), "keep" the columns kept (the arms' end caps cut off), "base" a polygon
 # put back from the picture where the grey stone base came away with the backdrop. Used both ways round (_m).
+FADE = 0.6                                   # tiles over which a corner's arm fades into the straight wall
 CORNERS = {
-    "corner_out": {"at": (515, 495), "high": 257.0, "keep": (140, 890),
+    "corner_out": {"at": (515, 495), "high": 257.0, "keep": (165, 860), "fade": "both",
                    "base": [(128, 140), (515, 332), (905, 140), (905, 302), (515, 495), (128, 302)]},
-    "corner_in": {"at": (512, 355), "high": 287.0, "keep": (135, 890)},
-    "corner_side": {"at": (157, 357), "high": 199.0, "keep": (140, 545)},
+    "corner_in": {"at": (512, 355), "high": 287.0, "keep": (135, 890), "fade": "both"},
+    "corner_side": {"at": (157, 357), "high": 199.0, "keep": (140, 545), "fade": "right"},
 }
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
 WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3, "back": 0, "thick": 0.3}   # px, measured
@@ -184,6 +185,17 @@ def corner(name, path, session):
         im = Image.composite(Image.open(path).convert("RGBA"), im, mask)
     x0, x1 = spec["keep"]
     im = im.crop((x0, 0, x1, im.height))
+    # the arms' ends fade out over FADE tiles, so they blend into the straight wall running in underneath
+    tile = 64 * spec["high"] / WALL_HIGH
+    n = int(FADE * tile)
+    ramp = np.ones(im.width, np.float32)
+    if spec["fade"] in ("both", "left"):
+        ramp[:n] = np.minimum(ramp[:n], np.linspace(0, 1, n))
+    if spec["fade"] in ("both", "right"):
+        ramp[-n:] = np.minimum(ramp[-n:], np.linspace(1, 0, n))
+    a = np.asarray(im).copy()
+    a[:, :, 3] = (a[:, :, 3] * ramp[None, :]).astype(np.uint8)
+    im = Image.fromarray(a)
     box = im.getbbox()
     im = im.crop((0, box[1], im.width, box[3]))
     return im, {"ax": spec["at"][0] - x0, "ay": spec["at"][1] - box[1], "tile": round(64 * spec["high"] / WALL_HIGH, 2)}

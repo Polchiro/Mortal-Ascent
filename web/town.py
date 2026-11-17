@@ -49,20 +49,31 @@ GATE_Y0 = 19.75 - GATE_LEN           # its doors (3.84 tiles from its south end)
 # from there. Their footprint is only for drawing order (`pass`: the town's edge already stops you): just the corner
 # for the north and south ones (you are always in front of the north one, behind the south one), the front arm for
 # the side ones.
-OUT_ARM = 3.77                       # corner_out: (515 - 140) / 99.26
-IN_ARM = 3.40                        # corner_in: (512 - 135) / 110.85, from the inner corner
-SIDE_ARM = 5.05                      # corner_side: (545 - 157) / 76.86
+# Each corner is then fitted to the straight wall (measured at the joints, roof line and foot): drawn `k` times
+# its own size about its corner point and `dy` world px lower, so roofs and feet meet the wall's at both arms.
+FIT = {"corner_in": (1.0182, 4.1), "corner_out": (0.954, -12.9), "corner_side": (1.078, -11.0)}
+OUT_ARM_W = (515 - 165) / 99.26 * FIT["corner_out"][0]      # corner_out's arms, as kept: its left (south-west)
+OUT_ARM_E = (860 - 515) / 99.26 * FIT["corner_out"][0]      # and right (south-east) arm
+IN_ARM = (512 - 135) / 110.85 * FIT["corner_in"][0]         # corner_in, from the inner corner
+SIDE_ARM = (545 - 157) / 76.86 * FIT["corner_side"][0]      # corner_side
 
 
-def _corner(key, img, anchor, fp):
-    return {"key": key, "img": img, "anchor": anchor, "x0": fp[0], "y0": fp[1], "a": fp[2], "b": fp[3], "pass": True}
+FADE = 0.6                           # the corners' arm ends fade out over this (make_town_kit FADE): the straight
+                                     # walls run this far in under them
+
+
+def _corner(key, img, anchor, fp, z=None):
+    k, dy = FIT[img.removesuffix("_m")]
+    return {"key": key, "img": img, "anchor": anchor, "k": k, "dy": dy, "z": z,
+            "x0": fp[0], "y0": fp[1], "a": fp[2], "b": fp[3], "pass": True}
 
 
 CORNERS = [
-    _corner("corner_n", "corner_in", (2.4 + 0.3, 2.4 + 0.3), (2.4, 2.4, 0.3, 0.3)),
+    # z: drawn just after the wall slices running in under its arms (their footprints' middles sum to less)
+    _corner("corner_n", "corner_in", (2.4 + 0.3, 2.4 + 0.3), (2.4, 2.4, 0.3, 0.3), z=9.0),
     _corner("corner_s", "corner_out", (29.4, 29.4), (29.1, 29.1, 0.3, 0.3)),
-    _corner("corner_w", "corner_side", (2.4, 29.4), (2.4, 29.1, SIDE_ARM, 0.3)),
-    _corner("corner_e", "corner_side_m", (29.4, 2.4), (29.1, 2.4, 0.3, SIDE_ARM)),
+    _corner("corner_w", "corner_side", (2.4, 29.4), (2.4, 29.1, SIDE_ARM, 0.3), z=38.0),
+    _corner("corner_e", "corner_side_m", (29.4, 2.4), (29.1, 2.4, 0.3, SIDE_ARM), z=38.0),
 ]
 
 
@@ -88,18 +99,18 @@ BUILDINGS = [
     # a 27-tile square from 2.4 to 29.4: a corner piece at each corner (art/maps/town/corner_*), the straight
     # walls running from one corner piece's arm to the next
     *CORNERS,
-    *_wall_line("wall_nw", 2.7 + IN_ARM, 29.7 - SIDE_ARM, 2.4, along_x=False),
-    *_wall_line("wall_ne", 2.7 + IN_ARM, 29.7 - SIDE_ARM, 2.4, along_x=True),
-    *_wall_line("wall_sw", 2.4 + SIDE_ARM, 29.4 - OUT_ARM, 29.4 - WALL_T, along_x=True),
-    *_wall_line("wall_se_n", 2.4 + SIDE_ARM, GATE_Y0, 29.4 - WALL_T, along_x=False),
+    *_wall_line("wall_nw", 2.7 + IN_ARM - FADE, 29.7 - SIDE_ARM + FADE, 2.4, along_x=False),
+    *_wall_line("wall_ne", 2.7 + IN_ARM - FADE, 29.7 - SIDE_ARM + FADE, 2.4, along_x=True),
+    *_wall_line("wall_sw", 2.4 + SIDE_ARM - FADE, 29.4 - OUT_ARM_W + FADE, 29.4 - WALL_T, along_x=True),
+    *_wall_line("wall_se_n", 2.4 + SIDE_ARM - FADE, GATE_Y0, 29.4 - WALL_T, along_x=False),
     _b("gate", "gate", 29.4 - WALL_T, GATE_Y0, WALL_T, GATE_LEN),
-    *_wall_line("wall_se_s", GATE_Y0 + GATE_LEN, 29.4 - OUT_ARM, 29.4 - WALL_T, along_x=False),
+    *_wall_line("wall_se_s", GATE_Y0 + GATE_LEN, 29.4 - OUT_ARM_E + FADE, 29.4 - WALL_T, along_x=False),
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
     _b("pavilion", "pavilion", 10.2, 3.4, 3.2),
     # along the north-east wall: the row house and a house; the market stalls face the plaza
-    _b("rowhouse", "rowhouse", 16.4, 3.0, 8.0, 3.6, mirror=True),
-    _b("house_ne", "house", 24.6, 3.2, 3.4, mirror=True),
+    _b("rowhouse", "rowhouse", 16.4, 3.4, 7.0, 3.2, mirror=True),
+    _b("house_ne", "house", 23.8, 3.6, 2.8, mirror=True),
     _b("stalls", "stalls", 14.0, 7.2, 4.4, mirror=True),
     # the west: the forge, the herb shop and its drying rack
     _b("forge", "forge", 3.4, 10.4, 4.8),
@@ -126,9 +137,6 @@ PROPS = [
     {"img": "well", "x": 15.5, "y": 15.5, "h": 200, "r": 0.8},
     # trees stand by the trunk: a crown is far wider than its roots, so each is where its crown hangs over nothing
     {"img": "blossom", "x": 21.6, "y": 7.0, "h": 380, "r": 0.4},     # by the training yard
-    {"img": "blossom", "x": 15.2, "y": 25.6, "h": 380, "r": 0.4},    # in the south-west garden
-    {"img": "pine", "x": 4.8, "y": 27.0, "h": 420, "r": 0.35},
-    {"img": "pine", "x": 16.6, "y": 23.0, "h": 400, "r": 0.35},
 ]
 # The ground (scripts/make_town_ground.py paints art/maps/town.webp from these): grass inside the walls, forest
 # floor outside, the plaza paved and dirt roads, paths and yards; rectangles x0, y0, x1, y1 in tiles.
@@ -219,11 +227,12 @@ def placed():
     for b in BUILDINGS:
         if "anchor" in b:
             c = k[b["img"]]
-            s = 64 / c["tile"]
+            s = 64 / c["tile"] * b["k"]
             ax, ay = screen(*b["anchor"])
+            ay += b["dy"]
             out.append({"src": f"/art/maps/town/{b['img']}.webp", "rect": [round(ax - c["ax"] * s, 1),
                         round(ay - c["ay"] * s, 1), round(c["w"] * s, 1), round(c["h"] * s, 1)],
-                        "fp": [b["x0"], b["y0"], b["a"], b["b"]], "pass": True})
+                        "fp": [b["x0"], b["y0"], b["a"], b["b"]], "pass": True, "z": b.get("z")})
             continue
         img = b["img"] + ("_m" if b.get("mirror") else "")
         c = k[img]
