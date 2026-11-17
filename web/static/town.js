@@ -61,8 +61,9 @@
   PIECES.forEach(function (p) {
     p.img = new Image(); p.img.src = p.src;
     p.depth = p.fp ? p.fp[0] + p.fp[2] / 2 + p.fp[1] + p.fp[3] / 2 : p.at[0] + p.at[1];   // a footprint's middle
+    p.order = p.z != null ? p.z : p.depth;        // a corner is drawn over the walls running in under its arms
   });
-  PIECES.sort(function (a, b) { return a.depth - b.depth; });
+  PIECES.sort(function (a, b) { return a.order - b.order; });
   var sheet = new Image(); sheet.src = SH.src;
   NPCS.forEach(function (n) { if (n.src) { n.img = new Image(); n.img.src = n.src; } n.t = Math.random() * 6; });
 
