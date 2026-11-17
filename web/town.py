@@ -29,7 +29,7 @@ REACH = 1.5                          # how close (tiles) you must be to someone 
 SCALE = 1.4                          # the town drawn this much bigger against you than the ground is (town.js K)
 INSET = 0.2                          # you can step this far onto a footprint's edge (its paved base)
 
-AREA = [(3.05, 3.05), (28.95, 3.05), (28.95, 28.95), (3.05, 28.95)]   # inside the town walls
+AREA = [(2.75, 2.75), (29.05, 2.75), (29.05, 29.05), (2.75, 29.05)]   # inside the town walls
 BLOCKED = []                         # (x, y, radius) in tiles: anything round that blocks the way
 
 
@@ -37,16 +37,20 @@ def _b(key, img, x0, y0, a, b=None, mirror=False):
     return {"key": key, "img": img, "x0": x0, "y0": y0, "a": a, "b": a if b is None else b, "mirror": mirror}
 
 
+WALL_T = 0.3                         # how thick the town wall is (tiles): as thin as it is painted
+
+
 def _wall_line(key, start, end, at, along_x):
     """A straight wall from `start` to `end` (tiles) along one side: a one-tile slice per tile (art/maps/town/wall_s,
-    a lantern every fourth: wall_l), 0.6 tiles thick, its face on the footprint's far side. The last slice tucks under
-    the tower or gate at its end."""
+    a lantern every fourth: wall_l), WALL_T thick, its face on the footprint's far side. The last slice is pulled
+    back to end exactly at `end` (overlapping the one before), so nothing pokes past a corner."""
+    n = max(1, math.ceil(end - start - 0.05))
     out = []
-    for i in range(math.ceil(end - start - 0.05)):
+    for i in range(n):
         img = "wall_l" if i % 4 == 2 else "wall_s"
-        p = start + i
-        out.append(_b(f"{key}{i}", img, p, at, 1.0, 0.6, mirror=True) if along_x else
-                   _b(f"{key}{i}", img, at, p, 0.6, 1.0))
+        p = min(start + i, end - 1)
+        out.append(_b(f"{key}{i}", img, p, at, 1.0, WALL_T, mirror=True) if along_x else
+                   _b(f"{key}{i}", img, at, p, WALL_T, 1.0))
     return out
 
 
@@ -55,10 +59,14 @@ def _wall_line(key, start, end, at, along_x):
 # bottom-left (+y), swapping which side is long. The picture's base corners are fitted onto the footprint's.
 BUILDINGS = [
     # the walls, meeting at the corners; the gate in the south-east wall
-    *_wall_line("wall_nw", 2.6, 29.6, 2.4, along_x=False), *_wall_line("wall_ne", 2.6, 29.6, 2.4, along_x=True),
-    *_wall_line("wall_sw", 2.6, 29.6, 29.0, along_x=True),
-    *_wall_line("wall_se_n", 2.6, 14.3, 29.0, along_x=False), *_wall_line("wall_se_s", 17.6, 29.6, 29.0, along_x=False),
-    _b("gatehouse", "gatehouse", 27.6, 14.3, 4.0, mirror=True),
+    # a 27-tile square from 2.4 to 29.4, every wall running right into its corners, where the nearer wall is drawn
+    # over the other's end. At the north corner the two inner faces meet, so the north-east wall starts at the
+    # north-west wall's face instead.
+    *_wall_line("wall_nw", 2.4, 29.4, 2.4, along_x=False), *_wall_line("wall_ne", 2.4 + WALL_T, 29.4, 2.4, along_x=True),
+    *_wall_line("wall_sw", 2.4, 29.4, 29.4 - WALL_T, along_x=True),
+    *_wall_line("wall_se_n", 2.4, 14.4, 29.4 - WALL_T, along_x=False),
+    *_wall_line("wall_se_s", 17.4, 29.4, 29.4 - WALL_T, along_x=False),
+    _b("gatehouse", "gatehouse", 26.7, 14.1, 4.0, mirror=True),   # its door face on the wall's face line,
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
     _b("pavilion", "pavilion", 10.2, 3.4, 3.2),
@@ -105,7 +113,7 @@ GROUND = {
              (8.6, 6.8, 12.6, 10.4), (12.6, 10.6, 19.6, 11.4),  # to the pavilion; in front of the stalls
              (20.8, 7.0, 28.6, 14.0),                           # the training yard
              (17.8, 19.2, 28.4, 28.6)],                         # round the arena
-    "walls": (2.4, 2.4, 29.6, 29.6),                            # outside this: forest floor
+    "walls": (2.4, 2.4, 29.4, 29.4),                            # outside this: forest floor
 }
 
 # The townsfolk: where each stands (x, y, the feet), who they are, what they say, and where they send you (label,

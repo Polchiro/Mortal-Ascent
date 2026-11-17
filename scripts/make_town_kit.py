@@ -46,7 +46,7 @@ BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lo
 OPEN = {"arena"}                          # buildings whose gaps are background (between banner poles): not filled
 BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
-WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3}   # px, measured
+WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3, "back": 0, "thick": 0.3}   # px, measured
 
 
 def corners(im):
@@ -120,18 +120,26 @@ def flush(path, session, band=0.65):
 
 
 def wall_slices(path, session):
-    """The wall's one-tile slices (name, picture, corners as a 0.6 x 1 tile footprint's)."""
+    """The wall's one-tile slices (name, picture, corners as a WALL["thick"] x 1 tile footprint's)."""
     im = npc.cut(path, session, crop=False)
     k = 0.5 - WALL["slope"]
     im = im.transform(im.size, Image.AFFINE, (1, 0, 0, k, 1, 0), Image.BICUBIC)   # footing now: foot - 0.5 x
     out = []
+    a = np.asarray(im)
+    back = WALL["back"]                       # the roof leans this far back (px) past a slice's left edge
     for name, x in (("wall_s", WALL["plain"]), ("wall_l", WALL["lantern"])):
         t = WALL["tile"]
-        strip = im.crop((x, 0, x + t + WALL["overlap"], im.height))
+        strip = np.array(im.crop((x - back, 0, x + t + WALL["overlap"], im.height)))
+        for c in range(back):                 # in the extra columns keep the roof only, not the next tile's face
+            col = a[:, x - back + c]
+            plaster = np.nonzero((col[:, 3] > 128) & (col[:, :3].mean(1) > 165))[0]
+            eave = plaster.min() if len(plaster) else im.height
+            strip[eave:, c, 3] = 0
+        strip = Image.fromarray(strip)
         box = strip.getbbox()
         strip = strip.crop((0, box[1], strip.width, box[3]))
         by = WALL["foot"] - 0.5 * x - box[1]
-        out.append((name, strip, {"l": round(-0.6 * t, 1), "r": t, "bx": 0, "by": round(by, 1)}))
+        out.append((name, strip, {"l": round(back - WALL["thick"] * t, 1), "r": back + t, "bx": back, "by": round(by, 1)}))
     return out
 
 
