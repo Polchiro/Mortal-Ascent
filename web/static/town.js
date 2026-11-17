@@ -2,7 +2,8 @@
 
    Walk the cultivator about the town: W A S D / the arrow keys or the on-screen joystick, as on the hunting map
    (web/static/huntmap.js, whose walking this follows: the sheet row follows the direction, the frames advance with
-   the distance walked, standing still holds each row's feet-together frame).
+   the distance walked, standing still holds each row's feet-together frame, or plays the look's idle sheet if it has
+   one: `sheet.idle`, its frames looped over `idle.loop` seconds, each faded into the next).
 
    What makes the town feel big: the painting is drawn at full size (32 x 32 tiles of 128 x 64 px) and the camera
    is zoomed so a screen shows about VIEW tiles across, whatever its size, so you never see the whole town at once;
@@ -65,6 +66,8 @@
   });
   PIECES.sort(function (a, b) { return a.order - b.order; });
   var sheet = new Image(); sheet.src = SH.src;
+  var IDLE = SH.idle, idle = null;
+  if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
   NPCS.forEach(function (n) { if (n.src) { n.img = new Image(); n.img.src = n.src; } n.t = Math.random() * 6; });
 
   /* input: keyboard and joystick feed one movement vector (screen space, length 0..1) */
@@ -159,7 +162,8 @@
       if (!was) hero.phase = STAND[hero.dir];
       hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM / K) * 8) % 8;
       hero.frame = Math.floor(hero.phase);
-    } else hero.frame = STAND[hero.dir];
+      hero.still = 0;
+    } else { hero.frame = STAND[hero.dir]; hero.still = (hero.still || 0) + dt; }
     var best = null, bd = REACH;
     NPCS.forEach(function (n) { var d = Math.hypot(hero.x - n.x, hero.y - n.y); if (d < bd) { bd = d; best = n; } });
     if (best !== near) {
@@ -172,7 +176,14 @@
   function drawHero(x, y) {
     var s = 0.5 * ZOOM;
     shadow(x, y, 26 * ZOOM, 9 * ZOOM, .42);
-    if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, x - FEET_X * s, y - FEET_Y * s, CELL * s, CELL * s);
+    var dx = x - FEET_X * s, dy = y - FEET_Y * s, d = CELL * s;
+    if (!hero.moving && idle && idle.complete && idle.naturalWidth) {
+      var t = (hero.still / IDLE.loop * IDLE.cols) % IDLE.cols, a = Math.floor(t), b = (a + 1) % IDLE.cols;
+      ctx.drawImage(idle, a * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+      ctx.save(); ctx.globalAlpha *= t - a;                    // *=: also right when drawn faded through a wall
+      ctx.drawImage(idle, b * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+      ctx.restore();
+    } else if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
   }
   function label(n, x, y, close) {
     ctx.save(); ctx.textAlign = 'center';
