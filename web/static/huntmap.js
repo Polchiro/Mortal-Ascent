@@ -328,7 +328,7 @@
     if (!hero.moving && idle && idle.complete && idle.naturalWidth) {
       var t = (hero.still / IDLE.loop * IDLE.cols) % IDLE.cols, a = Math.floor(t), b = (a + 1) % IDLE.cols;
       ctx.drawImage(idle, a * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
-      ctx.save(); ctx.globalAlpha = t - a;
+      ctx.save(); ctx.globalAlpha *= t - a;
       ctx.drawImage(idle, b * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
       ctx.restore();
     } else if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
