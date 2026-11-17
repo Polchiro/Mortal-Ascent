@@ -175,3 +175,7 @@ def test_the_walk_sheets_meet_the_spec():
         s = looks.WALK_SHEETS[gender]
         assert s["src"] == "/art/portraits/map/" + path.rsplit("/", 1)[1]
         assert (s["cell"], s["rows"], s["cols"], s["feet"]) == (256, 8, 8, [128, 232]) and len(s["stand"]) == 8
+    from scripts import make_heroine_idle
+    idle = looks.WALK_SHEETS["female"]["idle"]
+    assert make_hero_walk.check(Image.open(make_heroine_idle.OUT)) == []
+    assert idle["src"] == "/art/portraits/map/hero_female_idle.webp" and idle["cols"] == 8 and idle["loop"] > 1

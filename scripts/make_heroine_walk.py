@@ -46,12 +46,12 @@ def raw(video, w, h, vf=None):
     return np.frombuffer(data, np.uint8).reshape(-1, h, w, 3)
 
 
-def stride(video, skip):
-    """(first frame, frames) of the stride that loops best."""
+def stride(video, skip, span=STRIDE):
+    """(first frame, frames) of the stride (or breath) that loops best, `span` frames long at least and most."""
     small = raw(video, 90, 160, "scale=90:160").astype(float).mean(3)
     best = None
-    for a in range(skip, len(small) - STRIDE[1]):
-        for n in range(*STRIDE):
+    for a in range(skip, len(small) - span[0]):
+        for n in range(span[0], min(span[1], len(small) - a)):
             d = np.abs(small[a] - small[a + n]).mean()
             if best is None or d < best[0]:
                 best = (d, a, n)
