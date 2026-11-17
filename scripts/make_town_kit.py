@@ -50,6 +50,16 @@ BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
 # tower and a tile of wall either side, the stubs' end caps cut off so the real wall slices carry on from there.
 GATE = {"slope": 0.488, "foot": 639.7, "high": 128.0, "x0": 385, "x1": 745}
 WALL_HIGH = 165.7
+# the wall's corners (SHOAIB's Gemini pictures, measured by hand): "at" the picture's pixel on the corner's own point
+# on the ground (outer: the outer corner; inner: the inner corner; side: the outer end of the front wall), "high" a
+# wall's height there (foot to roof top, px), "keep" the columns kept (the arms' end caps cut off), "base" a polygon
+# put back from the picture where the grey stone base came away with the backdrop. Used both ways round (_m).
+CORNERS = {
+    "corner_out": {"at": (515, 495), "high": 257.0, "keep": (140, 890),
+                   "base": [(128, 140), (515, 332), (905, 140), (905, 302), (515, 495), (128, 302)]},
+    "corner_in": {"at": (512, 355), "high": 287.0, "keep": (135, 890)},
+    "corner_side": {"at": (157, 357), "high": 199.0, "keep": (140, 545)},
+}
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
 WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3, "back": 0, "thick": 0.3}   # px, measured
 
@@ -163,6 +173,22 @@ def gate(path, session):
     return strip, {"l": round(-WALL["thick"] * tile, 1), "r": w, "bx": 0, "by": round(by, 1), "tiles": round(w / tile, 3)}
 
 
+def corner(name, path, session):
+    """A wall corner, cropped to its arms, and where it stands: "ax", "ay" its corner point (px), "tile" px a tile."""
+    from PIL import ImageDraw
+    spec = CORNERS[name]
+    im = npc.cut(path, session, crop=False)
+    if spec.get("base"):
+        mask = Image.new("L", im.size, 0)
+        ImageDraw.Draw(mask).polygon(spec["base"], fill=255)
+        im = Image.composite(Image.open(path).convert("RGBA"), im, mask)
+    x0, x1 = spec["keep"]
+    im = im.crop((x0, 0, x1, im.height))
+    box = im.getbbox()
+    im = im.crop((0, box[1], im.width, box[3]))
+    return im, {"ax": spec["at"][0] - x0, "ay": spec["at"][1] - box[1], "tile": round(64 * spec["high"] / WALL_HIGH, 2)}
+
+
 def mirrored(im, c):
     w = im.width
     return ImageOps.mirror(im), {"l": w - 1 - c["r"], "r": w - 1 - c["l"], "bx": round(w - 1 - c["bx"], 1), "by": c["by"]}
@@ -193,6 +219,12 @@ def main(pairs):
             whole = Image.open(src).convert("RGB")
             for key, box in PROP_BOXES.items():
                 save(key, prop(whole, box, session), kit, base=False)
+            continue
+        if name in CORNERS:
+            im, c = corner(name, src, session)
+            for n, pic, cc in ((name, im, c), (name + "_m", ImageOps.mirror(im), {**c, "ax": im.width - 1 - c["ax"]})):
+                pic.save(os.path.join(OUT, f"{n}.webp"), "WEBP", quality=90, method=6)
+                kit[n] = {"w": pic.width, "h": pic.height, **cc}
             continue
         if name == "gate":
             im, c = gate(src, session)

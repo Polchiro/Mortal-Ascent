@@ -44,7 +44,8 @@ def test_buildings_props_and_the_pond_block_the_way():
     for cx, cy, r in town.BLOCKED:
         assert not town.walkable(cx, cy)
     for b in town.BUILDINGS:
-        assert not town.walkable(b["x0"] + b["a"] / 2, b["y0"] + b["b"] / 2), b["key"]
+        if not b.get("pass"):
+            assert not town.walkable(b["x0"] + b["a"] / 2, b["y0"] + b["b"] / 2), b["key"]
     for p in town.PROPS:
         assert not town.walkable(p["x"], p["y"])
     assert not town.walkable(1, 30) and not town.walkable(town.SIZE - 1, town.SIZE / 2)    # outside the walls
@@ -59,7 +60,7 @@ def test_every_piece_has_its_picture_and_sits_on_the_ground():
         assert im.mode == "RGBA"
         left, top, w, h = q["rect"]
         assert 0 <= left and left + w <= town.SIZE * 128 and top + h <= town.SIZE * 64 and w > 0 and h > 0
-    edge = {"wall_s", "wall_l", "gate"}                  # wall slices meet at corners and tuck under the gate
+    edge = {"wall_s", "wall_l", "gate", "corner_in", "corner_out", "corner_side", "corner_side_m"}                  # wall slices meet at corners and tuck under the gate
     gap = 0.2                                                 # stone bases never touch: a little ground between
     for a in town.BUILDINGS:
         for b in town.BUILDINGS:

@@ -44,6 +44,28 @@ GATE_LEN = 7.282                     # the gate's stretch of wall (art/maps/town
 GATE_Y0 = 19.75 - GATE_LEN           # its doors (3.84 tiles from its south end) on the road at y 15.9
 
 
+# The corners: each picture stands on its own corner point (`anchor`, in tiles: art/maps/town/kit.json "ax", "ay" in
+# the picture), at its own px a tile. Their arms are this long (tiles) from that point; the straight walls carry on
+# from there. Their footprint is only for drawing order (`pass`: the town's edge already stops you): just the corner
+# for the north and south ones (you are always in front of the north one, behind the south one), the front arm for
+# the side ones.
+OUT_ARM = 3.77                       # corner_out: (515 - 140) / 99.26
+IN_ARM = 3.40                        # corner_in: (512 - 135) / 110.85, from the inner corner
+SIDE_ARM = 5.05                      # corner_side: (545 - 157) / 76.86
+
+
+def _corner(key, img, anchor, fp):
+    return {"key": key, "img": img, "anchor": anchor, "x0": fp[0], "y0": fp[1], "a": fp[2], "b": fp[3], "pass": True}
+
+
+CORNERS = [
+    _corner("corner_n", "corner_in", (2.4 + 0.3, 2.4 + 0.3), (2.4, 2.4, 0.3, 0.3)),
+    _corner("corner_s", "corner_out", (29.4, 29.4), (29.1, 29.1, 0.3, 0.3)),
+    _corner("corner_w", "corner_side", (2.4, 29.4), (2.4, 29.1, SIDE_ARM, 0.3)),
+    _corner("corner_e", "corner_side_m", (29.4, 2.4), (29.1, 2.4, 0.3, SIDE_ARM)),
+]
+
+
 def _wall_line(key, start, end, at, along_x):
     """A straight wall from `start` to `end` (tiles) along one side: a one-tile slice per tile (art/maps/town/wall_s,
     a lantern every fourth: wall_l), WALL_T thick, its face on the footprint's far side. The last slice is pulled
@@ -63,14 +85,15 @@ def _wall_line(key, start, end, at, along_x):
 # bottom-left (+y), swapping which side is long. The picture's base corners are fitted onto the footprint's.
 BUILDINGS = [
     # the walls, meeting at the corners; the gate in the south-east wall
-    # a 27-tile square from 2.4 to 29.4, every wall running right into its corners, where the nearer wall is drawn
-    # over the other's end. At the north corner the two inner faces meet, so the north-east wall starts at the
-    # north-west wall's face instead.
-    *_wall_line("wall_nw", 2.4, 29.4, 2.4, along_x=False), *_wall_line("wall_ne", 2.4 + WALL_T, 29.4, 2.4, along_x=True),
-    *_wall_line("wall_sw", 2.4, 29.4, 29.4 - WALL_T, along_x=True),
-    *_wall_line("wall_se_n", 2.4, GATE_Y0, 29.4 - WALL_T, along_x=False),
+    # a 27-tile square from 2.4 to 29.4: a corner piece at each corner (art/maps/town/corner_*), the straight
+    # walls running from one corner piece's arm to the next
+    *CORNERS,
+    *_wall_line("wall_nw", 2.7 + IN_ARM, 29.7 - SIDE_ARM, 2.4, along_x=False),
+    *_wall_line("wall_ne", 2.7 + IN_ARM, 29.7 - SIDE_ARM, 2.4, along_x=True),
+    *_wall_line("wall_sw", 2.4 + SIDE_ARM, 29.4 - OUT_ARM, 29.4 - WALL_T, along_x=True),
+    *_wall_line("wall_se_n", 2.4 + SIDE_ARM, GATE_Y0, 29.4 - WALL_T, along_x=False),
     _b("gate", "gate", 29.4 - WALL_T, GATE_Y0, WALL_T, GATE_LEN),
-    *_wall_line("wall_se_s", GATE_Y0 + GATE_LEN, 29.4, 29.4 - WALL_T, along_x=False),
+    *_wall_line("wall_se_s", GATE_Y0 + GATE_LEN, 29.4 - OUT_ARM, 29.4 - WALL_T, along_x=False),
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
     _b("pavilion", "pavilion", 10.2, 3.4, 3.2),
@@ -174,7 +197,7 @@ def in_footprint(x, y, b, inset=INSET):
 def walkable(x, y):
     return (0 < x < SIZE and 0 < y < SIZE and inside(x, y)
             and all(math.dist((x, y), (cx, cy)) > r for cx, cy, r in BLOCKED)
-            and not any(in_footprint(x, y, b) for b in BUILDINGS)
+            and not any(in_footprint(x, y, b) for b in BUILDINGS if not b.get("pass"))
             and all(math.dist((x, y), (p["x"], p["y"])) > p["r"] for p in PROPS))
 
 
@@ -194,6 +217,14 @@ def placed():
     k = kit()
     out = []
     for b in BUILDINGS:
+        if "anchor" in b:
+            c = k[b["img"]]
+            s = 64 / c["tile"]
+            ax, ay = screen(*b["anchor"])
+            out.append({"src": f"/art/maps/town/{b['img']}.webp", "rect": [round(ax - c["ax"] * s, 1),
+                        round(ay - c["ay"] * s, 1), round(c["w"] * s, 1), round(c["h"] * s, 1)],
+                        "fp": [b["x0"], b["y0"], b["a"], b["b"]], "pass": True})
+            continue
         img = b["img"] + ("_m" if b.get("mirror") else "")
         c = k[img]
         s = (b["a"] + b["b"]) * 64 / (c["r"] - c["l"])

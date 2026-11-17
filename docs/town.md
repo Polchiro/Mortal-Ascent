@@ -21,7 +21,8 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   ground tiles, lifted flat and blended into seamless tiles) and `town.GROUND`: grass inside the walls, forest floor
   outside, the paved plaza, dirt roads and yards, a soft shadow at each building's foot, dimmed to dusk. On it stand
   the walls (one straightened one-tile slice of SHOAIB's wall per tile, so they run straight and
-  unbroken and meet at the corners), the gate (a tower built into a stretch of the same wall, spliced into the south-east wall:
+  unbroken), a corner piece at each corner (`make_town_kit` CORNERS: an outer, an inner and a side corner, the
+  side one mirrored for the other side), the gate (a tower built into a stretch of the same wall, spliced into the south-east wall:
   `make_town_kit` GATE), the buildings, trees, the pond, rocks and props, each its own Gemini picture
   (`art/maps/town/`, cut by `scripts/make_town_kit.py`), so each is as sharp as it was drawn.
 - **Spacing:** no two stone bases touch: there is at least a fifth of a tile of ground between footprints
