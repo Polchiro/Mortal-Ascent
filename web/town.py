@@ -40,6 +40,10 @@ def _b(key, img, x0, y0, a, b=None, mirror=False):
 WALL_T = 0.3                         # how thick the town wall is (tiles): as thin as it is painted
 
 
+GATE_LEN = 7.282                     # the gate's stretch of wall (art/maps/town/gate: kit.json "tiles")
+GATE_Y0 = 19.75 - GATE_LEN           # its doors (3.84 tiles from its south end) on the road at y 15.9
+
+
 def _wall_line(key, start, end, at, along_x):
     """A straight wall from `start` to `end` (tiles) along one side: a one-tile slice per tile (art/maps/town/wall_s,
     a lantern every fourth: wall_l), WALL_T thick, its face on the footprint's far side. The last slice is pulled
@@ -64,9 +68,9 @@ BUILDINGS = [
     # north-west wall's face instead.
     *_wall_line("wall_nw", 2.4, 29.4, 2.4, along_x=False), *_wall_line("wall_ne", 2.4 + WALL_T, 29.4, 2.4, along_x=True),
     *_wall_line("wall_sw", 2.4, 29.4, 29.4 - WALL_T, along_x=True),
-    *_wall_line("wall_se_n", 2.4, 14.4, 29.4 - WALL_T, along_x=False),
-    *_wall_line("wall_se_s", 17.4, 29.4, 29.4 - WALL_T, along_x=False),
-    _b("gatehouse", "gatehouse", 29.0, 14.1, 4.0, mirror=True),   # outside the wall, before its opening,
+    *_wall_line("wall_se_n", 2.4, GATE_Y0, 29.4 - WALL_T, along_x=False),
+    _b("gate", "gate", 29.4 - WALL_T, GATE_Y0, WALL_T, GATE_LEN),
+    *_wall_line("wall_se_s", GATE_Y0 + GATE_LEN, 29.4, 29.4 - WALL_T, along_x=False),
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
     _b("pavilion", "pavilion", 10.2, 3.4, 3.2),

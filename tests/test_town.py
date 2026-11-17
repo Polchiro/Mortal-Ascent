@@ -59,7 +59,7 @@ def test_every_piece_has_its_picture_and_sits_on_the_ground():
         assert im.mode == "RGBA"
         left, top, w, h = q["rect"]
         assert 0 <= left and left + w <= town.SIZE * 128 and top + h <= town.SIZE * 64 and w > 0 and h > 0
-    edge = {"wall_s", "wall_l", "gatehouse"}                  # wall slices meet at corners and tuck under the gate
+    edge = {"wall_s", "wall_l", "gate"}                  # wall slices meet at corners and tuck under the gate
     gap = 0.2                                                 # stone bases never touch: a little ground between
     for a in town.BUILDINGS:
         for b in town.BUILDINGS:

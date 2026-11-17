@@ -45,6 +45,11 @@ BAND = {"pine": 0.3, "blossom": 0.3}      # where the base is looked for: the lo
 # (left, right, bottom), measured by hand, so the floor is put back whole and where it really is
 OPEN = {"arena"}                          # buildings whose gaps are background (between banner poles): not filled
 BASES = {"stalls": ((150, 336), (868, 334.5), (507.5, 534))}
+# the gate: a tower built into a stretch of wall. Its stubs' footing runs at "slope" from "foot" (px), they stand
+# "high" px from foot to roof (the wall slices stand 165.7 at 64 px a tile), and it is kept from "x0" to "x1": the
+# tower and a tile of wall either side, the stubs' end caps cut off so the real wall slices carry on from there.
+GATE = {"slope": 0.488, "foot": 639.7, "high": 128.0, "x0": 385, "x1": 745}
+WALL_HIGH = 165.7
 SLOPE = 0.58                        # Gemini draws its tiles a little steeper than 2:1
 WALL = {"slope": 0.478, "foot": 647.5, "plain": 520, "lantern": 650, "tile": 64, "overlap": 3, "back": 0, "thick": 0.3}   # px, measured
 
@@ -143,6 +148,21 @@ def wall_slices(path, session):
     return out
 
 
+def gate(path, session):
+    """The gate's stretch of wall, straightened, with its footing's ends as a WALL["thick"]-tile footprint's corners;
+    "tiles": how long it runs."""
+    im = npc.cut(path, session, crop=False)
+    k = 0.5 - GATE["slope"]
+    im = im.transform(im.size, Image.AFFINE, (1, 0, 0, k, 1, 0), Image.BICUBIC)
+    tile = 64 * GATE["high"] / WALL_HIGH                        # px a tile in this picture
+    strip = im.crop((GATE["x0"], 0, GATE["x1"], im.height))
+    box = strip.getbbox()
+    strip = strip.crop((0, box[1], strip.width, box[3]))
+    by = GATE["foot"] - 0.5 * GATE["x0"] - box[1]
+    w = GATE["x1"] - GATE["x0"]
+    return strip, {"l": round(-WALL["thick"] * tile, 1), "r": w, "bx": 0, "by": round(by, 1), "tiles": round(w / tile, 3)}
+
+
 def mirrored(im, c):
     w = im.width
     return ImageOps.mirror(im), {"l": w - 1 - c["r"], "r": w - 1 - c["l"], "bx": round(w - 1 - c["bx"], 1), "by": c["by"]}
@@ -173,6 +193,11 @@ def main(pairs):
             whole = Image.open(src).convert("RGB")
             for key, box in PROP_BOXES.items():
                 save(key, prop(whole, box, session), kit, base=False)
+            continue
+        if name == "gate":
+            im, c = gate(src, session)
+            im.save(os.path.join(OUT, "gate.webp"), "WEBP", quality=90, method=6)
+            kit["gate"] = {"w": im.width, "h": im.height, **c}
             continue
         if name in FLUSH or name == "wall":
             pieces = wall_slices(src, session) if name == "wall" else [(name, *flush(src, session, BAND.get(name, 0.65)))]
