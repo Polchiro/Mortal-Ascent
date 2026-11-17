@@ -171,6 +171,11 @@ the website's memory. Rare finds (Earth, Heaven) are announced only when gathere
 `/town` (the **Town** tab) is the walkable town hub: walk up to the townsfolk, who send you on to the pages
 below. docs/town.md.
 
+## The Arena
+
+`/arena` and `/duel`: friendly duels against other players, on the beast fight's screen. docs/pvp.md,
+"On the website".
+
 ## Rankings
 
 `/rankings` is read from the Stone Stele in town: the bot's leaderboards (realm, Lotus Coins, Moon Pearls) and

@@ -98,6 +98,23 @@ HP is full again afterwards: no injury, no Qi loss, no Lotus Coins, no mastery E
 - **/admin duelstats** (bot owner only) shows each technique's and basic move's **pick count** (turns played,
   timeouts left out) and **win rate** (the share of duels where a player played it that this player won), for balancing.
 
+## On the website: the Arena
+
+Talk to the **Arena Keeper** in Azure Cloud Town (or open `/arena`). Same duel, same rules, same records: the engine is
+`bot/duel.py`, a finished duel is saved by `db.save_duel` (so it counts on the Profile and the Stone Stele's **Duels**
+board, `/rankings`), and the pair gets the same one-minute cooldown. Code: `web/duel_play.py` (the referee),
+`web/duel_routes.py`, `web/templates/arena.html`, `web/templates/duel.html`, `web/static/duel.js`.
+Tests: `tests/test_duel_play.py`.
+
+- **Two ways in:** challenge a cultivator **by name** (they see it in the Arena for 60 seconds and Accept or
+  Decline), or **Find a match**: the first two waiting are paired.
+- **The fight screen** is the beast fight's: your fighter on the left, the other cultivator where the beast stands
+  (their own fight art, mirrored), the four big buttons (keys 1–4: Strike, Techniques, Guard, Break), Flee (F),
+  Battle History (H) and the info panel. Each turn both fighters act out their moves, and the damage floats up.
+- **20 seconds** a turn (the bot's 15, plus the web's round trip), or you Guard; three timeouts in a row forfeit.
+- You can't start a duel while **injured** or already in one. Website duels live in the web server's memory, like
+  team hunts: a restart ends them unsaved. The website doesn't know about fights you are in on Discord.
+
 ## Not yet
 
 Ranked Arena, True Power mode (real stats), rewards, tournaments, 2v2.

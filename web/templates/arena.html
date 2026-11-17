@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}The Arena · Mortal Ascent{% endblock %}
+{% block body_class %}arenabg{% endblock %}
+{% block body %}
+<style>body.arenabg{background:linear-gradient(rgba(8,10,16,.55),rgba(8,10,16,.92)),url(/art/scenes/arena_ruins.jpg) center/cover fixed}</style>
+{% with page="arena" %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="arenalobby" data-poll="/arena/v" data-v="{{ 0 }}">
+  <section class="card">
+    <p class="kicker">AZURE CLOUD TOWN · THE ARENA</p>
+    <h2>Friendly duels</h2>
+    <p class="sub">Fair duel: both fight at the lower realm and layer, gear at half strength. Nothing is won or lost but
+      your name on the Stele's Duels board. {{ v.me.won }} won · {{ v.me.lost }} lost.</p>
+    {% if notice %}<p class="anotice" role="alert">{{ notice }}</p>{% endif %}
+    {% if v.hurt %}<p class="anotice">You are injured for {{ v.hurt }}. Rest before you step into the ring.</p>{% endif %}
+  </section>
+
+  {% if v.incoming %}
+  <section class="card">
+    <h2>Challenged!</h2>
+    {% for c in v.incoming %}
+    <div class="arow">
+      <div><b>{{ c.name }}</b><small>{{ c.realm }}, layer {{ c.layer }} · {{ c.won }} won · {{ c.lost }} lost</small>
+        <small class="aleft" data-left="{{ c.left }}">{{ c.left }}s to answer</small></div>
+      <div class="abtns">
+        <form method="post" action="/arena/answer"><input type="hidden" name="id" value="{{ c.id }}"><input type="hidden" name="accept" value="1">
+          <button class="hbtn small" type="submit">Accept</button></form>
+        <form method="post" action="/arena/answer"><input type="hidden" name="id" value="{{ c.id }}"><input type="hidden" name="accept" value="0">
+          <button class="hbtn ghost small" type="submit">Decline</button></form>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>Challenge a cultivator</h2>
+    {% if v.outgoing %}
+    <div class="arow">
+      <div><b>Waiting for {{ v.outgoing.name }}</b><small class="aleft" data-left="{{ v.outgoing.left }}">{{ v.outgoing.left }}s left to answer</small></div>
+      <form method="post" action="/arena/withdraw"><button class="hbtn ghost small" type="submit">Withdraw</button></form>
+    </div>
+    {% else %}
+    <form method="post" action="/arena/challenge" class="aform">
+      <label for="cname" class="sub">Their name</label>
+      <input id="cname" name="name" list="cnames" autocomplete="off" required placeholder="e.g. {{ v.names[0] if v.names else 'Lin Feng' }}">
+      <datalist id="cnames">{% for n in v.names %}<option value="{{ n }}">{% endfor %}</datalist>
+      <button class="hbtn small" type="submit">Challenge</button>
+    </form>
+    <p class="sub">They have {{ 60 }} seconds to accept, here in the Arena.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Find a match</h2>
+    {% if v.queued %}
+    <p class="sub">Waiting for another cultivator to step into the ring<span class="dots">…</span></p>
+    <form method="post" action="/arena/queue"><input type="hidden" name="join" value="0"><button class="hbtn ghost small" type="submit">Stop looking</button></form>
+    {% else %}
+    <p class="sub">{% if v.waiting %}{{ v.waiting }} cultivator{{ "" if v.waiting == 1 else "s" }} waiting for a match.{% else %}Nobody is waiting yet: you'll be paired with the next one who steps up.{% endif %}</p>
+    <form method="post" action="/arena/queue"><input type="hidden" name="join" value="1"><button class="hbtn small" type="submit">Find a match</button></form>
+    {% endif %}
+  </section>
+
+  <p class="rback"><a class="hbtn ghost small" href="/town">Back to town</a></p>
+</main>
+<script>
+/* the lobby reloads when something changes for you (a challenge, an answer, a match), and counts down */
+(function () {
+  var seen = null;
+  function poll() {
+    fetch('/arena/v', {cache: 'no-store'}).then(function (r) { return r.json(); }).then(function (v) {
+      if (v.gone) return;
+      if (v.live) { location.href = '/duel'; return; }
+      if (seen !== null && v.a !== seen) { location.reload(); return; }
+      seen = v.a;
+    }).catch(function () {}).then(function () { setTimeout(poll, 1500); });
+  }
+  poll();
+  setInterval(function () {
+    document.querySelectorAll('[data-left]').forEach(function (el) {
+      var n = Math.max(0, (+el.dataset.left) - 1); el.dataset.left = n;
+      el.textContent = el.textContent.replace(/^\d+s/, n + 's');
+    });
+  }, 1000);
+})();
+</script>
+{% endblock %}

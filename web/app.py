@@ -13,6 +13,7 @@ Pages:
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
   /town       the town hub: walk up to the townsfolk, who send you on to the pages above (web/town.py)
   /rankings   the Stone Stele's rankings: realm, Lotus Coins, Moon Pearls, duels won (web/rankings.py)
+  /arena      duels: challenge a cultivator or find a match, then /duel (web/duel_routes.py)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -34,7 +35,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, explore_play, forge_play, gather_play, hunt_routes, rankings, town
+from . import alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, rankings, town
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -464,6 +465,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     # Explore: hunting alone or as a party (web/hunt_routes.py); /explore/play below still runs an expedition
     # already under way and the /admin web_fight test fights.
     hunt_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # Duels at the Arena (web/duel_routes.py, web/duel_play.py)
+    duel_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

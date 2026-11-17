@@ -1384,7 +1384,7 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .tgo .hbtn{white-space:nowrap}
 
 /* ── the Stone Stele's rankings (rankings.html, web/rankings.py) ──────────────────────────────────────────────── */
-main.rankings{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+main.rankings{width:100%;box-sizing:border-box;max-width:720px;margin:0 auto;padding:24px 16px 48px}
 .stele .kicker{margin:0 0 4px}
 .rtabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 18px}
 .rtab{padding:7px 14px;border-radius:999px;border:1px solid rgba(232,194,122,.4);color:var(--gold2);text-decoration:none;font-size:14px}
@@ -1404,3 +1404,52 @@ main.rankings{max-width:720px;margin:0 auto;padding:24px 16px 48px}
 .rgap{text-align:center;color:var(--mist);margin:2px 0}
 .rfoot{margin-top:14px}
 .rback{text-align:center;margin-top:16px}
+
+/* ── the Arena: the lobby (arena.html) and a duel (duel.html, duel.js, web/duel_play.py) ─────────────────────── */
+main.arenalobby{width:100%;box-sizing:border-box;max-width:720px;margin:0 auto;padding:24px 16px 48px;display:grid;gap:16px}
+main.arenalobby .card{background:rgba(14,18,28,.82)}
+.anotice{margin:12px 0 0;padding:10px 14px;border-radius:12px;background:rgba(224,90,79,.15);border:1px solid rgba(224,90,79,.5);color:#FFC4BC}
+.arow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0}
+.arow+.arow{border-top:1px solid rgba(232,194,122,.14)}
+.arow b{display:block;font-family:Cinzel,Georgia,serif;color:#F4ECDA}
+.arow small{display:block;color:var(--mist);font-size:13px}
+.arow small.aleft{color:var(--gold2)}
+.abtns{display:flex;gap:8px;flex-wrap:wrap}
+.aform{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 10px}
+.aform input{flex:1;min-width:180px;min-height:44px;padding:0 14px;border-radius:10px;border:1px solid rgba(232,194,122,.45);background:rgba(8,10,16,.7);color:#F4ECDA;font-size:16px}
+.aform label{width:100%}
+.dots{display:inline-block;animation:dots 1.4s steps(4) infinite;width:1.2em;overflow:hidden;vertical-align:bottom}
+@keyframes dots{from{width:0}to{width:1.2em}}
+
+
+/* the duel on the beast fight's screen (duel.html): the other cultivator stands where the beast does, mirrored */
+.duelfight .bscene .fighter.them{left:auto;right:1%}
+.duelfight .fighter.them img.pose{transform:scaleX(-1)}
+.duelfight .fighter{transition:transform .22s ease,filter .3s}
+.duelfight .fighter.me.lunge{transform:translateX(9%)}
+.duelfight .fighter.them.lunge{transform:translateX(-9%)}
+.duelfight .fighter.hit{animation:dhit .4s}
+.duelfight .fighter.guarding .poses{filter:drop-shadow(0 0 22px rgba(120,190,255,.9))}
+.duelfight .fighter.down{filter:grayscale(1) brightness(.5)}
+@keyframes dhit{0%,100%{filter:none}25%{filter:brightness(2.4) saturate(.2)}55%{filter:brightness(.75)}}
+.duelfight .fighter .dmg{left:50%;top:-4%}
+.dsay{position:absolute;left:50%;top:-14%;transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:10px;white-space:nowrap;
+  background:rgba(10,12,20,.88);border:1px solid rgba(232,194,122,.55);font:700 16px Cinzel,Georgia,serif;color:var(--gold2);opacity:0;pointer-events:none}
+.dsay.go{animation:dsay 1.8s ease-out}
+@keyframes dsay{0%{opacity:0;transform:translate(-50%,8px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+.dtoast{position:absolute;left:50%;top:30%;transform:translateX(-50%);z-index:3;margin:0;padding:10px 20px;border-radius:999px;max-width:80%;text-align:center;
+  background:rgba(10,12,20,.88);border:1px solid rgba(232,194,122,.45);font-weight:700;font-size:17px;color:#F4ECDA;animation:dtoast 3.2s ease-out forwards;pointer-events:none}
+.dtoast.go{animation:none;animation:dtoast 3.2s ease-out forwards}
+@keyframes dtoast{0%{opacity:0;transform:translate(-50%,8px)}10%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0}}
+.dheat{position:absolute;left:50%;top:4%;transform:translateX(-50%);margin:0;padding:5px 14px;border-radius:999px;background:rgba(60,14,8,.85);
+  border:1px solid rgba(255,140,80,.7);color:#FFB27A;font-weight:700;font-size:14px}
+.dheat[hidden],.duelfight [hidden]{display:none!important}
+.dfoehead{display:flex;justify-content:flex-end;align-items:center;gap:12px;text-align:right}
+.dface{flex:none;width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:50% 8%;border:2px solid #E05A4F;background:#141820;transform:scaleX(-1)}
+.dfoe .bwarn{margin-top:8px}
+.dlock{margin:4px 0 0;font-size:13px;color:var(--jade);min-height:1.1em}
+.duelfight .techmenu.shut>summary{opacity:.5;pointer-events:none}
+.dresult{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;
+  background:radial-gradient(rgba(6,8,14,.75),rgba(6,8,14,.35) 70%)}
+.dresult p{margin:0}.dresult .rword{font-size:64px}.dresult .rsub{transform:none}
+.dresbtns{display:flex;gap:12px;align-items:center;margin-top:14px}.dresbtns .btn{width:auto}

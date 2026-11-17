@@ -63,7 +63,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Silk Merchant | the silk stalls | `/appearance` |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
 | Martial Master | the training yard, in front of the dummies | not open on the website yet: says so |
-| Arena Keeper | in front of the arena, on its gate side | not open yet |
+| Arena Keeper | in front of the arena, on its gate side | Duels at the Arena (`/arena`, docs/pvp.md) |
 | Stone Stele | the west side of the plaza (a thing, not a person) | The rankings (`/rankings`, `web/rankings.py`): realm, Lotus Coins, Moon Pearls and duels won |
 
 **Pictures:** `art/portraits/town/<key>.webp`, cut from SHOAIB's Gemini pictures (one person, full body, on a plain
