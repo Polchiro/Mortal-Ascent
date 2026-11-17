@@ -113,7 +113,7 @@ beast it is, how strong and what it pays are the same as above (`Hunts._roll` ro
 same random numbers; `_battle` builds the same fight).
 
 - **Who:** admins (`ADMIN_IDS`) on a Solo Hunt, with a look that has a walking sheet (`looks.WALK_SHEETS`: the male
-  cultivator for now). Everyone else keeps the menus. Code: `web/hunt_map.py`, `Hunt.map` in `web/hunt_play.py`,
+  and female cultivators). Everyone else keeps the menus. Code: `web/hunt_map.py`, `Hunt.map` in `web/hunt_play.py`,
   `web/templates/hunt_map.html`, `web/static/huntmap.js`. Tests: `tests/test_hunt_map.py`.
 - **Walking:** W A S D or the arrow keys (Shift: stroll), or the on-screen joystick on touch screens; both feed one
   movement vector in screen space. The sheet row follows the direction (8 sectors with a little hysteresis); the
@@ -133,3 +133,7 @@ same random numbers; `_battle` builds the same fight).
   **256 x 256**, the point between the feet at **(128, 232)**, about 200 px tall, walking in place; walk 8 frames,
   idle 4. `scripts/make_hero_walk.py` builds his from SHOAIB's walk video and refuses a sheet that breaks the spec.
   His video never faced left, so SW, W, NW are mirrored; there is no idle sheet yet.
+  `scripts/make_heroine_walk.py` builds hers from five videos, one per view (front, front-right, right,
+  back-right, back), each walking in place facing one way; it takes the stride that loops best from each and
+  mirrors the right side for the left. New animations should come this way: one video per view, from a reference
+  image already turned to that view.
