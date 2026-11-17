@@ -167,6 +167,16 @@ def test_the_moon_forest_map_blocks_its_rocks_and_water():
         assert hunt_map.walkable(x, y, MAP)
 
 
+def test_a_charge_can_start_the_fight_only_within_its_reach():
+    for tier in ("normal", "elite", "beast_king"):
+        beast = {"x": 12.0, "y": 12.0, "tier": tier}
+        reach = hunt_map.WANDER[tier] + hunt_map.NOTICE[tier] + hunt_map.REACH
+        assert hunt_map.close_enough((12.0 + reach - 0.05, 12.0), beast)
+        assert not hunt_map.close_enough((12.0 + reach + 0.05, 12.0), beast)
+        assert hunt_map.SPAWN_GAP > reach                                               # it never sees you as it appears
+    assert hunt_map.NOTICE["beast_king"] > hunt_map.NOTICE["elite"] > hunt_map.NOTICE["normal"]
+
+
 def test_the_walk_sheets_meet_the_spec():
     from PIL import Image
     from scripts import make_heroine_walk
