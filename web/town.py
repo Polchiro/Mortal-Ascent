@@ -182,9 +182,11 @@ NPCS = [
      "line": "The training yard isn't open to you yet. Train through the bot for now; my doors open soon."},
     {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 25.4, "y": 22.4,
      "src": "/art/portraits/town/arena.webp", "h": 134,
-     "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
+     "line": "The ring is open. Name a cultivator to challenge, or wait for whoever steps up next. Friendly bouts only: nobody leaves hurt.",
+     "go": [["Enter the Arena", "/arena"]]},
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
-     "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
+     "line": "The names of the town's strongest are carved here: the highest realms, the richest purses, the fiercest duelists.",
+     "go": [["Read the rankings", "/rankings"]]},
 ]
 
 

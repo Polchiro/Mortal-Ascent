@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Rankings · Mortal Ascent{% endblock %}
+{% block body %}
+{% with page="rankings", coins=coins, pearls=pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="rankings">
+  <section class="card stele" aria-labelledby="steleTitle">
+    <p class="kicker">THE STONE STELE · AZURE CLOUD TOWN</p>
+    <h2 id="steleTitle">{{ v.title }}</h2>
+    <nav class="rtabs" aria-label="Rankings">
+      {% for t in v.tabs %}
+      <a href="/rankings?board={{ t.key }}" class="rtab{% if t.on %} on{% endif %}"{% if t.on %} aria-current="page"{% endif %}>{{ t.label }}</a>
+      {% endfor %}
+    </nav>
+    {% if v.top %}
+    <ol class="rlist">
+      {% for r in v.top %}
+      <li class="rrow{% if r.rank <= 3 %} r{{ r.rank }}{% endif %}{% if r.you %} you{% endif %}">
+        <span class="rnum">{{ r.rank }}</span>
+        <span class="rwho"><span class="rname"><b>{{ r.name }}</b>{% if r.you %}<em>you</em>{% endif %}</span><small>{{ r.where }}</small></span>
+        <span class="rval">{{ r.value }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% if v.me %}
+    <p class="rgap" aria-hidden="true">⋯</p>
+    <ol class="rlist" start="{{ v.me.rank }}">
+      <li class="rrow you">
+        <span class="rnum">{{ v.me.rank }}</span>
+        <span class="rwho"><span class="rname"><b>{{ v.me.name }}</b><em>you</em></span><small>{{ v.me.where }}</small></span>
+        <span class="rval">{{ v.me.value }}</span>
+      </li>
+    </ol>
+    {% endif %}
+    <p class="sub rfoot">{{ v.players }} cultivator{{ "" if v.players == 1 else "s" }} carved on the stone.</p>
+    {% else %}
+    <p class="empty">No names carved yet.</p>
+    {% endif %}
+  </section>
+  <p class="rback"><a class="hbtn ghost small" href="/town">Back to town</a></p>
+</main>
+{% endblock %}
