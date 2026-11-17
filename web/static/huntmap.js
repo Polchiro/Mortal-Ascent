@@ -4,7 +4,8 @@
    one movement vector, in screen space. He is drawn from his walking sheet (looks.WALK_SHEETS: 8 rows S SW W NW N NE
    E SE x 8 frames, feet at a fixed point in each 256 px cell); the row follows the direction he moves in, and the
    frames advance with the distance walked, one stride per `STRIDE` px, so his feet never slide. Standing still holds
-   each row's feet-together frame.
+   each row's feet-together frame, or, for a look with an idle sheet (`sheet.idle`: same rows and cells), plays it:
+   its frames in a loop of `idle.loop` seconds, each faded into the next so the breathing is smooth.
 
    The server decides everything that matters: which beast is out there and where (it is already rolled), whether
    you are where you say (the page reports its position a few times a second and is put back if the server
@@ -113,7 +114,7 @@
   var ROW_ANGLE = [90, 135, 180, 225, 270, 315, 0, 45];      // each row's facing, screen degrees (0 right, clockwise)
   function sectorRow(a) { var k = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; return (k + 6) % 8; }
   function angDiff(a, b) { return Math.abs(((a - b) % 360 + 540) % 360 - 180); }
-  var hero = {x: cfg.hero.x, y: cfg.hero.y, dir: 4, frame: STAND[4], phase: 0, moving: false};
+  var hero = {x: cfg.hero.x, y: cfg.hero.y, dir: 4, frame: STAND[4], phase: 0, moving: false, still: 0};
 
   /* the beast */
   var beast = cfg.beast, bimg = null, bt = 0;
@@ -146,6 +147,8 @@
 
   /* the loop: fixed 60 Hz steps, drawn every frame */
   var sheet = new Image(); sheet.src = SH.src;
+  var IDLE = SH.idle, idle = null;
+  if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
   var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60;
   function update(dt) {
     if (engaging) return;
@@ -163,7 +166,8 @@
       hero.frame = Math.floor(hero.phase);
       report(false);
     } else {
-      if (was) report(true);
+      if (was) { report(true); hero.still = 0; }
+      hero.still += dt;
       hero.frame = STAND[hero.dir];
     }
     if (beast) {
@@ -178,7 +182,14 @@
   function drawHero(x, y) {
     var s = 0.5 * ZOOM;
     shadow(x, y, 26 * ZOOM, 9 * ZOOM, .42);
-    if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, x - FEET_X * s, y - FEET_Y * s, CELL * s, CELL * s);
+    var dx = x - FEET_X * s, dy = y - FEET_Y * s, d = CELL * s;
+    if (!hero.moving && idle && idle.complete && idle.naturalWidth) {
+      var t = (hero.still / IDLE.loop * IDLE.cols) % IDLE.cols, a = Math.floor(t), b = (a + 1) % IDLE.cols;
+      ctx.drawImage(idle, a * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+      ctx.save(); ctx.globalAlpha = t - a;
+      ctx.drawImage(idle, b * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+      ctx.restore();
+    } else if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
   }
   function drawBeast(x, y, face) {
     if (!bimg.complete || !bimg.naturalWidth) return;

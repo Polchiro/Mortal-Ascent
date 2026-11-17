@@ -148,7 +148,9 @@ def test_only_admins_with_a_walking_look_walk(conn, monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "1")
     assert walks(conn, 1)                                                               # no look chosen yet: male
     db.update_player(conn, 1, appearance=looks.dump({"gender": "female"}))
-    assert not walks(conn, 1)                                                           # no walking sheet for her yet
+    assert walks(conn, 1)                                                               # she walks too
+    monkeypatch.setitem(looks.WALK_SHEETS, "female", None)
+    assert not walks(conn, 1)                                                           # a look with no sheet keeps the menus
 
 
 def test_the_moon_forest_map_blocks_its_rocks_and_water():
@@ -165,9 +167,15 @@ def test_the_moon_forest_map_blocks_its_rocks_and_water():
         assert hunt_map.walkable(x, y, MAP)
 
 
-def test_the_walk_sheet_meets_the_spec():
+def test_the_walk_sheets_meet_the_spec():
     from PIL import Image
-    im = Image.open(make_hero_walk.OUT)
-    assert make_hero_walk.check(im) == []
-    s = looks.WALK_SHEETS["male"]
-    assert (s["cell"], s["rows"], s["cols"], s["feet"]) == (256, 8, 8, [128, 232]) and len(s["stand"]) == 8
+    from scripts import make_heroine_walk
+    for gender, path in (("male", make_hero_walk.OUT), ("female", make_heroine_walk.OUT)):
+        assert make_hero_walk.check(Image.open(path)) == [], gender
+        s = looks.WALK_SHEETS[gender]
+        assert s["src"] == "/art/portraits/map/" + path.rsplit("/", 1)[1]
+        assert (s["cell"], s["rows"], s["cols"], s["feet"]) == (256, 8, 8, [128, 232]) and len(s["stand"]) == 8
+    from scripts import make_heroine_idle
+    idle = looks.WALK_SHEETS["female"]["idle"]
+    assert make_hero_walk.check(Image.open(make_heroine_idle.OUT)) == []
+    assert idle["src"] == "/art/portraits/map/hero_female_idle.webp" and idle["cols"] == 8 and idle["loop"] > 1
