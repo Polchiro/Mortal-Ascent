@@ -54,12 +54,10 @@ def _wall_line(key, start, end, at, along_x):
 # x0..x0+a, y0..y0+b in tiles. A picture's door (or face) looks to the bottom-right (+x); `mirror` turns it to the
 # bottom-left (+y), swapping which side is long. The picture's base corners are fitted onto the footprint's.
 BUILDINGS = [
-    # the walls: towers at the corners, the gate in the south-east wall
-    _b("tower_n", "tower_low", 1.4, 1.4, 3.0), _b("tower_e", "tower_low", 28.2, 1.4, 3.0),
-    _b("tower_w", "tower_low", 1.4, 28.2, 3.0), _b("tower_s", "tower", 28.2, 28.2, 3.0),
-    *_wall_line("wall_nw", 4.4, 28.2, 2.4, along_x=False), *_wall_line("wall_ne", 4.4, 28.2, 2.4, along_x=True),
-    *_wall_line("wall_sw", 4.4, 28.2, 29.0, along_x=True),
-    *_wall_line("wall_se_n", 4.4, 14.3, 29.0, along_x=False), *_wall_line("wall_se_s", 18.3, 28.2, 29.0, along_x=False),
+    # the walls, meeting at the corners; the gate in the south-east wall
+    *_wall_line("wall_nw", 2.6, 29.6, 2.4, along_x=False), *_wall_line("wall_ne", 2.6, 29.6, 2.4, along_x=True),
+    *_wall_line("wall_sw", 2.6, 29.6, 29.0, along_x=True),
+    *_wall_line("wall_se_n", 2.6, 14.3, 29.0, along_x=False), *_wall_line("wall_se_s", 17.6, 29.6, 29.0, along_x=False),
     _b("gatehouse", "gatehouse", 27.6, 14.3, 4.0, mirror=True),
     # the north corner: the pond, the pavilion, rocks and trees
     _b("pond", "pond", 4.6, 4.6, 5.0),
@@ -76,14 +74,14 @@ BUILDINGS = [
     # the south-west: a house, trees and bushes
     _b("house_w", "house", 3.4, 22.2, 3.4),
     _b("house_sw", "house", 8.8, 25.0, 3.4, mirror=True),
-    _b("boulders_sw", "boulders", 16.0, 26.0, 2.4),
+    _b("boulders_sw", "boulders", 16.0, 26.6, 1.8),
     # the east: the training yard
     _b("rack_1", "rack", 22.4, 8.0, 1.4), _b("rack_2", "rack", 26.2, 7.6, 1.4, mirror=True),
     _b("dummy_1", "dummy", 22.6, 10.4, 0.55), _b("dummy_2", "dummy", 24.4, 9.6, 0.55), _b("dummy_3", "dummy", 25.8, 11.0, 0.55),
     _b("barrels_e", "barrels", 26.8, 12.0, 1.8),
     # the south: the arena, the stele by the plaza
-    _b("arena", "arena", 19.8, 20.2, 7.0),
-    _b("stele", "stele", 18.4, 18.4, 1.5),
+    _b("arena", "arena", 18.4, 19.8, 6.4),
+    _b("stele", "stele", 12.0, 17.6, 1.5),
     # lantern posts along the road and at the plaza's corners
     *[_b(f"lantern_{i}", "lantern", x, y, 0.4) for i, (x, y) in enumerate(
         [(21.4, 13.8), (24.8, 13.8), (21.4, 18.0), (24.8, 18.0), (10.4, 10.4), (20.0, 10.2), (10.2, 20.0)])],
@@ -95,7 +93,7 @@ PROPS = [
     {"img": "blossom", "x": 21.6, "y": 7.0, "h": 380, "r": 0.4},     # by the training yard
     {"img": "blossom", "x": 15.2, "y": 25.6, "h": 380, "r": 0.4},    # in the south-west garden
     {"img": "pine", "x": 4.8, "y": 27.0, "h": 420, "r": 0.35},
-    {"img": "pine", "x": 17.6, "y": 23.4, "h": 400, "r": 0.35},
+    {"img": "pine", "x": 16.6, "y": 23.0, "h": 400, "r": 0.35},
 ]
 # The ground (scripts/make_town_ground.py paints art/maps/town.webp from these): grass inside the walls, forest
 # floor outside, the plaza paved and dirt roads, paths and yards; rectangles x0, y0, x1, y1 in tiles.
@@ -106,7 +104,7 @@ GROUND = {
              (8.2, 10.4, 11.4, 21.0),                           # in front of the forge and the herb shop
              (8.6, 6.8, 12.6, 10.4), (12.6, 10.6, 19.6, 11.4),  # to the pavilion; in front of the stalls
              (20.8, 7.0, 28.6, 14.0),                           # the training yard
-             (19.0, 19.6, 28.4, 28.6)],                         # round the arena
+             (17.8, 19.2, 28.4, 28.6)],                         # round the arena
     "walls": (2.4, 2.4, 29.6, 29.6),                            # outside this: forest floor
 }
 
@@ -116,7 +114,7 @@ GROUND = {
 # glow and their name. `h`: how tall it is drawn, in world px (the cultivator is about 120); `flip`: the picture faces
 # left (the page turns everyone toward you). scripts/make_town_npcs.py cuts them out.
 NPCS = [
-    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 26.4, "y": 18.7,
+    {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 26.2, "y": 18.8,
      "src": "/art/portraits/town/gate.webp", "h": 135,
      "line": "The wilds are restless tonight. Beasts prowl the forest, and the herbs out there won't pick themselves.",
      "go": [["Hunt beasts", "/explore"], ["Gather herbs", "/gather"]]},
@@ -136,13 +134,13 @@ NPCS = [
      "src": "/art/portraits/town/elder.webp", "h": 128,
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
      "go": [["Show my cultivation", "/profile"], ["Check my bag", "/inventory"]]},
-    {"key": "master", "name": "Martial Master", "title": "Training", "x": 23.0, "y": 13.0,
+    {"key": "master", "name": "Martial Master", "title": "Training", "x": 24.0, "y": 12.2,
      "src": "/art/portraits/town/master.webp", "h": 128,
      "line": "The training yard isn't open to you yet. Train through the bot for now; my doors open soon."},
-    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 24.6, "y": 16.4,
+    {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 25.4, "y": 22.4,
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "No duels in the ring tonight. When it opens, cultivators will test each other here."},
-    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 17.6, "y": 19.6, "prop": True,
+    {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
      "line": "The names of the town's strongest are carved here. The carving isn't finished yet."},
 ]
 

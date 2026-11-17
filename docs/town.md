@@ -21,7 +21,7 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   ground tiles, lifted flat and blended into seamless tiles) and `town.GROUND`: grass inside the walls, forest floor
   outside, the paved plaza, dirt roads and yards, a soft shadow at each building's foot, dimmed to dusk. On it stand
   the walls (one straightened one-tile slice of SHOAIB's wall per tile, so they run straight and
-  unbroken between the towers), the towers and gate, the buildings, trees, the pond, rocks and props, each its own Gemini picture
+  unbroken and meet at the corners), the gate, the buildings, trees, the pond, rocks and props, each its own Gemini picture
   (`art/maps/town/`, cut by `scripts/make_town_kit.py`), so each is as sharp as it was drawn.
 - **Spacing:** no two stone bases touch: there is at least a fifth of a tile of ground between footprints
   (`tests/test_town.py`).
@@ -33,7 +33,7 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   `h` world px tall.
 - **Walking behind things:** the pieces are drawn back to front with you and the townsfolk among them: you are
   drawn after every piece you overlap on screen and stand in front of (beyond a footprint's back edges, or nearer
-  than a prop), so a building hides you when you walk behind it.
+  than a prop), so a building hides you when you walk behind it, and whatever hides you fades to see-through.
 - **Where you can walk:** inside `town.AREA` (a polygon: the town inside its walls), off every footprint (you can
   step `INSET` onto its paved edge), props and `town.BLOCKED` (the pond). Press **G** on the page to see the grid,
   the walkable outline, the footprints and circles, and your position. The page and `town.walkable` share the test.
@@ -50,7 +50,7 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
 ## The townsfolk
 
 `town.NPCS`: where each stands (x, y in tiles, the feet), name, title, what they say, and the pages they send you
-to. Walk within `REACH` (1.5 tiles) and a **Talk to …** button appears; press **E** (or Enter, Space, or tap it)
+to. They stand at least 3 tiles apart. Walk within `REACH` (1.5 tiles) and a **Talk to …** button appears; press **E** (or Enter, Space, or tap it)
 for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open.
 
 | Who | Where | Sends you to |
@@ -60,9 +60,9 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Herbalist Lan | the herb shop | `/alchemy` |
 | Silk Merchant | the silk stalls | `/appearance` |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
-| Martial Master | the training yard | not open on the website yet: says so |
-| Arena Keeper | in front of the arena | not open yet |
-| Stone Stele | the plaza (a thing, not a person) | not open yet (the rankings) |
+| Martial Master | the training yard, in front of the dummies | not open on the website yet: says so |
+| Arena Keeper | in front of the arena, on its gate side | not open yet |
+| Stone Stele | the west side of the plaza (a thing, not a person) | not open yet (the rankings) |
 
 **Pictures:** `art/portraits/town/<key>.webp`, cut from SHOAIB's Gemini pictures (one person, full body, on a plain
 grey-green backdrop) by `scripts/make_town_npcs.py`: rembg plus a colour key for thin things like the warden's spear,

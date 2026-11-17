@@ -12,7 +12,7 @@
 
    The town is built from pieces (web/town.py): the ground, then each building and prop as its own picture, drawn in
    depth order with you and the townsfolk: you are hidden by a building when you stand behind it (beyond its
-   footprint's back edges), and drawn over it in front.
+   footprint's back edges), and drawn over it in front; whatever hides you fades to see-through.
 
    Walk up to someone and press E (or tap the button) to talk: a dialogue says who they are and offers the pages
    they send you to. Nothing here changes the game, so the server doesn't follow where you walk. */
@@ -214,7 +214,7 @@
     if (painted.complete) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
     if (debug) drawDebug();
     function at(x, y, f) { ctx.save(); ctx.translate(x, y); ctx.scale(1 / K, 1 / K); f(); ctx.restore(); }   // you and they at your size
-    var movers = [{x: hero.x, y: hero.y, h: 175, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
+    var movers = [{hero: true, x: hero.x, y: hero.y, h: 175, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
     NPCS.forEach(function (n) {
       var p = toScreen(n.x, n.y);
       movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
@@ -240,6 +240,10 @@
         if (front) slot = i + 1;
       });
       m.slot = slot;
+      if (m.hero) PIECES.forEach(function (q, i) {         // anything drawn over you turns see-through
+        var r = q.rect, left = r[0] - off.x;
+        q.fade = i >= slot && !(p.x + w < left || p.x - w > left + r[2] || p.y < r[1] || top > r[1] + r[3]);
+      });
     });
     movers.sort(function (a, b) { return a.slot - b.slot || (a.x + a.y) - (b.x + b.y); });
     var out = [], k = 0;
@@ -250,7 +254,11 @@
     return out;
   }
   function drawPiece(q, off) {
-    if (q.img.complete && q.img.naturalWidth) ctx.drawImage(q.img, q.rect[0] - off.x, q.rect[1], q.rect[2], q.rect[3]);
+    if (!q.img.complete || !q.img.naturalWidth) return;
+    q.alpha = q.alpha == null ? 1 : q.alpha + ((q.fade ? 0.4 : 1) - q.alpha) * 0.15;   // ease in and out
+    ctx.globalAlpha = q.alpha;
+    ctx.drawImage(q.img, q.rect[0] - off.x, q.rect[1], q.rect[2], q.rect[3]);
+    ctx.globalAlpha = 1;
   }
   /* G: the tile grid, the walkable ground and what blocks the way (to check the town against its painting) */
   function drawDebug() {
