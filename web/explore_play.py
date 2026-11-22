@@ -671,7 +671,7 @@ def fight_view(conn, s, b, p, now, me=None):
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
                "face": look_face(p), "poses": look_poses(p), "tip": looks.sword_tip(looks.of_player(p)),
                "sheet": looks.attack_sheet(looks.of_player(p)), "gsheet": looks.guard_sheet(looks.of_player(p)),
-               "msheet": motion_of(b, f, p),
+               "msheet": motion_of(b, f, p), "isheet": looks.idle_sheet(looks.of_player(p)),
                "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},

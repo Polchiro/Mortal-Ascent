@@ -34,8 +34,9 @@
     <p class="dtoast" id="dtoast">{{ s.me.name }} and {{ s.them.name }} bow to each other. Begin!</p>
     <p class="dheat" id="dheat" hidden></p>
     {% for who, side in (("me", s.me), ("them", s.them)) %}
-    <div class="fighter dfighter {{ who }}" id="f{{ who }}" data-pose="idle" aria-hidden="true">
-      <div class="poses">{% for p, src in side.poses.items() %}{% if p != "guard" %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}</div>
+    <div class="fighter dfighter {{ who }}{% if side.isheet %} stanced{% endif %}" id="f{{ who }}" data-pose="idle" aria-hidden="true">
+      <div class="poses">{% for p, src in side.poses.items() %}{% if p != "guard" %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
+        {%- if side.isheet %}{% with isheet = side.isheet %}{% include "_stance.html" %}{% endwith %}{% endif %}</div>
       <p class="dsay" id="say{{ who }}"></p><p class="dpop" id="pop{{ who }}"></p>
     </div>
     {% endfor %}

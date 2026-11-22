@@ -75,6 +75,15 @@ GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "fr
                 "female": {"src": "/art/portraits/fight/hero_female_guard.webp", "frames": 33, "cols": 8, "rows": 5,
                            "ready": 360, "first": 12, "ms": 55, "shift": 10 / 320}}
 
+# her fighting stance: the loop she plays while she stands between moves, in beast fights and duels, in place of
+# the still idle picture (style.css `.stanced`, stepped through in CSS: `cols` x `rows` frames fill the grid, `loop`
+# seconds round). From SHOAIB's video of her (scripts/make_heroine_stance.py): on guard, sword held low in her right
+# hand, left hand at her chest, breathing, sleeves and hair stirring, her feet where the still's are (`shift` as in
+# GUARD_SHEETS, none needed). He has none yet:
+# he keeps his still picture and its breathing.
+IDLE_SHEETS = {"female": {"src": "/art/portraits/fight/hero_female_stance.webp", "frames": 72, "cols": 8, "rows": 9,
+                          "loop": 5.38, "shift": 0}}
+
 # the shared movements techniques play (web/technique_fx.py "motion"), frame by frame, in the same 320 x 360 cells.
 # "fist": SHOAIB's punch video (scripts/make_hero_fist.py): on guard (0-1), a jab (out at `jab`), the fist drawn
 # back (7-8), a lunging punch (out at `release`), held, drawn back (21-27), on guard again (28-35). `shift`: he was
@@ -188,6 +197,11 @@ def attack_sheet(look):
 def guard_sheet(look):
     """The frame-by-frame sword block for this look (GUARD_SHEETS), or None to stand in the idle pose behind the ring."""
     return GUARD_SHEETS.get(gender_of(look))
+
+
+def idle_sheet(look):
+    """The fighting stance this look plays while standing (IDLE_SHEETS), or None to show the still idle picture."""
+    return IDLE_SHEETS.get(gender_of(look))
 
 
 def motion_sheet(look, motion):

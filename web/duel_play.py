@@ -337,7 +337,8 @@ class Arena:
                 look = m.looks[s.uid]
                 out = {"uid": s.uid, "name": s.name, "hp": round(s.hp), "max_hp": round(s.max_hp),
                        "locked": d.locked(s), "staggered": s.staggered,
-                       "poses": {p: looks.fighter(look, p) for p in ("idle", "windup", "strike", "guard")}}
+                       "poses": {p: looks.fighter(look, p) for p in ("idle", "windup", "strike", "guard")},
+                       "isheet": looks.idle_sheet(look)}
                 out["face"] = looks.face(look)
                 out["realm"] = f"{s.realm} · Layer {s.layer}"
                 if mine:

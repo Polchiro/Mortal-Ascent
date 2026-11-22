@@ -1,0 +1,3 @@
+{#- The fighting stance (looks.IDLE_SHEETS) for `isheet`: a grid stepped through in CSS while she stands (style.css `.stanced`). -#}
+{%- set S = isheet if isheet is defined else F.me.isheet -%}
+<div class="sheetfx isheet" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; --shift: {{ S.shift | round(4) }}; --loop: {{ S.loop }}s; --cols: {{ S.cols }}; --rows: {{ S.rows }}; --xend: {{ (S.cols / (S.cols - 1) * 100) | round(4) }}%; --yend: {{ (S.rows / (S.rows - 1) * 100) | round(4) }}%"></div>
