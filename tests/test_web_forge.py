@@ -312,3 +312,34 @@ def test_the_live_page_loads_its_script_once(client, db_path):
     page = client.get("/forge/play").text
     assert page.count("forge_live.js") == 1 and "<script" not in page.split("</title>")[0].split("<title>")[1]
     assert 'class="forgebg"' in page
+
+
+def test_the_rarity_forecast_follows_the_bot_rules_and_the_cap():
+    """forge_play.forecast: what the points lock in, the best still possible, and the gear's cap (never above it)."""
+    import random
+    from types import SimpleNamespace
+    from web import forge_play as FP
+    g = forging.Forge("treasure", forge.RANK_NEEDED["treasure"], random.Random(1))
+    s = SimpleNamespace(game=g, plan=SimpleNamespace(tier="treasure", essence=None))
+    f = FP.forecast(s)
+    assert (f["total"], f["max"], f["locked"], f["best"], f["cap"]) == (0, 100, None, "Legendary", "Legendary")
+    assert [m["name"] for m in f["marks"] if m["over"]] == ["Mythical"]          # beyond Treasure gear's cap
+    g.points.update(ignite=20, heat=20, hammer=20, quench=20)
+    f = FP.forecast(s)
+    assert (f["total"], f["max"]) == (80, 100)
+    assert f["locked"] == "Rare"              # 80 with a blank inscription: Epic and up need a good one
+    assert f["best"] == "Legendary"           # 100 would be Mythical, but the tier caps it
+    g.points["inscribe"] = 10
+    f = FP.forecast(s)
+    assert f["locked"] == f["best"] == "Rare"  # 90, but an inscription of 10 holds back Epic
+    o = SimpleNamespace(game=forging.Forge("ordinary", 1, random.Random(1)), plan=SimpleNamespace(tier="ordinary", essence=None))
+    assert FP.forecast(o)["best"] == FP.forecast(o)["cap"] == "Rare"
+
+
+def test_the_live_forge_page_has_its_hud_and_forecast(client, db_path):
+    begin(client, db_path, "live")
+    page = client.get("/forge/play").text
+    for part in ('id="fcast"', 'id="fcfill"', 'class="fcam"', 'class="fhud"', 'class="ffx"', 'id="fcombo"'):
+        assert part in page, part
+    state = client.get("/forge/live").json()
+    assert state["forecast"]["cap"] == "Rare" and state["forecast"]["total"] == 0

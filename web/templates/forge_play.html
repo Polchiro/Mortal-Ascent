@@ -14,11 +14,27 @@
     <div class="stg total"><span>Total</span><b>{{ g.total }} / 100</b></div>
     <p class="sub">{{ g.item.action }} · {{ g.item.name }} ({{ g.item.tier }})</p>
   </aside>
+  {% if g.live %}{% set F = g.forecast %}
+  <div class="fcast" id="fcast" aria-live="polite">
+    <div class="fcbar">
+      <div class="fcfill" id="fcfill" style="width: {{ F.total }}%"></div>
+      <div class="fcmax" id="fcmax" style="left: {{ F.total }}%; width: {{ F.max - F.total }}%"></div>
+      {% for m in F.marks %}<span class="fcmark{% if m.over %} over{% endif %}{% if loop.index is even %} lo{% endif %}" style="left: {{ m.at }}%; --c: {{ m.color }}" title="{{ m.name }} from {{ m.at }}"><i>{{ m.name }}</i></span>{% endfor %}
+    </div>
+    <div class="fcrow">
+      <span><b id="fctotal">{{ F.total }}</b> / 100</span>
+      <span>Locked in <b id="fclocked" style="color: {{ F.locked_color }}">{{ F.locked or "—" }}</b></span>
+      <span>Best still possible <b id="fcbest" style="color: {{ F.best_color }}">{{ F.best or "Failed" }}</b></span>
+      <span>Tier cap <b style="color: {{ F.cap_color }}">{{ F.cap }}</b></span>
+    </div>
+  </div>
+  {% endif %}
 
   {% if g.live %}{% set H = scene.sheets.hammer %}{% set B = scene.sheets.bellows %}
   <section class="stage card flive" id="flive" data-gear="{{ scene.gear }}">
     <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
-    <div class="fscene nosmith" id="fscene" aria-hidden="true">
+    <div class="fscene nosmith" id="fscene">
+      <div class="fshake"><div class="fcam" id="fcam" aria-hidden="true">
       <img class="fbg" src="/art/forge/workshop.jpg" alt="">
       <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
       <canvas class="ffurnace" width="960" height="540"></canvas>
@@ -44,29 +60,35 @@
         <video class="fqfx fqsteam" src="/art/forge/steam.mp4" muted playsinline preload="auto"></video>
         <video class="fqfx fqflare" src="/art/forge/oil_flare.mp4" muted playsinline preload="auto"></video>
       </div>
+      <canvas class="fover" width="960" height="540"></canvas>
+      </div>
       <div class="fplate" id="fplate">
         <img class="fplateblank" src="{{ scene.blank }}" alt="">
-        <canvas class="frune" width="600" height="420"></canvas>
+        <canvas class="frune" width="720" height="380"></canvas>
         <video class="fruneglow" src="/art/forge/rune.mp4" muted playsinline preload="auto"></video>
       </div>
-      <canvas class="fover" width="960" height="540"></canvas>
+      <canvas class="ffx" width="960" height="540" aria-hidden="true"></canvas>
+      </div>
+      <div class="fcombo" id="fcombo" aria-live="polite"></div>
       <div class="lbanner" id="lbanner"></div>
       <div class="lhelp" id="lhelp" hidden></div>
       <button class="lmute" id="lmute" type="button" aria-label="Sound on or off">🔊</button>
       <button class="lmute lhelpbtn" id="lhelpbtn" type="button" aria-label="Instructions on or off">📖</button>
+      <div class="lpanel fclue" id="lclue" hidden></div>
+      <div class="fhud">
+        <p class="pline lhint" id="lhint" aria-live="polite"></p>
+        <div class="lpanel" id="lgauge" hidden>
+          <div class="gauge heat"><div class="band" id="lband"></div><div class="needle" id="lneedle"></div></div>
+          <div class="glabels"><span>cold</span><span id="lheat">—</span><span>wild</span></div>
+        </div>
+        <div class="lpanel fswatch" id="lswatch" hidden><span>Pull it out at</span><b id="lswatchc"></b></div>
+        <div class="lpanel fbtns" id="lbtns" hidden></div>
+        <div class="lpanel fprompt" id="lprompt" hidden></div>
+        <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
+      </div>
       <button class="lmute lsmithbtn" id="lsmithbtn" type="button" aria-label="Show or hide the smith" title="Show or hide the smith">👤</button>
     </div>
-    <p class="pline lhint" id="lhint" aria-live="polite"></p>
-    <div class="lpanel" id="lgauge" hidden>
-      <div class="gauge heat"><div class="band" id="lband"></div><div class="needle" id="lneedle"></div></div>
-      <div class="glabels"><span>cold</span><span id="lheat">—</span><span>wild</span></div>
-    </div>
-    <div class="lpanel fswatch" id="lswatch" hidden><span>Pull it out at</span><b id="lswatchc"></b></div>
-    <div class="lpanel fbtns" id="lbtns" hidden></div>
-    <div class="lpanel fclue" id="lclue" hidden></div>
-    <div class="lpanel fprompt" id="lprompt" hidden></div>
-    <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
-    <div id="llog"></div>
+    <div id="llog" class="flivelog"></div>
     <p class="sub lkeys" id="lkeys"></p>
     <noscript><p class="ferror">Live controls need JavaScript. <a href="/forge">Back</a>, then choose Classic buttons.</p></noscript>
   </section>

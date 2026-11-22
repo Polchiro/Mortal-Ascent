@@ -278,7 +278,7 @@ def play_view(s, now):
                "active": not g.done and g.stage == k} for k in forge.STAGES]
     total = g.score()
     out = {"item": gear_view_plain(s.plan), "points": points, "total": total, "turn": s.turn, "done": s.outcome is not None,
-           "live": s.controls == "live" and s.outcome is None}
+           "live": s.controls == "live" and s.outcome is None, "forecast": forecast(s)}
     if s.outcome is None and s.controls == "live":
         out.update(stage=g.stage, stage_no=g.stage_i + 1, title="Forging")
     elif s.outcome is None:
@@ -304,6 +304,27 @@ def play_view(s, now):
     return out
 
 
+def forecast(s):
+    """The live forge's rarity forecast (forge_play.html .fcast): what the points so far already lock in (if every
+    stage left scored nothing), the best rarity still possible (if every stage left scored 20), and this gear's cap
+    (tier and essence grade). The bot's own rules (forge.rarity_for_score, capped_rarity), so it never shows a rarity
+    the gear can't reach; display only, the forge's result is decided as before."""
+    g, plan = s.game, s.plan
+    grade = materials.MATERIALS[plan.essence]["grade"] if plan.essence else None
+    total, left = g.score(), sum(1 for k in forge.STAGES if g.points.get(k) is None)
+    ins = g.points.get("inscribe")
+    locked = forge.capped_rarity(forge.rarity_for_score(total, ins or 0), plan.tier, grade)
+    best = forge.capped_rarity(forge.rarity_for_score(total + left * forge.STAGE_MAX_POINTS,
+                                                      forge.STAGE_MAX_POINTS if ins is None else ins), plan.tier, grade)
+    cap = forge.rarity_cap(plan.tier, grade)
+    colour = lambda r: RARITY_COLOR.get(r, "#8A96B4")  # noqa: E731
+    return {"total": total, "max": total + left * forge.STAGE_MAX_POINTS,
+            "locked": locked, "locked_color": colour(locked), "best": best, "best_color": colour(best),
+            "cap": cap, "cap_color": colour(cap),
+            "marks": [{"at": need, "name": r, "color": colour(r), "over": forge.RARITIES.index(r) > forge.RARITIES.index(cap)}
+                      for need, r in reversed(forge.SCORE_TO_RARITY)]}
+
+
 def scene_view(s, player):
     """What the live forge's scene is made of (forge_play.html .fscene): this player's smith (frame sheets of
     SHOAIB's videos, scripts/make_forge_sheets.py; none for a look without them, then only the forge and the effects
@@ -325,7 +346,7 @@ def live_view(s, now):
     points = [{"key": k, "name": STAGE_TITLE[k], "pts": g.points.get(k), "active": not g.done and g.stage == k}
               for k in forge.STAGES]
     out = {"done": s.outcome is not None, "turn": s.turn, "points": points, "total": g.score(), "last": s.last,
-           "log": [rich(x) for x in g.log]}
+           "log": [rich(x) for x in g.log], "forecast": forecast(s)}
     if base:
         return out
     if s.live is not None:

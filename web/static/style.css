@@ -1850,3 +1850,92 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .fqset .fqfx.on{opacity:1}
 .fqset .fqsteam{left:28.7%;top:-4.9%;width:80%}
 .fqset .fqflare{left:40%;top:0;width:60%}
+
+/* ── The live forge, part 1 of its redesign: a camera that follows the stage, a game HUD inside the scene, the rarity
+   forecast, and the feel of each action (static/forge_live.js; docs/web.md "Live forge") ── */
+.flive{padding:14px 14px 10px;gap:8px}
+.flive .kicker{margin:0}
+.fscene{width:min(100%,1010px,calc((100vh - 335px) * 16 / 9))}
+/* the camera: everything of the workshop inside .fcam moves together; it glides to what the stage is about and holds
+   still while you play. translate(tx, ty) scale(z) from the top left: the stage's focus lands just above the HUD */
+.fshake,.fcam{position:absolute;inset:0}
+.fcam{transform-origin:0 0;transition:transform 1.1s cubic-bezier(.45,0,.2,1);will-change:transform}
+.fscene.st-ignite .fcam{transform:translate(-4%,-14.7%) scale(1.35)}          /* the furnace and the bellows */
+.fscene.st-heat .fcam{transform:translate(-18%,-46%) scale(1.7)}              /* the metal in the furnace mouth */
+.fscene.st-hammer .fcam{transform:translate(-45%,-45%) scale(1.45)}           /* the anvil and the hammer */
+.fscene.st-quench .fcam{transform:translate(-30%,-23%) scale(1.3)}            /* the trough or the cauldron */
+.fscene.st-inscribe .fcam{transform:translate(-2.5%,-2.5%) scale(1.05)}       /* the workshop falls away behind the piece */
+@media (prefers-reduced-motion:reduce){.fcam{transition:none}}
+.fshake.shake{animation:fshake .24s linear}
+.fshake.shake.big{animation:fshakebig .3s linear}
+@keyframes fshake{0%,100%{transform:translate(0,0)}25%{transform:translate(-5px,3px)}50%{transform:translate(4px,-3px)}75%{transform:translate(-2px,2px)}}
+@keyframes fshakebig{0%,100%{transform:translate(0,0)}20%{transform:translate(-9px,5px)}40%{transform:translate(8px,-6px)}60%{transform:translate(-5px,4px)}80%{transform:translate(3px,-2px)}}
+@media (prefers-reduced-motion:reduce){.fshake.shake,.fshake.shake.big{animation:none}}
+.fscene.hitstop .fcam{filter:brightness(1.35) saturate(1.2)}
+/* the HUD: hints, gauge, controls and the timer sit in the bottom of the scene over a dark fade */
+.fhud{position:absolute;left:0;right:0;bottom:0;z-index:6;display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 14px 10px;background:linear-gradient(rgba(10,5,2,0),rgba(10,5,2,.78) 38%,rgba(10,5,2,.9));pointer-events:none}
+.fhud>*{pointer-events:auto}
+.fhud .lhint{margin:0;font-size:15px;text-shadow:0 1px 3px #000;max-width:90%}
+.fhud .gauge{width:min(460px,80%);height:18px}
+.fhud .gauge .needle{top:-6px;height:28px}
+.fhud .glabels{width:min(460px,80%);font-size:12px;margin-top:-4px}
+.fhud .fbtns{gap:8px}
+.fhud .fbtns .btn{min-height:38px;min-width:92px;padding:4px 14px;font-size:15px;border-radius:12px}
+.fhud .fbtns .btn kbd{font-size:10px}
+.fhud .fswatch{font-size:14px}
+.fhud .ltime{width:min(360px,60%)}
+.fhud .tbar{height:6px}
+.flivelog{display:none}
+.lkeys{font-size:13px}
+/* Inscribe: the clue across the top, the piece large in the middle, the strokes along the bottom */
+.fscene .fclue{position:absolute;left:0;right:0;top:10px;z-index:6;padding:0 60px;box-sizing:border-box}
+.fscene.st-inscribe .fhud{padding-top:26px}
+.fplate{top:45%;width:68%;aspect-ratio:720/380}
+.fhud .fbtns.strokes .btn{min-width:0;padding:4px 10px}
+/* the rarity forecast under the stage chips */
+.fcast{width:min(100%,780px);margin:0 auto;padding:0 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px}
+.fcbar{position:relative;height:12px;margin:18px 0 16px;border-radius:999px;background:#1c110a;border:1px solid rgba(232,194,122,.3)}
+.fcfill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#8a5a1c,#E8C27A 70%,#fff1c8);box-shadow:0 0 12px rgba(232,194,122,.6);transition:width .8s cubic-bezier(.3,1.3,.5,1)}
+.fcmax{position:absolute;top:0;bottom:0;border-radius:0 999px 999px 0;background:repeating-linear-gradient(135deg,rgba(232,194,122,.22) 0 5px,rgba(232,194,122,.08) 5px 10px);transition:left .8s,width .8s}
+.fcmark{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--c)}
+.fcmark i{position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);font:700 11px Inter,Arial,sans-serif;font-style:normal;color:var(--c);white-space:nowrap}
+.fcmark.lo i{bottom:auto;top:calc(100% + 1px)}
+.fcmark.over{opacity:.28}
+.fcmark.over i{text-decoration:line-through}
+.fcrow{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;font-size:14px;color:var(--mist)}
+.fcrow b{font-family:Cinzel,Georgia,serif;color:var(--cream)}
+#fctotal{font-size:18px;color:var(--gold2)}
+.fcrow b.bump{animation:fcbump .6s}
+@keyframes fcbump{40%{transform:scale(1.35);text-shadow:0 0 12px currentColor}}
+.forgeplay .track .stg.bump{animation:stgbump .7s}
+@keyframes stgbump{30%{transform:scale(1.12);box-shadow:0 0 22px rgba(232,194,122,.8)}}
+/* the feel of each action: floating points, the combo, sparks (canvas .ffx) */
+.ffx{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+.fpop{position:absolute;z-index:7;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap;font:800 26px Cinzel,Georgia,serif;color:var(--cream);text-shadow:0 2px 6px #000;animation:fpop 1.1s ease-out forwards}
+.fpop.good{color:#FFE29A;text-shadow:0 0 12px rgba(255,200,90,.9),0 2px 4px #000}
+.fpop.great{font-size:34px;color:#FFF1C8;text-shadow:0 0 18px rgba(255,190,70,1),0 0 4px #fff,0 2px 4px #000}
+.fpop.bad{color:#FF8A7E;text-shadow:0 0 10px rgba(224,90,79,.9),0 2px 4px #000}
+.fpop small{display:block;font:700 13px Inter,Arial,sans-serif;text-align:center}
+@keyframes fpop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}15%{opacity:1;transform:translate(-50%,-60%) scale(1.12)}30%{transform:translate(-50%,-70%) scale(1)}100%{opacity:0;transform:translate(-50%,-170%) scale(.95)}}
+.ffly{position:fixed;z-index:30;pointer-events:none;font:800 28px Cinzel,Georgia,serif;color:#FFE29A;text-shadow:0 0 14px rgba(255,190,70,.9),0 2px 4px #000;transform:translate(-50%,-50%);transition:left .75s cubic-bezier(.5,0,.75,0),top .75s cubic-bezier(.5,0,.75,0),transform .75s,opacity .2s .7s}
+.ffly.bad{color:#FF8A7E;text-shadow:0 0 10px rgba(224,90,79,.9),0 2px 4px #000}
+.fcombo{position:absolute;left:14px;top:12px;z-index:7;font:800 20px Cinzel,Georgia,serif;color:#FFE29A;text-shadow:0 0 12px rgba(255,190,70,.8),0 2px 4px #000;opacity:0;transition:opacity .3s;pointer-events:none}
+.fcombo.on{opacity:1}
+.fcombo.pop{animation:fcombo .35s}
+@keyframes fcombo{40%{transform:scale(1.4)}}
+.fscene.st-inscribe .fcombo{top:56px}
+@media (prefers-reduced-motion:reduce){.fpop{animation-duration:.01s}}
+
+.ffly small{display:block;font:700 13px Inter,Arial,sans-serif;color:var(--cream);text-align:center}
+/* phones: the scene keeps its 16:9 picture and the HUD sits under it, so the controls never cover the action */
+@media (max-width:620px){
+  .fscene{aspect-ratio:auto;overflow:visible;box-shadow:none;display:flex;flex-direction:column}
+  .fshake{position:relative;inset:auto;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .fhud{position:relative;background:none;padding:8px 0 0}
+  .fscene .fclue{position:static;padding:6px 0 0}
+  .fscene .lmute{top:2%}
+  .fscene .lhelpbtn{top:calc(2% + 46px)}
+  .fscene .lsmithbtn{top:calc(2% + 92px)}
+  .fcombo{font-size:15px;top:6px;left:8px}
+  .fpop{font-size:18px}.fpop.great{font-size:22px}
+}
