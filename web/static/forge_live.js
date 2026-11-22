@@ -530,6 +530,20 @@
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('mainup'); } });
   window.addEventListener('blur', function () { act('mainup'); });
 
+  // 👤 show or hide the smith (remembered): the forge, the props and the effects stay either way
+  var sb = $('lsmithbtn');
+  if (sb) {
+    var smithOff = false;
+    try { smithOff = localStorage.getItem('ma-forge-smith') === 'off'; } catch (e) {}
+    var showSmith = function () { scene.classList.toggle('nosmith', smithOff); sb.classList.toggle('off', smithOff); };
+    showSmith();
+    sb.addEventListener('click', function (e) {
+      e.stopPropagation(); smithOff = !smithOff;
+      try { localStorage.setItem('ma-forge-smith', smithOff ? 'off' : 'on'); } catch (e2) {}
+      showSmith(); flash(smithOff ? '👤 Smith hidden' : '👤 Smith shown', '', 800);
+    });
+  }
+
   getState().then(apply).catch(function () { hint.textContent = 'Lost the connection to the forge. Reload the page.'; });
   loop();
 })();
