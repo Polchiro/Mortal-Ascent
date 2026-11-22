@@ -56,14 +56,15 @@
      from SHOAIB's videos onto one cell. The frames are laid exactly over the beast's still picture (sheets.json `still`:
      where the picture sits in the cell), which stays underneath unseen; whatever the fight does to the picture (its
      transform, flash, fade: `animal`, the knocks, the shakes) is copied onto the frames, so every existing movement
-     still carries the beast. One sheet shows at a time (data-anim; style.css fades between them). The idle loops in CSS;
+     still carries the beast. The picture itself is never drawn (style.css): it only keeps the beast's size and place.
+     One sheet shows at a time (data-anim; style.css fades between them). The idle loops in CSS, also through its roar;
      attack is stepped by the turn (`frame`), hit and death play on their own clock (`play`); death then holds its last
-     frame. "still" shows the picture itself (its roar swaps in its open-mouthed picture). */
+     frame. */
   function BeastSheets(box) {
     var data, img = box.querySelector(':scope > img'), layer = box.querySelector('.bsheets'), raf = null, cur = 'idle';
     try { data = JSON.parse(box.dataset.sheets); } catch (e) { return null; }
     if (!img || !layer || !data) return null;
-    var S = data.sheets, k = 1, base = '';
+    var S = data.sheets, k = 1, base = '', at = [0, 0], origin = '';
     function fit() {                                           // the layer onto the picture as drawn (object-fit: contain)
       var nw = img.naturalWidth, nh = img.naturalHeight, w = img.offsetWidth, h = img.offsetHeight;
       if (!nw || !nh || !w || !h) return;
@@ -74,13 +75,17 @@
       var left = cx - data.still[0] * k, top = cy - data.still[1] * k;
       layer.style.left = left + 'px'; layer.style.top = top + 'px';
       layer.style.width = data.cell[0] * k + 'px'; layer.style.height = data.cell[1] * k + 'px';
-      layer.style.transformOrigin = (img.offsetLeft + w / 2 - left) + 'px ' + (img.offsetTop + h - top) + 'px';   // the picture's own 50% 100%
+      at = [img.offsetLeft - left, img.offsetTop - top];       // the picture's box, from the layer's corner
+      origin = (at[0] + w / 2) + 'px ' + (at[1] + h) + 'px';  // the picture's own 50% 100%
+      copy();
     }
     function copy() {                                          // the picture's movement and flash, onto the frames
       if (!base) base = getComputedStyle(img).filter;          // its shadow and glow (style.css), when nothing flashes it
       layer.style.transform = img.style.transform;
       layer.style.filter = img.style.filter || (base !== 'none' ? base : '');
       layer.style.opacity = img.style.opacity;
+      var o = img.style.transformOrigin.match(/^(-?[\d.]+)px (-?[\d.]+)px/);   // a pivot of its own (its roar): the same point
+      layer.style.transformOrigin = o ? (+o[1] + at[0]) + 'px ' + (+o[2] + at[1]) + 'px' : origin;
     }
     function show(name, f) {
       var sh = S[name], div = layer.querySelector('.bs-' + name);
@@ -96,7 +101,13 @@
       width: function () { return data.still[2] * k; },       // the picture's width on screen (px)
       now: function () { return cur; },
       busy: function (name) { return cur === name && raf !== null; },
-      set: function (name) { stop(); if (name === 'idle' || name === 'still') { box.dataset.anim = name; cur = name; } },
+      set: function (name) { stop(); if (name === 'idle') { box.dataset.anim = name; cur = name; } },
+      edge: function (name) {                                  // where its front is on screen (px), at rest: standing, or biting
+        var r = layer.getBoundingClientRect(), keep = layer.style.transform;
+        if (keep) { layer.style.transform = ''; r = layer.getBoundingClientRect(); layer.style.transform = keep; }
+        var x = name === 'bite' ? S.attack.bite_x : S.idle.nose_x;
+        return x === undefined ? null : r.left + r.width * x;
+      },
       frame: function (name, f) { stop(); show(name, f); },
       play: function (name, done) {                            // on its own clock, at its own length
         stop();
@@ -119,7 +130,6 @@
     };
     if (window.MutationObserver) new MutationObserver(copy).observe(img, {attributes: true, attributeFilter: ['style']});
     if (img.complete) fit(); else img.addEventListener('load', fit);
-    copy();
     Object.keys(S).forEach(function (n) { new Image().src = S[n].src; });     // every sheet loaded now: changes are instant
     return api;
   }
@@ -346,6 +356,7 @@
     var scene = main.querySelector('.bscene'), fighter = main.querySelector('.fighter'), poses = main.querySelector('.fighter .poses');
     var beastBox = main.querySelector('.beast'), beast = main.querySelector('.beast img');
     var BS = (beastBox && beastBox._sheets) || null;            // its animation frames (BeastSheets), when it has them
+    var FRONT = 0.57;                                            // the cultivator's front (chest and skirt), a share of the fighter's box
     var end = endOf(main);                                      // the fight was won on this turn: the beast goes down last
     if ((!events.length && !end) || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
@@ -363,6 +374,8 @@
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
     var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
     var reachBeast = Math.max(0, br.left - (fr.left + fr.width * 0.64));                       // the beast to your body
+    if (BS && BS.edge('nose') !== null)                         // an animated beast: your sword tip to its nose, your body stays clear
+      reachMe = Math.max(0, BS.edge('nose') - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));
     var beastFilter = getComputedStyle(beast).filter;
     var bposes = null, home = beast.dataset.pose || 'idle';
     try { bposes = JSON.parse(beastBox.dataset.poses || 'null'); } catch (e) {}
@@ -537,7 +550,9 @@
         var bite = Math.round(A.bite / A.frames * A.ms);
         lunge = Math.round(bite * 0.5);                          // it springs from the crouch at about half way to the bite
         R = {gather: 0, rear: lunge, hit: bite, toss: bite + 140, back: bite + 140, end: A.ms, knock: RECIPES.gore.knock};
-        reach = Math.max(0, reachBeast - (A.reach || 0) * BS.width());   // its jaws already reach this far ahead in the frames
+        var jaws = BS.edge('bite');                              // its jaws, as the bite frame draws them where it stands
+        reach = jaws !== null ? Math.max(0, jaws - (fr.left + fr.width * FRONT))   // they stop at your front, never inside you
+                              : Math.max(0, reachBeast - (A.reach || 0) * BS.width());
       }
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
       return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
@@ -1890,11 +1905,6 @@
       }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } if (DS) BS.dead(); beast.style.opacity = ''; }};
     }
 
-    /* a step drawn on the beast's still picture (its roar swaps in the open-mouthed one): its frames step aside meanwhile */
-    function still(step) {
-      if (!BS) return step;
-      return {end: step.end, render: function (t) { BS.set(t >= step.end ? 'idle' : 'still'); step.render(t); }};
-    }
     var steps = [], kinds = {};
     function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
@@ -1905,7 +1915,7 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'roar') { add(still(roaring(ev)), 'beast_acting'); kinds.enemy = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting'); kinds.enemy = 1; }

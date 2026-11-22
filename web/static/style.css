@@ -659,9 +659,9 @@ form.inline{display:inline}
 /* the frame-by-frame sword attack (looks.ATTACK_SHEETS): the video cell sits where the stills put him on the 1024 x 559 canvas */
 .fighter .sheetfx{position:absolute;left:20.3125%;top:.54%;width:46.875%;height:96.6%;visibility:hidden;background-repeat:no-repeat;background-position:0 0;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
 .fighter[data-pose=sheet] .sheetfx:not(.gsheet):not(.msheet):not(.isheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
-/* her fighting stance (looks.IDLE_SHEETS) plays while she stands, in place of the still idle picture and its breathing:
-   x steps through a row every loop/rows seconds while y steps down the rows once a loop. Reduced motion: frame 0. */
-.fighter.stanced[data-pose=idle] .p-idle{visibility:hidden}
+/* her fighting stance (looks.IDLE_SHEETS) is her standing picture: the still idle picture isn't on the page at all
+   (explore_play.html, duel.html), and its breathing is off. x steps through a row every loop/rows seconds while y steps
+   down the rows once a loop. Reduced motion: frame 0. */
 .fighter.stanced[data-pose=idle] .isheet{visibility:visible}
 .fighter.stanced[data-pose=idle]:not(.acting) .poses{animation:none}
 .fighter .isheet{left:calc(20.3125% + 46.875% * var(--shift, 0));
@@ -1496,13 +1496,12 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
 }
 
 /* ── Beasts with animation frames (art/beasts/sheets/<slug>/, web/beast_sheets.py): the frames are laid exactly over
-   the beast's still picture (fight.js BeastSheets fits .bsheets to it and copies every move and flash the fight gives
-   the picture), which stays underneath unseen. One sheet shows at a time (data-anim on .beast), fading over the last
-   in 0.12 s so a change of animation never jumps. The idle loops in CSS while it stands (x steps through a row every
-   loop/rows, y down the rows once a loop); attack, hit and death are stepped by fight.js. "still": the picture
-   itself, while its roar shows its open-mouthed picture. Reduced motion: the idle holds its first frame. */
-.beast.sheeted>img{opacity:0;transition:opacity .12s}
-.beast.sheeted[data-anim=still]>img{opacity:1}
+   the place of the beast's still picture (fight.js BeastSheets fits .bsheets to it and copies every move and flash the
+   fight gives it). That picture is never drawn: it only keeps the beast's size and place on the page. One sheet shows
+   at a time (data-anim on .beast), fading over the last in 0.12 s so a change of animation never jumps. The idle loops
+   in CSS while it stands (x steps through a row every loop/rows, y down the rows once a loop), also through its roar;
+   attack, hit and death are stepped by fight.js. Reduced motion: the idle holds its first frame. */
+.beast.sheeted>img{visibility:hidden}
 .beast .bsheets{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;will-change:transform}
 .beast .bs{position:absolute;inset:0;background-repeat:no-repeat;background-position:0 0;opacity:0;transition:opacity .12s}
 .beast[data-anim=idle] .bs-idle,.beast[data-anim=attack] .bs-attack,.beast[data-anim=hit] .bs-hit,.beast[data-anim=death] .bs-death{opacity:1}

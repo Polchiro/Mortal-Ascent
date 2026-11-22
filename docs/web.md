@@ -236,7 +236,7 @@ a lair is fought with `bot/hunt.py`.
    steadies behind her crossed arms. Each sheet carries its own timing (`ready`, `first`, `ms` in
    `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). **The stance:** while she stands between moves, in beast
    fights and in duels (mirrored when she is the other cultivator), the female cultivator plays her fighting stance
-   instead of the still idle picture: on guard, sword held low, breathing, her sleeves, hair and skirts stirring, a
+   (her still idle picture isn't on those pages at all): on guard, sword held low, breathing, her sleeves, hair and skirts stirring, a
    5.4 s loop (`looks.IDLE_SHEETS`, `hero_female_stance.webp`, 72 frames cut by `scripts/make_heroine_stance.py`
    from SHOAIB's video of her, her feet on the still's feet). The page steps through it in CSS (`.stanced`,
    `stancex`/`stancey` in `style.css`); with reduced motion she holds its first frame. He keeps his still picture.
@@ -522,9 +522,9 @@ share one cell, so the beast never changes size or place between animations. The
 once it lies down, so its frames are recoloured to the hit video's (`match`).
 
 On the fight screen (`web/beast_sheets.py`, `BeastSheets` in `fight.js`, "Beasts with animation frames" in
-`style.css`) the frames are laid exactly over the still picture, which stays underneath unseen: every movement, flash
-and shake the fight gives the picture is copied onto them. One animation shows at a time, fading over the last in
-0.12 s:
+`style.css`) the frames take the still picture's place. That picture is never drawn: it only keeps the beast's size
+and place, and every movement, flash and shake the fight gives it is copied onto the frames. One animation shows at a
+time, fading over the last in 0.12 s:
 
 - **Idle** loops while the beast stands (in CSS; with reduced motion it holds its first frame).
 - **Attack** plays when it attacks you, 2.2 s (`CLIPS[...]["attack_ms"]`, the video at about 1.4x): it crouches in
@@ -533,5 +533,7 @@ and shake the fight gives the picture is copied onto them. One animation shows a
   and the damage number stay.
 - **Death** plays when it is beaten (`death.view` kind `sheet`), the thud where it lands (`impact`), and it then
   lies on its last frame, also on a fresh page of the won fight.
-- Its roar shows its still and open-mouthed pictures as before (`still()` in `fight.js`). Damage, rules and every
-  other beast are unchanged.
+- Its roar plays over its idle frames, turning on the roar's own pivot.
+- **Kept apart:** its bite stops with its jaws at the cultivator's front (`bite_x` in `sheets.json`, `FRONT` in
+  `fight.js`) and your Strike stops with the sword tip at its nose (`nose_x`), so neither runs into the other.
+- Damage, rules and every other beast are unchanged.

@@ -19,8 +19,9 @@ All frames share one cell, the box that holds every frame of all four (the attac
 further right than the picture), at SCALE of the picture's pixels. sheets.json says where the picture sits in that
 cell (`still`, cell px), so the page lays the frames exactly over it; and per sheet its frames (COLS wide, rows filled
 exactly so the idle can be stepped in CSS), its length (`ms`), and for the attack the frame it bites on (`bite`) and
-how far its jaws then reach ahead of the picture's nose (`reach`, a share of the picture's width); for the death the
-frame it lands on (`impact`).
+how far its jaws then reach ahead of the picture's nose (`reach`, a share of the picture's width) and where they are
+(`bite_x`, a share of the cell's width); for the idle where its front is (`nose_x`); for the death the frame it lands
+on (`impact`). The page uses `bite_x` and `nose_x` to keep the beast and the cultivator from running into each other.
 Needs ffmpeg, numpy, Pillow, scipy and rembg. --cache keeps the cut frames, so a second run only places them.
 """
 import json
@@ -223,6 +224,7 @@ def main(slug, videos, cache=None):
         info = {"src": f"/art/beasts/sheets/{slug}/{kind}.webp", "frames": len(frames), "cols": COLS, "rows": rows}
         if kind == "idle":
             info["ms"] = idle_ms
+            info["nose_x"] = round(frames[0].getbbox()[0] / cw, 4)              # its front, standing
         elif kind == "attack":
             info["ms"] = cfg["attack_ms"]
             lefts = [f.getbbox()[0] for f in frames]
@@ -230,6 +232,7 @@ def main(slug, videos, cache=None):
             bite = lo + int(np.argmin(lefts[lo:hi]))                         # the jaws furthest forward
             info["bite"] = bite
             info["reach"] = round(max(0, lefts[0] - lefts[bite]) / (still.width * SCALE), 4)
+            info["bite_x"] = round(lefts[bite] / cw, 4)                         # its jaws, at the bite
         else:
             s0, s1 = cfg[kind]
             info["ms"] = round((s1 - s0) * 1000)
