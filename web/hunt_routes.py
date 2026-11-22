@@ -8,6 +8,8 @@ Explore's hunting pages (docs/hunting.md):
   /hunt/locations     the location cards (the leader picks one)
   /hunt/v             a small JSON version number the lobby and hunt pages poll to know when to reload
   /hunt/pos           the map page reporting where you walk (web/hunt_map.py)
+  /world              the World Map: the town and the hunting grounds on one painted scroll (web/world.py)
+  /world/go/<key>     set out from the World Map: a Solo Hunt on that ground's walkable map
 
 Every POST only asks web/parties.py or web/hunt_play.py; they decide.
 """
@@ -15,7 +17,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
-from . import explore_play, hunt_pages, hunt_play
+from . import explore_play, hunt_pages, hunt_play, world
 from . import discord_oauth as oauth
 from .parties import Parties
 
@@ -259,7 +261,68 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         user = current_user(request)
         if not user:
             return go("/")
+        walked = hunts.walked(user["id"])                       # a walked Solo Hunt ends on the World Map
         party = hunts.dismiss(user["id"])
-        return go("/hunt" if party else "/explore")
+        return go("/hunt" if party else "/world" if walked else "/explore")
+
+    # ── the World Map (web/world.py, docs/world.md) ─────────────────
+
+    @app.get("/world", response_class=HTMLResponse)
+    def world_page(request: Request):
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+        s = with_conn(explores.catch_up, uid)
+        if s and not explores._finished(s):                      # an expedition already under way
+            return go("/explore/play")
+        party = parties.of(uid)
+        if party is not None:
+            if party.solo and not party.hunting:                 # a Solo Hunt still choosing a ground: dropped
+                parties.leave(uid)
+            else:                                                # a team, or out hunting: that comes first
+                return go("/hunt")
+
+        def build(c):
+            from bot import db
+            p = db.get_player(c, uid)
+            if p is None:
+                return None
+            return {**hunt_pages.purse(p), "realm": p["realm"], "markers": world.markers(p, hunts.blocked(c, uid))}
+
+        v = with_conn(build)
+        if v is None:
+            return page(request, "no_character.html", user=user, avatar=avatar(user))
+        return no_store(page(request, "world.html", v=v, art=world.ART, user=user, avatar=avatar(user),
+                             error=error(request)))
+
+    @app.post("/world/go/{key}")
+    def world_go(request: Request, key: str):
+        """Set out from the World Map: a Solo Hunt on this ground. Every check is the Solo Hunt's own (realm,
+        injury, rest: Parties.start_problems, Hunts.blocked); if one fails nothing is started."""
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+        if world.place(key) is None:
+            flash(request, "There is no such place on the map.")
+            return go("/world")
+        if parties.of(uid) is not None:
+            return go("/hunt")
+
+        def set_out(c):
+            _, why = parties.create(c, uid, "", False, True)
+            if why:
+                return why
+            why = parties.set_location(c, uid, key) or hunts.start(c, uid, walk=hunt_play.walks(c, uid))
+            if why:
+                parties.leave(uid)                               # nothing started: no party left behind
+            return why
+
+        why = with_conn(set_out)
+        if why:
+            flash(request, why)
+            return go("/world")
+        return go("/hunt")
 
     return explore_play

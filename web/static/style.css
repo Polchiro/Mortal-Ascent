@@ -1380,6 +1380,9 @@ body.huntmap .steps5 i{width:11px;height:11px}
 
 /* ── the town hub (town.html, town.js, docs/town.md): the hunting map's look, plus the dialogue ─────────────── */
 body.town .mprompt{cursor:pointer;font-family:Cinzel,Georgia,serif}
+.mprompt.home{cursor:pointer;pointer-events:auto}
+.mprompt.home b{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid rgba(26,20,10,.6);border-radius:3px;font:700 11px Inter,sans-serif}
+#homeDlg form{display:contents}
 body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid rgba(26,20,10,.6);border-radius:3px;font:700 11px Inter,sans-serif}
 .tdlg{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:5;width:min(520px,calc(100vw - 24px));padding:16px 20px 18px}
 .tdlg h2{margin:2px 0 8px;font:800 22px Cinzel,Georgia,serif;color:var(--ag3);letter-spacing:.6px}
@@ -1395,6 +1398,42 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 @media (max-width:640px){.tboard .tnpc{flex-direction:column;align-items:flex-start}}
 .tboard .tnpc .tgo{flex-direction:column;align-items:stretch;flex-shrink:0}
 .tgo .hbtn{white-space:nowrap}
+
+/* ── the World Map (world.html, world.js, web/world.py, docs/world.md): the scroll, its markers and their cards ── */
+body.world{overflow:auto;background:radial-gradient(ellipse at 50% 40%,#1A1D26,#0B0B0D 70%)}
+.wstage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:96px 16px 24px;box-sizing:border-box}
+.wscroll{position:relative;width:min(1400px,calc(100vw - 32px),calc((100vh - 120px) * 1.77));line-height:0;
+  filter:drop-shadow(0 18px 40px rgba(0,0,0,.6))}
+.wscroll img{width:100%;height:auto;display:block;-webkit-user-drag:none}
+.wmark{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:0;border:0;background:none;cursor:pointer;line-height:1.2;color:inherit}
+.wmark i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#FFF4D6,#EBCB86 45%,#C9A45C 70%);
+  border:2px solid rgba(26,20,10,.75);box-shadow:0 0 0 0 rgba(246,226,176,.6);animation:wpulse 2.4s ease-out infinite}
+.wmark span{display:flex;flex-direction:column;align-items:center;padding:3px 9px;border-radius:4px;white-space:nowrap;
+  background:rgba(12,12,15,.82);border:1px solid rgba(201,164,92,.5)}
+.wmark b{font:700 13px Cinzel,Georgia,serif;color:var(--ag3);letter-spacing:.4px}
+.wmark em{font:600 10.5px Inter,sans-serif;font-style:normal;color:#A49E90}
+.wmark:hover span,.wmark:focus-visible span{border-color:var(--ag2);background:rgba(24,22,18,.92)}
+.wmark:focus-visible{outline:none}.wmark:focus-visible i{outline:2px solid var(--ag3);outline-offset:3px}
+.wmark.mine i{background:radial-gradient(circle,#E6FFF4,#7FE0BC 45%,#4FC79B 70%);box-shadow:0 0 0 0 rgba(79,199,155,.6);animation-name:wpulsej}
+.wmark.mine em{color:var(--jd)}
+.wmark.s-home i{background:radial-gradient(circle,#EAF4FF,#9CC8F0 45%,#5E93C9 70%);animation:none;box-shadow:0 0 14px rgba(140,190,240,.7)}
+.wmark.s-waiting i{animation:none;opacity:.8}.wmark.s-waiting em{color:#EBCB86}
+.wmark.s-locked i{background:radial-gradient(circle,#8C8578,#4E4A42 70%);animation:none;box-shadow:none;border-color:rgba(0,0,0,.8)}
+.wmark.s-locked b{color:#B8B2A4}.wmark.s-locked em{color:#E07A6F}
+@keyframes wpulse{0%{box-shadow:0 0 0 0 rgba(246,226,176,.65)}100%{box-shadow:0 0 0 16px rgba(246,226,176,0)}}
+@keyframes wpulsej{0%{box-shadow:0 0 0 0 rgba(79,199,155,.65)}100%{box-shadow:0 0 0 16px rgba(79,199,155,0)}}
+@media (prefers-reduced-motion:reduce){.wmark i{animation:none}}
+.wcard{position:fixed;z-index:6}
+.wstate{margin:-4px 0 14px;font-size:13.5px;line-height:1.45}
+.wstate.open{color:#B8D9C9}.wstate.waiting{color:#EBCB86}.wstate.locked{color:#E07A6F}
+.wcard form{display:contents}
+body.world .tnotice{color:#F0C4BC}
+@media (max-width:760px){                  /* a phone: the scroll wider than the screen, swiped across */
+  .wstage{justify-content:flex-start;overflow-x:auto;padding:120px 12px 24px;-webkit-overflow-scrolling:touch}
+  .wscroll{width:780px;flex-shrink:0}
+  body.world .mhud{right:120px}body.world .mplate h1{font-size:18px}
+  .wmark span{padding:2px 6px}.wmark b{font-size:11.5px}.wmark em{font-size:10px}.wmark i{width:15px;height:15px}}
 
 /* ── the Stone Stele's rankings (rankings.html, web/rankings.py) ──────────────────────────────────────────────── */
 main.rankings{width:100%;box-sizing:border-box;max-width:720px;margin:0 auto;padding:24px 16px 48px}

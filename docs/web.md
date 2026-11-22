@@ -178,6 +178,12 @@ the website's memory. Rare finds (Earth, Heaven) are announced only when gathere
 `/town` (the **Town** tab) is the walkable town hub: walk up to the townsfolk, who send you on to the pages
 below. docs/town.md.
 
+## The World Map
+
+`/world` is the painted scroll of the whole land: out through the town gate, then to a hunting ground (a Solo Hunt
+on its walkable map, for everyone with a walking look) or back to town. Places your realm can't enter yet are sealed,
+and the server checks it again when you set out. docs/world.md.
+
 ## The Arena
 
 `/arena` and `/duel`: friendly duels against other players, on the beast fight's screen. docs/pvp.md,

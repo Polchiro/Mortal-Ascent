@@ -32,6 +32,19 @@
 </section>
 
 <div class="mprompt" id="prompt" role="status"></div>
+<section class="mplate tdlg" id="homeDlg" role="dialog" aria-modal="true" aria-labelledby="homeH" hidden>
+  <p class="kicker">THE PATH HOME</p>
+  <h2 id="homeH">Leave {{ g.location }}?</h2>
+  <p class="tline">The path you came in by leads home. What you carry is banked when you get there.</p>
+  <div class="tgo">
+    <form method="post" action="/hunt/act">
+      <input type="hidden" name="what" value="return"><input type="hidden" name="arg" value="">
+      <input type="hidden" name="turn" value="{{ g.turn }}">
+      <button class="hbtn small" type="submit">Head home</button>
+    </form>
+    <button type="button" class="hbtn ghost small" data-stay>Stay and hunt</button>
+  </div>
+</section>
 <div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
 
 <form id="engage" method="post" action="/hunt/act" hidden>

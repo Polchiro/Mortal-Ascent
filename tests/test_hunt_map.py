@@ -142,11 +142,9 @@ def test_walking_keeps_you_out_and_standing_still_sends_you_home(conn):
     assert h.over
 
 
-def test_only_admins_with_a_walking_look_walk(conn, monkeypatch):
+def test_everyone_with_a_walking_look_walks(conn, monkeypatch):
     monkeypatch.delenv("ADMIN_IDS", raising=False)
-    assert not walks(conn, 1)
-    monkeypatch.setenv("ADMIN_IDS", "1")
-    assert walks(conn, 1)                                                               # no look chosen yet: male
+    assert walks(conn, 1)                                                               # not an admin, no look yet: male
     db.update_player(conn, 1, appearance=looks.dump({"gender": "female"}))
     assert walks(conn, 1)                                                               # she walks too
     monkeypatch.setitem(looks.WALK_SHEETS, "female", None)

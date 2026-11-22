@@ -16,13 +16,15 @@
    footprint's back edges), and drawn over it in front; when something hides you, your silhouette shows through it.
 
    Walk up to someone and press E (or tap the button) to talk: a dialogue says who they are and offers the pages
-   they send you to. Nothing here changes the game, so the server doesn't follow where you walk. */
+   they send you to. The ways out (cfg.exits: the gate, out to the World Map, docs/world.md) work the same way, their
+   doorway lit. Nothing here changes the game, so the server doesn't follow where you walk. */
 (function () {
   'use strict';
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
   var SIZE = cfg.size, AREA = cfg.area, BLOCKED = cfg.blocked || [], REACH = cfg.reach, NPCS = cfg.npcs;
   var PIECES = cfg.pieces || [], INSET = cfg.inset || 0;
+  var EXITS = cfg.exits || [], SPOTS = NPCS.concat(EXITS);   // the ways out (the gate): talked to like the townsfolk
   var TW = 128, TH = 64;                       // a tile, in the painting's pixels (the world)
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // world px/s; px per full stride (at 100%); character size
   var SLOW = 0.45, VIEW = 12;                   // Shift: a stroll; tiles across the screen (at K = 1)
@@ -114,6 +116,7 @@
   function sectorRow(a) { var k = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; return (k + 6) % 8; }
   function angDiff(a, b) { return Math.abs(((a - b) % 360 + 540) % 360 - 180); }
   var hero = {x: cfg.hero.x, y: cfg.hero.y, dir: 4, frame: STAND[4], phase: 0, moving: false};
+  if (window.__spy) window.__hero = hero;       // the headless-browser checks follow him
   var back = null;
   try { back = sessionStorage.getItem('town.from'); sessionStorage.removeItem('town.from'); } catch (e) {}
   if (cfg.near) back = cfg.near;                 // "Back to town" from someone's page: in front of them
@@ -150,7 +153,7 @@
   /* the loop: fixed 60 Hz steps, drawn every frame */
   var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60, debug = false, hiddenHero = false;
   function update(dt) {
-    NPCS.forEach(function (n) { n.t += dt; });
+    NPCS.forEach(function (n) { n.t += dt; }); glowT += dt;
     var v = inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
     hero.moving = m > 0.01;
     if (hero.moving) {
@@ -166,10 +169,13 @@
       hero.still = 0;
     } else { hero.frame = STAND[hero.dir]; hero.still = (hero.still || 0) + dt; }
     var best = null, bd = REACH;
-    NPCS.forEach(function (n) { var d = Math.hypot(hero.x - n.x, hero.y - n.y); if (d < bd) { bd = d; best = n; } });
+    SPOTS.forEach(function (n) { var d = Math.hypot(hero.x - n.x, hero.y - n.y); if (d < bd) { bd = d; best = n; } });
     if (best !== near) {
       near = best;
-      if (near) { prompt.textContent = (near.prop ? 'Read the ' : 'Talk to ') + near.name + ' '; var k = document.createElement('b'); k.textContent = 'E'; prompt.appendChild(k); }
+      if (near) {
+        prompt.textContent = (near.exit ? near.title : (near.prop ? 'Read the ' : 'Talk to ') + near.name) + ' ';
+        var k = document.createElement('b'); k.textContent = 'E'; prompt.appendChild(k);
+      }
     }
     prompt.classList.toggle('on', !!near && !dlgOpen);
   }
@@ -215,6 +221,27 @@
     }
     label(n, x, y - (n.prop ? 120 : 78), close);
   }
+  /* a way out: its doorway (e.glow: the foot of the door, outside) lit with pale blue Qi that breathes, motes rising
+     from it; drawn over the gate, brighter when you are close enough to leave */
+  var glowT = 0, CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function drawExit(e) {
+    var p = toScreen(e.glow[0], e.glow[1]), close = e === near, b = CALM ? 0.5 : (Math.sin(glowT * 2.2) + 1) / 2;
+    var k = (close ? 1.25 : 1) * (0.85 + 0.15 * b);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var pool = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 110);          // a pool of light on the road
+    pool.addColorStop(0, 'rgba(140,200,255,' + 0.30 * k + ')'); pool.addColorStop(1, 'rgba(110,180,255,0)');
+    ctx.fillStyle = pool; ctx.beginPath(); ctx.ellipse(p.x, p.y, 110, 46, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.translate(p.x, p.y - 70); ctx.scale(0.62, 1);                 // light spilling from the doorway
+    var door = ctx.createRadialGradient(0, 0, 6, 0, 0, 110);
+    door.addColorStop(0, 'rgba(170,220,255,' + 0.34 * k + ')'); door.addColorStop(0.55, 'rgba(120,185,255,' + 0.12 * k + ')');
+    door.addColorStop(1, 'rgba(110,180,255,0)');
+    ctx.fillStyle = door; ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    if (!CALM) for (var i = 0; i < 9; i++) {                                     // motes drifting up and out
+      var t = (glowT * 0.3 + i / 9) % 1, a = i * 2.39, mx = p.x + Math.cos(a) * 46 + Math.sin(glowT + i) * 6, my = p.y - 10 - t * 150;
+      ctx.fillStyle = 'rgba(205,238,255,' + (0.75 * Math.sin(Math.PI * t)) + ')'; ctx.beginPath(); ctx.arc(mx, my, 2.1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
   function draw() {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, W, H);
@@ -233,6 +260,7 @@
       movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
     });
     layered(movers).forEach(function (f) { f(); });
+    EXITS.forEach(drawExit);                            // over the gate: its doorway lit
     if (hiddenHero) {                                   // behind a wall or a building: your silhouette shows through
       ctx.save(); ctx.globalAlpha = 0.45; at(hp.x, hp.y, function () { drawHero(0, 0); }); ctx.restore();
     }

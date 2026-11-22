@@ -21,7 +21,7 @@
 {% if notice %}<div class="mplate tnotice" role="status">{{ notice }}</div>{% endif %}
 
 <div class="mtools">
-  <a class="hbtn ghost small" href="/profile">Leave town</a>
+  <a class="hbtn ghost small" href="/world">World Map</a>
 </div>
 
 {% if walking %}
@@ -44,6 +44,10 @@
     <div class="tgo">{% for label, href in n.go %}<a class="hbtn small" href="{{ href }}">{{ label }}</a>{% endfor %}</div>
   </div>
   {% endfor %}
+  <div class="tnpc">
+    <div><b>The Town Gate</b> <span class="mhint">· Leave town</span><p class="tline">The road out into the world.</p></div>
+    <div class="tgo"><a class="hbtn small" href="/world">Go out into the world</a></div>
+  </div>
 </section>
 {% endif %}
 {% endblock %}

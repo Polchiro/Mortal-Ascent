@@ -159,8 +159,9 @@ GROUND = {
 NPCS = [
     {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 26.2, "y": 18.8,
      "src": "/art/portraits/town/gate.webp", "h": 135,
-     "line": "The wilds are restless tonight. Beasts prowl the forest, and the herbs out there won't pick themselves.",
-     "go": [["Hunt beasts", "/explore"], ["Gather herbs", "/gather"]]},
+     "line": "The wilds are restless tonight. Walk out through the gate and the whole land lies before you. "
+             "Hunting with friends? Gather your party first. And the herbs out there won't pick themselves.",
+     "go": [["See the World Map", "/world"], ["Hunt with a team", "/explore"], ["Gather herbs", "/gather"]]},
     {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 8.9, "y": 12.6,
      "src": "/art/portraits/town/blacksmith.webp", "h": 132,
      "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging.",
@@ -187,6 +188,19 @@ NPCS = [
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
      "line": "The names of the town's strongest are carved here: the highest realms, the richest purses, the fiercest duelists.",
      "go": [["Read the rankings", "/rankings"]]},
+]
+
+
+# The ways out of town (docs/world.md): spots you walk onto, which ask where you'd like to go, like the townsfolk do
+# (the same dialogue, the same REACH). The gate's doors open onto the road (GATE_Y0 + 3.84); you step out of them onto
+# the World Map (web/world.py), and come back in at START. `glow`: where the page lights the way out (tiles): the
+# foot of the doorway on the gate's outer face, lit over the gate, since the spot itself is behind the wall from
+# where the camera looks.
+EXITS = [
+    {"key": "gate_out", "name": "The Town Gate", "title": "Leave town", "x": 28.6, "y": 16.0, "glow": (30.6, 16.9),
+     "line": "The gate stands open onto the moonlit road. Beyond it lie the forests, the gorge and the peaks, "
+             "each wilder than the last.",
+     "go": [["Go out into the world", "/world"]]},
 ]
 
 
@@ -252,15 +266,18 @@ def placed():
 
 
 def page_data(sheet, near=None):
-    """The page's data (web/static/town.js): the walking sheet, the map and the townsfolk. You come in at the gate,
-    or in front of `near` (an NPC's key: whoever you came back from), or of whoever you last left town through."""
+    """The page's data (web/static/town.js): the walking sheet, the map, the townsfolk and the ways out. You come in
+    at the gate (also back from the World Map), or in front of `near` (an NPC's key: whoever you came back from), or
+    of whoever you last left town through."""
     npcs = [{k: n[k] for k in ("key", "name", "title", "x", "y", "line")} |
             {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
              "flip": n.get("flip", False)} for n in NPCS]
+    exits = [{k: e[k] for k in ("key", "name", "title", "x", "y", "line", "go")} |
+             {"exit": True, "glow": list(e.get("glow", (e["x"], e["y"])))} for e in EXITS]
     return {"sheet": sheet, "size": SIZE, "ground": ART, "area": [list(p) for p in AREA], "inset": INSET,
             "blocked": [list(c) for c in BLOCKED] + [[p["x"], p["y"], p["r"]] for p in PROPS], "pieces": placed(),
             "reach": REACH, "scale": SCALE, "hero": {"x": START[0], "y": START[1]},
-            "near": near if any(n["key"] == near for n in NPCS) else None, "npcs": npcs}
+            "near": near if any(n["key"] == near for n in NPCS) else None, "npcs": npcs, "exits": exits}
 
 
 def page_json(data):

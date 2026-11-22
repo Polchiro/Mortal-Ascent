@@ -124,7 +124,9 @@ def test_realm_rules_and_leader_can_remove(site):
     assert app.state.parties.of(A) is None and a.get("/hunt").headers["location"] == "/explore"
 
 
-def test_solo_hunt_goes_straight_to_a_fight(site):
+def test_solo_hunt_goes_straight_to_a_fight(site, monkeypatch):
+    import looks
+    monkeypatch.setattr(looks, "WALK_SHEETS", {})                                       # a look that can't walk: menus
     app, login, path = site
     a = login(A)
     assert a.post("/explore/solo").headers["location"] == "/hunt/locations"
