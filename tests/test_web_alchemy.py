@@ -48,6 +48,7 @@ def client(db_path, monkeypatch):
     c = TestClient(app, base_url="http://localhost:8000", follow_redirects=False)
     q = urllib.parse.parse_qs(urllib.parse.urlparse(c.get("/login").headers["location"]).query)
     c.get("/callback", params={"code": "x", "state": q["state"][0]})
+    c.get("/town/visit/alchemist")                                        # Herbalist Lan opens the hall
     c.now = [1000.0]
     app.state.crafts.clock = lambda: c.now[0]
     c.crafts = app.state.crafts
@@ -65,7 +66,7 @@ def test_alchemy_page_shows_pills_and_recipe(client):
     assert "Ember Dantian Pill" in page.text and "Ready to craft" in page.text
     assert "2 × Spirit Grass" in page.text and "Begin refining" in page.text
     assert "disabled" not in page.text.split("Begin refining")[0][-80:]
-    assert 'href="/alchemy"' in page.text                                # the nav tab
+    assert 'href="/alchemy"' not in page.text                            # no Alchemy tab: Herbalist Lan in town
 
 
 def test_begin_takes_the_herbs(client, db_path):
@@ -635,3 +636,40 @@ def test_the_lid_is_off_while_herbs_go_in(client):
     begin(client, controls="live")                                       # live: body and lid, the page moves the lid
     page = client.get("/alchemy/play").text
     assert "cauldron_body.png" in page and 'class="lidl"' in page
+
+
+
+# ── reached through Herbalist Lan ────────────────────────────────────
+
+def test_alchemy_is_locked_to_herbalist_lan(client):
+    client.get("/town")                                                   # back in town: the pass ends
+    r = client.get("/alchemy")
+    assert r.status_code == 303 and r.headers["location"] == "/town?near=alchemist"
+    assert begin(client).headers["location"] == "/town?near=alchemist"   # nor can a craft start
+    town = client.get("/town?near=alchemist").text
+    assert "Herbalist Lan keeps the alchemy hall" in town and '"near": "alchemist"' in town
+    assert 'href="/alchemy"' not in town.split("</header>")[0]            # no Alchemy tab
+    r = client.get("/town/visit/alchemist")                               # talk to her
+    assert r.headers["location"] == "/alchemy" and client.get("/alchemy").status_code == 200
+
+
+def test_a_craft_in_progress_is_never_locked_out(client):
+    begin(client, controls="live")
+    client.get("/town")                                                   # wandered off mid-craft
+    assert client.get("/alchemy").headers["location"] == "/alchemy/play"
+    assert client.get("/alchemy/play").status_code == 200
+
+
+def test_back_to_town_from_the_result(client):
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    s.craft.settle(1.0)
+    s.craft.settle(0.8)
+    page = client.get("/alchemy/play").text
+    assert "Back to town" in page
+    r = client.post("/alchemy/done", data={"to": "town"})
+    assert r.status_code == 303, (r.status_code, r.text[:300])
+    assert r.headers["location"] == "/town?near=alchemist" and client.crafts.get(UID) is None
+    client.get(r.headers["location"])                                     # arriving in town ends the visit
+    assert client.get("/alchemy").headers["location"] == "/town?near=alchemist"

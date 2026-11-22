@@ -168,7 +168,7 @@ NPCS = [
     {"key": "alchemist", "name": "Herbalist Lan", "title": "Pills and herbs", "x": 8.6, "y": 19.6,
      "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
-     "go": [["Enter the alchemy hall", "/alchemy"]]},
+     "go": [["Enter the alchemy hall", "/town/visit/alchemist"]]},   # the only way in (app.py: alchemy is locked)
     {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 16.2, "y": 12.2,
      "src": "/art/portraits/town/merchant.webp", "h": 132,
      "line": "A cultivator should look the part. New robes, a new face to the world: I have it all.",
@@ -251,16 +251,16 @@ def placed():
     return out
 
 
-def page_data(sheet):
-    """The page's data (web/static/town.js): the walking sheet, the map and the townsfolk. You come in at the gate
-    (the page puts you back in front of whoever you last left town through)."""
+def page_data(sheet, near=None):
+    """The page's data (web/static/town.js): the walking sheet, the map and the townsfolk. You come in at the gate,
+    or in front of `near` (an NPC's key: whoever you came back from), or of whoever you last left town through."""
     npcs = [{k: n[k] for k in ("key", "name", "title", "x", "y", "line")} |
             {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
              "flip": n.get("flip", False)} for n in NPCS]
     return {"sheet": sheet, "size": SIZE, "ground": ART, "area": [list(p) for p in AREA], "inset": INSET,
             "blocked": [list(c) for c in BLOCKED] + [[p["x"], p["y"], p["r"]] for p in PROPS], "pieces": placed(),
             "reach": REACH, "scale": SCALE, "hero": {"x": START[0], "y": START[1]},
-            "npcs": npcs}
+            "near": near if any(n["key"] == near for n in NPCS) else None, "npcs": npcs}
 
 
 def page_json(data):

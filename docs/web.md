@@ -122,6 +122,13 @@ progress lives in the website's memory and is lost if the website restarts (like
 
 ## Alchemy
 
+**Reached only through Herbalist Lan in town.** There is no Alchemy tab. Lan's "Enter the alchemy hall" goes to
+`/town/visit/alchemist`, which gives a pass (session) and opens `/alchemy`; opening `/alchemy` or starting a craft
+without it sends you to the town, in front of Lan, with a note. Each click in the hall keeps the pass (it lapses after
+30 idle minutes); arriving in town ends it. A craft in progress is never locked out, so a refresh mid-craft is safe.
+"← Back to town" (recipe page, and the result next to Craft again) returns you in front of Lan (`/town?near=alchemist`,
+`town.page_data(near=)`); Gather's "To Herbalist Lan" does too.
+
 `/alchemy` is the bot's `/craft` (docs/alchemy.md, section 5) in the browser, with the same engine:
 `bot/crafting.py` picks the herbs (`plan`), takes them (`take_ingredients`), runs the stages (`Craft`, started by
 `craft_for`, the same function `/craft` uses, so the Furnace artifact, Steady Hand, Swift Hands and Alchemy Sage

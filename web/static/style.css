@@ -1710,3 +1710,6 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .lscene.storm.goright .lidl{transform:translateX(103.5%)}
 @keyframes lidjump{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,-5%) rotate(1deg)}}
 @media (prefers-reduced-motion:reduce){.lscene.hot .lidl,.lscene.backlash .lidl{animation:none}}
+.fhead .totown{width:auto;align-self:flex-start}
+.tnotice{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:20;padding:10px 18px;color:var(--gold2);font-weight:700;animation:tnfade 6s forwards}
+@keyframes tnfade{0%,80%{opacity:1}100%{opacity:0;visibility:hidden}}

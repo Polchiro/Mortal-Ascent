@@ -18,6 +18,8 @@
   {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to talk · <b>Shift</b> to stroll</div>{% endif %}
 </div>
 
+{% if notice %}<div class="mplate tnotice" role="status">{{ notice }}</div>{% endif %}
+
 <div class="mtools">
   <a class="hbtn ghost small" href="/profile">Leave town</a>
 </div>
