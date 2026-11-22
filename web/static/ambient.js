@@ -5,7 +5,13 @@
 
    The beast fight's page is replaced every turn (fight.js `show`); the same canvas is moved into the new scene, so the
    leaves keep falling instead of starting over. It stops while the tab is hidden, and with reduced motion it isn't
-   drawn at all. Sizes are shares of the scene, so it looks the same on a phone and on a wide screen. */
+   drawn at all. Sizes are shares of the scene, so it looks the same on a phone and on a wide screen.
+
+   A place may also have a video of its painting coming alive (`video`: art/scenes/<scene>.mp4, made by
+   scripts/make_background_loop.py): it loops behind the whole fight page, under the page's own shading, fading in
+   over the painting once it plays (until then, or if it can't play, the painting shows). Like the canvas it moves into
+   each turn's new page and carries on. Not with reduced motion, nor when the browser asks to save data. Where the
+   video already shows something (the aurora), the canvas leaves it out (`skip`). */
 (function () {
   'use strict';
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -19,7 +25,7 @@
                     motes: {n: 10, y: [0.15, 0.6], c: '255,236,190', a: 0.5}},
     misty_pine_valley: {mist: {n: 9, y: [0.25, 0.85], a: 0.24, c: '214,222,230', speed: 1.2},
                         motes: {n: 8, y: [0.3, 0.8], c: '220,232,240', a: 0.35}},
-    northern_sea_wilds: {aurora: {y: 0.12, c: '90,255,200'},
+    northern_sea_wilds: {aurora: {y: 0.12, c: '90,255,200'}, video: '/art/scenes/battle_northern_sea_wilds.mp4', skip: ['aurora'],
                          fall: {kind: 'snow', n: 34, speed: 0.05, wind: 0.03},
                          mist: {n: 3, y: [0.6, 0.9], a: 0.09, c: '200,230,255', speed: 1.6}},
     red_cliff_gorge: {fall: {kind: 'sand', n: 55, speed: 0.0, wind: 0.32, colors: ['#F2C28A', '#E0A060', '#FFD9A8']},
@@ -31,6 +37,27 @@
                   motes: {n: 30, y: [0.2, 0.85], c: '200,230,255', a: 0.8, glow: true, big: 1.5}}
   };
   var DEFAULT = {motes: {n: 10, y: [0.2, 0.8], c: '255,240,210', a: 0.4}};
+
+  var saveData = !!(navigator.connection && navigator.connection.saveData), film = null, filmSrc = null;
+  function film_(main, src) {                                  // the place's video, at the back of the whole fight page
+    if (!src || saveData) { if (film) { film.remove(); film = null; filmSrc = null; } main.classList.remove('bglive'); return; }
+    if (!film || filmSrc !== src) {
+      if (film) film.remove();
+      film = document.createElement('video'); filmSrc = src;
+      film.className = 'bgloop'; film.muted = true; film.loop = true; film.autoplay = true; film.playsInline = true;
+      film.setAttribute('muted', ''); film.setAttribute('playsinline', ''); film.setAttribute('aria-hidden', 'true');
+      film.preload = 'auto'; film.src = src;
+      film.addEventListener('playing', function () { film.classList.add('on'); });
+      film.addEventListener('error', function () { if (film) { film.remove(); film = null; } });
+    }
+    if (film.parentNode !== main) {
+      main.insertBefore(film, main.firstChild);
+      var shade = main.querySelector(':scope > .bgshade');      // the page's own shading, kept over the video
+      if (!shade) { shade = document.createElement('div'); shade.className = 'bgshade'; main.insertBefore(shade, film.nextSibling); }
+      main.classList.add('bglive');
+      var p = film.play(); if (p && p.catch) p.catch(function () {});
+    }
+  }
 
   var canvas = null, ctx = null, place = null, key = null, W = 0, H = 0, dpr = 1, items = [], last = 0, flash = 0,
       nextFlash = 0, bolt = null, gust = 0, nextGust = 0, mistSprite = null;
@@ -90,6 +117,7 @@
     var grown = resize();
     if (k !== key) { key = k; place = PLACES[k] || DEFAULT; mistSprite = place.mist ? sprite(place.mist.c) : null; seed(); nextFlash = 0; nextGust = 0; }
     else if (grown) seed();
+    film_(main, place.video);
     return true;
   }
 
@@ -108,7 +136,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    if (p.aurora) {                                            // the aurora breathes: a soft band that brightens and fades
+    if (p.aurora && !(film && p.skip && p.skip.indexOf('aurora') >= 0)) {                                            // the aurora breathes: a soft band that brightens and fades
       var a = 0.05 + 0.05 * Math.sin(t * 0.5) + 0.03 * Math.sin(t * 1.3);
       var g = ctx.createLinearGradient(0, 0, 0, H * 0.5);
       g.addColorStop(0, 'rgba(' + p.aurora.c + ',0)'); g.addColorStop(p.aurora.y + 0.1, 'rgba(' + p.aurora.c + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + p.aurora.c + ',0)');
