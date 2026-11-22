@@ -20,7 +20,7 @@
   var W = cv.width, H = cv.height;
 
   var cur = null;          // {id, stage, pub, t0 (performance.now at begin), st (stage-local state)}
-  var ending = false, frame = 0;
+  var ending = false, frame = 0, afterglow = null;
 
   // ── talking to the server ──
   function post(url, data) {
@@ -227,7 +227,7 @@
     var b = breathAt(p, t), phase = b[0], out = p.volatile === s.placed;
     var how = rate(out ? Math.min(phase, 1 - phase) : Math.abs(phase - 0.5), p.window);
     s.placed++; s.since = t;
-    once(V.splash);
+    flyHerb(key, function () { once(V.splash); });
     flash(WORD[how], how === 'rough' ? '' : 'good', 700);
     Snd(how === 'precise' ? 'chime' : how === 'good' ? 'good' : 'tick');
     press({herb: key}).then(function (r) {
@@ -239,6 +239,29 @@
         flash(m.how === 'wrong-forgiven' ? 'Backlash! (forgiven)' : 'Backlash! It wanted ' + m.want, 'bad', 1400);
       }
     });
+  }
+
+  // the herb's picture arcs from its button into the cauldron's mouth, spinning and shrinking; then the splash
+  function flyHerb(key, landed) {
+    var img = document.querySelector('#lherbs button[data-herb="' + key + '"] img');
+    if (calm || !img || !img.animate) { landed(); return; }
+    var from = img.getBoundingClientRect(), box = scene.getBoundingClientRect();
+    var tx = box.left + box.width * 0.5, ty = box.top + box.height * 0.42;              // the cauldron's mouth
+    var fly = img.cloneNode();
+    fly.className = 'flyherb';
+    fly.style.left = from.left + 'px'; fly.style.top = from.top + 'px';
+    fly.style.width = from.width + 'px'; fly.style.height = from.height + 'px';
+    document.body.appendChild(fly);
+    var dx = tx - (from.left + from.width / 2), dy = ty - (from.top + from.height / 2);
+    var peak = Math.min(dy, 0) - box.height * 0.22;                                     // up over the rim, then down
+    var a = fly.animate([
+      {transform: 'translate(0,0) scale(1) rotate(0deg)', opacity: 1},
+      {transform: 'translate(' + dx * 0.55 + 'px,' + peak + 'px) scale(.85) rotate(200deg)', opacity: 1, offset: 0.55},
+      {transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.25) rotate(420deg)', opacity: 0.2}
+    ], {duration: 520, easing: 'cubic-bezier(.3,.1,.5,1)'});
+    var done = false, end = function () { if (done) return; done = true; fly.remove(); landed(); };
+    a.onfinish = end;
+    setTimeout(end, 800);
   }
 
   function breathAt(p, t) {                 // the same as alchemy_live.breath_at
@@ -332,11 +355,30 @@
       play(V.cond);
     },
     tick: function (c, t) {
-      var p = c.pub, pa = pulseAt(p, t), level = pa[0], ph = pa[1], beat = level - p.start;
+      var tl = c.st.pressedAt !== undefined ? Math.min(t, c.st.pressedAt) : t;      // after the press the pill holds
+      var p = c.pub, pa = pulseAt(p, tl), level = pa[0], ph = pa[1], beat = level - p.start;
       var cx = W / 2, cy = H * 0.33, R = 62, far = 210;
       scene.style.setProperty('--glow', Math.min(1, level / 4));
       V.cond.style.setProperty('--glow', Math.min(1, level / 4));
+      // the pill comes alive beat by beat: pale → golden → white-hot, a breathing halo, a tremble when it's ready
+      var beatGlow = Math.sin(Math.PI * Math.min(1, ph * 1.1));
+      var hot = Math.min(1, level / 4), bright = 0.75 + 0.55 * hot + 0.25 * beatGlow * hot;
+      if (!calm) {
+        V.cond.style.filter = 'brightness(' + bright.toFixed(2) + ') saturate(' + (0.4 + 0.9 * hot).toFixed(2) + ') sepia(' + (level >= 4 ? 0 : 0.25 * hot).toFixed(2) + ')';
+        V.cond.style.transform = level === 4 ? 'translate(' + ((Math.random() - 0.5) * 3).toFixed(1) + 'px,' + ((Math.random() - 0.5) * 3).toFixed(1) + 'px)' : '';
+      }
       clear();
+      var hc = ['200,215,255', '245,225,170', '255,210,110', '255,190,80', '255,245,220', '255,120,90'][level];
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      var hr = 70 + 50 * hot + 20 * beatGlow, g0 = ctx.createRadialGradient(W / 2, H * 0.33, 10, W / 2, H * 0.33, hr);
+      g0.addColorStop(0, 'rgba(' + hc + ',' + (0.18 + 0.32 * hot * (0.6 + 0.4 * beatGlow)).toFixed(2) + ')'); g0.addColorStop(1, 'rgba(' + hc + ',0)');
+      ctx.fillStyle = g0; ctx.beginPath(); ctx.arc(W / 2, H * 0.33, hr, 0, 2 * Math.PI); ctx.fill();
+      if (c.st.flashAt !== undefined && t - c.st.flashAt < 0.6) {                    // a precise press: a burst of light
+        var k = (t - c.st.flashAt) / 0.6, g1 = ctx.createRadialGradient(W / 2, H * 0.33, 5, W / 2, H * 0.33, 60 + 220 * k);
+        g1.addColorStop(0, 'rgba(255,255,255,' + (0.9 * (1 - k)).toFixed(2) + ')'); g1.addColorStop(1, 'rgba(255,240,200,0)');
+        ctx.fillStyle = g1; ctx.beginPath(); ctx.arc(W / 2, H * 0.33, 60 + 220 * k, 0, 2 * Math.PI); ctx.fill();
+      }
+      ctx.restore();
       // the target: a fixed golden outline around the pill
       ctx.save(); ctx.setLineDash([10, 8]); ring(cx, cy, R, 'rgba(255,236,180,.85)', 4); ctx.restore();
       if (level < 5) {
@@ -365,6 +407,8 @@
       c.st.pressed = true;
       var p = c.pub, t = now(), pa = pulseAt(p, t), level = pa[0], ph = pa[1];
       var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint, how = glint ? rate(Math.abs(ph - 0.5), p.glint) : null;
+      if (glint) c.st.flashAt = t;
+      c.st.pressedAt = t;
       flash(glint ? (how === 'precise' ? '✨ Precise: a perfect pulse!' : 'Good: in the glint') : level === 4 ? (ph < 0.5 ? 'Rough: a little early' : 'Rough: a little late') : level >= 5 ? 'Cracked!' : 'Too early',
             glint ? 'good' : level === 4 ? '' : 'bad', 1200);
       Snd(glint ? 'chime' : level >= 5 || level < 4 ? 'bad' : 'good');
@@ -381,30 +425,13 @@
   }
 
   // ⚡ Tribulation: 🔵 blue bolts → Protect as the ring closes; 🔴 red bolts → Dodge to the SAFE side
-  var HELP_KEY = 'ma-trib-help';
   S[6] = {
     title: 'Pill Tribulation', keys: 'Space / ↑ = Protect · ← → = Dodge',
     hint: 'The heavens test a nine-pattern pill with lightning. Weather all three strikes!',
     intro: function (c, go) {
       scene.classList.add('storm');
       play(V.storm); fire('low');
-      var seen = false;
-      try { seen = localStorage.getItem(HELP_KEY) === '1'; } catch (e) {}
-      if (seen) return setTimeout(go, 1300);
-      var box = $('lhelp');
-      box.innerHTML = '<h3>⚡ Pill Tribulation</h3>'
-        + '<p><b class="blue">🔵 Blue bolt</b> → <b>PROTECT</b> (Space). Raise the shield as the ring closes on the cauldron: too early and it fades.</p>'
-        + '<p><b class="red">🔴 Red bolt</b> is too strong to block → <b>DODGE</b> (← or →) toward the side marked <b class="safe">SAFE</b>. Watch out: the safe side can change!</p>'
-        + '<p>Weather all 3 strikes for a nine-pattern pill.</p><button type="button" class="btn btn-gold">Got it</button>';
-      box.hidden = false;
-      var b = box.querySelector('button'), done = function () {
-        box.hidden = true;
-        try { localStorage.setItem(HELP_KEY, '1'); } catch (e) {}
-        document.removeEventListener('keydown', onKey, true);
-        go();
-      }, onKey = function (e) { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(); } };
-      b.addEventListener('click', done, {once: true});
-      document.addEventListener('keydown', onKey, true);
+      setTimeout(go, 1300);
     },
     setup: function (c) {
       c.st = {info: {}, asked: {}, acts: {}, landed: {}, marks: [], warned: {}, ticks: {}};
@@ -539,8 +566,59 @@
     scene.classList.remove('storm', 'cold', 'zone', 'hot', 'goleft', 'goright');
     ['ltrib'].forEach(function (id) { show(id, false); });
     stop(V.swirl); stop(V.cond); stop(V.storm);
+    afterglow = null; V.cond.style.filter = ''; V.cond.style.transform = '';
     hint.classList.remove('warn');
     clear();
+  }
+
+  // ── first-time help: each stage, and each harder challenge, explained once (remembered in localStorage) ──
+  var HELP = {
+    timing: ['✨ Timing', 'Every timed press is rated <b>Precise</b>, <b>Good</b> or <b>Rough</b>. Precise presses make more patterns.'],
+    ignite: ['🔥 Ignite the Cauldron', 'Hold <b>Space</b> (or the button) to pump the bellows; let go and the fire cools. Keep the white needle inside the <b>green band</b>. Gusts are warned in the text.'],
+    jump: ['⚠️ The band jumps', 'A flashing white outline shows where the band is about to jump. Follow it.'],
+    flare: ['🔥 Flare-ups', 'The heat surges by itself. <b>Let go</b> of the bellows until it passes, or the fire runs wild.'],
+    herbs: ['🌿 Add the Herbs', 'Read the clues for the order. Tap the right herb (or <b>1-4</b>) when the ring is at its <b>biggest</b>. A wrong herb causes a backlash.'],
+    volatile: ['💧 Volatile herb', 'Its ring turns <b>blue</b>. Add it when the ring is at its <b>smallest</b> (the out-breath).'],
+    shift: ['🌬️ Quickening breath', 'Partway through, the breathing speeds up. Watch the ring, not a count.'],
+    fuse: ['☯️ Fuse the Essences', 'Press <b>Space</b> the moment Yin and Yang meet. Every meeting counts; tapping while they are apart is unsteady.'],
+    seal: ['🔒 Seal the Core', 'Like Fuse, with the Beast Core: miss too many meetings (or tap out of time 3 times) and it <b>shatters</b>. The craft fails.'],
+    reverse: ['↩️ Reversing orbs', 'The orbs can change direction. Keep your eyes on them.'],
+    chaos: ['🟣 Chaos orb', 'A purple orb streaks through just before some meetings. <b>Don\'t tap on it.</b>'],
+    condense: ['💊 Condense the Pill', 'A ring closes in on the gold outline every beat. Press as the <b>thick gold ring</b> lands on it. This stage counts <b>double</b>.'],
+    decoy: ['🔴 Decoy ring', 'A fake gold ring <b>turns red</b> before it lands. Don\'t press on it.'],
+    quicken: ['⏩ Quickening beats', 'Each beat comes faster than the last, and the gold ring may come early.'],
+    trib: ['⚡ Pill Tribulation', '<b class="blue">🔵 Blue bolt</b> → <b>PROTECT</b> (Space) as the ring closes on the cauldron; too early and the shield fades. <b class="red">🔴 Red bolt</b> is too strong to block → <b>DODGE</b> (← or →) toward the side marked <b class="safe">SAFE</b>. The safe side can change! Weather all 3 strikes for a nine-pattern pill.']
+  };
+  function helpFor(stage, p) {
+    var k = [];
+    if (stage <= 5) k.push('timing');
+    if (stage === 1) { k.push('ignite'); if ((p.jumps || []).length) k.push('jump'); if ((p.flares || []).length) k.push('flare'); }
+    if (stage === 2) { k.push('herbs'); if (p.volatile !== null && p.volatile !== undefined) k.push('volatile'); if (p.shift) k.push('shift'); }
+    if (stage === 3 || stage === 5) { k.push(stage === 3 ? 'fuse' : 'seal'); if ((p.reverse || []).length) k.push('reverse'); if ((p.chaos || []).length) k.push('chaos'); }
+    if (stage === 4) {
+      k.push('condense');
+      if (p.decoy !== null && p.decoy !== undefined) k.push('decoy');
+      var b = p.beats || []; if (b.length > 2 && b[2] - b[1] < b[1] - b[0] - 0.01) k.push('quicken');
+    }
+    if (stage === 6) k.push('trib');
+    return k.filter(function (x) {
+      try { return localStorage.getItem('ma-help-' + x) !== '1' && !(x === 'trib' && localStorage.getItem('ma-trib-help') === '1'); } catch (e) { return false; }
+    });
+  }
+  function helpCard(keys, then) {
+    if (!keys.length) return then();
+    var box = $('lhelp');
+    box.innerHTML = keys.map(function (k) { return '<h3>' + HELP[k][0] + '</h3><p>' + HELP[k][1] + '</p>'; }).join('')
+      + '<button type="button" class="btn btn-gold">Got it</button>';
+    box.hidden = false;
+    var done = function () {
+      box.hidden = true;
+      keys.forEach(function (k) { try { localStorage.setItem('ma-help-' + k, '1'); } catch (e) {} });
+      document.removeEventListener('keydown', onKey, true);
+      then();
+    }, onKey = function (e) { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(); } };
+    box.querySelector('button').addEventListener('click', done, {once: true});
+    document.addEventListener('keydown', onKey, true);
   }
 
   function apply(state) {
@@ -566,8 +644,12 @@
       c.t0 = performance.now();
       post('/alchemy/live/begin', {id: c.id}).catch(function () {});
     };
-    flash(def.title, '', 1100);
-    if (def.intro) def.intro(c, function () { setTimeout(go, 200); }); else setTimeout(go, 1200);
+    if (L.stage === 6) { scene.classList.add('storm'); play(V.storm); }
+    helpCard(helpFor(L.stage, L.pub), function () {
+      if (cur !== c) return;
+      flash(def.title, '', 1100);
+      if (def.intro) def.intro(c, function () { setTimeout(go, 200); }); else setTimeout(go, 1200);
+    });
   }
 
   function finishStage(state) {
@@ -575,6 +657,7 @@
     ending = true;
     var was = cur;
     cur = null;
+    afterglow = was && was.stage === 4 && was.t0 !== null ? was : null;     // Condense keeps glowing until the next stage
     if (was && S[was.stage].up) tap.classList.remove('held');
     if (state && state.last && state.last.score !== undefined) flash(state.last.title + ': ' + Math.round(state.last.score * 100) + '%', state.last.score >= 0.7 ? 'good' : state.last.score < 0.4 ? 'bad' : '', 1300);
     setTimeout(function () { (state ? Promise.resolve(state) : getState()).then(apply); }, state && state.done ? 300 : 1400);
@@ -582,6 +665,7 @@
 
   function loop() {
     frame = requestAnimationFrame(loop);
+    if (ending && afterglow) { var ta = (performance.now() - afterglow.t0) / 1000; S[4].tick(afterglow, ta); return; }
     if (!cur || cur.t0 === null || ending) return;
     var t = now(), def = S[cur.stage];
     def.tick(cur, t);

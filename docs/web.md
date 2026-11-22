@@ -626,6 +626,17 @@ Discord's `/craft` is unchanged.
 The Tribulation's result lists every strike (🛡️ ⚡ 🛡️). The kind of each bolt and when it lands are public (the
 page draws its ring); where a red bolt is safe from stays on the server until its warning shows.
 
+**First-time help:** each stage, and each harder challenge (band jumps, flare-ups, the volatile herb, the quickening
+breath, reversing orbs, the chaos orb, the decoy ring, quickening beats, the Tribulation), is explained in a short card
+the first time it comes up (remembered per browser), before the stage's clock starts.
+
+**Herbs fly in:** a tapped herb's picture arcs from its button into the cauldron's mouth, spinning and shrinking, then
+the splash plays. **The Condense pill comes alive:** pale → golden → white-hot beat by beat, a breathing halo, a tremble
+on the ready beat, a burst of light on a precise press.
+
+The clips' black is never quite black, so every clip fades out toward its edges (CSS masks), and the cards have no
+backdrop blur (it would isolate them, and `screen` would show the clips' black).
+
 **Sounds** (`static/alchemy_sound.js`) are made in the browser with Web Audio, no files: chimes for good moves, a
 crack for bad ones, a warning rumble, thunder, the shield, a countdown tick, a soft note per pattern ring in the reveal.
 The 🔊 button in the scene mutes them (remembered).
@@ -687,8 +698,9 @@ small fan over the cauldron (`pill_spots`: 1 to 5), glowing in the grade's colou
 cauldron's width. Their patterns etch on as rings, one at a time on all of them, while the count climbs (一纹 … 九纹),
 then the rewards follow. A Perfect
 pill gets slow-turning heavenly rays. About 4 s; it plays once per craft (sessionStorage), a reload or reduced motion
-shows the finished picture. If `art/fx/alchemy/reveal.mp4` exists (SHOAIB's cauldron-bursting-open clip, effect on
-black) it plays under the pill; until then a drawn pillar of light stands in. An explosion keeps its own scene.
+shows the finished picture. SHOAIB's reveal video (`art/fx/alchemy/reveal.mp4`, made by `scripts/make_alchemy_reveal.py`: only its light, its own
+cauldron masked out) plays over the game's cauldron, its rim on the cauldron's mouth, tinted to the grade (silver
+Mortal, gold Yellow and Heaven, blue Mystic, purple Earth). Without the file, a drawn pillar of light stands in. An explosion keeps its own scene.
 
 **The engine is untouched.** A live stage only decides that stage's score and hands it to `Craft.settle` (or
 `Craft.shatter_core`; the Tribulation goes through `Craft.act` with the bot's own strike directions). Patterns,
