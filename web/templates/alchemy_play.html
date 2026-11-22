@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Refining · Mortal Ascent{% endblock %}
 {% block body_class %}alchemybg{% endblock %}
-{% block body %}
+{% block body %}{% set FX = "/art/fx/alchemy" %}
 {% with page="alchemy" %}{% include "_topbar.html" %}{% endwith %}
 
 <main class="forgeplay">
@@ -21,7 +21,43 @@
     <p class="sub">{{ rank.rank }} Alchemist · {{ rank.exp }} EXP</p>
   </aside>
 
-  {% if not g.done %}
+  {% if g.live %}
+  <section class="stage card alive" id="alive">
+    <p class="kicker" id="lkick">PREPARING THE CAULDRON</p>
+    <div class="cscene lscene" id="lscene" aria-hidden="true">
+      <img class="cbg" src="/art/scenes/alchemy_tribulation.jpg" alt="">
+      <video class="cfx cloop cstorm" data-src="/art/scenes/alchemy_tribulation.mp4" muted loop playsinline preload="none"></video>
+      <video class="cfx cloop cfire" data-fire="low" src="{{ FX }}/fire_low.mp4" muted loop playsinline preload="auto"></video>
+      <video class="cfx cloop cfire" data-fire="mid" src="{{ FX }}/fire_mid.mp4" muted loop playsinline preload="auto"></video>
+      <video class="cfx cloop cfire" data-fire="high" src="{{ FX }}/fire_high.mp4" muted loop playsinline preload="auto"></video>
+      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      <video class="cfx cloop cswirl" src="{{ FX }}/swirl.mp4" muted loop playsinline preload="auto"></video>
+      <video class="cfx conce csplash" src="{{ FX }}/splash.mp4" muted playsinline preload="auto"></video>
+      <video class="cfx conce ccondin" src="{{ FX }}/condense_in.mp4" muted playsinline preload="auto"></video>
+      <video class="cfx cloop ccond" src="{{ FX }}/condense_loop.mp4" muted loop playsinline preload="auto"></video>
+      <video class="cfx conce clight" src="{{ FX }}/lightning.mp4" muted playsinline preload="auto"></video>
+      <canvas class="lcanvas" width="560" height="560"></canvas>
+      <div class="lbanner" id="lbanner"></div>
+    </div>
+    <p class="pline lhint" id="lhint" aria-live="polite"></p>
+    <div class="lpanel" id="lgauge" hidden>
+      <div class="gauge heat"><div class="band" id="lband"></div><div class="needle" id="lneedle"></div></div>
+      <div class="glabels"><span>cold</span><span id="lheat">—</span><span>too hot</span></div>
+    </div>
+    <div class="lpanel lclues" id="lclues" hidden></div>
+    <div class="lpanel herbtray" id="lherbs" hidden></div>
+    <div class="lpanel ldirs" id="ldirs" hidden>
+      <button class="btn btn-gold" type="button" data-dir="left">⬅️ Left</button>
+      <button class="btn btn-gold" type="button" data-dir="above">⬆️ Above</button>
+      <button class="btn btn-gold" type="button" data-dir="right">➡️ Right</button>
+    </div>
+    <button class="btn btn-jade ltap" id="ltap" type="button" hidden>Tap</button>
+    <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
+    <div id="llog"></div>
+    <p class="sub lkeys" id="lkeys"></p>
+    <noscript><p class="ferror">Live controls need JavaScript. <a href="/alchemy">Back</a>, then choose Classic buttons.</p></noscript>
+  </section>
+  {% elif not g.done %}
   <section class="stage card" aria-live="polite">
     <p class="kicker">{% if g.stage_no %}STAGE {{ g.stage_no }} OF {{ g.total }} · {% endif %}{{ g.title | upper }}</p>
     {% set S = g.scene %}
@@ -73,7 +109,7 @@
   })();
   </script>
   {% else %}
-  <section class="stage card result" style="--rc: {{ g.result_color }}">
+  <section class="stage card result" style="--rc: {{ g.result_color }}{% if g.tier %}; --tc: {{ g.tier.color }}{% endif %}">
     {% if g.boom %}
     <div class="cscene boom" data-stage="done" data-turn="{{ g.turn }}" aria-hidden="true">
       <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
@@ -84,6 +120,7 @@
     <img class="stageart" src="{{ g.art }}" alt="" width="220" height="220">
     {% endif %}
     <p class="kicker">FINAL SCORE {{ g.score }}{% if g.patterns %} · {{ g.patterns }} PATTERN{{ "S" if g.patterns > 1 }}{% endif %}</p>
+    {% if g.tier %}<p class="tier">{{ g.tier.name }}</p>{% endif %}
     <h1 class="title" style="color: {{ g.result_color }}">{{ g.title }}</h1>
     {% if g.tribulation == "won" %}<p class="pline">⛈️ You survived the Pill Tribulation!</p>{% endif %}
     {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
@@ -93,5 +130,5 @@
   </section>
   {% endif %}
 </main>
-<script src="{{ asset('alchemy.js') }}" defer></script>
+{% if g.live %}<script src="{{ asset('alchemy_live.js') }}" defer></script>{% else %}<script src="{{ asset('alchemy.js') }}" defer></script>{% endif %}
 {% endblock %}

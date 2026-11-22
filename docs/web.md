@@ -601,3 +601,41 @@ Each decision reloads the page, so `alchemy.js` remembers the last stage it show
 happened. A clip shows only while it plays, so a slow one never covers the stills. The fire is chosen from the heat
 on the gauge, never from the hidden safe zone. With reduced motion only the stills show. About 5 MB of clips in all,
 and a page loads only its own stage's.
+
+## Live alchemy
+
+Every stage of the craft is played with the hands, not chosen from buttons (`web/alchemy_live.py`,
+`web/static/alchemy_live.js`, the `#alive` section of `alchemy_play.html`). It is the default; **Classic buttons**
+on the recipe page keeps the old one-decision-per-page craft (for slow connections), remembered in a cookie.
+Discord's `/craft` is unchanged.
+
+| Stage | The hands | Scored by |
+|---|---|---|
+| 🔥 Ignite | hold Space / the button to pump the bellows, let go to cool; keep the heat in the golden band. Gusts come with an omen first; on harder grades the band sways | share of the time in the band (after a 1.5 s warm-up); 85% is a full score |
+| 🌿 Add Herbs | the ring at the cauldron's mouth breathes; tap the right herb (or 1-4) as it swells to its fullest. Same order, clues and insights as the bot | right herb on the breath 100%, off the breath 70%, wrong or too slow a backlash (0, or 70% if forgiven) |
+| ☯️ Fuse | Yin and Yang orbit; press Space when they meet | fusions ÷ needed, −15% per tap while they are apart |
+| 💊 Condense | the pill pulses brighter each beat; press in the glint of the ready pulse. Harder grades show a false glint (it flickers) | the bot's pulse table: glint 100%, ready pulse 70%, earlier less, cracked 20% |
+| 🔒 Seal the Core | as Fuse, with the Beast Core: too few seals (or 3 unsteady taps) and it shatters | as Fuse, at least 30% |
+| ⚡ Tribulation | the clouds flash where the bolt gathers; press ← ↑ → before it lands | the bot's own: all 3 blocked = 9 patterns, else 8 |
+
+The result shows a quality tier: Failed (0 patterns), Normal (1-3), High quality (4-6), Superior (7-8), Perfect (9).
+
+**The engine is untouched.** A live stage only decides that stage's score and hands it to `Craft.settle` (or
+`Craft.shatter_core`; the Tribulation goes through `Craft.act` with the bot's own strike directions). Patterns,
+explosions, the Tribulation, EXP, toxicity, rewards and rank-ups are the bot's.
+
+**The server is the referee.** The page shows a stage's intro, then sends `/alchemy/live/begin` and starts its own
+clock at that moment; the server times every later press (`/alchemy/live/press`) from when that begin arrived, so the
+network delay cancels out and each window allows 0.09 s of jitter. A press can't say when it happened. The herb order
+and the lightning's direction stay on the server until the player could see them (the clues; the omen). A stage whose
+time is up is settled on the next request, so walking away runs the craft out.
+
+**Difficulty knobs.** `tempo = 4.5 / decision seconds` (0.7…1.6) sets how fast everything moves, so the grade, rank
+relief, Swift Hands and the batch penalty all carry over. The heat band is the safe-zone width (rank, Furnace,
+Steady Hand, batch); the Fuse/Seal window is the Yin-Yang tolerance; Seal allows one missed meeting while the seal
+pass is 10+; misleading hints become false glints and a swaying band; wild herbs make the orbs meet irregularly.
+Every number is at the top of `web/alchemy_live.py`.
+
+**Balance** (simulated players, `qi` pills, the rank the recipe needs): a careful player lands a little above the
+old buttons, a sloppy one below them, a skilled one reaches the herb-age cap nearly every time. Mortal pills stay
+easy (about 15 s). The herb age still caps the patterns.
