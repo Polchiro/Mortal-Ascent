@@ -1684,3 +1684,14 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
    every clip fades out toward its edges. */
 .lscene .cfx:not(.cstorm),.cscene.boom .cboom,.preveal .rlight{-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%)}
 .lscene .cfire{-webkit-mask-image:radial-gradient(ellipse 50% 55% at 50% 55%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 50% 55% at 50% 55%,#000 60%,transparent 100%)}
+/* the lid (scripts/make_cauldron_lid.py): where the whole picture had it, rattles, then blows off up and away */
+.preveal .clid{position:absolute;left:31.2%;top:41.6%;width:37.1%;z-index:3;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));transform-origin:50% 50%}
+.revealing .preveal.rattle:not(.blown) .clid{animation:lidrattle .09s linear infinite}
+.revealing .preveal.blown .clid{animation:lidfly .9s cubic-bezier(.2,.7,.4,1) forwards}
+.revealed .preveal .clid{display:none}
+@keyframes lidrattle{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-1%,-6%) rotate(-2deg)}50%{transform:translate(1%,-2%) rotate(1deg)}75%{transform:translate(0,-8%) rotate(2deg)}100%{transform:translate(0,0) rotate(0)}}
+@keyframes lidfly{0%{transform:translate(0,0) rotate(0);opacity:1}40%{opacity:1}100%{transform:translate(-55%,-330%) rotate(-40deg) scale(.8);opacity:0}}
+@media (prefers-reduced-motion:reduce){.preveal .clid{display:none}}
+.lmute.lhelpbtn{top:calc(2% + 46px)}
+.lmute.lhelpbtn.off{opacity:.45;filter:grayscale(1)}
+.lhelp .hoff{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mist);cursor:pointer}

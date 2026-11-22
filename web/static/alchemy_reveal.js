@@ -18,7 +18,11 @@
   if (light) { light.addEventListener('playing', function () { light.classList.add('on'); }, {once: true}); var p = light.play(); if (p && p.catch) p.catch(function () {}); }
 
   function at(ms, f) { setTimeout(f, ms); }
-  at(150, function () { box.classList.add('burst'); });                   // the lid blasts open, light rises
+  at(150, function () { box.classList.add('burst', 'rattle'); });          // the lid rattles as the light builds...
+  at(650, function () {                                                    // ...and blows off
+    box.classList.add('blown');
+    if (window.AlchemySound) window.AlchemySound.play('whoosh');
+  });                   // the lid blasts open, light rises
   at(900, function () { box.classList.add('rise'); });                    // the pill floats up out of it
   var t0 = 1700 + (pills - 1) * 220, step = Math.max(160, Math.min(320, 2200 / Math.max(1, n)));
   count.textContent = '';

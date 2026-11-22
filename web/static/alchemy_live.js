@@ -589,7 +589,31 @@
     quicken: ['⏩ Quickening beats', 'Each beat comes faster than the last, and the gold ring may come early.'],
     trib: ['⚡ Pill Tribulation', '<b class="blue">🔵 Blue bolt</b> → <b>PROTECT</b> (Space) as the ring closes on the cauldron; too early and the shield fades. <b class="red">🔴 Red bolt</b> is too strong to block → <b>DODGE</b> (← or →) toward the side marked <b class="safe">SAFE</b>. The safe side can change! Weather all 3 strikes for a nine-pattern pill.']
   };
+  // the instructions can be switched off (the card's checkbox, the 📖 button, or the recipe page): browser + cookie
+  function helpOff() {                              // the cookie (the recipe page's checkbox) decides when it is set
+    var m = /(?:^|; )ma_help=(on|off)/.exec(document.cookie);
+    if (m) return m[1] === 'off';
+    try { return localStorage.getItem('ma-help-off') === '1'; } catch (e) { return false; }
+  }
+  function setHelp(on) {
+    try {
+      localStorage.setItem('ma-help-off', on ? '0' : '1');
+      if (on) {                                     // back on: every card shows again, from the start
+        Object.keys(localStorage).forEach(function (k) { if (k.indexOf('ma-help-') === 0 && k !== 'ma-help-off') localStorage.removeItem(k); });
+        localStorage.removeItem('ma-trib-help');
+      }
+    } catch (e) {}
+    document.cookie = 'ma_help=' + (on ? 'on' : 'off') + ';path=/;max-age=31536000;samesite=lax';
+    showHelpBtn();
+  }
+  function showHelpBtn() {
+    var b = $('lhelpbtn'); if (!b) return;
+    var off = helpOff();
+    b.classList.toggle('off', off);
+    b.title = off ? 'Instructions are off: click to show them again' : 'Instructions are on: click to turn them off';
+  }
   function helpFor(stage, p) {
+    if (helpOff()) return [];
     var k = [];
     if (stage <= 5) k.push('timing');
     if (stage === 1) { k.push('ignite'); if ((p.jumps || []).length) k.push('jump'); if ((p.flares || []).length) k.push('flare'); }
@@ -609,15 +633,17 @@
     if (!keys.length) return then();
     var box = $('lhelp');
     box.innerHTML = keys.map(function (k) { return '<h3>' + HELP[k][0] + '</h3><p>' + HELP[k][1] + '</p>'; }).join('')
+      + '<label class="hoff"><input type="checkbox"> Don\'t show instructions again</label>'
       + '<button type="button" class="btn btn-gold">Got it</button>';
     box.hidden = false;
     var done = function () {
       box.hidden = true;
       keys.forEach(function (k) { try { localStorage.setItem('ma-help-' + k, '1'); } catch (e) {} });
+      if (box.querySelector('.hoff input').checked) setHelp(false);
       document.removeEventListener('keydown', onKey, true);
       then();
     }, onKey = function (e) { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(); } };
-    box.querySelector('button').addEventListener('click', done, {once: true});
+    box.querySelector('button.btn').addEventListener('click', done, {once: true});
     document.addEventListener('keydown', onKey, true);
   }
 
@@ -705,6 +731,20 @@
   });
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('up'); } });
   window.addEventListener('blur', function () { act('up'); });
+
+  try {                                             // switched back on from the recipe page: every card shows again
+    if (/(?:^|; )ma_help=on/.test(document.cookie) && localStorage.getItem('ma-help-off') === '1') setHelp(true);
+  } catch (e) {}
+  var hb = $('lhelpbtn');
+  if (hb) {
+    showHelpBtn();
+    hb.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var on = helpOff();
+      setHelp(on);
+      flash(on ? '📖 Instructions on' : '📖 Instructions off', '', 900);
+    });
+  }
 
   getState().then(apply).catch(function () { hint.textContent = 'Lost the connection to the cauldron. Reload the page.'; });
   loop();

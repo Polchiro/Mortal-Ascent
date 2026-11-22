@@ -434,7 +434,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
         return page(request, "alchemy.html", v=view, user=user, avatar=avatar,
-                    error=request.session.pop("alchemy_error", None), controls=request.cookies.get("ma_controls"))
+                    error=request.session.pop("alchemy_error", None), controls=request.cookies.get("ma_controls"),
+                    show_help=request.cookies.get("ma_help") != "off")
 
     @app.post("/alchemy/begin")
     async def alchemy_begin(request: Request):
@@ -459,6 +460,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         r = RedirectResponse("/alchemy/play", status_code=303)
         r.set_cookie("ma_controls", "classic" if form.get("controls") == "classic" else "live", max_age=31536000,
                      samesite="lax")
+        r.set_cookie("ma_help", "on" if form.get("help") == "on" else "off", max_age=31536000, samesite="lax")
         return r
 
     @app.get("/alchemy/play", response_class=HTMLResponse)

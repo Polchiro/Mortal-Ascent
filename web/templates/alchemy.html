@@ -88,6 +88,7 @@
       <fieldset class="controls"><legend>Controls</legend>
         <label class="pill"><input type="radio" name="controls" value="live"{% if controls != "classic" %} checked{% endif %}> Live: work the cauldron with your hands</label>
         <label class="pill"><input type="radio" name="controls" value="classic"{% if controls == "classic" %} checked{% endif %}> Classic buttons (slow connection)</label>
+        <label class="pill"><input type="checkbox" name="help" value="on"{% if show_help %} checked{% endif %}> Show instructions (live controls)</label>
       </fieldset>
       <button class="btn btn-gold" type="submit"{% if not c.ready %} disabled{% endif %}>Begin refining</button>
     </form>

@@ -604,3 +604,25 @@ def test_the_reveal_plays_shoaibs_light(client):
     s.craft.settle(0.8)
     page = client.get("/alchemy/play").text
     assert "/art/fx/alchemy/reveal.mp4" in page and "hasvideo" in page and 'data-grade="Mortal"' in page
+
+
+def test_instructions_can_be_switched_off(client):
+    page = client.get("/alchemy").text
+    assert 'name="help" value="on" checked' in page
+    r = client.post("/alchemy/begin", data={"pill": QI, "batch": "1", "prefer": "young", "controls": "live"})
+    assert "ma_help=off" in r.headers["set-cookie"]                      # unticked: off
+    assert 'id="lhelpbtn"' in client.get("/alchemy/play").text
+    client.crafts.clear(UID)
+    assert 'name="help" value="on" checked' not in client.get("/alchemy").text
+    r = client.post("/alchemy/begin", data={"pill": QI, "batch": "1", "prefer": "young", "controls": "live", "help": "on"})
+    assert "ma_help=on" in r.headers["set-cookie"]
+
+
+def test_the_lid_comes_off_in_the_reveal(client):
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    s.craft.settle(1.0)
+    s.craft.settle(0.8)
+    page = client.get("/alchemy/play").text
+    assert "cauldron_body.png" in page and 'class="clid"' in page
