@@ -610,3 +610,33 @@ def test_the_winning_blow_pays_once_however_often_it_is_sent(client, db_path):
     act(client, "continue")
     assert explore_play.phase(s) is None                              # the expedition goes on
     assert (s.exp.coins, list(s.exp.items)) == found
+
+
+def test_the_female_stance_plays_while_she_stands(client):
+    import json
+    import os
+    import looks
+    from PIL import Image
+    c = db.connect(client.path)
+    db.update_player(c, UID, appearance=json.dumps({"gender": "female"}))
+    c.close()
+    fight(client)
+    page = client.get("/explore/play").text
+    sheet = looks.IDLE_SHEETS["female"]
+    assert looks.idle_sheet({"gender": "female"}) == sheet and sheet["src"].endswith("hero_female_stance.webp")
+    assert " stanced" in page and 'class="sheetfx isheet"' in page and sheet["src"] in page
+    assert client.get(sheet["src"]).status_code == 200
+    im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
+    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] == sheet["cols"] * sheet["rows"]
+    assert f"--loop: {sheet['loop']}s" in page and f"--cols: {sheet['cols']}" in page and f"--rows: {sheet['rows']}" in page
+    css = client.get("/static/style.css").text
+    assert ".fighter.stanced[data-pose=idle] .isheet{visibility:visible}" in css and "@keyframes stancex" in css
+    assert ":not(.isheet)" in client.get("/static/fight.js").text        # never taken for her frame-by-frame attack
+
+
+def test_the_male_cultivator_keeps_his_still_idle(client):
+    import looks
+    fight(client)
+    page = client.get("/explore/play").text
+    assert looks.idle_sheet({"gender": "male"}) is None and looks.idle_sheet(None) is None
+    assert " stanced" not in page and "isheet" not in page

@@ -122,3 +122,22 @@ def test_you_cannot_duel_while_in_one(setup):
     arena.answer(conn, B, A, True)
     assert arena.challenge(conn, C, "Lin Feng") == "Lin Feng is in a duel right now."
     assert arena.join_queue(conn, A) == "You are already in a duel."
+
+
+def test_her_stance_plays_in_a_duel_and_his_still_stays(setup):
+    import json
+    import os
+
+    import jinja2
+
+    import looks
+    conn, clock, arena = setup
+    db.update_player(conn, B, appearance=json.dumps({"gender": "female"}))
+    arena.challenge(conn, A, "Mei Xue")
+    arena.answer(conn, B, A, accept=True)
+    sa = arena.state(conn, A)
+    assert sa["me"]["isheet"] is None and sa["them"]["isheet"] == looks.IDLE_SHEETS["female"]
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "templates")))
+    html = env.get_template("_stance.html").render(isheet=sa["them"]["isheet"])
+    assert 'class="sheetfx isheet"' in html and "hero_female_stance.webp" in html and "--xend: 114.2857%" in html

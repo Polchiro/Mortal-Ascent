@@ -658,7 +658,16 @@ form.inline{display:inline}
 .fighter[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1)}   /* Break: the same slash in gold */
 /* the frame-by-frame sword attack (looks.ATTACK_SHEETS): the video cell sits where the stills put him on the 1024 x 559 canvas */
 .fighter .sheetfx{position:absolute;left:20.3125%;top:.54%;width:46.875%;height:96.6%;visibility:hidden;background-repeat:no-repeat;background-position:0 0;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.fighter[data-pose=sheet] .sheetfx:not(.gsheet):not(.msheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
+.fighter[data-pose=sheet] .sheetfx:not(.gsheet):not(.msheet):not(.isheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
+/* her fighting stance (looks.IDLE_SHEETS) plays while she stands, in place of the still idle picture and its breathing:
+   x steps through a row every loop/rows seconds while y steps down the rows once a loop. Reduced motion: frame 0. */
+.fighter.stanced[data-pose=idle] .p-idle{visibility:hidden}
+.fighter.stanced[data-pose=idle] .isheet{visibility:visible}
+.fighter.stanced[data-pose=idle]:not(.acting) .poses{animation:none}
+.fighter .isheet{left:calc(20.3125% + 46.875% * var(--shift, 0));
+  animation:stancex calc(var(--loop) / var(--rows)) steps(var(--cols)) infinite,stancey var(--loop) steps(var(--rows)) infinite}
+@keyframes stancex{from{background-position-x:0}to{background-position-x:var(--xend)}}
+@keyframes stancey{from{background-position-y:0}to{background-position-y:var(--yend)}}
 .fighter.sworded.sheeted img.trailfx{left:12%;top:-4%;width:66%;height:66%;filter:drop-shadow(0 0 8px rgba(80,230,255,.7)) brightness(1.15)}
 .fighter.sworded.sheeted[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1) drop-shadow(0 0 8px rgba(255,200,80,.7))}
 .clawsfx{filter:drop-shadow(0 0 8px #FF2A3C) drop-shadow(0 0 18px rgba(255,40,60,.6))}
@@ -1425,6 +1434,7 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
 /* the duel on the beast fight's screen (duel.html): the other cultivator stands where the beast does, mirrored */
 .duelfight .bscene .fighter.them{left:auto;right:1%}
 .duelfight .fighter.them img.pose{transform:scaleX(-1)}
+.duelfight .fighter.them .isheet{left:calc(32.8125% - 46.875% * var(--shift, 0));transform:scaleX(-1)}   /* mirrored across the canvas, as the pictures are */
 .duelfight .fighter{transition:transform .22s ease,filter .3s}
 .duelfight .fighter.me.lunge{transform:translateX(9%)}
 .duelfight .fighter.them.lunge{transform:translateX(-9%)}

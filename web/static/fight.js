@@ -272,7 +272,7 @@
     var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
     function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
-    var sheet = fighter.querySelector('.sheetfx:not(.gsheet):not(.msheet)');   // a frame-by-frame attack, when this look has one
+    var sheet = fighter.querySelector('.sheetfx:not(.gsheet):not(.msheet):not(.isheet)');   // a frame-by-frame attack, when this look has one
     var msheet = fighter.querySelector('.msheet');              // this turn's technique movement (looks.MOTION_SHEETS)
     var cast = null;                                            // this turn's technique, when it has its own look (web/technique_fx.py)
     try { cast = JSON.parse(main.dataset.cast || 'null'); } catch (e) {}

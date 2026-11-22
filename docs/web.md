@@ -234,7 +234,13 @@ a lair is fought with `bot/hunt.py`.
    video of her (`hero_female_guard.webp`, `scripts/make_heroine_guard.py`): her arms close into a crossed, side-on
    guard as the beast comes in, the blow lands on them in a white flash with her sleeves whipping round, and she
    steadies behind her crossed arms. Each sheet carries its own timing (`ready`, `first`, `ms` in
-   `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). The beast is knocked back, flashes, and its HP bar and the damage number change at the
+   `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). **The stance:** while she stands between moves, in beast
+   fights and in duels (mirrored when she is the other cultivator), the female cultivator plays her fighting stance
+   instead of the still idle picture: on guard, sword held low, breathing, her sleeves, hair and skirts stirring, a
+   5.4 s loop (`looks.IDLE_SHEETS`, `hero_female_stance.webp`, 72 frames cut by `scripts/make_heroine_stance.py`
+   from SHOAIB's video of her, her feet on the still's feet). The page steps through it in CSS (`.stanced`,
+   `stancex`/`stancey` in `style.css`); with reduced motion she holds its first frame. He keeps his still picture.
+   The beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast attacks in turn (its M1, `charge` with `RECIPES.gore`, from SHOAIB's beast attack
    video): it lowers its head, rears, charges in kicking up dust and gores, tossing its head up with its jaws open (its
    open-mouthed roar picture, where it has one); its mark torn across you as it hits, three red claw marks for a
