@@ -19,6 +19,7 @@ Pages:
 
 Every number comes from the same code the bot uses. The forge, alchemy and gathering write to the same character.
 """
+import hashlib
 import os
 import secrets
 import urllib.parse
@@ -55,6 +56,34 @@ class Settings:
     session_secret: str = ""
 
 
+class FreshStatic(StaticFiles):
+    """The site's own style and scripts (web/static/): the browser asks every time whether its copy is still the
+    latest (an unchanged file answers 304, nothing re-sent). Without this a browser may keep an old style.css with a
+    new page, and a fighter or a beast drawn by the new page goes missing or stands frozen."""
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+_asset_versions = {}
+
+
+def asset(name):
+    """The address of a file in web/static/ with its version: the first characters of a hash of its content, so a
+    changed file has a new address and every browser fetches it fresh (templates: {{ asset("fight.js") }})."""
+    path = os.path.join(HERE, "static", name)
+    try:
+        stamp = os.stat(path).st_mtime_ns
+    except OSError:
+        return f"/static/{name}"
+    key = (name, stamp)
+    if key not in _asset_versions:
+        with open(path, "rb") as fh:
+            _asset_versions[key] = hashlib.sha1(fh.read()).hexdigest()[:10]
+    return f"/static/{name}?v={_asset_versions[key]}"
+
+
 def create_app(settings: Settings, on_ready=None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app):
@@ -86,11 +115,12 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return Response(status_code=404)
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
-    app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
+    app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps"):                     # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
+    templates.env.globals["asset"] = asset                     # /static/<file>?v=<its content>: never a stale copy
 
     def conn():
         return db.connect(settings.db_path)
