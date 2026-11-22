@@ -143,3 +143,9 @@ def test_her_stance_plays_in_a_duel_and_his_still_stays(setup):
     assert 'class="sheetfx isheet"' in html and "hero_female_stance.webp" in html and "--xend: 114.2857%" in html
     src = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "templates", "duel.html")).read()
     assert 'not (p == "idle" and side.isheet)' in src                    # no still idle picture under her stance
+
+
+def test_the_arena_background_is_alive_in_a_duel():
+    import os
+    src = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "templates", "duel.html")).read()
+    assert "{{ asset('ambient.js') }}" in src

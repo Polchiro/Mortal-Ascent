@@ -537,3 +537,22 @@ time, fading over the last in 0.12 s:
 - **Kept apart:** its bite stops with its jaws at the cultivator's front (`bite_x` in `sheets.json`, `FRONT` in
   `fight.js`) and your Strike stops with the sword tip at its nose (`nose_x`), so neither runs into the other.
 - Damage, rules and every other beast are unchanged.
+
+## Living backgrounds
+
+The fight's background moves (`web/static/ambient.js`, beast fights and duels): one canvas at the very back of the
+scene, behind the fighters, the beast and every effect, drawing its place's weather. Which weather is read off the
+background picture:
+
+| Background | What moves |
+|---|---|
+| Bamboo Forest | autumn leaves falling and turning, low mist, motes of light |
+| Misty Pine Valley | banks of mist drifting through, floating spores |
+| Northern Sea Wilds | wind-blown snow, the aurora brightening and fading, icy wisps over the ice |
+| Red Cliff Gorge | wind-blown sand streaks and, now and then, a gust of dust |
+| Thunder Peaks | slanted rain and, every 5-11 s, lightning: the sky lights up and a bolt flickers |
+| Arena ruins (duels) | moonlit fireflies, faint ground mist |
+
+Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
+scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
+shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
