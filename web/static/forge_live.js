@@ -38,10 +38,13 @@
     if (!cur || !cur.live) return Promise.resolve(null);
     var id = cur.id;
     data.id = id;
+    var stage = cur.stage;
     return post('/forge/live/press', data).then(function (r) {
       var st = r.state;
       if (st && (st.gone || st.done || !st.live || st.live.id !== id) && cur && cur.id === id) finishStage(st);
-      return r.reply;
+      var out = r.reply || {};
+      if (st && st.last && st.last.stage === stage && (!st.live || st.live.id !== id)) out.stagePts = st.last.pts;   // this press ended the stage: its points
+      return out;
     }).catch(function () { return null; });
   }
 
@@ -75,6 +78,90 @@
   }
   [qfx.water, qfx.oil].forEach(function (v) { if (v) v.addEventListener('ended', function () { v.classList.remove('on'); }); });
 
+  // ── the feel of each action: floating points, a combo, sparks, a shake and a hit-stop. Display only: the server
+  //    alone scores (the points shown on an action are what the bot's own rule gives it) ──
+  var fx = scene.querySelector('.ffx'), xctx = fx.getContext('2d'), parts = [];
+  var shaker = scene.querySelector('.fshake'), comboEl = $('fcombo'), combo = 0;
+  function at(el, fx_, fy_) {                 // a point of an element, in the scene's 0..1 (after the camera's move)
+    var r = el.getBoundingClientRect(), R = shaker.getBoundingClientRect();
+    return {x: (r.left + r.width * (fx_ === undefined ? 0.5 : fx_) - R.left) / R.width, y: (r.top + r.height * (fy_ === undefined ? 0.5 : fy_) - R.top) / R.height};
+  }
+  function popup(html, kind, p) {
+    var d = document.createElement('div');
+    d.className = 'fpop' + (kind ? ' ' + kind : ''); d.innerHTML = html;
+    d.style.left = (p.x * 100) + '%'; d.style.top = (p.y * 100) + '%';
+    shaker.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1200);
+  }
+  var SPARK = {great: ['255,236,170', '255,200,90', '255,255,240'], good: ['255,214,120', '255,180,80'], bad: ['224,90,79', '120,110,105'], steam: ['235,235,240']};
+  function burst(p, kind, n) {
+    if (calm) return;
+    var cols = SPARK[kind] || SPARK.good, W = fx.width, H = fx.height, big = kind === 'great';
+    for (var i = 0; i < (n || 24); i++) {
+      var a = Math.random() * Math.PI * 2, v = (big ? 260 : 170) * (0.35 + Math.random());
+      parts.push({x: p.x * W, y: p.y * H, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (kind === 'bad' ? 0 : 90), life: 1,
+                  decay: 0.9 + Math.random() * 0.9, col: cols[i % cols.length], size: kind === 'bad' ? 2.5 : big ? 3.5 : 2.8});
+    }
+  }
+  function drawParts(dt) {
+    xctx.clearRect(0, 0, fx.width, fx.height);
+    if (!parts.length) return;
+    xctx.save(); xctx.globalCompositeOperation = 'lighter';
+    parts = parts.filter(function (q) {
+      q.life -= dt * q.decay; if (q.life <= 0) return false;
+      q.vy += 380 * dt; q.vx *= 1 - 1.5 * dt; q.x += q.vx * dt; q.y += q.vy * dt;
+      xctx.strokeStyle = 'rgba(' + q.col + ',' + q.life + ')'; xctx.lineWidth = q.size; xctx.lineCap = 'round';
+      xctx.beginPath(); xctx.moveTo(q.x, q.y); xctx.lineTo(q.x - q.vx * 0.03, q.y - q.vy * 0.03); xctx.stroke();
+      return true;
+    });
+    xctx.restore();
+  }
+  function shake(big) {
+    if (calm) return;
+    shaker.classList.remove('shake', 'big'); void shaker.offsetWidth;
+    shaker.classList.add('shake'); if (big) shaker.classList.add('big');
+  }
+  function hitstop(ms) {
+    scene.classList.add('hitstop');
+    setTimeout(function () { scene.classList.remove('hitstop'); }, ms || 70);
+  }
+  function setCombo(n) {
+    combo = n;
+    comboEl.textContent = n >= 2 ? 'Combo ×' + n : '';
+    comboEl.classList.toggle('on', n >= 2);
+    if (n >= 2) { comboEl.classList.remove('pop'); void comboEl.offsetWidth; comboEl.classList.add('pop'); }
+  }
+  function hit(ok) { setCombo(ok ? combo + 1 : 0); return combo; }
+  function fmtPts(n) { return (Math.round(n * 10) / 10).toString(); }
+  var STAGE_KEYS = ['ignite', 'heat', 'hammer', 'quench', 'inscribe'];
+  function flyPoints(last) {                  // the stage's points fly from the scene into its chip
+    var i = STAGE_KEYS.indexOf(last.stage), row = document.querySelectorAll('.track .stg:not(.total)')[i];
+    var R = shaker.getBoundingClientRect(), d = document.createElement('div');
+    var good = last.pts >= 14, bad = last.pts < 8;
+    d.className = 'ffly' + (bad ? ' bad' : ''); d.innerHTML = '+' + last.pts + '<small>' + last.title + '</small>';
+    d.style.left = (R.left + R.width / 2) + 'px'; d.style.top = (R.top + R.height * 0.4) + 'px';
+    document.body.appendChild(d);
+    burst({x: 0.5, y: 0.4}, good ? 'great' : bad ? 'bad' : 'good', good ? 40 : 18);
+    if (good) Snd('chime');
+    setTimeout(function () {
+      if (!row) { d.remove(); return; }
+      var r = row.getBoundingClientRect();
+      d.style.left = (r.left + r.width / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px';
+      d.style.transform = 'translate(-50%,-50%) scale(.5)'; d.style.opacity = '0';
+    }, 450);
+    setTimeout(function () { d.remove(); if (row) { row.classList.remove('bump'); void row.offsetWidth; row.classList.add('bump'); } }, 1250);
+  }
+  function forecast(f) {
+    if (!f || !$('fcast')) return;
+    $('fcfill').style.width = f.total + '%';
+    $('fcmax').style.left = f.total + '%'; $('fcmax').style.width = (f.max - f.total) + '%';
+    [['fctotal', f.total, null], ['fclocked', f.locked || '—', f.locked_color], ['fcbest', f.best || 'Failed', f.best_color]].forEach(function (x) {
+      var el = $(x[0]), v = String(x[1]);
+      if (el.textContent !== v) { el.textContent = v; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+      if (x[2]) el.style.color = x[2];
+    });
+  }
+
   // ── little helpers ──
   var bannerTimer;
   function flash(text, kind, ms) {
@@ -95,6 +182,7 @@
       var b = row.querySelector('b'); if (b) b.textContent = pt.pts !== null ? pt.pts : '—';
     });
     var tot = document.querySelector('.track .stg.total b'); if (tot) tot.textContent = state.total + ' / 100';
+    forecast(state.forecast);
   }
   function setStageClass(k) {
     scene.classList.remove('st-ignite', 'st-heat', 'st-hammer', 'st-quench', 'st-inscribe', 'st-other', 'hot', 'steam');
@@ -179,6 +267,11 @@
       }
       if (bellows && s.pumping) { s.frame = (s.frame + bellows.m.fps / 60) % bellows.m.frames; bellows.show(s.frame); }
       var heat = s.heat, mood = heat < p.lo ? 'cold' : heat > p.lo + p.width ? 'hot' : 'zone';
+      if (s.mood && mood !== s.mood && t >= p.warmup) {          // the fire answers: settling in, or roaring out
+        if (mood === 'zone') burst(at(fire || furnace, 0.5, 0.7), 'good', 12);
+        else if (mood === 'hot') { burst(at(fire || furnace, 0.5, 0.4), 'bad', 10); }
+      }
+      s.mood = mood;
       $('lband').style.left = p.lo + '%'; $('lband').style.width = p.width + '%';
       $('lneedle').style.left = heat + '%'; $('lheat').textContent = Math.round(heat) + '°';
       scene.classList.toggle('hot', mood === 'hot' && heat > 92);
@@ -223,7 +316,7 @@
     var p = c.pub, s = c.st, t = now();
     if (t - s.lastVent < p.cooldown || jammed(p, t)) { flash(jammed(p, t) ? 'The vent is stuck!' : 'The vent is still open…', 'bad', 600); press({do: 'vent'}); return; }
     s.lastVent = t; s.heat = Math.max(0, s.heat - p.vent);
-    Snd('whoosh'); flash('🌬️ Vent!', '', 500);
+    Snd('whoosh'); popup('🌬️ Vent', '', at(fire || furnace, 0.5, 0.25));
     press({do: 'vent'});
   }
 
@@ -281,9 +374,15 @@
     var t = now(); c.st.pulled = t;
     var p = c.pub, b = p.bounds, i = 0; while (i + 1 < b.length && b[i + 1] <= t) i++;
     var miss = i >= b.length - 1 ? 9 : Math.abs(i - p.target);
-    flash(miss === 0 ? '🌡️ Right on the colour!' : miss === 1 ? 'Close: one colour off' : i >= b.length - 1 ? 'Burnt!' : 'Off colour', miss === 0 ? 'good' : miss === 1 ? '' : 'bad', 1100);
-    Snd(miss === 0 ? 'chime' : miss === 1 ? 'good' : 'bad');
-    press({do: 'pull'});
+    var where = at(heatCv, 0.5, 0.45), burnt = i >= b.length - 1;
+    press({do: 'pull'}).then(function (r) {                          // the server's points (the page's guess if none come)
+      var got = r && typeof r.stagePts === 'number' ? r.stagePts : miss === 0 ? 20 : miss === 1 ? 10 : 0;
+      var kind = got >= 20 ? 'great' : got > 0 ? 'good' : 'bad';
+      popup('+' + got + '<small>' + (got >= 20 ? 'Right on the colour!' : got > 0 ? 'One colour off' : burnt ? 'Burnt!' : 'Off colour') + '</small>', kind, where);
+      burst(where, kind, got >= 20 ? 36 : 16);
+      if (got >= 20) shake(false);
+      Snd(got >= 20 ? 'chime' : got > 0 ? 'good' : 'bad');
+    });
   }
 
   // 🔨 Hammer: strike when the spot slides under the hammer; hard, light or reheat as the metal asks
@@ -373,22 +472,37 @@
     var st = p.strikes[i], want = {true: 'hard', dull: 'light', cooling: 'reheat'}[st.state];
     if (s.acts[i].length >= (st.state === 'cooling' ? 1 : st.under.length)) return;
     s.acts[i].push([t, what]);
-    if (what === 'reheat') {
-      flash(want === 'reheat' ? '🔥 Reheated in time' : '💢 It wanted a ' + want + ' blow', want === 'reheat' ? 'good' : 'bad', 900);
-      Snd(want === 'reheat' ? 'good' : 'bad');
-    } else {
+    // the verdict is the server's (its reply to this press: the strike's whole judgement once its last blow is in);
+    // the page's own guess stands in only if the reply never comes
+    var on = st.under.some(function (u) { return Math.abs(t - u) <= p.window; });
+    var guess = what === want && (what === 'reheat' || on);
+    var reply = press({do: what}), landed = new Promise(function (ok) { setTimeout(ok, what === 'reheat' ? 0 : 120); });
+    if (what !== 'reheat') {
       s.anim = {t: performance.now(), light: what === 'light'};
       var own = tool && noSmith();                                         // the hammer alone brings its own sparks
-      var on = st.under.some(function (u) { return Math.abs(t - u) <= p.window; });
-      var ok = what === want && on;
-      setTimeout(function () {                                             // the blow lands
-        Snd(ok ? 'clang' : 'bad');
+      landed.then(function () {                                            // the blow lands
+        Snd(what === want ? 'clang' : 'bad');
         if (sparks && !calm && !own) { sparks.currentTime = 0; sparks.style.opacity = what === 'hard' ? 1 : 0.5; sparks.classList.add('on'); var pr = sparks.play(); if (pr && pr.catch) pr.catch(function () {}); }
-        if (ok) { s.good++; anvilBlank.style.setProperty('--shape', (0.8 + 0.2 * s.good / p.strikes.length).toFixed(3)); }
-        flash(ok ? (what === 'hard' ? '🔨 A clean, ringing blow!' : '🪶 A gentle tap, just right') : what !== want ? '💢 It wanted ' + (want === 'reheat' ? 'reheating' : 'a ' + want + ' blow') : '💢 Off the spot!', ok ? 'good' : 'bad', 800);
-      }, 120);
+      });
     }
-    press({do: what});
+    Promise.all([reply, landed]).then(function (r) {
+      var rep = r[0], ok = rep && rep.strike === i ? rep.good : guess;
+      var where = at(anvilBlank, 0.5, 0.4), each = 20 / p.strikes.length, above = {x: where.x - 0.06, y: Math.max(0.12, where.y - 0.2)};
+      if (ok === null) { burst(where, 'good', 10); popup('1 of 2', '', above); return; }   // a double strike, half done
+      var n = hit(ok);
+      if (ok) {
+        s.good++; anvilBlank.style.setProperty('--shape', (0.8 + 0.2 * s.good / p.strikes.length).toFixed(3));
+        var words = what === 'reheat' ? '🔥 Reheated in time' : what === 'hard' ? 'A ringing blow!' : 'Just right';
+        popup('+' + fmtPts(each) + '<small>' + words + (n >= 2 ? ' · ×' + n : '') + '</small>', what === 'hard' || n >= 3 ? 'great' : 'good', above);
+        burst(where, what === 'hard' ? 'great' : 'good', what === 'hard' ? 40 : what === 'reheat' ? 14 : 20);
+        if (what === 'hard') { shake(true); hitstop(80); if (s.anim) s.anim.t += 80; } else if (what === 'light') shake(false);
+        if (what === 'reheat') Snd('good');
+      } else {
+        popup('✗<small>' + (what !== want ? 'It wanted ' + (want === 'reheat' ? 'reheating' : 'a ' + want + ' blow') : 'Off the spot!') + '</small>', 'bad', above);
+        burst(where, 'bad', 10);
+        if (what === 'reheat') Snd('bad');
+      }
+    });
   }
   if (sparks) sparks.addEventListener('ended', function () { sparks.classList.remove('on'); });
 
@@ -467,11 +581,16 @@
     if (sheet) s.anim = {t: performance.now(), from: Math.max(0, sheet.m.impact - 4)};
     qset.classList.add('dipped');
     if (noSmith()) setTimeout(function () { playFx(qfx[s.medium]); }, 180);
-    var top = off <= half / 2, okish = off <= half;
-    flash(top ? '💦 A perfect quench!' : okish ? 'Close enough' : 'The steel shudders…', top ? 'good' : okish ? '' : 'bad', 1400);
+    var guess = off <= half / 2 ? p.max[s.medium] : off <= half ? Math.round(p.max[s.medium] / 2) : 2;
+    var qw = at(qblank && noSmith() ? qblank : qset, 0.5, 0.5), mx = p.max[s.medium];
     Snd(s.medium === 'water' ? 'hiss' : 'roar');
-    setTimeout(function () { Snd(top ? 'chime' : okish ? 'good' : 'bad'); }, 500);
-    press({do: 'plunge'});
+    press({do: 'plunge'}).then(function (r) {                        // the server's points (the page's guess if none come)
+      var got = r && typeof r.stagePts === 'number' ? r.stagePts : guess, top = got >= mx, okish = got > 2;
+      popup('+' + got + '<small>' + (top ? 'A perfect quench!' : okish ? 'Close enough' : 'The steel shudders…') + '</small>', top ? 'great' : okish ? 'good' : 'bad', {x: qw.x, y: Math.max(0.2, qw.y - 0.1)});
+      burst(qw, top ? 'great' : okish ? 'good' : 'bad', top ? 40 : 14);
+      if (top) shake(true); else if (!okish) shake(false);
+      setTimeout(function () { Snd(top ? 'chime' : okish ? 'good' : 'bad'); }, 300);
+    });
   }
 
   // ✍️ Inscribe: draw each stroke on the plate, in the clue's order
@@ -553,8 +672,12 @@
       if (!r || r.i === undefined) return;
       mark.ok = r.ok; redraw(c);
       if (chip) chip.classList.add(r.ok ? 'ok' : 'bad');
-      if (!r.ok) { flash('🩸 The chisel slips: it wanted a ' + STROKE[r.want][2].toLowerCase() + ' (' + STROKE[r.want][0] + ')', 'bad', 1300); Snd('bad'); }
-      else flash('✨ A clean ' + STROKE[what][2].toLowerCase() + ' stroke', 'good', 600);
+      var end = mark.pts[mark.pts.length - 1], rr = runeCv.getBoundingClientRect(), R = shaker.getBoundingClientRect();
+      var wp = {x: (rr.left + end.x / runeCv.width * rr.width - R.left) / R.width, y: (rr.top + end.y / runeCv.height * rr.height - R.top) / R.height};
+      var n = hit(r.ok);
+      if (!r.ok) { popup('✗<small>It wanted a ' + STROKE[r.want][2].toLowerCase() + ' (' + STROKE[r.want][0] + ')</small>', 'bad', wp); burst(wp, 'bad', 12); Snd('bad'); }
+      else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][2] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 18); }
+      if (r.over && c.st.marks.every(function (m) { return m.ok; })) { setTimeout(function () { popup('The rune resonates!', 'great', {x: 0.5, y: 0.3}); burst({x: 0.5, y: 0.45}, 'great', 60); shake(false); }, 350); }
       if (r.over) { if (runeGlow && !calm) { runeGlow.currentTime = 2.4; runeGlow.classList.add('on'); var pr = runeGlow.play(); if (pr && pr.catch) pr.catch(function () {}); } Snd('chime'); }
     });
   }
@@ -680,6 +803,7 @@
     if (state.prompt) { cur = null; ending = false; showPrompt(state); return; }
     if (!state.live) { setTimeout(function () { getState().then(apply); }, 500); return; }
     var L = state.live, def = S[L.stage];
+    setCombo(0);
     cur = {live: true, id: L.id, stage: L.stage, pub: L.pub, t0: null, st: {}};
     ending = false;
     setStageClass(L.stage);
@@ -704,11 +828,15 @@
     ending = true;
     if (cur && cur.st && cur.st.pumping) { cur.st.pumping = false; }
     cur = null;
-    if (state && state.last && state.last.pts !== undefined && state.last.pts !== null) flash(state.last.title + ': ' + state.last.pts + ' / 20', state.last.pts >= 14 ? 'good' : state.last.pts < 8 ? 'bad' : '', 1300);
+    if (state && state.last && state.last.pts !== undefined && state.last.pts !== null) {
+      if (state.last.stage) setTimeout(function () { flyPoints(state.last); }, 350);
+    }
     setTimeout(function () { (state ? Promise.resolve(state) : getState()).then(apply); }, state && state.done ? 300 : 1500);
   }
+  var lastFrame = performance.now();
   function loop() {
     requestAnimationFrame(loop);
+    var nowMs = performance.now(); drawParts(Math.min(0.05, (nowMs - lastFrame) / 1000)); lastFrame = nowMs;
     if (!cur || cur.t0 === null || ending) { if (!cur && !ending) { octx.clearRect(0, 0, FW, FH); drawFurnace(40, false, performance.now() / 1000); } return; }
     var t = now();
     S[cur.stage].tick(cur, t);

@@ -787,6 +787,22 @@ swings from lower), the video's anvil and bar cut away so only what moves stays;
 trough or the bath, glowing with its heat, dips in at the plunge, and the steam (`steam.mp4`) or the oil's fire
 (`oil_flare.mp4`) bursts from the surface.
 
+**The camera, the HUD and the forecast.** The workshop's layers move together inside `.fcam`, so a stage's camera
+glides to what it is about (the furnace for Ignite, the metal in its mouth for Heat, the anvil for Hammer, the trough or
+the bath for Quench; for Inscribe the workshop falls back behind the piece) and holds still while you play. The hint,
+the gauge, only this stage's controls and the timer sit in the bottom of the scene (under it on phones). Under the
+stage chips the **rarity forecast** (`forge_play.forecast`, in the page and in every `/forge/live` state): the total on
+a bar marked with each rarity's threshold, what the points so far **lock in** (were every stage left to score nothing),
+the **best still possible** (were every stage left to score 20) and the gear's **cap** (tier and essence grade), all by
+the bot's own `rarity_for_score` and `capped_rarity`, so it never shows a rarity the gear can't reach; rarities above
+the cap are struck through on the bar.
+
+**The feel of each action** (display only; the server alone scores): points float up from where you acted (the
+hammer's, the heat's and the quench's are the server's own verdict from its reply to the press, the page's guess only if
+none comes), consecutive good strikes and strokes build a combo, sparks burst gold for great actions and red for poor
+ones, a good hard blow shakes the scene with a brief hit-stop, a fully clean rune resonates, and each stage's points fly
+into its chip. Nothing waits on an effect.
+
 **The reveal** (`static/forge_reveal.js`): SHOAIB's rune glow (`art/forge/rune.mp4`) blooms over the result, and at its
 flash the forged piece appears in its rarity's colour; Legendary and Mythical turn heavenly rays behind it. Once per
 forge (sessionStorage); a reload or reduced motion shows the finished picture. A failed forge shakes its cracked piece.
