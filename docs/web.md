@@ -626,6 +626,10 @@ Discord's `/craft` is unchanged.
 The Tribulation's result lists every strike (🛡️ ⚡ 🛡️). The kind of each bolt and when it lands are public (the
 page draws its ring); where a red bolt is safe from stays on the server until its warning shows.
 
+**Instructions can be switched off**: a "Show instructions" checkbox on the recipe page (cookie `ma_help`, which
+decides), a 📖 button in the scene (switching it back on shows every card again), or "Don't show instructions again" on
+a card.
+
 **First-time help:** each stage, and each harder challenge (band jumps, flare-ups, the volatile herb, the quickening
 breath, reversing orbs, the chaos orb, the decoy ring, quickening beats, the Tribulation), is explained in a short card
 the first time it comes up (remembered per browser), before the stage's clock starts.
@@ -691,6 +695,9 @@ patterns anyway); Earth and Heaven need real precision. Every number is at the t
 
 Behind every alchemy page plays SHOAIB's chamber video (`art/scenes/alchemy_chamber.mp4`, made by
 `scripts/make_background_loop.py`, its first frame `alchemy_chamber.jpg` the still), darkened toward the edges.
+
+The cauldron is split into its body and its lid for the reveal (`scripts/make_cauldron_lid.py`: `cauldron_body.png`
+with a dark open mouth, `cauldron_lid.png`): the lid rattles as the light builds, then blows off up and away.
 
 A successful craft opens with a reveal (`#preveal` in `alchemy_play.html`, `static/alchemy_reveal.js`): the cauldron
 shakes and a pillar of light rises, then **one pill per pill crafted** floats up out of it, one after another, into a
