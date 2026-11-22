@@ -1556,10 +1556,18 @@ main.battle>video.bgloop.on+.bgshade{opacity:1}
 .tier{margin:0;padding:4px 16px;border-radius:999px;border:2px solid var(--tc);color:var(--tc);font:800 15px Cinzel,Georgia,serif;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 0 18px color-mix(in srgb,var(--tc) 45%,transparent)}
 fieldset.controls{margin:10px 0;display:flex;flex-direction:column;gap:6px}
 .alive{gap:12px;user-select:none;-webkit-user-select:none}
-.lscene{width:min(400px,90%);transition:width .3s}
+.lscene{width:min(100%,680px,calc(100vh - 330px));min-width:min(300px,100%)}
+.lscene::before{content:"";position:absolute;left:10%;right:10%;bottom:2%;height:30%;z-index:0;border-radius:50%;background:radial-gradient(closest-side,rgba(247,163,92,.35),transparent);pointer-events:none}
 .lscene .cbg,.lscene .cstorm{display:none}
 .lscene.storm .cbg,.lscene.storm .cstorm{display:block}
-.lscene.storm .cfire,.lscene.storm .cauldron,.lscene.storm .cswirl,.lscene.storm .ccond,.lscene.storm .ccondin,.lscene.storm .csplash{display:none}
+.lscene.storm .cswirl,.lscene.storm .ccond,.lscene.storm .ccondin,.lscene.storm .csplash{display:none}
+.lscene .cbg,.lscene .cstorm{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:18px;z-index:0}
+.lscene.storm .cstorm{mix-blend-mode:normal;opacity:1}
+.lscene.storm .cauldron{transition:transform .25s cubic-bezier(.3,1.4,.5,1),filter .3s}
+.lscene.storm.goleft .cauldron{transform:translateX(-62%)}
+.lscene.storm.goright .cauldron{transform:translateX(62%)}
+.lscene.storm.goleft .cfire{transform:translateX(-35%)}.lscene.storm.goright .cfire{transform:translateX(35%)}
+.lscene.storm .cfire{transition:transform .25s}
 .lscene .cfire{opacity:0;transition:opacity .4s}
 .lscene .cfire.lit{opacity:1}
 .lscene .cauldron{transition:filter .3s}
@@ -1598,22 +1606,24 @@ fieldset.controls{margin:10px 0;display:flex;flex-direction:column;gap:6px}
 .lkeys{margin:0}
 @media (prefers-reduced-motion:reduce){.lscene.hot .cauldron,.lscene.backlash .cauldron{animation:none}}
 
-/* ── The pill reveal (alchemy_play.html #preveal, static/alchemy_reveal.js): the cauldron bursts open, the pill rises
-   in its tier's colour (--tc), its patterns etch on as rings, the tier stamps in. .revealed = the finished picture. */
-.preveal{position:relative;width:min(380px,88%);aspect-ratio:1;margin:0 auto}
-.preveal .cauldron{position:absolute;left:24%;width:52%;bottom:2%;z-index:2;filter:drop-shadow(0 10px 18px rgba(0,0,0,.6));transition:opacity .8s,transform .8s}
+/* ── The pill reveal (alchemy_play.html #preveal, static/alchemy_reveal.js): the cauldron bursts open, the batch's
+   pills rise one by one (one per pill crafted) in their grade's colour (--tc), the patterns etch on as rings around
+   each, the count climbs. .revealed = the finished picture. */
+.preveal{position:relative;width:min(100%,600px,calc(100vh - 250px));min-width:min(280px,100%);aspect-ratio:1;margin:0 auto}
+.preveal .cauldron{position:absolute;left:19%;width:62%;bottom:0;z-index:2;filter:drop-shadow(0 14px 24px rgba(0,0,0,.7))}
 .preveal .rlight{position:absolute;inset:0;width:100%;height:100%;z-index:3;mix-blend-mode:screen;opacity:0;transition:opacity .3s}
 .preveal .rlight.on{opacity:1}
-.preveal .rpillar{position:absolute;left:26%;width:48%;bottom:26%;height:0;z-index:3;border-radius:50% 50% 0 0;background:linear-gradient(to top,#fff,color-mix(in srgb,var(--tc) 90%,#fff) 30%,transparent);filter:blur(12px);mix-blend-mode:screen;opacity:0}
-.preveal .rpill{position:absolute;left:30%;width:40%;top:22%;z-index:5;object-fit:contain;filter:drop-shadow(0 0 26px var(--tc)) drop-shadow(0 0 8px var(--tc));transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .6s}
-.preveal .rrings{position:absolute;left:5%;top:-3%;width:90%;height:90%;z-index:4;overflow:visible;pointer-events:none}
-.preveal .rrings circle{fill:none;stroke:var(--tc);stroke-width:1.6;opacity:.85;filter:drop-shadow(0 0 3px var(--tc))}
-.preveal .rcount{position:absolute;left:0;right:0;bottom:-2%;z-index:6;text-align:center;font:800 28px Cinzel,Georgia,serif;color:var(--tc);text-shadow:0 0 14px var(--tc)}
-.preveal .rrays{position:absolute;inset:-10%;z-index:1;border-radius:50%;opacity:0;background:repeating-conic-gradient(from 0deg,rgba(255,220,140,.28) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%)}
+.preveal .rpillar{position:absolute;left:28%;width:44%;bottom:52%;height:0;z-index:3;border-radius:50% 50% 0 0;background:linear-gradient(to top,#fff,color-mix(in srgb,var(--tc) 90%,#fff) 30%,transparent);filter:blur(14px);mix-blend-mode:screen;opacity:0}
+.preveal .rpills{position:absolute;inset:0;z-index:5;pointer-events:none}
+.preveal .rpill{position:absolute;left:calc(50% + var(--x) - 8%);top:calc(8% + var(--y));width:16%;aspect-ratio:1;transition:transform 1s cubic-bezier(.2,.8,.2,1),opacity .6s;transition-delay:calc(var(--k) * .22s)}
+.preveal .rpill img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 14px var(--tc)) drop-shadow(0 0 5px var(--tc))}
+.preveal .rrings{position:absolute;inset:-30%;width:160%;height:160%;overflow:visible}
+.preveal .rrings circle{fill:none;stroke:var(--tc);stroke-width:2.2;opacity:.85;filter:drop-shadow(0 0 3px var(--tc))}
+.preveal .rcount{position:absolute;left:0;right:0;top:41%;z-index:6;text-align:center;font:800 30px Cinzel,Georgia,serif;color:var(--tc);text-shadow:0 0 14px var(--tc),0 2px 6px #000}
+.preveal .rrays{position:absolute;inset:-6% 0 30% 0;z-index:1;border-radius:50%;opacity:0;background:repeating-conic-gradient(from 0deg,rgba(255,220,140,.28) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 66%);mask:radial-gradient(circle,#000 18%,transparent 66%)}
 .preveal.perfect .rrays{opacity:.7}
-/* while revealing */
-.revealing .preveal .cauldron{transform:translateY(0)}
-.revealing .preveal .rpill{transform:translateY(120%) scale(.3);opacity:0}
+/* while revealing: each pill starts down in the cauldron's mouth */
+.revealing .preveal .rpill{transform:translate(calc(var(--x) * -2.4), calc(260% - var(--y) * 2)) scale(.3);opacity:0}
 .revealing .preveal .rrings circle{opacity:0;stroke-dasharray:100;stroke-dashoffset:100}
 .revealing .preveal .rrings circle.on{opacity:.85;stroke-dashoffset:0;transition:stroke-dashoffset .35s ease-out,opacity .15s}
 .revealing .preveal .rcount{opacity:.95}
@@ -1621,19 +1631,38 @@ fieldset.controls{margin:10px 0;display:flex;flex-direction:column;gap:6px}
 .revealing .preveal .rrays{opacity:0;transition:opacity 1s}
 .preveal.burst .rpillar{animation:rpillar 1.6s ease-out forwards}
 .revealing .preveal.burst .cauldron{animation:lshake .1s linear 5}
-.revealing .preveal.rise .rpill{transform:translateY(0) scale(1);opacity:1}
-.revealing .preveal.rise .cauldron{opacity:.35;transform:translateY(6%)}
-.preveal.done .rpill{animation:rfloat 3s ease-in-out infinite}
+.revealing .preveal.rise .rpill{transform:none;opacity:1}
+.preveal.done .rpill img,.revealed .preveal .rpill img{animation:rfloat 3s ease-in-out infinite;animation-delay:calc(var(--k) * -.6s)}
 .revealing .preveal.glory .rrays{opacity:.8;animation:rspin 14s linear infinite}
 .revealing>:not(.preveal){opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s}
 .revealing>.in{opacity:1;transform:none}
-.revealing>.tier.in{animation:rstamp .45s cubic-bezier(.2,1.6,.4,1)}
-.revealed .preveal .cauldron{opacity:.35;transform:translateY(6%)}
-.revealed .preveal .rpill{animation:rfloat 3s ease-in-out infinite}
 .revealed .preveal.perfect .rrays{animation:rspin 14s linear infinite}
-@keyframes rpillar{0%{height:0;opacity:0}25%{opacity:1}60%{height:75%;opacity:.9}100%{height:80%;opacity:.15}}
-@keyframes rfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4%)}}
+@keyframes rpillar{0%{height:0;opacity:0}25%{opacity:1}60%{height:48%;opacity:.9}100%{height:50%;opacity:.15}}
+@keyframes rfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%)}}
 @keyframes rspin{to{transform:rotate(360deg)}}
 @keyframes rtick{0%{transform:scale(1.5)}100%{transform:scale(1)}}
-@keyframes rstamp{0%{transform:scale(2.2);opacity:0}100%{transform:scale(1);opacity:1}}
-@media (prefers-reduced-motion:reduce){.revealed .preveal .rpill,.revealed .preveal.perfect .rrays{animation:none}}
+@media (prefers-reduced-motion:reduce){.revealed .preveal .rpill img,.revealed .preveal.perfect .rrays{animation:none}}
+
+/* ── The alchemy chamber, alive (SHOAIB's video, art/scenes/alchemy_chamber.mp4): behind every alchemy page, dimmed
+   at the edges so the cauldron stays the brightest thing. The still (the same room) shows until it plays. */
+.roombg{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;z-index:-2;opacity:0;transition:opacity 1s}
+.roombg.on{opacity:1}
+.roomshade{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 55% 55%,rgba(8,14,32,.25),rgba(8,14,32,.62) 60%,rgba(4,8,20,.92))}
+body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixed,var(--navy)}
+@media (prefers-reduced-motion:reduce){.roombg{display:none}}
+.forgeplay .alive,.forgeplay .result{background:rgba(8,14,32,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.forgeplay .track .stg{background:rgba(12,20,40,.72)}
+/* the Tribulation's controls, first-time help and the sound button */
+.ldirs .btn{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:120px}
+.ldirs .btn kbd{font:600 11px Inter,Arial,sans-serif;opacity:.7}
+.ltrib{flex-direction:row;justify-content:center;gap:10px}
+.tround{padding:4px 12px;border-radius:999px;border:1px solid rgba(232,194,122,.35);background:rgba(9,16,36,.7);font-size:18px}
+.tround small{font-size:12px}.tround.ok{border-color:var(--jade)}.tround.bad{border-color:#E05A4F}
+.lhelp{position:absolute;left:6%;right:6%;top:12%;z-index:7;padding:16px 20px;border-radius:16px;background:rgba(9,16,36,.94);border:2px solid var(--gold);text-align:left;font-size:16px;color:var(--cream)}
+.lhelp[hidden]{display:none}
+.lhelp h3{margin:0 0 8px;font:800 22px Cinzel,Georgia,serif;color:var(--gold2)}
+.lhelp p{margin:6px 0}.lhelp .blue{color:#8CC8FF}.lhelp .red{color:#FF7A70}.lhelp .safe{color:var(--jade)}
+.lhelp .btn{margin-top:8px;width:auto}
+.lmute{position:absolute;right:2%;top:2%;z-index:8;width:40px;height:40px;border-radius:50%;border:1px solid rgba(232,194,122,.4);background:rgba(9,16,36,.7);font-size:18px;cursor:pointer}
+.lhint b{color:var(--gold2)}
+.cscene.lscene.storm{width:min(100%,680px,calc(100vh - 330px));aspect-ratio:1;border-radius:18px;overflow:hidden}

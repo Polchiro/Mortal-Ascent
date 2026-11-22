@@ -616,18 +616,30 @@ Discord's `/craft` is unchanged.
 | ☯️ Fuse | Yin and Yang orbit; press Space when they meet | fusions ÷ needed, −15% per tap while they are apart |
 | 💊 Condense | a dashed gold outline circles the pill; each beat a ring closes in on it from outside. Early beats' rings are thin and pale; the ready beat's is thick and gold: press as it lands on the outline. Dots under the pill count the beats. Harder grades send a false gold ring that turns red before it lands | the bot's pulse table: on the outline 100%, the ready beat but off it 70%, earlier less, cracked 20% |
 | 🔒 Seal the Core | as Fuse, with the Beast Core: too few seals (or 3 unsteady taps) and it shatters | as Fuse, at least 30% |
-| ⚡ Tribulation | the clouds flash where the bolt gathers; press ← ↑ → before it lands | the bot's own: all 3 blocked = 9 patterns, else 8 |
+| ⚡ Tribulation | each round is one bolt or a quick pair, warned in the clouds with a ring closing on the cauldron (and 3-2-1 for long warnings). 🔵 **blue**: Protect (Space / ↑) as the ring closes; raised earlier than 0.5 s before, the shield fades. 🔴 **red**, too strong to block: Dodge (← / →) toward the side marked SAFE; a fake-out flips SAFE once mid-warning. Rounds by grade: Mortal/Yellow blue·red·blue (2.2 s warnings), Mystic blue·red·red+blue (1.6 s), Earth red·blue·red+blue with fake-outs (1.3 s), Heaven red·blue+red·red+blue, more fake-outs (1.1 s). A short help card shows the first time | the bot's own: a round weathered is a strike blocked; all 3 = 9 patterns, else 8 |
 
-The result shows a quality tier: Failed (0 patterns), Normal (1-3), High quality (4-6), Superior (7-8), Perfect (9).
-The Tribulation's result lists every strike (🛡️ ⚡ 🛡️). In Ignite a big batch never squeezes the heat band under 10°
+The Tribulation's result lists every strike (🛡️ ⚡ 🛡️). The kind of each bolt and when it lands are public (the
+page draws its ring); where a red bolt is safe from stays on the server until its warning shows.
+
+**Sounds** (`static/alchemy_sound.js`) are made in the browser with Web Audio, no files: chimes for good moves, a
+crack for bad ones, a warning rumble, thunder, the shield, a countdown tick, a soft note per pattern ring in the reveal.
+The 🔊 button in the scene mutes them (remembered).
+
+**The scene** is as big as the window allows (`min(680px, 100vh − 330px)`, never under 300 px) with the controls
+compact below it; the Tribulation keeps the cauldron in the storm. In Ignite a big batch never squeezes the heat band under 10°
 nor speeds it past tempo 1.35, and each extra pill calms the band's sway by a quarter (a Heaven ×3 batch was close to
 unplayable).
 
 ## The pill reveal
 
+Behind every alchemy page plays SHOAIB's chamber video (`art/scenes/alchemy_chamber.mp4`, made by
+`scripts/make_background_loop.py`, its first frame `alchemy_chamber.jpg` the still), darkened toward the edges.
+
 A successful craft opens with a reveal (`#preveal` in `alchemy_play.html`, `static/alchemy_reveal.js`): the cauldron
-shakes and a pillar of light rises, the pill floats up out of it glowing in its tier's colour, its patterns etch on
-as rings one at a time while the count climbs (一纹 … 九纹), then the tier stamps in and the rewards follow. A Perfect
+shakes and a pillar of light rises, then **one pill per pill crafted** floats up out of it, one after another, into a
+small fan over the cauldron (`pill_spots`: 1 to 5), glowing in the grade's colour. Each is about a quarter of the
+cauldron's width. Their patterns etch on as rings, one at a time on all of them, while the count climbs (一纹 … 九纹),
+then the rewards follow. A Perfect
 pill gets slow-turning heavenly rays. About 4 s; it plays once per craft (sessionStorage), a reload or reduced motion
 shows the finished picture. If `art/fx/alchemy/reveal.mp4` exists (SHOAIB's cauldron-bursting-open clip, effect on
 black) it plays under the pill; until then a drawn pillar of light stands in. An explosion keeps its own scene.

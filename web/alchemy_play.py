@@ -371,11 +371,26 @@ def play_view(s, now):
             "art": pill_picture(s.kind, s.grade, n) if n else "/art/scenes/cauldron_burst.png",
             "boom": f"{FX}/explode.mp4" if not n else None,
             "log": [rich(x) for x in c.log], "lines": [rich(x) for x in o["lines"]],
-            "tribulation": c.tribulation, "tier": alchemy_live.tier(n),
+            "tribulation": c.tribulation,
             "reveal": {"id": int(s.started * 1000), "patterns": n, "cn": crafting.CN[n] if n else "",
-                       "perfect": n == 9, "video": f"{FX}/reveal.mp4" if REVEAL_VIDEO.exists() else None},
+                       "perfect": n == 9, "video": f"{FX}/reveal.mp4" if REVEAL_VIDEO.exists() else None,
+                       "pills": pill_spots(c.batch)},
         })
     return out
+
+
+PILL_ARC = {1: [(0, 0)], 2: [(-1, 0.15), (1, 0.15)], 3: [(-1, 0.35), (0, 0), (1, 0.35)],
+            4: [(-1.5, 0.55), (-0.5, 0.05), (0.5, 0.05), (1.5, 0.55)],
+            5: [(-2, 0.8), (-1, 0.25), (0, 0), (1, 0.25), (2, 0.8)]}
+
+
+def pill_spots(n):
+    """Where each pill of the batch floats after the reveal (alchemy_play.html .rpill): a fan over the cauldron, one
+    per pill crafted. x: % of the reveal box from its middle; y: % down from the top row."""
+    n = max(1, n)
+    spots = PILL_ARC.get(n) or [(i - (n - 1) / 2, abs(i - (n - 1) / 2) ** 2 * 0.2) for i in range(n)]
+    step = 17 if n <= 3 else 15 if n == 4 else 13
+    return [{"x": round(x * step, 1), "y": round(y * 10, 1), "i": i} for i, (x, y) in enumerate(spots)]
 
 
 def live_view(s, now):

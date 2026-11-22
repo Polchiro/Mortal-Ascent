@@ -511,7 +511,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if not user:
             return JSONResponse({"error": "not logged in"}, status_code=401)
         form = await form_of(request)
-        ev = {k: form[k] for k in ("herb", "shield") if form.get(k)}
+        ev = {k: form[k] for k in ("herb", "bolt", "act") if form.get(k)}
         if form.get("pump") in ("0", "1"):
             ev["pump"] = form["pump"] == "1"
         if form.get("omen"):

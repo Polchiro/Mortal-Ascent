@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Refining · Mortal Ascent{% endblock %}
 {% block body_class %}alchemybg{% endblock %}
-{% block body %}{% set FX = "/art/fx/alchemy" %}
+{% block body %}
+<video class="roombg" src="/art/scenes/alchemy_chamber.mp4" muted loop playsinline autoplay preload="auto" aria-hidden="true" oncanplay="this.classList.add('on')"></video><div class="roomshade"></div>{% set FX = "/art/fx/alchemy" %}
 {% with page="alchemy" %}{% include "_topbar.html" %}{% endwith %}
 
 <main class="forgeplay">
@@ -38,6 +39,8 @@
       <video class="cfx conce clight" src="{{ FX }}/lightning.mp4" muted playsinline preload="auto"></video>
       <canvas class="lcanvas" width="560" height="560"></canvas>
       <div class="lbanner" id="lbanner"></div>
+      <div class="lhelp" id="lhelp" hidden></div>
+      <button class="lmute" id="lmute" type="button" aria-label="Sound on or off">🔊</button>
     </div>
     <p class="pline lhint" id="lhint" aria-live="polite"></p>
     <div class="lpanel" id="lgauge" hidden>
@@ -46,10 +49,11 @@
     </div>
     <div class="lpanel lclues" id="lclues" hidden></div>
     <div class="lpanel herbtray" id="lherbs" hidden></div>
+    <div class="lpanel ltrib" id="ltrib" hidden></div>
     <div class="lpanel ldirs" id="ldirs" hidden>
-      <button class="btn btn-gold" type="button" data-dir="left">⬅️ Left</button>
-      <button class="btn btn-gold" type="button" data-dir="above">⬆️ Above</button>
-      <button class="btn btn-gold" type="button" data-dir="right">➡️ Right</button>
+      <button class="btn btn-gold" type="button" data-dir="left">⬅️ Dodge<kbd>←</kbd></button>
+      <button class="btn btn-jade" type="button" data-dir="protect">🛡️ Protect<kbd>Space</kbd></button>
+      <button class="btn btn-gold" type="button" data-dir="right">Dodge ➡️<kbd>→</kbd></button>
     </div>
     <button class="btn btn-jade ltap" id="ltap" type="button" hidden>Tap</button>
     <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
@@ -109,7 +113,7 @@
   })();
   </script>
   {% else %}
-  <section class="stage card result" style="--rc: {{ g.result_color }}{% if g.tier %}; --tc: {{ g.tier.color }}{% endif %}">
+  <section class="stage card result" style="--rc: {{ g.result_color }}; --tc: {{ g.result_color }}">
     {% if g.boom %}
     <div class="cscene boom" data-stage="done" data-turn="{{ g.turn }}" aria-hidden="true">
       <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
@@ -122,8 +126,14 @@
       <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
       {% if R.video %}<video class="cfx rlight" src="{{ R.video }}" muted playsinline preload="auto"></video>{% endif %}
       <div class="rpillar"></div>
-      <svg class="rrings" viewBox="-100 -100 200 200">{% for i in range(R.patterns) %}<circle r="{{ 44 + i * 4 }}" pathLength="100"></circle>{% endfor %}</svg>
-      <img class="rpill stageart" src="{{ g.art }}" alt="">
+      <div class="rpills">
+      {% for P in R.pills %}
+      <div class="rpill" style="--x: {{ P.x }}%; --y: {{ P.y }}%; --k: {{ P.i }}">
+        <svg class="rrings" viewBox="-100 -100 200 200">{% for i in range(R.patterns) %}<circle r="{{ 56 + i * 4.6 }}" pathLength="100"></circle>{% endfor %}</svg>
+        <img src="{{ g.art }}" alt="">
+      </div>
+      {% endfor %}
+      </div>
       <span class="rcount" id="rcount">{{ R.cn }}纹</span>
     </div>
     <script>(function () {               /* hide the finished picture before it paints, if the reveal will play */
@@ -134,7 +144,6 @@
     })();</script>
     {% endif %}
     <p class="kicker">FINAL SCORE {{ g.score }}{% if g.patterns %} · {{ g.patterns }} PATTERN{{ "S" if g.patterns > 1 }}{% endif %}</p>
-    {% if g.tier %}<p class="tier">{{ g.tier.name }}</p>{% endif %}
     <h1 class="title" style="color: {{ g.result_color }}">{{ g.title }}</h1>
     {% if g.tribulation == "won" %}<p class="pline">⛈️ You survived the Pill Tribulation!</p>{% endif %}
     {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
@@ -144,6 +153,7 @@
   </section>
   {% endif %}
 </main>
+<script src="{{ asset('alchemy_sound.js') }}" defer></script>
 {% if g.live %}<script src="{{ asset('alchemy_live.js') }}" defer></script>{% else %}<script src="{{ asset('alchemy.js') }}" defer></script>{% endif %}
 {% if g.done and g.reveal %}<script src="{{ asset('alchemy_reveal.js') }}" defer></script>{% endif %}
 {% endblock %}

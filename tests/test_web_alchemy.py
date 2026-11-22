@@ -298,7 +298,8 @@ def test_live_perfect_hands_make_a_full_score_pill(client, db_path):
     assert r["state"]["done"]
     assert s.craft.scores[4] == 1.0 and s.craft.result >= 4
     assert pills(db_path)
-    assert 'class="tier"' in client.get("/alchemy/play").text
+    page = client.get("/alchemy/play").text
+    assert 'class="tier"' not in page and page.count('class="rpill"') == 1
 
 
 def test_live_walking_away_runs_every_stage_out(client, db_path):
@@ -345,21 +346,58 @@ def test_live_herbs_wrong_herb_is_a_backlash_and_the_right_one_on_the_breath_is_
     assert c.scores[2] == pytest.approx((p["count"] - 1) / p["count"])
 
 
-def test_live_tribulation_uses_the_bots_strike_directions():
+def tribulation_craft(seed=2, grade="Mortal"):
     import random
     from web import alchemy_live as L
-    c = crafting.Craft("qi", "Mortal", 9, 1000, random.Random(2))
-    c.settle(1.0)
-    c.settle(1.0)
+    c = crafting.Craft("qi", grade, 9, 1000, random.Random(seed))
+    while c.tribulation is None:
+        c.settle(1.0)
     assert c.tribulation == "pending"
-    lv = L.make(c, c.rng, 0, 0)
-    assert lv.stage == 6 and "from" not in str(lv.pub)
-    for omen, bolt in lv.pub["strikes"]:
-        assert L.press(lv, c, omen - 1.0, {"omen": True}).get("from") is None     # not before the clouds show it
-        way = L.press(lv, c, omen + 0.1, {"omen": True})["from"]
-        L.press(lv, c, omen + 0.2, {"shield": way})
+    return c, L, L.make(c, c.rng, 0, 0)
+
+
+def weather(L, lv, c, i, wrong=False, early=False):
+    """The right answer to bolt i, as a player who read its warning would give it."""
+    b = lv.pub["bolts"][i]
+    info = L.press(lv, c, b["warn"], {"bolt": i, "omen": True})
+    if b["kind"] == "blue":
+        at = b["hit"] - (1.0 if early else 0.1)
+        return L.press(lv, c, at, {"bolt": i, "act": "right" if wrong else "protect"})
+    safe = info["safe"] if not info["flip"] else ("left" if info["safe"] == "right" else "right")
+    if wrong:
+        safe = "left" if safe == "right" else "right"
+    return L.press(lv, c, b["hit"] - 0.1, {"bolt": i, "act": safe})
+
+
+def test_live_tribulation_protect_and_dodge():
+    c, L, lv = tribulation_craft()
+    assert lv.stage == 6 and "safe" not in str(lv.pub)                     # where is safe stays on the server
+    kinds = [b["kind"] for b in lv.pub["bolts"]]
+    assert kinds == ["blue", "red", "blue"]                                # Mortal: one of each, gently
+    b0 = lv.pub["bolts"][0]
+    assert L.press(lv, c, b0["warn"] - 1.0, {"bolt": 0, "omen": True}) == {}   # no peeking before the warning
+    for i in range(len(kinds)):
+        assert weather(L, lv, c, i)["ok"]
     L.settle(lv, c, lv.length + 1)
     assert c.done and c.tribulation == "won" and c.result == 9
+
+
+def test_live_tribulation_shield_raised_too_early_fades():
+    c, L, lv = tribulation_craft()
+    assert weather(L, lv, c, 0, early=True)["ok"] is False
+    for i in (1, 2):
+        weather(L, lv, c, i)
+    L.settle(lv, c, lv.length + 1)
+    assert c.tribulation == "lost" and c.result == 8
+
+
+def test_live_tribulation_heaven_has_pairs_and_fakeouts():
+    c, L, lv = tribulation_craft(seed=7, grade="Heaven")
+    assert [len(r) for r in lv.pub["rounds"]] == [1, 2, 2]
+    for i in range(len(lv.pub["bolts"])):
+        weather(L, lv, c, i)
+    L.settle(lv, c, lv.length + 1)
+    assert c.tribulation == "won"
 
 
 def test_live_seal_shatters_the_core_when_missed():
@@ -373,25 +411,18 @@ def test_live_seal_shatters_the_core_when_missed():
     assert c.done and c.core_lost and c.result == 0
 
 
-def test_result_tiers():
-    from web import alchemy_live as L
-    assert [L.tier(n)["name"] for n in (0, 1, 3, 4, 6, 7, 8, 9)] == [
-        "Failed", "Normal", "Normal", "High quality", "High quality", "Superior", "Superior", "Perfect"]
+def test_the_reveal_shows_one_pill_per_pill_crafted():
+    assert [len(alchemy_play.pill_spots(n)) for n in (1, 2, 3, 4, 5)] == [1, 2, 3, 4, 5]
 
 
 def test_live_tribulation_lists_every_strike():
-    import random
-    from web import alchemy_live as L
-    c = crafting.Craft("qi", "Mortal", 9, 1000, random.Random(2))
-    c.settle(1.0)
-    c.settle(1.0)
-    lv = L.make(c, c.rng, 0, 0)
-    (o1, _), (o2, _), (o3, _) = lv.pub["strikes"]
-    L.press(lv, c, o1 + 0.1, {"shield": L.press(lv, c, o1, {"omen": True})["from"]})
-    L.press(lv, c, o3 + 0.1, {"shield": L.press(lv, c, o3, {"omen": True})["from"]})    # the second one missed
+    c, L, lv = tribulation_craft()
+    weather(L, lv, c, 0)
+    weather(L, lv, c, 1, wrong=True)                                      # dodged the wrong way
+    weather(L, lv, c, 2)
     L.settle(lv, c, lv.length + 1)
     assert c.tribulation == "lost" and c.result == 8
-    assert c.log == ["⛈️ The Tribulation: 🛡️ ⚡ 🛡️ · 2 of 3 strikes blocked. The pill survives, scarred: 8 patterns."]
+    assert c.log == ["⛈️ The Tribulation: 🛡️ ⚡ 🛡️ · 2 of 3 strikes weathered. The pill survives, scarred: 8 patterns."]
 
 
 def test_live_ignite_band_survives_a_big_batch():
@@ -412,4 +443,24 @@ def test_the_pill_reveal(client):
     page = client.get("/alchemy/play").text
     n = s.craft.result
     assert n and 'id="preveal"' in page and "alchemy_reveal.js" in page
-    assert page.count("<circle") == n and f"{crafting.CN[n]}纹" in page and 'class="tier"' in page
+    assert page.count("<circle") == n and f"{crafting.CN[n]}纹" in page and 'class="tier"' not in page
+
+
+def test_live_tribulation_over_the_web(client):
+    """The page's own requests: the warning, then the answer."""
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    s.craft.age, s.craft.score_bonus, s.craft.max_patterns = 1000, 0.25, 9
+    while s.craft.tribulation is None:
+        s.craft.settle(1.0)
+    lv = live(client)["live"]
+    assert lv["stage"] == 6
+    client.post("/alchemy/live/begin", data={"id": lv["id"]})
+    t0 = client.now[0]
+    b = lv["pub"]["bolts"][0]
+    client.now[0] = t0 + b["warn"]
+    info = lpress(client, lv["id"], bolt=0, omen="1")["reply"]
+    assert info["kind"] == "blue"
+    client.now[0] = t0 + b["hit"] - 0.1
+    assert lpress(client, lv["id"], bolt=0, act="protect")["reply"]["ok"]
