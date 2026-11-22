@@ -194,3 +194,38 @@ def test_setup_view_matches_the_bot_plan(db_path):
     assert v["chosen"]["ready"] and not pl["missing"]
     assert v["chosen"]["difficulty"] == game.diff["name"] and v["chosen"]["zone"] == game.zone_width
     assert v["chosen"]["seconds"] == f"{game.seconds:g}"
+
+
+def test_the_cauldron_comes_alive_stage_by_stage(client, db_path):
+    import os
+    begin(client)
+    page = client.get("/alchemy/play").text
+    assert 'class="cscene"' in page and 'data-stage="1"' in page and "/art/fx/alchemy/fire_" in page
+    assert 'src="/art/scenes/cauldron.png"' in page and "/static/alchemy.js?v=" in page
+    assert alchemy_play.fire_for(10) == "low" and alchemy_play.fire_for(60) == "mid" and alchemy_play.fire_for(90) == "high"
+    s = client.crafts.get(UID)
+    c = s.craft
+    assert alchemy_play.scene_view(c, 3, "Mystic")["loop"].endswith("swirl.mp4")
+    assert alchemy_play.scene_view(c, 2, "Yellow")["event"].endswith("splash.mp4")
+    v4 = alchemy_play.scene_view(c, 4, "Mortal")
+    assert v4["condense_in"].endswith("condense_in.mp4") and v4["condense"].endswith("condense_loop.mp4")
+    v6 = alchemy_play.scene_view(c, 6, "Heaven")
+    assert v6["storm"] == "/art/scenes/alchemy_tribulation.mp4" and v6["event"].endswith("lightning.mp4") and "fire" not in v6
+    root = os.path.dirname(os.path.dirname(__file__))
+    for name in ("fire_low", "fire_mid", "fire_high", "swirl", "splash", "condense_in", "condense_loop", "explode", "lightning"):
+        path = os.path.join(root, "art", "fx", "alchemy", f"{name}.mp4")
+        assert os.path.getsize(path) < 2 * 1024 * 1024
+        assert client.get(f"/art/fx/alchemy/{name}.mp4").headers["content-type"] == "video/mp4"
+    assert client.get("/art/scenes/alchemy_tribulation.mp4").status_code == 200
+    css, js = client.get("/static/style.css").text, client.get("/static/alchemy.js").text
+    assert "mix-blend-mode:screen" in css and ".cscene .cfx.on{opacity:1}" in css
+    assert "prefers-reduced-motion" in js and "sessionStorage" in js
+
+
+def test_an_exploded_craft_plays_the_explosion(client, db_path):
+    begin(client)
+    s = client.crafts.get(UID)
+    s.craft.done, s.craft.result = True, 0
+    s.outcome = {"lines": ["The cauldron explodes!"]}
+    page = client.get("/alchemy/play").text
+    assert 'class="cscene boom"' in page and "/art/fx/alchemy/explode.mp4" in page and "cauldron_burst.png" in page

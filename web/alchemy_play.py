@@ -244,6 +244,31 @@ def setup_view(conn, uid, pill=None, batch=None, prefer=None):
 
 # ── the playing page ─────────────────────────────────────────────────
 
+FX = "/art/fx/alchemy"
+
+
+def fire_for(heat):
+    """The fire under the cauldron for the heat the gauge shows (never the hidden safe zone)."""
+    return "low" if heat < 40 else "mid" if heat <= 75 else "high"
+
+
+def scene_view(c, stage, grade):
+    """What plays around the cauldron at this stage (alchemy_play.html, static/alchemy.js; docs/web.md "Alchemy
+    animations"): the fire under it, a loop over it, the one-off a decision sets off (the page decides when, from the
+    last stage it showed), and the pill forming (Condense). The Tribulation is its own scene."""
+    if stage == 6:
+        return {"storm": f"/art/scenes/alchemy_tribulation.mp4", "still": "/art/scenes/alchemy_tribulation.jpg",
+                "event": f"{FX}/lightning.mp4"}
+    out = {"fire": f"{FX}/fire_{fire_for(c.heat) if stage == 1 else 'mid' if stage in (2, 3, 5) else 'low'}.mp4"}
+    if stage in (3, 5):
+        out["loop"] = f"{FX}/swirl.mp4"
+    if stage == 2:
+        out["event"] = f"{FX}/splash.mp4"
+    if stage == 4:
+        out.update(condense_in=f"{FX}/condense_in.mp4", condense=f"{FX}/condense_loop.mp4")
+    return out
+
+
 def stage_art(stage, grade):
     if stage == 6:
         return "/art/scenes/alchemy_tribulation.jpg"
@@ -272,7 +297,7 @@ def play_view(s, now):
         left = max(0.0, s.deadline - crafting.TIMER_GRACE_SECONDS - now)
         out.update({
             "stage": pr.stage, "stage_no": c.stages.index(pr.stage) + 1 if pr.stage in c.stages else None,
-            "title": STAGE_TITLE[pr.stage], "art": stage_art(pr.stage, s.grade),
+            "title": STAGE_TITLE[pr.stage], "art": stage_art(pr.stage, s.grade), "scene": scene_view(c, pr.stage, s.grade),
             "lines": [rich(BAR.sub("", x)) for x in pr.lines],
             "options": [{"key": k, "label": lbl, "emoji": em, "good": pr.style.get(k) == "success"}
                         for k, lbl, em in pr.options],
@@ -286,6 +311,7 @@ def play_view(s, now):
                       else "The craft fails" if c.core_lost else "The cauldron explodes"),
             "result_color": GRADE_COLOR[s.grade] if n else EXPLODED_COLOR,
             "art": pill_picture(s.kind, s.grade, n) if n else "/art/scenes/cauldron_burst.png",
+            "boom": f"{FX}/explode.mp4" if not n else None,
             "log": [rich(x) for x in c.log], "lines": [rich(x) for x in o["lines"]],
             "tribulation": c.tribulation,
         })

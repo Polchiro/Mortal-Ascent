@@ -24,8 +24,22 @@
   {% if not g.done %}
   <section class="stage card" aria-live="polite">
     <p class="kicker">{% if g.stage_no %}STAGE {{ g.stage_no }} OF {{ g.total }} · {% endif %}{{ g.title | upper }}</p>
-    <img class="stageart{% if g.stage == 4 %} pulse{% endif %}" src="{{ g.art }}" alt="" width="220" height="220"
-      {% if g.gauge and g.gauge.kind == "pulse" %}style="--glow: {{ (g.gauge.level / g.gauge.steps) | round(2) }}"{% endif %}>
+    {% set S = g.scene %}
+    <div class="cscene{% if S.storm %} storm{% endif %}" data-stage="{{ g.stage }}" data-turn="{{ g.turn }}"
+      {%- if g.gauge and g.gauge.kind == "pulse" %} style="--glow: {{ (g.gauge.level / g.gauge.steps) | round(2) }}"{% endif %} aria-hidden="true">
+      {% if S.storm %}
+      <img class="cbg" src="{{ S.still }}" alt="">
+      <video class="cfx cloop cstorm" src="{{ S.storm }}" muted loop playsinline preload="auto"></video>
+      <video class="cfx conce clight" src="{{ S.event }}" muted playsinline preload="auto"></video>
+      {% else %}
+      <video class="cfx cloop cfire" src="{{ S.fire }}" muted loop playsinline preload="auto"></video>
+      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      {% if S.loop %}<video class="cfx cloop cswirl" src="{{ S.loop }}" muted loop playsinline preload="auto"></video>{% endif %}
+      {% if S.event %}<video class="cfx conce csplash" src="{{ S.event }}" muted playsinline preload="auto"></video>{% endif %}
+      {% if S.condense %}<video class="cfx conce ccondin" src="{{ S.condense_in }}" muted playsinline preload="auto"></video>
+      <video class="cfx cloop ccond" src="{{ S.condense }}" muted loop playsinline preload="auto"></video>{% endif %}
+      {% endif %}
+    </div>
     {% for line in g.lines %}<p class="pline">{{ line | safe }}</p>{% endfor %}
     {% if g.gauge %}{% set q = g.gauge %}
     {% if q.kind == "heat" %}
@@ -60,7 +74,15 @@
   </script>
   {% else %}
   <section class="stage card result" style="--rc: {{ g.result_color }}">
+    {% if g.boom %}
+    <div class="cscene boom" data-stage="done" data-turn="{{ g.turn }}" aria-hidden="true">
+      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      <video class="cfx conce cboom" src="{{ g.boom }}" muted playsinline preload="auto"></video>
+      <img class="cburst" src="{{ g.art }}" alt="">
+    </div>
+    {% else %}
     <img class="stageart" src="{{ g.art }}" alt="" width="220" height="220">
+    {% endif %}
     <p class="kicker">FINAL SCORE {{ g.score }}{% if g.patterns %} · {{ g.patterns }} PATTERN{{ "S" if g.patterns > 1 }}{% endif %}</p>
     <h1 class="title" style="color: {{ g.result_color }}">{{ g.title }}</h1>
     {% if g.tribulation == "won" %}<p class="pline">⛈️ You survived the Pill Tribulation!</p>{% endif %}
@@ -71,4 +93,5 @@
   </section>
   {% endif %}
 </main>
+<script src="{{ asset('alchemy.js') }}" defer></script>
 {% endblock %}
