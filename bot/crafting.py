@@ -630,8 +630,13 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
             lines.append("💥 **The cauldron explodes!** 🍀 **Second Chance:** your artifact catches the herbs. "
                          "Nothing is lost.")
         else:
-            lines.append("💥 **The cauldron explodes!** The herbs are lost." if not craft.core_lost
-                         else "💥 **The craft fails.** The herbs and the Beast Core are lost.")
+            saved = salvage(ingredients)
+            if saved:
+                loot.store(conn, user_id, saved)
+            kept = (" You sift " + ", ".join(f"{i['qty']}× {i['name']}" for i in saved) + " from the ashes."
+                    if saved else "")
+            lines.append(("💥 **The cauldron explodes!** The herbs are lost." if not craft.core_lost
+                          else "💥 **The craft fails.** The herbs and the Beast Core are lost.") + kept)
             if craft.batch > 1:
                 lines.append(f"All {craft.batch} pills of the batch are gone.")
     else:
@@ -663,6 +668,16 @@ def finish_craft(conn, user_id, craft, now=None, ingredients=None):
     if new_rank > old_rank:
         lines.append(f"🎉 You are now a **{rank_label(new_rank)} Alchemist**!")
     return lines, news
+
+
+def salvage(ingredients):
+    """What an explosion leaves: a share of each herb (alchemy.EXPLOSION_KEEPS, rounded down). Never a Beast Core."""
+    out = []
+    for item, qty in ingredients or []:
+        keep = int(qty * alchemy.EXPLOSION_KEEPS + 1e-9)
+        if item.get("category") == "herbs" and keep > 0:
+            out.append(dict(item, qty=keep))
+    return out
 
 
 # ── using crafted pills (called from loot.use_item) ───────────────────

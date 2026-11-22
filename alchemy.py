@@ -318,6 +318,8 @@ SCORE_TO_PATTERNS = [
     (0.62, 4), (0.55, 3), (0.47, 2), (0.40, 1),
 ]
 EXPLODE_BELOW = 0.40
+EXPLOSION_KEEPS = 1 / 3            # an explosion leaves this share of each herb (rounded down) in the ashes; a
+                                   # shattered Beast Core is still lost, and Second Chance still saves everything
 NINE_PATTERN_NEEDS_TRIBULATION = True
 TRIBULATION_FAIL_PATTERNS = 8
 
