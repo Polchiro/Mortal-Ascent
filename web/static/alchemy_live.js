@@ -123,7 +123,7 @@
     tick: function (c, t) {
       var p = c.pub, s = c.st, steps = Math.min(Math.floor(t / p.tick), Math.round(c.pub.length / p.tick));
       while (s.k < steps) {                   // the same simulation as alchemy_live.heat_run
-        var tt = s.k * p.tick, want = s.pumping ? p.up : -p.down;
+        var tt = s.k * p.tick, want = s.pumping ? p.up * (flaring(p, tt) ? p.flarepump : 1) : -p.down;
         s.speed += (want - s.speed) * Math.min(1, p.tick / p.ease);
         s.heat = Math.max(0, Math.min(100, s.heat + (s.speed + gustAt(p, tt)) * p.tick));
         if (tt >= p.warmup) { s.counted++; var lo = bandLo(p, tt); if (s.heat >= lo && s.heat <= lo + p.width) s.inside++; }
@@ -134,10 +134,16 @@
     down: function (c) { setPump(c, true); },
     up: function (c) { setPump(c, false); }
   };
-  function bandLo(p, t) { return p.lo + p.sway * Math.sin(2 * Math.PI * t / p.period + p.phase); }
-  function gustAt(p, t) {
-    for (var i = 0; i < p.gusts.length; i++) if (p.gusts[i][0] <= t && t < p.gusts[i][0] + p.gust) return p.gusts[i][1] * p.push;
-    return 0;
+  function bandLo(p, t) {
+    var jump = 0;
+    (p.jumps || []).forEach(function (j) { if (t >= j[0]) jump += j[1]; });
+    return p.lo + jump + p.sway * Math.sin(2 * Math.PI * t / p.period + p.phase);
+  }
+  function flaring(p, t) { return (p.flares || []).some(function (f) { return f[0] <= t && t < f[0] + f[1]; }); }
+  function gustAt(p, t) {                  // the same as alchemy_live.gust_at
+    var push = flaring(p, t) ? p.flarepush : 0;
+    for (var i = 0; i < p.gusts.length; i++) if (p.gusts[i][0] <= t && t < p.gusts[i][0] + p.gust) return push + p.gusts[i][1] * p.push;
+    return push;
   }
   function setPump(c, on) {
     if (c.st.pumping === on) return;
@@ -158,6 +164,19 @@
       if (t >= g[0] - p.omen && t < g[0]) omen = g[1] > 0 ? 'The flames lick hungrily at the walls… a gust is coming!' : 'A cold draught creeps under the cauldron…';
       else if (t >= g[0] && t < g[0] + p.gust) omen = g[1] > 0 ? '🔥 A gust feeds the fire!' : '🌬️ The draught chills the fire!';
     });
+    var ghost = null;
+    (p.jumps || []).forEach(function (j) {
+      if (t >= j[0] - p.jumpwarn && t < j[0]) { omen = '⚠️ The fire\'s heart shifts! The band jumps ' + (j[1] > 0 ? 'HOTTER' : 'COOLER') + '…'; ghost = lo + j[1]; }
+      else if (t >= j[0] && t < j[0] + 0.8) omen = '⚠️ The band has jumped! Follow it!';
+    });
+    (p.flares || []).forEach(function (f) {
+      if (t >= f[0] - p.flareomen && t < f[0]) omen = '🔥 A flare-up is coming! Stop pumping!';
+      else if (t >= f[0] && t < f[0] + f[1]) omen = '🔥 FLARE-UP! Let go of the bellows!';
+    });
+    var gb = $('lghost');
+    if (gb) { gb.hidden = ghost === null; if (ghost !== null) { gb.style.left = Math.max(0, ghost) + '%'; gb.style.width = p.width + '%'; } }
+    if (omen && omen !== c.st.lastOmen && /flare|shifts|gust/.test(omen)) Snd('warn');
+    c.st.lastOmen = omen;
     hint.textContent = omen || (t < p.warmup ? 'Bring the heat into the golden band.' : mood === 'zone' ? 'A soft golden glow fills the cauldron.'
       : mood === 'cold' ? 'The herbs lie dull and cold. Pump!' : 'The cauldron hisses and smokes! Let it cool.');
     hint.classList.toggle('warn', !!omen);
@@ -169,7 +188,7 @@
 
   // 🌿 Add Herbs: tap the right herb as the cauldron breathes in
   S[2] = {
-    title: 'Add the Herbs', keys: 'Tap a herb (or press 1-4) as the ring at the cauldron\'s mouth swells to its fullest.',
+    title: 'Add the Herbs', keys: 'Tap a herb (or press 1-4) as the ring swells to its fullest. A volatile herb (blue ring) goes in when it is at its smallest.',
     hint: '',
     setup: function (c) {
       var p = c.pub, tray = $('lherbs'), clues = $('lclues');
@@ -189,23 +208,28 @@
     tick: function (c, t) {
       var p = c.pub, s = c.st;
       while (s.placed < p.count && t > s.since + p.breath * p.per) { s.since += p.breath * p.per; s.placed++; flash('Too slow: it goes cold', 'bad'); }
-      var phase = (t % p.breath) / p.breath, swell = Math.sin(Math.PI * phase), on = Math.abs(phase - 0.5) <= p.window;
+      var b = breathAt(p, t), phase = b[0], swell = Math.sin(Math.PI * phase), out = p.volatile === s.placed;
+      var off = out ? Math.min(phase, 1 - phase) : Math.abs(phase - 0.5), on = off <= p.window;
       clear();
-      ring(W / 2, H * 0.52, 70 + 55 * swell, on ? 'rgba(168,240,210,.95)' : 'rgba(245,205,120,' + (0.25 + 0.4 * swell) + ')', on ? 9 : 4);
+      var col = out ? '140,200,255' : '245,205,120';
+      ring(W / 2, H * 0.52, 70 + 55 * swell, on ? 'rgba(168,240,210,.95)' : 'rgba(' + col + ',' + (0.3 + 0.4 * (out ? 1 - swell : swell)) + ')', on ? 9 : 4);
       if (on) ring(W / 2, H * 0.52, 70 + 55 * swell + 14, 'rgba(168,240,210,.35)', 4);
-      hint.textContent = s.placed < p.count ? 'Herb ' + (s.placed + 1) + ' of ' + p.count + ': which goes in ' + ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'][s.placed] + '?' : 'The herbs settle…';
-      label(on ? 'breathe in: now!' : '', H * 0.94);
+      if (p.shift && t >= p.shift[0] - 0.6 && t < p.shift[0] + 0.8) label('The breathing quickens!', H * 0.1);
+      hint.innerHTML = s.placed < p.count ? 'Herb ' + (s.placed + 1) + ' of ' + p.count + ': which goes in ' + ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'][s.placed] + '?'
+        + (out ? ' <b class="volatile">💧 Volatile: add it on the OUT-breath (smallest ring)!</b>' : '') : 'The herbs settle…';
+      label(on ? (out ? 'breathe out: now!' : 'breathe in: now!') : '', H * 0.94);
     },
     key: function (c, k) { var h = c.pub.herbs[+k - 1]; if (h) herb(c, h.key); }
   };
   function herb(c, key) {
     var p = c.pub, s = c.st, t = now();
     if (s.placed >= p.count) return;
-    var phase = (t % p.breath) / p.breath, on = Math.abs(phase - 0.5) <= p.window;
+    var b = breathAt(p, t), phase = b[0], out = p.volatile === s.placed;
+    var how = rate(out ? Math.min(phase, 1 - phase) : Math.abs(phase - 0.5), p.window);
     s.placed++; s.since = t;
     once(V.splash);
-    flash(on ? 'On the breath!' : 'In it goes', on ? 'good' : '', 700);
-    Snd(on ? 'good' : 'tick');
+    flash(WORD[how], how === 'rough' ? '' : 'good', 700);
+    Snd(how === 'precise' ? 'chime' : how === 'good' ? 'good' : 'tick');
     press({herb: key}).then(function (r) {
       if (!r || !r.marks) return;
       var m = r.marks[r.marks.length - 1];
@@ -216,6 +240,13 @@
       }
     });
   }
+
+  function breathAt(p, t) {                 // the same as alchemy_live.breath_at
+    if (p.shift && t >= p.shift[0]) { var b2 = p.shift[1]; return [((t - p.shift[0]) % b2) / b2, b2]; }
+    return [(t % p.breath) / p.breath, p.breath];
+  }
+  function rate(off, window) { return off <= window / 2 ? 'precise' : off <= window ? 'good' : 'rough'; }
+  var WORD = {precise: '✨ Precise!', good: 'Good', rough: 'Rough…'};
 
   // ☯️ Fuse / 🔒 Seal: tap when the orbs meet
   function fuseStage(seal) {
@@ -232,7 +263,10 @@
         for (i = 0; i < m.length; i++) { if (m[i] > t) { next = m[i]; prev = i ? m[i - 1] : 0; break; } prev = m[i]; next = m[i] + (m[i] - (i ? m[i - 1] : 0)); }
         var near = m.some(function (x) { return Math.abs(t - x) <= p.window; });
         var sep = 2 * Math.PI * Math.max(0, (next - t) / Math.max(0.2, next - prev));
-        var base = t * 1.1, cx = W / 2, cy = H * 0.36, rx = 170, ry = 70;
+        var dir = 1, cx = W / 2, cy = H * 0.36, rx = 170, ry = 70;
+        (p.reverse || []).forEach(function (k) { if (t >= m[k]) dir = -dir; });
+        var base = dir * t * 1.1;
+        sep = dir * sep;
         clear();
         ctx.strokeStyle = 'rgba(232,194,122,.25)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI); ctx.stroke();
         if (seal) {                         // the Beast Core, restless above the cauldron
@@ -242,6 +276,13 @@
         orb(cx + rx * Math.cos(base), cy + ry * Math.sin(base), 20, '#DCE6FF', '#1B2850');
         orb(cx + rx * Math.cos(base + sep), cy + ry * Math.sin(base + sep), 20, '#FFE2A0', '#8A5A10');
         if (near) ring(cx + rx * Math.cos(base), cy + ry * Math.sin(base), 34, 'rgba(255,255,255,.8)', 4);
+        (p.chaos || []).forEach(function (x) {                // the chaos orb streaks through the meeting place
+          var k = (t - x) / 0.6;
+          if (k < -1 || k > 1) return;
+          var ax = cx + rx * Math.cos(base) + k * 260, ay = cy + ry * Math.sin(base) - k * 40;
+          orb(ax, ay, 18, '#B57BFF', '#2A0A3A');
+          if (Math.abs(t - x) <= p.chaoshalf) ring(ax, ay, 30, 'rgba(224,90,79,.9)', 4);
+        });
         if (t - s.lastHit < 0.5) ring(cx + rx * Math.cos(base), cy + ry * Math.sin(base), 30 + 80 * (t - s.lastHit), 'rgba(168,240,210,' + (1 - 2 * (t - s.lastHit)) + ')', 6);
         scene.style.setProperty('--calm', (0.35 + 0.6 * s.fused / p.need) * Math.max(0.2, 1 - 0.25 * s.unsteady));
         hint.textContent = (seal ? 'Seal the Beast Core: ' : 'Fuse Yin and Yang: ') + s.fused + ' of ' + p.need
@@ -249,9 +290,14 @@
       },
       down: function (c) {
         var p = c.pub, s = c.st, t = now(), hit = -1;
-        p.meet.forEach(function (x, i) { if (hit < 0 && !s.used[i] && Math.abs(t - x) <= p.window) hit = i; });
-        if (hit >= 0) { s.used[hit] = 1; s.fused++; s.lastHit = t; flash(seal ? 'Sealed!' : 'Fused!', 'good', 600); Snd('good'); }
-        else { flash('Unsteady!', 'bad', 600); backlash(); Snd('bad'); }
+        var chaos = (p.chaos || []).some(function (x) { return Math.abs(t - x) <= p.chaoshalf; });
+        p.meet.forEach(function (x, i) { if (hit < 0 && !s.used[i] && Math.abs(t - x) <= p.window * p.reach) hit = i; });
+        if (chaos) hit = -1;
+        if (hit >= 0) {
+          var how = rate(Math.abs(t - p.meet[hit]), p.window);
+          s.used[hit] = 1; s.fused++; s.lastHit = t;
+          flash((seal ? 'Sealed · ' : 'Fused · ') + WORD[how], how === 'rough' ? '' : 'good', 650); Snd(how === 'precise' ? 'chime' : 'good');
+        } else { flash(chaos ? 'The chaos orb! Unsteady!' : 'Unsteady!', 'bad', 700); backlash(); Snd('bad'); }
         press({}).then(function (r) {
           if (!r) return;
           if (r.fused !== undefined) s.fused = r.fused;
@@ -282,7 +328,7 @@
       play(V.cond);
     },
     tick: function (c, t) {
-      var p = c.pub, beat = Math.floor(t / p.pulse), level = Math.min(5, p.start + beat), ph = (t % p.pulse) / p.pulse;
+      var p = c.pub, pa = pulseAt(p, t), level = pa[0], ph = pa[1], beat = level - p.start;
       var cx = W / 2, cy = H * 0.33, R = 62, far = 210;
       scene.style.setProperty('--glow', Math.min(1, level / 4));
       V.cond.style.setProperty('--glow', Math.min(1, level / 4));
@@ -295,7 +341,7 @@
         var col = ready ? 'rgba(255,214,102,1)' : decoy ? (ph > 0.25 ? 'rgba(235,80,70,.95)' : 'rgba(255,214,102,1)')
           : 'rgba(200,215,255,.45)';
         ring(cx, cy, Math.max(4, r), col, ready || decoy ? 10 : 3);
-        if (ready && Math.abs(ph - 0.5) <= p.glint) star(cx, cy, 48, '#FFF3C4', 0.9);
+        if (ready && Math.abs(ph - 0.5) <= p.glint) star(cx, cy, Math.abs(ph - 0.5) <= p.glint / 2 ? 56 : 40, '#FFF3C4', 0.9);
       } else cracks(cx, cy);
       // the beats, counted: dim dots for the warm-up, the gold one is the beat to press on
       var n = 5 - p.start, x0 = cx - (n - 1) * 18;
@@ -313,14 +359,22 @@
     down: function (c) {
       if (c.st.pressed) return;
       c.st.pressed = true;
-      var p = c.pub, t = now(), level = Math.min(5, p.start + Math.floor(t / p.pulse)), ph = (t % p.pulse) / p.pulse;
-      var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint;
-      flash(glint ? '✨ Perfect pulse!' : level === 4 ? (ph < 0.5 ? 'A little early' : 'A little late') : level >= 5 ? 'Cracked!' : 'Too early',
+      var p = c.pub, t = now(), pa = pulseAt(p, t), level = pa[0], ph = pa[1];
+      var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint, how = glint ? rate(Math.abs(ph - 0.5), p.glint) : null;
+      flash(glint ? (how === 'precise' ? '✨ Precise: a perfect pulse!' : 'Good: in the glint') : level === 4 ? (ph < 0.5 ? 'Rough: a little early' : 'Rough: a little late') : level >= 5 ? 'Cracked!' : 'Too early',
             glint ? 'good' : level === 4 ? '' : 'bad', 1200);
       Snd(glint ? 'chime' : level >= 5 || level < 4 ? 'bad' : 'good');
       press({});
     }
   };
+
+  function pulseAt(p, t) {                 // the same as alchemy_live.pulse_at
+    var b = p.beats, i = 0;
+    while (i + 1 < b.length && b[i + 1] <= t) i++;
+    if (i >= b.length - 1) return [5, 0, p.pulse];
+    var len = b[i + 1] - b[i];
+    return [p.start + i, (t - b[i]) / len, len];
+  }
 
   // ⚡ Tribulation: 🔵 blue bolts → Protect as the ring closes; 🔴 red bolts → Dodge to the SAFE side
   var HELP_KEY = 'ma-trib-help';

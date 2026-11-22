@@ -30,6 +30,7 @@ from dataclasses import dataclass, field
 import alchemy
 
 from bot import crafting, loot
+from bot.crafting import BALANCE_TOLERANCE
 
 from .inventory import item_picture
 
@@ -38,32 +39,54 @@ BEGIN_WAIT = 120.0      # a page that never says "begin" (closed, or its player 
 LINGER = 0.25           # a stage whose time is up is settled on the next request this long after its end
 TICK = 0.02             # the heat simulation step (static/alchemy_live.js uses the same)
 
+# Every timed press is precise, good or rough (shown on the page), so the patterns follow the hands: rough play
+# everywhere lands about 1-3 patterns, good play 4-6, precise play (and the higher grades' extra challenges
+# handled) 7-9, within what the herbs' age allows.
+TIMING = {"precise": 1.0, "good": 0.8, "rough": 0.5}
+WINDOW = {"Mortal": 0.20, "Yellow": 0.18, "Mystic": 0.16, "Earth": 0.14, "Heaven": 0.12}
+                        # seconds each side of the moment that are "good" (half of it "precise"), by difficulty grade:
+                        # the same feel at any speed, so a slow basic recipe isn't loose and a fast one isn't brutal
+ROUGH_REACH = 1.8       # a press this many windows away from the moment still counts, roughly (Fuse / Seal)
+RANK_MARGIN = 0.06      # each alchemist rank above the recipe (3 at most) widens every window and calms the
+                        # gusts and sway by this share. It never removes a challenge.
+
 # 🔥 Ignite
 IGNITE_WARMUP = 1.5     # the first seconds (getting the heat into the band) don't count
 IGNITE_MIN_BAND = 10    # the heat band is never narrower than this (a big batch could squeeze it to 6°)
 IGNITE_MAX_TEMPO = 1.35 # nor faster than this
 BATCH_SWAY = 0.25       # each pill beyond the first calms the band's sway by this share
-IGNITE_PERFECT = 0.85   # this share of the time in the band is a full score
+IGNITE_PERFECT = 0.95   # this share of the time in the band is a full score...
+IGNITE_ZERO = 0.45      # ...and this share or less scores nothing (in between, a straight line)
 HEAT_UP, HEAT_DOWN, HEAT_EASE = 24.0, 17.0, 0.25   # °/s while pumping / resting; seconds to reach that speed
 GUST_PUSH, GUST_LENGTH, GUST_OMEN = 30.0, 0.7, 0.9
 GUSTS = {"Mortal": 1, "Yellow": 2, "Mystic": 2, "Earth": 3, "Heaven": 3}
 BAND_SWAY = {"Mortal": 3, "Yellow": 5, "Mystic": 7, "Earth": 9, "Heaven": 11}   # ° the band drifts each way
+JUMPS = {"Earth": 1, "Heaven": 1}   # Earth+: the fire's heart jumps the band to a new place mid-stage...
+JUMP_WARN = 1.2                      # ...shown (a ghost band) this long before
+FLARES = {"Heaven": 2}               # Heaven: flare-ups. The heat surges by itself, and pumping into one overheats
+FLARE_LENGTH, FLARE_PUSH, FLARE_PUMP, FLARE_OMEN = 1.2, 14.0, 2.2, 1.0
 
 # 🌿 Herbs
 BREATH = 1.3            # seconds per breath (at tempo 1)
-BREATH_WINDOW = 0.18    # share of a breath, each side of its peak, that is "on the breath"
 BREATHS_PER_HERB = 4    # no herb by then: the cauldron goes cold on that one
-OFF_BREATH = 0.7
+VOLATILE_FROM = "Earth"  # Earth+: one herb is volatile and goes in on the OUT-breath (the ring at its smallest)
+BREATH_SHIFT = {"Heaven": 0.75}   # Heaven: after the second breath the rhythm quickens to this share
 
 # ☯️ Fuse / 🔒 Seal
 MEET = 1.5              # seconds between the orbs' meetings (at tempo 1)
 MISS_COST = 0.15        # each tap when the orbs are apart
 SEAL_SHATTER = 3        # this many taps out of time shatter the core
+REVERSE_FROM = "Earth"  # Earth+: the orbs change direction now and then
+CHAOS = {"Heaven": 2}   # Heaven: a chaos orb crosses this many times just before a meeting; a tap on it is unsteady
+CHAOS_LEAD, CHAOS_HALF = 0.42, 0.15
 
 # 💊 Condense
 PULSE = 0.82            # seconds per pulse (at tempo 1)
-GLINT = 0.28            # share of the "ready" pulse, each side of its middle, that glints
-READY_NOT_GLINT = 0.7   # pressed on the ready pulse, but not in its glint
+GLINT = 0.18            # the glint is WINDOW each side of the ready pulse's middle, never over twice this share of it
+READY_NOT_GLINT = 0.7   # pressed on the ready pulse, but not in its glint (rough)
+QUICKEN_FROM = "Earth"  # Earth+: each beat comes quicker than the last...
+QUICKEN = 0.88          # ...by this share
+EARLY_READY = {"Heaven": [0, 1, 2]}   # Heaven: the gold ring may come after fewer warm-up beats (can't just count)
 
 # ⚡ Tribulation: each round is one bolt or a quick pair. 🔵 blue: Protect (raise the shield as the ring closes);
 # 🔴 red, too strong to block: Dodge toward the SAFE side. A fake-out flips the safe side once during the warning.
@@ -80,6 +103,25 @@ TRIB_CALM = (1.2, 1.8)   # seconds between rounds
 TRIB_PAIR = 0.15         # the second bolt of a pair starts warning this soon after the first lands
 PROTECT_WINDOW = 0.5     # the shield holds this long: raised earlier than this before the bolt, it fades
 SEE_EARLY = 0.3          # the warning may be asked for this much before it shows (network)
+
+
+def harder(c, from_grade):
+    """True when this craft's difficulty grade is from_grade or above."""
+    return alchemy.GRADES.index(dgrade(c)) >= alchemy.GRADES.index(from_grade)
+
+
+def margin(c):
+    """The alchemist's rank margin: 1.0 at the recipe's rank, up to 1.18 three ranks above."""
+    return 1 + RANK_MARGIN * min(c.ranks_above, 3)
+
+
+def judge(off, window):
+    """How a press `off` seconds (or breath shares) from the moment rates against its window."""
+    if off <= window / 2:
+        return "precise"
+    if off <= window:
+        return "good"
+    return "rough"
 
 
 def tempo(c):
@@ -120,13 +162,23 @@ def make(c, rng, n, now):
 
 
 def make_ignite(c, rng, f):
-    g = dgrade(c)
+    g, m = dgrade(c), margin(c)
     f = min(f, IGNITE_MAX_TEMPO)
     length = 4 + c.diff["rounds"] * 0.8
     w = max(c.zone_width, IGNITE_MIN_BAND)
     lo = max(5, min(c.zone_lo, 95 - w))
-    sway = BAND_SWAY[g] * max(0.0, 1 - BATCH_SWAY * (c.batch - 1))
-    sway = round(max(0, min(sway, lo - 5, 95 - lo - w)), 2)
+    sway = BAND_SWAY[g] * max(0.0, 1 - BATCH_SWAY * (c.batch - 1)) / m
+    jumps = []
+    for _ in range(JUMPS.get(g, 0)):
+        at = round(length * rng.uniform(0.4, 0.6), 2)
+        room_up, room_down = 95 - (lo + w) - sway, lo - 5 - sway
+        size = w + 6
+        way = 1 if room_up >= size and (room_down < size or rng.random() < 0.5) else -1
+        size = min(size, room_up if way > 0 else room_down)
+        if size > 4:
+            jumps.append([at, round(way * size, 1)])
+    shift = sum(d for _, d in jumps)
+    sway = round(max(0, min(sway, lo - 5, 95 - lo - w, lo + shift - 5, 95 - lo - shift - w)), 2)
     gusts, t = [], IGNITE_WARMUP + 0.4
     for _ in range(GUSTS[g]):
         room = length - 1.0 - t - (GUSTS[g] - len(gusts) - 1) * 1.6
@@ -135,10 +187,22 @@ def make_ignite(c, rng, f):
         start = t + rng.uniform(0, room)
         gusts.append([round(start, 2), rng.choice([1, -1])])
         t = start + 1.6
+    flares = []
+    busy = [x for x, _ in gusts] + [x for x, _ in jumps]
+    for k in range(FLARES.get(g, 0)):
+        lo_t = IGNITE_WARMUP + 1.0 + (length - IGNITE_WARMUP - 2.5) * k / FLARES[g]
+        hi_t = IGNITE_WARMUP + 1.0 + (length - IGNITE_WARMUP - 2.5) * (k + 1) / FLARES[g]
+        tries = [round(rng.uniform(lo_t, hi_t), 2) for _ in range(12)]
+        at = max(tries, key=lambda x: min([abs(x - b) for b in busy] or [9]))   # as clear of gusts and jumps as it can
+        flares.append([at, FLARE_LENGTH])
+        busy.append(at)
     pub = {"tempo": round(f, 3), "heat": c.heat, "lo": lo, "width": w, "sway": sway, "period": round(6.0 / f, 2),
-           "phase": round(rng.uniform(0, 2 * math.pi), 3), "up": round(HEAT_UP * f ** 0.5, 2), "down": round(HEAT_DOWN * f ** 0.5, 2),
-           "ease": HEAT_EASE, "gusts": gusts, "push": round(GUST_PUSH * f ** 0.5, 2), "gust": GUST_LENGTH, "omen": GUST_OMEN,
-           "warmup": IGNITE_WARMUP, "perfect": IGNITE_PERFECT, "tick": TICK}
+           "phase": round(rng.uniform(0, 2 * math.pi), 3), "up": round(HEAT_UP * f ** 0.5, 2),
+           "down": round(HEAT_DOWN * f ** 0.5, 2), "ease": HEAT_EASE, "gusts": gusts,
+           "push": round(GUST_PUSH * f ** 0.5 / m, 2), "gust": GUST_LENGTH, "omen": GUST_OMEN,
+           "jumps": jumps, "jumpwarn": JUMP_WARN, "flares": flares, "flarepush": round(FLARE_PUSH * f ** 0.5, 2),
+           "flarepump": FLARE_PUMP, "flareomen": FLARE_OMEN,
+           "warmup": IGNITE_WARMUP, "perfect": IGNITE_PERFECT, "zero": IGNITE_ZERO, "tick": TICK}
     return pub, {"holds": []}, length
 
 
@@ -151,13 +215,25 @@ def dgrade(c):
 
 
 def make_herbs(c, rng, f):
+    g = dgrade(c)
     breath = BREATH / f
     kinds = sorted(set(c.order))
-    pub = {"breath": round(breath, 3), "window": BREATH_WINDOW, "per": BREATHS_PER_HERB, "count": len(c.order),
-           "clues": c.clues, "insights": c.insights,
+    n = len(c.order)
+    pub = {"breath": round(breath, 3), "window": round(WINDOW[g] / breath * margin(c), 3), "per": BREATHS_PER_HERB,
+           "count": n, "clues": c.clues, "insights": c.insights,
+           "volatile": rng.randrange(1, n) if harder(c, VOLATILE_FROM) and n > 1 else None,
+           "shift": [round(2 * breath, 3), round(breath * BREATH_SHIFT[g], 3)] if g in BREATH_SHIFT else None,
            "herbs": [{"key": t, "name": alchemy.HERBS[c.grade][t][0], "emoji": loot.TYPE_EMOJI.get(t, "🌿"),
                       "picture": item_picture(loot.herb(c.grade, t))} for t in kinds]}
-    return pub, {"placed": 0, "since": 0.0, "points": 0.0, "marks": []}, breath * BREATHS_PER_HERB * len(c.order)
+    return pub, {"placed": 0, "since": 0.0, "points": 0.0, "marks": []}, breath * BREATHS_PER_HERB * n
+
+
+def breath_at(p, t):
+    """(phase 0..1 of the breath at t, its length): 0.5 the fullest, 0 and 1 the emptiest."""
+    if p.get("shift") and t >= p["shift"][0]:
+        b = p["shift"][1]
+        return ((t - p["shift"][0]) % b) / b, b
+    return (t % p["breath"]) / p["breath"], p["breath"]
 
 
 def meetings(rng, f, count, wild):
@@ -169,27 +245,53 @@ def meetings(rng, f, count, wild):
 
 
 def make_fuse(c, rng, f, seal=False):
+    g = dgrade(c)
     need = alchemy.SEAL_CORE_MOVES if seal else max(3, c.diff["rounds"] - 2)
     spare = 1 if seal else 2
     meet = meetings(rng, f * (1.1 if seal else 1), need + spare, c.diff["wild_herbs"])
-    window = 0.09 + 0.025 * c.balance_tolerance
-    pub = {"meet": meet, "need": need, "window": round(window, 3), "seal": seal,
+    window = WINDOW[g] * (c.balance_tolerance / BALANCE_TOLERANCE) ** 0.5 * margin(c)   # a batch tightens it
+    reverse = sorted(rng.sample(range(len(meet)), min(2, len(meet)))) if harder(c, REVERSE_FROM) else []
+    chaos = [round(meet[i] - CHAOS_LEAD, 3) for i in sorted(rng.sample(range(len(meet)), min(CHAOS.get(g, 0), len(meet))))]
+    pub = {"meet": meet, "need": need, "window": round(window, 3), "seal": seal, "reverse": reverse, "chaos": chaos,
+           "chaoshalf": CHAOS_HALF, "reach": ROUGH_REACH,
            "allowed": (1 if c.seal_pass >= 10 else 0) if seal else None, "shatter": SEAL_SHATTER if seal else None}
-    return pub, {"fused": 0, "used": [], "unsteady": 0}, meet[-1] + 0.6
+    return pub, {"fused": 0, "credit": 0.0, "used": [], "unsteady": 0}, meet[-1] + 0.6
 
 
 def make_condense(c, rng, f):
-    pulse, start = PULSE / f, min(c.pulse, 1)
+    g = dgrade(c)
+    pulse = PULSE / f
+    start = rng.choice(EARLY_READY[g]) if g in EARLY_READY else min(c.pulse, 1)
     decoy = None
     if rng.random() < c.diff["misleading"] * 2:
-        decoy = rng.choice([2, 3])
-    pub = {"pulse": round(pulse, 3), "start": start, "glint": GLINT, "decoy": decoy, "steps": len(crafting.PULSES) - 1}
-    return pub, {}, (5 - start) * pulse
+        decoy = rng.choice([lv for lv in (2, 3) if lv >= start] or [3])
+        decoy = decoy if decoy >= start and decoy < 4 else None
+    quick = QUICKEN if harder(c, QUICKEN_FROM) else 1.0
+    beats, t, d = [], 0.0, pulse                       # when each pulse level begins, from `start` to 5 (cracked)
+    for _ in range(start, 6):
+        beats.append(round(t, 3))
+        t += d
+        d *= quick
+    ready = beats[4 - start + 1] - beats[4 - start]
+    glint = min(GLINT * 2, WINDOW[g] * margin(c) / ready)       # as a share of the ready beat
+    pub = {"pulse": round(pulse, 3), "start": start, "beats": beats, "glint": round(glint, 3),
+           "decoy": decoy, "steps": len(crafting.PULSES) - 1}
+    return pub, {}, beats[-1]
+
+
+def pulse_at(p, t):
+    """(pulse level at t, where in that beat 0..1, the beat's length)."""
+    b = p["beats"]
+    i = max(0, min(len(b) - 1, sum(1 for x in b if x <= t) - 1))
+    if i >= len(b) - 1:
+        return 5, 0.0, p["pulse"]
+    length = b[i + 1] - b[i]
+    return p["start"] + i, (t - b[i]) / length, length
 
 
 def make_tribulation(c, rng, f):
     g = dgrade(c)
-    warn = TRIB_WARN[g]
+    warn = TRIB_WARN[g] * margin(c)
     bolts, rounds, t = [], [], 1.0
     for kinds in TRIB_ROUNDS[g][c.strike:]:
         idx = []
@@ -205,7 +307,8 @@ def make_tribulation(c, rng, f):
             t += warn
         rounds.append(idx)
         t += rng.uniform(*TRIB_CALM)
-    pub = {"bolts": [b for b, _ in bolts], "rounds": rounds, "protect": PROTECT_WINDOW, "grace": GRACE}
+    pub = {"bolts": [b for b, _ in bolts], "rounds": rounds, "protect": round(PROTECT_WINDOW * margin(c), 3),
+           "grace": GRACE}
     return pub, {"secret": [s_ for _, s_ in bolts], "acts": {}, "round": 0, "marks": []}, bolts[-1][0]["hit"] + 0.8
 
 
@@ -233,14 +336,20 @@ MAKERS = {1: make_ignite, 2: make_herbs, 3: make_fuse, 4: make_condense,
 # ── 🔥 the heat, worked out the same way the page draws it ───────────
 
 def band_lo(p, t):
-    return p["lo"] + p["sway"] * math.sin(2 * math.pi * t / p["period"] + p["phase"])
+    jump = sum(d for at, d in p.get("jumps", ()) if t >= at)
+    return p["lo"] + jump + p["sway"] * math.sin(2 * math.pi * t / p["period"] + p["phase"])
+
+
+def flaring(p, t):
+    return any(at <= t < at + n for at, n in p.get("flares", ()))
 
 
 def gust_at(p, t):
+    push = p.get("flarepush", 0) if flaring(p, t) else 0.0
     for start, way in p["gusts"]:
         if start <= t < start + p["gust"]:
-            return way * p["push"]
-    return 0.0
+            return push + way * p["push"]
+    return push
 
 
 def heat_run(p, holds, until):
@@ -253,7 +362,7 @@ def heat_run(p, holds, until):
         while i < len(holds) and holds[i][0] <= t:
             pumping = holds[i][1]
             i += 1
-        want = p["up"] if pumping else -p["down"]
+        want = (p["up"] * (p.get("flarepump", 1) if flaring(p, t) else 1)) if pumping else -p["down"]
         speed += (want - speed) * min(1.0, p["tick"] / p["ease"])
         heat = max(0.0, min(100.0, heat + (speed + gust_at(p, t)) * p["tick"]))
         if t >= p["warmup"]:
@@ -289,12 +398,10 @@ def herb_mark(live, c, how):
     d = live.data
     want = c.order[d["placed"]]
     name = alchemy.HERBS[c.grade][want][0]
-    if how == "on":
-        d["points"] += 1
-    elif how == "off":
-        d["points"] += OFF_BREATH
+    if how in TIMING:
+        d["points"] += TIMING[how]
     elif not c._mistake():                       # wrong herb or too slow, unless experience saves it
-        d["points"] += OFF_BREATH
+        d["points"] += TIMING["rough"]
         how += "-forgiven"
     d["marks"].append({"how": how, "want": name})
     d["placed"] += 1
@@ -307,10 +414,12 @@ def press_herbs(live, c, t, ev):
     d, p = live.data, live.pub
     if live.over or ev.get("herb") not in {h["key"] for h in p["herbs"]}:
         return herb_reply(live)
-    phase = (t % p["breath"]) / p["breath"]
-    on = abs(phase - 0.5) <= p["window"] + GRACE / p["breath"]
+    phase, b = breath_at(p, t)
+    out = p.get("volatile") == d["placed"]                 # the volatile herb goes in on the out-breath
+    off = min(phase, 1 - phase) if out else abs(phase - 0.5)
+    how = judge(max(0.0, off - GRACE / b), p["window"])
     right = ev["herb"] == c.order[d["placed"]]
-    herb_mark(live, c, ("on" if on else "off") if right else "wrong")
+    herb_mark(live, c, how if right else "wrong")
     d["since"] = t
     return herb_reply(live)
 
@@ -322,20 +431,24 @@ def herb_reply(live):
 
 def press_fuse(live, c, t, ev):
     d, p = live.data, live.pub
-    hit = next((i for i, m in enumerate(p["meet"]) if abs(t - m) <= p["window"] + GRACE and i not in d["used"]), None)
-    if hit is not None:
+    on_chaos = any(abs(t - x) <= p["chaoshalf"] + GRACE for x in p["chaos"])
+    near = [(abs(t - m), i) for i, m in enumerate(p["meet"]) if i not in d["used"]]
+    off, hit = min(near) if near else (99, None)
+    if not on_chaos and hit is not None and off <= p["window"] * p["reach"] + GRACE:
+        how = judge(max(0.0, off - GRACE), p["window"])
         d["used"].append(hit)
         d["fused"] += 1
+        d["credit"] += TIMING[how]
         if d["fused"] >= p["need"]:
             live.over = True
-        return {"fused": d["fused"], "hit": True, "over": live.over}
-    if any(abs(t - m) <= p["window"] + GRACE for m in p["meet"]):
+        return {"fused": d["fused"], "hit": True, "how": how, "over": live.over}
+    if not on_chaos and any(abs(t - m) <= p["window"] + GRACE for m in p["meet"]):
         return {"fused": d["fused"], "hit": None}          # a second tap on a meeting already used: nothing
     if c._mistake():
         d["unsteady"] += 1
     if p["seal"] and d["unsteady"] >= p["shatter"]:
         live.over = True
-    return {"fused": d["fused"], "hit": False, "unsteady": d["unsteady"], "over": live.over}
+    return {"fused": d["fused"], "hit": False, "chaos": on_chaos, "unsteady": d["unsteady"], "over": live.over}
 
 
 def press_condense(live, c, t, ev):
@@ -399,7 +512,7 @@ def settle(live, c, t):
 def settle_ignite(live, c, t):
     p = live.pub
     share, heat = heat_run(p, live.data["holds"], live.length)
-    score = min(1.0, share / p["perfect"])
+    score = max(0.0, min(1.0, (share - p["zero"]) / (p["perfect"] - p["zero"])))
     c.heat = round(heat)
     c.settle(score, [f"🔥 The heat held in the golden band {share:.0%} of the time. Heat control: **{score:.0%}**"])
     live.result = {"score": score, "share": share}
@@ -411,16 +524,16 @@ def settle_herbs(live, c, t):
     while d["placed"] < live.pub["count"]:                    # the stage was cut short: the rest go cold
         herb_mark(live, c, "slow")
     score = d["points"] / live.pub["count"]
-    on = sum(m["how"] == "on" for m in d["marks"])
+    on = sum(m["how"] == "precise" for m in d["marks"])
     wrong = sum(m["how"].startswith(("wrong", "slow")) for m in d["marks"])
-    c.settle(score, [f"🌿 {on} of {live.pub['count']} herbs on the breath"
+    c.settle(score, [f"🌿 {on} of {live.pub['count']} herbs precisely on the breath"
                      + (f", {wrong} backlash{'es' if wrong > 1 else ''}" if wrong else "")
                      + f". Herb order: **{score:.0%}**"])
     live.result = {"score": score, "marks": d["marks"]}
 
 
 def fuse_score(d, p):
-    return max(0.0, min(1.0, d["fused"] / p["need"] - MISS_COST * d["unsteady"]))
+    return max(0.0, min(1.0, d.get("credit", d["fused"]) / p["need"] - MISS_COST * d["unsteady"]))
 
 
 def settle_fuse(live, c, t):
@@ -445,17 +558,14 @@ def settle_seal(live, c, t):
 def settle_condense(live, c, t):
     p = live.pub
     at = live.data.get("pressed")
-    if at is None:
-        level = 5
-    else:
-        level = min(5, p["start"] + int(at // p["pulse"]))
+    level, ph, length = (5, 0, 1) if at is None else pulse_at(p, at)
     if level >= 5:
         score, how = crafting.CRACKED_SCORE, f"💔 Too late: *{crafting.PULSES[-1]}*."
     elif level == 4:
-        mid = (4 - p["start"] + 0.5) * p["pulse"]
-        glint = abs(at - mid) <= p["glint"] * p["pulse"] + GRACE
-        score = 1.0 if glint else READY_NOT_GLINT
-        how = "✨ You condense in the glint: a perfect pulse!" if glint else "💊 You condense on the ready pulse."
+        rate = judge(max(0.0, abs(ph - 0.5) - GRACE / length), p["glint"]) if abs(ph - 0.5) <= p["glint"] + GRACE / length else None
+        score = TIMING[rate] if rate in ("precise", "good") else READY_NOT_GLINT
+        how = {"precise": "✨ You condense in the heart of the glint: a perfect pulse!",
+               "good": "✨ You condense in the glint."}.get(rate, "💊 You condense on the ready pulse, off its glint.")
     else:
         score, how = crafting.PULSE_SCORE[level], f"💊 You condense at *{crafting.PULSES[level]}*."
     c.settle(score, [f"{how} **{score:.0%}**"])

@@ -450,3 +450,19 @@ def test_batch_explosion_loses_everything(conn):
     c.done, c.result = True, 0
     lines, _ = crafting.finish_craft(conn, 1, c)
     assert db.get_items(conn, 1, "pills") == [] and any("All 2 pills" in line for line in lines)
+
+
+def test_an_explosion_leaves_a_third_of_the_herbs():
+    import random as _r
+    from bot import crafting as cr, loot as lt
+    conn = db.connect(":memory:")
+    db.create_player(conn, 5, "A", "Genius", 0, {})
+    herbs = [(lt.herb("Mortal", "qi", 10), 6), (lt.herb("Mortal", "purity", 10), 2)]
+    c = cr.Craft("qi", "Mortal", 1, 10, _r.Random(1))
+    c.settle(0.0)
+    c.settle(0.0)
+    assert c.done and c.result == 0
+    lines, _ = cr.finish_craft(conn, 5, c, ingredients=herbs)
+    left = {h["data"]["type"]: h["qty"] for h in db.get_items(conn, 5, "herbs")}
+    assert left == {"qi": 2} and "2× " in lines[0] and "from the ashes" in lines[0]
+    assert cr.salvage([({"category": "materials", "key": "core:x"}, 3)]) == []

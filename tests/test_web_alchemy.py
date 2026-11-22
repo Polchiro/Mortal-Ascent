@@ -287,7 +287,7 @@ def test_live_perfect_hands_make_a_full_score_pill(client, db_path):
         t += p["tick"]
     client.now[0] = t0 + p["length"] + 1
     st = live(client)
-    assert st["last"]["stage"] == 1 and st["last"]["score"] >= 0.95
+    assert st["last"]["stage"] == 1 and st["last"]["score"] >= 0.6         # a simple steady hand; 95% in band is full
     lv = st["live"]
     assert lv["stage"] == 4
     client.post("/alchemy/live/begin", data={"id": lv["id"]})
@@ -464,3 +464,75 @@ def test_live_tribulation_over_the_web(client):
     assert info["kind"] == "blue"
     client.now[0] = t0 + b["hit"] - 0.1
     assert lpress(client, lv["id"], bolt=0, act="protect")["reply"]["ok"]
+
+
+# ── the grade challenges and the rank margin ─────────────────────────
+
+def craft_at(grade, stage, rank_above=0, seed=3, age=50):
+    import random
+    rank = crafting.pill_spec("qi", grade)["rank"] + rank_above
+    c = crafting.Craft("qi", grade, rank, age, random.Random(seed))
+    while c.stage != stage:
+        c.settle(1.0)
+    return c
+
+
+def test_harder_grades_add_challenges_not_just_speed():
+    from web import alchemy_live as L
+    mortal = L.make(craft_at("Mortal", 1), __import__("random").Random(1), 0, 0).pub
+    heaven = L.make(craft_at("Heaven", 1), __import__("random").Random(1), 0, 0).pub
+    assert not mortal["jumps"] and not mortal["flares"]
+    assert heaven["jumps"] and heaven["flares"]
+    yellow = L.make(craft_at("Yellow", 2), __import__("random").Random(1), 0, 0).pub
+    earth = L.make(craft_at("Earth", 2), __import__("random").Random(1), 0, 0).pub
+    assert yellow["volatile"] is None and earth["volatile"] is not None and earth["shift"] is None
+    mystic = L.make(craft_at("Mystic", 3), __import__("random").Random(1), 0, 0).pub
+    heaven3 = L.make(craft_at("Heaven", 3), __import__("random").Random(1), 0, 0).pub
+    assert not mystic["reverse"] and not mystic["chaos"] and heaven3["reverse"] and heaven3["chaos"]
+    beats = L.make(craft_at("Earth", 4), __import__("random").Random(1), 0, 0).pub["beats"]
+    gaps = [b - a for a, b in zip(beats, beats[1:])]
+    assert all(g2 < g1 for g1, g2 in zip(gaps, gaps[1:]))                 # Earth's beats quicken
+
+
+def test_the_volatile_herb_goes_in_on_the_out_breath():
+    import random
+    from web import alchemy_live as L
+    c = craft_at("Earth", 2)
+    lv = L.make(c, random.Random(2), 0, 0)
+    p = lv.pub
+    t = 0.0
+    while not lv.over:
+        i = lv.data["placed"]
+        b = p["breath"]
+        t = (int(t / b) + 1) * b + (0 if p["volatile"] == i else b / 2)       # out-breath for it, in-breath for the rest
+        L.press(lv, c, t, {"herb": c.order[i]})
+    assert [m["how"] for m in lv.data["marks"]] == ["precise"] * p["count"]
+
+
+def test_a_tap_on_the_chaos_orb_is_unsteady():
+    import random
+    from web import alchemy_live as L
+    c = craft_at("Heaven", 3)
+    lv = L.make(c, random.Random(4), 0, 0)
+    r = L.press(lv, c, lv.pub["chaos"][0], {})
+    assert r["hit"] is False and r["chaos"] and lv.data["unsteady"] == 1
+
+
+def test_timing_is_precise_good_or_rough():
+    import random
+    from web import alchemy_live as L
+    c = craft_at("Mystic", 3)
+    lv = L.make(c, random.Random(4), 0, 0)
+    w, m = lv.pub["window"], lv.pub["meet"]
+    assert L.press(lv, c, m[0], {})["how"] == "precise"
+    assert L.press(lv, c, m[1] + w * 0.9 + L.GRACE, {})["how"] == "good"
+    assert L.press(lv, c, m[2] + w * 1.6 + L.GRACE, {})["how"] == "rough"
+
+
+def test_rank_widens_windows_but_keeps_the_challenges():
+    import random
+    from web import alchemy_live as L
+    at = L.make(craft_at("Heaven", 3), random.Random(1), 0, 0).pub
+    above = L.make(craft_at("Heaven", 3, rank_above=3), random.Random(1), 0, 0).pub
+    assert above["window"] == pytest.approx(at["window"] * 1.18, rel=0.01)
+    assert above["chaos"] and above["reverse"]

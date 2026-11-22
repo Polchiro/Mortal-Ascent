@@ -630,6 +630,44 @@ compact below it; the Tribulation keeps the cauldron in the storm. In Ignite a b
 nor speeds it past tempo 1.35, and each extra pill calms the band's sway by a quarter (a Heaven ×3 batch was close to
 unplayable).
 
+### Difficulty: by grade, by rank, and the patterns
+
+**Every timed press is precise, good or rough**, shown on the page ("✨ Precise!", "Good", "Rough…"), and scored
+1.0 / 0.8 / 0.5. The good window is `WINDOW` seconds each side of the moment (Mortal 0.20 s … Heaven 0.12 s, the same
+feel at any speed); half of it is precise. Ignite scores the share of time in the band, from nothing at 45% to full
+at 95%. So the existing patterns follow the hands: rough play lands in the low patterns, good play the middle ones,
+precise play the high ones, all still capped by the herbs' age. The pattern thresholds are unchanged.
+
+**Higher grades add challenges**, not only speed:
+
+| | Mortal | Yellow | Mystic | Earth | Heaven |
+|---|---|---|---|---|---|
+| Ignite | still band, 1 gust | band sways | 2 gusts | + the band **jumps** mid-stage (a flashing ghost band shows where, 1.2 s ahead) | + **flare-ups**: the heat surges, and pumping into one overheats |
+| Herbs | | on the breath | misleading clues | + a **volatile** herb goes in on the out-breath (blue ring) | + the breathing **quickens** after two breaths |
+| Fuse / Seal | | | steady orbits | + the orbs **reverse** | + a **chaos orb** streaks through just before a meeting: a tap on it is unsteady |
+| Condense | slow rings | | red **decoy** ring | + the beats **quicken** | + the gold ring may come after fewer warm-up beats |
+
+**Rank margin:** each alchemist rank above the recipe (3 at most) widens every window and the Tribulation's warning
+by 6%, and calms the gusts and the band's sway. It never removes a challenge.
+
+**Failing costs less:** an explosion leaves a third of each herb (rounded down) in the ashes, on the website and in
+Discord alike (`crafting.salvage`, `alchemy.EXPLOSION_KEEPS`); a shattered Beast Core is still lost; Second Chance
+still saves everything.
+
+**Balance** (simulated players with timing spread ~0.16 s rough, ~0.09 s good, ~0.04 s precise; raw score before the
+herb-age bonus, patterns uncapped):
+
+| Grade | rough | good | precise |
+|---|---|---|---|
+| Mortal | 0.92 (8) | 0.98 (9) | 0.99 (9) |
+| Mystic | 0.77 (6) | 0.91 (8) | 0.95 (9) |
+| Earth | 0.62 (3) | 0.77 (6) | 0.86 (7) |
+| Heaven | 0.56 (3) | 0.73 (5) | 0.83 (6) |
+
+Three ranks above the recipe adds about one pattern. Basic recipes stay easy (their herbs usually cap them at 5
+patterns anyway); Earth and Heaven need real precision. Every number is at the top of `web/alchemy_live.py`.
+
+
 ## The pill reveal
 
 Behind every alchemy page plays SHOAIB's chamber video (`art/scenes/alchemy_chamber.mp4`, made by
