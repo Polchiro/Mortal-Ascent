@@ -215,6 +215,13 @@ class Forge:
         self.log.append(f"{forge.STAGE_NAMES[self.stage]}: **{pts} / {forge.STAGE_MAX_POINTS}**")
         self._next_stage()
 
+    def settle(self, frac, lines=()):
+        """Score the whole current stage at once (0…1 of its 20 points), played outside the buttons (the website's
+        live forge, web/forge_live.py). The points, the total and the rarity then follow the same rules as ever."""
+        self.log, self._prompt = list(lines), None
+        self.decisions += 1
+        self._score_stage(frac)
+
     def misleading(self):
         return self.rng.random() < self.diff["misleading"]
 

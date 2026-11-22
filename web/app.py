@@ -117,7 +117,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps"):                     # only the art the pages use
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge"):                   # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
@@ -379,7 +379,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
-        return page(request, "forge.html", v=view, user=user, avatar=avatar, error=request.session.pop("forge_error", None))
+        return page(request, "forge.html", v=view, user=user, avatar=avatar, error=request.session.pop("forge_error", None),
+                    controls=request.cookies.get("ma_forge_controls"), show_help=request.cookies.get("ma_help") != "off")
 
     @app.post("/forge/begin")
     async def forge_begin(request: Request):
@@ -392,13 +393,59 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             plan = forge_play.plan_from(c, uid, form)
             if plan is None:
                 return "Pick a piece of gear first."
-            return forges.start(c, uid, plan)[1]
+            controls = "classic" if form.get("controls") == "classic" else "live"
+            return forges.start(c, uid, plan, controls=controls)[1]
 
         error = await run_in_threadpool(with_conn, begin, user["id"])
         if error:
             request.session["forge_error"] = error
             return RedirectResponse("/forge?" + urllib.parse.urlencode({k: v for k, v in form.items() if v}), status_code=303)
-        return RedirectResponse("/forge/play", status_code=303)
+        r = RedirectResponse("/forge/play", status_code=303)
+        r.set_cookie("ma_forge_controls", "classic" if form.get("controls") == "classic" else "live", max_age=31536000,
+                     samesite="lax")
+        r.set_cookie("ma_help", "on" if form.get("help") == "on" else "off", max_age=31536000, samesite="lax")
+        return r
+
+    # The live forge (web/forge_live.py, static/forge_live.js): the page plays each stage and the server times it.
+    def forge_json(s):
+        if not s:
+            return JSONResponse({"gone": True}, headers={"Cache-Control": "no-store"})
+        return JSONResponse(forge_play.live_view(s, forges.clock()), headers={"Cache-Control": "no-store"})
+
+    @app.get("/forge/live")
+    def forge_live_state(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        return forge_json(with_conn(forges.catch_up, user["id"]))
+
+    @app.post("/forge/live/begin")
+    async def forge_live_begin(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        form = await form_of(request)
+        return forge_json(await run_in_threadpool(with_conn, forges.live_begin, user["id"], num(form.get("id"))))
+
+    @app.post("/forge/live/press")
+    async def forge_live_press(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        form = await form_of(request)
+        ev = {"do": form["do"]} if form.get("do") else {}
+        s, reply = await run_in_threadpool(with_conn, forges.live_press, user["id"], num(form.get("id")), ev)
+        return JSONResponse({"reply": reply, "state": forge_play.live_view(s, forges.clock()) if s else {"gone": True}},
+                            headers={"Cache-Control": "no-store"})
+
+    @app.post("/forge/live/act")
+    async def forge_live_act(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        form = await form_of(request)
+        return forge_json(await run_in_threadpool(with_conn, forges.live_act, user["id"], form.get("key", ""),
+                                                  num(form.get("turn"))))
 
     @app.get("/forge/play", response_class=HTMLResponse)
     def forge_playing(request: Request):
@@ -411,7 +458,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         p = with_conn(lambda c, uid: db.get_player(c, uid), user["id"])
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         return page(request, "forge_play.html", g=forge_play.play_view(s, forges.clock()), user=user, avatar=avatar,
-                    coins=f"{p['lotus_coins']:,}", pearls=f"{p['moon_pearls']:,}")
+                    coins=f"{p['lotus_coins']:,}", pearls=f"{p['moon_pearls']:,}", scene=forge_play.scene_view(s, p))
 
     @app.post("/forge/act")
     async def forge_act(request: Request):
