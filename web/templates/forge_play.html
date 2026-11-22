@@ -30,7 +30,7 @@
   </div>
   {% endif %}
 
-  {% if g.live %}{% set H = scene.sheets.hammer %}{% set B = scene.sheets.bellows %}
+  {% if g.live %}
   <section class="stage card flive" id="flive" data-gear="{{ scene.gear }}">
     <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
     <div class="fscene nosmith" id="fscene">
@@ -41,21 +41,16 @@
       <img class="fbelcut" src="/art/forge/bellows.webp" alt="">
       <canvas class="ffurnace" width="960" height="540"></canvas>
       <video class="ffire" src="/art/forge/fire.mp4" muted loop playsinline autoplay preload="auto"></video>
-      {% if B %}<div class="fsheet fbellows" data-sheet='{{ B | tojson }}' style="background-image: url({{ B.src }})"></div>{% endif %}
       <img class="fblank inforge" src="{{ scene.blank }}" alt="">
       <canvas class="fheat" width="480" height="270"></canvas>
-      <div class="fset{% if not H %} nosmith{% endif %}">
-        {% if H %}<div class="fsheet fhammer" data-sheet='{{ H | tojson }}' style="background-image: url({{ H.src }})"></div>{% endif %}
+      <div class="fset">
         <img class="fanvil" src="/art/forge/anvil.webp" alt="">
         <img class="fblank onanvil" src="{{ scene.blank }}" alt="">
         {% if scene.tool.hammer %}{% set T = scene.tool.hammer %}<div class="ftool" data-sheet='{{ T | tojson }}' style="background-image: url({{ T.src }})"></div>{% endif %}
         <canvas class="fspot" width="400" height="400"></canvas>
         <video class="fsparks" src="/art/forge/sparks.mp4" muted playsinline preload="auto"></video>
       </div>
-      {% set QW = scene.sheets.water %}{% set QO = scene.sheets.oil %}
-      <div class="fqset{% if not QW %} nosmith{% endif %}" data-medium="water">
-        {% if QW %}<div class="fsheet fqwater" data-sheet='{{ QW | tojson }}' style="background-image: url({{ QW.src }})"></div>{% endif %}
-        {% if QO %}<div class="fsheet fqoil" data-sheet='{{ QO | tojson }}' style="background-image: url({{ QO.src }})"></div>{% endif %}
+      <div class="fqset" data-medium="water">
         <img class="ftrough" src="/art/forge/trough.webp" alt="">
         <img class="fcauldron" src="/art/forge/cauldron_oil.webp" alt="">
         <img class="fqblank" src="{{ scene.blank }}" alt="">
@@ -89,7 +84,6 @@
         <div class="lpanel fprompt" id="lprompt" hidden></div>
         <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
       </div>
-      <button class="lmute lsmithbtn" id="lsmithbtn" type="button" aria-label="Show or hide the smith" title="Show or hide the smith">👤</button>
     </div>
     <div id="llog" class="flivelog"></div>
     <p class="sub lkeys" id="lkeys"></p>
