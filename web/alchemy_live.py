@@ -40,6 +40,9 @@ TICK = 0.02             # the heat simulation step (static/alchemy_live.js uses 
 
 # 🔥 Ignite
 IGNITE_WARMUP = 1.5     # the first seconds (getting the heat into the band) don't count
+IGNITE_MIN_BAND = 10    # the heat band is never narrower than this (a big batch could squeeze it to 6°)
+IGNITE_MAX_TEMPO = 1.35 # nor faster than this
+BATCH_SWAY = 0.25       # each pill beyond the first calms the band's sway by this share
 IGNITE_PERFECT = 0.85   # this share of the time in the band is a full score
 HEAT_UP, HEAT_DOWN, HEAT_EASE = 24.0, 17.0, 0.25   # °/s while pumping / resting; seconds to reach that speed
 GUST_PUSH, GUST_LENGTH, GUST_OMEN = 30.0, 0.7, 0.9
@@ -100,15 +103,19 @@ def make(c, rng, n, now):
     stage = 6 if c.tribulation == "pending" else c.stage
     f = tempo(c)
     pub, data, length = MAKERS[stage](c, rng, f)
-    pub.update(stage=stage, tempo=round(f, 3), length=round(length, 3))
+    pub.setdefault("tempo", round(f, 3))
+    pub.update(stage=stage, length=round(length, 3))
     return Live(n, stage, now, length, pub, data=data)
 
 
 def make_ignite(c, rng, f):
     g = dgrade(c)
+    f = min(f, IGNITE_MAX_TEMPO)
     length = 4 + c.diff["rounds"] * 0.8
-    lo, w = c.zone_lo, c.zone_width
-    sway = max(0, min(BAND_SWAY[g], lo - 5, 95 - lo - w))
+    w = max(c.zone_width, IGNITE_MIN_BAND)
+    lo = max(5, min(c.zone_lo, 95 - w))
+    sway = BAND_SWAY[g] * max(0.0, 1 - BATCH_SWAY * (c.batch - 1))
+    sway = round(max(0, min(sway, lo - 5, 95 - lo - w)), 2)
     gusts, t = [], IGNITE_WARMUP + 0.4
     for _ in range(GUSTS[g]):
         room = length - 1.0 - t - (GUSTS[g] - len(gusts) - 1) * 1.6
@@ -117,7 +124,7 @@ def make_ignite(c, rng, f):
         start = t + rng.uniform(0, room)
         gusts.append([round(start, 2), rng.choice([1, -1])])
         t = start + 1.6
-    pub = {"heat": c.heat, "lo": lo, "width": w, "sway": sway, "period": round(6.0 / f, 2),
+    pub = {"tempo": round(f, 3), "heat": c.heat, "lo": lo, "width": w, "sway": sway, "period": round(6.0 / f, 2),
            "phase": round(rng.uniform(0, 2 * math.pi), 3), "up": round(HEAT_UP * f ** 0.5, 2), "down": round(HEAT_DOWN * f ** 0.5, 2),
            "ease": HEAT_EASE, "gusts": gusts, "push": round(GUST_PUSH * f ** 0.5, 2), "gust": GUST_LENGTH, "omen": GUST_OMEN,
            "warmup": IGNITE_WARMUP, "perfect": IGNITE_PERFECT, "tick": TICK}
@@ -324,6 +331,10 @@ def strike_resolve(live, c, t):
         d["i"], d["pressed"] = d["i"] + 1, None
         if c.done:
             live.over = True
+            marks = d["marks"]
+            c.log = [f"⛈️ The Tribulation: {' '.join('🛡️' if m else '⚡' for m in marks)} · {sum(marks)} of "
+                     f"{len(marks)} strikes blocked" + (". You survived it!" if all(marks) else
+                                                         ". The pill survives, scarred: 8 patterns.")]
 
 
 PRESS = {1: press_ignite, 2: press_herbs, 3: press_fuse, 4: press_condense, 5: press_fuse, 6: press_tribulation}

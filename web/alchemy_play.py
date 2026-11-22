@@ -11,6 +11,7 @@ decision has a deadline. A page that comes back late (or never) gets the timed-o
 import random
 import re
 import threading
+from pathlib import Path
 import time
 from dataclasses import dataclass, field
 
@@ -299,6 +300,7 @@ def setup_view(conn, uid, pill=None, batch=None, prefer=None):
 # ── the playing page ─────────────────────────────────────────────────
 
 FX = "/art/fx/alchemy"
+REVEAL_VIDEO = Path(__file__).resolve().parents[1] / "art" / "fx" / "alchemy" / "reveal.mp4"   # SHOAIB's, when it comes
 
 
 def fire_for(heat):
@@ -370,6 +372,8 @@ def play_view(s, now):
             "boom": f"{FX}/explode.mp4" if not n else None,
             "log": [rich(x) for x in c.log], "lines": [rich(x) for x in o["lines"]],
             "tribulation": c.tribulation, "tier": alchemy_live.tier(n),
+            "reveal": {"id": int(s.started * 1000), "patterns": n, "cn": crafting.CN[n] if n else "",
+                       "perfect": n == 9, "video": f"{FX}/reveal.mp4" if REVEAL_VIDEO.exists() else None},
         })
     return out
 

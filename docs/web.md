@@ -614,11 +614,23 @@ Discord's `/craft` is unchanged.
 | 🔥 Ignite | hold Space / the button to pump the bellows, let go to cool; keep the heat in the golden band. Gusts come with an omen first; on harder grades the band sways | share of the time in the band (after a 1.5 s warm-up); 85% is a full score |
 | 🌿 Add Herbs | the ring at the cauldron's mouth breathes; tap the right herb (or 1-4) as it swells to its fullest. Same order, clues and insights as the bot | right herb on the breath 100%, off the breath 70%, wrong or too slow a backlash (0, or 70% if forgiven) |
 | ☯️ Fuse | Yin and Yang orbit; press Space when they meet | fusions ÷ needed, −15% per tap while they are apart |
-| 💊 Condense | the pill pulses brighter each beat; press in the glint of the ready pulse. Harder grades show a false glint (it flickers) | the bot's pulse table: glint 100%, ready pulse 70%, earlier less, cracked 20% |
+| 💊 Condense | a dashed gold outline circles the pill; each beat a ring closes in on it from outside. Early beats' rings are thin and pale; the ready beat's is thick and gold: press as it lands on the outline. Dots under the pill count the beats. Harder grades send a false gold ring that turns red before it lands | the bot's pulse table: on the outline 100%, the ready beat but off it 70%, earlier less, cracked 20% |
 | 🔒 Seal the Core | as Fuse, with the Beast Core: too few seals (or 3 unsteady taps) and it shatters | as Fuse, at least 30% |
 | ⚡ Tribulation | the clouds flash where the bolt gathers; press ← ↑ → before it lands | the bot's own: all 3 blocked = 9 patterns, else 8 |
 
 The result shows a quality tier: Failed (0 patterns), Normal (1-3), High quality (4-6), Superior (7-8), Perfect (9).
+The Tribulation's result lists every strike (🛡️ ⚡ 🛡️). In Ignite a big batch never squeezes the heat band under 10°
+nor speeds it past tempo 1.35, and each extra pill calms the band's sway by a quarter (a Heaven ×3 batch was close to
+unplayable).
+
+## The pill reveal
+
+A successful craft opens with a reveal (`#preveal` in `alchemy_play.html`, `static/alchemy_reveal.js`): the cauldron
+shakes and a pillar of light rises, the pill floats up out of it glowing in its tier's colour, its patterns etch on
+as rings one at a time while the count climbs (一纹 … 九纹), then the tier stamps in and the rewards follow. A Perfect
+pill gets slow-turning heavenly rays. About 4 s; it plays once per craft (sessionStorage), a reload or reduced motion
+shows the finished picture. If `art/fx/alchemy/reveal.mp4` exists (SHOAIB's cauldron-bursting-open clip, effect on
+black) it plays under the pill; until then a drawn pillar of light stands in. An explosion keeps its own scene.
 
 **The engine is untouched.** A live stage only decides that stage's score and hands it to `Craft.settle` (or
 `Craft.shatter_core`; the Tribulation goes through `Craft.act` with the bot's own strike directions). Patterns,
