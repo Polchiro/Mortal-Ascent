@@ -182,7 +182,7 @@
     <p class="sub">Keys 1–4 · P pill · F flee. {% if F.team %}{{ F.team.total }} seconds a turn: whoever hasn't picked Guards.{% else %}Take your time: there's no turn timer.{% endif %}</p>
   </aside>
 </main>
-<script src="/static/fight.js" defer></script>
+<script src="{{ asset('fight.js') }}" defer></script>
 
 {% else %}
 <main class="forgeplay explore">

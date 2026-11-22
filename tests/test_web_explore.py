@@ -719,3 +719,16 @@ def test_the_grey_wolf_goes_down_in_its_death_animation(client):
     win(client, s)
     page = client.get("/explore/play").text
     assert " slain" in page and "death-sheet" in page and '"kind": "sheet"' in page and "bs-death" in page
+
+
+def test_style_and_scripts_are_never_stale(client):
+    import re
+    fight(client)
+    page = client.get("/explore/play").text
+    css = re.search(r'href="(/static/style\.css\?v=[0-9a-f]{10})"', page)
+    js = re.search(r'src="(/static/fight\.js\?v=[0-9a-f]{10})"', page)
+    assert css and js                                           # each address carries its file's version
+    r = client.get(css.group(1))
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"      # and the browser checks each time
+    from web import app as web_app
+    assert web_app.asset("style.css") == css.group(1) and web_app.asset("nothing.js") == "/static/nothing.js"
