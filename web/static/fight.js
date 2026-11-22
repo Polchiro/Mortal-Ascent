@@ -52,9 +52,90 @@
   var ANSWER_LIMIT = 12000;    // ms to wait for the server before asking it what happened
   window.MACombat = Combat;
 
+  /* A beast with animation frames (art/beasts/sheets/<slug>/, web/beast_sheets.py): idle, attack, hit and death, cut
+     from SHOAIB's videos onto one cell. The frames are laid exactly over the beast's still picture (sheets.json `still`:
+     where the picture sits in the cell), which stays underneath unseen; whatever the fight does to the picture (its
+     transform, flash, fade: `animal`, the knocks, the shakes) is copied onto the frames, so every existing movement
+     still carries the beast. One sheet shows at a time (data-anim; style.css fades between them). The idle loops in CSS;
+     attack is stepped by the turn (`frame`), hit and death play on their own clock (`play`); death then holds its last
+     frame. "still" shows the picture itself (its roar swaps in its open-mouthed picture). */
+  function BeastSheets(box) {
+    var data, img = box.querySelector(':scope > img'), layer = box.querySelector('.bsheets'), raf = null, cur = 'idle';
+    try { data = JSON.parse(box.dataset.sheets); } catch (e) { return null; }
+    if (!img || !layer || !data) return null;
+    var S = data.sheets, k = 1, base = '';
+    function fit() {                                           // the layer onto the picture as drawn (object-fit: contain)
+      var nw = img.naturalWidth, nh = img.naturalHeight, w = img.offsetWidth, h = img.offsetHeight;
+      if (!nw || !nh || !w || !h) return;
+      var s = Math.min(w / nw, h / nh), cw = nw * s, ch = nh * s;
+      var pos = (getComputedStyle(img).objectPosition || '50% 50%').split(' ').map(function (v) { return v.indexOf('%') > 0 ? parseFloat(v) / 100 : 0.5; });
+      var cx = img.offsetLeft + (w - cw) * pos[0], cy = img.offsetTop + (h - ch) * (pos[1] === undefined ? 0.5 : pos[1]);
+      k = cw / data.still[2];
+      var left = cx - data.still[0] * k, top = cy - data.still[1] * k;
+      layer.style.left = left + 'px'; layer.style.top = top + 'px';
+      layer.style.width = data.cell[0] * k + 'px'; layer.style.height = data.cell[1] * k + 'px';
+      layer.style.transformOrigin = (img.offsetLeft + w / 2 - left) + 'px ' + (img.offsetTop + h - top) + 'px';   // the picture's own 50% 100%
+    }
+    function copy() {                                          // the picture's movement and flash, onto the frames
+      if (!base) base = getComputedStyle(img).filter;          // its shadow and glow (style.css), when nothing flashes it
+      layer.style.transform = img.style.transform;
+      layer.style.filter = img.style.filter || (base !== 'none' ? base : '');
+      layer.style.opacity = img.style.opacity;
+    }
+    function show(name, f) {
+      var sh = S[name], div = layer.querySelector('.bs-' + name);
+      if (!sh || !div) return;
+      f = Math.max(0, Math.min(sh.frames - 1, Math.floor(f)));
+      if (name !== 'idle') div.style.backgroundPosition = (f % sh.cols) / Math.max(1, sh.cols - 1) * 100 + '% ' + Math.floor(f / sh.cols) / Math.max(1, sh.rows - 1) * 100 + '%';
+      if (box.dataset.anim !== name) box.dataset.anim = name;
+      cur = name;
+    }
+    function stop() { if (raf) cancelAnimationFrame(raf); raf = null; }
+    var api = {
+      data: data,
+      width: function () { return data.still[2] * k; },       // the picture's width on screen (px)
+      now: function () { return cur; },
+      busy: function (name) { return cur === name && raf !== null; },
+      set: function (name) { stop(); if (name === 'idle' || name === 'still') { box.dataset.anim = name; cur = name; } },
+      frame: function (name, f) { stop(); show(name, f); },
+      play: function (name, done) {                            // on its own clock, at its own length
+        stop();
+        var sh = S[name], t0 = null;
+        function tick(now) {
+          if (!box.isConnected) return stop();
+          if (t0 === null) t0 = now;
+          var t = now - t0;
+          show(name, t / sh.ms * sh.frames);
+          if (t < sh.ms) { raf = requestAnimationFrame(tick); return; }
+          raf = null;
+          if (name !== 'death') { box.dataset.anim = 'idle'; cur = 'idle'; }
+          if (done) done();
+        }
+        raf = requestAnimationFrame(tick);
+      },
+      hit: function () { if (cur !== 'death') api.play('hit'); },
+      dead: function () { stop(); show('death', S.death.frames - 1); },
+      fit: fit
+    };
+    if (window.MutationObserver) new MutationObserver(copy).observe(img, {attributes: true, attributeFilter: ['style']});
+    if (img.complete) fit(); else img.addEventListener('load', fit);
+    copy();
+    Object.keys(S).forEach(function (n) { new Image().src = S[n].src; });     // every sheet loaded now: changes are instant
+    return api;
+  }
+  window.addEventListener('resize', function () {
+    var b = document.querySelector('main.battle .beast.sheeted');
+    if (b && b._sheets) b._sheets.fit();
+  });
+
   function init() {
     var main = document.querySelector('main.battle');
     if (!main) return;
+    var sheeted = main.querySelector('.beast.sheeted');
+    if (sheeted && !sheeted._sheets) {
+      sheeted._sheets = BeastSheets(sheeted);
+      if (sheeted._sheets && main.classList.contains('slain')) sheeted._sheets.dead();   // a won fight: it lies there
+    }
     var title = main.querySelector('.ititle'), text = main.querySelector('.itext');
     main.querySelectorAll('[data-info]').forEach(function (el) {
       var target = el.tagName === 'DETAILS' ? el.querySelector('summary') : el;
@@ -264,6 +345,7 @@
     try { events = JSON.parse(main.dataset.events || '[]'); } catch (e) {}
     var scene = main.querySelector('.bscene'), fighter = main.querySelector('.fighter'), poses = main.querySelector('.fighter .poses');
     var beastBox = main.querySelector('.beast'), beast = main.querySelector('.beast img');
+    var BS = (beastBox && beastBox._sheets) || null;            // its animation frames (BeastSheets), when it has them
     var end = endOf(main);                                      // the fight was won on this turn: the beast goes down last
     if ((!events.length && !end) || !scene || !fighter || !poses || !beast || !window.requestAnimationFrame ||
         (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return null;
@@ -308,6 +390,7 @@
       beast.style.filter = flash > 0.05 ? beastFilter + ' brightness(' + (1 + 1.8 * flash) + ') saturate(' + (1 - 0.6 * flash) + ')' : '';
     }
     function pop(box, cls, text) {
+      if (BS && box === beastBox && /^hit/.test(cls)) BS.hit();   // it flinches in its own hit animation
       var n = document.createElement('span');
       n.className = 'tnum ' + cls; n.textContent = text; box.appendChild(n);
       setTimeout(function () { n.remove(); }, 1300);
@@ -384,7 +467,7 @@
         trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';     // sweeps left to right
         trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 300);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
-        animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
+        animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (R.knock * W || 1) * 5, k2[1]);
         if (t >= R.hit && !done) { done = true; strikes(ev, R); }
       }};
     }
@@ -418,7 +501,7 @@
         trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';
         trail.style.opacity = t < R.swing - 20 ? 0 : 1 - span(t, R.hit + 60, R.hit + 320);
         var k2 = ev.hit ? knocked(t - R.hit, R.knock * W) : [0, 0];
-        animal(k2[0], 0, k2[0] / (R.knock * W || 1) * 5, k2[1]);
+        animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (R.knock * W || 1) * 5, k2[1]);
         if (t >= R.hit && !done) { done = true; strikes(ev, R); }
       }};
     }
@@ -448,11 +531,25 @@
        your Guard stops it (and may counter). */
     function charge(ev) {
       var R = RECIPES.gore, guard = ev.act === 'guard', done = false, countered = false, dusted = false, opened = false, marked = false;
-      var still = beast.src, open = !bposes && ROAR && ROAR.art;
+      var still = beast.src, open = !bposes && !BS && ROAR && ROAR.art;
+      var A = BS && BS.data.sheets.attack, lunge = 0, reach = 0;
+      if (A) {                                                  // its own attack video: crouch, lunge and bite, back
+        var bite = Math.round(A.bite / A.frames * A.ms);
+        lunge = Math.round(bite * 0.5);                          // it springs from the crouch at about half way to the bite
+        R = {gather: 0, rear: lunge, hit: bite, toss: bite + 140, back: bite + 140, end: A.ms, knock: RECIPES.gore.knock};
+        reach = Math.max(0, reachBeast - (A.reach || 0) * BS.width());   // its jaws already reach this far ahead in the frames
+      }
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
       return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
         var x = 0, y = 0, rot = 0;
-        if (t < R.gather) { var q = inout(span(t, 0, R.gather)); x = 0.012 * W * q; y = 0.006 * W * q; rot = -5 * q; }      // head down
+        if (A) {                                                // in place through the crouch, then the lunge home to you and back
+          if (t < lunge) x = 0;
+          else if (t < R.hit) x = -reach * inout(span(t, lunge, R.hit));
+          else if (t < R.back) x = -reach;
+          else x = -reach * (1 - inout(span(t, R.back, R.end)));
+          if (!(countered && BS.busy('hit'))) BS.frame('attack', t / A.ms * A.frames);   // over the last flinch; your counter's own flinch plays
+        }
+        else if (t < R.gather) { var q = inout(span(t, 0, R.gather)); x = 0.012 * W * q; y = 0.006 * W * q; rot = -5 * q; }      // head down
         else if (t < R.rear) { var q2 = inout(span(t, R.gather, R.rear)); x = 0.012 * W + 0.006 * W * q2; y = 0.006 * W - 0.026 * W * q2; rot = -5 + 13 * q2; }   // rears
         else if (t < R.hit) {                                                     // the charge
           var c = span(t, R.rear, R.hit), e2 = c * c;
@@ -462,7 +559,7 @@
         } else if (t < R.end) {                                                   // trots home in two hops
           var r = inout(span(t, R.back, R.end)); x = -reachBeast * (1 - r); y = -0.02 * W * Math.abs(Math.sin(Math.PI * 2 * r)); rot = 12 * (1 - r) * (1 - r);
         }
-        bpose(t < R.rear ? 'crouch' : t < R.back ? 'leap' : 'idle');
+        if (!A) bpose(t < R.rear ? 'crouch' : t < R.back ? 'leap' : 'idle');
         if (open) {                                                               // jaws open for the gore
           var wide = t >= R.hit - 90 && t < R.back + 60;
           if (wide !== opened) { opened = wide; beast.src = wide ? ROAR.art : still; }
@@ -1404,7 +1501,7 @@
         hero(x, y);
         poses.style.filter = tier >= 1 && t < R + 200 ? 'drop-shadow(0 0 ' + (4 + 4 * tier) + 'px ' + tc + ')' : '';
         var k2 = ev.hit ? knocked(t - LAND, (0.02 + 0.006 * tier) * W) : [0, 0];
-        animal(k2[0], 0, k2[0] / (0.03 * W) * 4, k2[1]);
+        animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (0.03 * W) * 4, k2[1]);
         if (dragons) {
           punches.forEach(function (_, i) { loose(i, t); });
           if (t >= LAND && once('finale')) {
@@ -1755,7 +1852,9 @@
        Nothing is decided here: the server has already ended the fight and paid it out, once. */
     function death(d) {
       var cv = d.kind === 'warp' ? beastBox.querySelector('canvas.deathfx') : null, did = {}, total = 0, hitAt = 0;
+      var DS = d.kind === 'sheet' && BS ? BS.data.sheets.death : null;          // its own death animation
       if (cv) d.ms.forEach(function (m, n) { if (n < d.impact) hitAt += m; total += m; });
+      else if (DS) { total = d.ms; hitAt = d.impact; }
       else total = d.kind === 'rout' ? 600 : 1000;
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
       function thud() {
@@ -1766,7 +1865,10 @@
         if (t < 0) return;
         if (once('start')) main.classList.add('dying');
         pose('idle'); hero(0, 0);
-        if (cv) {
+        if (DS) {                                              // it falls in its own frames, and lies there
+          BS.frame('death', t / total * DS.frames);
+          if (t >= hitAt && once('thud')) thud();
+        } else if (cv) {
           drawDeath(main, t);                                  // the beast's own picture, bent through the shared movement
           var flash = 1 - span(t, 0, 200), dim = span(t, total, total + 500);
           cv.style.filter = 'drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(' + (1 + 1.2 * flash - 0.28 * dim) + ') saturate(' + (1 - 0.25 * dim) + ')';
@@ -1785,9 +1887,14 @@
           beast.style.filter = 'brightness(' + (1 - 0.25 * bb) + ') saturate(' + (1 - 0.3 * bb) + ')';
           if (b >= 1 && once('thud')) thud();
         }
-      }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } beast.style.opacity = ''; }};
+      }, clear: function () { if (cv) { cv.style.filter = ''; drawDeath(main, Infinity); } if (DS) BS.dead(); beast.style.opacity = ''; }};
     }
 
+    /* a step drawn on the beast's still picture (its roar swaps in the open-mouthed one): its frames step aside meanwhile */
+    function still(step) {
+      if (!BS) return step;
+      return {end: step.end, render: function (t) { BS.set(t >= step.end ? 'idle' : 'still'); step.render(t); }};
+    }
     var steps = [], kinds = {};
     function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
@@ -1798,7 +1905,7 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting'); kinds.enemy = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(still(roaring(ev)), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
       else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting'); kinds.enemy = 1; }
@@ -1810,7 +1917,7 @@
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;
-    if (dying) { add(dying, 'dying'); main.classList.remove('slain'); }      // .slain (the finished picture) returns in finish()
+    if (dying) { add(dying, 'dying'); main.classList.remove('slain'); if (BS) BS.set('idle'); }   // .slain (the finished picture) returns in finish(); it stands until it falls
     if (!steps.length) return null;
     Combat.set(steps[0].phase);
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
@@ -1819,7 +1926,7 @@
     main.classList.remove('tl-hold');
 
     var i = 0, start = null, stopped = false;
-    function reset() { bpose(home); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
+    function reset() { bpose(home); if (BS && BS.now() !== 'death' && !BS.busy('hit')) BS.set('idle'); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
       trail.style.opacity = 0; claws.setAttribute('opacity', 0); }
     /* the turn has been acted out (or `cut`: another fight replaced this one): hand the turn back to the player */
     function finish(cut) {

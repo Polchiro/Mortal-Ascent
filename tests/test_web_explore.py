@@ -640,3 +640,78 @@ def test_the_male_cultivator_keeps_his_still_idle(client):
     page = client.get("/explore/play").text
     assert looks.idle_sheet({"gender": "male"}) is None and looks.idle_sheet(None) is None
     assert " stanced" not in page and "isheet" not in page
+
+
+# ── Animated beasts (web/beast_sheets.py, art/beasts/sheets/<slug>/; docs/web.md "Animated beasts") ──────────────
+
+def wolf_fight(client):
+    import beasts
+    from bot import combat
+    from bot import fight as engine
+    s = fight(client)
+    b = s.battle
+    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Grey Wolf", "elite", "hunter")),
+                                      "Grey Wolf")
+    b.enemy.update(realm="Martial Apprentice", slug=beasts.slug("Grey Wolf"))
+    b.enemy["statuses"].clear()
+    b._plan()
+    return s, b
+
+
+def test_the_grey_wolf_has_its_four_animations_on_one_cell():
+    import os
+    from PIL import Image
+    from web import beast_sheets
+    d = beast_sheets.sheets("grey_wolf")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    cw, ch = d["cell"]
+    x, y, w, h = d["still"]                                       # the still picture, inside the cell
+    assert 0 <= x and 0 <= y and x + w <= cw + 1 and y + h <= ch + 1
+    root = os.path.dirname(os.path.dirname(__file__))
+    for kind, sh in d["sheets"].items():
+        im = Image.open(os.path.join(root, sh["src"].lstrip("/")))
+        assert im.size == (cw * sh["cols"], ch * sh["rows"]) and sh["frames"] <= sh["cols"] * sh["rows"]
+        assert sh["ms"] > 0
+    idle = d["sheets"]["idle"]
+    assert idle["frames"] == idle["cols"] * idle["rows"]                  # stepped through in CSS: the grid is full
+    attack = d["sheets"]["attack"]
+    assert attack["ms"] == 2200 and 0 < attack["bite"] < attack["frames"] - 1 and 0 <= attack["reach"] < 0.5
+    death_ = d["sheets"]["death"]
+    assert 0 < death_["impact"] < death_["frames"]
+    assert beast_sheets.sheets("wild_boar") is None and beast_sheets.sheets("../etc") is None
+
+
+def test_only_the_grey_wolf_dies_in_its_own_animation():
+    import beasts
+    from web import death
+    v = death.view({"kind": "beast", "name": "Grey Wolf", "slug": "grey_wolf"})
+    assert v["kind"] == "sheet" and v["ms"] == 2500 and 0 < v["impact"] < v["ms"] and v["linger"] == death.LINGER_MS
+    v = death.view({"kind": "beast", "name": "Shadow Wolf", "slug": beasts.slug("Shadow Wolf")})
+    assert v["kind"] == "warp"                                    # every other beast as before
+
+
+def test_the_grey_wolf_fight_draws_its_frames_over_its_picture(client):
+    s, b = wolf_fight(client)
+    page = client.get("/explore/play").text
+    assert 'class="beast sheeted"' in page and 'data-anim="idle"' in page and "data-sheets=" in page
+    for kind in ("idle", "attack", "hit", "death"):
+        assert f'class="bs bs-{kind}"' in page and f"/art/beasts/sheets/grey_wolf/{kind}.webp" in page
+        assert client.get(f"/art/beasts/sheets/grey_wolf/{kind}.webp").status_code == 200
+    assert "/art/beasts/grey_wolf.png" in page                    # its still picture stays underneath
+    assert "--loop:" in page and "--xend:" in page
+    css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text
+    assert ".beast.sheeted>img{opacity:0" in css and "@keyframes bsx" in css
+    assert "function BeastSheets" in js and "BS.hit()" in js and "BS.frame('attack'" in js and "BS.frame('death'" in js
+
+
+def test_other_beasts_keep_their_pictures(client):
+    fight(client)
+    page = client.get("/explore/play").text
+    assert "beast sheeted" not in page and "bsheets" not in page and "data-anim" not in page
+
+
+def test_the_grey_wolf_goes_down_in_its_death_animation(client):
+    s, b = wolf_fight(client)
+    win(client, s)
+    page = client.get("/explore/play").text
+    assert " slain" in page and "death-sheet" in page and '"kind": "sheet"' in page and "bs-death" in page
