@@ -31,7 +31,8 @@
       <video class="cfx cloop cfire" data-fire="low" src="{{ FX }}/fire_low.mp4" muted loop playsinline preload="auto"></video>
       <video class="cfx cloop cfire" data-fire="mid" src="{{ FX }}/fire_mid.mp4" muted loop playsinline preload="auto"></video>
       <video class="cfx cloop cfire" data-fire="high" src="{{ FX }}/fire_high.mp4" muted loop playsinline preload="auto"></video>
-      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      <img class="cauldron" src="/art/scenes/cauldron_body.png" alt="">
+      <img class="lidl" src="/art/scenes/cauldron_lid.png" alt="">
       <video class="cfx cloop cswirl" src="{{ FX }}/swirl.mp4" muted loop playsinline preload="auto"></video>
       <video class="cfx conce csplash" src="{{ FX }}/splash.mp4" muted playsinline preload="auto"></video>
       <video class="cfx conce ccondin" src="{{ FX }}/condense_in.mp4" muted playsinline preload="auto"></video>
@@ -74,7 +75,7 @@
       <video class="cfx conce clight" src="{{ S.event }}" muted playsinline preload="auto"></video>
       {% else %}
       <video class="cfx cloop cfire" src="{{ S.fire }}" muted loop playsinline preload="auto"></video>
-      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      <img class="cauldron" src="/art/scenes/cauldron{{ '_body' if g.stage in (2, 3, 5) }}.png" alt="">
       {% if S.loop %}<video class="cfx cloop cswirl" src="{{ S.loop }}" muted loop playsinline preload="auto"></video>{% endif %}
       {% if S.event %}<video class="cfx conce csplash" src="{{ S.event }}" muted playsinline preload="auto"></video>{% endif %}
       {% if S.condense %}<video class="cfx conce ccondin" src="{{ S.condense_in }}" muted playsinline preload="auto"></video>

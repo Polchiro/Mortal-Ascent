@@ -626,3 +626,12 @@ def test_the_lid_comes_off_in_the_reveal(client):
     s.craft.settle(0.8)
     page = client.get("/alchemy/play").text
     assert "cauldron_body.png" in page and 'class="clid"' in page
+
+
+def test_the_lid_is_off_while_herbs_go_in(client):
+    begin(client)                                                        # classic: Ignite shows the whole cauldron
+    assert "/art/scenes/cauldron.png" in client.get("/alchemy/play").text
+    client.crafts.clear(UID)
+    begin(client, controls="live")                                       # live: body and lid, the page moves the lid
+    page = client.get("/alchemy/play").text
+    assert "cauldron_body.png" in page and 'class="lidl"' in page

@@ -647,6 +647,15 @@
     document.addEventListener('keydown', onKey, true);
   }
 
+  // the lid: on for Ignite, lifted off for the herbs and the Qi, back on to seal the pill in (style.css .lidl)
+  var firstApply = true;
+  function lid(state, instant) {
+    if (instant) { scene.classList.add('instant'); setTimeout(function () { scene.classList.remove('instant'); }, 50); }
+    var off = state === 'off', was = scene.classList.contains('lidoff');
+    scene.classList.toggle('lidoff', off);
+    if (!instant && off !== was) Snd(off ? 'whoosh' : 'tick');
+  }
+
   function apply(state) {
     if (!state || state.gone) { location.replace('/alchemy'); return; }
     track(state.points);
@@ -655,6 +664,8 @@
     if (!state.live) { setTimeout(function () { getState().then(apply); }, 500); return; }
     var L = state.live, def = S[L.stage];
     reset();
+    lid(L.stage === 2 || L.stage === 3 || L.stage === 5 ? 'off' : 'on', firstApply);
+    firstApply = false;
     fireNow = null;
     cur = {id: L.id, stage: L.stage, pub: L.pub, t0: null, st: {}};
     ending = false;

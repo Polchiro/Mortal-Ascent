@@ -1695,3 +1695,18 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .lmute.lhelpbtn{top:calc(2% + 46px)}
 .lmute.lhelpbtn.off{opacity:.45;filter:grayscale(1)}
 .lhelp .hoff{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;color:var(--mist);cursor:pointer}
+/* The lid during the craft (live): on while the fire is lit, lifted off for the herbs and the Qi (Add Herbs, Fuse,
+   Seal), put back on to seal the pill in (Condense, the Tribulation); the reveal then blows it off. It sits where the
+   whole cauldron picture had it, and follows the cauldron's glow, shake and dodges. */
+.lscene .lidl{position:absolute;left:33.06%;top:37.2%;width:33.53%;z-index:2;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));transition:transform .6s cubic-bezier(.3,.8,.3,1),opacity .5s}
+.lscene.lidoff .lidl{transform:translate(-8%,-150%) rotate(-14deg);opacity:0}
+.lscene.instant .lidl{transition:none}
+.lscene.cold .lidl{filter:drop-shadow(0 6px 10px rgba(0,0,0,.6)) saturate(.6) brightness(.8) hue-rotate(-15deg)}
+.lscene.zone .lidl{filter:drop-shadow(0 0 16px rgba(245,205,120,.8))}
+.lscene.hot .lidl{filter:drop-shadow(0 0 16px rgba(224,90,79,.85)) brightness(1.1);animation:lidjump .14s linear infinite}
+.lscene.backlash .lidl{animation:lshake .1s linear 4}
+.lscene.storm .lidl{transition:transform .25s cubic-bezier(.3,1.4,.5,1),opacity .5s}
+.lscene.storm.goleft .lidl{transform:translateX(-103.5%)}
+.lscene.storm.goright .lidl{transform:translateX(103.5%)}
+@keyframes lidjump{0%,100%{transform:translate(0,0)}50%{transform:translate(1px,-5%) rotate(1deg)}}
+@media (prefers-reduced-motion:reduce){.lscene.hot .lidl,.lscene.backlash .lidl{animation:none}}
