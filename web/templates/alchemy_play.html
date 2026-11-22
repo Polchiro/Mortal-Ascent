@@ -116,8 +116,22 @@
       <video class="cfx conce cboom" src="{{ g.boom }}" muted playsinline preload="auto"></video>
       <img class="cburst" src="{{ g.art }}" alt="">
     </div>
-    {% else %}
-    <img class="stageart" src="{{ g.art }}" alt="" width="220" height="220">
+    {% else %}{% set R = g.reveal %}
+    <div class="preveal{% if R.perfect %} perfect{% endif %}" id="preveal" data-id="{{ R.id }}" data-patterns="{{ R.patterns }}" aria-hidden="true">
+      <div class="rrays"></div>
+      <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
+      {% if R.video %}<video class="cfx rlight" src="{{ R.video }}" muted playsinline preload="auto"></video>{% endif %}
+      <div class="rpillar"></div>
+      <svg class="rrings" viewBox="-100 -100 200 200">{% for i in range(R.patterns) %}<circle r="{{ 44 + i * 4 }}" pathLength="100"></circle>{% endfor %}</svg>
+      <img class="rpill stageart" src="{{ g.art }}" alt="">
+      <span class="rcount" id="rcount">{{ R.cn }}纹</span>
+    </div>
+    <script>(function () {               /* hide the finished picture before it paints, if the reveal will play */
+      var b = document.getElementById('preveal'), seen = null;
+      try { seen = sessionStorage.getItem('ma-alchemy-revealed'); } catch (e) {}
+      var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      b.closest('.result').classList.add(seen === b.dataset.id || calm ? 'revealed' : 'revealing');
+    })();</script>
     {% endif %}
     <p class="kicker">FINAL SCORE {{ g.score }}{% if g.patterns %} · {{ g.patterns }} PATTERN{{ "S" if g.patterns > 1 }}{% endif %}</p>
     {% if g.tier %}<p class="tier">{{ g.tier.name }}</p>{% endif %}
@@ -131,4 +145,5 @@
   {% endif %}
 </main>
 {% if g.live %}<script src="{{ asset('alchemy_live.js') }}" defer></script>{% else %}<script src="{{ asset('alchemy.js') }}" defer></script>{% endif %}
+{% if g.done and g.reveal %}<script src="{{ asset('alchemy_reveal.js') }}" defer></script>{% endif %}
 {% endblock %}

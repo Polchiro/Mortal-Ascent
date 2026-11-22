@@ -377,3 +377,39 @@ def test_result_tiers():
     from web import alchemy_live as L
     assert [L.tier(n)["name"] for n in (0, 1, 3, 4, 6, 7, 8, 9)] == [
         "Failed", "Normal", "Normal", "High quality", "High quality", "Superior", "Superior", "Perfect"]
+
+
+def test_live_tribulation_lists_every_strike():
+    import random
+    from web import alchemy_live as L
+    c = crafting.Craft("qi", "Mortal", 9, 1000, random.Random(2))
+    c.settle(1.0)
+    c.settle(1.0)
+    lv = L.make(c, c.rng, 0, 0)
+    (o1, _), (o2, _), (o3, _) = lv.pub["strikes"]
+    L.press(lv, c, o1 + 0.1, {"shield": L.press(lv, c, o1, {"omen": True})["from"]})
+    L.press(lv, c, o3 + 0.1, {"shield": L.press(lv, c, o3, {"omen": True})["from"]})    # the second one missed
+    L.settle(lv, c, lv.length + 1)
+    assert c.tribulation == "lost" and c.result == 8
+    assert c.log == ["⛈️ The Tribulation: 🛡️ ⚡ 🛡️ · 2 of 3 strikes blocked. The pill survives, scarred: 8 patterns."]
+
+
+def test_live_ignite_band_survives_a_big_batch():
+    import random
+    from web import alchemy_live as L
+    c = crafting.Craft("qi", "Heaven", 9, 10, random.Random(1), batch=5)
+    assert c.zone_width < L.IGNITE_MIN_BAND
+    p = L.make(c, c.rng, 0, 0).pub
+    assert p["width"] == L.IGNITE_MIN_BAND and p["sway"] == 0 and p["tempo"] <= L.IGNITE_MAX_TEMPO
+
+
+def test_the_pill_reveal(client):
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    s.craft.settle(1.0)                                        # a fine craft, played out
+    s.craft.settle(0.8)
+    page = client.get("/alchemy/play").text
+    n = s.craft.result
+    assert n and 'id="preveal"' in page and "alchemy_reveal.js" in page
+    assert page.count("<circle") == n and f"{crafting.CN[n]}纹" in page and 'class="tier"' in page

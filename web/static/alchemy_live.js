@@ -263,10 +263,10 @@
   S[3] = fuseStage(false);
   S[5] = fuseStage(true);
 
-  // 💊 Condense: tap in the glint
+  // 💊 Condense: a ring closes in on the golden outline every beat; on the ready beat, press as it lands
   S[4] = {
-    title: 'Condense the Pill', keys: 'Press Space (or the button) when the pill glints, steady and golden.',
-    hint: 'The pill pulses brighter with every beat. Condense in the glint: too early is weak, too late and it cracks.',
+    title: 'Condense the Pill', keys: 'Press Space (or the button) the moment the thick gold ring lands on the outline.',
+    hint: '',
     intro: function (c, go) {                 // the light spirals in once, then the pill pulses
       fire('low');
       if (calm || !V.cin) return go();
@@ -282,24 +282,40 @@
     },
     tick: function (c, t) {
       var p = c.pub, beat = Math.floor(t / p.pulse), level = Math.min(5, p.start + beat), ph = (t % p.pulse) / p.pulse;
-      var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint, decoy = p.decoy === level && Math.abs(ph - 0.5) <= p.glint;
+      var cx = W / 2, cy = H * 0.33, R = 62, far = 210;
       scene.style.setProperty('--glow', Math.min(1, level / 4));
       V.cond.style.setProperty('--glow', Math.min(1, level / 4));
       clear();
-      var cx = W / 2, cy = H * 0.33;
-      ring(cx, cy, 40 + 90 * ph, 'rgba(245,220,166,' + (0.15 + 0.15 * level) * (1 - ph) + ')', 3 + level * 1.5);
-      if (glint) star(cx, cy, 70, '#FFF3C4', 1);
-      if (decoy && Math.random() < 0.7) star(cx, cy, 62, '#E8D6A0', 0.6);
-      if (level >= 5) cracks(cx, cy);
-      hint.textContent = ['A faint glow…', 'A steady light…', 'The light brightens…', 'The light swells, warm and full…',
-                          'The light trembles, ready to set!', 'Cracks of light race across the pill!'][level];
+      // the target: a fixed golden outline around the pill
+      ctx.save(); ctx.setLineDash([10, 8]); ring(cx, cy, R, 'rgba(255,236,180,.85)', 4); ctx.restore();
+      if (level < 5) {
+        // this beat's ring: from far outside, landing on the outline at mid-beat, then passing inside
+        var r = R + (far - R) * (1 - 2 * ph), ready = level === 4, decoy = p.decoy === level;
+        var col = ready ? 'rgba(255,214,102,1)' : decoy ? (ph > 0.25 ? 'rgba(235,80,70,.95)' : 'rgba(255,214,102,1)')
+          : 'rgba(200,215,255,.45)';
+        ring(cx, cy, Math.max(4, r), col, ready || decoy ? 10 : 3);
+        if (ready && Math.abs(ph - 0.5) <= p.glint) star(cx, cy, 48, '#FFF3C4', 0.9);
+      } else cracks(cx, cy);
+      // the beats, counted: dim dots for the warm-up, the gold one is the beat to press on
+      var n = 5 - p.start, x0 = cx - (n - 1) * 18;
+      for (var i = 0; i < n; i++) {
+        var lv = p.start + i, x = x0 + i * 36, y = H * 0.93;
+        ctx.beginPath(); ctx.arc(x, y, lv === 4 ? 11 : 7, 0, 2 * Math.PI);
+        ctx.fillStyle = lv < level ? 'rgba(200,215,255,.25)' : lv === level ? (lv === 4 ? '#FFD666' : '#DCE6FF') : lv === 4 ? 'rgba(255,214,102,.45)' : 'rgba(200,215,255,.55)';
+        ctx.fill();
+      }
+      hint.textContent = level >= 5 ? 'Too late: cracks of light race across the pill!'
+        : level === 4 ? 'The GOLD ring! Press as it lands on the outline!'
+        : p.decoy === level ? 'A bright ring… watch: does it turn red?'
+        : 'Watch the rhythm… beat ' + (beat + 1) + ' of ' + n + '. Press on the gold ring.';
     },
     down: function (c) {
       if (c.st.pressed) return;
       c.st.pressed = true;
       var p = c.pub, t = now(), level = Math.min(5, p.start + Math.floor(t / p.pulse)), ph = (t % p.pulse) / p.pulse;
       var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint;
-      flash(glint ? '✨ Perfect pulse!' : level === 4 ? 'Ready…' : level >= 5 ? 'Cracked!' : 'Too early', glint ? 'good' : level === 4 ? '' : 'bad', 1200);
+      flash(glint ? '✨ Perfect pulse!' : level === 4 ? (ph < 0.5 ? 'A little early' : 'A little late') : level >= 5 ? 'Cracked!' : 'Too early',
+            glint ? 'good' : level === 4 ? '' : 'bad', 1200);
       press({});
     }
   };
