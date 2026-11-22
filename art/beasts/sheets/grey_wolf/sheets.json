@@ -15,7 +15,8 @@
    "frames": 56,
    "cols": 8,
    "rows": 7,
-   "ms": 4667
+   "ms": 4667,
+   "nose_x": 0.0607
   },
   "attack": {
    "src": "/art/beasts/sheets/grey_wolf/attack.webp",
@@ -24,7 +25,8 @@
    "rows": 5,
    "ms": 2200,
    "bite": 23,
-   "reach": 0.1163
+   "reach": 0.1163,
+   "bite_x": 0.0038
   },
   "hit": {
    "src": "/art/beasts/sheets/grey_wolf/hit.webp",

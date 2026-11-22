@@ -625,6 +625,8 @@ def test_the_female_stance_plays_while_she_stands(client):
     sheet = looks.IDLE_SHEETS["female"]
     assert looks.idle_sheet({"gender": "female"}) == sheet and sheet["src"].endswith("hero_female_stance.webp")
     assert " stanced" in page and 'class="sheetfx isheet"' in page and sheet["src"] in page
+    assert "hero_female_idle.webp" not in page and "p-idle" not in page     # the stance is her only standing picture
+    assert "hero_female_windup.webp" in page and "hero_female_strike.webp" in page
     assert client.get(sheet["src"]).status_code == 200
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
     assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] == sheet["cols"] * sheet["rows"]
@@ -676,6 +678,7 @@ def test_the_grey_wolf_has_its_four_animations_on_one_cell():
     assert idle["frames"] == idle["cols"] * idle["rows"]                  # stepped through in CSS: the grid is full
     attack = d["sheets"]["attack"]
     assert attack["ms"] == 2200 and 0 < attack["bite"] < attack["frames"] - 1 and 0 <= attack["reach"] < 0.5
+    assert 0 <= attack["bite_x"] < idle["nose_x"] < 0.3                   # the bite reaches further forward than it stands
     death_ = d["sheets"]["death"]
     assert 0 < death_["impact"] < death_["frames"]
     assert beast_sheets.sheets("wild_boar") is None and beast_sheets.sheets("../etc") is None
@@ -700,8 +703,9 @@ def test_the_grey_wolf_fight_draws_its_frames_over_its_picture(client):
     assert "/art/beasts/grey_wolf.png" in page                    # its still picture stays underneath
     assert "--loop:" in page and "--xend:" in page
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text
-    assert ".beast.sheeted>img{opacity:0" in css and "@keyframes bsx" in css
+    assert ".beast.sheeted>img{visibility:hidden}" in css and "@keyframes bsx" in css     # its still is never drawn
     assert "function BeastSheets" in js and "BS.hit()" in js and "BS.frame('attack'" in js and "BS.frame('death'" in js
+    assert "BS.edge('bite')" in js and "BS.edge('nose')" in js and "'still'" not in js   # kept apart; no still mode
 
 
 def test_other_beasts_keep_their_pictures(client):
