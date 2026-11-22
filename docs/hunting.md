@@ -112,7 +112,7 @@ isometric map of the hunting ground, and the fight starts when you walk up to it
 beast it is, how strong and what it pays are the same as above (`Hunts._roll` rolls it exactly as before, from the
 same random numbers; `_battle` builds the same fight).
 
-- **Who:** everyone on a Solo Hunt (from `/explore` or the World Map, docs/world.md) whose look has a walking sheet
+- **Who:** everyone on a Solo Hunt (down a road from the Crossroads, docs/world.md, or from `/explore`) whose look has a walking sheet
   (`looks.WALK_SHEETS`: the male and female cultivators). A look without one keeps the menus. Code: `web/hunt_map.py`, `Hunt.map` in `web/hunt_play.py`,
   `web/templates/hunt_map.html`, `web/static/huntmap.js`. Tests: `tests/test_hunt_map.py`.
 - **Walking:** W A S D or the arrow keys (Shift: stroll), or the on-screen joystick on touch screens; both feed one
@@ -139,7 +139,8 @@ same random numbers; `_battle` builds the same fight).
 - **The path home:** the spot you came in at (`start`) glows with a ring of pale blue light. Walk away from it and back
   onto it and the page asks *Leave …?*: **Head home** is the same as **Return home** (what you carry is banked),
   **Stay and hunt** (or Esc) carries on. It wakes only once you've walked 2.5 tiles away, so arriving doesn't ask.
-  A walked hunt's result page leads **Back to the World Map** (`/hunt/done` → `/world`).
+  A walked hunt's result page leads **Back to the Crossroads**, to the end of that ground's road
+  (`/hunt/done` → `/crossroads?near=road_<key>`). **M** opens the World Map (only a map; Back or M returns here).
 - **The walking sheet** (spec): one PNG per animation, transparent, 8 rows **S SW W NW N NE E SE**, cells
   **256 x 256**, the point between the feet at **(128, 232)**, about 200 px tall, walking in place; walk 8 frames,
   idle 8 (one breath, looped, each frame faded into the next). `scripts/make_hero_walk.py` builds his from SHOAIB's walk video and refuses a sheet that breaks the spec.

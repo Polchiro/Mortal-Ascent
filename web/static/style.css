@@ -1390,6 +1390,7 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .tgo{display:flex;flex-wrap:wrap;gap:8px}
 .tgo .hbtn{min-height:40px;padding:0 16px}
 .tdlg .hbtn.ghost{background:rgba(12,12,15,.6)}
+.tgo form{display:contents}
 .tstill{position:fixed;inset:0;background-size:cover;background-position:center;filter:brightness(.55)}
 .tboard{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);z-index:3;width:min(620px,calc(100vw - 24px));max-height:74vh;overflow:auto}
 .tboard .tnpc{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid rgba(201,164,92,.2)}

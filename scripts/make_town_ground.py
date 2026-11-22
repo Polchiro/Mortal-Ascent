@@ -13,10 +13,14 @@ match the buildings' lighting. Nothing is stretched: every pixel is sampled from
 ground is as sharp as the textures however big the town is drawn.
 
     python -m scripts.make_town_ground              (re-quilts and repaints; deterministic)
+    python -m scripts.make_town_ground crossroads   (the Crossroads outside the gate: web/crossroads.py, docs/world.md)
     python -m scripts.make_town_ground lift grass=tile.png ...   (lifts new textures from Gemini tiles first)
 
-Writes art/maps/town.webp: WIDTH x WIDTH/2 for the 32 x 32 tile diamond (a tile 128 x 64 world px, so WIDTH 6144
-is 1.5x the world: crisp when the page zooms in). Needs numpy and Pillow.
+Writes art/maps/town.webp (or art/maps/crossroads.webp): WIDTH x WIDTH/2 for the 32 x 32 tile diamond (a tile
+128 x 64 world px, so WIDTH 6144 is 1.5x the world: crisp when the page zooms in). Needs numpy and Pillow.
+
+A place's GROUND gives rectangles of "dirt" and "stone", optional "roads" (segments: start, end, width in tiles,
+for roads that run at any angle), and "walls": the rectangle with grass inside and forest floor outside.
 """
 import os
 import sys
@@ -111,10 +115,21 @@ def union(X, Y, rects):
     return np.max([rect_dist(X, Y, r) for r in rects], axis=0)
 
 
-def footprint_shadow(X, Y):
+def road_dist(X, Y, roads):
+    """Signed distance (tiles) into the nearest road: positive inside."""
+    out = np.full(X.shape, -99.0, np.float32)
+    for (ax, ay), (bx, by), w in roads:
+        dx, dy = bx - ax, by - ay
+        t = np.clip(((X - ax) * dx + (Y - ay) * dy) / (dx * dx + dy * dy), 0, 1)
+        d = np.hypot(X - (ax + t * dx), Y - (ay + t * dy))
+        out = np.maximum(out, w / 2 - d)
+    return out
+
+
+def footprint_shadow(X, Y, place=town):
     """How much a building's foot darkens the ground: strongest at its edge, fading over half a tile."""
     d = np.full(X.shape, 99.0, np.float32)
-    for b in town.BUILDINGS:
+    for b in place.BUILDINGS:
         if b["img"] == "wall":
             continue
         inside = rect_dist(X, Y, (b["x0"], b["y0"], b["x0"] + b["a"], b["y0"] + b["b"]))
@@ -122,7 +137,7 @@ def footprint_shadow(X, Y):
     return np.exp(-d / 0.45) * 0.38
 
 
-def paint(tex, width=WIDTH, rows=256):
+def paint(tex, width=WIDTH, rows=256, place=town):
     h = width // 2
     rng = np.random.default_rng(SEED + 1)
     def smooth(cells, blur):
@@ -131,12 +146,13 @@ def paint(tex, width=WIDTH, rows=256):
         return ((a - a.mean()) / (a.std() * 4))[..., None]
     noise = smooth(48, 10) * 1.0 + smooth(192, 3) * 0.45          # wide wobbles and small bites
     out = np.zeros((h, width, 3), np.uint8)
-    f = width / (town.SIZE * 128)                          # output px per world px
+    size, ground = place.SIZE, place.GROUND
+    f = width / (size * 128)                               # output px per world px
     us = np.arange(width, dtype=np.float32)
     for v0 in range(0, h, rows):
         vs = np.arange(v0, min(h, v0 + rows), dtype=np.float32)
         U, V = np.meshgrid(us, vs)
-        wx, wy = U / f - town.SIZE * 64, V / f                         # world px, the diamond's top corner at x 0
+        wx, wy = U / f - size * 64, V / f                              # world px, the diamond's top corner at x 0
         X = (wx / 64 + wy / 32) / 2                                     # tiles
         Y = (wy / 32 - wx / 64) / 2
         n = sample(noise, (X + 16) * 12, (Y + 16) * 12)[..., 0]        # smooth noise, about a tile across
@@ -145,13 +161,17 @@ def paint(tex, width=WIDTH, rows=256):
         d = sample(tex["dirt"], tx + 311, ty + 97)
         s = sample(tex["stone"], tx, ty)
         fo = sample(tex["forest"], tx + 53, ty + 211)
-        dirt = np.clip((union(X, Y, town.GROUND["dirt"]) + n * 1.8) / 0.45, 0, 1)[..., None]
-        stone = np.clip((union(X, Y, town.GROUND["stone"]) + n * 0.25) / 0.12, 0, 1)[..., None]
-        inside = np.clip((rect_dist(X, Y, town.GROUND["walls"]) + n * 0.6) / 0.3, 0, 1)[..., None]
+        inroad = union(X, Y, ground["dirt"]) if ground["dirt"] else np.full(X.shape, -99.0, np.float32)
+        if ground.get("roads"):
+            inroad = np.maximum(inroad, road_dist(X, Y, ground["roads"]))
+        dirt = np.clip((inroad + n * 1.8) / 0.45, 0, 1)[..., None]
+        stone = (np.clip((union(X, Y, ground["stone"]) + n * 0.25) / 0.12, 0, 1)[..., None] if ground["stone"]
+                 else np.zeros(X.shape + (1,), np.float32))
+        inside = np.clip((rect_dist(X, Y, ground["walls"]) + n * 0.6) / 0.3, 0, 1)[..., None]
         px = g * (1 - dirt) + d * 0.86 * dirt                          # the dirt a little darker, as the grass
         px = px * (1 - stone) + s * stone
         px = px * inside + fo * 0.82 * (1 - inside)                     # the forest floor outside, a little darker
-        px = px * (1 - footprint_shadow(X, Y)[..., None]) * DUSK
+        px = px * (1 - footprint_shadow(X, Y, place)[..., None]) * DUSK
         out[v0:v0 + len(vs)] = px.clip(0, 255).astype(np.uint8)
     return Image.fromarray(out)
 
@@ -163,6 +183,12 @@ def main(argv):
             lift(src, os.path.join(TEX, f"{name}.png"))
             Image.open(os.path.join(TEX, f"{name}.png")).save(os.path.join(TEX, f"{name}.webp"), "WEBP", quality=92)
             os.remove(os.path.join(TEX, f"{name}.png"))
+    if argv[:1] == ["crossroads"]:
+        from web import crossroads
+        out = os.path.join(ROOT, "art", "maps", "crossroads.webp")
+        paint(textures(), place=crossroads).save(out, "WEBP", quality=84, method=6)
+        print(f"wrote {out}")
+        return
     paint(textures()).save(OUT, "WEBP", quality=84, method=6)
     print(f"wrote {OUT}")
 

@@ -75,7 +75,7 @@ def test_the_gate_is_a_way_out_you_can_walk_to():
         for n in town.NPCS:
             assert math.dist((e["x"], e["y"]), (n["x"], n["y"])) > town.REACH, n["key"]
         assert e["go"] and all(href.startswith("/") for _, href in e["go"])
-    assert any(href == "/world" for e in town.EXITS for _, href in e["go"])
+    assert any(href.startswith("/crossroads") for e in town.EXITS for _, href in e["go"])
 
 
 def test_the_page_gets_the_ways_out():
@@ -124,97 +124,33 @@ def test_the_world_map_needs_a_login(site):
     app, _, _ = site
     anon = TestClient(app, base_url="http://localhost:8000", follow_redirects=False)
     assert anon.get("/world").headers["location"] == "/"
-    assert anon.post("/world/go/moon_forest").headers["location"] == "/"
 
 
-def test_the_world_map_shows_every_place_and_its_lock(site):
+def test_the_world_map_is_only_a_map(site):
     _, login, _ = site
-    r = login(WARRIOR).get("/world")
+    a = login(WARRIOR)
+    r = a.get("/world")
     assert r.status_code == 200 and world.ART in r.text and "/static/world.js" in r.text
     for loc in hunting.LOCATIONS:
         assert loc["name"] in r.text
-    assert "Needs Martial Master" in r.text and 'action="/world/go/crimson_gorge"' in r.text
-    assert 'action="/world/go/frostpeak_mountains"' not in r.text            # no button for a locked ground
-    assert 'href="/town"' in r.text
+    assert "Needs Martial Master" in r.text and "Crossroads" in r.text
+    assert 'method="post"' not in r.text                                    # no travelling from the scroll
+    assert a.post("/world/go/moon_forest").status_code in (404, 405)
 
 
-def test_setting_out_is_a_walked_solo_hunt(site):
-    app, login, path = site
-    a = login(WARRIOR)
-    assert a.post("/world/go/crimson_gorge").headers["location"] == "/hunt"
-    party = app.state.parties.of(WARRIOR)
-    assert party.solo and party.hunting and party.location == "crimson_gorge"
-    assert app.state.hunts.get(party.id).map                                 # everyone walks now, not just admins
-    assert 'id="homeDlg"' in a.get("/hunt").text                             # the hunting map, with the path home
-    c = db.connect(path)
-    assert db.cooldown_left(c, WARRIOR, "explore") > 0                       # the shared explore rest started
-    c.close()
-    assert a.get("/world").headers["location"] == "/hunt"                    # out hunting: that comes first
-    assert a.post("/world/go/moon_forest").headers["location"] == "/hunt"
-
-
-def test_the_server_refuses_a_locked_ground(site):
-    app, login, path = site
-    a = login(WARRIOR)
-    assert a.post("/world/go/frostpeak_mountains").headers["location"] == "/world"
-    assert "needs Martial Master" in a.get("/world").text
-    assert app.state.parties.of(WARRIOR) is None                             # nothing left behind
-    c = db.connect(path)
-    assert not db.cooldown_left(c, WARRIOR, "explore")                       # and no rest started
-    c.close()
-
-
-def test_resting_can_not_set_out(site):
-    app, login, _ = site
-    b = login(RESTING)
-    page = b.get("/world").text
-    assert "Resting" in page and 'action="/world/go/moon_forest"' not in page
-    assert b.post("/world/go/moon_forest").headers["location"] == "/world"
-    assert "resting from the last expedition" in b.get("/world").text
-    assert app.state.parties.of(RESTING) is None
-
-
-def test_an_unknown_place_is_refused(site):
-    _, login, _ = site
-    a = login(WARRIOR)
-    assert a.post("/world/go/the_moon").headers["location"] == "/world"
-    assert "no such place" in a.get("/world").text
-
-
-def test_heading_home_from_a_walked_hunt_ends_on_the_world_map(site):
+def test_the_world_map_opens_from_anywhere(site):
     app, login, _ = site
     a = login(WARRIOR)
-    a.post("/world/go/moon_forest")
-    turn = re.search(r'name="turn" value="([^"]*)"', a.get("/hunt").text).group(1)
-    a.post("/hunt/act", data={"what": "return", "arg": "", "turn": turn})
-    page = a.get("/hunt").text
-    assert "Back to the World Map" in page
-    assert a.post("/hunt/done").headers["location"] == "/world"
-    assert app.state.parties.of(WARRIOR) is None
-    assert "Resting" in a.get("/world").text
+    a.post("/crossroads/go/moon_forest")
+    assert app.state.parties.of(WARRIOR).hunting
+    assert a.get("/world").status_code == 200                               # even out hunting: it is only a map
+    assert app.state.parties.of(WARRIOR).hunting
 
 
-def test_a_solo_hunt_still_choosing_is_dropped_on_the_world_map(site):
-    app, login, _ = site
-    a = login(WARRIOR)
-    a.post("/explore/solo")
-    assert app.state.parties.of(WARRIOR) is not None
-    assert a.get("/world").status_code == 200
-    assert app.state.parties.of(WARRIOR) is None
-
-
-def test_a_team_goes_to_its_lobby(site):
-    _, login, _ = site
-    a = login(WARRIOR)
-    a.post("/party/create", data={"name": "Gorge Runners", "visibility": "public"})
-    assert a.get("/world").headers["location"] == "/hunt"
-    assert a.post("/world/go/moon_forest").headers["location"] == "/hunt"
-
-
-def test_town_links_to_the_world(site):
+def test_town_gate_leads_to_the_crossroads(site):
     _, login, _ = site
     a = login(WARRIOR)
     r = a.get("/town")
     data = json.loads(re.search(r'id="mapdata">(.*?)</script>', r.text, re.S).group(1))
-    assert data["exits"][0]["go"][0][1] == "/world" and 'href="/world"' in r.text
-    assert a.get("/world").status_code == 200
+    assert data["exits"][0]["go"][0][1] == "/crossroads?near=town_gate"
+    assert a.get("/crossroads?near=town_gate").status_code == 200

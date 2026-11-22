@@ -13,7 +13,7 @@
     <div class="mhp" title="{{ g.hp }} / {{ g.max_hp }} HP"><div style="width: {{ g.hp_pct }}%"></div></div>
     <span class="mhint">{{ g.hp }} / {{ g.max_hp }} HP</span>
   </div>
-  <div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> or arrows to walk · <b>Shift</b> to stroll</div>
+  <div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> or arrows to walk · <b>Shift</b> to stroll · <b>M</b> map</div>
 </div>
 
 <div class="mtools">
@@ -35,7 +35,7 @@
 <section class="mplate tdlg" id="homeDlg" role="dialog" aria-modal="true" aria-labelledby="homeH" hidden>
   <p class="kicker">THE PATH HOME</p>
   <h2 id="homeH">Leave {{ g.location }}?</h2>
-  <p class="tline">The path you came in by leads home. What you carry is banked when you get there.</p>
+  <p class="tline">The path you came in by leads back to the Crossroads. What you carry is banked when you get there.</p>
   <div class="tgo">
     <form method="post" action="/hunt/act">
       <input type="hidden" name="what" value="return"><input type="hidden" name="arg" value="">

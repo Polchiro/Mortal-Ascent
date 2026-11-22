@@ -11,7 +11,7 @@
 </div>
 
 <div class="mtools">
-  <a class="hbtn ghost small" href="/town">Back to town</a>
+  <a class="hbtn ghost small" href="/town" id="wback">Back</a>
 </div>
 
 {% if error %}<div class="mplate tnotice" role="alert">{{ error }}</div>{% endif %}
@@ -35,8 +35,7 @@
   <p class="kicker">HOME</p>
   <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
   <p class="tline">{{ m.text }}</p>
-  <div class="tgo"><a class="hbtn small" href="{{ m.go }}">Return to town</a>
-    <button type="button" class="hbtn ghost small" data-close>Close</button></div>
+  <p class="wstate open">The roads to every hunting ground start at the Crossroads, just outside its gate.</p>
   {% else %}
   <p class="kicker">HUNTING GROUND · {{ m.realms | upper }}</p>
   <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
@@ -47,16 +46,10 @@
   <p class="wstate waiting">You can't set out yet: {{ m.why }}.</p>
   {% else %}
   <p class="wstate open">{{ "Your realm's beasts live here." if m.here else "Open to you: the beasts fight at your strength." }}
-    Setting out starts the 30-minute explore rest.</p>
+    Walk out of the town gate and take its road from the Crossroads.</p>
   {% endif %}
-  <div class="tgo">
-    {% if m.state == "open" %}
-    <form method="post" action="/world/go/{{ m.key }}"><button class="hbtn small" type="submit">Set out alone</button></form>
-    {% endif %}
-    <a class="hbtn ghost small" href="/explore">Hunt with a team</a>
-    <button type="button" class="hbtn ghost small" data-close>Close</button>
-  </div>
   {% endif %}
+  <div class="tgo"><button type="button" class="hbtn ghost small" data-close>Close</button></div>
 </section>
 {% endfor %}
 <script src="{{ asset('world.js') }}" defer></script>

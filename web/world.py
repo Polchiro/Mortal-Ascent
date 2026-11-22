@@ -1,16 +1,12 @@
 """
-The World Map (docs/world.md): the painted scroll that joins the town and the six hunting grounds into one world.
+The World Map (docs/world.md): the painted scroll of the whole land, to look at. You travel by walking: out of the
+town gate onto the Crossroads (web/crossroads.py) and down a road; the scroll shows where everything is and which
+places your realm can enter.
 
-You come to it through the town gate (web/town.py EXITS) and go from it to a hunting ground, or back to town. Each
-place on the scroll is a marker drawn by the page over SHOAIB's painting (art/maps/world.webp, cut out by
+Each place on the scroll is a marker drawn by the page over SHOAIB's painting (art/maps/world.webp, cut out by
 scripts/make_world_map.py), at `at`: its spot on the picture, as shares of its width and height (0..1), measured on
-the painting. The names, the glow and the locks are the page's, as Gemini garbles writing.
-
-The world decides nothing new. A hunting ground is the hunting grounds' own (hunting.LOCATIONS: its realms, beasts
-and rewards); setting out there is a Solo Hunt on the walkable map (web/hunt_play.py), with the same checks as
-/explore: the ground's lowest realm or higher (hunting.eligible), not injured, not resting from the last expedition
-(Hunts.blocked). The server makes every one of those checks again when you set out (/world/go), whatever the page
-showed.
+the painting. The names, the glow and the locks are the page's, as Gemini garbles writing. A hunting ground is the
+hunting grounds' own (hunting.LOCATIONS); whether you may enter is hunting.eligible and Hunts.blocked, as on its road.
 """
 import hunting
 
@@ -30,7 +26,7 @@ AT = {
 
 TOWN = {"key": "town", "name": "Azure Cloud Town", "kind": "town",
         "text": "Home: the forge, the alchemy hall, the arena and the townsfolk, behind safe walls.",
-        "go": "/town"}                     # you come back in at the gate (web/town.py START)
+        "go": "/town"}
 
 
 def place(key):

@@ -81,6 +81,7 @@
     if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
     if (e.key === 'Shift') keys.slow = true;
     if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') && atHome) { openHome(); e.preventDefault(); }
+    if (e.code === 'KeyM') location.href = '/world';             // the World Map (Back or M brings you back here)
   });
   window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.slow = false; });
   var stick = document.getElementById('stick'), knob = document.getElementById('knob');

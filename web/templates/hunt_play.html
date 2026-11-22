@@ -28,7 +28,7 @@
   <section class="hpanel" style="max-width:760px">
     {% for l in g.result.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
     <form method="post" action="/hunt/done" style="margin-top:16px">
-      <button class="hbtn" type="submit">{{ "Back to the World Map" if g.walked and g.solo else "Back to Explore" if g.solo else "Back to the lobby" }}</button></form>
+      <button class="hbtn" type="submit">{{ "Back to the Crossroads" if g.walked and g.solo else "Back to Explore" if g.solo else "Back to the lobby" }}</button></form>
   </section>
 
   {% else %}

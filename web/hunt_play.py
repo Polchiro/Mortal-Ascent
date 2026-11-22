@@ -398,11 +398,11 @@ class Hunts:
             return None
 
     def walked(self, uid):
-        """Whether this player's hunt is (or was) walked on the map (web/hunt_map.py)."""
+        """If this player's hunt is (or was) walked on the map (web/hunt_map.py): its ground's key; else None."""
         with self.lock:
             party = self.parties.of(uid)
             h = self._h.get(party.id) if party else None
-            return bool(h and h.map)
+            return h.loc["key"] if h and h.map else None
 
     def dismiss(self, uid):
         """Seen the hunt's result: back to the lobby (a Solo Hunt party simply ends)."""
@@ -459,7 +459,7 @@ def view(conn, hunts, h, uid):
         out["mode"] = "home"
         out["result"] = h.results[uid]
         out["solo"] = party.solo if party else True
-        out["walked"] = h.map                               # back to the World Map (web/world.py), not Explore
+        out["walked"] = h.map                               # back to the Crossroads (web/crossroads.py), not Explore
         return out
     b = h.battle if h.battle is not None else (h.ended if h.ended is not None and uid not in h.acked else None)
     if b is not None and b.fighter(uid) is not None:

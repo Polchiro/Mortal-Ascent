@@ -84,6 +84,7 @@
     if (e.key === 'Shift') keys.slow = true;
     if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') && near) { openTalk(near); e.preventDefault(); }
     if (e.code === 'KeyG') debug = !debug;
+    if (e.code === 'KeyM') location.href = '/world';             // the World Map (Back or M brings you back here)
   });
   window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.slow = false; });
   window.addEventListener('blur', function () { keys = {}; resetStick(); });
@@ -120,11 +121,12 @@
   var back = null;
   try { back = sessionStorage.getItem('town.from'); sessionStorage.removeItem('town.from'); } catch (e) {}
   if (cfg.near) back = cfg.near;                 // "Back to town" from someone's page: in front of them
-  NPCS.forEach(function (n) {                    // step back from them toward the gate until there is ground
+  SPOTS.forEach(function (n) {                   // step back from them toward the gate until there is ground
     if (n.key !== back) return;
-    for (var t = 0.08; t <= 1; t += 0.04) {
+    var gap = n.exit ? REACH + 0.3 : 0.9;          // back along a road: far enough not to be asked to leave again
+    for (var t = 0.04; t <= 1; t += 0.02) {
       var x = n.x + (cfg.hero.x - n.x) * t, y = n.y + (cfg.hero.y - n.y) * t;
-      if (walkable(x, y) && Math.hypot(x - n.x, y - n.y) > 0.9) { hero.x = x; hero.y = y; break; }
+      if (walkable(x, y) && Math.hypot(x - n.x, y - n.y) > gap) { hero.x = x; hero.y = y; break; }
     }
     var d = Math.atan2(toScreen(n.x, n.y).y - toScreen(hero.x, hero.y).y, toScreen(n.x, n.y).x - toScreen(hero.x, hero.y).x);
     hero.dir = sectorRow(d); hero.frame = STAND[hero.dir];
@@ -140,13 +142,20 @@
     document.getElementById('dlgLine').textContent = n.line;
     var go = document.getElementById('dlgGo'); go.textContent = '';
     n.go.forEach(function (g, i) {
-      var a = document.createElement('a'); a.className = 'hbtn small' + (i ? ' ghost' : ''); a.href = g[1]; a.textContent = g[0];
-      a.addEventListener('click', function () { try { sessionStorage.setItem('town.from', n.key); } catch (e) {} });
+      var cls = 'hbtn small' + (i ? ' ghost' : '');
+      if (g[2] === 'post') {                       // setting out: a form, so the server checks and starts it
+        var f = document.createElement('form'); f.method = 'post'; f.action = g[1];
+        var sb = document.createElement('button'); sb.type = 'submit'; sb.className = cls; sb.textContent = g[0];
+        f.appendChild(sb); go.appendChild(f); return;
+      }
+      var a = document.createElement('a'); a.className = cls; a.href = g[1]; a.textContent = g[0];
+      if (!n.exit) a.addEventListener('click', function () { try { sessionStorage.setItem('town.from', n.key); } catch (e) {} });
       go.appendChild(a);
     });
-    var bye = document.createElement('button'); bye.type = 'button'; bye.className = 'hbtn ghost small'; bye.textContent = n.go.length ? 'Leave' : 'Farewell';
+    var bye = document.createElement('button'); bye.type = 'button'; bye.className = 'hbtn ghost small';
+    bye.textContent = n.exit ? (n.go.length ? 'Stay' : 'Turn back') : n.go.length ? 'Leave' : 'Farewell';
     bye.addEventListener('click', closeTalk); go.appendChild(bye);
-    dlg.hidden = false; (go.querySelector('a') || bye).focus();
+    dlg.hidden = false; (go.querySelector('a, form button') || bye).focus();
   }
   function closeTalk() { dlgOpen = false; dlg.hidden = true; cv.focus(); }
 
@@ -173,7 +182,8 @@
     if (best !== near) {
       near = best;
       if (near) {
-        prompt.textContent = (near.exit ? near.title : (near.prop ? 'Read the ' : 'Talk to ') + near.name) + ' ';
+        prompt.textContent = (near.kind === 'road' ? (near.state === 'open' ? 'The road to ' : '') + near.name
+          : near.exit ? near.title : (near.prop ? 'Read the ' : 'Talk to ') + near.name) + ' ';
         var k = document.createElement('b'); k.textContent = 'E'; prompt.appendChild(k);
       }
     }
@@ -225,6 +235,7 @@
      from it; drawn over the gate, brighter when you are close enough to leave */
   var glowT = 0, CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function drawExit(e) {
+    if (e.kind === 'road') { drawRoad(e); return; }
     var p = toScreen(e.glow[0], e.glow[1]), close = e === near, b = CALM ? 0.5 : (Math.sin(glowT * 2.2) + 1) / 2;
     var k = (close ? 1.25 : 1) * (0.85 + 0.15 * b);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
@@ -240,6 +251,54 @@
       var t = (glowT * 0.3 + i / 9) % 1, a = i * 2.39, mx = p.x + Math.cos(a) * 46 + Math.sin(glowT + i) * 6, my = p.y - 10 - t * 150;
       ctx.fillStyle = 'rgba(205,238,255,' + (0.75 * Math.sin(Math.PI * t)) + ')'; ctx.beginPath(); ctx.arc(mx, my, 2.1, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.restore();
+  }
+  /* a road's end: open, a ring of warm light on the road; resting, a bank of grey mist; sealed, a disc of golden runes
+     standing across it. Its name floats above. */
+  function drawRoad(e) {
+    var p = toScreen(e.glow[0], e.glow[1]), close = e === near, b = CALM ? 0.5 : (Math.sin(glowT * 2.2 + e.x) + 1) / 2;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    if (e.state === 'open') {
+      var g = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 95);
+      g.addColorStop(0, 'rgba(255,214,150,' + (0.26 + 0.1 * b + (close ? .12 : 0)) + ')'); g.addColorStop(1, 'rgba(255,190,110,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, 95, 44, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,226,170,' + (0.3 + 0.25 * b) + ')'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, 66, 31, 0, 0, Math.PI * 2); ctx.stroke();
+    } else if (e.state === 'waiting') {
+      ctx.globalCompositeOperation = 'source-over';
+      for (var i = 0; i < 6; i++) {
+        var a = glowT * 0.25 + i * 1.05, mx = p.x + Math.cos(a) * 40, my = p.y - 30 + Math.sin(a * 1.3) * 12;
+        var m = ctx.createRadialGradient(mx, my, 4, mx, my, 70);
+        m.addColorStop(0, 'rgba(190,200,215,.22)'); m.addColorStop(1, 'rgba(190,200,215,0)');
+        ctx.fillStyle = m; ctx.fillRect(mx - 70, my - 70, 140, 140);
+      }
+    } else {                                                        // sealed
+      ctx.translate(p.x, p.y - 62);
+      var halo = ctx.createRadialGradient(0, 0, 8, 0, 0, 80);
+      halo.addColorStop(0, 'rgba(255,200,110,' + (0.28 + 0.12 * b) + ')'); halo.addColorStop(1, 'rgba(255,170,80,0)');
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI * 2); ctx.fill();
+      ctx.scale(0.55, 1); ctx.rotate(CALM ? 0 : glowT * 0.35);
+      ctx.strokeStyle = 'rgba(255,214,140,' + (0.55 + 0.3 * b) + ')'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 52, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.stroke();
+      for (var r = 0; r < 8; r++) {                                 // rune strokes round the ring
+        ctx.rotate(Math.PI / 4); ctx.beginPath(); ctx.moveTo(0, -48); ctx.lineTo(0, -42); ctx.moveTo(-4, -46); ctx.lineTo(4, -44); ctx.stroke();
+      }
+      ctx.beginPath(); for (var k = 0; k < 6; k++) { var q = k * Math.PI / 3; ctx[k ? 'lineTo' : 'moveTo'](Math.cos(q) * 26, Math.sin(q) * 26); }
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.restore();
+    roadLabel(e, p, close);
+  }
+  function roadLabel(e, p, close) {
+    var y = p.y - (e.state === 'locked' ? 148 : 70);
+    ctx.save(); ctx.textAlign = 'center';
+    ctx.font = '700 17px Cinzel, Georgia, serif';
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(e.name, p.x + 1, y + 1);
+    ctx.fillStyle = e.state === 'locked' ? '#C9B79A' : close ? '#F6E2B0' : '#EBCB86'; ctx.fillText(e.name, p.x, y);
+    ctx.font = '600 12px Inter, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(e.title, p.x + 1, y + 18);
+    ctx.fillStyle = e.state === 'locked' ? '#E8968C' : e.state === 'waiting' ? '#EBCB86' : 'rgba(230,223,207,.85)';
+    ctx.fillText(e.title, p.x, y + 17);
     ctx.restore();
   }
   function draw() {
