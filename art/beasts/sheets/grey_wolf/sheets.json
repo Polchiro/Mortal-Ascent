@@ -1,0 +1,45 @@
+{
+ "cell": [
+  527,
+  290
+ ],
+ "still": [
+  30.0,
+  26.4,
+  438.6,
+  252.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/grey_wolf/idle.webp",
+   "frames": 56,
+   "cols": 8,
+   "rows": 7,
+   "ms": 4667
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/grey_wolf/attack.webp",
+   "frames": 36,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2200,
+   "bite": 23,
+   "reach": 0.1163
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/grey_wolf/hit.webp",
+   "frames": 18,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1500
+  },
+  "death": {
+   "src": "/art/beasts/sheets/grey_wolf/death.webp",
+   "frames": 30,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "impact": 22
+  }
+ }
+}

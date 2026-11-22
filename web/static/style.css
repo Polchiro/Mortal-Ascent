@@ -469,7 +469,7 @@ form.inline{display:inline}
 .fx-slash .slashfx{right:6%;top:15%;width:38%;height:60%;background:linear-gradient(115deg,transparent 42%,rgba(255,240,200,.95) 49%,rgba(232,194,122,.6) 52%,transparent 58%);
   animation:slash .5s ease-out .1s forwards}
 @keyframes slash{0%{opacity:0;transform:translateX(-40%) scaleX(.4)}40%{opacity:1}100%{opacity:0;transform:translateX(20%) scaleX(1.1)}}
-.fx-slash .beast img,.fx-crack .beast img,.fx-counter .beast img{animation:hitshake .45s ease-out .15s}
+.fx-slash .beast img,.fx-crack .beast img,.fx-counter .beast img,.fx-slash .beast .bsheets,.fx-crack .beast .bsheets,.fx-counter .beast .bsheets{animation:hitshake .45s ease-out .15s}
 @keyframes hitshake{0%,100%{transform:none;filter:drop-shadow(0 12px 18px rgba(0,0,0,.7))}25%{transform:translateX(12px);filter:brightness(2.2)}50%{transform:translateX(-8px)}75%{transform:translateX(4px)}}
 .fx-crack{animation:screenshake .4s ease-out .1s}
 @keyframes screenshake{0%,100%{transform:none}20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-1px)}}
@@ -482,7 +482,7 @@ form.inline{display:inline}
 @keyframes ring{0%{opacity:0;transform:scale(.6)}30%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
 .fx-heal .fighter img{animation:healglow 1.2s ease-out}
 @keyframes healglow{0%,100%{filter:drop-shadow(0 12px 18px rgba(0,0,0,.7))}40%{filter:drop-shadow(0 0 26px rgba(124,240,190,.95))}}
-.fx-stagger .beast img{animation:hitshake .45s ease-out .15s,stagger 1s ease-in-out .6s}
+.fx-stagger .beast img,.fx-stagger .beast .bsheets{animation:hitshake .45s ease-out .15s,stagger 1s ease-in-out .6s}
 @keyframes stagger{50%{transform:rotate(-4deg) translateY(6px)}}
 
 /* phones: one column */
@@ -632,7 +632,7 @@ form.inline{display:inline}
 .cast-stagger .tfx-c{right:18%;top:6%;width:16%;aspect-ratio:1;border-radius:50%;border:4px dotted var(--tc);animation:dizzy 1.2s linear .5s}
 @keyframes dizzy{0%{opacity:0;transform:rotate(0)}20%{opacity:1}100%{opacity:0;transform:rotate(540deg)}}
 .cast-counter .tfx-c{left:36%;top:30%;width:44%;height:4px;background:linear-gradient(90deg,var(--tc),#fff);box-shadow:0 0 14px var(--tc);transform-origin:left;animation:beam .4s ease-out .55s}
-.cast-counter .beast img{animation:hitshake .45s ease-out .7s}
+.cast-counter .beast img,.cast-counter .beast .bsheets{animation:hitshake .45s ease-out .7s}
 .cast-recover .tfx-c{left:14%;top:10%;width:26%;height:70%;background:radial-gradient(circle,#7CF0BE 0 3px,transparent 4px) 0 0/34px 34px;animation:rise 1.2s ease-out .3s}
 .cast-recover .fighter img{animation:healglow 1.2s ease-out .3s}
 @keyframes rise{0%{opacity:0;transform:translateY(30px)}30%{opacity:1}100%{opacity:0;transform:translateY(-60px)}}
@@ -686,7 +686,7 @@ form.inline{display:inline}
 @keyframes tring{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}
 /* while the scene is being acted out, the old all-at-once effects for the same thing stay quiet */
 .tl-me .slashfx,.tl-me .beast .dmg.hit,.tl-enemy .clawfx,.tl-enemy .fighter .dmg.hurt,.tl-guard .ringfx{display:none}
-.tl-me.fx-slash .beast img,.tl-me.fx-crack .beast img,.tl-me.fx-counter .beast img,.tl-guard.fx-counter .beast img{animation:none}
+.tl-me.fx-slash .beast img,.tl-me.fx-crack .beast img,.tl-me.fx-counter .beast img,.tl-guard.fx-counter .beast img,.tl-me.fx-slash .beast .bsheets,.tl-me.fx-crack .beast .bsheets,.tl-me.fx-counter .beast .bsheets,.tl-guard.fx-counter .beast .bsheets{animation:none}
 .tl-me.fx-crack,.tl-enemy.fx-claw .bme{animation:none}
 .tl-hold .bhp div,.tl-hold .ehp div{transition:none}
 @media (max-width:900px){.bscene{min-height:0;height:52vw}.tnum{font-size:22px}.tnum.word{font-size:17px}}
@@ -855,7 +855,7 @@ body:has(main.battle)>.topbar,body:has(main.battle)>header,body:has(main.battle)
 @keyframes qiring{0%{opacity:.2;transform:translateX(-50%) scale(.75) rotate(0)}50%{opacity:1}100%{opacity:.2;transform:translateX(-50%) scale(1.08) rotate(30deg)}}
 main.battle.skill-pounce:not(.playing) .beast img{transform:scale(1.03,.92);transition:transform .5s ease-out;
   filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,186,64,.85))}
-main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out infinite}
+main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .beast .bsheets{animation:roused 1.4s ease-in-out infinite}
 @keyframes roused{0%,100%{filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 10px rgba(255,186,64,.55))}
   50%{filter:drop-shadow(0 12px 18px rgba(0,0,0,.7)) drop-shadow(0 0 26px rgba(255,200,80,.95)) brightness(1.12)}}
 .pghost{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:50% 100%;transform-origin:50% 100%;pointer-events:none;
@@ -908,7 +908,7 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
 .fighter .msheet,.fighter .gsheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}   /* moved back by the share it was moved left in its cells */
 .fighter[data-pose=motion] .msheet{visibility:visible}
 .cast-fx .tfx,.cast-fx .ringfx{display:none}      /* its own look replaces the CSS shapes and the Guard ring */
-.cast-fx.cast-landed .bscene,.cast-fx.cast-landed .beast img{animation:none}
+.cast-fx.cast-landed .bscene,.cast-fx.cast-landed .beast img,.cast-fx.cast-landed .beast .bsheets{animation:none}
 .cast-fx .fighter img{animation:none}
 .tart{position:absolute;z-index:4;height:auto;pointer-events:none;transform:translate(-50%,-50%);opacity:0}
 .tart.tglow{filter:drop-shadow(0 0 10px var(--tc)) brightness(1.08)}
@@ -1137,7 +1137,7 @@ main.battle.roused:not(.playing) .beast img{animation:roused 1.4s ease-in-out in
   filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) sepia(.5) saturate(2.2)}   /* a beast's roar */
 .tnum.word.stun{color:#F5D04A;font-size:30px;top:-16%}
 .tnum.word.roused{color:#FFD46A;text-shadow:0 0 16px rgba(255,170,50,.9),0 2px 6px #000}
-@media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img{animation:none}}
+@media (prefers-reduced-motion:reduce){.beast .qiring,main.battle.roused .beast img,main.battle.roused .beast .bsheets{animation:none}}
 
 /* ── Beasts with cut-out poses (art/beasts/poses/<slug>/, web/explore_play.beast_poses): the box keeps the idle
    pose's shape; each pose picture sits in it at its own size (inline style), and fight.js swaps them. ── */
@@ -1158,7 +1158,7 @@ main.battle.skill-pounce:not(.playing) .beast.posed img{transform:none;filter:dr
 .deathfx{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;pointer-events:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65))}
 main.battle.slain .deathfx,main.battle.dying .deathfx{opacity:1}
 main.battle.slain .deathfx{filter:drop-shadow(0 8px 10px rgba(0,0,0,.65)) brightness(.72) saturate(.75)}
-main.battle.slain .beast img,main.battle.dying .beast img{animation:none!important;transition:none!important}
+main.battle.slain .beast img,main.battle.dying .beast img,main.battle.slain .beast .bsheets,main.battle.dying .beast .bsheets{animation:none!important;transition:none!important}
 main.battle.slain .beast.death-warp>img,main.battle.dying .beast.death-warp>img{opacity:0}
 main.battle.slain .beast.death-fall>img{transform:perspective(900px) translateY(2%) rotateZ(-4deg) rotateX(60deg);transform-origin:50% 100%;filter:brightness(.75) saturate(.7)}
 main.battle.slain .beast.death-fall[data-side="-1"]>img{transform:perspective(900px) translateY(2%) rotateZ(4deg) rotateX(60deg)}
@@ -1494,3 +1494,18 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
   .dtoast{font-size:13px;top:6%;padding:6px 12px}
   .dresult .rword{font-size:40px}
 }
+
+/* ── Beasts with animation frames (art/beasts/sheets/<slug>/, web/beast_sheets.py): the frames are laid exactly over
+   the beast's still picture (fight.js BeastSheets fits .bsheets to it and copies every move and flash the fight gives
+   the picture), which stays underneath unseen. One sheet shows at a time (data-anim on .beast), fading over the last
+   in 0.12 s so a change of animation never jumps. The idle loops in CSS while it stands (x steps through a row every
+   loop/rows, y down the rows once a loop); attack, hit and death are stepped by fight.js. "still": the picture
+   itself, while its roar shows its open-mouthed picture. Reduced motion: the idle holds its first frame. */
+.beast.sheeted>img{opacity:0;transition:opacity .12s}
+.beast.sheeted[data-anim=still]>img{opacity:1}
+.beast .bsheets{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;will-change:transform}
+.beast .bs{position:absolute;inset:0;background-repeat:no-repeat;background-position:0 0;opacity:0;transition:opacity .12s}
+.beast[data-anim=idle] .bs-idle,.beast[data-anim=attack] .bs-attack,.beast[data-anim=hit] .bs-hit,.beast[data-anim=death] .bs-death{opacity:1}
+.beast .bs-idle{animation:bsx calc(var(--loop) / var(--rows)) steps(var(--cols)) infinite,bsy var(--loop) steps(var(--rows)) infinite}
+@keyframes bsx{from{background-position-x:0}to{background-position-x:var(--xend)}}
+@keyframes bsy{from{background-position-y:0}to{background-position-y:var(--yend)}}

@@ -44,6 +44,10 @@ def view(enemy):
     """How this enemy goes down, for the fight page (read by web/static/fight.js)."""
     if enemy.get("kind") != "beast":
         return {"kind": "rout", "linger": LINGER_MS}
+    from . import beast_sheets
+    animated = beast_sheets.death_view(enemy.get("slug"), LINGER_MS)
+    if animated:                                         # it falls in its own death animation (web/beast_sheets.py)
+        return animated
     cat = beasts.death_category(enemy["name"])
     path = picture(enemy.get("slug"))
     if not cat or not path:

@@ -28,7 +28,7 @@ from bot.fight_view import GRACE_SECONDS as TURN_GRACE, TIER_LABEL, describe
 from cards.scenes import REGION
 from bot.explore_card import REGION_BY_TIER
 
-from . import death, technique_fx
+from . import beast_sheets, death, technique_fx
 from .forge_play import rich
 from .profile import number
 
@@ -683,6 +683,7 @@ def fight_view(conn, s, b, p, now, me=None):
                          f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "roar": beast_roar(e) if beast else None,
                   "poses": poses, "pose": "crouch" if poses and winding and "crouch" in poses["poses"] else "idle",
+                  "sheets": beast_sheets.sheets(e.get("slug")) if beast and not poses else None,
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},
         "warning": {"head": rich(head), "hint": rich(hint), "danger": danger,
                     "skill": skill["fx"] if winding else None},

@@ -510,3 +510,28 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 - Add the real address as a second redirect, e.g. `https://<your-domain>/callback`, and set
   `WEB_REDIRECT_URI` to it. With an `https://` address the login cookie is only sent over https.
 - When the bot and the website both write often, move from SQLite to PostgreSQL (CLAUDE.md, Tech stack).
+
+## Animated beasts
+
+A beast can be animated from four videos (SHOAIB's, Gemini: idle, attack, hit, death; so far the **Grey Wolf**).
+`scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
+`hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
+the idle video's stone slab dropped, 12 frames a second. Each video is placed on the beast's own picture
+(`art/beasts/<slug>.png`: the same size of outline, the same ground line, its paws under the same spot) and all four
+share one cell, so the beast never changes size or place between animations. The death video's wolf grows lighter
+once it lies down, so its frames are recoloured to the hit video's (`match`).
+
+On the fight screen (`web/beast_sheets.py`, `BeastSheets` in `fight.js`, "Beasts with animation frames" in
+`style.css`) the frames are laid exactly over the still picture, which stays underneath unseen: every movement, flash
+and shake the fight gives the picture is copied onto them. One animation shows at a time, fading over the last in
+0.12 s:
+
+- **Idle** loops while the beast stands (in CSS; with reduced motion it holds its first frame).
+- **Attack** plays when it attacks you, 2.2 s (`CLIPS[...]["attack_ms"]`, the video at about 1.4x): it crouches in
+  place, lunges to you, bites on its `bite` frame, the moment the damage shows, and goes back.
+- **Hit** plays whenever it takes damage (your blow, a counter, a technique), in place of the knock-back; the flash
+  and the damage number stay.
+- **Death** plays when it is beaten (`death.view` kind `sheet`), the thud where it lands (`impact`), and it then
+  lies on its last frame, also on a fresh page of the won fight.
+- Its roar shows its still and open-mouthed pictures as before (`still()` in `fight.js`). Damage, rules and every
+  other beast are unchanged.
