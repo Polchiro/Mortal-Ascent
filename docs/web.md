@@ -580,3 +580,24 @@ stance, attack, stance with no jump. Her still windup and strike paintings are n
   scale, its own timing (`blade`, as `BLADE` in `fight.js`) and how far it reaches (`tip`: the dash stops her there,
   short of the beast). The video's leap across the frame is taken out: the fight's dash carries her.
 - The male cultivator keeps his one sheet for both moves (`attack_sheets` gives it to each).
+
+## Alchemy animations
+
+The craft's cauldron comes alive with SHOAIB's alchemy videos (`.cscene` in `alchemy_play.html`,
+`web/static/alchemy.js`, `scene_view` in `web/alchemy_play.py`). The clips (`art/fx/alchemy/`, made by
+`scripts/make_alchemy_fx.py`: each cut to its own part of the frame, which leaves out Gemini's mark, loops faded
+end into start) are effects on black, laid on the dark card with `screen`, so the black is see-through:
+
+| Stage | What plays |
+|---|---|
+| Ignite | the fire under the cauldron, by the heat the gauge shows: low under 40°, right to 75°, too hot above |
+| Add herbs | the fire; a splash of steam and sparks each time a herb goes in |
+| Fuse, Seal the Core | the fire; the blue Qi swirl over the cauldron |
+| Condense | the light spirals in once as the stage begins, then the pill pulses, brighter as its pulse rises |
+| Pill Tribulation | its own scene: the storm over the chamber (`art/scenes/alchemy_tribulation.mp4`, a background loop), a lightning strike after each round |
+| The cauldron explodes | the explosion over the cauldron, which then stays smoking |
+
+Each decision reloads the page, so `alchemy.js` remembers the last stage it showed (sessionStorage) to know what just
+happened. A clip shows only while it plays, so a slow one never covers the stills. The fire is chosen from the heat
+on the gauge, never from the hidden safe zone. With reduced motion only the stills show. About 5 MB of clips in all,
+and a page loads only its own stage's.

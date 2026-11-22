@@ -1523,3 +1523,29 @@ main.battle>video.bgloop.on{opacity:1}
 main.battle>.bgshade{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .8s;
   background:linear-gradient(180deg,rgba(8,10,16,.35),rgba(8,10,16,.15) 40%,rgba(8,10,16,.75))}
 main.battle>video.bgloop.on+.bgshade{opacity:1}
+
+/* ── The alchemy craft's cauldron, alive (alchemy_play.html .cscene, static/alchemy.js): SHOAIB's clips laid on the
+   dark card with `screen` (their black is see-through). The fire burns behind the cauldron, the Qi swirl, a herb's
+   splash and the forming pill over its mouth (brighter as its pulse rises); the Tribulation is its own scene (the storm), struck by lightning; a
+   failed craft's explosion plays over the cauldron, which shows through its darkest bronze. A clip shows only while
+   it plays. With reduced motion only the stills show: the cauldron, the storm's painting, the burst. */
+.cscene{position:relative;width:min(340px,82%);aspect-ratio:1;margin:0 auto}
+.cscene .cauldron{position:absolute;left:22%;width:56%;bottom:10%;z-index:2;filter:drop-shadow(0 10px 18px rgba(0,0,0,.6))}
+.cscene .cfx{position:absolute;mix-blend-mode:screen;pointer-events:none;opacity:0;transition:opacity .35s}
+.cscene .cfx.on{opacity:1}
+.cscene .cfire{left:0;width:100%;bottom:-2%;z-index:1}
+.cscene .cswirl{left:14%;width:72%;top:-8%;z-index:3;opacity:0}
+.cscene .cswirl.on{opacity:.85}
+.cscene .csplash{left:20%;width:60%;bottom:70%;z-index:3}
+.cscene .ccondin,.cscene .ccond{left:0;width:100%;top:-14%;z-index:3}
+.cscene .ccond{filter:brightness(calc(.75 + .9 * var(--glow,0)))}   /* the pill shines brighter as its pulse rises */
+.cscene.storm{width:min(560px,100%);aspect-ratio:16/9;overflow:hidden;border-radius:14px}
+.cscene.storm .cbg,.cscene.storm .cstorm{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px}
+.cscene.storm .cstorm{mix-blend-mode:normal;z-index:1}
+.cscene.storm .clight{left:30%;width:40%;bottom:58%;z-index:3}
+.cscene.boom{width:min(420px,90%);aspect-ratio:4/3}
+.cscene.boom .cauldron{left:30%;width:42%;bottom:7.5%}
+.cscene.boom .cboom{inset:0;width:100%;height:100%;z-index:3}
+.cscene.boom .cburst{position:absolute;left:22%;width:56%;bottom:4%;z-index:4;filter:drop-shadow(0 0 30px var(--rc))}
+.cscene.boom.live .cburst{display:none}
+@media (prefers-reduced-motion:reduce){.cscene .cfx{display:none}}
