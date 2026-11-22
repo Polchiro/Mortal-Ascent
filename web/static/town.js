@@ -116,6 +116,7 @@
   var hero = {x: cfg.hero.x, y: cfg.hero.y, dir: 4, frame: STAND[4], phase: 0, moving: false};
   var back = null;
   try { back = sessionStorage.getItem('town.from'); sessionStorage.removeItem('town.from'); } catch (e) {}
+  if (cfg.near) back = cfg.near;                 // "Back to town" from someone's page: in front of them
   NPCS.forEach(function (n) {                    // step back from them toward the gate until there is ground
     if (n.key !== back) return;
     for (var t = 0.08; t <= 1; t += 0.04) {

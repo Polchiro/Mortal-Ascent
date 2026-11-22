@@ -138,7 +138,10 @@
     {% if g.tribulation == "won" %}<p class="pline">⛈️ You survived the Pill Tribulation!</p>{% endif %}
     {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
     {% for l in g.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
-    <form method="post" action="/alchemy/done"><button class="btn btn-gold" type="submit">Craft again</button></form>
+    <div class="choices">
+      <form method="post" action="/alchemy/done"><button class="btn btn-gold" type="submit">Craft again</button></form>
+      <form method="post" action="/alchemy/done"><input type="hidden" name="to" value="town"><button class="btn btn-gold ghost" type="submit">← Back to town</button></form>
+    </div>
     <p class="sub"><a href="/inventory?tab=pills">See your pills</a></p>
   </section>
   {% endif %}

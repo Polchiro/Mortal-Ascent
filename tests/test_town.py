@@ -141,7 +141,8 @@ def test_everyone_with_a_walking_sheet_walks_the_town(client):
 def test_every_place_the_townsfolk_send_you_exists(client):
     for n in town.NPCS:
         for _, href in n.get("go", []):
-            assert client.get(href).status_code == 200, href
+            r = client.get(href, follow_redirects=True)                  # (Lan's door redirects into the hall)
+            assert r.status_code == 200 and "/town" not in str(r.url).split("?")[0][-6:], href
 
 
 def test_a_look_without_a_walking_sheet_talks_from_a_list(client, db_path, monkeypatch):

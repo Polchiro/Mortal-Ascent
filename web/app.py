@@ -22,6 +22,7 @@ Every number comes from the same code the bot uses. The forge, alchemy and gathe
 import hashlib
 import os
 import secrets
+import time
 import urllib.parse
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -197,8 +198,16 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
                     points_notice=request.session.pop("points_notice", None),
                     look_done=request.session.pop("look_done", None))
 
+    @app.get("/town/visit/alchemist")
+    def town_visit_alchemist(request: Request):
+        """Herbalist Lan opens the alchemy hall (web/town.py NPCS): the only way into /alchemy (alchemy_allowed)."""
+        if not current_user(request):
+            return RedirectResponse("/", status_code=303)
+        request.session["alchemy_pass"] = time.time()
+        return RedirectResponse("/alchemy", status_code=303)
+
     @app.get("/town", response_class=HTMLResponse)
-    def town_page(request: Request):
+    def town_page(request: Request, near: str = ""):
         """The town hub (web/town.py). Everyone walks it whose look has a walking sheet (looks.WALK_SHEETS); a look
         without one sees the painting and speaks to the townsfolk from a list."""
         import looks
@@ -214,8 +223,10 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if p is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
         sheet = looks.walk_sheet(looks.of_player(p))
-        data = town.page_data(sheet) if sheet else None
+        data = town.page_data(sheet, near or None) if sheet else None
+        request.session.pop("alchemy_pass", None)        # back in town: the alchemy hall needs Lan again
         return page(request, "town.html", user=user, avatar=avatar, town_name=town.NAME, ground=town.ART,
+                    notice=request.session.pop("town_notice", None),
                     walking=sheet is not None, map_json=town.page_json(data) if data else "", npcs=town.NPCS,
                     coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]))
 
@@ -421,6 +432,23 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return RedirectResponse("/forge", status_code=303)
 
     crafts = app.state.crafts = alchemy_play.Crafts()
+    ALCHEMY_PASS_SECONDS = 30 * 60                # a visit to Lan lasts this long without a click in the hall
+
+    def alchemy_allowed(request, uid):
+        """Alchemy is reached only through Herbalist Lan in town (/town/visit/alchemist sets the pass). A craft in
+        progress is always allowed, so a refresh mid-craft never throws you out. Each visit to the hall keeps the pass
+        fresh; going back to town ends it."""
+        if crafts.get(uid):
+            return True
+        t = request.session.get("alchemy_pass")
+        if t and time.time() - t < ALCHEMY_PASS_SECONDS:
+            request.session["alchemy_pass"] = time.time()
+            return True
+        return False
+
+    def to_lan(request):
+        request.session["town_notice"] = "Herbalist Lan keeps the alchemy hall. Talk to her to refine pills."
+        return RedirectResponse("/town?near=alchemist", status_code=303)
 
     @app.get("/alchemy", response_class=HTMLResponse)
     def alchemy_page(request: Request, pill: str = "", batch: str = "", prefer: str = ""):
@@ -429,6 +457,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         if with_conn(crafts.catch_up, user["id"]):
             return RedirectResponse("/alchemy/play", status_code=303)
+        if not alchemy_allowed(request, user["id"]):
+            return to_lan(request)
         view = with_conn(alchemy_play.setup_view, user["id"], pill or None, num(batch), prefer or None)
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
         if view is None:
@@ -442,6 +472,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         user = current_user(request)
         if not user:
             return RedirectResponse("/", status_code=303)
+        if not alchemy_allowed(request, user["id"]):
+            return to_lan(request)
         form = await form_of(request)
 
         def begin(c, uid):
@@ -523,15 +555,16 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
                             headers={"Cache-Control": "no-store"})
 
     @app.post("/alchemy/done")
-    def alchemy_done(request: Request):
+    async def alchemy_done(request: Request):
         user = current_user(request)
+        to_town = (await form_of(request)).get("to") == "town"
         back = "/alchemy"
         if user:
             s = crafts.get(user["id"])
             if s and s.outcome is not None:
                 back = "/alchemy?" + urllib.parse.urlencode({"pill": f"{s.kind}:{s.grade}", "batch": s.craft.batch})
                 crafts.clear(user["id"])
-        return RedirectResponse(back, status_code=303)
+        return RedirectResponse("/town?near=alchemist" if to_town else back, status_code=303)
 
     explores = app.state.explores = explore_play.Explores()
 
