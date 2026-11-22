@@ -10,7 +10,8 @@
    craft: the server has already decided everything. With reduced motion nothing plays (style.css shows the stills). */
 (function () {
   'use strict';
-  var scene = document.querySelector('.cscene');
+  function init() {
+  var scene = document.querySelector('.cscene:not(.lscene)');
   if (!scene) return;
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -54,4 +55,7 @@
       }
     }
   }
+  }
+  window.AlchemyScene = {init: init};      // static/alchemy_classic.js runs it again after each decision
+  init();
 })();

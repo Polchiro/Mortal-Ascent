@@ -223,8 +223,12 @@ def make_herbs(c, rng, f):
     breath = BREATH / f
     kinds = sorted(set(c.order))
     n = len(c.order)
+    clues, insights = c.clues, c.insights
+    if len(kinds) == 1:                                   # one herb: no order to find, only the timing
+        clues = [f"*Only {alchemy.HERBS[c.grade][kinds[0]][0]} in this recipe: add each one on the breath.*"]
+        insights = []
     pub = {"breath": round(breath, 3), "window": round(WINDOW[g] / breath * margin(c), 3), "per": BREATHS_PER_HERB,
-           "count": n, "clues": c.clues, "insights": c.insights,
+           "count": n, "clues": clues, "insights": insights,
            "volatile": rng.randrange(1, n) if harder(c, VOLATILE_FROM) and n > 1 else None,
            "shift": [round(2 * breath, 3), round(breath * BREATH_SHIFT[g], 3)] if g in BREATH_SHIFT else None,
            "herbs": [{"key": t, "name": alchemy.HERBS[c.grade][t][0], "emoji": loot.TYPE_EMOJI.get(t, "🌿"),

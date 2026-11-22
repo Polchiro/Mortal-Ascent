@@ -93,25 +93,12 @@
     {% endif %}
     {% endif %}
     {% for l in g.log %}<p class="flog">{{ l | safe }}</p>{% endfor %}
-    <div class="timer"><div class="tbar"><div id="tfill" style="width: {{ (g.left / g.seconds * 100) | round(1) }}%"></div></div><span id="tleft">{{ g.left }}s</span></div>
+    <div class="timer" data-left="{{ g.left }}" data-seconds="{{ g.seconds }}"><div class="tbar"><div id="tfill" style="width: {{ (g.left / g.seconds * 100) | round(1) }}%"></div></div><span id="tleft">{{ g.left }}s</span></div>
     <form method="post" action="/alchemy/act" class="choices">
       <input type="hidden" name="turn" value="{{ g.turn }}">
       {% for o in g.options %}<button class="btn {{ 'btn-jade' if o.good else 'btn-gold' }}" type="submit" name="key" value="{{ o.key }}">{{ o.emoji }} {{ o.label }}</button>{% endfor %}
     </form>
   </section>
-  <script>
-  (function () {
-    var left = {{ g.left }}, total = {{ g.seconds }}, fill = document.getElementById('tfill'), txt = document.getElementById('tleft');
-    var end = Date.now() + left * 1000;
-    var t = setInterval(function () {
-      var l = Math.max(0, (end - Date.now()) / 1000);
-      fill.style.width = (l / total * 100) + '%'; txt.textContent = l.toFixed(1) + 's';
-      fill.style.background = l / total > 0.5 ? '#6FD9B0' : l / total > 0.25 ? '#E8C27A' : '#E05A4F';
-      if (l <= 0) { clearInterval(t); setTimeout(function () { location.replace('/alchemy/play'); }, 1100); }
-    }, 100);
-    document.querySelectorAll('.choices button').forEach(function (b) { b.addEventListener('click', function () { clearInterval(t); }); });
-  })();
-  </script>
   {% else %}
   <section class="stage card result" style="--rc: {{ g.result_color }}; --tc: {{ g.result_color }}">
     {% if g.boom %}
@@ -154,6 +141,7 @@
   {% endif %}
 </main>
 <script src="{{ asset('alchemy_sound.js') }}" defer></script>
-{% if g.live %}<script src="{{ asset('alchemy_live.js') }}" defer></script>{% else %}<script src="{{ asset('alchemy.js') }}" defer></script>{% endif %}
+{% if g.live %}<script src="{{ asset('alchemy_live.js') }}" defer></script>{% else %}<script src="{{ asset('alchemy.js') }}" defer></script>
+{% if not g.done %}<script src="{{ asset('alchemy_classic.js') }}" defer></script>{% endif %}{% endif %}
 {% if g.done and g.reveal %}<script src="{{ asset('alchemy_reveal.js') }}" defer></script>{% endif %}
 {% endblock %}

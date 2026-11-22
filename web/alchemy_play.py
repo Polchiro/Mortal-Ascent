@@ -81,6 +81,7 @@ class Crafts:
             if not crafting.take_ingredients(conn, uid, pl):
                 return None, "Your herbs changed in the meantime. Check the recipe again."
             craft = crafting.craft_for(p, kind, grade, pl["age"], rng, batch)
+            craft.time_one_herb = controls == "live"      # (set before Add Herbs starts: the craft is at Ignite)
             used = list(pl["uses"]) + ([(pl["core"], pl["core_qty"])] if pl["core"] else [])
             s = Session(kind, grade, craft, used, craft_card.herb_rows(pl["uses"], pl["core"], pl["core_qty"]),
                         self._deadline(craft), controls=controls if controls in CONTROLS else "classic")

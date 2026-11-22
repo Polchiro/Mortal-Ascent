@@ -564,3 +564,33 @@ def test_fuse_every_meeting_counts_and_precise_is_tight():
     L.settle(lv, c, lv.length + 1)
     assert c.scores[3] == pytest.approx((1 + 0.8 + 0 + 1 + 1) / 5)
     assert "1 missed" in c.log[0]
+
+
+def test_a_one_herb_recipe_is_still_timed_live_but_free_on_the_buttons():
+    import random
+    from web import alchemy_live as L
+    rank = crafting.pill_spec("cleansing", "Heaven")["rank"]
+    button = crafting.Craft("cleansing", "Heaven", rank, 1000, random.Random(1))
+    button.settle(1.0)
+    assert button.scores.get(2) == 1.0 and button.stage == 3                  # Discord / Classic: nothing to choose
+    c = crafting.Craft("cleansing", "Heaven", rank, 1000, random.Random(1))
+    c.time_one_herb = True
+    c.settle(1.0)
+    assert c.stage == 2 and 2 not in c.scores                                 # live: the stage is played
+    lv = L.make(c, random.Random(1), 0, 0)
+    assert lv.pub["count"] == 3 and "add each one on the breath" in lv.pub["clues"][0] and not lv.pub["insights"]
+    L.settle(lv, c, lv.length + 1)                                            # nothing added: it all goes cold
+    assert c.scores[2] < 1.0
+
+
+def test_live_crafts_time_one_herb_recipes(client):
+    begin(client, controls="live")
+    assert client.crafts.get(UID).craft.time_one_herb
+    client.crafts.clear(UID)
+
+
+def test_classic_page_has_no_reloading_timer_script(client):
+    begin(client)
+    page = client.get("/alchemy/play").text
+    assert "alchemy_classic.js" in page and "location.replace('/alchemy/play')" not in page
+    assert 'class="timer" data-left=' in page

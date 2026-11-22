@@ -606,7 +606,12 @@ and a page loads only its own stage's.
 
 Every stage of the craft is played with the hands, not chosen from buttons (`web/alchemy_live.py`,
 `web/static/alchemy_live.js`, the `#alive` section of `alchemy_play.html`). It is the default; **Classic buttons**
-on the recipe page keeps the old one-decision-per-page craft (for slow connections), remembered in a cookie.
+on the recipe page keeps the one-decision-at-a-time craft (for slow connections), remembered in a cookie. Classic no
+longer reloads the page on each click (`static/alchemy_classic.js`): the choice is sent in the background and the
+stage card swapped in place, keeping the cauldron's videos playing; only the result loads as a whole page.
+
+A one-herb recipe (the Cleansing Pill: Star Dew only) has no order to find, so Discord and Classic give Add Herbs
+100% for free; live controls still time each herb on the breath (`Craft.time_one_herb`).
 Discord's `/craft` is unchanged.
 
 | Stage | The hands | Scored by |
