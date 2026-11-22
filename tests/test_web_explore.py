@@ -732,3 +732,12 @@ def test_style_and_scripts_are_never_stale(client):
     assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"      # and the browser checks each time
     from web import app as web_app
     assert web_app.asset("style.css") == css.group(1) and web_app.asset("nothing.js") == "/static/nothing.js"
+def test_the_fight_background_is_alive_behind_the_fighters(client):
+    fight(client)
+    page = client.get("/explore/play").text
+    assert "/static/ambient.js?v=" in page
+    js, css = client.get("/static/ambient.js").text, client.get("/static/style.css").text
+    for place in ("bamboo_forest", "misty_pine_valley", "northern_sea_wilds", "red_cliff_gorge", "thunder_peaks", "arena_ruins"):
+        assert place + ":" in js                                   # every fight background has its own weather
+    assert "prefers-reduced-motion" in js and "document.hidden" in js
+    assert ".bscene>canvas.ambient{" in css and "pointer-events:none;z-index:-1" in css   # at the back, never in the way
