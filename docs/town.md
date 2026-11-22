@@ -11,7 +11,7 @@ Code: `web/town.py` (the layout and the townsfolk), the `/town` route in `web/ap
 
 Everyone whose look has a walking sheet (`looks.WALK_SHEETS`, docs/hunting.md "The map": the male cultivator for
 now). A look without one sees the painting and speaks to the townsfolk from a list, with the same words and
-buttons; it walks the town as soon as its sheet is added. No admin check, unlike the hunting map.
+buttons; it walks the town as soon as its sheet is added.
 
 ## The map
 
@@ -44,8 +44,14 @@ buttons; it walks the town as soon as its sheet is added. No admin check, unlike
   from you. And the town is drawn **1.4x** bigger against you than the ground's own scale (`town.SCALE`): you, the
   townsfolk and your walking speed on screen stay the same, so the streets are longer and the buildings tower over
   you.
-- **Coming in:** at the gate (`town.START`). After you leave through someone's dialogue, coming back puts you in
-  front of them (the page remembers it for the browser tab).
+- **Coming in:** at the gate (`town.START`), also when you come back in from the Crossroads. After you leave through
+  someone's dialogue, coming back puts you in front of them (the page remembers it for the browser tab).
+- **Going out:** the gate is the way out of town (`town.EXITS`, docs/world.md). Walk to it, within `REACH` of the spot
+  just inside its doors, and a **Leave town** button appears; press **E** for *The Town Gate* and **Go out to the
+  Crossroads** (`/crossroads`, where the roads to the hunting grounds begin). The spot is behind the wall from where the camera looks, so the page lights the
+  gate's doorway instead (`glow`: pale blue light spilling out of the doors onto the road, motes rising, brighter when
+  you are close enough to leave; calm with reduced motion). **M** or the **World Map** button opens the World Map,
+  only to look at (Back or M returns you here).
 - **The server doesn't follow you.** Nothing on the map changes the game, so unlike the hunting map there are no
   position reports.
 
@@ -57,7 +63,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 
 | Who | Where | Sends you to |
 |---|---|---|
-| Gate Warden | the gate | Hunt beasts (`/explore`), Gather herbs (`/gather`) |
+| Gate Warden | the gate | Look at the World Map (`/world`, docs/world.md), Hunt with a team (`/explore`), Gather herbs (`/gather`) |
 | Blacksmith Tie | the forge | `/forge` |
 | Herbalist Lan | the herb shop | `/alchemy` |
 | Silk Merchant | the silk stalls | `/appearance` |

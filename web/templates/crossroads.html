@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}The Crossroads · Mortal Ascent{% endblock %}
+{% block body_class %}huntmap town crossroads{% endblock %}
+{% block body %}
+{% if walking %}
+<canvas id="map" tabindex="0" aria-label="The Crossroads outside Azure Cloud Town. Walk with W A S D or the arrow keys, or the joystick; walk to a road's end or the town gate and press E."></canvas>
+<script type="application/json" id="mapdata">{{ map_json | safe }}</script>
+{% else %}
+<div class="tstill" style="background-image:url('{{ ground }}')" role="img" aria-label="The Crossroads"></div>
+{% endif %}
+
+<div class="mhud">
+  <div class="mplate">
+    <p class="kicker">MORTAL ASCENT · OUTSIDE THE GATE</p>
+    <h1>The Crossroads</h1>
+    <span class="mhint">You are {{ realm }} · {{ coins }} Lotus · {{ pearls }} Pearls</span>
+  </div>
+  {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> at a road's end · <b>Shift</b> to stroll · <b>M</b> map</div>{% endif %}
+</div>
+
+{% if notice %}<div class="mplate tnotice" role="alert">{{ notice }}</div>{% endif %}
+
+<div class="mtools">
+  <a class="hbtn ghost small" href="/world">World Map</a>
+</div>
+
+{% if walking %}
+<button class="mprompt" id="prompt" type="button"></button>
+<div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+<section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
+  <p class="kicker" id="dlgTitle"></p>
+  <h2 id="dlgName"></h2>
+  <p class="tline" id="dlgLine"></p>
+  <div class="tgo" id="dlgGo"></div>
+</section>
+<script src="{{ asset('town.js') }}" defer></script>
+{% else %}
+<section class="mplate tboard">
+  <p class="kicker">THE ROADS</p>
+  <p class="mhint">Your look can't walk the land yet. Its walking pictures are on the way; until then, choose a road from here.</p>
+  {% for e in exits %}
+  <div class="tnpc">
+    <div><b>{{ e.name }}</b> <span class="mhint">· {{ e.title }}</span><p class="tline">{{ e.line }}</p></div>
+    <div class="tgo">{% for g in e.go %}{% if g|length > 2 %}<form method="post" action="{{ g[1] }}"><button class="hbtn small" type="submit">{{ g[0] }}</button></form>{% else %}<a class="hbtn small" href="{{ g[1] }}">{{ g[0] }}</a>{% endif %}{% endfor %}</div>
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

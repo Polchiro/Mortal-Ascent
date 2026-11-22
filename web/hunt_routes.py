@@ -8,6 +8,9 @@ Explore's hunting pages (docs/hunting.md):
   /hunt/locations     the location cards (the leader picks one)
   /hunt/v             a small JSON version number the lobby and hunt pages poll to know when to reload
   /hunt/pos           the map page reporting where you walk (web/hunt_map.py)
+  /world              the World Map: the town and the hunting grounds on one painted scroll (web/world.py), to look at
+  /crossroads         outside the town gate: walk to a road's end (web/crossroads.py)
+  /crossroads/go/<key>  set out down that road: a Solo Hunt on that ground's walkable map
 
 Every POST only asks web/parties.py or web/hunt_play.py; they decide.
 """
@@ -15,7 +18,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
-from . import explore_play, hunt_pages, hunt_play
+from . import crossroads, explore_play, hunt_pages, hunt_play, world
 from . import discord_oauth as oauth
 from .parties import Parties
 
@@ -259,7 +262,105 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         user = current_user(request)
         if not user:
             return go("/")
-        party = hunts.dismiss(user["id"])
-        return go("/hunt" if party else "/explore")
+        walked = hunts.walked(user["id"])                       # a walked Solo Hunt ends back at the Crossroads,
+        party = hunts.dismiss(user["id"])                       # at the end of the road it went down
+        return go("/hunt" if party else f"/crossroads?near=road_{walked}" if walked else "/explore")
+
+    # ── the World Map (web/world.py, docs/world.md) ─────────────────
+
+    @app.get("/world", response_class=HTMLResponse)
+    def world_page(request: Request):
+        """The World Map (web/world.py): only a map to look at, from anywhere; you travel by walking."""
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+
+        def build(c):
+            from bot import db
+            p = db.get_player(c, uid)
+            if p is None:
+                return None
+            return {**hunt_pages.purse(p), "realm": p["realm"], "markers": world.markers(p, hunts.blocked(c, uid))}
+
+        v = with_conn(build)
+        if v is None:
+            return page(request, "no_character.html", user=user, avatar=avatar(user))
+        return no_store(page(request, "world.html", v=v, art=world.ART, user=user, avatar=avatar(user)))
+
+    def away(request, uid):
+        """Where a player must go instead of walking about: an expedition under way, a team, or a hunt (None: free).
+        A Solo Hunt still choosing its ground is dropped."""
+        s = with_conn(explores.catch_up, uid)
+        if s and not explores._finished(s):
+            return "/explore/play"
+        party = parties.of(uid)
+        if party is not None:
+            if party.solo and not party.hunting:
+                parties.leave(uid)
+            else:
+                return "/hunt"
+        return None
+
+    @app.get("/crossroads", response_class=HTMLResponse)
+    def crossroads_page(request: Request, near: str = ""):
+        """Outside the town gate (web/crossroads.py): walked like the town, by everyone whose look has a walking
+        sheet; a look without one chooses a road from a list."""
+        import looks
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+        elsewhere = away(request, uid)
+        if elsewhere:
+            return go(elsewhere)
+
+        def build(c):
+            from bot import db
+            p = db.get_player(c, uid)
+            if p is None:
+                return None
+            blocked = hunts.blocked(c, uid)
+            sheet = looks.walk_sheet(looks.of_player(p))
+            data = crossroads.page_data(sheet, p, blocked, near or None) if sheet else None
+            return {**hunt_pages.purse(p), "realm": p["realm"], "data": data, "exits": crossroads.exits(p, blocked)}
+
+        v = with_conn(build)
+        if v is None:
+            return page(request, "no_character.html", user=user, avatar=avatar(user))
+        from . import town
+        return no_store(page(request, "crossroads.html", user=user, avatar=avatar(user), notice=error(request),
+                             walking=v["data"] is not None, ground=crossroads.ART, exits=v["exits"],
+                             map_json=town.page_json(v["data"]) if v["data"] else "", realm=v["realm"],
+                             coins=v["coins"], pearls=v["pearls"]))
+
+    @app.post("/crossroads/go/{key}")
+    def crossroads_go(request: Request, key: str):
+        """Down a road from the Crossroads: a Solo Hunt on this ground. Every check is the Solo Hunt's own (realm,
+        injury, rest: Parties.start_problems, Hunts.blocked); if one fails nothing is started."""
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+        if world.place(key) is None:
+            flash(request, "There is no such road.")
+            return go("/crossroads")
+        if parties.of(uid) is not None:
+            return go("/hunt")
+
+        def set_out(c):
+            _, why = parties.create(c, uid, "", False, True)
+            if why:
+                return why
+            why = parties.set_location(c, uid, key) or hunts.start(c, uid, walk=hunt_play.walks(c, uid))
+            if why:
+                parties.leave(uid)                               # nothing started: no party left behind
+            return why
+
+        why = with_conn(set_out)
+        if why:
+            flash(request, why)
+            return go(f"/crossroads?near=road_{key}")
+        return go("/hunt")
 
     return explore_play

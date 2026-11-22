@@ -10,7 +10,10 @@
    The server decides everything that matters: which beast is out there and where (it is already rolled), whether
    you are where you say (the page reports its position a few times a second and is put back if the server
    disagrees), and when the fight starts (walk up to the beast: the page asks, the server checks how close you are,
-   then /hunt shows the ordinary fight screen). */
+   then /hunt shows the ordinary fight screen).
+
+   The path you came in by (cfg.start) is the way home: walk away from it and back onto its glow, and the page asks
+   whether to head home (the same Return home as the button: what you carry is banked; docs/world.md). */
 (function () {
   'use strict';
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
@@ -73,9 +76,12 @@
   var keys = {}, stickV = {x: 0, y: 0}, stickId = null;
   var KEYMAP = {KeyW: 'u', ArrowUp: 'u', KeyS: 'd', ArrowDown: 'd', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r'};
   window.addEventListener('keydown', function (e) {
+    if (homeOpen) { if (e.key === 'Escape') { closeHome(); e.preventDefault(); } return; }
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
     if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
     if (e.key === 'Shift') keys.slow = true;
+    if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') && atHome) { openHome(); e.preventDefault(); }
+    if (e.code === 'KeyM') location.href = '/world';             // the World Map (Back or M brings you back here)
   });
   window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.slow = false; });
   var stick = document.getElementById('stick'), knob = document.getElementById('knob');
@@ -99,6 +105,7 @@
   function stickUp(e) { if (e.pointerId === stickId) { stickId = null; resetStick(); } }
   stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercancel', stickUp);
   function inputVector() {
+    if (homeOpen) return {x: 0, y: 0};
     var x = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), y = (keys.d ? 1 : 0) - (keys.u ? 1 : 0), m = Math.hypot(x, y);
     if (m) { var s = keys.slow ? SLOW : 1; return {x: x / m * s, y: y / m * s}; }
     return stickV;
@@ -115,6 +122,7 @@
   function sectorRow(a) { var k = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; return (k + 6) % 8; }
   function angDiff(a, b) { return Math.abs(((a - b) % 360 + 540) % 360 - 180); }
   var hero = {x: cfg.hero.x, y: cfg.hero.y, dir: 4, frame: STAND[4], phase: 0, moving: false, still: 0};
+  if (window.__spy) window.__hero = hero;       // the headless-browser checks follow him
 
   /* the beast: it wanders about the spot the server put it on, notices you (a "!"), charges, and the fight starts
      when it reaches you. How far it roams and sees comes from the server (hunt_map.WANDER / NOTICE), which only
@@ -128,6 +136,18 @@
     beast.moving = 0;
   }
   var prompt = document.getElementById('prompt');
+
+  /* the way home: the path you came in by. It wakes once you have walked away from it, so arriving doesn't ask. */
+  var HOME = cfg.start || [hero.x, hero.y], homeArmed = Math.hypot(hero.x - HOME[0], hero.y - HOME[1]) > 1.6;
+  var atHome = false, homeOpen = false, homeDlg = document.getElementById('homeDlg');
+  function openHome() {
+    if (!homeDlg) return;
+    homeOpen = true; keys = {}; resetStick(); prompt.classList.remove('on');
+    homeDlg.hidden = false; homeDlg.querySelector('button').focus();
+  }
+  function closeHome() { homeOpen = false; if (homeDlg) homeDlg.hidden = true; homeArmed = false; cv.focus(); }
+  if (homeDlg) homeDlg.querySelector('[data-stay]').addEventListener('click', closeHome);
+  prompt.addEventListener('click', function () { if (atHome) openHome(); });
   function beastStep(dt) {
     var b = beast, d = Math.hypot(hero.x - b.x, hero.y - b.y);
     var leash = Math.hypot(hero.x - b.home.x, hero.y - b.home.y) <= WANDER + NOTICE;   // where the server allows a meeting
@@ -311,14 +331,33 @@
       hero.still += dt;
       hero.frame = STAND[hero.dir];
     }
+    var hd = Math.hypot(hero.x - HOME[0], hero.y - HOME[1]), msg = null;
+    if (hd > 2.5) homeArmed = true;
+    atHome = homeArmed && hd < 1.0 && !homeOpen;
     if (beast) {
       bt += dt;
       beastStep(dt);
-      if (beast.state === 'charge') { prompt.textContent = 'The ' + beast.name + ' charges!'; prompt.classList.add('on'); }
-      else if (beast.state === 'alert') { prompt.textContent = 'The ' + beast.name + ' has seen you…'; prompt.classList.add('on'); }
-      else prompt.classList.remove('on');
+      if (beast.state === 'charge') msg = 'The ' + beast.name + ' charges!';
+      else if (beast.state === 'alert') msg = 'The ' + beast.name + ' has seen you…';
     }
+    if (msg) atHome = false;
+    if (atHome && !prompt.classList.contains('home')) {
+      prompt.textContent = 'The path home '; var k = document.createElement('b'); k.textContent = 'E'; prompt.appendChild(k);
+    } else if (msg) prompt.textContent = msg;
+    prompt.classList.toggle('home', atHome);
+    prompt.classList.toggle('on', !!msg || atHome);
     stepAtmosphere(dt);
+  }
+  function drawHomePath(ox, oy) {             // a ring of pale blue Qi on the path you came in by
+    var p = toScreen(HOME[0], HOME[1]), x = ox + p.x, y = oy + p.y, b = CALM ? 0.5 : (Math.sin(night * 2.2) + 1) / 2;
+    var rx = 70 * (1 + 0.06 * b), ry = rx / 2, on = homeArmed ? 1 : 0.45;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var g = ctx.createRadialGradient(x, y, 3, x, y, rx);
+    g.addColorStop(0, 'rgba(150,210,255,' + (0.2 + 0.1 * b + (atHome ? .12 : 0)) * on + ')'); g.addColorStop(1, 'rgba(110,180,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(190,230,255,' + (0.3 + 0.25 * b) * on + ')'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(x, y, rx * 0.72, ry * 0.72, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
   }
   function shadow(x, y, rx, ry, a) { ctx.save(); ctx.fillStyle = 'rgba(0,0,0,' + a + ')'; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
   function drawHero(x, y) {
@@ -378,6 +417,7 @@
     if (debug) drawDebug(ox, oy);
     var list = [{y: hp.y, f: function () { drawHero(ox + hp.x, oy + hp.y); }}], bp = null;
     if (beast) { bp = toScreen(beast.x, beast.y); list.push({y: bp.y, f: function () { drawBeast(ox + bp.x, oy + bp.y); }}); }
+    drawHomePath(ox, oy);
     drawPuffs(ox, oy);
     list.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) { o.f(); });
     drawAtmosphere(ox, oy);

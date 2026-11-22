@@ -15,13 +15,13 @@
     <h1>{{ town_name }}</h1>
     <span class="mhint">{{ coins }} Lotus · {{ pearls }} Pearls</span>
   </div>
-  {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to talk · <b>Shift</b> to stroll</div>{% endif %}
+  {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to talk · <b>Shift</b> to stroll · <b>M</b> map</div>{% endif %}
 </div>
 
 {% if notice %}<div class="mplate tnotice" role="status">{{ notice }}</div>{% endif %}
 
 <div class="mtools">
-  <a class="hbtn ghost small" href="/profile">Leave town</a>
+  <a class="hbtn ghost small" href="/world">World Map</a>
 </div>
 
 {% if walking %}
@@ -44,6 +44,10 @@
     <div class="tgo">{% for label, href in n.go %}<a class="hbtn small" href="{{ href }}">{{ label }}</a>{% endfor %}</div>
   </div>
   {% endfor %}
+  <div class="tnpc">
+    <div><b>The Town Gate</b> <span class="mhint">· Leave town</span><p class="tline">The road out to the Crossroads, where every road begins.</p></div>
+    <div class="tgo"><a class="hbtn small" href="/crossroads?near=town_gate">Go out to the Crossroads</a></div>
+  </div>
 </section>
 {% endif %}
 {% endblock %}

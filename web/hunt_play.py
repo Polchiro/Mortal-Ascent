@@ -397,6 +397,13 @@ class Hunts:
             self.parties.leave(uid)
             return None
 
+    def walked(self, uid):
+        """If this player's hunt is (or was) walked on the map (web/hunt_map.py): its ground's key; else None."""
+        with self.lock:
+            party = self.parties.of(uid)
+            h = self._h.get(party.id) if party else None
+            return h.loc["key"] if h and h.map else None
+
     def dismiss(self, uid):
         """Seen the hunt's result: back to the lobby (a Solo Hunt party simply ends)."""
         with self.lock:
@@ -452,6 +459,7 @@ def view(conn, hunts, h, uid):
         out["mode"] = "home"
         out["result"] = h.results[uid]
         out["solo"] = party.solo if party else True
+        out["walked"] = h.map                               # back to the Crossroads (web/crossroads.py), not Explore
         return out
     b = h.battle if h.battle is not None else (h.ended if h.ended is not None and uid not in h.acked else None)
     if b is not None and b.fighter(uid) is not None:
@@ -486,12 +494,11 @@ def view(conn, hunts, h, uid):
 
 
 def walks(conn, uid):
-    """Whether this player walks the hunting-ground map (web/hunt_map.py) on a Solo Hunt: admins only for now,
-    and only with a look that has a walking sheet (looks.WALK_SHEETS). Everyone else keeps the menus."""
+    """Whether this player walks the hunting-ground map (web/hunt_map.py) on a Solo Hunt: everyone whose look has a
+    walking sheet (looks.WALK_SHEETS). A look without one keeps the menus."""
     import looks
-    from bot import admin
     p = db.get_player(conn, uid)
-    return p is not None and uid in admin.admin_ids_from_env() and looks.walk_sheet(looks.of_player(p)) is not None
+    return p is not None and looks.walk_sheet(looks.of_player(p)) is not None
 
 
 def map_view(conn, h, uid, p, lead):

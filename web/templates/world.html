@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}The World Map · Mortal Ascent{% endblock %}
+{% block body_class %}huntmap world{% endblock %}
+{% block body %}
+<div class="mhud">
+  <div class="mplate">
+    <p class="kicker">MORTAL ASCENT · THE WORLD</p>
+    <h1>The World Map</h1>
+    <span class="mhint">You are {{ v.realm }} · {{ v.coins }} Lotus · {{ v.pearls }} Pearls</span>
+  </div>
+</div>
+
+<div class="mtools">
+  <a class="hbtn ghost small" href="/town" id="wback">Back</a>
+</div>
+
+{% if error %}<div class="mplate tnotice" role="alert">{{ error }}</div>{% endif %}
+
+<main class="wstage">
+  <div class="wscroll">
+    <img src="{{ art }}" alt="A painted scroll of the world: Azure Cloud Town and the hunting grounds around it" draggable="false">
+    {% for m in v.markers %}
+    <button type="button" class="wmark s-{{ m.state }}{{ ' mine' if m.here }}" data-card="w-{{ m.key }}"
+            style="left:{{ (m.at[0] * 100) | round(2) }}%;top:{{ (m.at[1] * 100) | round(2) }}%"
+            aria-label="{{ m.name }}{% if m.state == 'locked' %}: needs {{ m.requirement }}{% endif %}">
+      <i></i><span><b>{{ m.name }}</b>{% if m.state == 'locked' %}<em>Needs {{ m.requirement }}</em>{% elif m.state == 'waiting' %}<em>{{ m.short }}</em>{% elif m.here %}<em>Your realm</em>{% endif %}</span>
+    </button>
+    {% endfor %}
+  </div>
+</main>
+
+{% for m in v.markers %}
+<section class="mplate tdlg wcard" id="w-{{ m.key }}" role="dialog" aria-modal="true" aria-labelledby="w-{{ m.key }}-h" hidden>
+  {% if m.kind == "town" %}
+  <p class="kicker">HOME</p>
+  <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
+  <p class="tline">{{ m.text }}</p>
+  <p class="wstate open">The roads to every hunting ground start at the Crossroads, just outside its gate.</p>
+  {% else %}
+  <p class="kicker">HUNTING GROUND · {{ m.realms | upper }}</p>
+  <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
+  <p class="tline">{{ m.text }}</p>
+  {% if m.state == "locked" %}
+  <p class="wstate locked">Sealed: {{ m.name }} needs {{ m.requirement }} or higher.</p>
+  {% elif m.state == "waiting" %}
+  <p class="wstate waiting">You can't set out yet: {{ m.why }}.</p>
+  {% else %}
+  <p class="wstate open">{{ "Your realm's beasts live here." if m.here else "Open to you: the beasts fight at your strength." }}
+    Walk out of the town gate and take its road from the Crossroads.</p>
+  {% endif %}
+  {% endif %}
+  <div class="tgo"><button type="button" class="hbtn ghost small" data-close>Close</button></div>
+</section>
+{% endfor %}
+<script src="{{ asset('world.js') }}" defer></script>
+{% endblock %}

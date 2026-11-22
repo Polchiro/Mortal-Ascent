@@ -12,6 +12,8 @@ Pages:
   /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
   /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
   /town       the town hub: walk up to the townsfolk, who send you on to the pages above (web/town.py)
+  /crossroads outside the town gate: walk down a road to a hunting ground (web/crossroads.py, web/hunt_routes.py)
+  /world      the World Map, only to look at (web/world.py)
   /rankings   the Stone Stele's rankings: realm, Lotus Coins, Moon Pearls, duels won (web/rankings.py)
   /arena      duels: challenge a cultivator or find a match, then /duel (web/duel_routes.py)
   /logout     forget the login (POST)
