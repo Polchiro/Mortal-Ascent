@@ -86,5 +86,28 @@
    },
    "impact": 13
   }
+ },
+ "tool": {
+  "hammer": {
+   "src": "/art/forge/tool_hammer.webp",
+   "frames": 37,
+   "cols": 6,
+   "rows": 7,
+   "w": 512,
+   "h": 248,
+   "fps": 12,
+   "crop": [
+    0,
+    0,
+    1280,
+    620
+   ],
+   "hit": [
+    660,
+    495
+   ],
+   "props": {},
+   "impact": 5
+  }
  }
 }

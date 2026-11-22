@@ -776,9 +776,16 @@ back out of the sparks and hair, stepped by the page so the bellows move only wh
 you strike. His anvil is laid exactly over the one inside the video (`CLIPS[...]["props"]`), so the hammer lands on it.
 One smith at a time: at the bellows for Ignite and Heat, at the anvil for Hammer, over the trough or the cauldron for
 Quench (his props laid over the video's bucket and bowl the same way); Inscribe lays the cooled piece on a plate before
-you. The 👤 button hides or shows the smith (remembered). A look without sheets (the female
-smith until her videos are cut) shows the forge, the props and the effects without a smith. The spark burst is
-`art/forge/sparks.mp4` (on black, laid on with `screen`).
+you. The 👤 button shows or hides the smith (remembered); **he is hidden unless the player turns him on**, so the
+forge is gameplay first. The spark burst is `art/forge/sparks.mp4` (on black, laid on with `screen`).
+
+**Without the smith** SHOAIB's effect videos carry the motion (`scripts/make_forge_fx.py`, which also leaves out
+Gemini's mark): the furnace fire (`art/forge/fire.mp4`, a seamless loop on the coal bed, laid on with `screen`) grows,
+brightens and roars faster with the heat in every stage; the hammer alone (`art/forge/tool_hammer.webp`, a frame sheet
+keyed from green, `sheets.json` "tool") swings down onto SHOAIB's anvil at each strike, with its own sparks (a light tap
+swings from lower), the video's anvil and bar cut away so only what moves stays; for Quench the hot piece hangs over the
+trough or the bath, glowing with its heat, dips in at the plunge, and the steam (`steam.mp4`) or the oil's fire
+(`oil_flare.mp4`) bursts from the surface.
 
 **The reveal** (`static/forge_reveal.js`): SHOAIB's rune glow (`art/forge/rune.mp4`) blooms over the result, and at its
 flash the forged piece appears in its rarity's colour; Legendary and Mythical turn heavenly rays behind it. Once per

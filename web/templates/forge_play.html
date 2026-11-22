@@ -18,10 +18,11 @@
   {% if g.live %}{% set H = scene.sheets.hammer %}{% set B = scene.sheets.bellows %}
   <section class="stage card flive" id="flive" data-gear="{{ scene.gear }}">
     <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
-    <div class="fscene" id="fscene" aria-hidden="true">
+    <div class="fscene nosmith" id="fscene" aria-hidden="true">
       <img class="fbg" src="/art/forge/workshop.jpg" alt="">
       <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
       <canvas class="ffurnace" width="960" height="540"></canvas>
+      <video class="ffire" src="/art/forge/fire.mp4" muted loop playsinline autoplay preload="auto"></video>
       {% if B %}<div class="fsheet fbellows" data-sheet='{{ B | tojson }}' style="background-image: url({{ B.src }})"></div>{% endif %}
       <img class="fblank inforge" src="{{ scene.blank }}" alt="">
       <canvas class="fheat" width="480" height="270"></canvas>
@@ -29,6 +30,7 @@
         {% if H %}<div class="fsheet fhammer" data-sheet='{{ H | tojson }}' style="background-image: url({{ H.src }})"></div>{% endif %}
         <img class="fanvil" src="/art/forge/anvil.webp" alt="">
         <img class="fblank onanvil" src="{{ scene.blank }}" alt="">
+        {% if scene.tool.hammer %}{% set T = scene.tool.hammer %}<div class="ftool" data-sheet='{{ T | tojson }}' style="background-image: url({{ T.src }})"></div>{% endif %}
         <canvas class="fspot" width="400" height="400"></canvas>
         <video class="fsparks" src="/art/forge/sparks.mp4" muted playsinline preload="auto"></video>
       </div>
@@ -38,6 +40,9 @@
         {% if QO %}<div class="fsheet fqoil" data-sheet='{{ QO | tojson }}' style="background-image: url({{ QO.src }})"></div>{% endif %}
         <img class="ftrough" src="/art/forge/trough.webp" alt="">
         <img class="fcauldron" src="/art/forge/cauldron_oil.webp" alt="">
+        <img class="fqblank" src="{{ scene.blank }}" alt="">
+        <video class="fqfx fqsteam" src="/art/forge/steam.mp4" muted playsinline preload="auto"></video>
+        <video class="fqfx fqflare" src="/art/forge/oil_flare.mp4" muted playsinline preload="auto"></video>
       </div>
       <div class="fplate" id="fplate">
         <img class="fplateblank" src="{{ scene.blank }}" alt="">

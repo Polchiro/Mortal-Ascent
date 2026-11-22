@@ -93,7 +93,12 @@ a{color:var(--gold)}
 .soon.small{font-size:13px;padding:10px 12px}
 @media (max-width:900px){.inventory{grid-template-columns:minmax(0,1fr)}.inspect{position:static}}
 @media (max-width:520px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tabsnav{order:3;width:100%}}
-body.forgebg{background:linear-gradient(rgba(8,14,32,.78),rgba(8,14,32,.94)),url(/art/scenes/forge_hall.jpg) center/cover fixed,var(--navy)}
+body.forgebg{background:#0d0806}
+/* the forge page sits inside SHOAIB's workshop: the same picture, blurred and warmed, fills the sides */
+body.forgebg::before{content:"";position:fixed;inset:-40px;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 60% 70% at 50% 45%,rgba(20,10,4,.15),rgba(10,5,2,.82) 100%),linear-gradient(rgba(14,7,3,.45),rgba(8,4,2,.7)),url(/art/forge/workshop.jpg) center/cover;
+  filter:blur(14px) saturate(1.15)}
+body.forgebg .topbar{background:rgba(12,7,4,.72)}
 .forge{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:24px 16px;display:flex;flex-direction:column;gap:18px}
 .fhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .fhead .chip{background:rgba(232,194,122,.14);border:1px solid var(--line);color:var(--gold2)}
@@ -117,8 +122,7 @@ select{min-height:40px;border-radius:10px;border:1px solid rgba(232,194,122,.4);
 .use.short{border-color:rgba(224,90,79,.7)}.use.short .sub{color:#FF9B90}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.small{min-height:44px;font-size:15px;width:auto}
-.forgeplay{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:20px;align-items:start;align-content:start}
-@media (max-width:760px){.forgeplay{grid-template-columns:minmax(0,1fr)}}
+.forgeplay{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:20px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start;align-content:start}
 .track{display:flex;flex-direction:column;gap:8px}
 .stg{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(12,20,40,.8);border:1px solid rgba(232,194,122,.25);color:#8A96B4}
 .stg img{object-fit:contain;opacity:.5}.stg span{flex:1;font-weight:700}.stg b{font-family:Cinzel,Georgia,serif}
@@ -1652,6 +1656,13 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 @media (prefers-reduced-motion:reduce){.roombg{display:none}}
 .forgeplay .alive,.forgeplay .result{background:rgba(8,14,32,.62)}   /* no backdrop blur: it would isolate the card, and the clips laid on with `screen` would show their black */
 .forgeplay .track .stg{background:rgba(12,20,40,.72)}
+/* the forge plays in the middle: the five stages run as one row of chips above it */
+.forgeplay .track{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px}
+.forgeplay .track .stg{padding:5px 10px 5px 6px;gap:6px;border-radius:999px;font-size:14px}
+.forgeplay .track .stg img{width:28px;height:28px}
+.forgeplay .track .stg span{flex:none}
+.forgeplay .track .sub{flex-basis:100%;margin:2px 0 0;text-align:center}
+@media (max-width:620px){.forgeplay .track .stg:not(.on):not(.total) span{display:none}}
 /* the Tribulation's controls, first-time help and the sound button */
 .ldirs .btn{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:120px}
 .ldirs .btn kbd{font:600 11px Inter,Arial,sans-serif;opacity:.7}
@@ -1807,3 +1818,35 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .revealing>:not(.freveal):not(script){opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s}
 .result.failed .fcracked{animation:lshake .1s linear 6;filter:drop-shadow(0 0 24px #E05A4F)}
 @media (prefers-reduced-motion:reduce){.freveal.grand .frays{animation:none}}
+/* the forge's panels in the workshop's warm dark instead of the site's navy */
+.forgeplay .track .stg{background:rgba(26,15,8,.78);border-color:rgba(232,194,122,.22)}
+.forgeplay .track .stg.on{background:rgba(232,194,122,.16);border-color:var(--gold)}
+.forgeplay .alive,.forgeplay .result,.forgeplay .stage.card{background:rgba(16,9,5,.66)}
+.forgeplay .lhelp{background:rgba(24,14,8,.95)}
+.forgeplay .tbar{background:#1c110a}
+/* SHOAIB's forge effects (scripts/make_forge_fx.py), lined up with his workshop picture and props:
+   - the furnace fire, its coals on the furnace's coal bed (workshop.jpg: x 30–51 %, y 50–54 %), laid on with `screen`;
+     static/forge_live.js grows it with the heat */
+.fscene .ffire{position:absolute;left:28%;top:20.5%;width:25%;mix-blend-mode:screen;pointer-events:none;opacity:.3;
+  transform-origin:50% 88%;transition:opacity .35s,transform .35s;
+  -webkit-mask-image:radial-gradient(ellipse 50% 62% at 50% 62%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 62% at 50% 62%,#000 62%,transparent 100%)}
+.fscene.st-inscribe .ffire{opacity:.15!important}
+@media (prefers-reduced-motion:reduce){.fscene .ffire{display:none}}
+/* - the hammer alone (frame sheet, 1280 × 620 video pixels, its face meeting the bar at 660, 495), sized so the
+     video's anvil would match SHOAIB's and its face lands where the smith's did (forge_live.js HIT: 48.6 %, 58.7 %) */
+.fset .ftool{position:absolute;left:2.53%;top:29.14%;width:89.35%;height:37.03%;background-repeat:no-repeat;opacity:0;transition:opacity .4s;pointer-events:none}
+.fscene.nosmith.st-hammer .ftool{opacity:1}
+/* - the quench without the smith: the hot piece hangs over the trough or the bath, glowing with its heat, and dips
+     in at the plunge; the steam (water) or the fire (oil) bursts from the surface */
+.fqset .fqblank{position:absolute;left:68.7%;top:41%;width:44%;transform:translate(-50%,-50%) rotate(-4deg);display:none;
+  filter:sepia(.6) saturate(2.2) brightness(1.15) drop-shadow(0 0 10px var(--glow,rgba(247,148,60,.95))) drop-shadow(0 0 22px var(--glow,rgba(247,148,60,.95)));
+  transition:transform .45s cubic-bezier(.5,0,.8,.4),opacity .45s .15s}
+.flive[data-gear="armor"] .fqset .fqblank,.flive[data-gear="artifact"] .fqset .fqblank{width:24%}
+.fqset[data-medium="oil"] .fqblank{left:70%}
+.fscene.nosmith .fqset .fqblank{display:block}
+.fqset.dipped .fqblank{transform:translate(-50%,10%) rotate(-4deg);opacity:0}
+.fqset .fqfx{position:absolute;mix-blend-mode:screen;opacity:0;pointer-events:none;transition:opacity .3s;
+  -webkit-mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 55%,transparent 100%)}
+.fqset .fqfx.on{opacity:1}
+.fqset .fqsteam{left:28.7%;top:-4.9%;width:80%}
+.fqset .fqflare{left:40%;top:0;width:60%}

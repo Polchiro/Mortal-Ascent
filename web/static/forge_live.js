@@ -63,6 +63,17 @@
   var qsheets = {water: Sheet(scene.querySelector('.fqwater')), oil: Sheet(scene.querySelector('.fqoil'))};
   var qset = scene.querySelector('.fqset'), plate = $('fplate'), runeCv = scene.querySelector('.frune'), rctx = runeCv.getContext('2d');
   var runeGlow = scene.querySelector('.fruneglow');
+  // SHOAIB's effects for when the smith is hidden (scripts/make_forge_fx.py): the hammer alone, the furnace fire,
+  // the steam and the oil's fire at the plunge, and the hot piece over the trough
+  var tool = Sheet(scene.querySelector('.ftool')), fire = scene.querySelector('.ffire');
+  var qblank = scene.querySelector('.fqblank'), qfx = {water: scene.querySelector('.fqsteam'), oil: scene.querySelector('.fqflare')};
+  function noSmith() { return scene.classList.contains('nosmith'); }
+  function playFx(v) {
+    if (!v || calm) return;
+    v.currentTime = 0; v.classList.add('on');
+    var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
+  }
+  [qfx.water, qfx.oil].forEach(function (v) { if (v) v.addEventListener('ended', function () { v.classList.remove('on'); }); });
 
   // ── little helpers ──
   var bannerTimer;
@@ -117,6 +128,13 @@
     g.addColorStop(1, 'rgba(120,30,10,0)');
     fctx.fillStyle = g; fctx.fillRect(0, 0, FW, FH);
     scene.style.setProperty('--room', (0.62 + 0.38 * k).toFixed(2));
+    if (fire) {                               // the fire in the furnace grows and roars with the heat
+      fire.style.opacity = (0.12 + 0.88 * k).toFixed(2);
+      fire.style.transform = 'scale(' + (0.7 + 0.4 * k).toFixed(3) + ')';
+      var rate = pumping ? 1.5 : 1;
+      if (fire.playbackRate !== rate) fire.playbackRate = rate;
+      if (fire.paused && !calm) { var fp = fire.play(); if (fp && fp.catch) fp.catch(function () {}); }
+    }
     if (!calm && (pumping || k > 0.75) && Math.random() < 0.6 + k) embers.push({x: x + (Math.random() - 0.5) * 120, y: y, vx: (Math.random() - 0.5) * 60, vy: -80 - 160 * Math.random() * (0.5 + k), life: 1});
     embers = embers.filter(function (e) { return e.life > 0; });
     embers.forEach(function (e) {
@@ -333,6 +351,14 @@
     return null;
   }
   function animateHammer(s) {
+    if (tool && noSmith()) {                  // the hammer alone: a quick swing down, the blow, then it lifts back
+      if (!s.anim) { tool.show(0); return; }
+      var tm = tool.m, te = (performance.now() - s.anim.t) / 1000, from = s.anim.light ? 3 : 1, DOWN = 0.12;
+      var tf = te < DOWN ? from + (tm.impact - from) * te / DOWN : tm.impact + (te - DOWN) * tm.fps * 2;
+      if (tf >= tm.frames - 1) { s.anim = null; tool.show(0); return; }
+      tool.show(tf);
+      return;
+    }
     if (!hammer) return;
     if (!s.anim) { hammer.show(0); return; }
     var a = s.anim, el = (performance.now() - a.t) / 1000, m = hammer.m;
@@ -351,12 +377,13 @@
       flash(want === 'reheat' ? '🔥 Reheated in time' : '💢 It wanted a ' + want + ' blow', want === 'reheat' ? 'good' : 'bad', 900);
       Snd(want === 'reheat' ? 'good' : 'bad');
     } else {
-      s.anim = {t: performance.now()};
+      s.anim = {t: performance.now(), light: what === 'light'};
+      var own = tool && noSmith();                                         // the hammer alone brings its own sparks
       var on = st.under.some(function (u) { return Math.abs(t - u) <= p.window; });
       var ok = what === want && on;
       setTimeout(function () {                                             // the blow lands
         Snd(ok ? 'clang' : 'bad');
-        if (sparks && !calm) { sparks.currentTime = 0; sparks.style.opacity = what === 'hard' ? 1 : 0.5; sparks.classList.add('on'); var pr = sparks.play(); if (pr && pr.catch) pr.catch(function () {}); }
+        if (sparks && !calm && !own) { sparks.currentTime = 0; sparks.style.opacity = what === 'hard' ? 1 : 0.5; sparks.classList.add('on'); var pr = sparks.play(); if (pr && pr.catch) pr.catch(function () {}); }
         if (ok) { s.good++; anvilBlank.style.setProperty('--shape', (0.8 + 0.2 * s.good / p.strikes.length).toFixed(3)); }
         flash(ok ? (what === 'hard' ? '🔨 A clean, ringing blow!' : '🪶 A gentle tap, just right') : what !== want ? '💢 It wanted ' + (want === 'reheat' ? 'reheating' : 'a ' + want + ' blow') : '💢 Off the spot!', ok ? 'good' : 'bad', 800);
       }, 120);
@@ -373,6 +400,7 @@
     setup: function (c) {
       c.st = {medium: null, chose: null, plunged: null, temp: c.pub.start, k: 0, anim: null};
       qset.dataset.medium = 'water';
+      qset.classList.remove('dipped');
       show('lgauge', true);
       $('lband').style.width = '0';
       btns.innerHTML = '';
@@ -405,6 +433,7 @@
       $('lneedle').style.opacity = steam ? 0 : 1;
       $('lheat').textContent = steam ? 'steam!' : Math.round(s.temp) + '°';
       $('lneedle').style.left = tpct(s.temp) + '%';
+      if (qblank) qblank.style.setProperty('--glow', rgb(colorAt(Math.max(-1, (s.temp - TLO) / (THI - TLO) * 4)), 0.95));
       var sheet = qsheets[s.medium];
       if (sheet) {
         if (s.anim) {
@@ -436,6 +465,8 @@
     s.plunged = now();
     var half = p.window[s.medium] / 2, off = Math.abs(s.temp - p.target), sheet = qsheets[s.medium];
     if (sheet) s.anim = {t: performance.now(), from: Math.max(0, sheet.m.impact - 4)};
+    qset.classList.add('dipped');
+    if (noSmith()) setTimeout(function () { playFx(qfx[s.medium]); }, 180);
     var top = off <= half / 2, okish = off <= half;
     flash(top ? '💦 A perfect quench!' : okish ? 'Close enough' : 'The steel shudders…', top ? 'good' : okish ? '' : 'bad', 1400);
     Snd(s.medium === 'water' ? 'hiss' : 'roar');
@@ -712,11 +743,11 @@
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('mainup'); } });
   window.addEventListener('blur', function () { act('mainup'); });
 
-  // 👤 show or hide the smith (remembered): the forge, the props and the effects stay either way
+  // 👤 show or hide the smith (remembered; hidden unless the player turns him on): the forge, the props and the effects stay either way
   var sb = $('lsmithbtn');
   if (sb) {
-    var smithOff = false;
-    try { smithOff = localStorage.getItem('ma-forge-smith') === 'off'; } catch (e) {}
+    var smithOff = true;
+    try { smithOff = localStorage.getItem('ma-forge-smith') !== 'on'; } catch (e) {}
     var showSmith = function () { scene.classList.toggle('nosmith', smithOff); sb.classList.toggle('off', smithOff); };
     showSmith();
     sb.addEventListener('click', function (e) {
