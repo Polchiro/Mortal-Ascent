@@ -696,7 +696,9 @@ patterns anyway); Earth and Heaven need real precision. Every number is at the t
 Behind every alchemy page plays SHOAIB's chamber video (`art/scenes/alchemy_chamber.mp4`, made by
 `scripts/make_background_loop.py`, its first frame `alchemy_chamber.jpg` the still), darkened toward the edges.
 
-The cauldron is split into its body and its lid for the reveal (`scripts/make_cauldron_lid.py`: `cauldron_body.png`
+During the craft the lid is on while the fire is lit (Ignite), lifted off for the herbs and the Qi (Add Herbs, Fuse,
+Seal), and put back on to seal the pill in (Condense, the Tribulation); Classic shows the open cauldron on those same
+stages. The cauldron is split into its body and its lid for this and the reveal (`scripts/make_cauldron_lid.py`: `cauldron_body.png`
 with a dark open mouth, `cauldron_lid.png`): the lid rattles as the light builds, then blows off up and away.
 
 A successful craft opens with a reveal (`#preveal` in `alchemy_play.html`, `static/alchemy_reveal.js`): the cauldron
