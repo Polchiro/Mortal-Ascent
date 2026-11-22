@@ -5,7 +5,7 @@
    Each decision reloads the page, so this remembers the last stage it showed (sessionStorage) to know what just
    happened: a herb went in (Add herbs again: the splash), a round of the Tribulation was weathered (its lightning),
    Condense has just begun (the light spirals in once, then the pill pulses), the craft has just blown up (the
-   explosion, which then stays smoking). Loops (the fire, the Qi swirl, the storm, the pulse) just play. A clip shows
+   explosion, which then stays smoking; once per craft, by its id, since the live controls never pass through here). Loops (the fire, the Qi swirl, the storm, the pulse) just play. A clip shows
    only once it plays (class "on"), so a slow one never covers the still pictures with black. Nothing here touches the
    craft: the server has already decided everything. With reduced motion nothing plays (style.css shows the stills). */
 (function () {
@@ -45,7 +45,9 @@
     var boom = scene.querySelector('.cboom');
     if (boom) {
       scene.classList.add('live');
-      if (prev && prev.stage !== 'done') once(boom, true);                    // it happens now: the whole explosion
+      var BOOM = 'ma-alchemy-boom', seen = null;                              // once per craft (its id), whatever page came
+      try { seen = sessionStorage.getItem(BOOM); sessionStorage.setItem(BOOM, scene.dataset.craft); } catch (e) {}
+      if (seen !== scene.dataset.craft) once(boom, true);                     // it happens now: the whole explosion
       else {                                                                   // the page again: it lies smoking
         boom.addEventListener('loadedmetadata', function () { boom.currentTime = Math.max(0, boom.duration - 0.2); boom.classList.add('on'); }, {once: true});
         if (boom.readyState >= 1) boom.dispatchEvent(new Event('loadedmetadata'));

@@ -115,7 +115,7 @@
   {% else %}
   <section class="stage card result" style="--rc: {{ g.result_color }}; --tc: {{ g.result_color }}">
     {% if g.boom %}
-    <div class="cscene boom" data-stage="done" data-turn="{{ g.turn }}" aria-hidden="true">
+    <div class="cscene boom" data-stage="done" data-turn="{{ g.turn }}" data-craft="{{ g.reveal.id }}" aria-hidden="true">
       <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
       <video class="cfx conce cboom" src="{{ g.boom }}" muted playsinline preload="auto"></video>
       <img class="cburst" src="{{ g.art }}" alt="">

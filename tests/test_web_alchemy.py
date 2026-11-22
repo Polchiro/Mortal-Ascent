@@ -536,3 +536,14 @@ def test_rank_widens_windows_but_keeps_the_challenges():
     above = L.make(craft_at("Heaven", 3, rank_above=3), random.Random(1), 0, 0).pub
     assert above["window"] == pytest.approx(at["window"] * 1.18, rel=0.01)
     assert above["chaos"] and above["reverse"]
+
+
+def test_the_explosion_carries_its_craft_id(client):
+    """static/alchemy.js plays the explosion once per craft by this id (the live controls never pass through it)."""
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    while not s.craft.done:
+        s.craft.settle(0.0)
+    page = client.get("/alchemy/play").text
+    assert 'class="cscene boom"' in page and f'data-craft="{int(s.started * 1000)}"' in page
