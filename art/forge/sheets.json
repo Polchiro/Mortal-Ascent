@@ -108,6 +108,27 @@
    ],
    "props": {},
    "impact": 5
+  },
+  "bellows": {
+   "src": "/art/forge/tool_bellows.webp",
+   "frames": 24,
+   "cols": 6,
+   "rows": 4,
+   "w": 576,
+   "h": 238,
+   "fps": 24,
+   "crop": [
+    0,
+    110,
+    1280,
+    530
+   ],
+   "nozzle": [
+    1125,
+    360
+   ],
+   "props": {},
+   "impact": null
   }
  }
 }

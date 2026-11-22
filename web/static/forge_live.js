@@ -68,7 +68,7 @@
   // SHOAIB's effects for when the smith is hidden (scripts/make_forge_fx.py): the hammer alone, the furnace fire,
   // the steam and the oil's fire at the plunge, and the hot piece over the trough
   var tool = Sheet(scene.querySelector('.ftool')), fire = scene.querySelector('.ffire');
-  var belCut = scene.querySelector('.fbelcut');
+  var belCut = scene.querySelector('.fbelcut'), toolBel = Sheet(scene.querySelector('.ftoolbel'));
   var qsheen = scene.querySelector('.fqsheen'), fsetEl = scene.querySelector('.fset');
   var qblank = scene.querySelector('.fqblank'), qfx = {water: scene.querySelector('.fqsteam'), oil: scene.querySelector('.fqflare')};
   function noSmith() { return scene.classList.contains('nosmith'); }
@@ -282,6 +282,16 @@
       s.sq = (s.sq || 0) + (sq - (s.sq || 0)) * 0.35;
       scene.style.setProperty('--squeeze', s.sq.toFixed(3));
       if (s.pumping && belCut && noSmith()) puff(at(belCut, 0.97, 0.97), 1, '255,232,200', 2, 340);
+      if (toolBel) {                            // SHOAIB's bellows: pump while held; let go and it finishes the stroke, open
+        var nowMs = performance.now(), dt = Math.min(0.05, (nowMs - (s.belT || nowMs)) / 1000), n = toolBel.m.frames;
+        s.belT = nowMs; s.bf = s.bf || 0;
+        if (s.pumping || (s.bf % n) > 0.5) {
+          var before = s.bf % n;
+          s.bf += dt * toolBel.m.fps * 1.6;
+          if (!s.pumping && s.bf % n < before) s.bf = Math.ceil(s.bf / n) * n;      // back to open: stop there
+        }
+        toolBel.show(s.bf % n);
+      }
       var gustNow = 0;
       p.gusts.forEach(function (g) { if (t >= g[0] && t < g[0] + p.gust) gustNow = g[1]; });
       if (gustNow && Math.random() < 0.8) {                     // a gust: wind streaks through the furnace mouth

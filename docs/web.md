@@ -822,7 +822,17 @@ into its chip. Nothing waits on an effect.
 - **Inscribe:** the hardened piece lies large on the plate. Each stroke burns into it, gold, or as a red crack where the
   server says it was wrong. Qi then flows along the clean strokes, and a fully clean rune flares white as it resonates.
 
-**The reveal** (`static/forge_reveal.js`): SHOAIB's rune glow (`art/forge/rune.mp4`) blooms over the result, and at its
-flash the forged piece appears in its rarity's colour; Legendary and Mythical turn heavenly rays behind it. Once per
-forge (sessionStorage); a reload or reduced motion shows the finished picture. A failed forge shakes its cracked piece.
+**The reveal** (`static/forge_reveal.js`): SHOAIB's golden burst (`art/forge/reveal_burst.mp4`, on black, laid on with
+`screen`) swirls in and flashes, tinted to the rarity (grey Common, green Uncommon, blue Rare, purple Epic, gold
+Legendary, red Mythical), and at its flash (1 s) the forged piece appears in its rarity's colour; Legendary and Mythical
+get a bigger burst, turning rays and his rune glow. Then the new passive and the rest follow. **A failed forge** plays his
+glowing bar cracking apart in sparks and smoke (`art/forge/crack.mp4`; the page shakes it as it breaks) and it stays
+broken (its last frame, `crack_end.jpg`, is the poster a reload shows). Each timeline starts when its video really plays,
+with a fallback if it never does. Once per forge (sessionStorage); reduced motion shows the finished result.
+
+**The second set of videos** (`scripts/make_forge_fx.py`): SHOAIB's pumping bellows (`tool_bellows.webp`, one pump keyed
+from his paler green screen with lower thresholds, the stand in its corner cut away) stand beside the furnace with the
+nozzle at the coal bed, and the painted ones on the wall are covered by the wall behind them. They pump only while you
+hold Space, finish the stroke when you let go and rest open. His drifting embers (`embers.mp4`, a seamless loop) float
+up through the whole scene, over the camera and under the HUD.
 
