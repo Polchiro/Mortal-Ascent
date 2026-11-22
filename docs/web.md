@@ -776,8 +776,8 @@ back out of the sparks and hair, stepped by the page so the bellows move only wh
 you strike. His anvil is laid exactly over the one inside the video (`CLIPS[...]["props"]`), so the hammer lands on it.
 One smith at a time: at the bellows for Ignite and Heat, at the anvil for Hammer, over the trough or the cauldron for
 Quench (his props laid over the video's bucket and bowl the same way); Inscribe lays the cooled piece on a plate before
-you. The 👤 button shows or hides the smith (remembered); **he is hidden unless the player turns him on**, so the
-forge is gameplay first. The spark burst is `art/forge/sparks.mp4` (on black, laid on with `screen`).
+you. **No smith is shown any more** (the page always has `.nosmith`, and his frame sheets aren't loaded): the forge is
+gameplay first, and SHOAIB's effect videos carry the motion. The spark burst is `art/forge/sparks.mp4` (on black, laid on with `screen`).
 
 **Without the smith** SHOAIB's effect videos carry the motion (`scripts/make_forge_fx.py`, which also leaves out
 Gemini's mark): the furnace fire (`art/forge/fire.mp4`, a seamless loop on the coal bed, laid on with `screen`) grows,
@@ -808,6 +808,11 @@ into its chip. Nothing waits on an effect.
   (`scripts/make_forge_bellows.py`: `art/forge/bellows.webp`, `bellows_wall.webp`), squeeze in a working rhythm while you
   pump and puff air from the nozzle. The fire surges on each pump, gusts blow streaks through the furnace mouth, and a
   flare-up reddens the room.
+- **Heat, made readable:** tongs slide the metal into the coals and, when you pull it, draw it out into the light. The
+  fire calms behind it and a dark bed lies under it so its colour reads. A colour ladder of the five colours under the
+  scene rings the target. On plain gear the colour the metal has reached lights up there, with a ring, a flash and its
+  name as it climbs; on gear that heats unevenly or flickers (Spirit and up) nothing lights and the hint doesn't name it,
+  so you judge the metal itself. The metal glows and pulses more and throws more sparks as it heats.
 - **Heat:** the metal wavers in the heat, more as it climbs (drawn in strips on its canvas: cheap, unlike an SVG
   filter). Past yellow it smokes and scorches dark, and burnt it cracks.
 - **Hammer:** the piece glows as its state asks, squashes under each blow, and takes shape with every good one (a sword

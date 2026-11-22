@@ -165,10 +165,10 @@ def test_live_is_the_default_and_shows_the_smith(client, db_path):
     assert r.headers["location"] == "/forge/play" and "ma_forge_controls=live" in r.headers["set-cookie"]
     page = client.get("/forge/play").text
     assert 'id="flive"' in page and "forge_live.js" in page and "/art/forge/anvil.webp" in page
-    assert 'class="fscene nosmith"' in page                     # the smith is hidden unless the player turns him on
+    assert 'class="fscene nosmith"' in page and "lsmithbtn" not in page   # no smith, and no button to show him
     for fx in ('class="ffire"', 'class="ftool"', "fqsteam", "fqflare", "fqblank"):   # the effects that move without him
         assert fx in page, fx
-    assert "male_hammer.webp" in page and "male_bellows.webp" in page
+    assert "male_hammer.webp" not in page and "male_bellows.webp" not in page   # his frame sheets aren't loaded
     lv = live(client)["live"]
     assert lv["stage"] == "ignite" and {"lo", "width", "gusts", "heat"} <= set(lv["pub"])
 

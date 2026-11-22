@@ -5,8 +5,7 @@
    /forge/live/press and the server times it. The page shows its own guess at once and the server's verdict after.
    Quench and Inscribe are still the bot's button decisions here (/forge/live/act).
 
-   The smith is SHOAIB's videos as frame sheets (scripts/make_forge_sheets.py): the bellows move only while you pump,
-   the hammer falls when you strike. Keys: Space = the stage's main action (pump / pull / hard strike), V = vent,
+   No smith is shown (the page always has .nosmith): SHOAIB's effect videos and props carry the motion. Keys: Space = the stage's main action (pump / pull / hard strike), V = vent,
    K = light strike, R = reheat. */
 (function () {
   'use strict';
@@ -348,11 +347,17 @@
   S.heat = {
     title: 'Heat the Metal', keys: 'Space (or Pull it out) when the metal glows the target colour',
     setup: function (c) {
-      var p = c.pub, tc = colorAt(p.target);
-      c.st = {pulled: null};
-      $('lswatchc').textContent = p.colors[p.target]; $('lswatchc').style.background = rgb(tc);
-      $('lswatch').style.setProperty('--sw', rgb(tc));
+      var p = c.pub;
+      // the colour ladder: the five colours, the target ringed. On plain gear the colour the metal has reached lights
+      // up; on gear that heats unevenly or flickers (Spirit and up) you judge the metal itself
+      c.st = {pulled: null, idx: -1, judge: !!(p.uneven || p.shimmer)};
+      $('lswatch').innerHTML = '<div class="fladder">' + p.colors.map(function (n, k) {
+        return '<span data-k="' + k + '" class="' + (k === p.target ? 'target' : '') + '" style="--c:' + rgb(colorAt(k + 0.5)) + ';color:' + (k < 2 ? '#fff' : '#1a0f08') + '">' + n + '</span>';
+      }).join('') + '</div>';
       show('lswatch', true);
+      heatCv.classList.remove('out'); heatCv.classList.add('away');                     // the tongs slide it into the coals
+      requestAnimationFrame(function () { requestAnimationFrame(function () { heatCv.classList.remove('away'); }); });
+      Snd('whoosh');
       btns.innerHTML = '';
       button('🪝 Pull it out', 'Space', function (e) { if (e === 'down') pull(c); }, 'btn-jade');
       show('lbtns', true);
@@ -366,16 +371,30 @@
       drawFurnace(55 + cc * 8, false, t);
       drawHeat(cc, p.uneven, t, s.pulled !== null);
       if (cc >= 4.5 && s.pulled === null && Math.random() < 0.25) puff(at(heatCv, 0.4 + Math.random() * 0.2, 0.4), 0, '90,80,75', 1, 60);
+      if (s.pulled === null && cc > 2.5 && cc < 5 && !calm && Math.random() < (cc - 2.5) * 0.12) burst(at(heatCv, 0.3 + Math.random() * 0.4, 0.45), 'good', 2);
+      var idx = i >= b.length - 1 ? 5 : i;                                    // the true colour (no flicker)
+      if (s.pulled === null && idx !== s.idx) {
+        if (s.idx >= 0 && idx <= 4) {                                         // a new colour: a ting and a flash
+          Snd('ring'); burst(at(heatCv, 0.5, 0.5), idx >= p.target - 1 && idx <= p.target ? 'great' : 'good', 10);
+          if (!s.judge) popup(p.colors[idx], idx === p.target ? 'great' : '', {x: at(heatCv, 0.5, 0.2).x, y: at(heatCv, 0.5, 0.2).y});
+        }
+        s.idx = idx;
+        $('lswatch').querySelectorAll('.fladder span').forEach(function (el, k) {
+          el.classList.toggle('now', !s.judge && k === idx);
+          if (!s.judge && k === idx) { el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+        });
+      }
       var name = cc >= 5 ? 'burning!' : p.colors[Math.max(0, Math.min(4, Math.floor(cc)))];
-      hint.textContent = s.pulled !== null ? 'You pull it out…' : cc >= 4.6 ? 'White-hot and spitting sparks: it is about to burn!'
-        : 'The metal glows ' + name + (p.uneven ? ' (the tip runs ahead: judge the middle)' : '') + '.';
+      hint.innerHTML = s.pulled !== null ? 'You pull it out…' : cc >= 4.6 ? 'White-hot and spitting sparks: it is about to burn!'
+        : s.judge ? 'Pull it out when it glows <b>' + p.colors[p.target] + '</b>' + (p.uneven ? ' · the tip runs ahead: judge the middle' : ' · read the metal, not the flicker')
+        : 'The metal glows <b>' + name + '</b>. Pull it out at <b>' + p.colors[p.target] + '</b>.';
     }
   };
   function drawHeat(cc, uneven, t, pulled) {
     var W = heatCv.width, H = heatCv.height;
     hctx.clearRect(0, 0, W, H);
     if (!blankImg.complete || !blankImg.naturalWidth) return;
-    var bw = gear === 'weapon' ? W * 0.62 : W * 0.24, bh = bw * blankImg.naturalHeight / blankImg.naturalWidth;
+    var bw = gear === 'weapon' ? W * 0.6 : W * 0.26, bh = bw * blankImg.naturalHeight / blankImg.naturalWidth;
     hctx.save();
     hctx.translate(W * 0.5, H * 0.52);
     if (gear !== 'weapon') hctx.scale(1, 0.55);
@@ -392,10 +411,22 @@
     g.addColorStop(0, rgb(colorAt(cc - d), 0.88)); g.addColorStop(0.5, rgb(colorAt(cc), 0.88)); g.addColorStop(1, rgb(colorAt(cc + d), 0.88));
     hctx.fillStyle = g; hctx.fillRect(-bw / 2, -bh / 2, bw, bh);
     hctx.restore();
-    hctx.save(); hctx.globalCompositeOperation = 'lighter';               // its own glow
-    var gl = hctx.createRadialGradient(W * 0.5, H * 0.52, 5, W * 0.5, H * 0.52, bw * 0.6);
-    gl.addColorStop(0, rgb(colorAt(cc), 0.25 + 0.1 * Math.min(cc, 5))); gl.addColorStop(1, rgb(colorAt(cc), 0));
-    hctx.fillStyle = gl; hctx.fillRect(0, 0, W, H); hctx.restore();
+    hctx.save(); hctx.globalCompositeOperation = 'destination-over';        // a dark bed under it, so its colour reads
+    hctx.translate(W * 0.5, H * 0.52); hctx.scale(1, 0.4);
+    var back = hctx.createRadialGradient(0, 0, 4, 0, 0, W * 0.46);
+    back.addColorStop(0, 'rgba(12,6,3,.6)'); back.addColorStop(1, 'rgba(12,6,3,0)');
+    hctx.fillStyle = back; hctx.fillRect(-W / 2, -H, W, H * 2); hctx.restore();
+    hctx.save(); hctx.globalCompositeOperation = 'lighter';               // its own glow (an oval that fits the canvas)
+    hctx.translate(W * 0.5, H * 0.52); hctx.scale(1, 0.42); hctx.translate(-W * 0.5, -H * 0.52);
+    var gl = hctx.createRadialGradient(W * 0.5, H * 0.52, 5, W * 0.5, H * 0.52, Math.min(bw * 0.6, W * 0.48));
+    gl.addColorStop(0, rgb(colorAt(cc), 0.22 + 0.09 * Math.min(cc, 5) + (pulled || calm ? 0 : 0.06 * Math.sin(t * 6)))); gl.addColorStop(1, rgb(colorAt(cc), 0));
+    hctx.fillStyle = gl; hctx.fillRect(0, -H, W, H * 3); hctx.restore();
+    hctx.save(); hctx.translate(W * 0.5 - bw / 2 + bw * 0.06, H * 0.52);      // the tongs holding it by the tang
+    hctx.strokeStyle = '#2b231e'; hctx.lineWidth = 5; hctx.lineCap = 'round';
+    hctx.beginPath(); hctx.moveTo(0, -3); hctx.lineTo(-W * 0.2, -14); hctx.moveTo(0, 3); hctx.lineTo(-W * 0.2, 14); hctx.stroke();
+    hctx.strokeStyle = 'rgba(255,170,90,.35)'; hctx.lineWidth = 1.5;
+    hctx.beginPath(); hctx.moveTo(0, -4); hctx.lineTo(-W * 0.2, -15); hctx.stroke();
+    hctx.restore();
     if (cc >= 4.4 && !pulled && !calm) {                                // overheating: spitting sparks
       for (var i = 0; i < 8; i++) { hctx.fillStyle = 'rgba(255,240,200,' + Math.random() + ')'; hctx.fillRect(W * 0.5 + (Math.random() - 0.5) * bw, H * 0.5 - Math.random() * 60, 3, 3); }
     }
@@ -425,6 +456,7 @@
   function pull(c) {
     if (c.st.pulled !== null) return;
     var t = now(); c.st.pulled = t;
+    heatCv.classList.add('out'); Snd('whoosh');                         // the tongs draw it out into the light
     var p = c.pub, b = p.bounds, i = 0; while (i + 1 < b.length && b[i + 1] <= t) i++;
     var miss = i >= b.length - 1 ? 9 : Math.abs(i - p.target);
     var where = at(heatCv, 0.5, 0.45), burnt = i >= b.length - 1;
@@ -914,6 +946,7 @@
     $('lneedle').style.opacity = 1;
     clearInterval(promptTimer);
     hctx.clearRect(0, 0, heatCv.width, heatCv.height); sctx.clearRect(0, 0, spotCv.width, spotCv.height);
+    heatCv.classList.remove('out', 'away');
   }
   function apply(state) {
     if (!state || state.gone) { location.replace('/forge'); return; }
@@ -990,20 +1023,6 @@
   });
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('mainup'); } });
   window.addEventListener('blur', function () { act('mainup'); });
-
-  // 👤 show or hide the smith (remembered; hidden unless the player turns him on): the forge, the props and the effects stay either way
-  var sb = $('lsmithbtn');
-  if (sb) {
-    var smithOff = true;
-    try { smithOff = localStorage.getItem('ma-forge-smith') !== 'on'; } catch (e) {}
-    var showSmith = function () { scene.classList.toggle('nosmith', smithOff); sb.classList.toggle('off', smithOff); };
-    showSmith();
-    sb.addEventListener('click', function (e) {
-      e.stopPropagation(); smithOff = !smithOff;
-      try { localStorage.setItem('ma-forge-smith', smithOff ? 'off' : 'on'); } catch (e2) {}
-      showSmith(); flash(smithOff ? '👤 Smith hidden' : '👤 Smith shown', '', 800);
-    });
-  }
 
   getState().then(apply).catch(function () { hint.textContent = 'Lost the connection to the forge. Reload the page.'; });
   loop();
