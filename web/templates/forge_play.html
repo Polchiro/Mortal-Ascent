@@ -18,7 +18,7 @@
   {% if g.live %}{% set H = scene.sheets.hammer %}{% set B = scene.sheets.bellows %}
   <section class="stage card flive" id="flive" data-gear="{{ scene.gear }}">
     <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
-    <div class="fscene" id="fscene" aria-hidden="true">
+    <div class="fscene nosmith" id="fscene" aria-hidden="true">
       <img class="fbg" src="/art/forge/workshop.jpg" alt="">
       <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
       <canvas class="ffurnace" width="960" height="540"></canvas>

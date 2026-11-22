@@ -712,11 +712,11 @@
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('mainup'); } });
   window.addEventListener('blur', function () { act('mainup'); });
 
-  // 👤 show or hide the smith (remembered): the forge, the props and the effects stay either way
+  // 👤 show or hide the smith (remembered; hidden unless the player turns him on): the forge, the props and the effects stay either way
   var sb = $('lsmithbtn');
   if (sb) {
-    var smithOff = false;
-    try { smithOff = localStorage.getItem('ma-forge-smith') === 'off'; } catch (e) {}
+    var smithOff = true;
+    try { smithOff = localStorage.getItem('ma-forge-smith') !== 'on'; } catch (e) {}
     var showSmith = function () { scene.classList.toggle('nosmith', smithOff); sb.classList.toggle('off', smithOff); };
     showSmith();
     sb.addEventListener('click', function (e) {

@@ -117,8 +117,7 @@ select{min-height:40px;border-radius:10px;border:1px solid rgba(232,194,122,.4);
 .use.short{border-color:rgba(224,90,79,.7)}.use.short .sub{color:#FF9B90}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.small{min-height:44px;font-size:15px;width:auto}
-.forgeplay{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:20px;align-items:start;align-content:start}
-@media (max-width:760px){.forgeplay{grid-template-columns:minmax(0,1fr)}}
+.forgeplay{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:20px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start;align-content:start}
 .track{display:flex;flex-direction:column;gap:8px}
 .stg{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(12,20,40,.8);border:1px solid rgba(232,194,122,.25);color:#8A96B4}
 .stg img{object-fit:contain;opacity:.5}.stg span{flex:1;font-weight:700}.stg b{font-family:Cinzel,Georgia,serif}
@@ -1652,6 +1651,13 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 @media (prefers-reduced-motion:reduce){.roombg{display:none}}
 .forgeplay .alive,.forgeplay .result{background:rgba(8,14,32,.62)}   /* no backdrop blur: it would isolate the card, and the clips laid on with `screen` would show their black */
 .forgeplay .track .stg{background:rgba(12,20,40,.72)}
+/* the forge plays in the middle: the five stages run as one row of chips above it */
+.forgeplay .track{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px}
+.forgeplay .track .stg{padding:5px 10px 5px 6px;gap:6px;border-radius:999px;font-size:14px}
+.forgeplay .track .stg img{width:28px;height:28px}
+.forgeplay .track .stg span{flex:none}
+.forgeplay .track .sub{flex-basis:100%;margin:2px 0 0;text-align:center}
+@media (max-width:620px){.forgeplay .track .stg:not(.on):not(.total) span{display:none}}
 /* the Tribulation's controls, first-time help and the sound button */
 .ldirs .btn{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:120px}
 .ldirs .btn kbd{font:600 11px Inter,Arial,sans-serif;opacity:.7}
