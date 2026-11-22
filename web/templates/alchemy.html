@@ -2,6 +2,7 @@
 {% block title %}Alchemy · Mortal Ascent{% endblock %}
 {% block body_class %}alchemybg{% endblock %}
 {% block body %}
+<video class="roombg" src="/art/scenes/alchemy_chamber.mp4" muted loop playsinline autoplay preload="auto" aria-hidden="true" oncanplay="this.classList.add('on')"></video><div class="roomshade"></div>
 {% with page="alchemy", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
 
 <main class="forge">

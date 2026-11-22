@@ -205,12 +205,13 @@
     s.placed++; s.since = t;
     once(V.splash);
     flash(on ? 'On the breath!' : 'In it goes', on ? 'good' : '', 700);
+    Snd(on ? 'good' : 'tick');
     press({herb: key}).then(function (r) {
       if (!r || !r.marks) return;
       var m = r.marks[r.marks.length - 1];
       s.placed = r.placed;
       if (m && m.how.indexOf('wrong') === 0) {
-        backlash();
+        backlash(); Snd('bad');
         flash(m.how === 'wrong-forgiven' ? 'Backlash! (forgiven)' : 'Backlash! It wanted ' + m.want, 'bad', 1400);
       }
     });
@@ -249,8 +250,8 @@
       down: function (c) {
         var p = c.pub, s = c.st, t = now(), hit = -1;
         p.meet.forEach(function (x, i) { if (hit < 0 && !s.used[i] && Math.abs(t - x) <= p.window) hit = i; });
-        if (hit >= 0) { s.used[hit] = 1; s.fused++; s.lastHit = t; flash(seal ? 'Sealed!' : 'Fused!', 'good', 600); }
-        else { flash('Unsteady!', 'bad', 600); backlash(); }
+        if (hit >= 0) { s.used[hit] = 1; s.fused++; s.lastHit = t; flash(seal ? 'Sealed!' : 'Fused!', 'good', 600); Snd('good'); }
+        else { flash('Unsteady!', 'bad', 600); backlash(); Snd('bad'); }
         press({}).then(function (r) {
           if (!r) return;
           if (r.fused !== undefined) s.fused = r.fused;
@@ -316,56 +317,133 @@
       var glint = level === 4 && Math.abs(ph - 0.5) <= p.glint;
       flash(glint ? '✨ Perfect pulse!' : level === 4 ? (ph < 0.5 ? 'A little early' : 'A little late') : level >= 5 ? 'Cracked!' : 'Too early',
             glint ? 'good' : level === 4 ? '' : 'bad', 1200);
+      Snd(glint ? 'chime' : level >= 5 || level < 4 ? 'bad' : 'good');
       press({});
     }
   };
 
-  // ⚡ Tribulation: raise the shield toward the lightning
+  // ⚡ Tribulation: 🔵 blue bolts → Protect as the ring closes; 🔴 red bolts → Dodge to the SAFE side
+  var HELP_KEY = 'ma-trib-help';
   S[6] = {
-    title: 'Pill Tribulation', keys: 'Watch the clouds: press ← ↑ → (or the buttons) toward where the lightning gathers.',
-    hint: 'Dark clouds gather over the cauldron. The heavens will not let a nine-pattern pill be born without a trial!',
-    setup: function (c) {
-      c.st = {i: 0, from: {}, asked: {}, chose: {}, struck: {}};
+    title: 'Pill Tribulation', keys: 'Space / ↑ = Protect · ← → = Dodge',
+    hint: 'The heavens test a nine-pattern pill with lightning. Weather all three strikes!',
+    intro: function (c, go) {
       scene.classList.add('storm');
-      play(V.storm);
-      show('ldirs', true);
+      play(V.storm); fire('low');
+      var seen = false;
+      try { seen = localStorage.getItem(HELP_KEY) === '1'; } catch (e) {}
+      if (seen) return setTimeout(go, 1300);
+      var box = $('lhelp');
+      box.innerHTML = '<h3>⚡ Pill Tribulation</h3>'
+        + '<p><b class="blue">🔵 Blue bolt</b> → <b>PROTECT</b> (Space). Raise the shield as the ring closes on the cauldron: too early and it fades.</p>'
+        + '<p><b class="red">🔴 Red bolt</b> is too strong to block → <b>DODGE</b> (← or →) toward the side marked <b class="safe">SAFE</b>. Watch out: the safe side can change!</p>'
+        + '<p>Weather all 3 strikes for a nine-pattern pill.</p><button type="button" class="btn btn-gold">Got it</button>';
+      box.hidden = false;
+      var b = box.querySelector('button'), done = function () {
+        box.hidden = true;
+        try { localStorage.setItem(HELP_KEY, '1'); } catch (e) {}
+        document.removeEventListener('keydown', onKey, true);
+        go();
+      }, onKey = function (e) { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done(); } };
+      b.addEventListener('click', done, {once: true});
+      document.addEventListener('keydown', onKey, true);
+    },
+    setup: function (c) {
+      c.st = {info: {}, asked: {}, acts: {}, landed: {}, marks: [], warned: {}, ticks: {}};
+      scene.classList.add('storm');
+      show('ldirs', true); show('ltrib', true);
+      tribRow(c);
     },
     tick: function (c, t) {
-      var p = c.pub, s = c.st;
-      while (s.i < p.strikes.length && t > p.strikes[s.i][1] + 0.1) {        // the bolt lands
-        var i = s.i, blocked = s.chose[i] && s.chose[i] === s.from[i];
-        V.light.classList.remove('left', 'right'); if (s.from[i] && s.from[i] !== 'above') V.light.classList.add(s.from[i]);
+      var p = c.pub, s = c.st, bolts = p.bolts, cx = W / 2, cy = H * 0.62;
+      // landings
+      bolts.forEach(function (b, i) {
+        if (s.landed[i] || t < b.hit) return;
+        s.landed[i] = 1;
+        var ok = boltOk(c, i, b);
+        s.acts[i] = s.acts[i] || null;
         once(V.light);
-        flash(blocked ? '🛡️ The lightning breaks on your shield!' : '⚡ The lightning strikes the cauldron!', blocked ? 'good' : 'bad', 1100);
-        s.i++;
-        document.querySelectorAll('#ldirs .btn').forEach(function (b) { b.classList.remove('chosen'); });
-      }
+        Snd(ok ? 'shield' : 'thunder');
+        if (!ok) { Snd('bad'); backlash(); }
+        flash(ok ? (b.kind === 'blue' ? '🛡️ Blocked!' : '💨 Dodged!') : (b.kind === 'blue' ? (s.acts[i] ? '⚡ The shield faded too soon!' : '⚡ Struck! Protect!') : '⚡ Struck! Dodge to the SAFE side!'), ok ? 'good' : 'bad', 1100);
+        setTimeout(function () { scene.classList.remove('goleft', 'goright'); }, 650);
+        p.rounds.forEach(function (r, k) {
+          if (r[r.length - 1] === i) { s.marks[k] = r.every(function (j) { return boltOk(c, j, bolts[j]); }); tribRow(c); }
+        });
+      });
       clear();
-      if (s.i >= p.strikes.length) { hint.textContent = 'The clouds part…'; return; }
-      var om = p.strikes[s.i][0], bolt = p.strikes[s.i][1];
-      if (t >= om && !s.asked[s.i]) {
-        s.asked[s.i] = 1;
-        var k = s.i;
-        press({omen: '1'}).then(function (r) { if (r && r.from && r.i === k) s.from[k] = r.from; });
+      var i = 0; while (i < bolts.length && s.landed[i]) i++;
+      if (i >= bolts.length) { hint.textContent = 'The clouds part…'; return; }
+      var b = bolts[i], info = s.info[i];
+      if (t >= b.warn - 0.25 && !s.asked[i]) {
+        s.asked[i] = 1;
+        press({bolt: i, omen: '1'}).then(function (r) { if (r && r.bolt === i) s.info[i] = r; });
       }
-      var from = s.from[s.i];
-      hint.textContent = 'Strike ' + (s.i + 1) + ' of ' + p.strikes.length + ': ' + (from && t >= om ? 'lightning gathers ' + {left: 'to the LEFT', above: 'ABOVE', right: 'to the RIGHT'}[from] + '! Raise your shield!' : 'the clouds churn…');
-      if (from && t >= om) {
-        var x = {left: W * 0.18, above: W / 2, right: W * 0.82}[from], f = (t - om) / (bolt - om);
-        ctx.fillStyle = 'rgba(200,220,255,' + (0.25 + 0.5 * Math.abs(Math.sin(t * 30)) * f) + ')';
-        ctx.beginPath(); ctx.ellipse(x, H * 0.16, 110, 60, 0, 0, 2 * Math.PI); ctx.fill();
-        ring(x, H * 0.16, 70 + 40 * f, 'rgba(255,255,255,.6)', 3);
+      if (t < b.warn || !info) {
+        hint.textContent = 'The clouds churn… get ready.';
+        return;
       }
-      if (s.chose[s.i]) shield({left: W * 0.25, above: W / 2, right: W * 0.75}[s.chose[s.i]], H * 0.42);
+      if (!s.warned[i]) { s.warned[i] = 1; Snd('warn'); }
+      var left = b.hit - t, f = Math.max(0, Math.min(1, (t - b.warn) / (b.hit - b.warn)));
+      var red = info.kind === 'red', safe = red ? safeNow(info, t) : null;
+      // the bolt gathering in the clouds above
+      ctx.fillStyle = red ? 'rgba(255,90,80,' + (0.2 + 0.45 * f * Math.abs(Math.sin(t * 25))) + ')' : 'rgba(120,180,255,' + (0.2 + 0.45 * f * Math.abs(Math.sin(t * 25))) + ')';
+      ctx.beginPath(); ctx.ellipse(cx, H * 0.12, 200, 70, 0, 0, 2 * Math.PI); ctx.fill();
+      // the timing ring closing on the cauldron (lands at its edge when the bolt does)
+      var R = 120, r = R + 200 * (1 - f);
+      ring(cx, cy, R, 'rgba(255,255,255,.35)', 3);
+      ring(cx, cy, r, red ? 'rgba(255,110,100,.95)' : 'rgba(140,200,255,.95)', 8);
+      if (!red && left <= p.protect) ring(cx, cy, R + 4, 'rgba(255,255,255,.9)', 6);             // now: protect!
+      if (red) {                                                                                // the SAFE side
+        var sx = safe === 'left' ? W * 0.13 : W * 0.87;
+        ctx.save(); ctx.fillStyle = 'rgba(111,217,176,.9)'; ctx.font = '800 30px Cinzel, Georgia, serif'; ctx.textAlign = 'center';
+        ctx.fillText('SAFE', sx, cy - 10); ctx.font = '800 52px Arial'; ctx.fillText(safe === 'left' ? '⇦' : '⇨', sx, cy + 44); ctx.restore();
+        if (info.flip && Math.abs(t - info.flip) < 0.25) flash('The clouds shift!', 'bad', 500);
+      }
+      var mine = s.acts[i];
+      if (mine && mine[0] === 'protect' && t - mine[1] <= p.protect + 0.05) shieldDome(cx, cy, 1 - (t - mine[1]) / (p.protect + 0.05));
+      if (b.warn + 0.05 > 0 && b.hit - b.warn >= 1.6) {                                           // 3, 2, 1
+        var n = Math.ceil(left);
+        if (n >= 1 && n <= 3) { label(String(n), H * 0.36); if (!s.ticks[i + ':' + n]) { s.ticks[i + ':' + n] = 1; Snd('tick'); } }
+      }
+      hint.innerHTML = red ? '🔴 <b>Red bolt!</b> Too strong to block. <b>DODGE ' + (safe === 'left' ? '← LEFT' : 'RIGHT →') + '</b> to the safe side!'
+        : '🔵 <b>Blue bolt!</b> <b>PROTECT</b> (Space) as the ring closes on the cauldron!';
     },
     dir: function (c, d) {
-      var s = c.st, t = now(), p = c.pub;
-      if (s.i >= p.strikes.length || s.chose[s.i] || t < p.strikes[s.i][0] - p.early) return;
-      s.chose[s.i] = d;
+      var p = c.pub, s = c.st, t = now(), i = 0;
+      while (i < p.bolts.length && s.landed[i]) i++;
+      if (i >= p.bolts.length || s.acts[i] || t < p.bolts[i].warn - 0.25) return;
+      s.acts[i] = [d, t];
+      if (d === 'protect') Snd('whoosh');
+      else { scene.classList.remove('goleft', 'goright'); scene.classList.add(d === 'left' ? 'goleft' : 'goright'); Snd('whoosh'); }
       document.querySelectorAll('#ldirs .btn').forEach(function (b) { b.classList.toggle('chosen', b.dataset.dir === d); });
-      press({shield: d});
+      setTimeout(function () { document.querySelectorAll('#ldirs .btn').forEach(function (b) { b.classList.remove('chosen'); }); }, 600);
+      press({bolt: i, act: d});
     }
   };
+  function safeNow(info, t) { return info.flip && t >= info.flip ? (info.safe === 'left' ? 'right' : 'left') : info.safe; }
+  function boltOk(c, i, b) {
+    var a = c.st.acts[i], info = c.st.info[i];
+    if (!a || !info) return false;
+    if (b.kind === 'blue') return a[0] === 'protect' && a[1] >= b.hit - c.pub.protect - c.pub.grace && a[1] <= b.hit + c.pub.grace;
+    return a[0] === (info.flip ? (info.safe === 'left' ? 'right' : 'left') : info.safe);
+  }
+  function tribRow(c) {
+    var html = c.pub.rounds.map(function (r, k) {
+      var m = c.st.marks[k], kinds = r.map(function (i) { return c.pub.bolts[i].kind === 'red' ? '🔴' : '🔵'; }).join('');
+      return '<span class="tround' + (m === true ? ' ok' : m === false ? ' bad' : '') + '">' + (m === true ? '🛡️' : m === false ? '⚡' : '○') + ' <small>' + kinds + '</small></span>';
+    }).join('');
+    $('ltrib').innerHTML = html;
+  }
+  function shieldDome(x, y, a) {
+    ctx.save(); ctx.globalAlpha = Math.max(0.15, a);
+    var g = ctx.createRadialGradient(x, y, 40, x, y, 170);
+    g.addColorStop(0, 'rgba(111,217,176,0)'); g.addColorStop(0.8, 'rgba(111,217,176,.35)'); g.addColorStop(1, 'rgba(168,240,210,.9)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 170, Math.PI, 2 * Math.PI); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#A8F0D2'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 170, Math.PI, 2 * Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+  function Snd(n) { if (window.AlchemySound) window.AlchemySound.play(n); }
 
   // ── drawing ──
   function clear() { ctx.clearRect(0, 0, W, H); }
@@ -400,7 +478,8 @@
   function reset() {
     ['lgauge', 'lherbs', 'lclues', 'ldirs'].forEach(function (id) { show(id, false); });
     tap.hidden = true; tap.classList.remove('held');
-    scene.classList.remove('storm', 'cold', 'zone', 'hot');
+    scene.classList.remove('storm', 'cold', 'zone', 'hot', 'goleft', 'goright');
+    ['ltrib'].forEach(function (id) { show(id, false); });
     stop(V.swirl); stop(V.cond); stop(V.storm);
     hint.classList.remove('warn');
     clear();
@@ -463,6 +542,7 @@
   function act(kind, arg) {
     if (!cur || cur.t0 === null || ending) return;
     var def = S[cur.stage];
+    if (kind === 'down' && !def.down && def.dir) def.dir(cur, 'protect');
     if (kind === 'down' && def.down) def.down(cur);
     if (kind === 'up' && def.up) def.up(cur);
     if (kind === 'key' && def.key) def.key(cur, arg);
@@ -474,7 +554,7 @@
   document.querySelectorAll('#ldirs .btn').forEach(function (b) {
     b.addEventListener('pointerdown', function (e) { e.preventDefault(); act('dir', b.dataset.dir); });
   });
-  var DIRS = {ArrowLeft: 'left', ArrowUp: 'above', ArrowRight: 'right'};
+  var DIRS = {ArrowLeft: 'left', ArrowUp: 'protect', ArrowRight: 'right'};
   document.addEventListener('keydown', function (e) {
     if (e.repeat) { if (e.code === 'Space' || DIRS[e.key]) e.preventDefault(); return; }
     if (e.code === 'Space') { e.preventDefault(); act('down'); }

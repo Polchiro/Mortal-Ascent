@@ -7,7 +7,7 @@ Live alchemy on the website: every stage of the craft played with the hands inst
     ☯️ Fuse        tap when the Yin and Yang orbs meet
     💊 Condense    tap when the pill glints, ready to set
     🔒 Seal Core   as Fuse, with the Beast Core: miss too many meetings and it shatters
-    ⚡ Tribulation  raise your shield toward the lightning before it lands
+    ⚡ Tribulation  Protect from blue bolts as the ring closes, Dodge red ones to the safe side
 
 The craft itself is still the bot's (bot/crafting.py Craft): its herb order, clues, heat zone, Tribulation
 directions, forgiveness and every number in alchemy.py. A stage here only decides that stage's score (0…1) and
@@ -34,7 +34,7 @@ from bot import crafting, loot
 from .inventory import item_picture
 
 GRACE = 0.09            # seconds of network jitter forgiven on each side of a timing window
-BEGIN_WAIT = 20.0       # a page that never says "begin": the stage starts this long after it was handed out
+BEGIN_WAIT = 120.0      # a page that never says "begin" (closed, or its player reading the help): the stage starts this long after it was handed out
 LINGER = 0.25           # a stage whose time is up is settled on the next request this long after its end
 TICK = 0.02             # the heat simulation step (static/alchemy_live.js uses the same)
 
@@ -65,10 +65,21 @@ PULSE = 0.82            # seconds per pulse (at tempo 1)
 GLINT = 0.28            # share of the "ready" pulse, each side of its middle, that glints
 READY_NOT_GLINT = 0.7   # pressed on the ready pulse, but not in its glint
 
-# ⚡ Tribulation
-CALM = (1.1, 1.9)
-OMEN = 1.0              # seconds the clouds show where the bolt comes from (at tempo 1), never under 0.6
-SHIELD_EARLY = 0.3
+# ⚡ Tribulation: each round is one bolt or a quick pair. 🔵 blue: Protect (raise the shield as the ring closes);
+# 🔴 red, too strong to block: Dodge toward the SAFE side. A fake-out flips the safe side once during the warning.
+TRIB_ROUNDS = {          # the bolts of each round, by the craft's difficulty grade
+    "Mortal": [["blue"], ["red"], ["blue"]],
+    "Yellow": [["blue"], ["red"], ["blue"]],
+    "Mystic": [["blue"], ["red"], ["red", "blue"]],
+    "Earth":  [["red"], ["blue"], ["red", "blue"]],
+    "Heaven": [["red"], ["blue", "red"], ["red", "blue"]],
+}
+TRIB_WARN = {"Mortal": 2.2, "Yellow": 2.2, "Mystic": 1.6, "Earth": 1.3, "Heaven": 1.1}   # seconds of warning
+TRIB_FAKE = {"Mortal": 0, "Yellow": 0, "Mystic": 0, "Earth": 0.5, "Heaven": 0.75}      # chance a red bolt fakes out
+TRIB_CALM = (1.2, 1.8)   # seconds between rounds
+TRIB_PAIR = 0.15         # the second bolt of a pair starts warning this soon after the first lands
+PROTECT_WINDOW = 0.5     # the shield holds this long: raised earlier than this before the bolt, it fades
+SEE_EARLY = 0.3          # the warning may be asked for this much before it shows (network)
 
 
 def tempo(c):
@@ -177,14 +188,42 @@ def make_condense(c, rng, f):
 
 
 def make_tribulation(c, rng, f):
-    omen = max(0.6, OMEN / f)
-    strikes, t = [], 0.6
-    for _ in range(crafting.TRIBULATION_STRIKES - c.strike):
-        t += rng.uniform(*CALM)
-        strikes.append([round(t, 3), round(t + omen, 3)])
-        t += omen
-    pub = {"strikes": strikes, "early": SHIELD_EARLY}
-    return pub, {"i": 0, "pressed": None}, strikes[-1][1] + 0.6
+    g = dgrade(c)
+    warn = TRIB_WARN[g]
+    bolts, rounds, t = [], [], 1.0
+    for kinds in TRIB_ROUNDS[g][c.strike:]:
+        idx = []
+        for j, kind in enumerate(kinds):
+            if j:
+                t += TRIB_PAIR
+            b = {"kind": kind, "warn": round(t, 3), "hit": round(t + warn, 3)}
+            secret = {"safe": rng.choice(["left", "right"]), "flip": None}
+            if kind == "red" and rng.random() < TRIB_FAKE[g]:
+                secret["flip"] = round(t + warn * rng.uniform(0.35, 0.6), 3)
+            idx.append(len(bolts))
+            bolts.append((b, secret))
+            t += warn
+        rounds.append(idx)
+        t += rng.uniform(*TRIB_CALM)
+    pub = {"bolts": [b for b, _ in bolts], "rounds": rounds, "protect": PROTECT_WINDOW, "grace": GRACE}
+    return pub, {"secret": [s_ for _, s_ in bolts], "acts": {}, "round": 0, "marks": []}, bolts[-1][0]["hit"] + 0.8
+
+
+def final_safe(secret):
+    """Where a red bolt is safe from when it lands: the side shown last."""
+    if secret["flip"] is None:
+        return secret["safe"]
+    return "left" if secret["safe"] == "right" else "right"
+
+
+def bolt_ok(live, i):
+    b, sec, a = live.pub["bolts"][i], live.data["secret"][i], live.data["acts"].get(i)
+    if a is None:
+        return False
+    what, t = a
+    if b["kind"] == "blue":
+        return what == "protect" and b["hit"] - live.pub["protect"] - GRACE <= t <= b["hit"] + GRACE
+    return what == final_safe(sec) and t <= b["hit"] + GRACE
 
 
 MAKERS = {1: make_ignite, 2: make_herbs, 3: make_fuse, 4: make_condense,
@@ -311,30 +350,38 @@ def press_tribulation(live, c, t, ev):
     strike_resolve(live, c, t)
     if live.over:
         return {"over": True}
-    omen, bolt = p["strikes"][d["i"]]
-    if ev.get("omen") and t >= omen - SHIELD_EARLY:          # the clouds show where it comes from
-        return {"i": d["i"], "from": c.strike_dir[0]}
-    way = ev.get("shield")
-    if way in {k for k, _, _ in crafting.DIRECTIONS} and d["pressed"] is None and t >= omen - SHIELD_EARLY:
-        d["pressed"] = way
-        return {"i": d["i"], "shield": way}
-    return {"i": d["i"]}
+    try:
+        i = int(ev.get("bolt", -1))
+    except (TypeError, ValueError):
+        return {}
+    if not 0 <= i < len(p["bolts"]) or t < p["bolts"][i]["warn"] - SEE_EARLY:
+        return {}
+    b, sec = p["bolts"][i], d["secret"][i]
+    if ev.get("omen"):                                     # the warning: what kind of bolt, and where is safe
+        return {"bolt": i, "kind": b["kind"], "safe": sec["safe"] if b["kind"] == "red" else None,
+                "flip": sec["flip"]}
+    what = ev.get("act")
+    if what in ("protect", "left", "right") and i not in d["acts"] and t <= b["hit"] + GRACE:
+        d["acts"][i] = (what, t)
+        return {"bolt": i, "ok": bolt_ok(live, i)}
+    return {"bolt": i}
 
 
 def strike_resolve(live, c, t):
-    """Every bolt that has landed by t strikes (or breaks on the shield), in order, through the bot's own rules."""
+    """Every round whose bolts have all landed by t strikes (or is weathered), in order, through the bot's own
+    rules: a round weathered is a strike blocked."""
     d, p = live.data, live.pub
-    while not live.over and d["i"] < len(p["strikes"]) and t > p["strikes"][d["i"]][1] + GRACE:
-        blocked = d["pressed"] == c.strike_dir[0]
-        d.setdefault("marks", []).append(bool(blocked))
-        c.act(c.strike_dir[0] if blocked else None)
-        d["i"], d["pressed"] = d["i"] + 1, None
+    while not live.over and d["round"] < len(p["rounds"]) and t > p["bolts"][p["rounds"][d["round"]][-1]]["hit"] + GRACE:
+        ok = all(bolt_ok(live, i) for i in p["rounds"][d["round"]])
+        d["marks"].append(ok)
+        c.act(c.strike_dir[0] if ok else None)
+        d["round"] += 1
         if c.done:
             live.over = True
             marks = d["marks"]
             c.log = [f"⛈️ The Tribulation: {' '.join('🛡️' if m else '⚡' for m in marks)} · {sum(marks)} of "
-                     f"{len(marks)} strikes blocked" + (". You survived it!" if all(marks) else
-                                                         ". The pill survives, scarred: 8 patterns.")]
+                     f"{len(marks)} strikes weathered" + (". You survived it!" if all(marks) else
+                                                          ". The pill survives, scarred: 8 patterns.")]
 
 
 PRESS = {1: press_ignite, 2: press_herbs, 3: press_fuse, 4: press_condense, 5: press_fuse, 6: press_tribulation}
@@ -422,16 +469,3 @@ def settle_tribulation(live, c, t):
 
 SETTLE = {1: settle_ignite, 2: settle_herbs, 3: settle_fuse, 4: settle_condense, 5: settle_seal,
           6: settle_tribulation}
-
-
-# ── the pill's quality ───────────────────────────────────────────────
-
-TIERS = [(9, "Perfect", "#F5C35C"), (7, "Superior", "#B57BFF"), (4, "High quality", "#6FA8FF"), (1, "Normal", "#C9D2E6"),
-         (0, "Failed", "#E05A4F")]
-
-
-def tier(patterns):
-    """Failed (0) · Normal (1-3) · High quality (4-6) · Superior (7-8) · Perfect (9, after the Tribulation)."""
-    for least, name, color in TIERS:
-        if patterns >= least:
-            return {"name": name, "color": color}
