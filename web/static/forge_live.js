@@ -69,6 +69,8 @@
   // SHOAIB's effects for when the smith is hidden (scripts/make_forge_fx.py): the hammer alone, the furnace fire,
   // the steam and the oil's fire at the plunge, and the hot piece over the trough
   var tool = Sheet(scene.querySelector('.ftool')), fire = scene.querySelector('.ffire');
+  var belCut = scene.querySelector('.fbelcut');
+  var qsheen = scene.querySelector('.fqsheen'), fsetEl = scene.querySelector('.fset');
   var qblank = scene.querySelector('.fqblank'), qfx = {water: scene.querySelector('.fqsteam'), oil: scene.querySelector('.fqflare')};
   function noSmith() { return scene.classList.contains('nosmith'); }
   function playFx(v) {
@@ -109,12 +111,20 @@
     xctx.save(); xctx.globalCompositeOperation = 'lighter';
     parts = parts.filter(function (q) {
       q.life -= dt * q.decay; if (q.life <= 0) return false;
-      q.vy += 380 * dt; q.vx *= 1 - 1.5 * dt; q.x += q.vx * dt; q.y += q.vy * dt;
+      q.vy += (q.g === undefined ? 380 : q.g) * dt; q.vx *= 1 - (q.drag || 1.5) * dt; q.x += q.vx * dt; q.y += q.vy * dt;
       xctx.strokeStyle = 'rgba(' + q.col + ',' + q.life + ')'; xctx.lineWidth = q.size; xctx.lineCap = 'round';
       xctx.beginPath(); xctx.moveTo(q.x, q.y); xctx.lineTo(q.x - q.vx * 0.03, q.y - q.vy * 0.03); xctx.stroke();
       return true;
     });
     xctx.restore();
+  }
+  function puff(p, dir, col, n, speed) {        // air or wind: soft streaks that drift (no gravity)
+    if (calm) return;
+    for (var i = 0; i < (n || 2); i++) {
+      var a = (Math.random() - 0.5) * 0.5;
+      parts.push({x: p.x * fx.width, y: p.y * fx.height + (Math.random() - 0.5) * 10, vx: dir * (speed || 260) * (0.7 + Math.random() * 0.5) * Math.cos(a),
+                  vy: (speed || 260) * Math.sin(a) * 0.5 - 20, life: 0.8, decay: 1.6 + Math.random(), col: col || '255,236,210', size: 2, g: 0, drag: 2.2});
+    }
   }
   function shake(big) {
     if (calm) return;
@@ -185,7 +195,8 @@
     forecast(state.forecast);
   }
   function setStageClass(k) {
-    scene.classList.remove('st-ignite', 'st-heat', 'st-hammer', 'st-quench', 'st-inscribe', 'st-other', 'hot', 'steam');
+    scene.classList.remove('st-ignite', 'st-heat', 'st-hammer', 'st-quench', 'st-inscribe', 'st-other', 'hot', 'steam', 'flare');
+    scene.style.setProperty('--squeeze', 0);
     scene.classList.add('st-' + (S[k] ? k : 'other'));
   }
   function button(label, key, on, kind) {
@@ -218,7 +229,7 @@
     scene.style.setProperty('--room', (0.62 + 0.38 * k).toFixed(2));
     if (fire) {                               // the fire in the furnace grows and roars with the heat
       fire.style.opacity = (0.12 + 0.88 * k).toFixed(2);
-      fire.style.transform = 'scale(' + (0.7 + 0.4 * k).toFixed(3) + ')';
+      fire.style.transform = 'scale(' + (0.7 + 0.4 * k + (pumping ? 0.08 : 0)).toFixed(3) + ')';     // a surge on each pump
       var rate = pumping ? 1.5 : 1;
       if (fire.playbackRate !== rate) fire.playbackRate = rate;
       if (fire.paused && !calm) { var fp = fire.play(); if (fp && fp.catch) fp.catch(function () {}); }
@@ -266,6 +277,19 @@
         s.k++;
       }
       if (bellows && s.pumping) { s.frame = (s.frame + bellows.m.fps / 60) % bellows.m.frames; bellows.show(s.frame); }
+      // the bellows squeeze while you pump (a quick working rhythm) and open again when you let go; air puffs out
+      s.phase = (s.phase || 0) + (s.pumping ? 1 / 60 : 0);
+      var sq = s.pumping ? 0.55 + 0.45 * Math.sin(s.phase * 2 * Math.PI * 1.8) : 0;
+      s.sq = (s.sq || 0) + (sq - (s.sq || 0)) * 0.35;
+      scene.style.setProperty('--squeeze', s.sq.toFixed(3));
+      if (s.pumping && belCut && noSmith()) puff(at(belCut, 0.97, 0.97), 1, '255,232,200', 2, 340);
+      var gustNow = 0;
+      p.gusts.forEach(function (g) { if (t >= g[0] && t < g[0] + p.gust) gustNow = g[1]; });
+      if (gustNow && Math.random() < 0.8) {                     // a gust: wind streaks through the furnace mouth
+        var fm = at(fire || furnace, gustNow > 0 ? 0.05 : 0.95, 0.3 + Math.random() * 0.5);
+        puff(fm, gustNow > 0 ? 1 : -1, gustNow > 0 ? '255,190,120' : '190,215,255', 1, 420);
+      }
+      scene.classList.toggle('flare', !!(p.flare && t >= p.flare[0] && t < p.flare[0] + p.flare[1]));
       var heat = s.heat, mood = heat < p.lo ? 'cold' : heat > p.lo + p.width ? 'hot' : 'zone';
       if (s.mood && mood !== s.mood && t >= p.warmup) {          // the fire answers: settling in, or roaring out
         if (mood === 'zone') burst(at(fire || furnace, 0.5, 0.7), 'good', 12);
@@ -341,6 +365,7 @@
       octx.clearRect(0, 0, FW, FH);
       drawFurnace(55 + cc * 8, false, t);
       drawHeat(cc, p.uneven, t, s.pulled !== null);
+      if (cc >= 4.5 && s.pulled === null && Math.random() < 0.25) puff(at(heatCv, 0.4 + Math.random() * 0.2, 0.4), 0, '90,80,75', 1, 60);
       var name = cc >= 5 ? 'burning!' : p.colors[Math.max(0, Math.min(4, Math.floor(cc)))];
       hint.textContent = s.pulled !== null ? 'You pull it out…' : cc >= 4.6 ? 'White-hot and spitting sparks: it is about to burn!'
         : 'The metal glows ' + name + (p.uneven ? ' (the tip runs ahead: judge the middle)' : '') + '.';
@@ -354,7 +379,13 @@
     hctx.save();
     hctx.translate(W * 0.5, H * 0.52);
     if (gear !== 'weapon') hctx.scale(1, 0.55);
-    hctx.drawImage(blankImg, -bw / 2, -bh / 2, bw, bh);
+    if (calm || pulled) hctx.drawImage(blankImg, -bw / 2, -bh / 2, bw, bh);
+    else {                                    // the heat shimmers: the metal drawn in strips that waver, more as it heats
+      var iw = blankImg.naturalWidth, ih = blankImg.naturalHeight, N = 18, amp = 0.6 + Math.min(5, cc) * 0.55;
+      for (var k = 0; k < N; k++) {
+        hctx.drawImage(blankImg, 0, k * ih / N, iw, ih / N, -bw / 2 + Math.sin(t * 9 + k * 0.8) * amp, -bh / 2 + k * bh / N, bw, bh / N + 0.6);
+      }
+    }
     hctx.globalCompositeOperation = 'source-atop';
     var g = hctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
     var d = uneven ? 0.7 : 0;
@@ -367,6 +398,28 @@
     hctx.fillStyle = gl; hctx.fillRect(0, 0, W, H); hctx.restore();
     if (cc >= 4.4 && !pulled && !calm) {                                // overheating: spitting sparks
       for (var i = 0; i < 8; i++) { hctx.fillStyle = 'rgba(255,240,200,' + Math.random() + ')'; hctx.fillRect(W * 0.5 + (Math.random() - 0.5) * bw, H * 0.5 - Math.random() * 60, 3, 3); }
+    }
+    if (cc > 4.7) {                                                     // scorching: dark blotches, then cracks when it burns
+      var burn = Math.min(1, (cc - 4.7) / 0.3);
+      hctx.save(); hctx.translate(W * 0.5, H * 0.52); if (gear !== 'weapon') hctx.scale(1, 0.55);
+      hctx.globalCompositeOperation = 'source-atop';
+      [[-0.3, 0.1], [0.05, -0.15], [0.3, 0.05], [-0.1, 0.2]].forEach(function (b, k) {
+        var x = b[0] * bw, y = b[1] * bh, r = bw * (0.12 + 0.04 * k) * burn;
+        var g2 = hctx.createRadialGradient(x, y, 1, x, y, Math.max(2, r));
+        g2.addColorStop(0, 'rgba(25,12,8,' + (0.85 * burn) + ')'); g2.addColorStop(1, 'rgba(25,12,8,0)');
+        hctx.fillStyle = g2; hctx.fillRect(-bw / 2, -bh / 2, bw, bh);
+      });
+      hctx.restore();
+      if (cc >= 5) {
+        hctx.save(); hctx.translate(W * 0.5, H * 0.52); if (gear !== 'weapon') hctx.scale(1, 0.55);
+        hctx.strokeStyle = 'rgba(20,8,4,.95)'; hctx.lineWidth = 2; hctx.shadowColor = 'rgba(255,90,40,.9)'; hctx.shadowBlur = 6;
+        [[-0.32, -0.1, -0.12, 0.25], [0.08, -0.3, 0.2, 0.1], [0.28, -0.05, 0.4, 0.2]].forEach(function (c) {
+          hctx.beginPath(); hctx.moveTo(c[0] * bw, c[1] * bh);
+          for (var j = 1; j <= 5; j++) hctx.lineTo((c[0] + (c[2] - c[0]) * j / 5) * bw + (j % 2 ? 4 : -4), (c[1] + (c[3] - c[1]) * j / 5) * bh);
+          hctx.stroke();
+        });
+        hctx.restore();
+      }
     }
   }
   function pull(c) {
@@ -397,7 +450,8 @@
       button('🪶 Light', 'K', function (e) { if (e === 'down') strike(c, 'light'); });
       button('🔥 Reheat', 'R', function (e) { if (e === 'down') strike(c, 'reheat'); });
       show('lbtns', true);
-      anvilBlank.style.setProperty('--shape', 0.8);
+      shapeBlank(0, false);
+      fsetEl.querySelectorAll('.fdent').forEach(function (d) { d.remove(); });
     },
     tick: function (c, t) {
       var p = c.pub, s = c.st, i = strikeAt(p, t);
@@ -441,6 +495,22 @@
   function dot(x, y, r, color) {
     sctx.save(); sctx.shadowColor = color; sctx.shadowBlur = 16; sctx.fillStyle = color;
     sctx.beginPath(); sctx.arc(x, y, r, 0, 2 * Math.PI); sctx.fill(); sctx.restore();
+  }
+  // the piece takes shape with each good blow (0..1 of the strikes good): a sword lengthens and thins, a plate spreads;
+  // a blow squashes it for an instant first
+  function shapeBlank(k, thud) {
+    var sx = 0.8 + 0.2 * k, sy = gear === 'weapon' ? 1.3 - 0.3 * k : 1;
+    if (thud && !calm) {
+      anvilBlank.style.setProperty('--sx', (sx * 1.04).toFixed(3)); anvilBlank.style.setProperty('--sy', (sy * 0.8).toFixed(3));
+      setTimeout(function () { anvilBlank.style.setProperty('--sx', sx.toFixed(3)); anvilBlank.style.setProperty('--sy', sy.toFixed(3)); }, 110);
+    } else { anvilBlank.style.setProperty('--sx', sx.toFixed(3)); anvilBlank.style.setProperty('--sy', sy.toFixed(3)); }
+  }
+  function dent() {                           // a bad blow leaves its mark where the hammer fell
+    var d = document.createElement('span');
+    d.className = 'fdent';
+    d.style.left = (HIT.x * 100 + (Math.random() - 0.5) * (gear === 'weapon' ? 14 : 6)).toFixed(1) + '%';
+    d.style.top = (HIT.y * 100 + (Math.random() - 0.5) * 2).toFixed(1) + '%';
+    fsetEl.appendChild(d);
   }
   function strikeAt(p, t) {
     for (var i = 0; i < p.strikes.length; i++) {
@@ -491,7 +561,7 @@
       if (ok === null) { burst(where, 'good', 10); popup('1 of 2', '', above); return; }   // a double strike, half done
       var n = hit(ok);
       if (ok) {
-        s.good++; anvilBlank.style.setProperty('--shape', (0.8 + 0.2 * s.good / p.strikes.length).toFixed(3));
+        s.good++; shapeBlank(s.good / p.strikes.length, what !== 'reheat');
         var words = what === 'reheat' ? '🔥 Reheated in time' : what === 'hard' ? 'A ringing blow!' : 'Just right';
         popup('+' + fmtPts(each) + '<small>' + words + (n >= 2 ? ' · ×' + n : '') + '</small>', what === 'hard' || n >= 3 ? 'great' : 'good', above);
         burst(where, what === 'hard' ? 'great' : 'good', what === 'hard' ? 40 : what === 'reheat' ? 14 : 20);
@@ -499,6 +569,7 @@
         if (what === 'reheat') Snd('good');
       } else {
         popup('✗<small>' + (what !== want ? 'It wanted ' + (want === 'reheat' ? 'reheating' : 'a ' + want + ' blow') : 'Off the spot!') + '</small>', 'bad', above);
+        if (what !== 'reheat') dent();
         burst(where, 'bad', 10);
         if (what === 'reheat') Snd('bad');
       }
@@ -514,7 +585,8 @@
     setup: function (c) {
       c.st = {medium: null, chose: null, plunged: null, temp: c.pub.start, k: 0, anim: null};
       qset.dataset.medium = 'water';
-      qset.classList.remove('dipped');
+      qset.classList.remove('dipped', 'risen', 'fine', 'poor');
+      if (qsheen && qblank && qblank.naturalWidth) qsheen.style.setProperty('--ar', (qblank.naturalWidth / qblank.naturalHeight).toFixed(3));
       show('lgauge', true);
       $('lband').style.width = '0';
       btns.innerHTML = '';
@@ -586,6 +658,7 @@
     Snd(s.medium === 'water' ? 'hiss' : 'roar');
     press({do: 'plunge'}).then(function (r) {                        // the server's points (the page's guess if none come)
       var got = r && typeof r.stagePts === 'number' ? r.stagePts : guess, top = got >= mx, okish = got > 2;
+      setTimeout(function () { qset.classList.add('risen', okish ? 'fine' : 'poor'); if (okish) Snd('ring'); }, 700);   // it rises hardened
       popup('+' + got + '<small>' + (top ? 'A perfect quench!' : okish ? 'Close enough' : 'The steel shudders…') + '</small>', top ? 'great' : okish ? 'good' : 'bad', {x: qw.x, y: Math.max(0.2, qw.y - 0.1)});
       burst(qw, top ? 'great' : okish ? 'good' : 'bad', top ? 40 : 14);
       if (top) shake(true); else if (!okish) shake(false);
@@ -601,6 +674,7 @@
     setup: function (c) {
       var p = c.pub;
       c.st = {i: 0, path: null, marks: []};
+      plate.classList.remove('resonate');
       var clue = $('lclue');
       clue.innerHTML = p.clue.map(function (k, i) { return '<span class="chip' + (i === 0 ? ' now' : '') + '" data-i="' + i + '"><b>' + STROKE[k][0] + '</b>' + STROKE[k][1] + ' ' + STROKE[k][2] + '</span>'; }).join('');
       clue.classList.remove('faded'); show('lclue', true);
@@ -612,6 +686,7 @@
     tick: function (c, t) {
       var p = c.pub, s = c.st;
       octx.clearRect(0, 0, FW, FH);
+      redraw(c);
       if (p.fade && t > p.fade && !$('lclue').classList.contains('faded')) { $('lclue').classList.add('faded'); flash('The clue fades: carve it from memory', '', 1100); }
       hint.innerHTML = s.i < p.count ? 'The Rune of <b>' + p.rune + '</b> · stroke ' + (s.i + 1) + ' of ' + p.count + (p.fade && t > p.fade ? ' (from memory)' : ': ' + STROKE[p.clue[s.i]][2]) : 'The rune is complete…';
     }
@@ -633,15 +708,54 @@
     return {x: (e.clientX - r.left) * runeCv.width / r.width, y: (e.clientY - r.top) * runeCv.height / r.height};
   }
   function strokeLine(pts, color, width, glow) {
-    rctx.save(); rctx.strokeStyle = color; rctx.lineWidth = width; rctx.lineCap = 'round'; rctx.lineJoin = 'round';
-    rctx.shadowColor = glow; rctx.shadowBlur = 18; rctx.beginPath();
+    var dash = rctx.getLineDash(), off = rctx.lineDashOffset;
+    rctx.save(); rctx.setLineDash(dash); rctx.lineDashOffset = off; rctx.strokeStyle = color; rctx.lineWidth = width; rctx.lineCap = 'round'; rctx.lineJoin = 'round';
+    if (glow && glow !== 'rgba(0,0,0,0)') { rctx.shadowColor = glow; rctx.shadowBlur = 18; }
+    rctx.beginPath();
     pts.forEach(function (q, i) { if (i) rctx.lineTo(q.x, q.y); else rctx.moveTo(q.x, q.y); });
     if (pts.length === 1) { rctx.arc(pts[0].x, pts[0].y, width * 0.7, 0, 2 * Math.PI); }
     rctx.stroke(); rctx.restore();
   }
+  // the strokes burn into the piece: each draws itself in over BURN ms (gold, or a red crack when the server says it's
+  // wrong); Qi then flows along the clean ones, and a clean rune flares white as it resonates
+  var BURN = 260;
+  function partial(pts, k) {
+    if (k >= 1 || pts.length < 2) return pts;
+    var L = 0, i, seg = [];
+    for (i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    var want = L * k, run = 0, out = [pts[0]];
+    for (i = 1; i < pts.length; i++) {
+      var d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      if (run + d >= want) { var f = (want - run) / (d || 1); out.push({x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f}); return out; }
+      run += d; out.push(pts[i]);
+    }
+    return out;
+  }
+  function crack(pts) {                       // a jagged copy of the stroke: where the chisel slipped
+    var out = [];
+    pts.forEach(function (q, i) { if (i % 2 === 0 || i === pts.length - 1) out.push({x: q.x + (Math.random() - 0.5) * 9, y: q.y + (Math.random() - 0.5) * 9}); });
+    if (out.length === 1) out.push({x: out[0].x + 8, y: out[0].y + 6});
+    return out;
+  }
   function redraw(c) {
+    var nowMs = performance.now(), res = c.st.resonate ? Math.max(0, 1 - (nowMs - c.st.resonate) / 900) : 0;
     rctx.clearRect(0, 0, runeCv.width, runeCv.height);
-    c.st.marks.forEach(function (m) { strokeLine(m.pts, m.ok === false ? 'rgba(224,90,79,.9)' : 'rgba(255,224,150,.95)', m.ok === false ? 5 : 9, m.ok === false ? '#E05A4F' : '#FFD27A'); });
+    c.st.marks.forEach(function (m) {
+      var k = calm ? 1 : Math.min(1, (nowMs - m.born) / BURN), pts = partial(m.pts, k);
+      if (m.ok === false) {
+        m.crack = m.crack || crack(m.pts);
+        strokeLine(pts, 'rgba(120,60,50,.55)', 6, 'rgba(0,0,0,0)');
+        strokeLine(m.crack, 'rgba(224,90,79,.95)', 3, '#E05A4F');
+        return;
+      }
+      var gold = res ? 'rgba(255,' + Math.round(224 + 31 * res) + ',' + Math.round(150 + 105 * res) + ',1)' : 'rgba(255,224,150,.95)';
+      strokeLine(pts, gold, 9 + 4 * res, res ? '#FFFFFF' : '#FFD27A');
+      if (m.ok && k >= 1 && !calm) {          // Qi flowing along the stroke
+        rctx.save(); rctx.setLineDash([8, 22]); rctx.lineDashOffset = -nowMs / 18;
+        strokeLine(m.pts, 'rgba(255,252,235,.9)', 3, null);
+        rctx.restore();
+      }
+    });
     if (c.st.path) strokeLine(c.st.path, 'rgba(255,240,200,.8)', 7, '#FFE6A8');
   }
   runeCv.addEventListener('pointerdown', function (e) {
@@ -663,7 +777,7 @@
   function carve(c, what, pts) {
     var s = c.st, p = c.pub;
     if (s.i >= p.count) return;
-    var i = s.i++, mark = {pts: pts || defaultPath(what, i, p.count), ok: null};
+    var i = s.i++, mark = {pts: pts || defaultPath(what, i, p.count), ok: null, born: pts ? performance.now() - BURN : performance.now()};
     s.marks.push(mark); redraw(c);
     var chip = $('lclue').querySelector('[data-i="' + i + '"]'), next = $('lclue').querySelector('[data-i="' + (i + 1) + '"]');
     if (chip) chip.classList.remove('now'); if (next) next.classList.add('now');
@@ -677,7 +791,13 @@
       var n = hit(r.ok);
       if (!r.ok) { popup('✗<small>It wanted a ' + STROKE[r.want][2].toLowerCase() + ' (' + STROKE[r.want][0] + ')</small>', 'bad', wp); burst(wp, 'bad', 12); Snd('bad'); }
       else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][2] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 18); }
-      if (r.over && c.st.marks.every(function (m) { return m.ok; })) { setTimeout(function () { popup('The rune resonates!', 'great', {x: 0.5, y: 0.3}); burst({x: 0.5, y: 0.45}, 'great', 60); shake(false); }, 350); }
+      if (r.over && c.st.marks.every(function (m) { return m.ok; })) {
+        setTimeout(function () {
+          c.st.resonate = performance.now();
+          plate.classList.remove('resonate'); void plate.offsetWidth; plate.classList.add('resonate');
+          popup('The rune resonates!', 'great', {x: 0.5, y: 0.3}); burst({x: 0.5, y: 0.45}, 'great', 60); shake(false);
+        }, 350);
+      }
       if (r.over) { if (runeGlow && !calm) { runeGlow.currentTime = 2.4; runeGlow.classList.add('on'); var pr = runeGlow.play(); if (pr && pr.catch) pr.catch(function () {}); } Snd('chime'); }
     });
   }

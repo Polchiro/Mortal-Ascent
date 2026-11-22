@@ -1742,9 +1742,11 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .fset .fhammer{left:0;top:0;width:100%;height:88.02%}
 .fset .fanvil{position:absolute;left:31.4%;top:55.3%;width:48.9%;filter:drop-shadow(0 8px 12px rgba(0,0,0,.6))}
 .fset .fblank.onanvil{position:absolute;transition:filter .3s,transform .3s}
-.flive[data-gear="weapon"] .fset .fblank.onanvil{left:26%;top:54.4%;width:52%;transform:rotate(-6deg) scaleX(var(--shape,.8))}
-.flive[data-gear="armor"] .fset .fblank.onanvil{left:39%;top:46%;width:28%;transform:perspective(300px) rotateX(55deg) scale(var(--shape,.8))}
-.flive[data-gear="artifact"] .fset .fblank.onanvil{left:42%;top:49%;width:22%;transform:perspective(300px) rotateX(60deg) scale(var(--shape,.8))}
+/* the piece on the anvil takes shape with each good blow (static/forge_live.js sets --sx, --sy from 0 to all strikes
+   good): a sword lengthens and thins, a chest plate and a round plate spread out */
+.flive[data-gear="weapon"] .fset .fblank.onanvil{left:26%;top:54.4%;width:52%;transform:rotate(-6deg) scale(var(--sx,.8),var(--sy,1))}
+.flive[data-gear="armor"] .fset .fblank.onanvil{left:39%;top:46%;width:28%;transform:perspective(300px) rotateX(55deg) scale(var(--sx,.8),var(--sx,.8))}
+.flive[data-gear="artifact"] .fset .fblank.onanvil{left:42%;top:49%;width:22%;transform:perspective(300px) rotateX(60deg) scale(var(--sx,.8),var(--sx,.8))}
 .fset .fspot{inset:0;width:100%;height:100%}
 .fset .fsparks{position:absolute;left:4%;top:24%;width:92%;mix-blend-mode:screen;opacity:0;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 60%,transparent 100%)}
 .fset .fsparks.on{opacity:1}
@@ -1939,3 +1941,34 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   .fcombo{font-size:15px;top:6px;left:8px}
   .fpop{font-size:18px}.fpop.great{font-size:22px}
 }
+
+/* ── The live forge, part 2: the piece changes as you forge it ── */
+/* Ignite: SHOAIB's bellows (scripts/make_forge_bellows.py: cut from the picture, the wall filled in behind) squeeze as
+   you pump, pivoting on the nozzle; air puffs out of it (forge_live.js) */
+.fscene .fbelwall,.fscene .fbelcut{position:absolute;left:9.38%;top:19.58%;width:16.8%;height:34.27%;pointer-events:none;display:none}
+.fscene.nosmith .fbelwall,.fscene.nosmith .fbelcut{display:block}
+.fscene .fbelcut{transform-origin:92% 94%;transform:rotate(calc(var(--squeeze,0) * 9deg)) scale(calc(1 - var(--squeeze,0) * .06),calc(1 - var(--squeeze,0) * .16));filter:brightness(calc(1 + var(--squeeze,0) * .25))}
+.fscene.flare .ffire{filter:brightness(1.5) saturate(1.3)}
+.fscene.flare .fcam::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 40% 45%,rgba(255,90,30,.25),transparent 60%);pointer-events:none}
+/* Hammer: the piece glows as the metal's state asks (forge_live.js), squashes under each blow, and a bad blow leaves a dent */
+.fset .fblank.onanvil{transition:filter .5s,transform .25s cubic-bezier(.3,1.6,.5,1)}
+.fset .fdent{position:absolute;width:6%;aspect-ratio:1.5;margin:-1.6% 0 0 -3%;border-radius:50%;background:radial-gradient(ellipse at 45% 42%,rgba(10,4,2,.95),rgba(40,14,6,.8) 45%,rgba(255,110,40,.35) 62%,transparent 74%);pointer-events:none;animation:fdent .3s ease-out;z-index:2}
+@keyframes fdent{0%{transform:scale(1.8);opacity:0}100%{transform:scale(1);opacity:1}}
+/* Quench: the piece dips in, then rises hardened: dark steel with a sheen running along it (a good quench) or warped and
+   dull (a poor one) */
+.fqset .fqsheen{position:absolute;left:68.7%;top:41%;width:44%;aspect-ratio:var(--ar,4);transform:translate(-50%,-50%) rotate(-4deg);display:none;pointer-events:none;
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.85) 50%,transparent 65%) 200% 0/250% 100% no-repeat;mix-blend-mode:screen}
+.fqset[data-medium="oil"] .fqsheen{left:70%}
+.flive[data-gear="armor"] .fqset .fqsheen,.flive[data-gear="artifact"] .fqset .fqsheen{width:24%}
+.fqset.risen .fqblank{transform:translate(-50%,-50%) rotate(-4deg);opacity:1;transition:transform .6s cubic-bezier(.2,.8,.3,1),opacity .3s,filter 1s;
+  filter:grayscale(.55) brightness(.9) contrast(1.25) drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.fqset.risen.poor .fqblank{transform:translate(-50%,-50%) rotate(-9deg) skewX(10deg);filter:grayscale(.8) brightness(.6) contrast(1.1) sepia(.3) drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.fscene.nosmith .fqset.risen.fine .fqsheen{display:block;animation:fsheen 1.1s .35s ease-in-out forwards}
+@keyframes fsheen{to{background-position:-100% 0}}
+/* Inscribe: the hardened piece, large; the strokes burn into it (the canvas) */
+.fplate .fplateblank{filter:grayscale(.45) brightness(.78) contrast(1.2) drop-shadow(0 10px 18px rgba(0,0,0,.7));opacity:1}
+.flive[data-gear="weapon"] .fplate .fplateblank{width:94%}
+.flive[data-gear="armor"] .fplate .fplateblank,.flive[data-gear="artifact"] .fplate .fplateblank{width:52%}
+.fplate::after{content:"";position:absolute;inset:-12%;border-radius:30px;background:radial-gradient(ellipse at 50% 50%,rgba(255,214,130,.55),rgba(255,190,90,.18) 45%,transparent 70%);opacity:0;pointer-events:none}
+.fplate.resonate::after{animation:fresonate 1.2s ease-out}
+@keyframes fresonate{25%{opacity:1}100%{opacity:0}}

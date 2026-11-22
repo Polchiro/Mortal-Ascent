@@ -37,6 +37,8 @@
       <div class="fshake"><div class="fcam" id="fcam" aria-hidden="true">
       <img class="fbg" src="/art/forge/workshop.jpg" alt="">
       <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
+      <img class="fbelwall" src="/art/forge/bellows_wall.webp" alt="">
+      <img class="fbelcut" src="/art/forge/bellows.webp" alt="">
       <canvas class="ffurnace" width="960" height="540"></canvas>
       <video class="ffire" src="/art/forge/fire.mp4" muted loop playsinline autoplay preload="auto"></video>
       {% if B %}<div class="fsheet fbellows" data-sheet='{{ B | tojson }}' style="background-image: url({{ B.src }})"></div>{% endif %}
@@ -57,6 +59,7 @@
         <img class="ftrough" src="/art/forge/trough.webp" alt="">
         <img class="fcauldron" src="/art/forge/cauldron_oil.webp" alt="">
         <img class="fqblank" src="{{ scene.blank }}" alt="">
+        <div class="fqsheen" style="-webkit-mask-image: url({{ scene.blank }}); mask-image: url({{ scene.blank }})"></div>
         <video class="fqfx fqsteam" src="/art/forge/steam.mp4" muted playsinline preload="auto"></video>
         <video class="fqfx fqflare" src="/art/forge/oil_flare.mp4" muted playsinline preload="auto"></video>
       </div>
