@@ -24,6 +24,7 @@
     <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
     <div class="fscene" id="fscene" aria-hidden="true">
       <img class="fbg" src="/art/forge/workshop.jpg" alt="">
+      <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
       <canvas class="ffurnace" width="960" height="540"></canvas>
       {% if B %}<div class="fsheet fbellows" data-sheet='{{ B | tojson }}' style="background-image: url({{ B.src }})"></div>{% endif %}
       <img class="fblank inforge" src="{{ scene.blank }}" alt="">

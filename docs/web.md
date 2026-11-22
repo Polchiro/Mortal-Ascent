@@ -765,7 +765,8 @@ window by 6%. A first-time help card explains each stage and challenge (the same
 live alchemy).
 
 **The scene** is SHOAIB's art (`art/forge/`): the workshop (`scripts/make_forge_art.py`: Gemini's mark painted
-over), his props and blanks keyed from green, and his smith as frame sheets of his videos
+over) and his video of it (`workshop.mp4`, made from that same picture so everything stays lined up: candles, chimney
+smoke and dust, looped by `scripts/make_background_loop.py`, over the still until it plays), his props and blanks keyed from green, and his smith as frame sheets of his videos
 (`scripts/make_forge_sheets.py` → `<look>_bellows.webp`, `<look>_hammer.webp`, `sheets.json`): keyed, the green taken
 back out of the sparks and hair, stepped by the page so the bellows move only while you pump and the hammer falls when
 you strike. His anvil is laid exactly over the one inside the video (`CLIPS[...]["props"]`), so the hammer lands on it.

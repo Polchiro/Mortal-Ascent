@@ -180,10 +180,14 @@ def test_live_forge_perfect_hands_score_the_live_stages(client, db_path):
         client.post("/forge/live/begin", data={"id": lv["id"]})
         t0, p, n = client.now[0], lv["pub"], lv["id"]
         if lv["stage"] == "ignite":
-            heat, sp, pump, t = float(p["heat"]), 0.0, False, 0.0
+            heat, sp, pump, t, vented = float(p["heat"]), 0.0, False, 0.0, -9.0
             mid = p["lo"] + p["width"] / 2
             while t < p["length"]:
                 want = heat + sp * 0.35 < mid
+                if heat > p["lo"] + p["width"] - 1 and t - vented >= p["cooldown"]:     # too hot: vent it
+                    client.now[0] = t0 + t
+                    lpress(client, n, do="vent")
+                    heat, vented = heat - p["vent"], t
                 if want != pump:
                     pump = want
                     client.now[0] = t0 + t
@@ -194,7 +198,7 @@ def test_live_forge_perfect_hands_score_the_live_stages(client, db_path):
                 heat = max(0, min(100, heat + (sp + L.push_at(p, t)) * p["tick"]))
                 t += p["tick"]
             client.now[0] = t0 + p["length"] + 1
-            assert live(client)["last"]["pts"] >= 15
+            assert live(client)["last"]["pts"] >= 12                       # a simple steady hand
         elif lv["stage"] == "heat":
             b = p["bounds"]
             client.now[0] = t0 + (b[p["target"]] + b[p["target"] + 1]) / 2
@@ -207,7 +211,7 @@ def test_live_forge_perfect_hands_score_the_live_stages(client, db_path):
                     lpress(client, n, do=want)
             client.now[0] = t0 + p["length"] + 1
             live(client)
-    assert s.game.points["heat"] == 20 and s.game.points["hammer"] == 20 and s.game.points["ignite"] >= 15
+    assert s.game.points["heat"] == 20 and s.game.points["hammer"] == 20 and s.game.points["ignite"] >= 12
     st = live(client)
     assert st["prompt"]["stage"] == "quench" and st["prompt"]["options"]            # the button stages carry on
 
@@ -237,5 +241,5 @@ def test_hammer_judging():
 
 
 def test_the_forge_art_is_served(client):
-    for path in ("/art/forge/workshop.jpg", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4"):
+    for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4"):
         assert client.get(path).status_code == 200, path

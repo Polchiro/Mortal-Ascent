@@ -1755,3 +1755,8 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .fprompt .pline{margin:0}
 .fprompt .gauge{margin:6px auto}
 @media (prefers-reduced-motion:reduce){.fscene.hot .fbg{animation:none}}
+/* SHOAIB's workshop, alive (art/forge/workshop.mp4: candles, chimney smoke, dust; scripts/make_background_loop.py),
+   over its still, which shows until it plays */
+.fscene .fbgv{opacity:0;transition:opacity .8s}
+.fscene .fbgv.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.fscene .fbgv{display:none}}
