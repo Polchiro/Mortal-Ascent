@@ -1713,3 +1713,53 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .fhead .totown{width:auto;align-self:flex-start}
 .tnotice{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:20;padding:10px 18px;color:var(--gold2);font-weight:700;animation:tnfade 6s forwards}
 @keyframes tnfade{0%,80%{opacity:1}100%{opacity:0;visibility:hidden}}
+
+/* ── The live forge (forge_play.html #flive, static/forge_live.js, web/forge_live.py): SHOAIB's workshop, his smith
+   (frame sheets of his videos) and his props, lined up from his videos: the bellows' nozzle in the furnace mouth, his
+   anvil laid exactly over the video's own (scripts/make_forge_sheets.py CLIPS props). */
+.flive{gap:10px;user-select:none;-webkit-user-select:none;background:rgba(14,10,8,.6)}
+.fscene{position:relative;width:min(100%,960px,calc((100vh - 330px) * 16 / 9));min-width:min(320px,100%);aspect-ratio:16/9;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.fscene .fbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(var(--room,.8))}
+.fscene canvas{position:absolute;pointer-events:none}
+.fscene .ffurnace,.fscene .fover{inset:0;width:100%;height:100%}
+.fscene .ffurnace{mix-blend-mode:screen}
+.fsheet{position:absolute;background-repeat:no-repeat}
+.fscene .fbellows{height:66%;aspect-ratio:830/720;left:-11%;top:6%;transition:opacity .5s,filter .5s;-webkit-mask-image:linear-gradient(to bottom,#000 78%,transparent 100%);mask-image:linear-gradient(to bottom,#000 78%,transparent 100%)}
+.fscene .fblank.inforge{display:none}
+.fscene .fheat{left:20%;top:32%;width:40%;height:40%}
+.fset{position:absolute;right:1%;bottom:0;height:84%;aspect-ratio:700/818;transition:opacity .5s,filter .5s}
+.fset .fhammer{left:0;top:0;width:100%;height:88.02%}
+.fset .fanvil{position:absolute;left:31.4%;top:55.3%;width:48.9%;filter:drop-shadow(0 8px 12px rgba(0,0,0,.6))}
+.fset .fblank.onanvil{position:absolute;transition:filter .3s,transform .3s}
+.flive[data-gear="weapon"] .fset .fblank.onanvil{left:26%;top:54.4%;width:52%;transform:rotate(-6deg) scaleX(var(--shape,.8))}
+.flive[data-gear="armor"] .fset .fblank.onanvil{left:39%;top:46%;width:28%;transform:perspective(300px) rotateX(55deg) scale(var(--shape,.8))}
+.flive[data-gear="artifact"] .fset .fblank.onanvil{left:42%;top:49%;width:22%;transform:perspective(300px) rotateX(60deg) scale(var(--shape,.8))}
+.fset .fspot{inset:0;width:100%;height:100%}
+.fset .fsparks{position:absolute;left:4%;top:24%;width:92%;mix-blend-mode:screen;opacity:0;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 60%,transparent 100%)}
+.fset .fsparks.on{opacity:1}
+.fscene.st-ignite .fset,.fscene.st-heat .fset{opacity:.7;filter:brightness(.6)}
+.fset .fhammer{transition:opacity .5s}
+.fscene.st-ignite .fhammer,.fscene.st-heat .fhammer{opacity:0}          /* one smith at a time: he's at the bellows */
+.fscene.st-hammer .fbellows,.fscene.st-other .fbellows{opacity:0}
+.fscene.st-hammer .fset{filter:none;opacity:1}
+.fscene.st-other .fset{opacity:.8}
+.fscene.hot .fbg{animation:lshake .14s linear infinite}
+.fbtns{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px}
+.fbtns .btn{width:auto;min-width:120px;display:flex;flex-direction:column;align-items:center;gap:2px;touch-action:none}
+.fbtns .btn kbd{font:600 11px Inter,Arial,sans-serif;opacity:.7}
+.fbtns .btn.held{filter:brightness(1.25);transform:scale(.97)}
+.fbtns .btn.cool{opacity:.45}
+.fswatch{flex-direction:row;justify-content:center;gap:10px;font-weight:700}
+.fswatch b{padding:4px 14px;border-radius:999px;color:#1a0f08;box-shadow:0 0 14px var(--sw)}
+.fprompt .choices{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.fprompt .pline{margin:0}
+.fprompt .gauge{margin:6px auto}
+@media (prefers-reduced-motion:reduce){.fscene.hot .fbg{animation:none}}
+/* SHOAIB's workshop, alive (art/forge/workshop.mp4: candles, chimney smoke, dust; scripts/make_background_loop.py),
+   over its still, which shows until it plays */
+.fscene .fbgv{opacity:0;transition:opacity .8s}
+.fscene .fbgv.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.fscene .fbgv{display:none}}
+.lmute.lsmithbtn{top:calc(2% + 92px)}
+.lmute.lsmithbtn.off{opacity:.45;filter:grayscale(1)}
+.fscene.nosmith .fsheet{display:none}

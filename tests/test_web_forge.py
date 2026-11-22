@@ -57,8 +57,8 @@ def coins(path):
     return v
 
 
-def begin(client, db_path):
-    return client.post("/forge/begin", data={"item": gear_id(db_path), "action": "enchant"})
+def begin(client, db_path, controls="classic"):
+    return client.post("/forge/begin", data={"item": gear_id(db_path), "action": "enchant", "controls": controls})
 
 
 def test_forge_page_shows_gear_and_cost(client, db_path):
@@ -147,3 +147,99 @@ def test_the_page_never_shows_the_hidden_answers(client, db_path):
     for shown in (f"{s.game.heat}°", f"({s.game.zone_width}° wide)", "0° cold", "100° wild"):
         page = page.replace(shown, "")
     assert f"{s.game.zone_lo}°" not in page and "zone_lo" not in page
+
+
+
+# ── the live forge (web/forge_live.py) ───────────────────────────────
+
+def live(client):
+    return client.get("/forge/live").json()
+
+
+def lpress(client, n, **ev):
+    return client.post("/forge/live/press", data=dict(id=n, **ev)).json()
+
+
+def test_live_is_the_default_and_shows_the_smith(client, db_path):
+    r = client.post("/forge/begin", data={"item": gear_id(db_path), "action": "enchant"})
+    assert r.headers["location"] == "/forge/play" and "ma_forge_controls=live" in r.headers["set-cookie"]
+    page = client.get("/forge/play").text
+    assert 'id="flive"' in page and "forge_live.js" in page and "/art/forge/anvil.webp" in page
+    assert "male_hammer.webp" in page and "male_bellows.webp" in page
+    lv = live(client)["live"]
+    assert lv["stage"] == "ignite" and {"lo", "width", "gusts", "heat"} <= set(lv["pub"])
+
+
+def test_live_forge_perfect_hands_score_the_live_stages(client, db_path):
+    import forge as F
+    from web import forge_live as L
+    begin(client, db_path, "live")
+    s = client.forges.get(UID)
+    for _ in range(3):
+        lv = live(client)["live"]
+        client.post("/forge/live/begin", data={"id": lv["id"]})
+        t0, p, n = client.now[0], lv["pub"], lv["id"]
+        if lv["stage"] == "ignite":
+            heat, sp, pump, t, vented = float(p["heat"]), 0.0, False, 0.0, -9.0
+            mid = p["lo"] + p["width"] / 2
+            while t < p["length"]:
+                want = heat + sp * 0.35 < mid
+                if heat > p["lo"] + p["width"] - 1 and t - vented >= p["cooldown"]:     # too hot: vent it
+                    client.now[0] = t0 + t
+                    lpress(client, n, do="vent")
+                    heat, vented = heat - p["vent"], t
+                if want != pump:
+                    pump = want
+                    client.now[0] = t0 + t
+                    lpress(client, n, do="pump" if pump else "rest")
+                rest = p["down"] * (1 + p["burn"] * t / p["length"])
+                w = p["up"] if pump else -rest
+                sp += (w - sp) * min(1, p["tick"] / p["ease"])
+                heat = max(0, min(100, heat + (sp + L.push_at(p, t)) * p["tick"]))
+                t += p["tick"]
+            client.now[0] = t0 + p["length"] + 1
+            assert live(client)["last"]["pts"] >= 12                       # a simple steady hand
+        elif lv["stage"] == "heat":
+            b = p["bounds"]
+            client.now[0] = t0 + (b[p["target"]] + b[p["target"] + 1]) / 2
+            lpress(client, n, do="pull")
+        else:
+            for st in p["strikes"]:
+                want = F.HAMMER_STATES[st["state"]]["answer"]
+                for u in (st["under"] if want != "reheat" else [st["start"] + 0.2]):
+                    client.now[0] = t0 + u
+                    lpress(client, n, do=want)
+            client.now[0] = t0 + p["length"] + 1
+            live(client)
+    assert s.game.points["heat"] == 20 and s.game.points["hammer"] == 20 and s.game.points["ignite"] >= 12
+    st = live(client)
+    assert st["prompt"]["stage"] == "quench" and st["prompt"]["options"]            # the button stages carry on
+
+
+def test_live_forge_button_stages_and_walking_away(client, db_path):
+    begin(client, db_path, "live")
+    live(client)
+    client.now[0] += 3600
+    st = live(client)
+    assert st["done"]
+    s = client.forges.get(UID)
+    assert s.outcome is not None and set(s.game.points) == {"ignite", "heat", "hammer", "quench", "inscribe"}
+
+
+def test_hammer_judging():
+    import forge as F
+    from web import forge_live as L
+    p = {"window": 0.16, "strikes": [{"state": "true", "start": 0, "end": 1.5, "under": [0.8], "decoy": 0.3},
+                                     {"state": "cooling", "start": 2, "end": 3.5, "under": [2.8]},
+                                     {"state": "dull", "start": 4, "end": 5.5, "under": [4.7, 5.1]}]}
+    assert L.strike_good(p, 0, [(0.82, "hard")])
+    assert not L.strike_good(p, 0, [(0.82, "light")])                    # the wrong blow
+    assert not L.strike_good(p, 0, [(0.3, "hard")])                      # the decoy
+    assert L.strike_good(p, 1, [(2.3, "reheat")]) and not L.strike_good(p, 1, [(2.8, "hard")])
+    assert L.strike_good(p, 2, [(4.7, "light"), (5.12, "light")]) and not L.strike_good(p, 2, [(4.7, "light")])
+    assert F.HAMMER_STATES["true"]["answer"] == "hard"
+
+
+def test_the_forge_art_is_served(client):
+    for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4"):
+        assert client.get(path).status_code == 200, path

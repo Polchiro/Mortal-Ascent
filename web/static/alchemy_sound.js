@@ -1,5 +1,5 @@
 /* The alchemy's little sounds, made in the browser (Web Audio; no sound files): chimes for a good move, a crack for
-   a bad one, thunder and a rumbling warning for the Tribulation, a tick for its countdown. A mute button (🔊 in the
+   a bad one, an anvil's clang, thunder and a rumbling warning for the Tribulation, a tick for its countdown. A mute button (🔊 in the
    scene) is remembered. Browsers only allow sound after the page has been clicked or a key pressed, so the first
    press wakes it. window.AlchemySound.play(name). */
 (function () {
@@ -38,7 +38,8 @@
     warn: function (c, t) { noise(c, t, 1.0, 0.18, 'lowpass', 180, 0.6); },
     thunder: function (c, t) { noise(c, t, 0.12, 0.5, 'highpass', 900); noise(c, t + 0.02, 1.6, 0.55, 'lowpass', 320, 0.02); },
     shield: function (c, t) { tone(c, 520, t, 0.5, 0.12, 'triangle'); tone(c, 780, t + 0.05, 0.6, 0.1); noise(c, t, 0.3, 0.12, 'bandpass', 2400); },
-    whoosh: function (c, t) { noise(c, t, 0.35, 0.18, 'bandpass', 900, 0.12); }
+    whoosh: function (c, t) { noise(c, t, 0.35, 0.18, 'bandpass', 900, 0.12); },
+    clang: function (c, t) { tone(c, 1850, t, 0.5, 0.12, 'triangle'); tone(c, 2780, t, 0.35, 0.07); tone(c, 920, t, 0.6, 0.08); noise(c, t, 0.08, 0.3, 'highpass', 3000); }
   };
   window.AlchemySound = {
     play: function (name) {

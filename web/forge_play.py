@@ -8,6 +8,8 @@ The server is the referee: the hidden zone, the true metal and the temperatures 
 decision has a deadline. A page that comes back late (or never) gets the timed-out move, like the bot's timer.
 """
 import html
+import json
+import os
 import re
 import threading
 import time
@@ -17,7 +19,7 @@ import forge
 
 from bot import db, forging, materials, passives
 
-from . import drawn
+from . import drawn, forge_live
 from .profile import art_url, number
 
 STAGE_ART = {s: f"/art/scenes/forge_stage_{s}.png" for s in forge.STAGES}
@@ -26,6 +28,8 @@ STAGE_TITLE = {"ignite": "Ignite the Forge", "heat": "Heat the Metal", "hammer":
 RARITY_COLOR = {"Common": "#C9D2E6", "Uncommon": "#6FD9B0", "Rare": "#6FA8FF", "Epic": "#B57BFF",
                 "Legendary": "#F5C35C", "Mythical": "#FF6B6B"}
 HEAT_CSS = ["#7A2A22", "#C0392B", "#F7943C", "#F5D04A", "#FFF6E0"]
+BLANKS = {"weapon": "blank_sword", "armor": "blank_chest", "artifact": "blank_disc"}   # art/forge/, by gear kind
+SHEETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "forge", "sheets.json")
 GEAR_LABEL = {"weapon": "Weapon", "armor": "Armor", "artifact": "Artifact"}
 
 
@@ -37,6 +41,12 @@ class Session:
     turn: int = 0                       # bumps on every decision, so a stale page can't act twice
     outcome: dict = None
     started: float = field(default_factory=time.time)
+    controls: str = "classic"           # "live" (forge_live: hands, the default) or "classic" (the buttons)
+    live: object = None                 # the live stage being played (forge_live, an alchemy_live.Live)
+    last: dict = None                   # how the last live stage went, for the page
+
+    def is_live(self):
+        return self.controls == "live" and not self.game.done and self.game.stage in forge_live.LIVE_STAGES
 
 
 class Forges:
@@ -53,7 +63,7 @@ class Forges:
     def clear(self, uid):
         self._s.pop(uid, None)
 
-    def start(self, conn, uid, plan, rng=None):
+    def start(self, conn, uid, plan, rng=None, controls="classic"):
         """Take the materials and start. Returns (session, None) or (None, reason)."""
         with self._lock:
             if uid in self._s and self._s[uid].outcome is None:
@@ -63,7 +73,7 @@ class Forges:
             if not forging.take_materials(conn, uid, plan):
                 return None, "Your materials or coins changed. Check the cost again."
             game = forging.new_game(conn, uid, plan, rng)
-            s = Session(plan, game, self._deadline(game))
+            s = Session(plan, game, self._deadline(game), controls=controls if controls in ("live", "classic") else "classic")
             self._s[uid] = s
             return s, None
 
@@ -76,6 +86,9 @@ class Forges:
         if not s or s.outcome is not None:
             return s
         with self._lock:
+            if s.controls == "live":
+                self._live_catch_up(conn, uid, s)
+                return s
             while not s.game.done and self.clock() > s.deadline:
                 missed = s.deadline
                 s.game.act(None)
@@ -87,7 +100,7 @@ class Forges:
     def act(self, conn, uid, key, turn):
         """The player's choice. Ignored if it is for an old turn or not one of the buttons."""
         s = self.catch_up(conn, uid)
-        if not s or s.outcome is not None or s.game.done or turn != s.turn:
+        if not s or s.outcome is not None or s.game.done or turn != s.turn or s.is_live():
             return s
         with self._lock:
             pr = s.game.prompt()
@@ -97,6 +110,74 @@ class Forges:
             s.turn += 1
             s.deadline = self._deadline(s.game)
             self._finish_if_done(conn, uid, s)
+        return s
+
+    # ── live controls (forge_live) ──
+
+    def _live_catch_up(self, conn, uid, s):
+        """The live stage for the forge's current stage, settled when its time is up; the button stages (Quench,
+        Inscribe for now) keep the bot's timer. Walking away runs everything out, as with the buttons."""
+        now = at = self.clock()                     # `at`: when the next stage starts (a walked-away one: back then)
+        for _ in range(500):
+            g = s.game
+            if g.done:
+                break
+            if s.is_live():
+                if s.live is None:
+                    s.live = forge_live.make(g, g.rng, s.turn, at)
+                if not s.live.expired(now):
+                    break
+                lv = s.live
+                end = (lv.t0 if lv.t0 is not None else lv.issued + forge_live.BEGIN_WAIT) + lv.length
+                self._live_settle(s, lv.elapsed(now))
+                at = min(now, end + forge_live.LINGER)
+                s.deadline = at + g.seconds + forge.TIMER_GRACE_SECONDS
+                continue
+            if now <= s.deadline:                                  # a button stage, still in time
+                break
+            missed = s.deadline
+            g.act(None)
+            s.turn += 1
+            s.deadline = missed + g.seconds + forge.TIMER_GRACE_SECONDS
+        self._finish_if_done(conn, uid, s)
+
+    def _live_settle(self, s, t):
+        stage = s.live.stage
+        result = forge_live.settle(s.live, s.game, t)
+        s.last = dict(result or {}, stage=stage, title=STAGE_TITLE[stage], pts=s.game.points.get(stage))
+        s.live = None
+        s.turn += 1
+
+    def live_begin(self, conn, uid, n):
+        s = self.catch_up(conn, uid)
+        if s and s.live is not None and s.live.id == n and s.live.t0 is None:
+            s.live.t0 = min(self.clock(), s.live.issued + forge_live.BEGIN_WAIT)
+        return s
+
+    def live_press(self, conn, uid, n, ev):
+        s = self.catch_up(conn, uid)
+        if not s or s.live is None or s.live.id != n or s.live.t0 is None:
+            return s, {"stale": True}
+        with self._lock:
+            reply = forge_live.press(s.live, s.game, self.clock() - s.live.t0, ev)
+            if s.live.over:
+                self._live_settle(s, self.clock() - s.live.t0)
+                s.deadline = self._deadline(s.game)
+                self._live_catch_up(conn, uid, s)
+        return s, reply
+
+    def live_act(self, conn, uid, key, turn):
+        """A button stage on the live page (Quench, Inscribe for now): the bot's own decision."""
+        s = self.catch_up(conn, uid)
+        if not s or s.outcome is not None or s.game.done or turn != s.turn or s.is_live():
+            return s
+        with self._lock:
+            pr = s.game.prompt()
+            if key in {k for k, _, _ in pr.options}:
+                s.game.act(key)
+                s.turn += 1
+                s.deadline = self._deadline(s.game)
+                self._live_catch_up(conn, uid, s)
         return s
 
     def _finish_if_done(self, conn, uid, s):
@@ -196,8 +277,11 @@ def play_view(s, now):
     points = [{"name": STAGE_TITLE[k], "art": STAGE_ART[k], "pts": g.points.get(k),
                "active": not g.done and g.stage == k} for k in forge.STAGES]
     total = g.score()
-    out = {"item": gear_view_plain(s.plan), "points": points, "total": total, "turn": s.turn, "done": s.outcome is not None}
-    if s.outcome is None:
+    out = {"item": gear_view_plain(s.plan), "points": points, "total": total, "turn": s.turn, "done": s.outcome is not None,
+           "live": s.controls == "live" and s.outcome is None}
+    if s.outcome is None and s.controls == "live":
+        out.update(stage=g.stage, stage_no=g.stage_i + 1, title="Forging")
+    elif s.outcome is None:
         pr = g.prompt()
         left = max(0.0, s.deadline - forge.TIMER_GRACE_SECONDS - now)
         out.update({
@@ -216,6 +300,43 @@ def play_view(s, now):
             "art": "/art/scenes/forge_success.png" if o["rarity"] else "/art/scenes/forge_cracked.png",
             "log": [rich(x) for x in g.log],
         })
+    return out
+
+
+def scene_view(s, player):
+    """What the live forge's scene is made of (forge_play.html .fscene): this player's smith (frame sheets of
+    SHOAIB's videos, scripts/make_forge_sheets.py; none for a look without them, then only the forge and the effects
+    show), and the blank of this gear kind (a sword, a chest plate or a round plate)."""
+    import looks
+    try:
+        sheets = json.load(open(SHEETS))
+    except (OSError, ValueError):
+        sheets = {}
+    return {"sheets": sheets.get(looks.gender_of(looks.of_player(player)), {}), "gear": s.plan.gear,
+            "blank": f"/art/forge/{BLANKS[s.plan.gear]}.webp"}
+
+
+def live_view(s, now):
+    """The live page's state (static/forge_live.js)."""
+    g = s.game
+    base = play_view(s, now) if s.outcome is not None else None
+    points = [{"key": k, "name": STAGE_TITLE[k], "pts": g.points.get(k), "active": not g.done and g.stage == k}
+              for k in forge.STAGES]
+    out = {"done": s.outcome is not None, "turn": s.turn, "points": points, "total": g.score(), "last": s.last,
+           "log": [rich(x) for x in g.log]}
+    if base:
+        return out
+    if s.live is not None:
+        lv = s.live
+        out["live"] = {"id": lv.id, "stage": lv.stage, "title": STAGE_TITLE[lv.stage], "pub": lv.pub,
+                       "began": lv.t0 is not None, "t": round(now - lv.t0, 3) if lv.t0 is not None else None,
+                       "no": forge.STAGES.index(lv.stage) + 1}
+    elif not g.done:
+        pr = g.prompt()
+        out["prompt"] = {"stage": pr.stage, "title": STAGE_TITLE[pr.stage], "no": g.stage_i + 1,
+                         "lines": [rich(x) for x in pr.lines], "gauge": gauge(pr), "seconds": pr.seconds,
+                         "left": round(max(0.0, s.deadline - forge.TIMER_GRACE_SECONDS - now), 1),
+                         "options": [{"key": k, "label": lbl} for k, lbl, _ in pr.options]}
     return out
 
 

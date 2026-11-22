@@ -1,6 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Forging · Mortal Ascent{% endblock %}
-{% block body_class %}forgebg{% endblock %}
+{% block title %}Forging · Mortal Ascent{% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
+<script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
+{% endblock %}
+{% block body_class %}forgebg{% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
+<script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
+{% endblock %}
 {% block body %}
 {% with page="forge" %}{% include "_topbar.html" %}{% endwith %}
 
@@ -15,7 +19,44 @@
     <p class="sub">{{ g.item.action }} · {{ g.item.name }} ({{ g.item.tier }})</p>
   </aside>
 
-  {% if not g.done %}
+  {% if g.live %}{% set H = scene.sheets.hammer %}{% set B = scene.sheets.bellows %}
+  <section class="stage card flive" id="flive" data-gear="{{ scene.gear }}">
+    <p class="kicker" id="lkick">FIRING UP THE FORGE</p>
+    <div class="fscene" id="fscene" aria-hidden="true">
+      <img class="fbg" src="/art/forge/workshop.jpg" alt="">
+      <video class="fbg fbgv" src="/art/forge/workshop.mp4" poster="/art/forge/workshop.jpg" muted loop playsinline autoplay preload="auto" oncanplay="this.classList.add('on')"></video>
+      <canvas class="ffurnace" width="960" height="540"></canvas>
+      {% if B %}<div class="fsheet fbellows" data-sheet='{{ B | tojson }}' style="background-image: url({{ B.src }})"></div>{% endif %}
+      <img class="fblank inforge" src="{{ scene.blank }}" alt="">
+      <canvas class="fheat" width="480" height="270"></canvas>
+      <div class="fset{% if not H %} nosmith{% endif %}">
+        {% if H %}<div class="fsheet fhammer" data-sheet='{{ H | tojson }}' style="background-image: url({{ H.src }})"></div>{% endif %}
+        <img class="fanvil" src="/art/forge/anvil.webp" alt="">
+        <img class="fblank onanvil" src="{{ scene.blank }}" alt="">
+        <canvas class="fspot" width="400" height="400"></canvas>
+        <video class="fsparks" src="/art/forge/sparks.mp4" muted playsinline preload="auto"></video>
+      </div>
+      <canvas class="fover" width="960" height="540"></canvas>
+      <div class="lbanner" id="lbanner"></div>
+      <div class="lhelp" id="lhelp" hidden></div>
+      <button class="lmute" id="lmute" type="button" aria-label="Sound on or off">🔊</button>
+      <button class="lmute lhelpbtn" id="lhelpbtn" type="button" aria-label="Instructions on or off">📖</button>
+      <button class="lmute lsmithbtn" id="lsmithbtn" type="button" aria-label="Show or hide the smith" title="Show or hide the smith">👤</button>
+    </div>
+    <p class="pline lhint" id="lhint" aria-live="polite"></p>
+    <div class="lpanel" id="lgauge" hidden>
+      <div class="gauge heat"><div class="band" id="lband"></div><div class="needle" id="lneedle"></div></div>
+      <div class="glabels"><span>cold</span><span id="lheat">—</span><span>wild</span></div>
+    </div>
+    <div class="lpanel fswatch" id="lswatch" hidden><span>Pull it out at</span><b id="lswatchc"></b></div>
+    <div class="lpanel fbtns" id="lbtns" hidden></div>
+    <div class="lpanel fprompt" id="lprompt" hidden></div>
+    <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
+    <div id="llog"></div>
+    <p class="sub lkeys" id="lkeys"></p>
+    <noscript><p class="ferror">Live controls need JavaScript. <a href="/forge">Back</a>, then choose Classic buttons.</p></noscript>
+  </section>
+  {% elif not g.done %}
   <section class="stage card" aria-live="polite">
     <p class="kicker">STAGE {{ g.stage_no }} OF 5 · {{ g.title | upper }}</p>
     <img class="stageart" src="{{ g.art }}" alt="" width="220" height="220">
@@ -61,4 +102,6 @@
   </section>
   {% endif %}
 </main>
+{% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
+<script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
 {% endblock %}

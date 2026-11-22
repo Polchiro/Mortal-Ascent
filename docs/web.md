@@ -737,3 +737,40 @@ Every number is at the top of `web/alchemy_live.py`.
 **Balance** (simulated players, `qi` pills, the rank the recipe needs): a careful player lands a little above the
 old buttons, a sloppy one below them, a skilled one reaches the herb-age cap nearly every time. Mortal pills stay
 easy (about 15 s). The herb age still caps the patterns.
+
+## Live forge
+
+The forge played with the hands (`web/forge_live.py`, `web/static/forge_live.js`, the `#flive` section of
+`forge_play.html`). It is the default; **Classic buttons** on the forge page keep the one-decision-at-a-time forge.
+Discord's `/forge` is unchanged. In this version Ignite, Heat and Hammer are live; Quench and Inscribe are still the
+bot's button decisions, played on the same page (`/forge/live/act`).
+
+| Stage | The hands | Points (of 20) |
+|---|---|---|
+| 🔥 Ignite | hold Space / Pump to work the bellows (the smith pumps only while you do), tap V / Vent to dump heat (then it needs a moment); keep the forge in the band while the coals burn down, so resting cools faster and faster. Gusts come with a warning | the share of time in the band, from nothing at 45% to all at 95% |
+| 🌡️ Heat | the blank glows in the furnace mouth, climbing dull red → cherry → orange → yellow → white; Space / Pull it out at the target colour (shown as a swatch). Past white it burns | the bot's own: the right colour 20, one off 10 |
+| 🔨 Hammer | a glowing spot slides along the blank on the anvil: strike as it passes under the hammer (the dashed line). Bright ring → Hard (Space / J), soft spreading glow → Light (K), glow fading → Reheat (R). A good blow throws SHOAIB's spark burst and the blank takes shape | the bot's own: good strikes out of all |
+
+Harder gear adds challenges, not only speed:
+
+| | Ordinary | Refined | Spirit | Treasure | Divine |
+|---|---|---|---|---|---|
+| Ignite | coals burn down slowly | + a gust | 2 gusts, they burn faster | + the vent sticks for a while | + a flare-up |
+| Heat | even | | the tip runs ahead: judge the middle | + the colour shimmers | + the last colours come faster |
+| Hammer | a steady spot | | the spot speeds up and slows down | + a faint false spot crosses first | + some strikes want two blows |
+
+The tempo is the gear tier's decision time with rank relief and Swift Hands (`4.5 / seconds`); the Ignite band is the
+forge's safe zone (rank, fuel, Steady Hand); each blacksmith rank above the gear's (3 at most) widens the hammer's
+window by 6%. A first-time help card explains each stage and challenge (the same 📖 switch and `ma_help` cookie as the
+live alchemy).
+
+**The scene** is SHOAIB's art (`art/forge/`): the workshop (`scripts/make_forge_art.py`: Gemini's mark painted
+over) and his video of it (`workshop.mp4`, made from that same picture so everything stays lined up: candles, chimney
+smoke and dust, looped by `scripts/make_background_loop.py`, over the still until it plays), his props and blanks keyed from green, and his smith as frame sheets of his videos
+(`scripts/make_forge_sheets.py` → `<look>_bellows.webp`, `<look>_hammer.webp`, `sheets.json`): keyed, the green taken
+back out of the sparks and hair, stepped by the page so the bellows move only while you pump and the hammer falls when
+you strike. His anvil is laid exactly over the one inside the video (`CLIPS[...]["props"]`), so the hammer lands on it.
+One smith at a time: at the bellows for Ignite and Heat, at the anvil for Hammer. A look without sheets (the female
+smith until her videos are cut) shows the forge, the props and the effects without a smith. The spark burst is
+`art/forge/sparks.mp4` (on black, laid on with `screen`).
+

@@ -1,0 +1,44 @@
+{
+ "male": {
+  "hammer": {
+   "src": "/art/forge/male_hammer.webp",
+   "frames": 34,
+   "cols": 6,
+   "rows": 6,
+   "w": 350,
+   "h": 360,
+   "fps": 12,
+   "crop": [
+    300,
+    0,
+    700,
+    720
+   ],
+   "props": {
+    "anvil": [
+     220,
+     452,
+     0.43
+    ]
+   },
+   "impact": 10
+  },
+  "bellows": {
+   "src": "/art/forge/male_bellows.webp",
+   "frames": 21,
+   "cols": 6,
+   "rows": 4,
+   "w": 415,
+   "h": 360,
+   "fps": 12,
+   "crop": [
+    300,
+    0,
+    830,
+    720
+   ],
+   "props": {},
+   "impact": null
+  }
+ }
+}

@@ -68,6 +68,11 @@
       {% for k in ["action", "essence", "fuel", "liquid"] %}<input type="hidden" name="{{ k }}" value="{{ c[k] or "" }}">{% endfor %}
       <input type="hidden" name="item" value="{{ c.item.id }}">
       <input type="hidden" name="lock" value="{{ c.lock if c.lock is not none else "" }}">
+      <fieldset class="controls"><legend>Controls</legend>
+        <label class="pill"><input type="radio" name="controls" value="live"{% if controls != "classic" %} checked{% endif %}> Live: work the forge with your hands</label>
+        <label class="pill"><input type="radio" name="controls" value="classic"{% if controls == "classic" %} checked{% endif %}> Classic buttons (slow connection)</label>
+        <label class="pill"><input type="checkbox" name="help" value="on"{% if show_help %} checked{% endif %}> Show instructions (live controls)</label>
+      </fieldset>
       <button class="btn btn-gold" type="submit"{% if not c.ready %} disabled{% endif %}>Begin forging</button>
     </form>
     <p class="sub">The materials and coins are taken when you press Begin.</p>
