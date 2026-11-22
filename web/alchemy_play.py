@@ -18,6 +18,7 @@ import alchemy
 
 from bot import craft_card, crafting, db, loot
 
+from . import alchemy_live
 from .forge_play import rich
 from .inventory import item_picture
 from .profile import number
@@ -27,6 +28,7 @@ GRADE_COLOR = {"Mortal": "#C9D2E6", "Yellow": "#F5D04A", "Mystic": "#6FA8FF", "E
 EXPLODED_COLOR = "#E05A4F"
 STAGE_TITLE = {s: name.split(" ", 1)[1] for s, name in crafting.STAGE_NAMES.items()}   # without the emoji
 PREFER = ("young", "old")
+CONTROLS = ("live", "classic")
 MAX_TIMEOUTS = 500                       # walking away: every decision left times out (the bot allows 200)
 BAR = re.compile(r"\s*[▱◆┃]{5,}")       # the text heat / Yin-Yang bars; the page draws real gauges instead
 
@@ -42,6 +44,9 @@ class Session:
     turn: int = 0                        # bumps on every decision, so a stale page can't act twice
     outcome: dict = None
     started: float = field(default_factory=time.time)
+    controls: str = "classic"            # "live" (alchemy_live: hands, the default) or "classic" (the buttons)
+    live: object = None                  # the live stage being played (alchemy_live.Live)
+    last: dict = None                    # how the last live stage went, for the page
 
 
 class Crafts:
@@ -58,7 +63,7 @@ class Crafts:
     def clear(self, uid):
         self._s.pop(uid, None)
 
-    def start(self, conn, uid, kind, grade, prefer="young", batch=1, rng=None):
+    def start(self, conn, uid, kind, grade, prefer="young", batch=1, rng=None, controls="classic"):
         """Plan from the database, take the herbs (and core) and start. Returns (session, None) or (None, reason)."""
         with self._lock:
             if uid in self._s and self._s[uid].outcome is None:
@@ -77,7 +82,7 @@ class Crafts:
             craft = crafting.craft_for(p, kind, grade, pl["age"], rng, batch)
             used = list(pl["uses"]) + ([(pl["core"], pl["core_qty"])] if pl["core"] else [])
             s = Session(kind, grade, craft, used, craft_card.herb_rows(pl["uses"], pl["core"], pl["core_qty"]),
-                        self._deadline(craft))
+                        self._deadline(craft), controls=controls if controls in CONTROLS else "classic")
             self._s[uid] = s
             self._finish_if_done(conn, uid, s)
             return s, None
@@ -89,6 +94,10 @@ class Crafts:
         """Apply every decision whose time ran out (the page was closed or too slow)."""
         s = self._s.get(uid)
         if not s or s.outcome is not None:
+            return s
+        if s.controls == "live":
+            with self._lock:
+                self._live_catch_up(conn, uid, s)
             return s
         with self._lock:
             n = 0
@@ -104,7 +113,7 @@ class Crafts:
     def act(self, conn, uid, key, turn):
         """The player's choice. Ignored if it is for an old turn or not one of the buttons."""
         s = self.catch_up(conn, uid)
-        if not s or s.outcome is not None or s.craft.done or turn != s.turn:
+        if not s or s.controls != "classic" or s.outcome is not None or s.craft.done or turn != s.turn:
             return s
         with self._lock:
             pr = s.craft.prompt()
@@ -115,6 +124,51 @@ class Crafts:
             s.deadline = self._deadline(s.craft)
             self._finish_if_done(conn, uid, s)
         return s
+
+    # ── live controls (alchemy_live) ──
+
+    def _live_catch_up(self, conn, uid, s):
+        """Hand out the live stage for the craft's current decision, and settle every stage whose time is up (a page
+        that was closed or never began). Walking away runs every stage out, like the buttons' timer."""
+        now = self.clock()
+        for _ in range(MAX_TIMEOUTS):
+            if s.craft.done:
+                break
+            if s.live is None:
+                s.live = alchemy_live.make(s.craft, s.craft.rng, s.turn, now)
+            if not s.live.expired(now):
+                break
+            end = (s.live.t0 if s.live.t0 is not None else s.live.issued + alchemy_live.BEGIN_WAIT) + s.live.length
+            self._live_settle(s, s.live.elapsed(now))
+            if s.live is None and not s.craft.done:
+                s.live = alchemy_live.make(s.craft, s.craft.rng, s.turn, min(now, end + alchemy_live.LINGER))
+        self._finish_if_done(conn, uid, s)
+
+    def _live_settle(self, s, t):
+        stage = s.live.stage
+        result = alchemy_live.settle(s.live, s.craft, t)
+        s.last = dict(result or {}, stage=stage, title=STAGE_TITLE[stage])
+        s.live = None
+        s.turn += 1
+
+    def live_begin(self, conn, uid, n):
+        """The page has started the stage's clock (it sent this the moment it began)."""
+        s = self.catch_up(conn, uid)
+        if s and s.live is not None and s.live.id == n and s.live.t0 is None:
+            s.live.t0 = min(self.clock(), s.live.issued + alchemy_live.BEGIN_WAIT)
+        return s
+
+    def live_press(self, conn, uid, n, ev):
+        """One press in the live stage n. Returns (session, reply)."""
+        s = self.catch_up(conn, uid)
+        if not s or s.live is None or s.live.id != n or s.live.t0 is None:
+            return s, {"stale": True}
+        with self._lock:
+            reply = alchemy_live.press(s.live, s.craft, self.clock() - s.live.t0, ev)
+            if s.live.over:
+                self._live_settle(s, self.clock() - s.live.t0)
+                self._live_catch_up(conn, uid, s)
+        return s, reply
 
     def _finish_if_done(self, conn, uid, s):
         if s.craft.done and s.outcome is None:
@@ -292,7 +346,9 @@ def play_view(s, now):
            "effect": craft_card.effect_line(s.kind, s.grade), "points": points, "turn": s.turn,
            "herbs": [dict(h, label=f"{h['age']}-year {h['name']}" if h["age"] else h["name"]) for h in s.herbs],
            "done": s.outcome is not None, "total": len(c.stages)}
-    if s.outcome is None:
+    if s.outcome is None and s.controls == "live":
+        out.update(live=True, stage_no=None, title="Refining", scene=scene_view(c, c.stage or 4, s.grade))
+    elif s.outcome is None:
         pr = c.prompt()
         left = max(0.0, s.deadline - crafting.TIMER_GRACE_SECONDS - now)
         out.update({
@@ -313,8 +369,22 @@ def play_view(s, now):
             "art": pill_picture(s.kind, s.grade, n) if n else "/art/scenes/cauldron_burst.png",
             "boom": f"{FX}/explode.mp4" if not n else None,
             "log": [rich(x) for x in c.log], "lines": [rich(x) for x in o["lines"]],
-            "tribulation": c.tribulation,
+            "tribulation": c.tribulation, "tier": alchemy_live.tier(n),
         })
+    return out
+
+
+def live_view(s, now):
+    """The live page's state (static/alchemy_live.js): the stage to play, what the last one scored, the track."""
+    c = s.craft
+    base = play_view(s, now)
+    out = {"done": s.outcome is not None, "turn": s.turn, "points": base["points"], "last": s.last,
+           "log": [rich(x) for x in c.log]}
+    lv = s.live
+    if lv is not None and not out["done"]:
+        out["live"] = {"id": lv.id, "stage": lv.stage, "title": STAGE_TITLE[lv.stage], "pub": lv.pub,
+                       "began": lv.t0 is not None, "t": round(now - lv.t0, 3) if lv.t0 is not None else None,
+                       "no": c.stages.index(lv.stage) + 1 if lv.stage in c.stages else None, "total": len(c.stages)}
     return out
 
 

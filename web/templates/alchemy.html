@@ -84,6 +84,10 @@
       <input type="hidden" name="pill" value="{{ c.key }}">
       <input type="hidden" name="batch" value="{{ c.batch }}">
       <input type="hidden" name="prefer" value="{{ c.prefer }}">
+      <fieldset class="controls"><legend>Controls</legend>
+        <label class="pill"><input type="radio" name="controls" value="live"{% if controls != "classic" %} checked{% endif %}> Live: work the cauldron with your hands</label>
+        <label class="pill"><input type="radio" name="controls" value="classic"{% if controls == "classic" %} checked{% endif %}> Classic buttons (slow connection)</label>
+      </fieldset>
       <button class="btn btn-gold" type="submit"{% if not c.ready %} disabled{% endif %}>Begin refining</button>
     </form>
     <p class="sub">The herbs are taken when you press Begin.</p>

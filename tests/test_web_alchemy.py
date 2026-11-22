@@ -54,12 +54,13 @@ def client(db_path, monkeypatch):
     return c
 
 
-def begin(client, pill=QI):
-    return client.post("/alchemy/begin", data={"pill": pill, "batch": "1", "prefer": "young"})
+def begin(client, pill=QI, controls="classic"):
+    return client.post("/alchemy/begin", data={"pill": pill, "batch": "1", "prefer": "young", "controls": controls})
 
 
 def test_alchemy_page_shows_pills_and_recipe(client):
     page = client.get("/alchemy")
+    assert "Classic buttons" in page.text and 'value="live" checked' in page.text
     assert page.status_code == 200 and "Choose a pill" in page.text
     assert "Ember Dantian Pill" in page.text and "Ready to craft" in page.text
     assert "2 × Spirit Grass" in page.text and "Begin refining" in page.text
@@ -229,3 +230,150 @@ def test_an_exploded_craft_plays_the_explosion(client, db_path):
     s.outcome = {"lines": ["The cauldron explodes!"]}
     page = client.get("/alchemy/play").text
     assert 'class="cscene boom"' in page and "/art/fx/alchemy/explode.mp4" in page and "cauldron_burst.png" in page
+
+
+# ── live controls (web/alchemy_live.py) ──────────────────────────────
+
+def live(client):
+    return client.get("/alchemy/live").json()
+
+
+def lpress(client, n, **ev):
+    return client.post("/alchemy/live/press", data=dict(id=n, **ev)).json()
+
+
+def test_live_is_the_default_and_keeps_the_herb_order_secret(client):
+    r = client.post("/alchemy/begin", data={"pill": QI, "batch": "1", "prefer": "young"})
+    assert r.headers["location"] == "/alchemy/play" and "ma_controls=live" in r.headers["set-cookie"]
+    page = client.get("/alchemy/play").text
+    assert 'id="alive"' in page and "alchemy_live.js" in page and "Stoke" not in page
+    st = live(client)
+    lv = st["live"]
+    assert lv["stage"] == 1 and not lv["began"]
+    assert {"lo", "width", "gusts", "heat"} <= set(lv["pub"])          # the band is visible on purpose
+
+
+def test_live_presses_before_begin_are_ignored_and_time_runs_from_the_begin(client):
+    begin(client, controls="live")
+    n = live(client)["live"]["id"]
+    assert lpress(client, n, pump="1")["reply"] == {"stale": True}
+    client.post("/alchemy/live/begin", data={"id": n})
+    s = client.crafts.get(UID)
+    assert s.live.t0 == client.now[0]
+    client.now[0] += 1.0
+    lpress(client, n, pump="1")
+    assert s.live.data["holds"] == [(1.0, True)]
+
+
+def test_live_perfect_hands_make_a_full_score_pill(client, db_path):
+    """Heat held in the band by the server's own simulation, then Condense in the glint."""
+    from web import alchemy_live as L
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    n = live(client)["live"]["id"]
+    client.post("/alchemy/live/begin", data={"id": n})
+    p, t0 = s.live.pub, client.now[0]
+    heat, speed, pump, t = float(p["heat"]), 0.0, False, 0.0
+    while t < p["length"]:                                    # a steady hand keeping to the band's middle
+        mid = L.band_lo(p, t) + p["width"] / 2
+        want = heat + speed * 0.3 < mid
+        if want != pump:
+            pump = want
+            client.now[0] = t0 + t
+            lpress(client, n, pump="1" if pump else "0")
+        sp = p["up"] if pump else -p["down"]
+        speed += (sp - speed) * min(1, p["tick"] / p["ease"])
+        heat = max(0, min(100, heat + (speed + L.gust_at(p, t)) * p["tick"]))
+        t += p["tick"]
+    client.now[0] = t0 + p["length"] + 1
+    st = live(client)
+    assert st["last"]["stage"] == 1 and st["last"]["score"] >= 0.95
+    lv = st["live"]
+    assert lv["stage"] == 4
+    client.post("/alchemy/live/begin", data={"id": lv["id"]})
+    t0 = client.now[0]
+    q = lv["pub"]
+    client.now[0] = t0 + (4 - q["start"] + 0.5) * q["pulse"]
+    r = lpress(client, lv["id"])
+    assert r["state"]["done"]
+    assert s.craft.scores[4] == 1.0 and s.craft.result >= 4
+    assert pills(db_path)
+    assert 'class="tier"' in client.get("/alchemy/play").text
+
+
+def test_live_walking_away_runs_every_stage_out(client, db_path):
+    begin(client, controls="live")
+    live(client)
+    client.now[0] += 600
+    st = live(client)
+    assert st["done"]
+    s = client.crafts.get(UID)
+    assert s.craft.scores[4] == crafting.CRACKED_SCORE and s.outcome is not None
+
+
+def test_live_condense_too_early_and_too_late(client):
+    from web import alchemy_live as L
+    c = crafting.Craft("qi", "Mortal", 1, 10, __import__("random").Random(1))
+    c.settle(1.0)
+    lv = L.make(c, c.rng, 0, 0)
+    L.press(lv, c, 0.01, {})
+    L.settle(lv, c, 1)
+    assert c.scores[4] == crafting.PULSE_SCORE[lv.pub["start"]]
+    c = crafting.Craft("qi", "Mortal", 1, 10, __import__("random").Random(1))
+    c.settle(1.0)
+    lv = L.make(c, c.rng, 0, 0)
+    L.settle(lv, c, lv.length + 1)
+    assert c.scores[4] == crafting.CRACKED_SCORE
+
+
+def test_live_herbs_wrong_herb_is_a_backlash_and_the_right_one_on_the_breath_is_full():
+    import random
+    from web import alchemy_live as L
+    c = crafting.Craft("qi", "Yellow", 2, 10, random.Random(4))
+    c.settle(1.0)
+    assert c.stage == 2
+    lv = L.make(c, c.rng, 0, 0)
+    p = lv.pub
+    wrong = next(h["key"] for h in p["herbs"] if h["key"] != c.order[0])
+    r = L.press(lv, c, p["breath"] * 0.5, {"herb": wrong})
+    assert r["marks"][0]["how"] == "wrong"
+    t = p["breath"] * 1.5
+    while not lv.over:
+        L.press(lv, c, t, {"herb": c.order[lv.data["placed"]]})
+        t += p["breath"]
+    L.settle(lv, c, t)
+    assert c.scores[2] == pytest.approx((p["count"] - 1) / p["count"])
+
+
+def test_live_tribulation_uses_the_bots_strike_directions():
+    import random
+    from web import alchemy_live as L
+    c = crafting.Craft("qi", "Mortal", 9, 1000, random.Random(2))
+    c.settle(1.0)
+    c.settle(1.0)
+    assert c.tribulation == "pending"
+    lv = L.make(c, c.rng, 0, 0)
+    assert lv.stage == 6 and "from" not in str(lv.pub)
+    for omen, bolt in lv.pub["strikes"]:
+        assert L.press(lv, c, omen - 1.0, {"omen": True}).get("from") is None     # not before the clouds show it
+        way = L.press(lv, c, omen + 0.1, {"omen": True})["from"]
+        L.press(lv, c, omen + 0.2, {"shield": way})
+    L.settle(lv, c, lv.length + 1)
+    assert c.done and c.tribulation == "won" and c.result == 9
+
+
+def test_live_seal_shatters_the_core_when_missed():
+    import random
+    from web import alchemy_live as L
+    c = crafting.Craft("breakthrough", "Mortal", 9, 10, random.Random(5))
+    while c.stage != 5:
+        c.settle(1.0)
+    lv = L.make(c, c.rng, 0, 0)
+    L.settle(lv, c, lv.length + 1)
+    assert c.done and c.core_lost and c.result == 0
+
+
+def test_result_tiers():
+    from web import alchemy_live as L
+    assert [L.tier(n)["name"] for n in (0, 1, 3, 4, 6, 7, 8, 9)] == [
+        "Failed", "Normal", "Normal", "High quality", "High quality", "Superior", "Superior", "Perfect"]

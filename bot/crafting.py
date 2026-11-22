@@ -297,6 +297,23 @@ class Craft:
         else:
             getattr(self, f"_act_{self.stage}")(key)
 
+    def settle(self, score, lines=()):
+        """Score the whole current stage at once, played outside the buttons (the website's live alchemy,
+        web/alchemy_live.py). Everything after it is the same as a stage finished with the buttons: the next stage
+        starts, or the pill is scored, explodes or calls down its Tribulation."""
+        self.log, self._prompt = list(lines), None
+        self.decisions += 1
+        self.scores[self.stage] = max(0.0, min(1.0, score))
+        self._next_stage()
+
+    def shatter_core(self, lines=()):
+        """Seal the Core failed outside the buttons: the core shatters and the craft fails, as in _act_5."""
+        self.log, self._prompt = list(lines), None
+        self.decisions += 1
+        self.core_lost = True
+        self.log.append("💥 The Beast Core shatters! The craft fails.")
+        self._finish(failed=True)
+
     # ── 🔥 Stage 1: heat ─────────────────────────────────────────────
 
     def _start_1(self):

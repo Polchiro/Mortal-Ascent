@@ -434,7 +434,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         if view is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
         return page(request, "alchemy.html", v=view, user=user, avatar=avatar,
-                    error=request.session.pop("alchemy_error", None))
+                    error=request.session.pop("alchemy_error", None), controls=request.cookies.get("ma_controls"))
 
     @app.post("/alchemy/begin")
     async def alchemy_begin(request: Request):
@@ -447,14 +447,19 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             pill = alchemy_play.parse_pill(form.get("pill"))
             if pill is None:
                 return "Pick a pill first."
-            return crafts.start(c, uid, *pill, prefer=form.get("prefer") or "young", batch=num(form.get("batch")) or 1)[1]
+            controls = "classic" if form.get("controls") == "classic" else "live"
+            return crafts.start(c, uid, *pill, prefer=form.get("prefer") or "young", batch=num(form.get("batch")) or 1,
+                                controls=controls)[1]
 
         error = await run_in_threadpool(with_conn, begin, user["id"])
         if error:
             request.session["alchemy_error"] = error
             return RedirectResponse("/alchemy?" + urllib.parse.urlencode({k: v for k, v in form.items() if v}),
                                     status_code=303)
-        return RedirectResponse("/alchemy/play", status_code=303)
+        r = RedirectResponse("/alchemy/play", status_code=303)
+        r.set_cookie("ma_controls", "classic" if form.get("controls") == "classic" else "live", max_age=31536000,
+                     samesite="lax")
+        return r
 
     @app.get("/alchemy/play", response_class=HTMLResponse)
     def alchemy_playing(request: Request):
@@ -478,6 +483,42 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         form = await form_of(request)
         await run_in_threadpool(with_conn, crafts.act, user["id"], form.get("key", ""), num(form.get("turn")))
         return RedirectResponse("/alchemy/play", status_code=303)
+
+    # Live controls (web/alchemy_live.py, static/alchemy_live.js): the page plays each stage and the server times it.
+    def live_json(s):
+        if not s:
+            return JSONResponse({"gone": True}, headers={"Cache-Control": "no-store"})
+        return JSONResponse(alchemy_play.live_view(s, crafts.clock()), headers={"Cache-Control": "no-store"})
+
+    @app.get("/alchemy/live")
+    def alchemy_live_state(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        return live_json(with_conn(crafts.catch_up, user["id"]))
+
+    @app.post("/alchemy/live/begin")
+    async def alchemy_live_begin(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        form = await form_of(request)
+        return live_json(await run_in_threadpool(with_conn, crafts.live_begin, user["id"], num(form.get("id"))))
+
+    @app.post("/alchemy/live/press")
+    async def alchemy_live_press(request: Request):
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"error": "not logged in"}, status_code=401)
+        form = await form_of(request)
+        ev = {k: form[k] for k in ("herb", "shield") if form.get(k)}
+        if form.get("pump") in ("0", "1"):
+            ev["pump"] = form["pump"] == "1"
+        if form.get("omen"):
+            ev["omen"] = True
+        s, reply = await run_in_threadpool(with_conn, crafts.live_press, user["id"], num(form.get("id")), ev)
+        return JSONResponse({"reply": reply, "state": alchemy_play.live_view(s, crafts.clock()) if s else {"gone": True}},
+                            headers={"Cache-Control": "no-store"})
 
     @app.post("/alchemy/done")
     def alchemy_done(request: Request):
