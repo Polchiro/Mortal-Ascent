@@ -245,7 +245,8 @@ def test_hammer_judging():
 
 def test_the_forge_art_is_served(client):
     for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4",
-                 "/art/forge/fire.mp4", "/art/forge/steam.mp4", "/art/forge/oil_flare.mp4", "/art/forge/tool_hammer.webp"):
+                 "/art/forge/fire.mp4", "/art/forge/steam.mp4", "/art/forge/oil_flare.mp4", "/art/forge/tool_hammer.webp",
+                 "/art/forge/bellows.webp", "/art/forge/bellows_wall.webp"):
         assert client.get(path).status_code == 200, path
 
 
@@ -339,7 +340,8 @@ def test_the_rarity_forecast_follows_the_bot_rules_and_the_cap():
 def test_the_live_forge_page_has_its_hud_and_forecast(client, db_path):
     begin(client, db_path, "live")
     page = client.get("/forge/play").text
-    for part in ('id="fcast"', 'id="fcfill"', 'class="fcam"', 'class="fhud"', 'class="ffx"', 'id="fcombo"'):
+    for part in ('id="fcast"', 'id="fcfill"', 'class="fcam"', 'class="fhud"', 'class="ffx"', 'id="fcombo"',
+                 'class="fbelcut"', 'class="fbelwall"', 'class="fqsheen"'):
         assert part in page, part
     state = client.get("/forge/live").json()
     assert state["forecast"]["cap"] == "Rare" and state["forecast"]["total"] == 0

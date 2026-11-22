@@ -803,6 +803,20 @@ none comes), consecutive good strikes and strokes build a combo, sparks burst go
 ones, a good hard blow shakes the scene with a brief hit-stop, a fully clean rune resonates, and each stage's points fly
 into its chip. Nothing waits on an effect.
 
+**The piece changes as you forge it** (display only):
+- **Ignite:** SHOAIB's bellows, cut from the workshop picture with the wall filled in behind them
+  (`scripts/make_forge_bellows.py`: `art/forge/bellows.webp`, `bellows_wall.webp`), squeeze in a working rhythm while you
+  pump and puff air from the nozzle. The fire surges on each pump, gusts blow streaks through the furnace mouth, and a
+  flare-up reddens the room.
+- **Heat:** the metal wavers in the heat, more as it climbs (drawn in strips on its canvas: cheap, unlike an SVG
+  filter). Past yellow it smokes and scorches dark, and burnt it cracks.
+- **Hammer:** the piece glows as its state asks, squashes under each blow, and takes shape with every good one (a sword
+  lengthens and thins, a chest plate or round plate spreads; `--sx`, `--sy`). A bad blow leaves a dent.
+- **Quench:** the piece rises out of the water or oil hardened, as dark steel. After a good quench a sheen runs along it;
+  after a poor one it comes out warped and dull.
+- **Inscribe:** the hardened piece lies large on the plate. Each stroke burns into it, gold, or as a red crack where the
+  server says it was wrong. Qi then flows along the clean strokes, and a fully clean rune flares white as it resonates.
+
 **The reveal** (`static/forge_reveal.js`): SHOAIB's rune glow (`art/forge/rune.mp4`) blooms over the result, and at its
 flash the forged piece appears in its rarity's colour; Legendary and Mythical turn heavenly rays behind it. Once per
 forge (sessionStorage); a reload or reduced motion shows the finished picture. A failed forge shakes its cracked piece.
