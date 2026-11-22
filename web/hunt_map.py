@@ -12,6 +12,8 @@ it stops where the server would.
 """
 import math
 
+from . import env
+
 SIZE = 24
 EDGE = 2.2
 START = (SIZE / 2, SIZE - EDGE - 2.2)       # where you come in when the map has no START of its own
@@ -39,6 +41,13 @@ MAPS = {
 }
 
 
+# Environment pieces placed on a map (web/env.py: rocks, logs, plants, mushrooms) block the way where they stand:
+# their circles join the painting's, so the server and the page agree on where you can walk.
+for _key in env.PLACED:
+    if _key in MAPS:
+        MAPS[_key]["blocked"] = list(MAPS[_key]["blocked"]) + env.blocks(_key)
+
+
 def plan(key):
     """The map of this location, or None (a plain ground drawn by the page)."""
     return MAPS.get(key)
@@ -47,7 +56,8 @@ def plan(key):
 def page_data(key):
     m = MAPS.get(key) or {}
     return {"ground": m.get("art"), "edge": m.get("edge", EDGE), "blocked": [list(c) for c in m.get("blocked", [])],
-            "lights": [list(c) for c in m.get("lights", [])], "wander": WANDER, "notice": NOTICE}
+            "lights": [list(c) for c in m.get("lights", [])] + [list(c) for c in env.lights(key)],
+            "pieces": env.pieces(key), "tone": env.TONE.get(key), "wander": WANDER, "notice": NOTICE}
 SPEED = 3.4                                 # the page's fastest walk, in tiles a second (150 screen px/s, straight up)
 SLACK = 1.6                                 # leeway for network jitter on that speed ...
 JUMP = 1.0                                  # ... plus this many tiles

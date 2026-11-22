@@ -185,6 +185,11 @@ You travel by walking: out of the town gate onto `/crossroads`, the Crossroads, 
 the server checks it again when you set out. `/world` is the painted scroll of the whole land, only to look at
 (**M**). docs/world.md.
 
+## Environment pieces
+
+Rocks, logs, plants and mushrooms on the maps: one picture each, placed many times, cut from SHOAIB's Gemini pictures
+by `scripts/make_env_assets.py` (`art/env/`, `web/env.py`). Moon Forest has the first ten. docs/environment.md.
+
 ## The Arena
 
 `/arena` and `/duel`: friendly duels against other players, on the beast fight's screen. docs/pvp.md,
