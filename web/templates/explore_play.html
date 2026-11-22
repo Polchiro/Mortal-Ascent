@@ -58,8 +58,10 @@
         {% for pose, src in F.me.poses.items() %}{% if not (pose == "idle" and F.me.isheet) %}<img class="pose p-{{ pose }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
         <img class="trailfx" src="/art/fx/slash.webp" alt="" width="1024" height="559">
         {% if F.me.isheet %}{% include "_stance.html" with context %}{% endif %}
-        {% if F.me.sheet %}<div class="sheetfx" data-frames="{{ F.me.sheet.frames }}" data-cols="{{ F.me.sheet.cols }}" data-rows="{{ F.me.sheet.rows }}"
-          style="background-image: url({{ F.me.sheet.src }}); background-size: {{ F.me.sheet.cols * 100 }}% {{ F.me.sheet.rows * 100 }}%"></div>{% endif %}
+        {% for act, S in (F.me.sheets or {}).items() %}<div class="sheetfx asheet" data-act="{{ act }}" data-frames="{{ S.frames }}" data-cols="{{ S.cols }}" data-rows="{{ S.rows }}"
+          {%- if S.blade %} data-blade='{{ S.blade | tojson }}'{% endif %}{% if S.tip %} data-tip="{{ S.tip }}"{% endif %}
+          style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%
+          {%- if S.box %}; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%{% endif %}"></div>{% endfor %}
         {% if F.me.gsheet %}<div class="sheetfx gsheet" data-frames="{{ F.me.gsheet.frames }}" data-cols="{{ F.me.gsheet.cols }}" data-rows="{{ F.me.gsheet.rows }}"{% if F.me.gsheet.first %} data-first="{{ F.me.gsheet.first }}"{% endif %}{% if F.me.gsheet.ms %} data-ms="{{ F.me.gsheet.ms }}"{% endif %}{% if F.me.gsheet.ready %} data-ready="{{ F.me.gsheet.ready }}"{% endif %}
           style="background-image: url({{ F.me.gsheet.src }}); background-size: {{ F.me.gsheet.cols * 100 }}% {{ F.me.gsheet.rows * 100 }}%{% if F.me.gsheet.shift %}; --shift: {{ F.me.gsheet.shift | round(4) }}{% endif %}"></div>{% endif %}
         {% if F.me.msheet %}<div class="sheetfx msheet" data-frames="{{ F.me.msheet.frames }}" data-cols="{{ F.me.msheet.cols }}" data-rows="{{ F.me.msheet.rows }}"

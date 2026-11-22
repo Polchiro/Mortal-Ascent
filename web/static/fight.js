@@ -365,17 +365,21 @@
     var maxHp = {me: +main.dataset.maxMe || 0, enemy: +main.dataset.maxEnemy || 0};
     function heavy(who, dmg) { return maxHp[who] && dmg >= maxHp[who] * 0.2 ? ' big' : ''; }   // a fifth of the HP or more
     var trail = fighter.querySelector('.trailfx');
-    var sheet = fighter.querySelector('.sheetfx:not(.gsheet):not(.msheet):not(.isheet)');   // a frame-by-frame attack, when this look has one
+    var asheets = {};                                           // its frame-by-frame Strike and Break, when this look has them
+    fighter.querySelectorAll('.asheet').forEach(function (el) { asheets[el.dataset.act] = el; });
     var msheet = fighter.querySelector('.msheet');              // this turn's technique movement (looks.MOTION_SHEETS)
     var cast = null;                                            // this turn's technique, when it has its own look (web/technique_fx.py)
     try { cast = JSON.parse(main.dataset.cast || 'null'); } catch (e) {}
     var gsheet = fighter.querySelector('.gsheet');              // and a frame-by-frame Guard (looks.GUARD_SHEETS)
     var claws = fighter.querySelector('.clawsfx g'), clawClip = fighter.querySelector('#clawclip rect');
     var fr = fighter.getBoundingClientRect(), br = beastBox.getBoundingClientRect();
-    var reachMe = Math.max(0, br.left + br.width * 0.12 - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
+    var targetX = br.left + br.width * 0.12;                  // where your blade lands on the beast
+    var reachMe = Math.max(0, targetX - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));     // sword tip to the beast
     var reachBeast = Math.max(0, br.left - (fr.left + fr.width * 0.64));                       // the beast to your body
-    if (BS && BS.edge('nose') !== null)                         // an animated beast: your sword tip to its nose, your body stays clear
-      reachMe = Math.max(0, BS.edge('nose') - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));
+    if (BS && BS.edge('nose') !== null) {                       // an animated beast: your sword tip to its nose, your body stays clear
+      targetX = BS.edge('nose');
+      reachMe = Math.max(0, targetX - (fr.left + fr.width * (parseFloat(fighter.dataset.tip) || 0.962)));
+    }
     var beastFilter = getComputedStyle(beast).filter;
     var bposes = null, home = beast.dataset.pose || 'idle';
     try { bposes = JSON.parse(beastBox.dataset.poses || 'null'); } catch (e) {}
@@ -442,7 +446,7 @@
        the blade comes down (`slam`): spikes of blue Qi, the split ground (art/fx/break_*.webp, scripts/make_break_fx.py),
        a shockwave, stones, a cloud of dust, and a hard shake. */
     function gathered() {
-      var g = at(fr, sheet ? 0.44 : 0.46, 0.96);
+      var g = at(fr, asheets.break ? 0.44 : 0.46, 0.96);
       fx('bqring', g[0], g[1], 760); fx('bqring q2', g[0], g[1], 900);
     }
     function slam() {
@@ -465,7 +469,7 @@
 
     /* your weapon attack: wind up, dash, swing with a trail, then step back */
     function attack(ev) {
-      if (sheet) return sweep(ev);
+      if (asheets[ev.act]) return sweep(ev, asheets[ev.act]);
       var R = RECIPES[ev.act] || RECIPES.strike, done = false, began = false;
       if (ev.hit) hold('enemy');
       fighter.dataset.trail = R.slam ? 'slam' : ev.act;
@@ -485,9 +489,13 @@
       }};
     }
 
-    /* the same attack, frame by frame from the video: the spin closes the distance, the forward cut lands */
-    function sweep(ev) {
+    /* the same attack, frame by frame from the video: the spin closes the distance, the forward cut lands. A sheet may
+       carry its own timing (data-blade, as BLADE) and how far its blade reaches at the hit (data-tip): hers do. */
+    function sweep(ev, sheet) {
       var R = BLADE[ev.act] || BLADE.strike, done = false, began = false;
+      try { if (sheet.dataset.blade) R = JSON.parse(sheet.dataset.blade); } catch (e) {}
+      var reach = sheet.dataset.tip ? Math.max(0, targetX - (fr.left + fr.width * +sheet.dataset.tip)) : reachMe;
+      Object.keys(asheets).forEach(function (k) { asheets[k].classList.toggle('on', asheets[k] === sheet); });
       var n = +sheet.dataset.frames, cols = +sheet.dataset.cols, rows = +sheet.dataset.rows;
       if (ev.hit) hold('enemy');
       fighter.dataset.trail = R.slam ? 'slam' : ev.act;
@@ -505,10 +513,10 @@
             if (t < R.keys[j][0]) { var a = R.keys[j - 1], b = R.keys[j]; f = a[1] + (b[1] - a[1]) * span(t, a[0], b[0]); break; }
           }
           show(f);
-          var x = reachMe * inout(span(t, R.dash[0], R.dash[1])), y = 0;
+          var x = reach * inout(span(t, R.dash[0], R.dash[1])), y = 0;
           if (R.hop) y = -R.hop * W * Math.sin(Math.PI * span(t, R.dash[0], R.dash[1]));              // a leap in, blade overhead
           if (R.dip && t >= R.hit && t < R.back[0]) y = R.dip * W * (1 - span(t, R.back[0] - 160, R.back[0]));  // into the blow
-          if (t >= R.back[0]) { var r = inout(span(t, R.back[0], R.back[1])); x = reachMe * (1 - r); y = -0.03 * W * Math.sin(Math.PI * r); }
+          if (t >= R.back[0]) { var r = inout(span(t, R.back[0], R.back[1])); x = reach * (1 - r); y = -(R.bob === undefined ? 0.03 : R.bob) * W * Math.sin(Math.PI * r); }
           hero(x, y);
         }
         trail.style.clipPath = 'inset(0 ' + (100 - 100 * span(t, R.swing - 20, R.hit + 10)) + '% 0 0)';

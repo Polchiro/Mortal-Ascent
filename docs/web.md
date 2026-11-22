@@ -556,3 +556,19 @@ background picture:
 Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
 shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
+
+## Her Strike and Break
+
+The female cultivator's Strike and Break play frame by frame from SHOAIB's two videos of her (`looks.ATTACK_SHEETS
+["female"]`, cut by `scripts/make_heroine_attacks.py`), each starting and ending in her fighting stance, so she goes
+stance, attack, stance with no jump. Her still windup and strike paintings are no longer used in fights.
+
+- **Strike** (1.56 s): she raises the sword, steps in and cuts in one diagonal arc (the fight draws its sword trail;
+  the video's own arc couldn't be cut out cleanly), holds, and steps back into her stance.
+- **Break** (2.26 s): blue Qi swirls round her (kept from the video), she leaps with the sword overhead and drives it
+  down; the fight's own Break bursts there (the video's explosion is left out), she holds the landing while the dust
+  rises, then rises and steps back into her stance.
+- Each sheet has its own cell (`box` on the fight canvas: it holds the overhead sword and the leap) at the stance's
+  scale, its own timing (`blade`, as `BLADE` in `fight.js`) and how far it reaches (`tip`: the dash stops her there,
+  short of the beast). The video's leap across the frame is taken out: the fight's dash carries her.
+- The male cultivator keeps his one sheet for both moves (`attack_sheets` gives it to each).

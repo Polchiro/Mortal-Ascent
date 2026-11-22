@@ -63,7 +63,28 @@ POSES = ("idle", "windup", "strike")
 SWORD_POSES = {"male": 0.66, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
 # genders whose sword attack plays frame by frame (scripts/make_hero_attack.py cuts it from SHOAIB's video):
 # a grid of 320 x 360 frames that web/static/fight.js steps through; the stills above come from the same video.
-ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6}}
+ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6},
+                 # hers are a sheet per move, from SHOAIB's two videos of her (scripts/make_heroine_attacks.py), each
+                 # starting and ending in her stance. `box`: the cell's place on the 1024 x 559 canvas (shares; it holds
+                 # the overhead sword and the leap); `tip`: how far her blade reaches at the hit (the dash stops it at the
+                 # beast); `blade`: its timing, as fight.js BLADE ([ms, frame] keys, the hit, the dash in and back).
+                 # Strike: she raises the sword (0-9), cuts in one diagonal arc (10-18, the hit 13: the fight draws the
+                 # trail), holds (19-24) and steps back into her stance (25-41).
+                 # Break: blue Qi swirls round her (0-13), she leaps with it overhead (14-26) and drives it down (27, the
+                 # hit: the fight's own slam bursts there), holds the landing (28) while the dust rises, rises (29-39)
+                 # and steps back into her stance (40-50). The video's leap across the frame is the fight's dash.
+                 "female": {
+                     "strike": {"src": "/art/portraits/fight/hero_female_strike_sheet.webp", "frames": 42, "cols": 8, "rows": 6,
+                                "box": [0.3506, 0.093, 0.5693, 0.8623], "tip": 0.9141,
+                                "blade": {"keys": [[0, 0], [380, 9], [470, 13], [620, 18], [860, 24], [1500, 41]],
+                                          "dash": [150, 470], "swing": 400, "hit": 470, "back": [860, 1450], "end": 1560,
+                                          "knock": 0.024, "bob": 0}},
+                     "break": {"src": "/art/portraits/fight/hero_female_break_sheet.webp", "frames": 51, "cols": 8, "rows": 7,
+                               "box": [0.1357, 0.1038, 0.5811, 0.9284], "tip": 0.73,   # past the blade: her crouch reaches as far
+                               "blade": {"keys": [[0, 0], [520, 13], [940, 26], [1000, 27], [1010, 28], [1500, 28],
+                                                  [1900, 39], [2200, 50]],
+                                         "dash": [520, 1000], "swing": 900, "hit": 1000, "back": [1500, 2200], "end": 2260,
+                                         "knock": 0.05, "slam": True, "bob": 0}}}}
 
 # the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video).
 # She blocks bare-handed, from SHOAIB's video of her (scripts/make_heroine_guard.py): her arms close into a crossed,
@@ -192,6 +213,15 @@ def sword_tip(look):
 def attack_sheet(look):
     """The frame-by-frame sword attack for this look (ATTACK_SHEETS), or None to swing through the three poses."""
     return ATTACK_SHEETS.get(gender_of(look))
+
+
+def attack_sheets(look):
+    """This look's frame-by-frame Strike and Break, by move ({"strike": sheet, "break": sheet}), or None. One sheet
+    (his) serves both moves with the page's own timing (fight.js BLADE); hers are a sheet each with its own."""
+    s = attack_sheet(look)
+    if not s:
+        return None
+    return {"strike": s, "break": s} if "src" in s else dict(s)
 
 
 def guard_sheet(look):

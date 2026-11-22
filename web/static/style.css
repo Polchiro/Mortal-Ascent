@@ -658,7 +658,7 @@ form.inline{display:inline}
 .fighter[data-trail=break] img.trailfx{filter:hue-rotate(225deg) saturate(1.4) brightness(1.1)}   /* Break: the same slash in gold */
 /* the frame-by-frame sword attack (looks.ATTACK_SHEETS): the video cell sits where the stills put him on the 1024 x 559 canvas */
 .fighter .sheetfx{position:absolute;left:20.3125%;top:.54%;width:46.875%;height:96.6%;visibility:hidden;background-repeat:no-repeat;background-position:0 0;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.fighter[data-pose=sheet] .sheetfx:not(.gsheet):not(.msheet):not(.isheet),.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
+.fighter[data-pose=sheet] .asheet.on,.fighter[data-pose=guard] .gsheet{visibility:visible}   /* attack / Guard (looks.GUARD_SHEETS) */
 /* her fighting stance (looks.IDLE_SHEETS) is her standing picture: the still idle picture isn't on the page at all
    (explore_play.html, duel.html), and its breathing is off. x steps through a row every loop/rows seconds while y steps
    down the rows once a loop. Reduced motion: frame 0. */
