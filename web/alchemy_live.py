@@ -35,6 +35,7 @@ from bot.crafting import BALANCE_TOLERANCE
 from .inventory import item_picture
 
 GRACE = 0.09            # seconds of network jitter forgiven on each side of a timing window
+GRACE_PRECISE = 0.03    # ...but only this much on Fuse / Seal's precise window (the whole grace made it ±0.15 s)
 BEGIN_WAIT = 120.0      # a page that never says "begin" (closed, or its player reading the help): the stage starts this long after it was handed out
 LINGER = 0.25           # a stage whose time is up is settled on the next request this long after its end
 TICK = 0.02             # the heat simulation step (static/alchemy_live.js uses the same)
@@ -77,7 +78,10 @@ MEET = 1.5              # seconds between the orbs' meetings (at tempo 1)
 MISS_COST = 0.15        # each tap when the orbs are apart
 SEAL_SHATTER = 3        # this many taps out of time shatter the core
 REVERSE_FROM = "Earth"  # Earth+: the orbs change direction now and then
-CHAOS = {"Heaven": 2}   # Heaven: a chaos orb crosses this many times just before a meeting; a tap on it is unsteady
+CHAOS = {"Earth": 1, "Heaven": 3}   # Earth+: a chaos orb crosses this many times just before a meeting; a tap on
+                                    # it is unsteady
+FUSE_TIGHTER = {"Earth": 0.9, "Heaven": 0.8}   # Fuse / Seal windows on the top grades, on top of WINDOW
+RUSH_FROM = "Heaven"    # Heaven: the orbs drift slowly, then rush together at the end (harder to time by eye)
 CHAOS_LEAD, CHAOS_HALF = 0.42, 0.15
 
 # 💊 Condense
@@ -219,8 +223,12 @@ def make_herbs(c, rng, f):
     breath = BREATH / f
     kinds = sorted(set(c.order))
     n = len(c.order)
+    clues, insights = c.clues, c.insights
+    if len(kinds) == 1:                                   # one herb: no order to find, only the timing
+        clues = [f"*Only {alchemy.HERBS[c.grade][kinds[0]][0]} in this recipe: add each one on the breath.*"]
+        insights = []
     pub = {"breath": round(breath, 3), "window": round(WINDOW[g] / breath * margin(c), 3), "per": BREATHS_PER_HERB,
-           "count": n, "clues": c.clues, "insights": c.insights,
+           "count": n, "clues": clues, "insights": insights,
            "volatile": rng.randrange(1, n) if harder(c, VOLATILE_FROM) and n > 1 else None,
            "shift": [round(2 * breath, 3), round(breath * BREATH_SHIFT[g], 3)] if g in BREATH_SHIFT else None,
            "herbs": [{"key": t, "name": alchemy.HERBS[c.grade][t][0], "emoji": loot.TYPE_EMOJI.get(t, "🌿"),
@@ -247,12 +255,14 @@ def meetings(rng, f, count, wild):
 def make_fuse(c, rng, f, seal=False):
     g = dgrade(c)
     need = alchemy.SEAL_CORE_MOVES if seal else max(3, c.diff["rounds"] - 2)
-    spare = 1 if seal else 2
+    spare = 1 if seal else 0             # Fuse: every meeting counts, a missed one scores nothing
     meet = meetings(rng, f * (1.1 if seal else 1), need + spare, c.diff["wild_herbs"])
-    window = WINDOW[g] * (c.balance_tolerance / BALANCE_TOLERANCE) ** 0.5 * margin(c)   # a batch tightens it
+    window = (WINDOW[g] * FUSE_TIGHTER.get(g, 1) * (c.balance_tolerance / BALANCE_TOLERANCE) ** 0.5
+              * margin(c))                                    # a batch tightens it, rank widens it
     reverse = sorted(rng.sample(range(len(meet)), min(2, len(meet)))) if harder(c, REVERSE_FROM) else []
     chaos = [round(meet[i] - CHAOS_LEAD, 3) for i in sorted(rng.sample(range(len(meet)), min(CHAOS.get(g, 0), len(meet))))]
     pub = {"meet": meet, "need": need, "window": round(window, 3), "seal": seal, "reverse": reverse, "chaos": chaos,
+           "rush": harder(c, RUSH_FROM), "gp": GRACE_PRECISE,
            "chaoshalf": CHAOS_HALF, "reach": ROUGH_REACH,
            "allowed": (1 if c.seal_pass >= 10 else 0) if seal else None, "shatter": SEAL_SHATTER if seal else None}
     return pub, {"fused": 0, "credit": 0.0, "used": [], "unsteady": 0}, meet[-1] + 0.6
@@ -435,7 +445,9 @@ def press_fuse(live, c, t, ev):
     near = [(abs(t - m), i) for i, m in enumerate(p["meet"]) if i not in d["used"]]
     off, hit = min(near) if near else (99, None)
     if not on_chaos and hit is not None and off <= p["window"] * p["reach"] + GRACE:
-        how = judge(max(0.0, off - GRACE), p["window"])
+        how = judge(max(0.0, off - GRACE_PRECISE), p["window"])
+        if how == "rough" and off - GRACE <= p["window"]:
+            how = "good"                                    # the full grace still applies to good
         d["used"].append(hit)
         d["fused"] += 1
         d["credit"] += TIMING[how]
@@ -539,7 +551,9 @@ def fuse_score(d, p):
 def settle_fuse(live, c, t):
     d, p = live.data, live.pub
     score = fuse_score(d, p)
-    c.settle(score, [f"☯️ {d['fused']} of {p['need']} fusions" + (f", {d['unsteady']} unsteady" if d["unsteady"] else "")
+    missed = p["need"] - d["fused"]
+    c.settle(score, [f"☯️ {d['fused']} of {p['need']} fusions" + (f", {missed} missed" if missed else "")
+                     + (f", {d['unsteady']} unsteady" if d["unsteady"] else "")
                      + f". Fusion: **{score:.0%}**"])
     live.result = {"score": score}
 

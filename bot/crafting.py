@@ -253,6 +253,7 @@ class Craft:
         self.tribulation = None      # None / "pending" / "won" / "lost"
         self._prompt = None
         self.decisions = 0
+        self.time_one_herb = False   # the website's live controls still time each herb of a one-herb recipe
         self._next_stage()
 
     # ── flow ─────────────────────────────────────────────────────────
@@ -398,7 +399,7 @@ class Craft:
         for pos in self.rng.sample(range(len(units)), min(self.hints, len(units))):
             self.insights.append(f"💡 Insight: the {POSITION[pos + 1]} herb is "
                                  f"**{alchemy.HERBS[self.grade][units[pos]][0]}**.")
-        if len(kinds) == 1:
+        if len(kinds) == 1 and not self.time_one_herb:
             self.scores[2] = 1.0
             self.log.append(f"🌿 Only {alchemy.HERBS[self.grade][kinds[0]][0]} in this recipe: it all goes in together.")
             self._next_stage()

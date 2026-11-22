@@ -606,7 +606,12 @@ and a page loads only its own stage's.
 
 Every stage of the craft is played with the hands, not chosen from buttons (`web/alchemy_live.py`,
 `web/static/alchemy_live.js`, the `#alive` section of `alchemy_play.html`). It is the default; **Classic buttons**
-on the recipe page keeps the old one-decision-per-page craft (for slow connections), remembered in a cookie.
+on the recipe page keeps the one-decision-at-a-time craft (for slow connections), remembered in a cookie. Classic no
+longer reloads the page on each click (`static/alchemy_classic.js`): the choice is sent in the background and the
+stage card swapped in place, keeping the cauldron's videos playing; only the result loads as a whole page.
+
+A one-herb recipe (the Cleansing Pill: Star Dew only) has no order to find, so Discord and Classic give Add Herbs
+100% for free; live controls still time each herb on the breath (`Craft.time_one_herb`).
 Discord's `/craft` is unchanged.
 
 | Stage | The hands | Scored by |
@@ -644,8 +649,11 @@ precise play the high ones, all still capped by the herbs' age. The pattern thre
 |---|---|---|---|---|---|
 | Ignite | still band, 1 gust | band sways | 2 gusts | + the band **jumps** mid-stage (a flashing ghost band shows where, 1.2 s ahead) | + **flare-ups**: the heat surges, and pumping into one overheats |
 | Herbs | | on the breath | misleading clues | + a **volatile** herb goes in on the out-breath (blue ring) | + the breathing **quickens** after two breaths |
-| Fuse / Seal | | | steady orbits | + the orbs **reverse** | + a **chaos orb** streaks through just before a meeting: a tap on it is unsteady |
+| Fuse / Seal | | | steady orbits | + the orbs **reverse**, a **chaos orb** streaks through once just before a meeting (a tap on it is unsteady), windows ×0.9 | + three chaos orbs, the orbs drift then **rush** together, windows ×0.8 |
 | Condense | slow rings | | red **decoy** ring | + the beats **quicken** | + the gold ring may come after fewer warm-up beats |
+
+**Fuse** has no spare meetings: every meeting counts and a missed one scores nothing (Seal the Core keeps its one
+spare). Its precise window allows only 0.03 s of network jitter (`GRACE_PRECISE`), the full 0.09 s only for good.
 
 **Rank margin:** each alchemist rank above the recipe (3 at most) widens every window and the Tribulation's warning
 by 6%, and calms the gusts and the band's sway. It never removes a challenge.
