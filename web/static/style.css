@@ -1512,3 +1512,14 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
 /* ── Living backgrounds (web/static/ambient.js): one canvas at the very back of the scene, behind every fighter and
    effect (the scene is its own stacking context), drawing its place's weather. Never in the way of a click. */
 .bscene>canvas.ambient{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:-1}
+
+/* a place's video (ambient.js `film_`): behind everything on the fight page, under a copy of the page's shading, fading
+   in over the painting once it plays. The page becomes its own layer (isolation) so the video sits above its
+   background but below every panel, fighter and button. */
+main.battle.bglive{isolation:isolate}
+main.battle>video.bgloop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%;
+  z-index:-1;pointer-events:none;opacity:0;transition:opacity .8s}
+main.battle>video.bgloop.on{opacity:1}
+main.battle>.bgshade{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .8s;
+  background:linear-gradient(180deg,rgba(8,10,16,.35),rgba(8,10,16,.15) 40%,rgba(8,10,16,.75))}
+main.battle>video.bgloop.on+.bgshade{opacity:1}

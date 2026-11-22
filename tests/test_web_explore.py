@@ -769,3 +769,19 @@ def test_her_strike_and_break_play_frame_by_frame_from_her_stance(client):
     assert looks.ATTACK_SHEETS["female"]["break"]["blade"]["slam"]                    # the fight's own Break burst
     js = client.get("/static/fight.js").text
     assert "sweep(ev, asheets[ev.act])" in js and "sheet.dataset.blade" in js
+
+
+def test_frostpeak_plays_its_background_video_behind_the_fight(client):
+    import os
+    import subprocess
+    js, css = client.get("/static/ambient.js").text, client.get("/static/style.css").text
+    assert "video: '/art/scenes/battle_northern_sea_wilds.mp4'" in js and "skip: ['aurora']" in js
+    r = client.get("/art/scenes/battle_northern_sea_wilds.mp4")
+    assert r.status_code == 200 and r.headers["content-type"] == "video/mp4"
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "art", "scenes", "battle_northern_sea_wilds.mp4")
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height",
+                            "-of", "csv=p=0", path], capture_output=True, text=True).stdout.split()
+    assert probe == ["h264,video,1280,720"] or probe == ["video,h264,1280,720"] or (len(probe) == 1 and "h264" in probe[0])
+    assert os.path.getsize(path) < 4 * 1024 * 1024                              # light enough for a page background
+    assert "main.battle.bglive{isolation:isolate}" in css and "video.bgloop{" in css and "z-index:-1" in css
+    assert "saveData" in js                                                     # not when the browser saves data

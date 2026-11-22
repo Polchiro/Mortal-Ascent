@@ -553,6 +553,14 @@ background picture:
 | Thunder Peaks | slanted rain and, every 5-11 s, lightning: the sky lights up and a bolt flickers |
 | Arena ruins (duels) | moonlit fireflies, faint ground mist |
 
+**Background videos:** a place can also have a video of its painting coming alive, played behind the whole fight
+page under its shading (`video` in `PLACES`; so far **Frostpeak Mountains**, `art/scenes/battle_northern_sea_wilds.mp4`:
+the aurora flowing, mist and snow drifting, the open water shimmering, the ice where the fighters stand still). It
+fades in over the painting once it plays, and the canvas leaves out what the video already shows (`skip`: the
+aurora). Not with reduced motion or when the browser saves data: the painting shows. SHOAIB's Gemini video becomes the
+loop with `scripts/make_background_loop.py <scene> video.mp4`: Gemini's mark filled from around it, the last 1.5 s
+faded into the start so it loops with no jump (8.5 s), H.264 with no sound (about 2 MB).
+
 Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
 shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
