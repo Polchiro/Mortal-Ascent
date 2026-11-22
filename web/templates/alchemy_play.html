@@ -108,7 +108,7 @@
       <img class="cburst" src="{{ g.art }}" alt="">
     </div>
     {% else %}{% set R = g.reveal %}
-    <div class="preveal{% if R.perfect %} perfect{% endif %}" id="preveal" data-id="{{ R.id }}" data-patterns="{{ R.patterns }}" aria-hidden="true">
+    <div class="preveal{% if R.perfect %} perfect{% endif %}{% if R.video %} hasvideo{% endif %}" data-grade="{{ g.grade }}" id="preveal" data-id="{{ R.id }}" data-patterns="{{ R.patterns }}" aria-hidden="true">
       <div class="rrays"></div>
       <img class="cauldron" src="/art/scenes/cauldron.png" alt="">
       {% if R.video %}<video class="cfx rlight" src="{{ R.video }}" muted playsinline preload="auto"></video>{% endif %}

@@ -594,3 +594,13 @@ def test_classic_page_has_no_reloading_timer_script(client):
     page = client.get("/alchemy/play").text
     assert "alchemy_classic.js" in page and "location.replace('/alchemy/play')" not in page
     assert 'class="timer" data-left=' in page
+
+
+def test_the_reveal_plays_shoaibs_light(client):
+    begin(client, controls="live")
+    s = client.crafts.get(UID)
+    s.live = None
+    s.craft.settle(1.0)
+    s.craft.settle(0.8)
+    page = client.get("/alchemy/play").text
+    assert "/art/fx/alchemy/reveal.mp4" in page and "hasvideo" in page and 'data-grade="Mortal"' in page
