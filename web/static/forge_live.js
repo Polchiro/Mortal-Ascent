@@ -667,8 +667,8 @@
   }
 
   // ✍️ Inscribe: draw each stroke on the plate, in the clue's order
-  var STROKE = {horizontal: ['横', '→', 'Horizontal'], vertical: ['竖', '↓', 'Vertical'], sweep: ['撇', '↙', 'Sweep'],
-                press: ['捺', '↘', 'Press'], dot: ['点', '•', 'Dot'], hook: ['钩', '↩', 'Hook']};
+  var STROKE = {horizontal: ['→', 'Horizontal'], vertical: ['↓', 'Vertical'], sweep: ['↙', 'Sweep'],
+                press: ['↘', 'Press'], dot: ['•', 'Dot'], hook: ['↩', 'Hook']};
   S.inscribe = {
     title: 'Inscribe', keys: 'Draw each stroke on the plate (drag; a tap is a dot), or use the stroke buttons',
     setup: function (c) {
@@ -676,7 +676,7 @@
       c.st = {i: 0, path: null, marks: []};
       plate.classList.remove('resonate');
       var clue = $('lclue');
-      clue.innerHTML = p.clue.map(function (k, i) { return '<span class="chip' + (i === 0 ? ' now' : '') + '" data-i="' + i + '"><b>' + STROKE[k][0] + '</b>' + STROKE[k][1] + ' ' + STROKE[k][2] + '</span>'; }).join('');
+      clue.innerHTML = p.clue.map(function (k, i) { return '<span class="chip' + (i === 0 ? ' now' : '') + '" data-i="' + i + '"><b>' + STROKE[k][0] + '</b> ' + STROKE[k][1] + '</span>'; }).join('');
       clue.classList.remove('faded'); show('lclue', true);
       btns.innerHTML = ''; btns.classList.add('strokes');
       p.strokes.forEach(function (k) { button(STROKE[k][0] + ' ' + STROKE[k][1], '', function (e) { if (e === 'down') carve(c, k, null); }); });
@@ -688,7 +688,7 @@
       octx.clearRect(0, 0, FW, FH);
       redraw(c);
       if (p.fade && t > p.fade && !$('lclue').classList.contains('faded')) { $('lclue').classList.add('faded'); flash('The clue fades: carve it from memory', '', 1100); }
-      hint.innerHTML = s.i < p.count ? 'The Rune of <b>' + p.rune + '</b> · stroke ' + (s.i + 1) + ' of ' + p.count + (p.fade && t > p.fade ? ' (from memory)' : ': ' + STROKE[p.clue[s.i]][2]) : 'The rune is complete…';
+      hint.innerHTML = s.i < p.count ? 'The Rune of <b>' + p.rune + '</b> · stroke ' + (s.i + 1) + ' of ' + p.count + (p.fade && t > p.fade ? ' (from memory)' : ': ' + STROKE[p.clue[s.i]][1]) : 'The rune is complete…';
     }
   };
   function classify(pts) {
@@ -789,8 +789,8 @@
       var end = mark.pts[mark.pts.length - 1], rr = runeCv.getBoundingClientRect(), R = shaker.getBoundingClientRect();
       var wp = {x: (rr.left + end.x / runeCv.width * rr.width - R.left) / R.width, y: (rr.top + end.y / runeCv.height * rr.height - R.top) / R.height};
       var n = hit(r.ok);
-      if (!r.ok) { popup('✗<small>It wanted a ' + STROKE[r.want][2].toLowerCase() + ' (' + STROKE[r.want][0] + ')</small>', 'bad', wp); burst(wp, 'bad', 12); Snd('bad'); }
-      else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][2] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 18); }
+      if (!r.ok) { popup('✗<small>It wanted a ' + STROKE[r.want][1].toLowerCase() + ' (' + STROKE[r.want][0] + ')</small>', 'bad', wp); burst(wp, 'bad', 12); Snd('bad'); }
+      else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][1] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 18); }
       if (r.over && c.st.marks.every(function (m) { return m.ok; })) {
         setTimeout(function () {
           c.st.resonate = performance.now();
