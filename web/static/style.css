@@ -1763,3 +1763,47 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .lmute.lsmithbtn{top:calc(2% + 92px)}
 .lmute.lsmithbtn.off{opacity:.45;filter:grayscale(1)}
 .fscene.nosmith .fsheet{display:none}
+/* the quench corner: the smith over the trough (water) or the bronze cauldron (oil), SHOAIB's props laid over the
+   video's bucket and bowl (scripts/make_forge_sheets.py CLIPS water / oil props: crop 950 × 720, props reach 900) */
+.fqset{position:absolute;right:3%;bottom:0;height:92%;aspect-ratio:950/900;opacity:0;transition:opacity .5s;pointer-events:none}
+.fqset .fsheet{left:0;top:0;width:100%;height:80%}
+.fqset .ftrough{position:absolute;left:38.1%;top:51.8%;width:61.2%;display:none}
+.fqset .fcauldron{position:absolute;left:49.2%;top:53.1%;width:41.7%;display:none}
+.fqset[data-medium="water"] .ftrough,.fqset[data-medium="oil"] .fcauldron{display:block}
+.fqset[data-medium="water"] .fqoil,.fqset[data-medium="oil"] .fqwater{display:none}
+.fscene.st-quench .fqset{opacity:1}
+.fscene.st-quench .fset,.fscene.st-inscribe .fset{opacity:0}
+.fscene.st-quench .fbellows,.fscene.st-inscribe .fbellows{opacity:0}
+.fscene.steam .fsheet,.fscene.steam .ftrough{filter:brightness(1.05)}
+/* the carving plate: the forged piece, cooled, laid before you; the rune is drawn on it */
+.fplate{position:absolute;left:50%;top:50%;width:62%;aspect-ratio:600/420;transform:translate(-50%,-50%) scale(.9);opacity:0;pointer-events:none;transition:opacity .5s,transform .5s;border-radius:18px;background:radial-gradient(ellipse at 50% 45%,rgba(40,34,30,.92),rgba(12,10,9,.96));border:2px solid rgba(232,194,122,.45);box-shadow:0 18px 40px rgba(0,0,0,.7),inset 0 0 40px rgba(0,0,0,.8)}
+.fscene.st-inscribe .fplate{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.fplate .fplateblank{position:absolute;left:50%;top:50%;width:70%;max-height:80%;object-fit:contain;transform:translate(-50%,-50%);filter:grayscale(.6) brightness(.55) contrast(1.1);opacity:.85}
+.flive[data-gear="weapon"] .fplate .fplateblank{width:88%}
+.flive[data-gear="armor"] .fplate .fplateblank,.flive[data-gear="artifact"] .fplate .fplateblank{width:46%}
+.fplate .frune{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;pointer-events:auto}
+.fplate .fruneglow{position:absolute;left:50%;top:50%;width:80%;transform:translate(-50%,-50%);mix-blend-mode:screen;opacity:0;pointer-events:none;-webkit-mask-image:radial-gradient(circle,#000 55%,transparent 72%);mask-image:radial-gradient(circle,#000 55%,transparent 72%)}
+.fplate .fruneglow.on{opacity:1}
+.fscene.st-inscribe .fbg{filter:brightness(.45) blur(1px)}
+.fclue{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;transition:opacity .6s}
+.fclue.faded .chip{opacity:0}
+.fclue .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid rgba(232,194,122,.4);background:rgba(20,14,10,.8);font-weight:700;transition:opacity .6s}
+.fclue .chip b{font-size:18px}
+.fclue .chip.now{border-color:var(--gold);box-shadow:0 0 12px rgba(232,194,122,.6)}
+.fclue .chip.ok{border-color:var(--jade);color:var(--jade);opacity:1}
+.fclue .chip.bad{border-color:#E05A4F;color:#E05A4F;opacity:1}
+.fbtns.strokes .btn{min-width:84px}
+/* the forged piece's reveal (static/forge_reveal.js): the rune glow blooms, the piece appears at its flash */
+.freveal{position:relative;width:min(340px,80%);aspect-ratio:1;margin:0 auto}
+.freveal .frglow{position:absolute;inset:-12%;width:124%;height:124%;mix-blend-mode:screen;opacity:0;transition:opacity .4s;-webkit-mask-image:radial-gradient(circle,#000 52%,transparent 70%);mask-image:radial-gradient(circle,#000 52%,transparent 70%);filter:drop-shadow(0 0 0 var(--rc))}
+.freveal .frglow.on{opacity:1}
+.freveal .fritem{position:absolute;left:18%;top:18%;width:64%;height:64%;object-fit:contain;filter:drop-shadow(0 0 22px var(--rc)) drop-shadow(0 0 6px var(--rc));transition:transform .7s cubic-bezier(.2,1.4,.4,1),opacity .5s}
+.freveal .frays{position:absolute;inset:-8%;border-radius:50%;opacity:0;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--rc) 45%,transparent) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 18%,transparent 66%);mask:radial-gradient(circle,#000 18%,transparent 66%)}
+.freveal.grand .frays{opacity:.75;animation:rspin 16s linear infinite}
+.revealing .freveal .fritem{transform:scale(.2);opacity:0}
+.revealing .freveal.shown .fritem{transform:none;opacity:1}
+.revealing .freveal .frays{opacity:0;transition:opacity 1s}
+.revealing .freveal.grand.shown .frays{opacity:.75}
+.revealing>:not(.freveal):not(script){opacity:0;transform:translateY(10px);transition:opacity .4s,transform .4s}
+.result.failed .fcracked{animation:lshake .1s linear 6;filter:drop-shadow(0 0 24px #E05A4F)}
+@media (prefers-reduced-motion:reduce){.freveal.grand .frays{animation:none}}

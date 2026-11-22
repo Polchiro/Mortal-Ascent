@@ -213,7 +213,7 @@ def test_live_forge_perfect_hands_score_the_live_stages(client, db_path):
             live(client)
     assert s.game.points["heat"] == 20 and s.game.points["hammer"] == 20 and s.game.points["ignite"] >= 12
     st = live(client)
-    assert st["prompt"]["stage"] == "quench" and st["prompt"]["options"]            # the button stages carry on
+    assert st["live"]["stage"] == "quench"                                     # every stage is live now
 
 
 def test_live_forge_button_stages_and_walking_away(client, db_path):
@@ -243,3 +243,68 @@ def test_hammer_judging():
 def test_the_forge_art_is_served(client):
     for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4"):
         assert client.get(path).status_code == 200, path
+
+
+
+def quench_game(medium="water", tier="ordinary", seed=3):
+    import random
+    from web import forge_live as L
+    g = forging.Forge(tier, forge.RANK_NEEDED[tier], random.Random(seed))
+    while g.stage != "quench":
+        g.settle(1.0)
+    return g, L, L.make(g, g.rng, 0, 0)
+
+
+def time_to(L, p, medium, temp):
+    """Seconds after choosing until the blade reaches temp."""
+    t = 0.0
+    while L.quench_temp(p, medium, t) > temp:
+        t += 0.02
+    return t
+
+
+def test_live_quench_uses_the_bots_points():
+    g, L, lv = quench_game()
+    p = lv.pub
+    L.press(lv, g, 0.5, {"do": "water"})
+    L.press(lv, g, 0.5 + time_to(L, p, "water", p["target"]), {"do": "plunge"})
+    L.settle(lv, g, lv.length)
+    assert g.points["quench"] == forge.QUENCH["water"]["max_points"] and g.medium == "water"
+    g, L, lv = quench_game()
+    L.press(lv, g, 0.5, {"do": "oil"})
+    L.settle(lv, g, lv.length + 1)                                       # never plunged: it went cold
+    assert g.points["quench"] == forge.QUENCH_MISS_POINTS and g.stage == "inscribe"
+    g, L, lv = quench_game()
+    assert L.press(lv, g, 0.5, {"do": "plunge"}) == {}                   # no plunging before choosing
+
+
+def test_live_quench_harder_gear_adds_draughts_steam_and_a_rush():
+    _, _, easy = quench_game(tier="ordinary")
+    _, _, hard = quench_game(tier="divine")
+    assert not easy.pub["wave"] and not easy.pub["steam"] and not easy.pub["rush"]
+    assert hard.pub["wave"] and hard.pub["steam"] and hard.pub["rush"]
+
+
+def test_live_inscribe_judges_each_drawn_stroke_against_the_true_order():
+    import random
+    from web import forge_live as L
+    g = forging.Forge("treasure", forge.RANK_NEEDED["treasure"], random.Random(5))
+    while g.stage != "inscribe":
+        g.settle(1.0)
+    lv = L.make(g, g.rng, 0, 0)
+    assert lv.pub["fade"] and lv.pub["clue"] == g.clue and lv.pub["count"] == len(g.order)
+    wrong = next(k for k in forge.STROKES if k != g.order[0])
+    r = L.press(lv, g, 0.5, {"do": wrong})
+    assert r["ok"] is False and r["want"] == g.order[0]
+    for i, k in enumerate(g.order[1:], 1):
+        assert L.press(lv, g, 0.5 + i, {"do": k})["ok"]
+    L.settle(lv, g, lv.length)
+    n = len(g.order)
+    assert g.done and g.points["inscribe"] == round((n - 1) / n * forge.STAGE_MAX_POINTS)
+
+
+def test_the_live_page_loads_its_script_once(client, db_path):
+    begin(client, db_path, "live")
+    page = client.get("/forge/play").text
+    assert page.count("forge_live.js") == 1 and "<script" not in page.split("</title>")[0].split("<title>")[1]
+    assert 'class="forgebg"' in page
