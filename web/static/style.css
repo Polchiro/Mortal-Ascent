@@ -1824,3 +1824,29 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .forgeplay .alive,.forgeplay .result,.forgeplay .stage.card{background:rgba(16,9,5,.66)}
 .forgeplay .lhelp{background:rgba(24,14,8,.95)}
 .forgeplay .tbar{background:#1c110a}
+/* SHOAIB's forge effects (scripts/make_forge_fx.py), lined up with his workshop picture and props:
+   - the furnace fire, its coals on the furnace's coal bed (workshop.jpg: x 30–51 %, y 50–54 %), laid on with `screen`;
+     static/forge_live.js grows it with the heat */
+.fscene .ffire{position:absolute;left:28%;top:20.5%;width:25%;mix-blend-mode:screen;pointer-events:none;opacity:.3;
+  transform-origin:50% 88%;transition:opacity .35s,transform .35s;
+  -webkit-mask-image:radial-gradient(ellipse 50% 62% at 50% 62%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 62% at 50% 62%,#000 62%,transparent 100%)}
+.fscene.st-inscribe .ffire{opacity:.15!important}
+@media (prefers-reduced-motion:reduce){.fscene .ffire{display:none}}
+/* - the hammer alone (frame sheet, 1280 × 620 video pixels, its face meeting the bar at 660, 495), sized so the
+     video's anvil would match SHOAIB's and its face lands where the smith's did (forge_live.js HIT: 48.6 %, 58.7 %) */
+.fset .ftool{position:absolute;left:2.53%;top:29.14%;width:89.35%;height:37.03%;background-repeat:no-repeat;opacity:0;transition:opacity .4s;pointer-events:none}
+.fscene.nosmith.st-hammer .ftool{opacity:1}
+/* - the quench without the smith: the hot piece hangs over the trough or the bath, glowing with its heat, and dips
+     in at the plunge; the steam (water) or the fire (oil) bursts from the surface */
+.fqset .fqblank{position:absolute;left:68.7%;top:41%;width:44%;transform:translate(-50%,-50%) rotate(-4deg);display:none;
+  filter:sepia(.6) saturate(2.2) brightness(1.15) drop-shadow(0 0 10px var(--glow,rgba(247,148,60,.95))) drop-shadow(0 0 22px var(--glow,rgba(247,148,60,.95)));
+  transition:transform .45s cubic-bezier(.5,0,.8,.4),opacity .45s .15s}
+.flive[data-gear="armor"] .fqset .fqblank,.flive[data-gear="artifact"] .fqset .fqblank{width:24%}
+.fqset[data-medium="oil"] .fqblank{left:70%}
+.fscene.nosmith .fqset .fqblank{display:block}
+.fqset.dipped .fqblank{transform:translate(-50%,10%) rotate(-4deg);opacity:0}
+.fqset .fqfx{position:absolute;mix-blend-mode:screen;opacity:0;pointer-events:none;transition:opacity .3s;
+  -webkit-mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 55%,transparent 100%);mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 55%,transparent 100%)}
+.fqset .fqfx.on{opacity:1}
+.fqset .fqsteam{left:28.7%;top:-4.9%;width:80%}
+.fqset .fqflare{left:40%;top:0;width:60%}

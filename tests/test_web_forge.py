@@ -165,6 +165,9 @@ def test_live_is_the_default_and_shows_the_smith(client, db_path):
     assert r.headers["location"] == "/forge/play" and "ma_forge_controls=live" in r.headers["set-cookie"]
     page = client.get("/forge/play").text
     assert 'id="flive"' in page and "forge_live.js" in page and "/art/forge/anvil.webp" in page
+    assert 'class="fscene nosmith"' in page                     # the smith is hidden unless the player turns him on
+    for fx in ('class="ffire"', 'class="ftool"', "fqsteam", "fqflare", "fqblank"):   # the effects that move without him
+        assert fx in page, fx
     assert "male_hammer.webp" in page and "male_bellows.webp" in page
     lv = live(client)["live"]
     assert lv["stage"] == "ignite" and {"lo", "width", "gusts", "heat"} <= set(lv["pub"])
@@ -241,7 +244,8 @@ def test_hammer_judging():
 
 
 def test_the_forge_art_is_served(client):
-    for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4"):
+    for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4",
+                 "/art/forge/fire.mp4", "/art/forge/steam.mp4", "/art/forge/oil_flare.mp4", "/art/forge/tool_hammer.webp"):
         assert client.get(path).status_code == 200, path
 
 

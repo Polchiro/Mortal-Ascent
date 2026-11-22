@@ -307,13 +307,14 @@ def play_view(s, now):
 def scene_view(s, player):
     """What the live forge's scene is made of (forge_play.html .fscene): this player's smith (frame sheets of
     SHOAIB's videos, scripts/make_forge_sheets.py; none for a look without them, then only the forge and the effects
-    show), and the blank of this gear kind (a sword, a chest plate or a round plate)."""
+    show), the hammer alone for when the smith is hidden (scripts/make_forge_fx.py), and the blank of this gear kind (a sword, a chest plate or a round plate)."""
     import looks
     try:
         sheets = json.load(open(SHEETS))
     except (OSError, ValueError):
         sheets = {}
-    return {"sheets": sheets.get(looks.gender_of(looks.of_player(player)), {}), "gear": s.plan.gear,
+    return {"sheets": sheets.get(looks.gender_of(looks.of_player(player)), {}), "tool": sheets.get("tool", {}),
+            "gear": s.plan.gear,
             "blank": f"/art/forge/{BLANKS[s.plan.gear]}.webp"}
 
 
