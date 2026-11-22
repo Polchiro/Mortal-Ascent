@@ -12,7 +12,16 @@ hidden (static/forge_live.js, docs/web.md "Live forge"):
 
 The crops leave out Gemini's sparkle (about 1160, 600).
 
-    python -m scripts.make_forge_fx DIR      (DIR holds the four videos, named as SHOAIB sent them)
+- art/forge/reveal_burst.mp4: the golden burst behind a forged piece's reveal (on black, `screen`; its flash at
+  REVEAL_FLASH s, when the piece appears; the page tints it to the rarity), static/forge_reveal.js;
+- art/forge/crack.mp4: a glowing bar cracking apart in sparks and smoke, for a failed forge (on black, `screen`);
+- art/forge/embers.mp4: embers drifting up through the whole workshop (on black, `screen`), a seamless loop;
+- art/forge/tool_bellows.webp (+ sheets.json "tool" / "bellows"): the bellows alone, one pump from open to squeezed and
+  open again (keyed from green; the stand and Gemini's mark in its corner cut away). The page steps it only while you
+  pump.
+
+    python -m scripts.make_forge_fx DIR [NAME ...]   (DIR holds the videos, named as SHOAIB sent them; NAMEs: only those,
+                                                     of fire steam oil_flare reveal_burst crack embers tool bellows)
 Needs ffmpeg, numpy and Pillow.
 """
 import glob
@@ -33,7 +42,17 @@ FX = {
     "fire": ("Furnace_fire", 0, 10, "960:720:160:0", "640:480"),
     "steam": ("Quench_steam_burst", 0, 5, "1000:720:100:0", "560:404"),
     "oil_flare": ("Oil_flare", 0.3, 5.3, "800:720:240:0", "480:432"),
+    "reveal_burst": ("Reveal_burst", 0, 6, "720:720:280:0", "540:540"),
+    "crack": ("Failure_crack", 1.2, 7.2, "960:540:160:160", "640:360"),
+    "embers": ("Drifting_embers", 0, 10, "1120:720:0:0", "700:450"),
 }
+LOOPS = ("fire", "embers")
+REVEAL_FLASH, CRACK_AT = 1.0, 0.97                  # seconds into reveal_burst.mp4 / crack.mp4
+# the bellows: one pump (open at BELLOWS_FROM, squeezed halfway, open again at BELLOWS_TO), its crop in the video, and
+# the corner where a stand and Gemini's mark sit (cut away); NOZZLE: the nozzle's tip in the crop's pixels
+BELLOWS_FROM, BELLOWS_TO, BELLOWS_CROP, BELLOWS_SCALE = 1.0, 2.0, (0, 110, 1280, 530), 0.45
+BELLOWS_CUT, BELLOWS_NOZZLE = (1080, 430), (1125, 360)
+BELLOWS_KEY = (14, 58)                              # its green is paler (about 83 greener than red and blue, not 120+)
 # the hammer: the raised pose, then from the start of the swing to the hammer back up (seconds in the video)
 REST, SWING_FROM, SWING_TO, IMPACT = 3.0, 4.583, 7.5, 4.917
 TOOL_CROP, TOOL_SCALE, TOOL_FPS = (0, 0, 1280, 620), 0.4, 12
@@ -55,17 +74,41 @@ def run(*args):
 def clip(src, name):
     video, a, b, crop, size = FX[name]
     out = os.path.join(OUT, f"{name}.mp4")
-    enc = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "24", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+    enc = ["-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "31" if name == "embers" else "24", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
     base = f"crop={crop},scale={size},{BLACK},fps=24"
-    if name == "fire":
+    if name in LOOPS:
         T = b - a
         graph = (f"[0:v]{base},split=3[x][y][z];[x]trim=0:{LOOP},setpts=PTS-STARTPTS[head];"
                  f"[y]trim={T - LOOP}:{T},setpts=PTS-STARTPTS[tail];[z]trim={LOOP}:{T - LOOP},setpts=PTS-STARTPTS[mid];"
                  f"[tail][head]xfade=transition=fade:duration={LOOP}:offset=0[xf];[xf][mid]concat=n=2:v=1:a=0[out]")
         run("-i", find(src, video), "-filter_complex", graph, "-map", "[out]", *enc, out)
     else:
-        run("-ss", str(a), "-t", str(b - a), "-i", find(src, video), "-vf", f"{base},fade=t=out:st={b - a - 1}:d=1", *enc, out)
+        fade = "" if name == "crack" else f",fade=t=out:st={b - a - 1}:d=1"     # the crack ends on the broken bar
+        run("-ss", str(a), "-t", str(b - a), "-i", find(src, video), "-vf", base + fade, *enc, out)
+        if name == "crack":                         # its last frame, for a page that has already seen it
+            run("-sseof", "-0.1", "-i", out, "-frames:v", "1", "-q:v", "4", os.path.join(OUT, "crack_end.jpg"))
     print(name, f"{os.path.getsize(out) // 1024} KB")
+
+
+def bellows(src):
+    video = find(src, "bellows_pumping")
+    fr = frames(video, BELLOWS_FROM, BELLOWS_TO, BELLOWS_CROP, 24)
+    fw, fh = round(BELLOWS_CROP[2] * BELLOWS_SCALE), round(BELLOWS_CROP[3] * BELLOWS_SCALE)
+    rows = -(-len(fr) // COLS)
+    sheet = Image.new("RGBA", (fw * COLS, fh * rows))
+    cx, cy = BELLOWS_CUT
+    for i, f in enumerate(fr):
+        k = key(f, *BELLOWS_KEY)
+        k[cy:, cx:, 3] = 0                          # the stand and the mark
+        sheet.paste(Image.fromarray(k, "RGBA").resize((fw, fh), Image.LANCZOS), ((i % COLS) * fw, (i // COLS) * fh))
+    sheet.save(os.path.join(OUT, "tool_bellows.webp"), quality=82, method=6)
+    meta_path = os.path.join(OUT, "sheets.json")
+    meta = json.load(open(meta_path))
+    meta.setdefault("tool", {})["bellows"] = {
+        "src": "/art/forge/tool_bellows.webp", "frames": len(fr), "cols": COLS, "rows": rows, "w": fw, "h": fh, "fps": 24,
+        "crop": BELLOWS_CROP, "nozzle": list(BELLOWS_NOZZLE), "props": {}, "impact": None}
+    json.dump(meta, open(meta_path, "w"), indent=1)
+    print("tool bellows", len(fr), "frames", f"{os.path.getsize(os.path.join(OUT, 'tool_bellows.webp')) // 1024} KB")
 
 
 def tool(src):
@@ -96,8 +139,13 @@ def tool(src):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         sys.exit(__doc__)
+    only = set(sys.argv[2:])
     for n in FX:
-        clip(sys.argv[1], n)
-    tool(sys.argv[1])
+        if not only or n in only:
+            clip(sys.argv[1], n)
+    if not only or "tool" in only:
+        tool(sys.argv[1])
+    if not only or "bellows" in only:
+        bellows(sys.argv[1])

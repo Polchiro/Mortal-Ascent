@@ -48,11 +48,13 @@ def frames(video, start, end, crop, fps=FPS):
     return np.frombuffer(raw, np.uint8).reshape(-1, h, w, 3).astype(np.float32)
 
 
-def key(a):
+def key(a, solid=KEY_SOLID, clear=KEY_CLEAR):
+    """solid / clear: how much greener than red and blue a pixel may be and still be all there / be all gone (a paler
+    green screen needs lower ones)."""
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     excess = g - np.maximum(r, b)
-    alpha = np.clip((KEY_CLEAR - excess) / (KEY_CLEAR - KEY_SOLID), 0, 1)
-    green = a[excess > KEY_CLEAR + 30]
+    alpha = np.clip((clear - excess) / (clear - solid), 0, 1)
+    green = a[excess > clear + min(30, clear // 4)]
     bg = np.median(green, axis=0) if len(green) else np.array([45, 180, 60], np.float32)
     al = alpha[..., None]
     fg = np.where(al > 0.02, (a - (1 - al) * bg) / np.maximum(al, 0.02), 0)     # take the green back out

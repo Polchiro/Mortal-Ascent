@@ -246,7 +246,8 @@ def test_hammer_judging():
 def test_the_forge_art_is_served(client):
     for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4",
                  "/art/forge/fire.mp4", "/art/forge/steam.mp4", "/art/forge/oil_flare.mp4", "/art/forge/tool_hammer.webp",
-                 "/art/forge/bellows.webp", "/art/forge/bellows_wall.webp"):
+                 "/art/forge/bellows.webp", "/art/forge/bellows_wall.webp", "/art/forge/tool_bellows.webp",
+                 "/art/forge/reveal_burst.mp4", "/art/forge/crack.mp4", "/art/forge/crack_end.jpg", "/art/forge/embers.mp4"):
         assert client.get(path).status_code == 200, path
 
 
@@ -341,7 +342,21 @@ def test_the_live_forge_page_has_its_hud_and_forecast(client, db_path):
     begin(client, db_path, "live")
     page = client.get("/forge/play").text
     for part in ('id="fcast"', 'id="fcfill"', 'class="fcam"', 'class="fhud"', 'class="ffx"', 'id="fcombo"',
-                 'class="fbelcut"', 'class="fbelwall"', 'class="fqsheen"'):
+                 'class="ftoolbel"', 'class="fbelwall"', 'class="fqsheen"', 'class="fembers"'):
         assert part in page, part
     state = client.get("/forge/live").json()
     assert state["forecast"]["cap"] == "Rare" and state["forecast"]["total"] == 0
+
+
+def test_the_result_plays_the_burst_or_the_crack(client, db_path):
+    """A forged piece appears in SHOAIB's burst, tinted to its rarity; a failed forge plays his cracking bar."""
+    begin(client, db_path)
+    s = play_to_the_end(client)
+    page = client.get("/forge/play").text
+    if s.outcome["rarity"]:
+        assert 'class="frburst"' in page and f'data-rarity="{s.outcome["rarity"]}"' in page and "fcrackbox" not in page
+    else:
+        assert 'id="fcrackbox"' in page and "/art/forge/crack.mp4" in page and "frburst" not in page
+    s.outcome["rarity"] = None                                     # the other way round, on the same page
+    page = client.get("/forge/play").text
+    assert 'id="fcrackbox"' in page and 'poster="/art/forge/crack_end.jpg"' in page
