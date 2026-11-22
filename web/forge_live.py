@@ -8,7 +8,8 @@ The live forge on the website: the blacksmith's stages played with the hands ins
     🔨 Hammer   a glowing spot slides along the blank: strike when it passes under the hammer, Hard or Light as the
                 metal asks (bright ring: hard; soft spreading glow: light), or Reheat when the glow fades
 
-Quench and Inscribe are still the bot's decisions in this version (played with buttons on the same page).
+    💦 Quench   choose water or oil, then the glowing blade cools in real time: plunge it at the target temperature
+    ✍️ Inscribe draw the rune stroke by stroke (drag; a tap is a dot), in the order the clue shows
 
 The forge itself is still the bot's (bot/forging.py Forge): its safe zone, colours, metal states, the 20 points per
 stage, the total, the rarity rules, materials and rewards. A live stage only decides that stage's share of its 20
@@ -28,7 +29,7 @@ from bot import forging
 
 from .alchemy_live import Live, BEGIN_WAIT, GRACE, LINGER, TICK  # noqa: F401  (the same stage record and timing)
 
-LIVE_STAGES = ("ignite", "heat", "hammer")
+LIVE_STAGES = ("ignite", "heat", "hammer", "quench", "inscribe")
 TIERS = forge.TIERS
 
 
@@ -271,9 +272,128 @@ def settle_hammer(live, g, t):
     live.result = {"good": good}
 
 
-MAKERS = {"ignite": make_ignite, "heat": make_heat, "hammer": make_hammer}
-PRESS = {"ignite": press_ignite, "heat": press_heat, "hammer": press_hammer}
-SETTLE = {"ignite": settle_ignite, "heat": settle_heat, "hammer": settle_hammer}
+# 💦 Quench: water (fast, risky) or oil (slow, safe), the bot's QUENCH; then the blade cools from its start
+# temperature, and the plunge is judged by the bot's own rule (forge_live.quench_points = Forge._quench_points)
+COOL = 95.0                  # °/s it cools at tempo 1 (water cools it faster still: COOL_MEDIUM)
+COOL_MEDIUM = {"water": 1.15, "oil": 0.85}
+DRAUGHTS_FROM = "spirit"     # the cooling speeds up and slows down
+STEAM_FROM = "treasure"      # steam hides the thermometer now and then (the blade's own colour still shows)
+RUSH_COOL_FROM = "divine"    # it cools faster the nearer it gets to the target
+CHOOSE_SECONDS = 8.0         # time to pick a quench before it picks oil
+
+
+def make_quench(g, rng, f):
+    t = forge.QUENCH_TEMPS
+    start, target = rng.randint(*t["start"]), rng.randint(*t["target"])
+    wave = [round(rng.uniform(0, 6.28), 2), round(rng.uniform(0.6, 1.1), 2)] if at_least(g.tier, DRAUGHTS_FROM) else None
+    steam = []
+    if at_least(g.tier, STEAM_FROM):
+        steam = [[round(x, 2), 0.7] for x in (rng.uniform(0.8, 1.6), rng.uniform(2.0, 2.8))]
+    pub = {"start": start, "target": target, "window": {m: round(g.window * forge.QUENCH[m]["window_mult"], 1) for m in forge.QUENCH},
+           "max": {m: forge.QUENCH[m]["max_points"] for m in forge.QUENCH}, "cool": round(COOL * f, 2), "medium": COOL_MEDIUM,
+           "wave": wave, "steam": steam, "rush": at_least(g.tier, RUSH_COOL_FROM), "choose": CHOOSE_SECONDS, "tick": TICK}
+    span = (start - target) / (COOL * f * COOL_MEDIUM["oil"] * 0.6) + 2.0         # time enough to go cold, slowly
+    pub["length"] = round(CHOOSE_SECONDS + span, 3)
+    return pub, {}, CHOOSE_SECONDS + span
+
+
+def quench_temp(p, medium, since):
+    """The blade's temperature `since` seconds after the quench was chosen (static/forge_live.js runs the same)."""
+    temp, k = float(p["start"]), 0
+    rate0 = p["cool"] * p["medium"][medium]
+    steps = int(max(0.0, since) / p["tick"])
+    for k in range(steps):
+        tt = k * p["tick"]
+        rate = rate0
+        if p["wave"]:
+            rate *= 1 + 0.3 * math.sin(p["wave"][1] * 2 * math.pi * tt + p["wave"][0])
+        if p["rush"]:
+            rate *= 1 + 0.6 * max(0.0, 1 - (temp - p["target"]) / 250)
+        temp -= rate * p["tick"]
+    return temp
+
+
+def quench_points(p, medium, temp):
+    """The bot's Forge._quench_points, for this medium's window and top points."""
+    off, half, top = abs(temp - p["target"]), p["window"][medium] / 2, p["max"][medium]
+    if off <= half / 2:
+        return top
+    if off <= half:
+        return round(top * forge.QUENCH_HALF_POINTS)
+    return forge.QUENCH_MISS_POINTS
+
+
+def press_quench(live, g, t, ev):
+    d, what = live.data, ev.get("do")
+    if what in forge.QUENCH and "medium" not in d:
+        d["medium"], d["chose"] = what, max(0.0, t)
+        return {"medium": what}
+    if what == "plunge" and "medium" in d and "plunged" not in d:
+        d["plunged"] = max(0.0, t)
+        live.over = True
+        return {"over": True}
+    return {}
+
+
+def settle_quench(live, g, t):
+    p, d = live.pub, live.data
+    medium = d.get("medium") or "oil"
+    chose = d.get("chose", min(t, p["choose"]))
+    g.medium = medium
+    if "plunged" in d:
+        temp = quench_temp(p, medium, d["plunged"] - chose)
+        pts = quench_points(p, medium, temp)
+        g.temp, g.quench_target = round(temp), p["target"]
+        word = "perfect!" if pts == p["max"][medium] else "close." if pts > forge.QUENCH_MISS_POINTS else "the steel shudders."
+        g.settle(pts / forge.STAGE_MAX_POINTS, [f"💦 You plunge it into the {medium} at **{round(temp)}°**: {word}"])
+        live.result = {"medium": medium, "temp": round(temp), "pts": pts}
+    else:
+        g.settle(forge.QUENCH_MISS_POINTS / forge.STAGE_MAX_POINTS, ["🥶 The blade went cold before the quench."])
+        live.result = {"medium": medium, "temp": None}
+
+
+# ✍️ Inscribe: the bot's rune, strokes and clue (Forge._start_inscribe); each stroke drawn by hand, in order
+STROKE_SECONDS = 2.6         # seconds per stroke at tempo 1 (the whole carving's time)
+FADE_FROM = "treasure"       # the clue fades after a look: carve it from memory
+FADE_AFTER = 2.5
+
+
+def make_inscribe(g, rng, f):
+    n = len(g.order)
+    length = 1.0 + n * STROKE_SECONDS / f * margin(g)
+    pub = {"rune": g.rune, "clue": g.clue, "count": n, "strokes": forge.STROKES,
+           "fade": FADE_AFTER if at_least(g.tier, FADE_FROM) else None, "length": round(length, 3)}
+    return pub, {"carved": []}, length
+
+
+def press_inscribe(live, g, t, ev):
+    d, what = live.data, ev.get("do")
+    if what not in forge.STROKES or len(d["carved"]) >= len(g.order):
+        return {}
+    i = len(d["carved"])
+    ok = what == g.order[i]
+    d["carved"].append(ok)
+    if len(d["carved"]) >= len(g.order):
+        live.over = True
+    return {"i": i, "ok": ok, "want": None if ok else g.order[i], "over": live.over}
+
+
+def settle_inscribe(live, g, t):
+    d, n = live.data, len(g.order)
+    right = sum(d["carved"])
+    g.carved_ok = list(d["carved"]) + [False] * (n - len(d["carved"]))
+    g.carved, g.right = n, right
+    g.settle(right / n, [f"✨ The Rune of {g.rune}: {right} of {n} strokes carved clean."
+                         + ("" if len(d["carved"]) == n else " The chisel ran out of time.")])
+    live.result = {"right": right, "n": n}
+
+
+MAKERS = {"ignite": make_ignite, "heat": make_heat, "hammer": make_hammer, "quench": make_quench,
+          "inscribe": make_inscribe}
+PRESS = {"ignite": press_ignite, "heat": press_heat, "hammer": press_hammer, "quench": press_quench,
+         "inscribe": press_inscribe}
+SETTLE = {"ignite": settle_ignite, "heat": settle_heat, "hammer": settle_hammer, "quench": settle_quench,
+          "inscribe": settle_inscribe}
 
 
 def make(g, rng, n, now):

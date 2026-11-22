@@ -298,7 +298,8 @@ def play_view(s, now):
             "title": f"{o['rarity']} forge" if o["rarity"] else o.get("title", "The forge failed"),
             "changed": changed, "lines": [rich(x) for x in o["lines"]], "score": o["score"],
             "art": "/art/scenes/forge_success.png" if o["rarity"] else "/art/scenes/forge_cracked.png",
-            "log": [rich(x) for x in g.log],
+            "log": [rich(x) for x in g.log], "picture": gear_view(s.plan.item)["picture"], "rid": int(s.started * 1000),
+            "grand": o["rarity"] in ("Legendary", "Mythical"),
         })
     return out
 

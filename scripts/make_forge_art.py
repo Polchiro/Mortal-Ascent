@@ -61,3 +61,6 @@ if __name__ == "__main__":
 # The spark burst for a good hammer strike (on black, laid on with `screen`), cut from SHOAIB's hammer_sparkles video:
 #   ffmpeg -ss 0.7 -t 3.5 -i hammer_sparkles__blacksmith.mp4 -an -vf "crop=800:600:240:120,scale=480:360,fps=24"
 #          -c:v libx264 -crf 26 -pix_fmt yuv420p -movflags +faststart art/forge/sparks.mp4
+# The rune's glow for Inscribe and the reveal (on black, laid on with `screen`), from SHOAIB's Rune_glow video:
+#   ffmpeg -ss 0 -t 7.5 -i Rune_glow_inscribe_blacksmith.mp4 -an -vf "crop=720:720:280:0,scale=480:480,fps=24"
+#          -c:v libx264 -crf 24 -pix_fmt yuv420p -movflags +faststart art/forge/rune.mp4

@@ -39,6 +39,52 @@
    ],
    "props": {},
    "impact": null
+  },
+  "water": {
+   "src": "/art/forge/male_water.webp",
+   "frames": 75,
+   "cols": 6,
+   "rows": 13,
+   "w": 380,
+   "h": 288,
+   "fps": 10,
+   "crop": [
+    160,
+    0,
+    950,
+    720
+   ],
+   "props": {
+    "trough": [
+     362,
+     466,
+     0.64
+    ]
+   },
+   "impact": 20
+  },
+  "oil": {
+   "src": "/art/forge/male_oil.webp",
+   "frames": 75,
+   "cols": 6,
+   "rows": 13,
+   "w": 380,
+   "h": 288,
+   "fps": 10,
+   "crop": [
+    160,
+    0,
+    950,
+    720
+   ],
+   "props": {
+    "cauldron_oil": [
+     467,
+     478,
+     0.43
+    ]
+   },
+   "impact": 13
   }
  }
 }

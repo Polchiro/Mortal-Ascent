@@ -1,10 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Forging · Mortal Ascent{% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
-<script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
-{% endblock %}
-{% block body_class %}forgebg{% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
-<script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
-{% endblock %}
+{% block title %}Forging · Mortal Ascent{% endblock %}
+{% block body_class %}forgebg{% endblock %}
 {% block body %}
 {% with page="forge" %}{% include "_topbar.html" %}{% endwith %}
 
@@ -36,6 +32,18 @@
         <canvas class="fspot" width="400" height="400"></canvas>
         <video class="fsparks" src="/art/forge/sparks.mp4" muted playsinline preload="auto"></video>
       </div>
+      {% set QW = scene.sheets.water %}{% set QO = scene.sheets.oil %}
+      <div class="fqset{% if not QW %} nosmith{% endif %}" data-medium="water">
+        {% if QW %}<div class="fsheet fqwater" data-sheet='{{ QW | tojson }}' style="background-image: url({{ QW.src }})"></div>{% endif %}
+        {% if QO %}<div class="fsheet fqoil" data-sheet='{{ QO | tojson }}' style="background-image: url({{ QO.src }})"></div>{% endif %}
+        <img class="ftrough" src="/art/forge/trough.webp" alt="">
+        <img class="fcauldron" src="/art/forge/cauldron_oil.webp" alt="">
+      </div>
+      <div class="fplate" id="fplate">
+        <img class="fplateblank" src="{{ scene.blank }}" alt="">
+        <canvas class="frune" width="600" height="420"></canvas>
+        <video class="fruneglow" src="/art/forge/rune.mp4" muted playsinline preload="auto"></video>
+      </div>
       <canvas class="fover" width="960" height="540"></canvas>
       <div class="lbanner" id="lbanner"></div>
       <div class="lhelp" id="lhelp" hidden></div>
@@ -50,6 +58,7 @@
     </div>
     <div class="lpanel fswatch" id="lswatch" hidden><span>Pull it out at</span><b id="lswatchc"></b></div>
     <div class="lpanel fbtns" id="lbtns" hidden></div>
+    <div class="lpanel fclue" id="lclue" hidden></div>
     <div class="lpanel fprompt" id="lprompt" hidden></div>
     <div class="ltime"><div class="tbar"><div id="lfill"></div></div></div>
     <div id="llog"></div>
@@ -91,7 +100,21 @@
   </script>
   {% else %}
   <section class="stage card result" style="--rc: {{ g.color }}">
-    <img class="stageart" src="{{ g.art }}" alt="" width="240" height="240">
+    {% if g.rarity %}
+    <div class="freveal{% if g.grand %} grand{% endif %}" id="freveal" data-id="{{ g.rid }}" aria-hidden="true">
+      <div class="frays"></div>
+      <video class="frglow" src="/art/forge/rune.mp4" muted playsinline preload="auto"></video>
+      <img class="fritem" src="{{ g.picture or g.art }}" alt="">
+    </div>
+    <script>(function () {               /* hide the finished picture before it paints, if the reveal will play */
+      var b = document.getElementById('freveal'), seen = null;
+      try { seen = sessionStorage.getItem('ma-forge-revealed'); } catch (e) {}
+      var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      b.closest('.result').classList.add(seen === b.dataset.id || calm ? 'revealed' : 'revealing');
+    })();</script>
+    {% else %}
+    <img class="stageart fcracked" src="{{ g.art }}" alt="" width="240" height="240">
+    {% endif %}
     <p class="kicker">{{ g.score }} / 100 POINTS</p>
     <h1 class="title" style="color: {{ g.color }}">{{ g.title }}</h1>
     {% for p in g.changed %}
@@ -104,4 +127,5 @@
 </main>
 {% if g.live %}<script src="{{ asset('alchemy_sound.js') }}" defer></script>
 <script src="{{ asset('forge_live.js') }}" defer></script>{% endif %}
+{% if g.done %}<script src="{{ asset('alchemy_sound.js') }}" defer></script><script src="{{ asset('forge_reveal.js') }}" defer></script>{% endif %}
 {% endblock %}

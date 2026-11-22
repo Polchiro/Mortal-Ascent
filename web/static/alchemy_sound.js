@@ -39,6 +39,8 @@
     thunder: function (c, t) { noise(c, t, 0.12, 0.5, 'highpass', 900); noise(c, t + 0.02, 1.6, 0.55, 'lowpass', 320, 0.02); },
     shield: function (c, t) { tone(c, 520, t, 0.5, 0.12, 'triangle'); tone(c, 780, t + 0.05, 0.6, 0.1); noise(c, t, 0.3, 0.12, 'bandpass', 2400); },
     whoosh: function (c, t) { noise(c, t, 0.35, 0.18, 'bandpass', 900, 0.12); },
+    hiss: function (c, t) { noise(c, t, 2.2, 0.28, 'highpass', 2600, 0.04); noise(c, t + 0.05, 1.6, 0.15, 'bandpass', 900, 0.1); },
+    roar: function (c, t) { noise(c, t, 1.8, 0.4, 'lowpass', 500, 0.08); noise(c, t, 0.4, 0.2, 'bandpass', 1400, 0.02); },
     clang: function (c, t) { tone(c, 1850, t, 0.5, 0.12, 'triangle'); tone(c, 2780, t, 0.35, 0.07); tone(c, 920, t, 0.6, 0.08); noise(c, t, 0.08, 0.3, 'highpass', 3000); }
   };
   window.AlchemySound = {

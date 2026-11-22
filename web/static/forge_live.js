@@ -60,6 +60,9 @@
     return me;
   }
   var bellows = Sheet(scene.querySelector('.fbellows')), hammer = Sheet(scene.querySelector('.fhammer'));
+  var qsheets = {water: Sheet(scene.querySelector('.fqwater')), oil: Sheet(scene.querySelector('.fqoil'))};
+  var qset = scene.querySelector('.fqset'), plate = $('fplate'), runeCv = scene.querySelector('.frune'), rctx = runeCv.getContext('2d');
+  var runeGlow = scene.querySelector('.fruneglow');
 
   // ── little helpers ──
   var bannerTimer;
@@ -83,8 +86,8 @@
     var tot = document.querySelector('.track .stg.total b'); if (tot) tot.textContent = state.total + ' / 100';
   }
   function setStageClass(k) {
-    scene.classList.remove('st-ignite', 'st-heat', 'st-hammer', 'st-other', 'hot');
-    scene.classList.add('st-' + (k === 'ignite' || k === 'heat' || k === 'hammer' ? k : 'other'));
+    scene.classList.remove('st-ignite', 'st-heat', 'st-hammer', 'st-quench', 'st-inscribe', 'st-other', 'hot', 'steam');
+    scene.classList.add('st-' + (S[k] ? k : 'other'));
   }
   function button(label, key, on, kind) {
     var b = document.createElement('button');
@@ -362,7 +365,177 @@
   }
   if (sparks) sparks.addEventListener('ended', function () { sparks.classList.remove('on'); });
 
-  // ── the button stages (Quench, Inscribe): the bot's own decisions on this page ──
+  // 💦 Quench: choose water or oil; the blade cools in real time; plunge it at the target
+  var TLO = 300, THI = 950;
+  function tpct(x) { return Math.max(0, Math.min(100, (x - TLO) / (THI - TLO) * 100)); }
+  S.quench = {
+    title: 'Quench', keys: '1 = Water · 2 = Oil, then Space (or Plunge) at the target temperature',
+    setup: function (c) {
+      c.st = {medium: null, chose: null, plunged: null, temp: c.pub.start, k: 0, anim: null};
+      qset.dataset.medium = 'water';
+      show('lgauge', true);
+      $('lband').style.width = '0';
+      btns.innerHTML = '';
+      var w = c.pub.max;
+      c.st.bw = button('💧 Water · up to ' + w.water, '1', function (e) { if (e === 'down') choose(c, 'water'); });
+      c.st.bo = button('🛢️ Oil · up to ' + w.oil, '2', function (e) { if (e === 'down') choose(c, 'oil'); });
+      c.st.bw.addEventListener('pointerenter', function () { if (!c.st.medium) qset.dataset.medium = 'water'; });
+      c.st.bo.addEventListener('pointerenter', function () { if (!c.st.medium) qset.dataset.medium = 'oil'; });
+      show('lbtns', true);
+    },
+    tick: function (c, t) {
+      var p = c.pub, s = c.st;
+      octx.clearRect(0, 0, FW, FH);
+      drawFurnace(35, false, t);
+      if (!s.medium) {
+        hint.innerHTML = 'Choose the quench: <b>Water</b> is fast and risky (narrow window, up to ' + p.max.water + '), <b>Oil</b> slow and safe (wide window, up to ' + p.max.oil + ').';
+        $('lneedle').style.left = tpct(p.start) + '%'; $('lheat').textContent = p.start + '°';
+        return;
+      }
+      var since = (s.plunged !== null ? s.plunged : t) - s.chose, steps = Math.floor(Math.max(0, since) / p.tick);
+      var rate0 = p.cool * p.medium[s.medium];
+      while (s.k < steps) {                     // the same as forge_live.quench_temp
+        var tt = s.k * p.tick, rate = rate0;
+        if (p.wave) rate *= 1 + 0.3 * Math.sin(p.wave[1] * 2 * Math.PI * tt + p.wave[0]);
+        if (p.rush) rate *= 1 + 0.6 * Math.max(0, 1 - (s.temp - p.target) / 250);
+        s.temp -= rate * p.tick; s.k++;
+      }
+      var steam = p.steam.some(function (x) { return since >= x[0] && since < x[0] + x[1]; }) && s.plunged === null;
+      scene.classList.toggle('steam', steam);
+      $('lneedle').style.opacity = steam ? 0 : 1;
+      $('lheat').textContent = steam ? 'steam!' : Math.round(s.temp) + '°';
+      $('lneedle').style.left = tpct(s.temp) + '%';
+      var sheet = qsheets[s.medium];
+      if (sheet) {
+        if (s.anim) {
+          var f = s.anim.from + (performance.now() - s.anim.t) / 1000 * sheet.m.fps * 1.5;
+          if (f >= sheet.m.frames - 1) { f = sheet.m.frames - 1; }
+          sheet.show(f);
+        } else sheet.show(Math.max(0, Math.min(1, (p.start - s.temp) / Math.max(1, p.start - p.target))) * (sheet.m.impact - 5));
+      }
+      var half = p.window[s.medium] / 2, off = Math.abs(s.temp - p.target);
+      hint.innerHTML = s.plunged !== null ? 'The steel hisses…' : steam ? 'Steam hides the thermometer: read the blade\'s glow!'
+        : 'Plunge at <b>' + p.target + '°</b> (± ' + Math.round(half) + '°). ' + (off <= half / 2 ? '<b>Now!</b>' : s.temp > p.target ? 'Still too hot…' : 'It\'s getting cold!');
+    }
+  };
+  function choose(c, medium) {
+    var s = c.st;
+    if (s.medium) return;
+    s.medium = medium; s.chose = now();
+    qset.dataset.medium = medium;
+    var p = c.pub, half = p.window[medium] / 2;
+    $('lband').style.left = tpct(p.target - half) + '%'; $('lband').style.width = (tpct(p.target + half) - tpct(p.target - half)) + '%';
+    btns.innerHTML = '';
+    button('💦 Plunge', 'Space', function (e) { if (e === 'down') plunge(c); }, 'btn-jade');
+    flash(medium === 'water' ? '💧 The water trough' : '🛢️ The oil bath', '', 700);
+    press({do: medium});
+  }
+  function plunge(c) {
+    var s = c.st, p = c.pub;
+    if (!s.medium || s.plunged !== null) return;
+    s.plunged = now();
+    var half = p.window[s.medium] / 2, off = Math.abs(s.temp - p.target), sheet = qsheets[s.medium];
+    if (sheet) s.anim = {t: performance.now(), from: Math.max(0, sheet.m.impact - 4)};
+    var top = off <= half / 2, okish = off <= half;
+    flash(top ? '💦 A perfect quench!' : okish ? 'Close enough' : 'The steel shudders…', top ? 'good' : okish ? '' : 'bad', 1400);
+    Snd(s.medium === 'water' ? 'hiss' : 'roar');
+    setTimeout(function () { Snd(top ? 'chime' : okish ? 'good' : 'bad'); }, 500);
+    press({do: 'plunge'});
+  }
+
+  // ✍️ Inscribe: draw each stroke on the plate, in the clue's order
+  var STROKE = {horizontal: ['横', '→', 'Horizontal'], vertical: ['竖', '↓', 'Vertical'], sweep: ['撇', '↙', 'Sweep'],
+                press: ['捺', '↘', 'Press'], dot: ['点', '•', 'Dot'], hook: ['钩', '↩', 'Hook']};
+  S.inscribe = {
+    title: 'Inscribe', keys: 'Draw each stroke on the plate (drag; a tap is a dot), or use the stroke buttons',
+    setup: function (c) {
+      var p = c.pub;
+      c.st = {i: 0, path: null, marks: []};
+      var clue = $('lclue');
+      clue.innerHTML = p.clue.map(function (k, i) { return '<span class="chip' + (i === 0 ? ' now' : '') + '" data-i="' + i + '"><b>' + STROKE[k][0] + '</b>' + STROKE[k][1] + ' ' + STROKE[k][2] + '</span>'; }).join('');
+      clue.classList.remove('faded'); show('lclue', true);
+      btns.innerHTML = ''; btns.classList.add('strokes');
+      p.strokes.forEach(function (k) { button(STROKE[k][0] + ' ' + STROKE[k][1], '', function (e) { if (e === 'down') carve(c, k, null); }); });
+      show('lbtns', true);
+      rctx.clearRect(0, 0, runeCv.width, runeCv.height);
+    },
+    tick: function (c, t) {
+      var p = c.pub, s = c.st;
+      octx.clearRect(0, 0, FW, FH);
+      if (p.fade && t > p.fade && !$('lclue').classList.contains('faded')) { $('lclue').classList.add('faded'); flash('The clue fades: carve it from memory', '', 1100); }
+      hint.innerHTML = s.i < p.count ? 'The Rune of <b>' + p.rune + '</b> · stroke ' + (s.i + 1) + ' of ' + p.count + (p.fade && t > p.fade ? ' (from memory)' : ': ' + STROKE[p.clue[s.i]][2]) : 'The rune is complete…';
+    }
+  };
+  function classify(pts) {
+    var a = pts[0], b = pts[pts.length - 1], len = 0, maxY = a, i;
+    for (i = 1; i < pts.length; i++) { len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); if (pts[i].y > maxY.y) maxY = pts[i]; }
+    if (len < 14) return 'dot';
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var downThen = maxY.y - a.y, curl = Math.hypot(b.x - maxY.x, b.y - maxY.y);   // a hook: mostly straight down, then
+    if (downThen > 30 && Math.abs(maxY.x - a.x) < downThen * 0.35 && curl >= 9 &&       // a curl after its lowest point,
+        (b.x < maxY.x - 6 || b.y < maxY.y - 6)) return 'hook';                         // back left or up
+    if (Math.abs(dx) > 2 * Math.abs(dy)) return 'horizontal';
+    if (Math.abs(dy) > 2 * Math.abs(dx)) return 'vertical';
+    return dx < 0 ? 'sweep' : 'press';
+  }
+  function cvPoint(e) {
+    var r = runeCv.getBoundingClientRect();
+    return {x: (e.clientX - r.left) * runeCv.width / r.width, y: (e.clientY - r.top) * runeCv.height / r.height};
+  }
+  function strokeLine(pts, color, width, glow) {
+    rctx.save(); rctx.strokeStyle = color; rctx.lineWidth = width; rctx.lineCap = 'round'; rctx.lineJoin = 'round';
+    rctx.shadowColor = glow; rctx.shadowBlur = 18; rctx.beginPath();
+    pts.forEach(function (q, i) { if (i) rctx.lineTo(q.x, q.y); else rctx.moveTo(q.x, q.y); });
+    if (pts.length === 1) { rctx.arc(pts[0].x, pts[0].y, width * 0.7, 0, 2 * Math.PI); }
+    rctx.stroke(); rctx.restore();
+  }
+  function redraw(c) {
+    rctx.clearRect(0, 0, runeCv.width, runeCv.height);
+    c.st.marks.forEach(function (m) { strokeLine(m.pts, m.ok === false ? 'rgba(224,90,79,.9)' : 'rgba(255,224,150,.95)', m.ok === false ? 5 : 9, m.ok === false ? '#E05A4F' : '#FFD27A'); });
+    if (c.st.path) strokeLine(c.st.path, 'rgba(255,240,200,.8)', 7, '#FFE6A8');
+  }
+  runeCv.addEventListener('pointerdown', function (e) {
+    if (!cur || cur.stage !== 'inscribe' || cur.t0 === null || ending) return;
+    e.preventDefault(); if (runeCv.setPointerCapture) runeCv.setPointerCapture(e.pointerId);
+    cur.st.path = [cvPoint(e)]; Snd('tick');
+  });
+  runeCv.addEventListener('pointermove', function (e) {
+    if (!cur || !cur.st || !cur.st.path) return;
+    cur.st.path.push(cvPoint(e)); redraw(cur);
+  });
+  ['pointerup', 'pointercancel'].forEach(function (n) {
+    runeCv.addEventListener(n, function () {
+      if (!cur || !cur.st || !cur.st.path) return;
+      var pts = cur.st.path; cur.st.path = null;
+      carve(cur, classify(pts), pts);
+    });
+  });
+  function carve(c, what, pts) {
+    var s = c.st, p = c.pub;
+    if (s.i >= p.count) return;
+    var i = s.i++, mark = {pts: pts || defaultPath(what, i, p.count), ok: null};
+    s.marks.push(mark); redraw(c);
+    var chip = $('lclue').querySelector('[data-i="' + i + '"]'), next = $('lclue').querySelector('[data-i="' + (i + 1) + '"]');
+    if (chip) chip.classList.remove('now'); if (next) next.classList.add('now');
+    Snd('clang');
+    press({do: what}).then(function (r) {
+      if (!r || r.i === undefined) return;
+      mark.ok = r.ok; redraw(c);
+      if (chip) chip.classList.add(r.ok ? 'ok' : 'bad');
+      if (!r.ok) { flash('🩸 The chisel slips: it wanted a ' + STROKE[r.want][2].toLowerCase() + ' (' + STROKE[r.want][0] + ')', 'bad', 1300); Snd('bad'); }
+      else flash('✨ A clean ' + STROKE[what][2].toLowerCase() + ' stroke', 'good', 600);
+      if (r.over) { if (runeGlow && !calm) { runeGlow.currentTime = 2.4; runeGlow.classList.add('on'); var pr = runeGlow.play(); if (pr && pr.catch) pr.catch(function () {}); } Snd('chime'); }
+    });
+  }
+  function defaultPath(what, i, n) {          // a stroke chosen with a button is carved in a tidy place
+    var W = runeCv.width, H = runeCv.height, x = W * (0.25 + 0.5 * (n > 1 ? i / (n - 1) : 0.5)), y = H * 0.5, L = 70;
+    return {horizontal: [{x: x - L, y: y}, {x: x + L, y: y}], vertical: [{x: x, y: y - L}, {x: x, y: y + L}],
+            sweep: [{x: x + L * 0.6, y: y - L}, {x: x - L * 0.6, y: y + L}], press: [{x: x - L * 0.6, y: y - L}, {x: x + L * 0.6, y: y + L}],
+            dot: [{x: x, y: y}], hook: [{x: x, y: y - L}, {x: x, y: y + L * 0.6}, {x: x - 26, y: y + L * 0.3}]}[what];
+  }
+  if (runeGlow) runeGlow.addEventListener('ended', function () { runeGlow.classList.remove('on'); });
+
+  // ── the button stages (none now: every stage is live; kept for a forge started before this page changed) ──
   var promptTimer = null;
   function showPrompt(state) {
     var pr = state.prompt, box = $('lprompt');
@@ -404,7 +577,11 @@
     'f-uneven': ['↔️ Uneven heat', 'The tip heats ahead of the base: judge the colour in the <b>middle</b>.'],
     'f-hammer': ['🔨 Hammer', 'A glowing spot slides along the metal: strike as it passes <b>under the hammer</b> (the dashed line). The metal tells you how: <b>rings bright → Hard</b> (Space/J), <b>soft spreading glow → Light</b> (K), <b>glow fading → Reheat</b> (R).'],
     'f-decoy': ['👻 False spots', 'A fainter, flickering spot may cross first. Striking it is a bad blow.'],
-    'f-double': ['✌️ Double strikes', 'Some strikes show two spots: hit both.']
+    'f-double': ['✌️ Double strikes', 'Some strikes show two spots: hit both.'],
+    'f-quench': ['💦 Quench', 'Choose <b>Water</b> (1: fast, narrow window, up to 20) or <b>Oil</b> (2: slow, wide window, up to 15). The blade then cools: press <b>Space</b> (or Plunge) when the needle is in the <b>green band</b>.'],
+    'f-steam': ['🌫️ Steam', 'Steam sometimes hides the thermometer: judge by the timing.'],
+    'f-inscribe': ['✍️ Inscribe', 'Carve the rune stroke by stroke, in the order shown: <b>drag</b> on the plate (→ horizontal, ↓ vertical, ↙ sweep, ↘ press, a <b>tap</b> is a dot, ↓ then curl back is a hook), or use the stroke buttons.'],
+    'f-fade': ['🧠 From memory', 'On fine gear the clue fades after a moment: remember the order.']
   };
   function helpOff() {
     var m = /(?:^|; )ma_help=(on|off)/.exec(document.cookie);
@@ -416,6 +593,8 @@
     var k = [];
     if (stage === 'ignite') { k.push('f-ignite'); if (p.jam) k.push('f-jam'); if (p.flare) k.push('f-flare'); }
     if (stage === 'heat') { k.push('f-heat'); if (p.uneven) k.push('f-uneven'); }
+    if (stage === 'quench') { k.push('f-quench'); if (p.steam && p.steam.length) k.push('f-steam'); }
+    if (stage === 'inscribe') { k.push('f-inscribe'); if (p.fade) k.push('f-fade'); }
     if (stage === 'hammer') {
       k.push('f-hammer');
       if (p.strikes.some(function (s) { return s.decoy !== undefined; })) k.push('f-decoy');
@@ -456,8 +635,9 @@
 
   // ── the loop ──
   function reset() {
-    ['lgauge', 'lswatch', 'lbtns', 'lprompt'].forEach(function (id) { show(id, false); });
-    btns.innerHTML = ''; hint.innerHTML = '';
+    ['lgauge', 'lswatch', 'lbtns', 'lprompt', 'lclue'].forEach(function (id) { show(id, false); });
+    btns.innerHTML = ''; btns.classList.remove('strokes'); hint.innerHTML = '';
+    $('lneedle').style.opacity = 1;
     clearInterval(promptTimer);
     hctx.clearRect(0, 0, heatCv.width, heatCv.height); sctx.clearRect(0, 0, spotCv.width, spotCv.height);
   }
@@ -515,6 +695,7 @@
     var k = cur.stage;
     if (k === 'ignite') { if (kind === 'main') pump(cur, true); if (kind === 'mainup') pump(cur, false); if (kind === 'vent') vent(cur); }
     if (k === 'heat' && kind === 'main') pull(cur);
+    if (k === 'quench') { if (kind === 'main') plunge(cur); if (kind === 'one') choose(cur, 'water'); if (kind === 'two') choose(cur, 'oil'); }
     if (k === 'hammer') {
       if (kind === 'main' || kind === 'hard') strike(cur, 'hard');
       if (kind === 'light') strike(cur, 'light');
@@ -526,6 +707,7 @@
     var k = e.key.toLowerCase();
     if (e.code === 'Space') { e.preventDefault(); act('main'); }
     else if (k === 'v') act('vent'); else if (k === 'j') act('hard'); else if (k === 'k') act('light'); else if (k === 'r') act('reheat');
+    else if (k === '1') act('one'); else if (k === '2') act('two');
   });
   document.addEventListener('keyup', function (e) { if (e.code === 'Space') { e.preventDefault(); act('mainup'); } });
   window.addEventListener('blur', function () { act('mainup'); });
