@@ -255,13 +255,14 @@ def test_the_male_sword_attack_plays_frame_by_frame(client):
     fight(client)
     page = client.get("/explore/play").text
     sheet = looks.ATTACK_SHEETS["male"]
-    assert 'class="sheetfx"' in page and sheet["src"] in page and " sheeted" in page
+    assert 'class="sheetfx asheet" data-act="strike"' in page and 'class="sheetfx asheet" data-act="break"' in page
+    assert sheet["src"] in page and " sheeted" in page and "data-blade" not in page      # his: one sheet, the page's timing
     assert f'data-frames="{sheet["frames"]}"' in page and client.get(sheet["src"]).status_code == 200
     from PIL import Image
     import os
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
     assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
-    assert looks.attack_sheet({"gender": "female"}) is None                  # she still swings through her three poses
+    assert set(looks.attack_sheets({"gender": "female"})) == {"strike", "break"}   # hers: her own sheets (test below)
 
 
 def test_break_slams_the_ground_with_its_own_effects(client):
@@ -633,7 +634,7 @@ def test_the_female_stance_plays_while_she_stands(client):
     assert f"--loop: {sheet['loop']}s" in page and f"--cols: {sheet['cols']}" in page and f"--rows: {sheet['rows']}" in page
     css = client.get("/static/style.css").text
     assert ".fighter.stanced[data-pose=idle] .isheet{visibility:visible}" in css and "@keyframes stancex" in css
-    assert ":not(.isheet)" in client.get("/static/fight.js").text        # never taken for her frame-by-frame attack
+    assert "querySelectorAll('.asheet')" in client.get("/static/fight.js").text   # only .asheet is an attack, never the stance
 
 
 def test_the_male_cultivator_keeps_his_still_idle(client):
@@ -741,3 +742,30 @@ def test_the_fight_background_is_alive_behind_the_fighters(client):
         assert place + ":" in js                                   # every fight background has its own weather
     assert "prefers-reduced-motion" in js and "document.hidden" in js
     assert ".bscene>canvas.ambient{" in css and "pointer-events:none;z-index:-1" in css   # at the back, never in the way
+
+
+def test_her_strike_and_break_play_frame_by_frame_from_her_stance(client):
+    import json
+    import os
+    import looks
+    from PIL import Image
+    c = db.connect(client.path)
+    db.update_player(c, UID, appearance=json.dumps({"gender": "female"}))
+    c.close()
+    fight(client)
+    page = client.get("/explore/play").text
+    root = os.path.dirname(os.path.dirname(__file__))
+    for act in ("strike", "break"):
+        sh = looks.ATTACK_SHEETS["female"][act]
+        assert f'class="sheetfx asheet" data-act="{act}"' in page and sh["src"] in page and "data-blade=" in page
+        assert client.get(sh["src"]).status_code == 200
+        im = Image.open(os.path.join(root, sh["src"].lstrip("/")))
+        cw, ch = im.size[0] // sh["cols"], im.size[1] // sh["rows"]
+        assert sh["frames"] <= sh["cols"] * sh["rows"] and abs(cw / ch - sh["box"][2] * 1024 / (sh["box"][3] * 559)) < 0.02
+        keys = sh["blade"]["keys"]
+        assert keys[0] == [0, 0] and keys[-1][1] == sh["frames"] - 1                # stance to stance
+        assert all(a[0] <= b[0] for a, b in zip(keys, keys[1:]))
+        assert sh["blade"]["dash"][1] <= sh["blade"]["hit"] <= sh["blade"]["back"][0] < sh["blade"]["end"]
+    assert looks.ATTACK_SHEETS["female"]["break"]["blade"]["slam"]                    # the fight's own Break burst
+    js = client.get("/static/fight.js").text
+    assert "sweep(ev, asheets[ev.act])" in js and "sheet.dataset.blade" in js
