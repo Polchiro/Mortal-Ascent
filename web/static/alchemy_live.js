@@ -251,7 +251,7 @@
   // ☯️ Fuse / 🔒 Seal: tap when the orbs meet
   function fuseStage(seal) {
     return {
-      title: seal ? 'Seal the Core' : 'Fuse the Essences', keys: 'Press Space (or the button) the moment Yin and Yang meet.',
+      title: seal ? 'Seal the Core' : 'Fuse the Essences', keys: seal ? 'Press Space (or the button) the moment Yin and Yang meet.' : 'Press Space the moment Yin and Yang meet. Every meeting counts: a missed one scores nothing.',
       hint: '',
       setup: function (c) {
         c.st = {fused: 0, unsteady: 0, used: {}, lastHit: -9};
@@ -262,7 +262,9 @@
         var p = c.pub, s = c.st, m = p.meet, prev = -m[0], next = m[0], i;
         for (i = 0; i < m.length; i++) { if (m[i] > t) { next = m[i]; prev = i ? m[i - 1] : 0; break; } prev = m[i]; next = m[i] + (m[i] - (i ? m[i - 1] : 0)); }
         var near = m.some(function (x) { return Math.abs(t - x) <= p.window; });
-        var sep = 2 * Math.PI * Math.max(0, (next - t) / Math.max(0.2, next - prev));
+        var left = Math.max(0, (next - t) / Math.max(0.2, next - prev));
+        if (p.rush) left = left * left;                    // Heaven: slow drift, then a rush together
+        var sep = 2 * Math.PI * left;
         var dir = 1, cx = W / 2, cy = H * 0.36, rx = 170, ry = 70;
         (p.reverse || []).forEach(function (k) { if (t >= m[k]) dir = -dir; });
         var base = dir * t * 1.1;
@@ -285,7 +287,9 @@
         });
         if (t - s.lastHit < 0.5) ring(cx + rx * Math.cos(base), cy + ry * Math.sin(base), 30 + 80 * (t - s.lastHit), 'rgba(168,240,210,' + (1 - 2 * (t - s.lastHit)) + ')', 6);
         scene.style.setProperty('--calm', (0.35 + 0.6 * s.fused / p.need) * Math.max(0.2, 1 - 0.25 * s.unsteady));
-        hint.textContent = (seal ? 'Seal the Beast Core: ' : 'Fuse Yin and Yang: ') + s.fused + ' of ' + p.need
+        var missed = seal ? 0 : m.filter(function (x, k) { return t > x + p.window * p.reach && !s.used[k]; }).length;
+        if (missed > (s.missed || 0)) { s.missed = missed; flash('Missed!', 'bad', 600); Snd('bad'); }
+        hint.textContent = (seal ? 'Seal the Beast Core: ' : 'Fuse Yin and Yang: ') + s.fused + ' of ' + p.need + (missed ? ' · ' + missed + ' missed' : '')
           + (s.unsteady ? ' · ' + s.unsteady + ' unsteady' : '') + (seal && p.allowed ? ' · ' + p.allowed + ' miss allowed' : '');
       },
       down: function (c) {

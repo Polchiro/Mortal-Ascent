@@ -644,8 +644,11 @@ precise play the high ones, all still capped by the herbs' age. The pattern thre
 |---|---|---|---|---|---|
 | Ignite | still band, 1 gust | band sways | 2 gusts | + the band **jumps** mid-stage (a flashing ghost band shows where, 1.2 s ahead) | + **flare-ups**: the heat surges, and pumping into one overheats |
 | Herbs | | on the breath | misleading clues | + a **volatile** herb goes in on the out-breath (blue ring) | + the breathing **quickens** after two breaths |
-| Fuse / Seal | | | steady orbits | + the orbs **reverse** | + a **chaos orb** streaks through just before a meeting: a tap on it is unsteady |
+| Fuse / Seal | | | steady orbits | + the orbs **reverse**, a **chaos orb** streaks through once just before a meeting (a tap on it is unsteady), windows ×0.9 | + three chaos orbs, the orbs drift then **rush** together, windows ×0.8 |
 | Condense | slow rings | | red **decoy** ring | + the beats **quicken** | + the gold ring may come after fewer warm-up beats |
+
+**Fuse** has no spare meetings: every meeting counts and a missed one scores nothing (Seal the Core keeps its one
+spare). Its precise window allows only 0.03 s of network jitter (`GRACE_PRECISE`), the full 0.09 s only for good.
 
 **Rank margin:** each alchemist rank above the recipe (3 at most) widens every window and the Tribulation's warning
 by 6%, and calms the gusts and the band's sway. It never removes a challenge.

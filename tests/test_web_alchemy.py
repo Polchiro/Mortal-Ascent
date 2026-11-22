@@ -547,3 +547,20 @@ def test_the_explosion_carries_its_craft_id(client):
         s.craft.settle(0.0)
     page = client.get("/alchemy/play").text
     assert 'class="cscene boom"' in page and f'data-craft="{int(s.started * 1000)}"' in page
+
+
+def test_fuse_every_meeting_counts_and_precise_is_tight():
+    import random
+    from web import alchemy_live as L
+    c = craft_at("Heaven", 3)
+    lv = L.make(c, random.Random(4), 0, 0)
+    p = lv.pub
+    assert len(p["meet"]) == p["need"] and p["rush"]                     # no spare meetings on Fuse
+    p["chaos"] = []                                                      # (its timing is tested on its own)
+    assert L.press(lv, c, p["meet"][0] + p["window"] / 2 + L.GRACE_PRECISE * 0.5, {})["how"] == "precise"
+    assert L.press(lv, c, p["meet"][1] + p["window"] / 2 + L.GRACE_PRECISE * 2, {})["how"] == "good"
+    for m in p["meet"][3:]:                                              # the third meeting goes by untouched
+        L.press(lv, c, m, {})
+    L.settle(lv, c, lv.length + 1)
+    assert c.scores[3] == pytest.approx((1 + 0.8 + 0 + 1 + 1) / 5)
+    assert "1 missed" in c.log[0]
