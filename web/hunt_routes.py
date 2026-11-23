@@ -9,8 +9,8 @@ Explore's hunting pages (docs/hunting.md):
   /hunt/v             a small JSON version number the lobby and hunt pages poll to know when to reload
   /hunt/pos           the map page reporting where you walk (web/hunt_map.py)
   /world              the World Map: the town and the hunting grounds on one painted scroll (web/world.py), to look at
-  /crossroads         outside the town gate: walk to a road's end (web/crossroads.py)
-  /crossroads/go/<key>  set out down that road: a Solo Hunt on that ground's walkable map
+  /crossroads/go/<key>  set out down a road from the Crossroads (web/world_routes.py has the page) to a ground that has
+                        no walkable world map yet: a Solo Hunt on its hunting map
 
 Every POST only asks web/parties.py or web/hunt_play.py; they decide.
 """
@@ -194,6 +194,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/hunt/locations")
         if kind == "lobby":
             return no_store(page(request, "hunt_lobby.html", v=v, user=user, avatar=avatar(user), error=error(request)))
+        if v["mode"] == "map" and v.get("world"):               # a trip in the open world: back out there
+            return go(f"/wild/{v['loc_key']}")
         if v["mode"] == "map":                                   # walking the hunting ground (web/hunt_map.py)
             return no_store(page(request, "hunt_map.html", g=v, user=user, avatar=avatar(user), error=error(request)))
         if v["mode"] == "fight":                                 # the shared fight screen
@@ -262,8 +264,18 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         user = current_user(request)
         if not user:
             return go("/")
-        walked = hunts.walked(user["id"])                       # a walked Solo Hunt ends back at the Crossroads,
-        party = hunts.dismiss(user["id"])                       # at the end of the road it went down
+        uid = user["id"]
+        mine = parties.of(uid)
+        h = hunts.get(mine.id) if mine else None
+        if h is not None and h.world:                           # an open-world trip that ended out there
+            res = h.results.get(uid) or {}
+            hunts.dismiss(uid)
+            if res.get("defeated"):                             # carried home: you wake up in town
+                app.state.world.defeated(uid)
+                return go("/town")
+            return go(f"/wild/{h.loc['key']}")
+        walked = hunts.walked(uid)                              # a walked Solo Hunt ends back at the Crossroads,
+        party = hunts.dismiss(uid)                              # at the end of the road it went down
         return go("/hunt" if party else f"/crossroads?near=road_{walked}" if walked else "/explore")
 
     # ── the World Map (web/world.py, docs/world.md) ─────────────────
@@ -287,52 +299,6 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if v is None:
             return page(request, "no_character.html", user=user, avatar=avatar(user))
         return no_store(page(request, "world.html", v=v, art=world.ART, user=user, avatar=avatar(user)))
-
-    def away(request, uid):
-        """Where a player must go instead of walking about: an expedition under way, a team, or a hunt (None: free).
-        A Solo Hunt still choosing its ground is dropped."""
-        s = with_conn(explores.catch_up, uid)
-        if s and not explores._finished(s):
-            return "/explore/play"
-        party = parties.of(uid)
-        if party is not None:
-            if party.solo and not party.hunting:
-                parties.leave(uid)
-            else:
-                return "/hunt"
-        return None
-
-    @app.get("/crossroads", response_class=HTMLResponse)
-    def crossroads_page(request: Request, near: str = ""):
-        """Outside the town gate (web/crossroads.py): walked like the town, by everyone whose look has a walking
-        sheet; a look without one chooses a road from a list."""
-        import looks
-        user = current_user(request)
-        if not user:
-            return go("/")
-        uid = user["id"]
-        elsewhere = away(request, uid)
-        if elsewhere:
-            return go(elsewhere)
-
-        def build(c):
-            from bot import db
-            p = db.get_player(c, uid)
-            if p is None:
-                return None
-            blocked = hunts.blocked(c, uid)
-            sheet = looks.walk_sheet(looks.of_player(p))
-            data = crossroads.page_data(sheet, p, blocked, near or None) if sheet else None
-            return {**hunt_pages.purse(p), "realm": p["realm"], "data": data, "exits": crossroads.exits(p, blocked)}
-
-        v = with_conn(build)
-        if v is None:
-            return page(request, "no_character.html", user=user, avatar=avatar(user))
-        from . import town
-        return no_store(page(request, "crossroads.html", user=user, avatar=avatar(user), notice=error(request),
-                             walking=v["data"] is not None, ground=crossroads.ART, exits=v["exits"],
-                             map_json=town.page_json(v["data"]) if v["data"] else "", realm=v["realm"],
-                             coins=v["coins"], pearls=v["pearls"]))
 
     @app.post("/crossroads/go/{key}")
     def crossroads_go(request: Request, key: str):

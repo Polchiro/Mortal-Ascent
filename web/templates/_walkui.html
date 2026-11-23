@@ -1,0 +1,24 @@
+{# The controls every walkable place shares (web/static/town.js, docs/world.md): the prompt, the joystick, the
+   talk box, the gathering panel, what you found, the trip's line, and the fade between places. #}
+<button class="mprompt" id="prompt" type="button"></button>
+<div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+<div class="mplate wtrip" id="trip" hidden aria-live="polite"></div>
+<div class="mplate tnotice wsay" id="say" role="status" hidden></div>
+<section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
+  <p class="kicker" id="dlgTitle"></p>
+  <h2 id="dlgName"></h2>
+  <p class="tline" id="dlgLine"></p>
+  <div class="tgo" id="dlgGo"></div>
+</section>
+<section class="mplate gpanel" id="gpanel" role="dialog" aria-modal="true" aria-label="Gathering" hidden>
+  <p class="kicker" id="gKicker">GATHERING</p>
+  <div id="gBody"></div>
+</section>
+<section class="mplate tdlg fpanel" id="fpanel" role="dialog" aria-modal="true" aria-labelledby="fName" hidden>
+  <p class="kicker" id="fKicker">A DISCOVERY</p>
+  <h2 id="fName">Something glints</h2>
+  <div id="fBody"></div>
+  <div class="tgo"><button type="button" class="hbtn small" id="fClose">Walk on</button></div>
+</section>
+<div class="wfade" id="fade" aria-hidden="true"></div>
+<script src="{{ asset('town.js') }}" defer></script>

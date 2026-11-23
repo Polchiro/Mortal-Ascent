@@ -82,17 +82,21 @@ class Gathering:
 
     # ── rounds ───────────────────────────────────────────────────────
 
-    def next_round(self):
+    def next_round(self, herb=None):
+        """The next round. `herb`: (grade, type, place) of a herb already found growing (the website's open world
+        rolls it when it sprouts, with the same grade odds); None rolls one here, as /gather does."""
         p = self.player
         if p["spirit_check_in"] <= 0:
             self.round = self._spirit_round()
         else:
-            self.round = self._herb_round(p)
+            self.round = self._herb_round(p, herb)
         return self.round
 
-    def _herb_round(self, p):
-        tier = loot.herb_tier(p["realm"], self.rng)
-        type_ = loot.roll_herb_type(self.rng)
+    def _herb_round(self, p, herb=None):
+        if herb:
+            tier, type_, where = herb
+        else:
+            tier, type_, where = loot.herb_tier(p["realm"], self.rng), loot.roll_herb_type(self.rng), None
         age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]
         old = age >= alchemy.OLD_HERB_FROM_AGE
@@ -109,7 +113,7 @@ class Gathering:
         keyed = [(f"o{i}", kind, plant) for i, (kind, plant) in enumerate(options)]
         answer = next(k for k, kind, _ in keyed if kind == "herb")
         seconds = alchemy.GATHER_SECONDS[tier] + passives.artifact_passive(self.player, "swift_hands", "decision_seconds")
-        place = self.rng.choice(PLACES)
+        place = where or self.rng.choice(PLACES)
         prompt = self.rng.choice(SEARCH_LINES).format(place=place, name=name) + f"\n> *{desc}*"
         if old:
             seconds = max(alchemy.OLD_HERB_MIN_SECONDS, seconds - alchemy.OLD_HERB_SECONDS_LESS)

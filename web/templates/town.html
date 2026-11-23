@@ -11,29 +11,21 @@
 
 <div class="mhud">
   <div class="mplate">
-    <p class="kicker">MORTAL ASCENT · TOWN</p>
-    <h1>{{ town_name }}</h1>
+    <p class="kicker" id="placeKicker">MORTAL ASCENT · TOWN</p>
+    <h1 id="placeTitle">{{ town_name }}</h1>
     <span class="mhint">{{ coins }} Lotus · {{ pearls }} Pearls</span>
   </div>
   {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to talk · <b>Shift</b> to stroll · <b>M</b> map</div>{% endif %}
 </div>
 
-{% if notice %}<div class="mplate tnotice" role="status">{{ notice }}</div>{% endif %}
+{% if notice %}<div class="mplate tnotice" role="status">{% if notice_html %}{{ notice | safe }}{% else %}{{ notice }}{% endif %}</div>{% endif %}
 
 <div class="mtools">
   <a class="hbtn ghost small" href="/world">World Map</a>
 </div>
 
 {% if walking %}
-<button class="mprompt" id="prompt" type="button"></button>
-<div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
-<section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
-  <p class="kicker" id="dlgTitle"></p>
-  <h2 id="dlgName"></h2>
-  <p class="tline" id="dlgLine"></p>
-  <div class="tgo" id="dlgGo"></div>
-</section>
-<script src="{{ asset('town.js') }}" defer></script>
+{% include "_walkui.html" %}
 {% else %}
 <section class="mplate tboard">
   <p class="kicker">THE TOWNSFOLK</p>

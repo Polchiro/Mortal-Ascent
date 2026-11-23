@@ -76,6 +76,17 @@ def is_announced(grade):
 
 
 HERB_TYPE_CHANCE = {"qi": 0.30, "healing": 0.20, "purity": 0.35, "breakthrough": 0.15}
+# Herbs growing out in the world (the website's open world, docs/world.md): each region favours its own types
+# (the same four; the grade still follows the gatherer's realm, alchemy.herb_grade_odds). Each row sums to 1.
+REGION_HERB_TYPES = {
+    "crossroads":                {"qi": 0.40, "healing": 0.30, "purity": 0.25, "breakthrough": 0.05},
+    "moon_forest":               {"qi": 0.25, "healing": 0.35, "purity": 0.30, "breakthrough": 0.10},
+    "crimson_gorge":             {"qi": 0.25, "healing": 0.10, "purity": 0.25, "breakthrough": 0.40},
+    "frostpeak_mountains":       {"qi": 0.20, "healing": 0.15, "purity": 0.55, "breakthrough": 0.10},
+    "thunderfall_valley":        {"qi": 0.50, "healing": 0.15, "purity": 0.15, "breakthrough": 0.20},
+    "ancient_battlefield":       {"qi": 0.20, "healing": 0.40, "purity": 0.15, "breakthrough": 0.25},
+    "celestial_forbidden_lands": {"qi": 0.25, "healing": 0.25, "purity": 0.25, "breakthrough": 0.25},
+}
 
 # tier → type → (name, description)
 HERBS = {

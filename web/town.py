@@ -160,8 +160,8 @@ NPCS = [
     {"key": "gate", "name": "Gate Warden", "title": "The road out", "x": 26.2, "y": 18.8,
      "src": "/art/portraits/town/gate.webp", "h": 135,
      "line": "The wilds are restless tonight. The roads to every hunting ground start at the crossroads just outside "
-             "this gate. Hunting with friends? Gather your party first. And the herbs out there won't pick themselves.",
-     "go": [["Look at the World Map", "/world"], ["Hunt with a team", "/explore"], ["Gather herbs", "/gather"]]},
+             "this gate. Hunting with friends? Gather your party first. And keep an eye on the grass: herbs grow out there.",
+     "go": [["Look at the World Map", "/world"], ["Hunt with a team", "/explore"]]},
     {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 8.9, "y": 12.6,
      "src": "/art/portraits/town/blacksmith.webp", "h": 132,
      "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging.",

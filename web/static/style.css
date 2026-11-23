@@ -1400,6 +1400,27 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .tboard .tnpc .tgo{flex-direction:column;align-items:stretch;flex-shrink:0}
 .tgo .hbtn{white-space:nowrap}
 
+/* ── the open world's panels (town.js, _walkui.html, docs/world.md): the trip, a passing line, gathering, a find ── */
+.wtrip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:3;max-width:min(720px,92vw);
+  padding:8px 16px;font:600 13px Inter,sans-serif;color:#E6DFCF;text-align:center}
+.wsay{position:fixed;left:50%;top:168px;transform:translateX(-50%);z-index:5;max-width:min(640px,92vw);animation:none}
+.gpanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:min(900px,94vw);max-height:92vh;
+  overflow:auto;padding:18px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.gpanel .plants{margin-top:4px}.gpanel .plantcard img{max-height:150px}
+.gpanel .pline{margin:0}.gpanel .timer{margin:4px auto 0}.gpanel .link{margin-top:2px}
+.gpanel .choices{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.fpanel{position:fixed;z-index:6}
+.gpanel[hidden],.fpanel[hidden],.wtrip[hidden],.wsay[hidden]{display:none}
+.fpanel .tline{margin:0 0 8px}
+.wfade{position:fixed;inset:0;z-index:7;background:#05060A;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.wfade.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.wfade{transition:none}}
+@media (max-width:760px){.gpanel{padding:12px}.gpanel .plantcard img{max-height:100px}}
+/* a phone: the name plate leaves room for the World Map button, the trip's line sits under it, and the prompt sits
+   beside the thumb stick instead of on it */
+@media (max-width:640px){.mhud{right:136px}.wtrip{top:148px;bottom:auto;font-size:12px;padding:6px 10px;width:max-content}
+  .wsay{top:204px}.mprompt{left:auto;right:12px;transform:none;max-width:calc(100vw - 190px)}}
+
 /* ── the World Map (world.html, world.js, web/world.py, docs/world.md): the scroll, its markers and their cards ── */
 body.world{overflow:auto;background:radial-gradient(ellipse at 50% 40%,#1A1D26,#0B0B0D 70%)}
 .wstage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:96px 16px 24px;box-sizing:border-box}

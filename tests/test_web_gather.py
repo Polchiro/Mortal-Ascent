@@ -1,5 +1,6 @@
-"""Gathering on the website (docs/web.md, "Gathering"): the bot's own /gather engine, refereed on the server."""
-import html
+"""Gathering on the website (docs/world.md "Herbs"): walk up to a herb out in the world and play its round. The
+round is the bot's own /gather engine (bot/gathering.py), refereed on the server (web/gather_play.py,
+web/overworld.py)."""
 import urllib.parse
 
 import pytest
@@ -12,7 +13,6 @@ from bot import db, gathering  # noqa: E402
 from bot import player as rules  # noqa: E402
 from web import app as web_app  # noqa: E402
 from web import discord_oauth as oauth  # noqa: E402
-from web import gather_play  # noqa: E402
 
 UID = 779
 
@@ -57,150 +57,159 @@ def client(db_path, monkeypatch):
     c.get("/callback", params={"code": "x", "state": q["state"][0]})
     c.now = [1000.0]
     app.state.gathers.clock = lambda: c.now[0]
-    c.gathers = app.state.gathers
+    app.state.world.clock = lambda: c.now[0]
+    c.gathers, c.world = app.state.gathers, app.state.world
+    assert c.get("/crossroads").status_code == 200               # out of the gate, into the meadow
     return c
 
 
-def begin(client):
-    r = client.post("/gather/begin")
-    return client.gathers.get(UID), r
+def kneel(client, herb=None):
+    """Stand by a herb and kneel: (session, the panel's data, the herb)."""
+    st = client.post("/world/state", data={"place": "crossroads"}).json()
+    h = herb or st["herbs"][0]
+    w = client.world.walker(UID)
+    w.x, w.y = h["x"], h["y"]
+    g = client.post("/world/gather", data={"place": "crossroads", "id": h["id"], "x": h["x"], "y": h["y"]}).json()
+    return client.gathers.get(UID), g, h
 
 
-def test_gather_page_and_nav(client):
-    page = client.get("/gather")
-    assert page.status_code == 200 and "Start gathering" in page.text and "Herbal Insight" in page.text
-    assert 'href="/gather"' in page.text and "Heaven" in page.text
+def pick(client, key, turn):
+    return client.post("/world/gather/pick", data={"key": key, "turn": turn}).json()
 
 
-def test_begin_shows_a_round_with_choices(client):
-    s, r = begin(client)
-    assert r.headers["location"] == "/gather/play"
-    page = client.get("/gather/play").text
+def test_the_gather_page_is_gone_and_herbs_grow_in_the_world(client):
+    r = client.get("/gather")
+    assert r.headers["location"] == "/town"
+    assert "herbs grow out in the world" in client.get("/town").text.lower()
+    assert 'href="/gather"' not in client.get("/profile").text                # no Gather tab any more
+    for gone in ("/gather/begin", "/gather/pick", "/gather/again", "/gather/stop", "/gather/done"):
+        assert client.post(gone).status_code in (404, 405)
+
+
+def test_kneeling_shows_the_round_for_that_herb(client):
+    s, g, h = kneel(client)
     rnd = s.g.round
-    assert rnd.herb["name"] in page and "You are looking for" in page
-    assert page.count('class="plantcard') == alchemy.GATHER_CHOICES or rnd.old
-    for _, look, _ in rnd.options:
-        assert look.split()[0] in page
-    assert client.get("/gather").headers["location"] == "/gather/play"       # one trip at a time
-    assert client.post("/gather/begin").headers["location"] == "/gather/play" and client.gathers.get(UID) is s
+    assert g["mode"] == "round" and rnd.kind == "herb"
+    assert rnd.herb["name"] == h["name"] == g["target"]["name"]               # the herb that grew there
+    assert rnd.herb["grade"] == h["grade"] and rnd.herb["data"]["type"] == h["type"]
+    assert len(g["choices"]) in (alchemy.GATHER_CHOICES, alchemy.OLD_HERB_CHOICES)
+    assert "the meadow outside the town walls" in " ".join(g["prompt"])
 
 
-def test_the_round_page_never_tells_which_choice_is_real(client):
-    s, _ = begin(client)
+def test_the_panel_never_tells_which_choice_is_real(client):
+    s, g, _ = kneel(client)
     rnd = s.g.round
-    page = client.get("/gather/play").text
+    flat = str({k: v for k, v in g.items() if k != "world"})               # (the map names herbs growing nearby)
     for key, name in rnd.names.items():
         if key != rnd.answer:
-            assert name not in page                    # the other plants' names stay on the server
-    assert "right" not in page.split('class="plants')[1].split("</form>")[0]
-    assert page.count(rnd.herb["name"]) >= 1
-    # pictures are asked for by position, and only for the page now showing
-    assert client.get(f"/gather/plant/{s.turn}/{rnd.answer}.png").headers["content-type"] == "image/png"
-    assert client.get(f"/gather/plant/{s.turn + 1}/{rnd.answer}.png").status_code == 404
-    assert client.get(f"/gather/plant/{s.turn}/o9.png").status_code == 404
+            assert name not in flat                                           # the other plants stay on the server
+    assert all(c["state"] is None and c["name"] is None for c in g["choices"])
+    turn = s.turn
+    assert client.get(f"/gather/plant/{turn}/{rnd.answer}.png").headers["content-type"] == "image/png"
+    assert client.get(f"/gather/plant/{turn + 1}/{rnd.answer}.png").status_code == 404
+    assert client.get(f"/gather/plant/{turn}/o9.png").status_code == 404
 
 
-def test_a_right_pick_stores_the_herb_and_builds_the_streak(client, db_path):
-    s, _ = begin(client)
+def test_a_right_pick_stores_the_herb_and_it_regrows_elsewhere(client, db_path):
+    s, g, h = kneel(client)
     rnd = s.g.round
     client.now[0] += 2
-    client.post("/gather/pick", data={"key": rnd.answer, "turn": s.turn})
+    out = pick(client, rnd.answer, s.turn)
     assert herbs(db_path) == 1 and player(db_path)["herb_streak"] == 1 and player(db_path)["herbs_gathered"] == 1
-    page = client.get("/gather/play").text
-    assert "You gather" in page or "pull it free" in page
-    assert "plantcard right" in page and "Gather again" in page
-    for name in rnd.names.values():                    # after the pick every plant is named
-        assert html.escape(name) in page
+    assert out["mode"] == "result" and any("You gather" in x or "pull it free" in x for x in out["result"])
+    assert any(c["state"] == "right" for c in out["choices"]) and all(c["name"] for c in out["choices"])
+    ids = [x["id"] for x in out["world"]["herbs"]]
+    assert h["id"] not in ids and len(ids) == 4                               # picked: gone, one regrowing
+    client.now[0] += 91
+    st = client.post("/world/state", data={"place": "crossroads"}).json()
+    assert len(st["herbs"]) == 5 and h["id"] not in [x["id"] for x in st["herbs"]]
 
 
 def test_a_decoy_poisons_and_resets_the_streak(client, db_path):
     set_player(db_path, herb_streak=7)
-    s, _ = begin(client)
+    s, g, h = kneel(client)
     rnd = s.g.round
-    decoy = next(iter(rnd.decoys))
-    client.post("/gather/pick", data={"key": decoy, "turn": s.turn})
+    out = pick(client, next(iter(rnd.decoys)), s.turn)
     assert herbs(db_path) == 0 and player(db_path)["herb_streak"] == 0 and s.g.hp < s.g.max_hp
-    page = client.get("/gather/play").text
-    assert "look-alike" in page and "plantcard wrong" in page and "plantcard right" in page
+    assert any("look-alike" in x for x in out["result"])
+    assert h["id"] not in [x["id"] for x in out["world"]["herbs"]]            # the herb is gone either way
 
 
-def test_old_pages_and_unknown_choices_are_ignored(client, db_path):
-    s, _ = begin(client)
+def test_old_panels_and_unknown_choices_are_ignored(client, db_path):
+    s, g, _ = kneel(client)
     rnd, turn = s.g.round, s.turn
-    client.post("/gather/pick", data={"key": "o9", "turn": turn})
-    client.post("/gather/pick", data={"key": rnd.answer, "turn": turn + 3})
+    pick(client, "o9", turn)
+    pick(client, rnd.answer, turn + 3)
     assert s.g.round is rnd and herbs(db_path) == 0
-    client.post("/gather/pick", data={"key": rnd.answer, "turn": turn})
-    client.post("/gather/pick", data={"key": rnd.answer, "turn": turn})      # the same page sent twice
+    pick(client, rnd.answer, turn)
+    pick(client, rnd.answer, turn)                                           # the same panel sent twice
     assert herbs(db_path) == 1
-    client.post("/gather/again", data={"turn": turn})                        # an old page's button
-    assert s.g.round is None
 
 
 def test_too_slow_misses_even_with_the_right_answer(client, db_path):
     set_player(db_path, herb_streak=4)
-    s, _ = begin(client)
+    s, g, _ = kneel(client)
     rnd = s.g.round
     client.now[0] += rnd.seconds + gathering.TIMER_GRACE_SECONDS + 0.5
-    client.post("/gather/pick", data={"key": rnd.answer, "turn": s.turn})
+    out = pick(client, rnd.answer, s.turn)
     assert herbs(db_path) == 0 and player(db_path)["herb_streak"] == 0
-    assert "Too slow" in client.get("/gather/play").text
+    assert any("Too slow" in x for x in out["result"])
 
 
-def test_gather_again_then_stop(client, db_path):
-    s, _ = begin(client)
-    client.post("/gather/pick", data={"key": s.g.round.answer, "turn": s.turn})
-    client.post("/gather/again", data={"turn": s.turn})
-    assert s.g.round is not None
-    before = player(db_path)["herb_streak"]
-    client.post("/gather/stop", data={"turn": s.turn})                        # mid-round: counts as missed
-    assert s.g.over and player(db_path)["herb_streak"] == 0 and before == 1
-    page = client.get("/gather/play").text
-    assert "The trip ends" in page and "head home" in page and "1 ×" in page
-    s2, _ = begin(client)                                                     # a fresh trip
-    assert s2 is not s and not s2.g.over
+def test_walking_away_counts_as_missed(client, db_path):
+    set_player(db_path, herb_streak=3)
+    s, g, h = kneel(client)
+    out = client.post("/world/gather/away", data={"turn": s.turn}).json()
+    assert player(db_path)["herb_streak"] == 0 and herbs(db_path) == 0
+    assert h["id"] not in [x["id"] for x in out["world"]["herbs"]]
 
 
-def test_walking_away_ends_the_trip(client, db_path):
-    s, _ = begin(client)
-    client.now[0] += gather_play.IDLE_SECONDS + 60
-    assert "Dusk falls" in client.get("/gather/play").text and s.g.over
-    assert client.post("/gather/done").headers["location"] == "/gather" and client.gathers.get(UID) is None
+def test_you_must_kneel_by_the_herb(client):
+    st = client.post("/world/state", data={"place": "crossroads"}).json()
+    h = st["herbs"][0]
+    w = client.world.walker(UID)
+    w.x, w.y = h["x"] + 3, h["y"]
+    out = client.post("/world/gather", data={"place": "crossroads", "id": h["id"], "x": w.x, "y": w.y}).json()
+    assert out["error"] and client.gathers.get(UID) is None
+    w.x, w.y = h["x"] + 0.5, h["y"]                                           # a jump across the meadow: refused
+    out = client.post("/world/gather", data={"place": "crossroads", "id": h["id"], "x": h["x"] + 9, "y": h["y"]}).json()
+    assert out["error"]
+    out = client.post("/world/gather", data={"place": "town", "id": h["id"], "x": h["x"], "y": h["y"]}).json()
+    assert out["error"]                                                       # not where you are
 
 
 def test_the_wandering_spirit_check(client, db_path):
     set_player(db_path, spirit_check_in=0)
-    s, _ = begin(client)
+    s, g, h = kneel(client)
     rnd = s.g.round
-    assert rnd.kind == "spirit"
-    page = client.get("/gather/play").text
-    assert "Wandering Spirit" in page and page.count('class="btn btn-gold sign"') == 4
+    assert rnd.kind == "spirit" and g["spirit"] and len(g["spirit"]["signs"]) == 4
     wrong = next(k for k, _, _ in rnd.options if k != rnd.answer)
-    client.post("/gather/pick", data={"key": wrong, "turn": s.turn})
+    out = pick(client, wrong, s.turn)
     assert player(db_path)["spirit_check_fails"] == 1
-    client.post("/gather/again", data={"turn": s.turn})
+    assert h["id"] in [x["id"] for x in out["world"]["herbs"]]                # the herb is still there
+    s, g, _ = kneel(client, h)
     assert s.g.round.kind == "spirit"                                         # it still blocks the way
-    client.post("/gather/pick", data={"key": s.g.round.answer, "turn": s.turn})
-    assert player(db_path)["spirit_check_fails"] == 0 and "not a puppet" in client.get("/gather/play").text
+    out = pick(client, s.g.round.answer, s.turn)
+    assert player(db_path)["spirit_check_fails"] == 0 and any("not a puppet" in x for x in out["result"])
+    s, g, _ = kneel(client, h)
+    assert s.g.round.kind == "herb"                                           # and now the herb
 
 
 def test_a_spirit_pause_blocks_gathering(client, db_path):
     set_player(db_path, gather_paused_until=1000.0 + 600)
-    page = client.get("/gather").text
-    assert "Wandering Spirit" in page and "disabled" in page.split("Start gathering")[0][-60:]
-    s, r = begin(client)
-    assert s is None and r.headers["location"] == "/gather"
+    s, g, _ = kneel(client)
+    assert "Wandering Spirit" in g["error"] and (s is None or s.g.round is None)
 
 
-def test_many_rounds_in_a_row(client, db_path):
-    s, _ = begin(client)
+def test_many_herbs_in_a_row(client, db_path):
     got = 0
-    for _ in range(25):
-        rnd = s.g.round
+    for _ in range(12):
+        st = client.post("/world/state", data={"place": "crossroads"}).json()
+        if not st["herbs"]:
+            client.now[0] += 95
+            continue
+        s, g, _ = kneel(client, st["herbs"][0])
         client.now[0] += 1.5
-        client.post("/gather/pick", data={"key": rnd.answer, "turn": s.turn})
-        assert client.get("/gather/play").status_code == 200
+        pick(client, s.g.round.answer, s.turn)
         got += 1
-        client.post("/gather/again", data={"turn": s.turn})
-        assert client.get("/gather/play").status_code == 200
-    assert herbs(db_path) == got and player(db_path)["herb_streak"] == got
+    assert herbs(db_path) == got and player(db_path)["herb_streak"] == got and got >= 8

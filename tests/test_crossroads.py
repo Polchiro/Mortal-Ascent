@@ -150,7 +150,9 @@ def test_the_crossroads_is_walked(site):
     r = a.get("/crossroads?near=town_gate")
     assert r.status_code == 200 and "/static/town.js" in r.text
     d = _data(r.text)
-    assert d["near"] == "town_gate" and d["sheet"]["src"]
+    assert d["place"] == "crossroads" and d["sheet"]["src"]
+    from web import overworld
+    assert (d["hero"]["x"], d["hero"]["y"]) == overworld.arrival("crossroads", "town_gate")   # in from the gate
     states = {e["key"]: e["state"] for e in d["exits"]}
     assert states["road_crimson_gorge"] == "open" and states["road_celestial_forbidden_lands"] == "locked"
     assert a.get(cr.ART).status_code == 200
@@ -200,9 +202,10 @@ def test_an_unknown_road_is_refused(site):
     assert "no such road" in a.get("/crossroads").text
 
 
-def test_heading_home_comes_back_up_the_same_road(site):
+def test_heading_home_comes_back_up_the_same_road(site, monkeypatch):
     app, login, _ = site
     a = login(WARRIOR)
+    a.get("/crossroads")
     a.post("/crossroads/go/moon_forest")
     turn = re.search(r'name="turn" value="([^"]*)"', a.get("/hunt").text).group(1)
     a.post("/hunt/act", data={"what": "return", "arg": "", "turn": turn})
@@ -210,8 +213,11 @@ def test_heading_home_comes_back_up_the_same_road(site):
     assert a.post("/hunt/done").headers["location"] == "/crossroads?near=road_moon_forest"
     assert app.state.parties.of(WARRIOR) is None
     d = _data(a.get("/crossroads?near=road_moon_forest").text)
-    assert d["near"] == "road_moon_forest"
-    assert {e["key"]: e["state"] for e in d["exits"]}["road_moon_forest"] == "waiting"   # now resting
+    from web import overworld
+    assert (d["hero"]["x"], d["hero"]["y"]) == overworld.arrival("crossroads", "road_moon_forest")
+    road = {e["key"]: e for e in d["exits"]}["road_moon_forest"]
+    assert road["state"] == "waiting" and road["walk"]                      # resting, but the forest is open to walk
+    assert d["world"]["wary"] is True
 
 
 def test_a_solo_hunt_still_choosing_is_dropped_and_a_team_goes_to_its_lobby(site):

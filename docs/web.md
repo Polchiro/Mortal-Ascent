@@ -127,7 +127,7 @@ progress lives in the website's memory and is lost if the website restarts (like
 without it sends you to the town, in front of Lan, with a note. Each click in the hall keeps the pass (it lapses after
 30 idle minutes); arriving in town ends it. A craft in progress is never locked out, so a refresh mid-craft is safe.
 "← Back to town" (recipe page, and the result next to Craft again) returns you in front of Lan (`/town?near=alchemist`,
-`town.page_data(near=)`); Gather's "To Herbalist Lan" does too.
+`town.page_data(near=)`).
 
 `/alchemy` is the bot's `/craft` (docs/alchemy.md, section 5) in the browser, with the same engine:
 `bot/crafting.py` picks the herbs (`plan`), takes them (`take_ingredients`), runs the stages (`Craft`, started by
@@ -152,38 +152,29 @@ A nine-pattern pill is announced only when it is crafted in Discord (the website
 
 ## Gathering
 
-`/gather` is the bot's `/gather` (docs/alchemy.md, section 2) in the browser, with the same engine:
-`bot/gathering.py` (`Gathering`) rolls the herb, its age and the choices, checks the pick, stores the herb and keeps
-the Herbal Insight streak, the Wandering Spirit check, the poison HP and the review flags.
+There is no Gather page any more. Herbs grow on the Crossroads and in the Moon Forest: walk up to one and press
+**E**, and one round of the bot's gathering game opens in a panel over the map (docs/world.md "Herbs"). The engine is
+still `bot/gathering.py` (`Gathering`): it checks the pick, stores the herb and keeps the Herbal Insight streak, the
+Wandering Spirit check, the poison HP and the review flags. Discord's `/gather` is unchanged.
 
-1. **Start:** the streak, the odds per grade at the player's realm, and the Wandering Spirit's pause if there is one.
-2. **Round:** the place (its painting is the background), the herb to find with its description, the numbered
-   choice cards (each plant's drawing and LOOK text) and a timer bar. Keys **1–6** pick a card. The Wandering
-   Spirit round shows four signs instead.
-3. **Result:** the real herb ringed in green, a wrong pick in red, every plant named, then **Gather again** or **Stop**.
-4. **The trip ends** (Stop, two idle minutes, or the spirit's pause): what was gathered this trip.
-
-**Why this is fast with many players.** In Discord every round is a 1200×940 card drawn on the server, one at a
-time for all players. Here the browser shows the page; the server only sends text and small pictures that are
-drawn once and kept.
-
-**The server referees.** Which choice is real stays on the server until the pick: the page has no plant names,
-and each choice's picture is asked for by its position (`/gather/plant/<turn>/o2.png`), only for the page now
-showing. The time for a pick is measured on the server, so a late right answer is still "too slow", and a closed
-page times out. Old or repeated pages and unknown choices are ignored. One trip at a time per player, kept in
-the website's memory. Rare finds (Earth, Heaven) are announced only when gathered in Discord.
+**The server referees** (`web/gather_play.py`, `web/overworld.py`). Which choice is real stays on the server until the
+pick: the panel has no plant names, and each choice's picture is asked for by its position
+(`/gather/plant/<turn>/o2.png`), only for the round now showing. The time for a pick is measured on the server, so a
+late right answer is still "too slow". You must be standing by the herb, and each herb can be tried once. Rare finds
+(Earth, Heaven) are announced only when gathered in Discord.
 
 ## The town
 
 `/town` (the **Town** tab) is the walkable town hub: walk up to the townsfolk, who send you on to the pages
 below. docs/town.md.
 
-## The Crossroads and the World Map
+## The open world and the World Map
 
-You travel by walking: out of the town gate onto `/crossroads`, the Crossroads, and down a road to a hunting ground
-(a Solo Hunt on its walkable map, for everyone with a walking look). Roads your realm can't take yet are sealed, and
-the server checks it again when you set out. `/world` is the painted scroll of the whole land, only to look at
-(**M**). docs/world.md.
+The town, the Crossroads and the Moon Forest are one world you walk through (`/town`, `/crossroads`,
+`/wild/moon_forest`): reaching the gate or the end of the road takes you to the next place. Herbs grow to pick, beasts
+roam the forest and finds glint in the grass; beasts and finds make a trip of 5 encounters with the usual 30-minute
+rest, banked when you walk back into town. The other five roads still start the Solo Hunt. `/world` is the painted
+scroll of the whole land, only to look at (**M**). docs/world.md.
 
 ## Environment pieces
 
