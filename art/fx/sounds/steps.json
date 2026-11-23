@@ -6,5 +6,13 @@
   "step_run_4.mp3",
   "step_run_5.mp3",
   "step_run_6.mp3"
+ ],
+ "walk": [
+  "step_walk_1.mp3",
+  "step_walk_2.mp3",
+  "step_walk_3.mp3",
+  "step_walk_4.mp3",
+  "step_walk_5.mp3",
+  "step_walk_6.mp3"
  ]
 }

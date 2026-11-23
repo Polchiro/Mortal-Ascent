@@ -216,10 +216,11 @@ clean ones (from as many of the videos as it can), and writes them as `art/fx/so
 about 4 KB), listed by gait in `art/fx/sounds/steps.json`. On every footfall (twice a stride, as before) `town.js`
 tells `sound.js` the ground and the gait (`step('stone' | 'earth', 'run' | 'walk')`), and it plays one of that
 gait's takes: never the same twice running, a little different in pitch and loudness each time, duller and softer
-on earth than on the town's stone. Running steps are from her five running videos. **Walking has no takes of its
-own yet** (her walk videos were not given with them): until `make_step_sound walk ...` is run on them, a walking
-step plays a running take, quieter and a little lower. With no takes at all (or before they have loaded) the step
-made in code is kept.
+on earth than on the town's stone. Running steps are from her five running videos; walking steps
+(`step_walk_1..6.mp3`) from her front-right, right and back-right walking videos, the three with a quiet floor (her
+front walk hisses and her back walk's steps are faint). A gait with no takes of its own would borrow the other's,
+quieter and a little lower; with no takes at all (or before they have loaded) the step made in code is kept. A
+party's hunting map (`hunt_map.html`, `huntmap.js`) has the same walking steps on earth.
 
 **Music.** Over each bed a quiet tune plays, made up as it goes (no recording): plucked strings in the manner of a
 guzheng on a five-note scale, a low string at the start of each phrase and a bamboo flute now and then, with rests

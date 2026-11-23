@@ -327,7 +327,10 @@
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
       hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM) * 8) % 8;
-      if ((before < 4 && hero.phase >= 4) || hero.phase < before) puff(hero.x, hero.y, 0.45);   // a foot comes down
+      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {                           // a foot comes down
+        puff(hero.x, hero.y, 0.45);
+        if (window.MASound) try { MASound.step('earth', 'walk'); } catch (e) {}               // web/static/sound.js
+      }
       hero.frame = Math.floor(hero.phase);
       report(false);
     } else {

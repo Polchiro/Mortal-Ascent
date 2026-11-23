@@ -87,7 +87,7 @@ def test_footfalls_are_found_and_the_cleanest_cut(tmp_path, monkeypatch):
     monkeypatch.setattr(mss, "LIST", str(tmp_path / "sounds" / "steps.json"))
     video = str(tmp_path / "steps.mp4")                       # 8 s: a short knock of noise every half second
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=160x90:r=24:d=8",
-                    "-f", "lavfi", "-i", "anoisesrc=d=8:c=pink:a=0.5", "-af", "volume='if(lt(mod(t,0.5),0.06),1,0)':eval=frame",
+                    "-f", "lavfi", "-i", "anoisesrc=d=8:c=pink:a=0.5:seed=7", "-af", "volume='if(lt(mod(t,0.5),0.06),1,0)':eval=frame",
                     "-c:a", "aac", "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p", video], check=True)
     falls = mss.footfalls(mss.sound(video))
     assert 12 <= len(falls) <= 17 and all(abs((b[0] - a[0]) - 0.5) < 0.06 for a, b in zip(falls, falls[1:]))
