@@ -87,14 +87,15 @@ ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "
                                          "knock": 0.05, "slam": True, "bob": 0}}}}
 
 # the same for Guard: he blocks with the blade, a gold flash and sparks where the blow lands (SHOAIB's second video).
-# She blocks bare-handed, from SHOAIB's video of her (scripts/make_heroine_guard.py): her arms close into a crossed,
-# side-on guard (0-11), the blow lands on them in a white flash (`first`, 12) and her sleeves whip round with it,
-# then she steadies behind her crossed arms. Each sheet's timing (fight.js `block`): `ready` ms to raise the guard
-# before the blow, `first` the frame it lands on, `ms` per frame after; `shift` as in MOTION_SHEETS. His are the
-# page's defaults (fight.js GUARD).
+# She blocks with her sword, from SHOAIB's Nov 23 video of her (scripts/make_heroine_set.py), starting and ending in
+# her stance: she raises the blade across her body as the beast comes in (0-10), the blow lands on it in a burst of
+# sparks (`first`), her sleeves and skirt whip round, she steadies behind the blade and lowers it. Her step forward in
+# the video is taken out (the beast comes to her). `box`: the sheet's own cell on the 1024 x 559 canvas (shares), as
+# her attack sheets'. Each sheet's timing (fight.js `block`): `ready` ms to raise the guard before the blow, `first`
+# the frame it lands on, `ms` per frame after; `shift` as in MOTION_SHEETS. His are the page's defaults (fight.js GUARD).
 GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5},
-                "female": {"src": "/art/portraits/fight/hero_female_guard.webp", "frames": 33, "cols": 8, "rows": 5,
-                           "ready": 360, "first": 12, "ms": 55, "shift": 10 / 320}}
+                "female": {"src": "/art/portraits/fight/hero_female_guard.webp", "frames": 42, "cols": 8, "rows": 6,
+                           "ready": 360, "first": 13, "ms": 50, "box": [0.3037, 0.1109, 0.3906, 0.8569]}}
 
 # her fighting stance: the loop she plays while she stands between moves, in beast fights and duels, in place of
 # the still idle picture (style.css `.stanced`, stepped through in CSS: `cols` x `rows` frames fill the grid, `loop`
@@ -112,30 +113,35 @@ IDLE_SHEETS = {"female": {"src": "/art/portraits/fight/hero_female_stance.webp",
 # "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
 # two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
 # `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
+# Her kick, fist, palm and finger are from SHOAIB's Nov 23 videos (scripts/make_heroine_set.py): each starts and ends
+# in her fighting stance, sword held low, the move made with her free hand; `box` is the sheet's own cell on the
+# 1024 x 559 canvas (shares), in place of the shared 320 x 360 cell and its `shift`.
 # The female cultivator's movements are all her own, from SHOAIB's videos of her (scripts/make_heroine_*.py).
 MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
                                    "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]},
-                          # hers is her own, from SHOAIB's video of her (scripts/make_heroine_fist.py): on guard (0-4),
-                          # a jab (out at `jab`), drawn back (`windup`), a lunging punch held from `release`
-                          "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 40, "cols": 8, "rows": 5,
-                                     "jab": 10, "windup": 14, "release": 18, "back": 38, "shift": 30 / 320, "hand": [0.695, 0.386]}},
+                          # hers (scripts/make_heroine_set.py): in her stance (0-1), a jab with her left fist (out
+                          # at `jab`), drawn back (`windup`), a lunging punch held from `release`, back from `back`
+                          "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 45, "cols": 8, "rows": 6, "jab": 6, "windup": 15, "release": 19, "back": 31, "shift": 0, "hand": [0.68, 0.396], "box": [0.3018, 0.1789, 0.3877, 0.771]}},
                  "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
                                    "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]},
-                          # hers is her own, from SHOAIB's video of her (scripts/make_heroine_palm.py): on guard (0-6),
-                          # both arms and sleeves swept back (`windup`), a lunging two-handed palm push (out at
+                          # hers is her own, from SHOAIB's video of her (scripts/make_heroine_set.py): in her stance,
+                          # her left arm drawn back (`windup`), a lunging open-palm strike (out at
                           # `release`), held, then rising back to standing (`back` on)
-                          "female": {"src": "/art/portraits/fight/hero_female_palm.webp", "frames": 40, "cols": 8, "rows": 5,
-                                     "jab": 14, "windup": 14, "release": 16, "back": 28, "shift": 35 / 320, "hand": [0.710, 0.432]}},
+                          "female": {"src": "/art/portraits/fight/hero_female_palm.webp", "frames": 40, "cols": 8, "rows": 5, "jab": 11, "windup": 11, "release": 15, "back": 24, "shift": 0, "hand": [0.807, 0.398], "box": [0.3662, 0.1771, 0.4561, 0.771]}},
+                 # "kick": hers from SHOAIB's video of her (scripts/make_heroine_set.py), what the four kick techniques
+                 # play: she gathers (0-6), lifts her front leg (`windup`), snaps a high side kick out (`release`,
+                 # where `hand` is her foot), holds it, draws the leg back (`back` on) and settles in her stance.
+                 # He has no kick yet: he keeps the hop over his three poses (fight.js `technique`).
+                 "kick": {"female": {"src": "/art/portraits/fight/hero_female_kick.webp", "frames": 37, "cols": 8, "rows": 5, "jab": 9, "windup": 9, "release": 13, "back": 22, "shift": 0, "hand": [0.772, 0.395], "box": [0.3672, 0.1753, 0.4248, 0.7728]}},
                  # "finger": SHOAIB's finger-jab video (scripts/make_hero_finger.py): on guard (0-4), a first reach
                  # (`jab`), the lunge with two fingers thrust out (`release`, where the beam leaves the fingertip),
                  # held, drawing back (`back` on). `hand` is the fingertip.
                  "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 48, "cols": 8, "rows": 6,
                                      "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 21 / 320, "hand": [0.689, 0.315]},
-                            # hers is her own, from SHOAIB's video of her (scripts/make_heroine_finger.py): on guard (0-7),
+                            # hers is her own, from SHOAIB's video of her (scripts/make_heroine_set.py): in her stance,
                             # two fingers pointed (`jab`), the arm swung (`windup`), a deep lunge thrusting them forward
                             # (`release`, where the beam leaves), held, rising with the arm drawn in (`back` on), on guard
-                            "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 28, "cols": 8, "rows": 4,
-                                       "jab": 8, "windup": 12, "release": 15, "back": 21, "shift": 43 / 320, "hand": [0.708, 0.392]}},
+                            "female": {"src": "/art/portraits/fight/hero_female_finger.webp", "frames": 36, "cols": 8, "rows": 5, "jab": 8, "windup": 8, "release": 10, "back": 23, "shift": 0, "hand": [0.711, 0.41], "box": [0.2686, 0.1753, 0.4521, 0.7585]}},
                  # "brace": SHOAIB's brace video (scripts/make_hero_brace.py): standing (0-4), reaching out, the arms
                  # crossed up into guard, settled in a wide stance at `release` and held to the end, where the
                  # beast's blow is taken. `hand` is the crossed forearms; `body` the braced figure (middle, top of the

@@ -299,9 +299,10 @@ def test_the_female_guard_plays_frame_by_frame_with_its_own_timing(client):
     sheet = looks.GUARD_SHEETS["female"]
     assert looks.guard_sheet({"gender": "female"}) == sheet and sheet["src"].endswith("hero_female_guard.webp")
     assert 'class="sheetfx gsheet"' in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
-    assert f'data-first="{sheet["first"]}"' in page and f'data-ms="{sheet["ms"]}"' in page and "--shift: 0.0312" in page
+    assert f'data-first="{sheet["first"]}"' in page and f'data-ms="{sheet["ms"]}"' in page
+    assert f'left: {sheet["box"][0] * 100}%' in page                           # her Guard has a cell of its own on the canvas
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
-    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert abs(im.width / sheet["cols"] * 1.5 - sheet["box"][2] * 1024) < 2 and sheet["frames"] <= sheet["cols"] * sheet["rows"]
     assert 0 < sheet["first"] < sheet["frames"] and 0 < sheet["ready"] <= 370      # raised before the beast's blow lands
 
 

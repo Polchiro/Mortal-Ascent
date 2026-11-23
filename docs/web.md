@@ -261,10 +261,10 @@ a lair is fought with `bot/hunt.py`.
    hits or misses; the female plays the same effects over her three poses (`RECIPES.break`). His **Guard** is frame by frame too (`looks.GUARD_SHEETS`, `hero_male_guard.webp`,
    from SHOAIB's second video, robes recoloured to match): he stands with the blade raised as the beast comes in,
    the blow bursts into a gold flash and sparks on the blade, he leans back under it and steadies (`block()` in
-   `fight.js`; also used when he guards the Mountain Tiger's pounce). **Hers** is her own, bare-handed, from SHOAIB's
-   video of her (`hero_female_guard.webp`, `scripts/make_heroine_guard.py`): her arms close into a crossed, side-on
-   guard as the beast comes in, the blow lands on them in a white flash with her sleeves whipping round, and she
-   steadies behind her crossed arms. Each sheet carries its own timing (`ready`, `first`, `ms` in
+   `fight.js`; also used when he guards the Mountain Tiger's pounce). **Hers** is her own, with her sword, from SHOAIB's
+   Nov 23 video of her (`hero_female_guard.webp`, `scripts/make_heroine_set.py`, "Her movements" below): she raises
+   the blade across her body as the beast comes in, the blow lands on it in a burst of sparks with her sleeves and
+   skirt whipping round, she steadies behind the blade and lowers it into her stance. Each sheet carries its own timing (`ready`, `first`, `ms` in
    `looks.GUARD_SHEETS`; his are `GUARD` in `fight.js`). **The stance:** while she stands between moves, in beast
    fights and in duels (mirrored when she is the other cultivator), the female cultivator plays her fighting stance
    (her still idle picture isn't on those pages at all): on guard, sword held low, breathing, her sleeves, hair and skirts stirring, a
@@ -311,7 +311,8 @@ a lair is fought with `bot/hunt.py`.
      dragons, nine in all, then all nine rise around the beast in one coil as the damage lands.
    - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
      frames (`hero_<gender>_kick.webp` in `looks.MOTION_SHEETS`, made from that look's own picture so it keeps
-     its appearance) or, until it has them (neither does yet), with its own three poses and a hop into the kick
+     its appearance) or, until it has them, with its own three poses and a hop into the kick. **She has hers**
+     (Nov 23, "Her movements" below): a high side kick from her stance, the effects leaving from her foot. He has none yet
      (Meteor-Falling Kick: a leap). Every Leg technique. Crescent Sweep sweeps a pale crescent across the beast;
      Swift Swallow Kick sends a golden swallow from the foot straight through it; Autumn Wind Kick spins a whirl of
      autumn leaves round it, one pulse per hit; Meteor-Falling Kick, the Heaven one, brings a blazing meteor down
@@ -595,6 +596,31 @@ faded into the start so it loops with no jump (8.5 s), H.264 with no sound (abou
 Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
 shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
+
+## Her movements
+
+Her kick, Guard, fist, palm and finger are cut from SHOAIB's Nov 23 videos of her by `scripts/make_heroine_set.py`
+(Gemini, 1280 x 720, 24 fps; each made from her stance picture, so it starts and ends in her stance, sword held low,
+the move made with her free hand or her front leg):
+
+| Sheet | What she does | Played by |
+|---|---|---|
+| `hero_female_kick.webp` | gathers, snaps a high side kick out, holds it, draws the leg back | Crescent Sweep, Swift Swallow Kick, Autumn Wind Kick, Meteor-Falling Kick |
+| `hero_female_guard.webp` | raises the sword across her body, the blow bursts into sparks on it, she steadies and lowers it | Guard |
+| `hero_female_fist.webp` | a quick jab, drawn back, a lunging punch | the Fist techniques |
+| `hero_female_palm.webp` | arm drawn back, a lunging open-palm strike | the Palm techniques |
+| `hero_female_finger.webp` | a deep lunge with two fingers thrust out | the Finger techniques |
+
+How they are kept from jumping: every video's first frame (her stance picture) is laid over her stance sheet's
+first frame, at the scale and place where the two outlines overlap most, and every frame of that video is placed the
+same way; the sheet's first frame is that stance picture, and its last is moved onto the first (`home`). Each sheet
+has a cell of its own on the 1024 x 559 fight canvas (`box` in `looks.py`, as her Strike and Break have), so a long
+kick or lunge is never cut off; the page places it from `box` (`explore_play.html`). Her Guard video loses the sword
+for two frames just before the sparks: those are left out. Her step forward in the Guard video is taken out, since
+the beast comes to her. The key frames (`jab`, `windup`, `release`, `back`, the Guard's `first`) and `hand` (her
+fist, palm, fingertip or foot at the release, where the effects leave from) are printed by the script and stored in
+`looks.MOTION_SHEETS` / `looks.GUARD_SHEETS`. Her brace, deflect and sidestep are still the earlier videos
+(`scripts/make_heroine_{brace,deflect,sidestep}.py`). Presentation only: timing, damage and rules are unchanged.
 
 ## Her Strike and Break
 
