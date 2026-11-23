@@ -459,3 +459,20 @@ def test_a_defense_technique_holds_part_of_a_break():
     lost_tech = tech_.sides[1].max_hp - tech_.sides[1].hp
     assert lost_plain > 0 and lost_tech == pytest.approx(lost_plain * 0.8, abs=2)   # Mortal: holds 20%
     assert tech_.sides[1].staggered                                                # Break still wins the exchange
+
+
+def test_a_deflection_turns_a_break_aside_in_a_duel_and_costs_more():
+    arm = tech("Parrying Arm", "defense", "Mortal", tid=3)
+    turned, n = 0, 200
+    for seed in range(n):
+        d = make(techs2=[arm], rng=random.Random(seed))
+        a, b = d.sides
+        assert b.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"] + battle.DEFLECT_QI_EXTRA
+        play(d, "break", "defense_tech")
+        if any("deflected by" in line for _, line in d.log):
+            turned += 1
+            assert b.hp == b.max_hp and a.hp < a.max_hp and not b.staggered      # untouched, countered, guard not shattered
+        else:
+            assert b.hp < b.max_hp and b.staggered
+    assert 0.72 * n <= turned <= 0.88 * n
+    assert a.qi_cost("attack_tech") == battle.TECHNIQUE_QI_COST[a.atk_t["grade"]]   # other techniques: no extra

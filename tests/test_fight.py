@@ -843,3 +843,27 @@ def test_a_dodge_technique_always_slips_the_beasts_break_and_charged_strike():
     plain.choose(1, "defense_tech")
     plain.resolve()
     assert plain.fighters[0].hp < plain.fighters[0].max_hp
+
+
+def test_a_deflection_turns_a_break_aside_four_times_in_five_and_costs_more():
+    """Nov 24: the Counter techniques (the deflections) turn a beast's Break aside battle.DEFLECT_BREAK_CHANCE of the
+    time: no damage, their Counter share of it back at the beast. Otherwise they hold their block % as before. They
+    cost battle.DEFLECT_QI_EXTRA more Battle Qi than their grade."""
+    import battle
+    techs = [TECHS[0], {"id": 2, "name": "Parrying Arm", "type": "defense", "grade": "Mortal", "mastery_exp": 0, "stage": 0}]
+    turned = 0
+    for seed in range(200):
+        b = make_battle(seed=seed, techs=techs)
+        f, hp0 = b.fighters[0], b.enemy["hp"]
+        assert f.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"] + battle.DEFLECT_QI_EXTRA == 45
+        force(b, "break")
+        assert b.choose(1, "defense_tech") is None
+        b.resolve()
+        line = next((text for _, text in b.log if "Parrying Arm:" in text), "")
+        if "deflected the Break" in line:
+            turned += 1
+            assert f.hp == f.max_hp and b.enemy["hp"] < hp0 and "countered for" in line     # untouched, and it hits back
+        else:
+            assert f.hp < f.max_hp and "holds 20% of the Break" in line                    # as before
+    assert 0.72 * 200 <= turned <= 0.88 * 200
+    assert make_battle().fighters[0].qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"]   # Horse Stance Guard: no extra

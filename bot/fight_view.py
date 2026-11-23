@@ -73,7 +73,7 @@ def describe(tech):
              "pierce": lambda: f"ignores {val:.0%} defense",
              "heavy": lambda: f"×{val:g} heavier, rests longer",
              "stagger": lambda: "it can't Guard next turn" if val >= 1 else f"its next Guard lets {val:.0%} through",
-             "counter": lambda: f"reflects {val:.0%} of blocked dmg",
+             "counter": lambda: f"reflects {val:.0%} of blocked dmg, turns a Break aside {rules_data.DEFLECT_BREAK_CHANCE:.0%} of the time",
              "recover": lambda: f"heals {val:.0%} HP on a block",
              "unbreakable": lambda: "Break hits you for half",
              "evade": lambda: "always dodges a Break"}.get(kind)

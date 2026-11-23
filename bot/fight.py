@@ -136,7 +136,7 @@ class Fighter:
             return 0
         if self.free_cast:
             return 0
-        return battle.TECHNIQUE_QI_COST.get(t["grade"], 30) + (battle.CHILLED_QI_COST if "chilled" in self.statuses else 0)
+        return battle.technique_qi(t, tech_effect(t)) + (battle.CHILLED_QI_COST if "chilled" in self.statuses else 0)
 
     def gain_qi(self, amount):
         self.bqi = min(self.max_bqi, self.bqi + amount)
@@ -655,6 +655,12 @@ class Battle:
                         if eff and eff[0] == "evade":                           # a dodge technique always slips a Break
                             dmg = 0
                             log.append(("shield", f"{t.name} slipped away from the {en}'s Break"))
+                        elif eff and eff[0] == "counter" and self.rng.random() < battle.DEFLECT_BREAK_CHANCE:
+                            back = min(e["hp"], dmg * eff[1])                   # a deflection turns the Break aside
+                            e["hp"] = max(0, e["hp"] - back)
+                            dmg = 0
+                            log.append(("shield", f"{t.name} — {t.last_move}: deflected the Break (blocked 100%), "
+                                                  f"countered for {back:,.0f}"))
                         else:
                             held = break_held(t.guard_tech(), eff)
                             if held:

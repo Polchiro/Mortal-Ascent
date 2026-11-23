@@ -127,7 +127,7 @@ to damage and block; the 30% cap applies to **total damage in one turn**.
 ### Defense effects
 | Effect | What it does |
 |---|---|
-| Counter | Reflects part of the blocked damage back |
+| Counter | Reflects part of the blocked damage back; turns a Break aside 80% of the time (no damage, the share reflected). Costs 15 more Battle Qi |
 | Recover | Heals a % of max HP when it blocks |
 | Unbreakable | Break moves deal half of what gets past the block |
 | Evade | Always dodges a Break when used (and a beast's charged Strike), for its Battle Qi |

@@ -108,7 +108,7 @@ class Duelist:
     def qi_cost(self, choice):
         """Battle Qi this technique costs: by grade, as in beast fights (battle.TECHNIQUE_QI_COST)."""
         t = self.tech(choice) if choice in TECH_KEYS else None
-        return battle.TECHNIQUE_QI_COST.get(t["grade"], 30) if t else 0
+        return battle.technique_qi(t, tech_effect(t)) if t else 0
 
     def ready(self, choice):
         if self.no_guard and self.base(choice) == "guard":
@@ -305,6 +305,10 @@ class Duel:
                 note = "the guard shatters!"
                 if eff and eff[0] == "evade":                                   # a dodge technique always slips a Break
                     return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} slips away (Evade)")
+                if eff and eff[0] == "counter" and self.rng.random() < battle.DEFLECT_BREAK_CHANCE:
+                    turned = self._hit(att, dfn, skill, pierce, hits)           # a deflection turns the Break aside
+                    back = min(turned * eff[1], att.max_hp * stats.MAX_HIT_PERCENT)
+                    return 0, back, ("shield", f"{att.name} — {label}: deflected by {dfn.name}, countered for {back:,.0f}")
                 held = break_held(dt, eff) if def_tech else 0
                 if held:
                     share, note = 1 - held, f"the guard still holds {held:.0%}"
