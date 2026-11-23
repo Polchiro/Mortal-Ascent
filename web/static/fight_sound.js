@@ -64,6 +64,7 @@
       var conv = ctx.createConvolver(), wet = ctx.createGain(), dark = ctx.createBiquadFilter();
       conv.buffer = ir; dark.type = 'lowpass'; dark.frequency.value = 4200; wet.gain.value = 0.5;
       room = ctx.createGain(); room.connect(conv); conv.connect(dark); dark.connect(wet); wet.connect(master);
+      loadTakes();
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
@@ -248,13 +249,52 @@
     }
   };
 
+  /* Recorded sounds (art/fx/sounds/, cut from SHOAIB's animation videos by scripts/make_fight_sound.py). sounds.json
+     lists them: {"swing": ["swing.mp3"], "hit:big": ["hit_big.mp3", "hit_big2.mp3"]}. A sound that has a recording
+     plays it (one of its takes, not the same twice running) instead of the one made in code; "hit:big" is used for
+     a big hit if it is there, else "hit". They load when the page opens; until one is ready the made one plays. */
+  var BASE = '/art/fx/sounds/', takes = {}, bufs = {}, lastTake = {};
+  function fetchTakes() {
+    fetch(BASE + 'sounds.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { takes = j || {}; loadTakes(); }).catch(function () {});
+  }
+  function loadTakes() {                                      // decoding needs the context, which needs a first click
+    if (!ctx) return;
+    Object.keys(takes).forEach(function (k) {
+      takes[k].forEach(function (file) {
+        if (file in bufs) return;
+        bufs[file] = null;
+        fetch(BASE + file).then(function (r) { return r.arrayBuffer(); })
+          .then(function (a) { return new Promise(function (ok, no) { ctx.decodeAudioData(a, ok, no); }); })
+          .then(function (b) { bufs[file] = b; }).catch(function () {});
+      });
+    });
+  }
+  function recorded(name, arg, at) {
+    var key = arg !== undefined && arg !== null && arg !== '' && takes[name + ':' + arg] ? name + ':' + arg : name;
+    var ready = (takes[key] || []).filter(function (f) { return bufs[f]; });
+    if (!ready.length) return false;
+    var pick = ready[Math.floor(Math.random() * ready.length)];
+    if (ready.length > 1 && pick === lastTake[key]) pick = ready[(ready.indexOf(pick) + 1) % ready.length];
+    lastTake[key] = pick;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), send = ctx.createGain();
+    src.buffer = bufs[pick]; g.gain.value = 0.9; send.gain.value = 0.12;
+    src.connect(g); g.connect(master); g.connect(send); send.connect(room);
+    src.start(at);
+    return true;
+  }
+  fetchTakes();
+
   window.FightSound = {
+    /* which sounds have a recording ready (for checks) */
+    recorded: function () { return Object.keys(takes).filter(function (k) { return takes[k].some(function (f) { return bufs[f]; }); }); },
     names: Object.keys(S),
     /* play a sound now, or `delay` ms from now */
     play: function (name, arg, delay) {
       if (!S[name] || !on || !ac(false) || ctx.state !== 'running') return;
+      var at = ctx.currentTime + (delay || 0) / 1000;
+      try { if (recorded(name, arg, at)) return; } catch (e) {}
       K = LEVEL[name] || 1;
-      try { S[name](ctx.currentTime + (delay || 0) / 1000, arg); } catch (e) {}
+      try { S[name](at, arg); } catch (e) {}
       K = 1;
     }
   };

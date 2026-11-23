@@ -253,6 +253,14 @@ through air, out-of-tune partials for steel, a rough buzz through throat shapes 
 little overdrive and a short echo, so a blow has punch and sits in a place. `LEVEL` in `fight_sound.js` sets how
 loud each is against the others.
 
+**Recorded sounds from the animation videos.** SHOAIB's Gemini / Veo videos carry sound, and a fight sound can be
+taken from one: `python -m scripts.make_fight_sound --listen video.mp4` prints where the video is loud, and
+`python -m scripts.make_fight_sound swing video.mp4 --from 1.2 --to 1.6` cuts that part into
+`art/fx/sounds/swing.mp3` (one channel, loudness evened, ends faded) and lists it in `art/fx/sounds/sounds.json`.
+A sound listed there is played instead of the one made in code; one not listed still plays the made one. A name can
+be narrowed (`swing:break`, `hit:big`, `roar:big`), and a second take of the same sound (`--as swing2`) makes the
+fight vary between them.
+
 In a duel both fighters' moves sound together, a moment apart. The sounds follow the map's settings (the gear on
 the map: Sound On / Off and the volume), and start with your first click or key press on the page.
 
