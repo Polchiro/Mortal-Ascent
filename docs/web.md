@@ -53,6 +53,15 @@ diamond, and the Journey as a parchment scroll with a wooden plaque per deed (ic
 `stat_icons` in `web/profile.py`). It is all CSS over the same template and data: nothing in the numbers,
 forms or links changed. The appearance page keeps the plain panels (`.xpanel` without `.xprofile`).
 
+**The cultivator's stage** (Nov 23, `.portrait.stage` in `style.css`). The left panel is a tall stage instead of a
+small framed picture: the player's painting (`looks.portrait`, cut by `scripts/make_hero_portrait.py` from SHOAIB's
+new paintings of the male and female cultivator) stands large under a pale moon, on a slowly turning Qi formation,
+with motes of Qi rising round them, the realm's seal faint behind, and a gentle float. At their sides are the four
+gear slots (weapon, armor, the two artifacts: `worn`, the same data as the Equipment panel), each a link to that
+item or tab in the bag, coloured by rarity, a `+` when empty. Under the stage a name plate (name, realm and layer),
+the title chips, and HP / Attack / Defense as three plaques (`p.hp`, `p.attack`, `p.defense`, the Attributes panel's
+own numbers). With reduced motion nothing moves. Presentation only: no number, form or rule changed.
+
 Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
 
 - **Identity:** the player's painting (docs/appearance.md): `art/portraits/hero_female.webp` or
