@@ -137,6 +137,54 @@
    "lead": 0.84
   }
  ],
+ "step@female": [
+  {
+   "file": "step_female_1.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_female_2.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_female_3.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_female_4.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_female_5.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_female_6.mp3",
+   "lead": 0.04
+  }
+ ],
+ "step@male": [
+  {
+   "file": "step_male_1.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_male_2.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_male_3.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_male_4.mp3",
+   "lead": 0.04
+  },
+  {
+   "file": "step_male_5.mp3",
+   "lead": 0.04
+  }
+ ],
  "swing:break": [
   {
    "file": "swing_break.mp3",

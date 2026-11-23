@@ -18,6 +18,7 @@
   'use strict';
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
+  if (window.MASound) MASound.walker(SH.steps || '');      // your footsteps, recorded from your look's walking videos
   var SIZE = cfg.size, EDGE = cfg.edge, REACH = cfg.reach, BLOCKED = cfg.blocked || [];
   var TW = 128, TH = 64;                       // a tile on screen
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // px/s on screen; px per full stride (at 100%); character size
@@ -327,7 +328,10 @@
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
       hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM) * 8) % 8;
-      if ((before < 4 && hero.phase >= 4) || hero.phase < before) puff(hero.x, hero.y, 0.45);   // a foot comes down
+      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {                           // a foot comes down
+        puff(hero.x, hero.y, 0.45);
+        if (window.MASound) try { MASound.step('earth'); } catch (e) {}                       // web/static/sound.js
+      }
       hero.frame = Math.floor(hero.phase);
       report(false);
     } else {

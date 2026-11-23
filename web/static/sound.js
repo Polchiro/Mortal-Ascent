@@ -6,7 +6,8 @@
    Over the bed a quiet tune plays, made up as it goes (plucked strings and a bamboo flute; MUSIC below), in each
    place's own mood; Settings has Music On / Off (ma.music). Talking to someone unrolls a scroll and plays a few
    notes of their "voice" (VOICES), a choice clicks, leaving rustles.
-   and a few little sounds: footsteps (stone in town, earth outside), the whoosh of walking into the next land, a
+   and a few little sounds: footsteps (stone in town, earth outside; recorded from the walking videos when the look
+   has them, MASound.walker below), the whoosh of walking into the next land, a
    beast's growl when it notices you, kneeling at a herb, a chime when it is picked (a dull note when not), the
    sparkle of a glint, a bell when a task is done.
 
@@ -32,6 +33,7 @@
       ctx = new A(); master = ctx.createGain(); master.gain.value = vol * vol; master.connect(ctx.destination);
       musicBus = ctx.createGain(); musicBus.gain.value = music ? 1 : 0; musicBus.connect(master);
       if (kind) setBed(kind);
+      loadSteps();
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
@@ -214,11 +216,47 @@
     other:      {f: 180, notes: [0, 2], pace: 0.14, wave: 'triangle', end: 1}
   };
 
+  /* Recorded footsteps (docs/world.md "Sound"): cut from SHOAIB's walking videos by scripts/make_step_sound.py
+     into art/fx/sounds/ and listed in its sounds.json as "step@female", "step@male". The walker (town.js tells it
+     the hero's look: looks.WALK_SHEETS[...]["steps"]) steps with one of their takes at random, never the same twice
+     running, a little higher or lower each time; on earth it is softened (the videos' floor is hard). A look with
+     no recording, or before they have loaded, keeps the step made in code. */
+  var walker = '', stepTakes = {}, stepBufs = {}, lastTake = '';
+  function loadSteps() {
+    fetch('/art/fx/sounds/sounds.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+      Object.keys(j || {}).forEach(function (k) {
+        if (k.indexOf('step@') !== 0) return;
+        stepTakes[k.slice(5)] = j[k].map(function (t) { return typeof t === 'string' ? t : t.file; });
+        stepTakes[k.slice(5)].forEach(function (file) {
+          if (file in stepBufs) return;
+          stepBufs[file] = null;
+          fetch('/art/fx/sounds/' + file).then(function (r) { return r.arrayBuffer(); })
+            .then(function (a) { return new Promise(function (ok, no) { ctx.decodeAudioData(a, ok, no); }); })
+            .then(function (b) { stepBufs[file] = b; }).catch(function () {});
+        });
+      });
+    }).catch(function () {});
+  }
+  function recordedStep(t, surface) {
+    var ready = (stepTakes[walker] || []).filter(function (f) { return stepBufs[f]; });
+    if (!ready.length) return false;
+    var file = ready[Math.floor(Math.random() * ready.length)];
+    if (ready.length > 1 && file === lastTake) file = ready[(ready.indexOf(file) + 1) % ready.length];
+    lastTake = file;
+    var src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = stepBufs[file]; src.playbackRate.value = rnd(0.93, 1.07);
+    f.type = 'lowpass'; f.frequency.value = surface === 'stone' ? 9000 : 1500;
+    g.gain.value = (surface === 'stone' ? 0.16 : 0.24) * rnd(0.8, 1);
+    src.connect(f); f.connect(g); out(g, rnd(-0.08, 0.08)); src.start(t);
+    return true;
+  }
+
   /* the little sounds */
   var lastStep = 0;
   var SFX = {
     step: function (surface) {
       var t = ctx.currentTime; if (t - lastStep < 0.12) return; lastStep = t;
+      if (recordedStep(t, surface)) return;
       if (surface === 'stone') burst(t, 0.07, 0.05 * rnd(0.7, 1), 'bandpass', rnd(1500, 2100), 1.5, rnd(-0.1, 0.1));
       else burst(t, 0.11, 0.06 * rnd(0.7, 1), 'lowpass', rnd(500, 750), 0.7, rnd(-0.1, 0.1));
     },
@@ -257,7 +295,8 @@
   };
 
   window.MASound = {
-    place: function (k) { kind = k; if (ac()) setBed(k); }
+    place: function (k) { kind = k; if (ac()) setBed(k); },
+    walker: function (who) { walker = who || ''; }           // whose recorded footsteps to play ('' for none)
   };
   Object.keys(SFX).forEach(function (k) {
     window.MASound[k] = function (a) { if (on && ac() && ctx.state === 'running') SFX[k](a); };

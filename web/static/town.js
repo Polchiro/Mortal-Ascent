@@ -139,6 +139,7 @@
 
   /* sound (web/static/sound.js): the place's ambience and a few little sounds; silent if it isn't there */
   function snd(name, arg) { var S = window.MASound; if (S && S[name]) try { S[name](arg); } catch (e) {} }
+  snd('walker', SH.steps || '');                    // your footsteps: recorded from your look's walking videos
 
   /* the hero */
   var ROW_ANGLE = [90, 135, 180, 225, 270, 315, 0, 45];      // each row's facing, screen degrees (0 right, clockwise)

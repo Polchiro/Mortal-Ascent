@@ -171,7 +171,7 @@ Three tasks a day, the same all day and new at **midnight UTC**, picked for each
 
 ## Sound
 
-Made in the browser (`web/static/sound.js`, Web Audio, no sound files). Each kind of place has its own bed, which
+Made in the browser (`web/static/sound.js`, Web Audio), all but your footsteps. Each kind of place has its own bed, which
 crossfades as you walk on: the town (soft wind, the street's murmur, wind chimes), the Crossroads (wind over grass,
 a few crickets, birds) and the Moon Forest (wind in the trees, crickets all round, a far-off owl, a creaking branch).
 Little sounds: footsteps (stone in town, earth outside), a whoosh into the next land, a growl when a beast notices
@@ -179,6 +179,16 @@ you (deeper for an Elite or a Beast King), kneeling at a herb, a chime when it i
 glint's sparkle and a bell for a finished task. **Settings** (the gear) has Sound On / Off, a volume and Music On / Off,
 kept on the device. Browsers allow sound only after a click or key press, so it starts with your first one, and it goes quiet
 while the tab is hidden.
+
+**Footsteps** are recorded: cut from SHOAIB's walking videos (Gemini / Veo videos carry sound) by
+`scripts/make_step_sound.py`, which finds each step in a video's sound, keeps the cleanest few, evens them and writes
+`art/fx/sounds/step_<look>_<n>.mp3`, listed in `art/fx/sounds/sounds.json` as `step@female` / `step@male`. A look's
+walking sheet names whose steps it takes (`looks.WALK_SHEETS[...]["steps"]`); each step plays one of them at random,
+never the same twice running and a little higher or lower each time, softened on earth (the videos' floor is hard).
+They play in every walkable place and on a party's hunting map; a look with none keeps the step made in code. The
+female steps come from her front-right, right and back-right walks (the quietest), the male's from his walk.
+
+    python -m scripts.make_step_sound female walk_front_right.mp4 walk_right.mp4 ... [--takes 6]
 
 **Music.** Over each bed a quiet tune plays, made up as it goes (no recording): plucked strings in the manner of a
 guzheng on a five-note scale, a low string at the start of each phrase and a bamboo flute now and then, with rests
