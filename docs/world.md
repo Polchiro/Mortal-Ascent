@@ -73,6 +73,25 @@ pages and `/world/...` requests), `web/static/town.js` (the one script that walk
   there: the old menu hunt is gone from the roads (`/crossroads/go` no longer exists). A road above your realm
   still shows its seal.
 
+## Running
+
+The player chooses whether to **run or walk** (Nov 24, `town.js` `gait`), the same way on a phone and a computer:
+
+- the round **Run / Walk button** at the bottom right, above the dock (it shows the current one; one tap switches);
+- **R** on a keyboard; **Shift** held gives the other one for as long as it is held;
+- **Settings** (the gear): Movement, Run or Walk.
+
+The choice is kept on the device (`localStorage` `ma.gait`); running is the default. **Walking** is the speed the
+maps always had (`SPEED`, 150 screen px a second) with the walk frames and walking footsteps. **Running** is
+`RUN_K` = 1.25 times that, with the run frames (where the look has them) and running footsteps. The joystick pushed
+gently slows either, as before. The old Shift "stroll" (0.45 of full speed) is gone: walking is the slow choice now.
+
+Two things were set against that speed. The server's check on reported positions (`hunt_map.SPEED`, tiles a second,
+with its slack) now allows for a run, so a runner isn't snapped back. And a run (4.25 tiles a second straight up) is
+kept a little under a hunting beast's chase (4.4 for an ordinary beast, more for elites and kings), so a beast that
+has seen you still catches you: running gets you about the map sooner, it is not a way out of every fight. Other
+players are shown running when they move faster than midway between the two speeds.
+
 ## Herbs (the Crossroads and the Moon Forest)
 
 - **Where:** glowing herbs (10 at a time on the Crossroads, 14 in each forest land), at random spots anywhere off

@@ -58,7 +58,8 @@ def page_data(key):
     return {"ground": m.get("art"), "edge": m.get("edge", EDGE), "blocked": [list(c) for c in m.get("blocked", [])],
             "lights": [list(c) for c in m.get("lights", [])] + [list(c) for c in env.lights(key)],
             "pieces": env.pieces(key), "tone": env.TONE.get(key), "wander": WANDER, "notice": NOTICE}
-SPEED = 3.4                                 # the page's fastest walk, in tiles a second (150 screen px/s, straight up)
+SPEED = 4.25                                # the page's fastest, running, in tiles a second (150 screen px/s walking is
+                                            # 3.4 straight up; running is 1.25 times that, town.js RUN_K)
 SLACK = 1.6                                 # leeway for network jitter on that speed ...
 JUMP = 1.0                                  # ... plus this many tiles
 REACH = 1.6                                 # how close (tiles) you must be to the beast to start the fight

@@ -2,6 +2,8 @@
    talk box, the gathering panel, what you found, the trip's line, and the fade between places. #}
 <button class="mprompt" id="prompt" type="button"></button>
 <div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+{# run or walk: one tap (or R) switches, kept on this device; town.js `gait` #}
+<button type="button" class="gaitbtn" id="gaitBtn" aria-pressed="true" title="Run or walk (R)"><b id="gaitNow">Run</b><small>tap to walk</small></button>
 <div class="wright">
 <section class="mplate wtasks" id="tasks" aria-label="Today's tasks" hidden>
   <button type="button" class="thead" id="tasksHead" aria-expanded="true" aria-controls="tasksBody">
@@ -50,6 +52,12 @@
     <button type="button" class="hbtn ghost small" data-size="1.5">Largest</button>
   </div>
   <p class="mhint">Bigger shows you and the land closer up; smaller shows more of the land. Saved on this device.</p>
+  <p class="setlabel" id="gaitLabel">Movement</p>
+  <div class="setrow" role="group" aria-labelledby="gaitLabel">
+    <button type="button" class="hbtn ghost small" data-gait="run">Run</button>
+    <button type="button" class="hbtn ghost small" data-gait="walk">Walk</button>
+  </div>
+  <p class="mhint">Running is a little faster. The button at the bottom right (or R) switches too; hold Shift for the other one.</p>
   <p class="setlabel" id="soundLabel">Sound</p>
   <div class="setrow" role="group" aria-labelledby="soundLabel">
     <button type="button" class="hbtn ghost small" data-sound="on">On</button>
