@@ -696,7 +696,7 @@ def fight_view(conn, s, b, p, now, me=None):
         "me": {"name": f.name, "realm": f.realm, "layer": f.layer, "hp": round(f.hp), "max_hp": round(f.max_hp),
                "hp_pct": round(f.hp / max(1, f.max_hp) * 100), "attack": number(round(f.attack)),
                "defense": number(round(f.defense)), "statuses": statuses(f.statuses), "stunned": f.stunned,
-               "face": look_face(p), "poses": look_poses(p), "tip": looks.sword_tip(looks.of_player(p)),
+               "face": look_face(p), "voice": looks.gender_of(looks.of_player(p)), "poses": look_poses(p), "tip": looks.sword_tip(looks.of_player(p)),
                "sheet": looks.attack_sheet(looks.of_player(p)), "sheets": looks.attack_sheets(looks.of_player(p)),
                "gsheet": looks.guard_sheet(looks.of_player(p)),
                "msheet": motion_of(b, f, p), "isheet": looks.idle_sheet(looks.of_player(p)),

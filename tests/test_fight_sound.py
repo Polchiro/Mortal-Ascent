@@ -25,10 +25,12 @@ def test_the_list_the_page_reads_is_there_and_names_real_sounds():
     with open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8") as f:
         data = json.load(f)
     for name, takes in data.items():
-        assert name.split("@")[0].split(":")[0] in mfs.NAMES, name
+        assert name.split("#")[0].split("@")[0].split(":")[0] in mfs.NAMES, name
+        if "#" in name:                                                   # a cultivator's own take
+            assert name.split("#")[1] in ("male", "female") and "@" not in name, name
         if "@" in name:
             import beasts
-            assert name.split("@")[1] in beasts.BODY_TYPES, name
+            assert name.split("#")[0].split("@")[1] in beasts.BODY_TYPES, name
         for t in takes:
             path = os.path.join(ROOT, "art", "fx", "sounds", t["file"])
             assert os.path.exists(path) and 2_000 < os.path.getsize(path) < 120_000, t   # there, and small
@@ -95,3 +97,17 @@ def test_footfalls_are_found_and_the_cleanest_cut(tmp_path, monkeypatch):
     listed = json.load(open(mss.LIST))
     assert listed == {"walk": [f"step_walk_{i}.mp3" for i in range(1, mss.TAKES + 1)]}
     assert all(os.path.getsize(os.path.join(mss.OUT, n)) > 500 for n in listed["walk"])
+
+
+def test_the_new_male_has_his_own_recordings_and_the_page_asks_for_them():
+    """His swing, Break, block and four technique sounds are from his Nov 24 videos ("#male"); she keeps the plain ones."""
+    with open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    for name in ("swing:strike", "swing:break", "gather", "boom", "guardup", "block",
+                 "cast:fist", "cast:kick", "cast:palm", "cast:finger"):
+        assert name in data and name + "#male" in data, name
+        assert data[name][0]["file"] != data[name + "#male"][0]["file"]
+    js = open(os.path.join(ROOT, "web", "static", "fight_sound.js"), encoding="utf-8").read()
+    assert "name + ':' + narrow + '#' + voice" in js and "name + '#' + voice" in js
+    assert "FightSound.voice = fighter.dataset.voice" in open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert 'data-voice="{{ F.me.voice }}"' in open(os.path.join(ROOT, "web", "templates", "explore_play.html"), encoding="utf-8").read()

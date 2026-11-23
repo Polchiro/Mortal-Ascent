@@ -5,9 +5,21 @@
    "lead": 0.08
   }
  ],
+ "block#male": [
+  {
+   "file": "block_male.mp3",
+   "lead": 0.08
+  }
+ ],
  "boom": [
   {
    "file": "boom.mp3",
+   "lead": 0.14
+  }
+ ],
+ "boom#male": [
+  {
+   "file": "boom_male.mp3",
    "lead": 0.14
   }
  ],
@@ -17,10 +29,22 @@
    "lead": 0.1
   }
  ],
+ "cast:finger#male": [
+  {
+   "file": "cast_finger_male.mp3",
+   "lead": 0.22
+  }
+ ],
  "cast:fist": [
   {
    "file": "cast_fist.mp3",
    "lead": 0.26
+  }
+ ],
+ "cast:fist#male": [
+  {
+   "file": "cast_fist_male.mp3",
+   "lead": 0.3
   }
  ],
  "cast:kick": [
@@ -29,10 +53,22 @@
    "lead": 0.22
   }
  ],
+ "cast:kick#male": [
+  {
+   "file": "cast_kick_male.mp3",
+   "lead": 0.24
+  }
+ ],
  "cast:palm": [
   {
    "file": "cast_palm.mp3",
    "lead": 0.36
+  }
+ ],
+ "cast:palm#male": [
+  {
+   "file": "cast_palm_male.mp3",
+   "lead": 0.42
   }
  ],
  "death@wolf": [
@@ -53,10 +89,22 @@
    "lead": 0.4
   }
  ],
+ "gather#male": [
+  {
+   "file": "gather_male.mp3",
+   "lead": 0.58
+  }
+ ],
  "guardup": [
   {
    "file": "guardup.mp3",
    "lead": 0.16
+  }
+ ],
+ "guardup#male": [
+  {
+   "file": "guardup_male.mp3",
+   "lead": 0.2
   }
  ],
  "hit": [
@@ -143,10 +191,22 @@
    "lead": 0.36
   }
  ],
+ "swing:break#male": [
+  {
+   "file": "swing_break_male.mp3",
+   "lead": 0.34
+  }
+ ],
  "swing:strike": [
   {
    "file": "swing_strike.mp3",
    "lead": 0.18
+  }
+ ],
+ "swing:strike#male": [
+  {
+   "file": "swing_strike_male.mp3",
+   "lead": 0.2
   }
  ]
 }

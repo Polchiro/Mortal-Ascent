@@ -1962,6 +1962,7 @@
       step.phase = phase; if (cues) step.cues = (step.cues || []).concat(cues); steps.push(step);
     }
     var castTier = cast ? (TIER[cast.grade] || 0) : 0;
+    if (window.FightSound) window.FightSound.voice = fighter.dataset.voice || '';       // whose recordings the cultivator's moves play
     if (window.FightSound) window.FightSound.body = beastBox.dataset.body || '';         // whose voice the beast's sounds are
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
     var inside = cast && cast.fx && (cast.fx.motion === 'brace' || cast.fx.motion === 'deflect');

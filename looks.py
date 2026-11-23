@@ -60,10 +60,17 @@ def portrait(look):
 
 
 POSES = ("idle", "windup", "strike")
-SWORD_POSES = {"male": 0.66, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
+SWORD_POSES = {"male": 0.82, "female": 0.82}   # genders painted in the sword poses: how far the blade reaches (0-1)
 # genders whose sword attack plays frame by frame (scripts/make_hero_attack.py cuts it from SHOAIB's video):
 # a grid of 320 x 360 frames that web/static/fight.js steps through; the stills above come from the same video.
-ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "frames": 41, "cols": 8, "rows": 6},
+ATTACK_SHEETS = {"male": {
+                     # his own (Nov 24, scripts/make_hero_set.py, from SHOAIB's videos of the new male), made and timed as hers.
+                     # Strike: he raises the sword (0-10), cuts in one sweep (the hit 11) in a ring of blue Qi painted in
+                     # the video (12-19), holds (20-23), draws the sword back and stands (24-37).
+                     # Break: Qi coils round him (2-16), he leaps with the sword overhead (17-30) and drives it into
+                     # the ground (31, the hit), kneels through the burst (32), rises and stands (33-46).
+                     "strike": {"src": "/art/portraits/fight/hero_male_strike_sheet.webp", "frames": 38, "cols": 8, "rows": 5, "box": [0.1455, 0.0394, 0.7871, 0.9249], "tip": 0.8193, "blade": {"keys": [[0, 0], [500, 10], [590, 11], [860, 19], [1100, 23], [1880, 37]], "dash": [190, 590], "swing": 500, "hit": 590, "back": [1080, 1810], "end": 1950, "knock": 0.024, "bob": 0}},
+                     "break": {"src": "/art/portraits/fight/hero_male_break_sheet.webp", "frames": 47, "cols": 8, "rows": 6, "box": [0.2148, 0.068, 0.6211, 0.9785], "tip": 0.8291, "blade": {"keys": [[0, 0], [580, 16], [1050, 30], [1120, 31], [1130, 32], [1680, 32], [2130, 41], [2460, 46]], "dash": [580, 1120], "swing": 1010, "hit": 1120, "back": [1680, 2460], "end": 2530, "knock": 0.05, "slam": True, "bob": 0}}},
                  # hers are a sheet per move, from SHOAIB's two videos of her (scripts/make_heroine_attacks.py), each
                  # starting and ending in her stance. `box`: the cell's place on the 1024 x 559 canvas (shares; it holds
                  # the overhead sword and the leap); `tip`: how far her blade reaches at the hit (the dash stops it at the
@@ -93,17 +100,18 @@ ATTACK_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_attack.webp", "
 # the video is taken out (the beast comes to her). `box`: the sheet's own cell on the 1024 x 559 canvas (shares), as
 # her attack sheets'. Each sheet's timing (fight.js `block`): `ready` ms to raise the guard before the blow, `first`
 # the frame it lands on, `ms` per frame after; `shift` as in MOTION_SHEETS. His are the page's defaults (fight.js GUARD).
-GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 37, "cols": 8, "rows": 5},
+GUARD_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_guard.webp", "frames": 42, "cols": 8, "rows": 6, "box": [0.333, 0.0608, 0.3867, 0.8873], "first": 12, "ready": 620, "ms": 66},
                 "female": {"src": "/art/portraits/fight/hero_female_guard.webp", "frames": 42, "cols": 8, "rows": 6,
                            "ready": 620, "first": 13, "ms": 66, "box": [0.3037, 0.1109, 0.3906, 0.8569]}}
 
-# her fighting stance: the loop she plays while she stands between moves, in beast fights and duels, in place of
+# the fighting stance: the loop a cultivator plays while she stands between moves, in beast fights and duels, in place of
 # the still idle picture (style.css `.stanced`, stepped through in CSS: `cols` x `rows` frames fill the grid, `loop`
 # seconds round). From SHOAIB's video of her (scripts/make_heroine_stance.py): on guard, sword held low in her right
 # hand, left hand at her chest, breathing, sleeves and hair stirring, her feet where the still's are (`shift` as in
-# GUARD_SHEETS, none needed). He has none yet:
-# he keeps his still picture and its breathing.
-IDLE_SHEETS = {"female": {"src": "/art/portraits/fight/hero_female_stance.webp", "frames": 72, "cols": 8, "rows": 9,
+# GUARD_SHEETS, none needed). His is the new male's (Nov 24, scripts/make_hero_set.py), made the same way.
+IDLE_SHEETS = {"male": {"src": "/art/portraits/fight/hero_male_stance.webp", "frames": 72, "cols": 8, "rows": 9,
+                        "loop": 5.08, "shift": 0},
+               "female": {"src": "/art/portraits/fight/hero_female_stance.webp", "frames": 72, "cols": 8, "rows": 9,
                           "loop": 5.38, "shift": 0}}
 
 # the shared movements techniques play (web/technique_fx.py "motion"), frame by frame, in the same 320 x 360 cells.
@@ -122,13 +130,11 @@ IDLE_SHEETS = {"female": {"src": "/art/portraits/fight/hero_female_stance.webp",
 # in her fighting stance, sword held low, the move made with her free hand; `box` is the sheet's own cell on the
 # 1024 x 559 canvas (shares), in place of the shared 320 x 360 cell and its `shift`.
 # The female cultivator's movements are all her own, from SHOAIB's videos of her (scripts/make_heroine_*.py).
-MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 36, "cols": 8, "rows": 5,
-                                   "jab": 5, "release": 12, "back": 21, "shift": 18 / 320, "hand": [0.685, 0.287]},
+MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.webp", "frames": 44, "cols": 8, "rows": 6, "box": [0.3057, 0.1091, 0.4541, 0.8462], "jab": 7, "windup": 15, "release": 19, "back": 30, "hand": [0.746, 0.36], "shift": 0, "ms": 2200},
                           # hers (scripts/make_heroine_set.py): in her stance (0-1), a jab with her left fist (out
                           # at `jab`), drawn back (`windup`), a lunging punch held from `release`, back from `back`
                           "female": {"src": "/art/portraits/fight/hero_female_fist.webp", "frames": 45, "cols": 8, "rows": 6, "jab": 6, "windup": 15, "release": 19, "back": 31, "ms": 2200, "shift": 0, "hand": [0.68, 0.396], "box": [0.3018, 0.1789, 0.3877, 0.771]}},
-                 "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 48, "cols": 8, "rows": 6,
-                                   "jab": 12, "release": 14, "back": 40, "shift": 7 / 320, "hand": [0.66, 0.231]},
+                 "palm": {"male": {"src": "/art/portraits/fight/hero_male_palm.webp", "frames": 37, "cols": 8, "rows": 5, "box": [0.3525, 0.1199, 0.4463, 0.8336], "jab": 9, "windup": 9, "release": 13, "back": 22, "hand": [0.753, 0.331], "shift": 0, "ms": 2000},
                           # hers is her own, from SHOAIB's video of her (scripts/make_heroine_set.py): in her stance,
                           # her left arm drawn back (`windup`), a lunging open-palm strike (out at
                           # `release`), held, then rising back to standing (`back` on)
@@ -136,13 +142,13 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # "kick": hers from SHOAIB's video of her (scripts/make_heroine_set.py), what the four kick techniques
                  # play: she gathers (0-6), lifts her front leg (`windup`), snaps a high side kick out (`release`,
                  # where `hand` is her foot), holds it, draws the leg back (`back` on) and settles in her stance.
-                 # He has no kick yet: he keeps the hop over his three poses (fight.js `technique`).
-                 "kick": {"female": {"src": "/art/portraits/fight/hero_female_kick.webp", "frames": 37, "cols": 8, "rows": 5, "jab": 9, "windup": 9, "release": 13, "back": 22, "ms": 2100, "shift": 0, "hand": [0.772, 0.395], "box": [0.3672, 0.1753, 0.4248, 0.7728]}},
+                 # His (Nov 24, scripts/make_hero_set.py): a front kick from his stance, keyed the same way.
+                 "kick": {"male": {"src": "/art/portraits/fight/hero_male_kick.webp", "frames": 37, "cols": 8, "rows": 5, "box": [0.2764, 0.0966, 0.502, 0.8712], "jab": 8, "windup": 8, "release": 11, "back": 19, "hand": [0.769, 0.4], "shift": 0, "ms": 2100},
+                          "female": {"src": "/art/portraits/fight/hero_female_kick.webp", "frames": 37, "cols": 8, "rows": 5, "jab": 9, "windup": 9, "release": 13, "back": 22, "ms": 2100, "shift": 0, "hand": [0.772, 0.395], "box": [0.3672, 0.1753, 0.4248, 0.7728]}},
                  # "finger": SHOAIB's finger-jab video (scripts/make_hero_finger.py): on guard (0-4), a first reach
                  # (`jab`), the lunge with two fingers thrust out (`release`, where the beam leaves the fingertip),
                  # held, drawing back (`back` on). `hand` is the fingertip.
-                 "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 48, "cols": 8, "rows": 6,
-                                     "jab": 6, "windup": 5, "release": 10, "back": 44, "shift": 21 / 320, "hand": [0.689, 0.315]},
+                 "finger": {"male": {"src": "/art/portraits/fight/hero_male_finger.webp", "frames": 36, "cols": 8, "rows": 5, "box": [0.2324, 0.1055, 0.5811, 0.8462], "jab": 9, "windup": 9, "release": 13, "back": 25, "hand": [0.802, 0.4], "shift": 0, "ms": 2000},
                             # hers is her own, from SHOAIB's video of her (scripts/make_heroine_set.py): in her stance,
                             # two fingers pointed (`jab`), the arm swung (`windup`), a deep lunge thrusting them forward
                             # (`release`, where the beam leaves), held, rising with the arm drawn in (`back` on), on guard

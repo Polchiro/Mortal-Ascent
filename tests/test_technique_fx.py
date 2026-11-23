@@ -99,7 +99,7 @@ def test_the_movement_frames_exist_for_both_cultivators():
     from PIL import Image
     for motion in looks.MOTION_SHEETS:
         genders = ("male", "female")
-        assert set(looks.MOTION_SHEETS[motion]) == ({"female"} if motion == "kick" else set(genders))   # his kick: not made yet
+        assert set(looks.MOTION_SHEETS[motion]) == set(genders)
         for gender in looks.MOTION_SHEETS[motion]:
             sheet = looks.motion_sheet({"gender": gender}, motion)
             path = os.path.join(ROOT, sheet["src"].lstrip("/"))
@@ -278,7 +278,9 @@ def test_her_kick_is_her_own_and_the_four_kick_techniques_play_it():
     assert her["src"].endswith("hero_female_kick.webp") and os.path.exists(os.path.join(ROOT, her["src"].lstrip("/")))
     assert 0 < her["windup"] < her["release"] < her["back"] < her["frames"] <= her["cols"] * her["rows"]
     assert her["hand"][0] > 0.7 and 0.3 < her["hand"][1] < 0.5                 # her foot, out at chest height
-    assert looks.motion_sheet({"gender": "male"}, "kick") is None
+    his = looks.motion_sheet({"gender": "male"}, "kick")                       # his own too, since Nov 24 (make_hero_set.py)
+    assert his["src"].endswith("hero_male_kick.webp") and 0 < his["windup"] < his["release"] < his["back"] < his["frames"]
+    assert his["ms"] >= 2000 and technique_fx.of("Crescent Sweep", "Mortal", "male")["motion"] == "kick"
     for name in ("Crescent Sweep", "Swift Swallow Kick", "Autumn Wind Kick", "Meteor-Falling Kick"):
         assert technique_fx.of(name, "Mortal", "female")["motion"] == "kick"
 
