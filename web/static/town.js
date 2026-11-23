@@ -578,6 +578,7 @@
   var dlgOpen = false, dlg = document.getElementById('dlg');
   function openTalk(n) {
     dlgOpen = true; keys = {}; resetStick(); prompt.classList.remove('on');
+    snd('talk', n.exit ? 'exit' : n.key);
     document.getElementById('dlgName').textContent = n.name;
     document.getElementById('dlgTitle').textContent = n.title.toUpperCase();
     document.getElementById('dlgLine').textContent = n.line;
@@ -587,9 +588,11 @@
       if (g[2] === 'post') {                       // setting out: a form, so the server checks and starts it
         var f = document.createElement('form'); f.method = 'post'; f.action = g[1];
         var sb = document.createElement('button'); sb.type = 'submit'; sb.className = cls; sb.textContent = g[0];
+        sb.addEventListener('click', function () { snd('click'); });
         f.appendChild(sb); go.appendChild(f); return;
       }
       var a = document.createElement('a'); a.className = cls; a.href = g[1]; a.textContent = g[0];
+      a.addEventListener('click', function () { snd('click'); });
       if (!n.exit) a.addEventListener('click', function () { try { sessionStorage.setItem('town.from', n.key); } catch (e) {} });
       go.appendChild(a);
     });
@@ -598,7 +601,7 @@
     bye.addEventListener('click', closeTalk); go.appendChild(bye);
     dlg.hidden = false; (go.querySelector('a, form button') || bye).focus();
   }
-  function closeTalk() { dlgOpen = false; dlg.hidden = true; cv.focus(); }
+  function closeTalk() { if (dlgOpen) snd('bye'); dlgOpen = false; dlg.hidden = true; cv.focus(); }
 
   /* gathering: kneel at a herb and play its round in the panel (web/gather_play.py decides everything) */
   var gOpen = false, gp = document.getElementById('gpanel'), gBody = document.getElementById('gBody'), gView = null, gTimer = null;

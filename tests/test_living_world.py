@@ -230,3 +230,22 @@ def test_a_herb_picked_counts_a_look_alike_does_not(world, conn, monkeypatch):
         got += 1 if right else 0
         world.gathers._s.pop(UID, None)                                   # a fresh gathering for the next herb
     assert got and db.daily_count(conn, UID, "world:herbs", NOW) == got
+
+
+def test_music_and_a_voice_for_everyone_in_town(site):
+    import os
+    import re
+    from web import town
+    make, login = site
+    a = login(make(), UID)
+    r = a.get("/town").text
+    assert 'data-music="on"' in r and 'data-music="off"' in r               # Settings: Music On / Off
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    js = open(os.path.join(root, "web", "static", "sound.js"), encoding="utf-8").read()
+    voices = js[js.index("var VOICES = {"):js.index("/* the little sounds */")]
+    for n in town.NPCS:                                                    # nobody in town is without a voice
+        assert re.search(rf"^\s+{n['key']}:", voices, re.M), n["key"]
+    for place in ("town", "meadow", "forest"):                             # each kind of place has its tune
+        assert re.search(rf"^\s+{place}:\s+\{{root:", js, re.M), place
+    walk = open(os.path.join(root, "web", "static", "town.js"), encoding="utf-8").read()
+    assert "snd('talk'" in walk and "snd('click')" in walk and "snd('bye')" in walk

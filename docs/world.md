@@ -176,9 +176,20 @@ crossfades as you walk on: the town (soft wind, the street's murmur, wind chimes
 a few crickets, birds) and the Moon Forest (wind in the trees, crickets all round, a far-off owl, a creaking branch).
 Little sounds: footsteps (stone in town, earth outside), a whoosh into the next land, a growl when a beast notices
 you (deeper for an Elite or a Beast King), kneeling at a herb, a chime when it is picked (a dull note when not), a
-glint's sparkle and a bell for a finished task. **Settings** (the gear) has Sound On / Off and a volume, kept on the
-device. Browsers allow sound only after a click or key press, so it starts with your first one, and it goes quiet
+glint's sparkle and a bell for a finished task. **Settings** (the gear) has Sound On / Off, a volume and Music On / Off,
+kept on the device. Browsers allow sound only after a click or key press, so it starts with your first one, and it goes quiet
 while the tab is hidden.
+
+**Music.** Over each bed a quiet tune plays, made up as it goes (no recording): plucked strings in the manner of a
+guzheng on a five-note scale, a low string at the start of each phrase and a bamboo flute now and then, with rests
+between phrases. The town is warm and unhurried, the Crossroads open and light, the forest slow, low and sparse
+(`MUSIC` in `sound.js`: each place's root note, scale, pace, phrase and rest lengths). Music On / Off in Settings
+turns only the tune off; the wind, crickets and little sounds stay.
+
+**Talking.** Walking up to someone and pressing E unrolls a scroll and plays a few notes of their "voice" (no
+words): each of the town's people has their own pitch and manner (`VOICES` in `sound.js`, by the NPC's key), and
+some a sound of their trade (the blacksmith's anvil, the merchant's coins, Lan's dried herbs, the Arena's gong; the
+Stone Stele grinds like stone, a road's end sighs with wind). A choice clicks; leaving rustles.
 
 ## The Crossroads (`/crossroads`)
 

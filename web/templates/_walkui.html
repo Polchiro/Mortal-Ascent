@@ -56,6 +56,11 @@
     <button type="button" class="hbtn ghost small" data-sound="off">Off</button>
   </div>
   <input type="range" class="setvol" id="soundVol" min="0" max="100" step="5" value="60" aria-label="Volume">
+  <p class="setlabel" id="musicLabel">Music</p>
+  <div class="setrow" role="group" aria-labelledby="musicLabel">
+    <button type="button" class="hbtn ghost small" data-music="on">On</button>
+    <button type="button" class="hbtn ghost small" data-music="off">Off</button>
+  </div>
 </section>
 <div class="wfade" id="fade" aria-hidden="true"></div>
 <script src="{{ asset('sound.js') }}" defer></script>

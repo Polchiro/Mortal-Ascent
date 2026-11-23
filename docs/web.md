@@ -195,8 +195,8 @@ below. docs/town.md.
   changes, e.g. when a trip is banked at the gate). The icons are drawn in code (SVG) until SHOAIB makes painted ones.
 - **Settings** (the gear at the top right of the walking pages): **Character size**, Small / Normal / Large /
   Largest. It draws you and the land closer up or further away (`UZ` in `town.js`); it is only how the page looks
-  and is kept on the device (`localStorage` `ma.size`), not in the game's save. Also **Sound** On / Off and a volume
-  (`ma.sound`, `ma.vol`; docs/world.md "Sound").
+  and is kept on the device (`localStorage` `ma.size`), not in the game's save. Also **Sound** On / Off, a volume and **Music** On / Off
+  (`ma.sound`, `ma.vol`, `ma.music`; docs/world.md "Sound").
 
 ## The map screen
 
