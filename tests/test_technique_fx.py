@@ -107,7 +107,7 @@ def test_the_movement_frames_exist_for_both_cultivators():
             if "box" in sheet:                                 # a cell of its own on the fight canvas, at 1.5 canvas px a pixel
                 cell = (size[0] / sheet["cols"], size[1] / sheet["rows"])
                 assert abs(cell[0] * 1.5 - sheet["box"][2] * 1024) < 2 and abs(cell[1] * 1.5 - sheet["box"][3] * 559) < 2
-                assert sheet["box"][0] >= 0 and sheet["box"][0] + sheet["box"][2] <= 1 and sheet["box"][1] + sheet["box"][3] <= 1
+                assert sheet["box"][0] >= 0 and sheet["box"][0] + sheet["box"][2] <= 1 and sheet["box"][1] + sheet["box"][3] <= 1.08   # a deep lunge's back foot dips under the canvas
             else:
                 assert size == (320 * sheet["cols"], 360 * sheet["rows"])
             assert gender in sheet["src"]
@@ -195,7 +195,7 @@ def test_the_sidesteps_are_the_two_evades_and_play_only_when_the_evade_worked():
 
 def test_the_sidesteps_play_at_the_videos_pace_and_end_on_their_feet():
     her, him = (looks.motion_sheet({"gender": g}, "sidestep") for g in ("female", "male"))
-    assert her["frames"] == 27 and him["frames"] == 24               # every 2nd frame of the 24 fps videos
+    assert her["frames"] == 36 and him["frames"] == 24               # every 2nd frame of the 24 fps videos (her hold thinned)
     for d in (her, him):
         assert d["fps"] == 12
         assert 0 < d["jab"] < d["release"] < d["back"] < d["frames"]
@@ -297,9 +297,23 @@ def test_her_new_moves_start_and_end_in_her_stance():
         return x0 + xs.min() * s, y0 + ys.min() * s, x0 + xs.max() * s, y0 + ys.max() * s
 
     stance = box_on_canvas(looks.IDLE_SHEETS["female"], 0)
-    sheets = [looks.GUARD_SHEETS["female"]] + [looks.MOTION_SHEETS[m]["female"] for m in ("kick", "fist", "palm", "finger")]
+    sheets = [looks.GUARD_SHEETS["female"]] + [looks.MOTION_SHEETS[m]["female"] for m in looks.MOTION_SHEETS]
+    assert len(sheets) == 8 and all("box" in s for s in sheets)          # all eight are from her stance
     for sheet in sheets:
         for frame in (0, sheet["frames"] - 1):
             b = box_on_canvas(sheet, frame)
             assert abs(b[1] - stance[1]) <= 8 and abs(b[3] - stance[3]) <= 14, (sheet["src"], frame, b, stance)   # head and feet
             assert abs(b[2] - stance[2]) <= 30, (sheet["src"], frame, b, stance)                                    # her front
+
+
+def test_her_defences_are_from_her_stance_videos():
+    """Her brace, deflect and sidestep (scripts/make_heroine_set.py, the second set of videos): the frames the players
+    in fight.js lean on are in order, and the points they place effects by are on her."""
+    b, d, s = (looks.MOTION_SHEETS[m]["female"] for m in ("brace", "deflect", "sidestep"))
+    assert 4 < b["jab"] < b["release"] < b["back"] < b["frames"]          # the page starts her from frame 4, still standing
+    assert d["jab"] < d["release"] < d["sweep"] < d["back"] < d["frames"]
+    assert d["hand"][0] > d["body"][0] > d["tip"][0]                      # her palm before her, her sleeve's tip behind
+    assert b["body"][3] > d["body"][3]                                    # the braced stance is wider than standing
+    assert b["hand"][1] < 0.6 and b["hand"][0] > b["body"][0]             # her raised forearm, not her front foot
+    for sheet in (b, d, s):
+        assert sheet["shift"] == 0 and len(sheet["box"]) == 4 and len(sheet["body"]) == 4
