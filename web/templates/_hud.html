@@ -1,0 +1,23 @@
+{# The map screen's frame (docs/web.md "The map screen"), shared by town.html and place.html: who you are at the top
+   left (face, name, realm and layer, HP, injured or resting), the place's name, which shows big for a moment as you
+   come in and then stays as a small line, and the controls, which fade once you know them (the "?" brings them back).
+   web/static/town.js keeps the frame fresh from /world/state ("hero") and swaps the place's name between lands. #}
+<div class="mhud">
+  {% if hero %}
+  <section class="mplate mhero{% if hero.tone %} t-{{ hero.tone }}{% endif %}" id="hero" aria-label="Your cultivator">
+    <a class="mface" href="/profile" title="Your character"><img src="{{ hero.face }}" alt="" width="64" height="64"></a>
+    <div class="mwho">
+      <b class="mname" id="heroName">{{ hero.name }}</b>
+      <span class="mrealm" id="heroRealm">{{ hero.realm }} · {{ hero.layer }}</span>
+      <div class="mhpbar" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ hero.pct }}" id="heroBar"><div style="width:{{ hero.pct }}%"></div><span id="heroHp">HP {{ hero.hp }} / {{ hero.max_hp }}</span></div>
+      <span class="mstatus" id="heroStatus"{% if not hero.status %} hidden{% endif %}>{{ hero.status or "" }}</span>
+    </div>
+  </section>
+  {% endif %}
+  <p class="mplace" id="placeLine">{{ title }}</p>
+  {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to {{ keys_e }} · <b>Shift</b> to stroll · <b>M</b> map</div>{% endif %}
+</div>
+<div class="mbanner" id="banner" aria-live="polite">
+  <p class="kicker" id="placeKicker">{{ kicker }}</p>
+  <h1 id="placeTitle">{{ title }}</h1>
+</div>

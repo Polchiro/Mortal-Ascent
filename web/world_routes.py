@@ -82,6 +82,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             sheet = looks.walk_sheet(looks.of_player(p))
             data = overworld.page_data(c, world, uid, place, sheet, p, blocked, near or None) if sheet else None
             return {"p": p, "data": data, "banked": banked, "blocked": blocked,
+                    "hero": overworld.hero_view(c, uid, p, hunts.trip_view(c, uid), hunts.clock()),
                     "exits": crossroads.exits(p, blocked) if place == "crossroads" else []}
 
         v = with_conn(build)
@@ -94,7 +95,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         ctx = dict(user=user, avatar=avatar(user), walking=v["data"] is not None, place=place,
                    info=overworld.PLACES[place], map_json=town.page_json(v["data"]) if v["data"] else "",
                    realm=p["realm"], coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]),
-                   notice=notice, notice_html=bool(v["banked"]))
+                   notice=notice, notice_html=bool(v["banked"]), hero=v["hero"])
         if place == "town":
             request.session.pop("alchemy_pass", None)        # back in town: the alchemy hall needs Lan again
             request.session.pop("forge_pass", None)          # and the forge needs Tie
