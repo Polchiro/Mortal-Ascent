@@ -38,6 +38,7 @@
   // this place (load() sets them; a new place swaps them all)
   var PLACE, SIZE, AREA, BLOCKED, REACH, NPCS, PIECES, INSET, EXITS, SPOTS, K = 1, Z = 1, painted, GROUND, TONE, LIGHTS, ATMOS, TRIGGER;
   var HERBS = [], FINDS = [], BEASTS = [], WORLD = {}, IMGS = {};
+  var SHEETS = cfg.sheets || {}, OTHERS = {};   // the other players walking here (/world/others), by tag
 
   function toScreen(x, y) { return {x: (x - y) * TW / 2, y: (x + y) * TH / 2}; }
   function inside(x, y) {                       // point in AREA (even-odd), as web/town.inside
@@ -134,6 +135,9 @@
   function plain(src) { var c = IMGS[src]; if (c) return c; var im = new Image(); im.src = src; return (IMGS[src] = {img: im}); }
   function ready(c) { return c.ready || (c.img && c.img.complete && c.img.naturalWidth ? c.img : null); }
 
+  /* sound (web/static/sound.js): the place's ambience and a few little sounds; silent if it isn't there */
+  function snd(name, arg) { var S = window.MASound; if (S && S[name]) try { S[name](arg); } catch (e) {} }
+
   /* the hero */
   var ROW_ANGLE = [90, 135, 180, 225, 270, 315, 0, 45];      // each row's facing, screen degrees (0 right, clockwise)
   function sectorRow(a) { var k = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; return (k + 6) % 8; }
@@ -148,6 +152,9 @@
   var cam = {x: 0, y: 0}, armed = {}, through = false;
   function load(c, swapped) {
     cfg = c;
+    if (c.sheets) SHEETS = c.sheets;
+    OTHERS = {};
+    snd('place', c.place === 'town' ? 'town' : c.place === 'crossroads' ? 'meadow' : 'forest');
     PLACE = c.place; SIZE = c.size; AREA = c.area; BLOCKED = c.blocked || []; REACH = c.reach; NPCS = c.npcs || [];
     PIECES = c.pieces || []; INSET = c.inset || 0; EXITS = c.exits || []; K = c.scale || 1; TONE = c.tone || null;
     LIGHTS = c.lights || []; ATMOS = !!c.atmos; TRIGGER = c.trigger || 0.75; Z = c.zoom || 1;
@@ -276,7 +283,7 @@
   function goThrough(e) {
     if (through) return;
     through = true; prompt.classList.remove('on');           // the keys stay held: you walk on out the other side
-    fade.classList.add('on');
+    fade.classList.add('on'); snd('whoosh');
     var t0 = performance.now();
     post('/world/move', {place: PLACE, key: e.key, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
       setTimeout(function () {
@@ -319,6 +326,7 @@
       return b;
     });
     if (v.hero) hud(v.hero);
+    if (v.tasks) tasks(v.tasks);
     trip(v);
   }
   /* the frame at the top left: HP, realm, injured or resting (web/overworld.py hero_view) */
@@ -356,6 +364,114 @@
     pips.hidden = !t; count.hidden = !t; loot.hidden = !t;
   }
 
+  /* the other players walking here: asked for about once a second; each walks smoothly to where the server last
+     saw them, with their own walking sheet (male or female) and their name and realm over their head */
+  var sheetImgs = {};
+  function sheetFor(look) {
+    var sh = SHEETS[look] || SH;
+    if (!sheetImgs[sh.src]) { var im = new Image(); im.src = sh.src; sheetImgs[sh.src] = im; }
+    return {sh: sh, img: sheetImgs[sh.src]};
+  }
+  function pollOthers() {
+    if (document.hidden || through || !PLACE) return;
+    var at = PLACE;
+    post('/world/others', {place: PLACE}).then(function (v) {
+      if (at !== PLACE || !v.others) return;
+      var seen = {};
+      v.others.forEach(function (o) {
+        seen[o.tag] = true;
+        var m = OTHERS[o.tag];
+        if (!m) {
+          var s0 = sheetFor(o.look).sh;
+          m = OTHERS[o.tag] = {x: o.x, y: o.y, dir: 4, phase: 0, frame: s0.stand[4], moving: false};
+        }
+        m.tx = o.x; m.ty = o.y; m.name = o.name; m.realm = o.realm; m.look = o.look;
+        if (Math.hypot(m.x - o.x, m.y - o.y) > 6) { m.x = o.x; m.y = o.y; }      // too far behind: just there
+      });
+      Object.keys(OTHERS).forEach(function (k) { if (!seen[k]) delete OTHERS[k]; });
+    }).catch(function () {});
+  }
+  setInterval(pollOthers, 1000);
+  function stepOthers(dt) {
+    Object.keys(OTHERS).forEach(function (k) {
+      var o = OTHERS[k], dx = o.tx - o.x, dy = o.ty - o.y, d = Math.hypot(dx, dy), sh = sheetFor(o.look).sh;
+      if (d < 0.04) { o.moving = false; o.frame = sh.stand[o.dir]; return; }
+      var go = Math.min(d, Math.max(2.1, d * 1.6) * dt);
+      var a = toScreen(o.x, o.y);
+      o.x += dx / d * go; o.y += dy / d * go;
+      var b = toScreen(o.x, o.y), px = Math.hypot(b.x - a.x, b.y - a.y);
+      var row = sectorRow(Math.atan2(b.y - a.y, b.x - a.x));
+      if (!o.moving || angDiff(ROW_ANGLE[row], ROW_ANGLE[o.dir]) > 30) o.dir = row;
+      if (!o.moving) o.phase = sh.stand[o.dir];
+      o.moving = true;
+      o.phase = (o.phase + px / (STRIDE * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
+    });
+  }
+  function drawOther(o, x, y) {
+    var f = sheetFor(o.look), sh = f.sh, s = 0.5 * ZOOM, d = sh.cell * s;
+    shadow(x, y, 26 * ZOOM, 9 * ZOOM, .36);
+    if (f.img.complete && f.img.naturalWidth)
+      ctx.drawImage(f.img, o.frame * sh.cell, o.dir * sh.cell, sh.cell, sh.cell, x - sh.feet[0] * s, y - sh.feet[1] * s, d, d);
+  }
+  function otherLabel(o, x, y) {                 // drawn over everything, so a name never hides behind a stall
+    var sh = sheetFor(o.look).sh, s = 0.5 * ZOOM, d = sh.cell * s;
+    ctx.save(); ctx.textAlign = 'center';
+    var top = y - sh.feet[1] * s + d * 0.12;
+    ctx.font = '700 14px Cinzel, Georgia, serif';
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(o.name, x + 1, top + 1);
+    ctx.fillStyle = '#BFE3FF'; ctx.fillText(o.name, x, top);
+    ctx.font = '600 10.5px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(o.realm, x + 1, top + 15);
+    ctx.fillStyle = 'rgba(160,230,200,.9)'; ctx.fillText(o.realm, x, top + 14);
+    ctx.restore();
+  }
+
+  /* today's tasks (web/world_tasks.py): the list at the top right, and a line when one is done (it has paid) */
+  var tasksEl = document.getElementById('tasks'), taskDone = null, tasksOpen = true;
+  try {                                         // open, unless you shut it (or, on a phone, until you open it)
+    var t0 = localStorage.getItem('ma.tasks');
+    tasksOpen = t0 === null ? !matchMedia('(max-width: 640px)').matches : t0 !== '0';
+  } catch (e) {}
+  (function () {
+    var t = document.getElementById('tasksHead');
+    if (!t) return;
+    t.addEventListener('click', function (e) {
+      e.stopPropagation(); tasksOpen = !tasksOpen; try { localStorage.setItem('ma.tasks', tasksOpen ? '1' : '0'); } catch (x) {}
+      showTasksOpen(); cv.focus();
+    });
+  })();
+  function showTasksOpen() {
+    if (!tasksEl) return;
+    tasksEl.classList.toggle('shut', !tasksOpen);
+    var t = document.getElementById('tasksHead'); if (t) t.setAttribute('aria-expanded', tasksOpen);
+  }
+  function tasks(b) {
+    if (!tasksEl || !b) return;
+    tasksEl.hidden = false; showTasksOpen();
+    var list = document.getElementById('tasksList'), n = 0;
+    list.innerHTML = '';
+    b.tasks.forEach(function (t) {
+      if (t.done) n++;
+      var li = document.createElement('li'); li.className = t.done ? 'done' : '';
+      var box = document.createElement('i'); box.setAttribute('aria-hidden', 'true'); li.appendChild(box);
+      var txt = document.createElement('span'); txt.textContent = t.text; li.appendChild(txt);
+      var prog = document.createElement('b'); prog.textContent = t.done ? '+' + t.coins : t.have + ' / ' + t.n; li.appendChild(prog);
+      list.appendChild(li);
+    });
+    document.getElementById('tasksCount').textContent = n + ' / ' + b.tasks.length;
+    document.getElementById('tasksBonus').textContent = b.all ? 'All done today. New tasks at midnight UTC.'
+      : 'All three: +' + b.bonus + ' Lotus Coins more. Each pays when done.';
+    var now = {};
+    b.tasks.forEach(function (t) { now[t.key] = t.done; });
+    if (taskDone) {
+      var lines = [];
+      b.tasks.forEach(function (t) { if (t.done && !taskDone[t.key]) lines.push('Task done: ' + t.text + ' · +' + t.coins + ' Lotus Coins'); });
+      if (lines.length && b.all) lines.push('All of today\'s tasks done · +' + b.bonus + ' Lotus Coins');
+      if (lines.length) { say(lines.join(' · ')); snd('task'); }
+    }
+    taskDone = now;
+  }
+
   var sayEl = document.getElementById('say'), sayT = null;
   function say(text, html) {
     if (!sayEl) return;
@@ -384,7 +500,7 @@
       }
       if (b.state === 'alert' || b.state === 'charge') { b.state = 'return'; b.timer = 8; }
     } else if ((b.state === 'idle' || b.state === 'wander') && d < NOTICE && leash) {
-      b.state = 'alert'; b.timer = b.tier === 'beast_king' ? 0.4 : 0.55; b.alertAt = bt;
+      b.state = 'alert'; b.timer = b.tier === 'beast_king' ? 0.4 : 0.55; b.alertAt = bt; snd('growl', b.tier);
     }
     if (b.state === 'idle' && b.timer <= 0) {
       for (var i = 0; i < 8; i++) {                                 // somewhere to sniff about, near its spot
@@ -490,7 +606,7 @@
   function htmlLine(tag, cls, html) { var e = el(tag, cls); e.innerHTML = html; return e; }   // the server's own lines
   function gather(h) {
     if (gOpen) return;
-    gOpen = true; keys = {}; resetStick(); prompt.classList.remove('on');
+    gOpen = true; keys = {}; resetStick(); prompt.classList.remove('on'); snd('kneel');
     face(h.x, h.y);
     gBody.textContent = ''; gBody.appendChild(el('p', 'pline', 'You kneel in the grass…'));
     gp.hidden = false;
@@ -549,6 +665,7 @@
       var first = gBody.querySelector('.plantcard, .sign'); if (first) first.focus();
     } else {
       (g.result || []).forEach(function (l) { gBody.appendChild(htmlLine('p', 'pline big2', l)); });
+      snd(/✅|✨/.test((g.result || []).join(' ')) ? 'picked' : 'missed');
       var row2 = el('div', 'choices'), ok = el('button', 'btn btn-jade', 'Walk on'); ok.type = 'button';
       ok.addEventListener('click', closeGather); row2.appendChild(ok); gBody.appendChild(row2); ok.focus();
     }
@@ -580,7 +697,7 @@
   document.getElementById('fClose').addEventListener('click', closeFind);
   function discover(f) {
     if (fOpen) return;
-    fOpen = true; keys = {}; resetStick(); prompt.classList.remove('on'); face(f.x, f.y);
+    fOpen = true; keys = {}; resetStick(); prompt.classList.remove('on'); face(f.x, f.y); snd('glint');
     document.getElementById('fName').textContent = f.secret ? 'A hidden place' : 'Something glints';
     fBody.textContent = ''; fBody.appendChild(el('p', 'tline', 'You look closer…'));
     fp.hidden = false;
@@ -611,7 +728,10 @@
       if (!was) hero.phase = STAND[hero.dir];
       var before = hero.phase;
       hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM / K) * 8) % 8;
-      if (ATMOS && ((before < 4 && hero.phase >= 4) || hero.phase < before)) puff(hero.x, hero.y, 0.45);
+      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {
+        if (ATMOS) puff(hero.x, hero.y, 0.45);
+        snd('step', PLACE === 'town' ? 'stone' : 'earth');
+      }
       hero.frame = Math.floor(hero.phase);
       hero.still = 0;
       report(false);
@@ -619,6 +739,7 @@
       if (was) report(true);
       hero.frame = STAND[hero.dir]; hero.still = (hero.still || 0) + dt;
     }
+    stepOthers(dt);
     if (!busy()) {
       BEASTS.forEach(function (b) { beastStep(b, dt); });
       EXITS.forEach(function (e) {                                // walk into a gate or a path: through it
@@ -924,7 +1045,15 @@
       var p = toScreen(b.x, b.y);
       movers.push({x: b.x, y: b.y, h: b.w, f: function () { at(p.x, p.y, function () { drawBeast(b, 0, 0); }); }});
     });
+    Object.keys(OTHERS).forEach(function (k) {
+      var o = OTHERS[k], p = toScreen(o.x, o.y);
+      movers.push({x: o.x, y: o.y, h: 175, f: function () { at(p.x, p.y, function () { drawOther(o, 0, 0); }); }});
+    });
     layered(movers).forEach(function (f) { f(); });
+    Object.keys(OTHERS).forEach(function (k) {
+      var o = OTHERS[k], p = toScreen(o.x, o.y);
+      at(p.x, p.y, function () { otherLabel(o, 0, 0); });
+    });
     EXITS.forEach(function (e) { if (e.kind !== 'path') drawExit(e); });   // over the gate: its doorway lit
     if (hiddenHero) {                                   // behind a wall or a building: your silhouette shows through
       ctx.save(); ctx.globalAlpha = 0.45; at(hp.x, hp.y, function () { drawHero(0, 0); }); ctx.restore();

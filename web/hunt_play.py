@@ -229,6 +229,9 @@ class Hunts:
                 e.story = []
                 e._beast_result(b, name)                       # coins, chest, core, materials: kept until home
                 mine += e.story
+                if h.world:                                    # out in the open world: today's tasks count it
+                    from . import world_tasks
+                    mine += world_tasks.record(conn, f.uid, "beasts", self.clock())
             elif b.result == "escaped":
                 mine.append(f"🌫️ The **{name}** slinks away into the wilds.")
             h.lines[f.uid] = mine

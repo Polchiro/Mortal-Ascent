@@ -130,6 +130,14 @@ CREATE TABLE IF NOT EXISTS cooldowns (
     until       REAL    NOT NULL,
     PRIMARY KEY (user_id, name)
 );
+-- where each player last stood in the website's open world (web/overworld.py), so a restart puts them back there
+CREATE TABLE IF NOT EXISTS world_spots (
+    user_id     INTEGER PRIMARY KEY,
+    place       TEXT    NOT NULL,   -- a key of web/overworld.PLACES (town, crossroads, forest_edge, ...)
+    x           REAL    NOT NULL,   -- tiles
+    y           REAL    NOT NULL,
+    at          REAL    NOT NULL
+);
 CREATE TABLE IF NOT EXISTS settings (
     key         TEXT PRIMARY KEY,
     value       TEXT
@@ -712,6 +720,20 @@ def clear_cooldown(conn, user_id, name):
 
 
 # ── Daily counters (diminishing returns) ──────────────────────────────
+
+def save_world_spot(conn, user_id, place, x, y, now=None):
+    """Where this player stands in the website's open world (web/overworld.py), kept through a restart."""
+    now = time.time() if now is None else now
+    with conn:
+        conn.execute("INSERT INTO world_spots (user_id, place, x, y, at) VALUES (?, ?, ?, ?, ?) "
+                     "ON CONFLICT(user_id) DO UPDATE SET place = excluded.place, x = excluded.x, y = excluded.y, "
+                     "at = excluded.at", (user_id, place, float(x), float(y), now))
+
+
+def world_spot(conn, user_id):
+    row = conn.execute("SELECT place, x, y, at FROM world_spots WHERE user_id = ?", (user_id,)).fetchone()
+    return dict(row) if row else None
+
 
 def _day(now):
     return time.strftime("%Y-%m-%d", time.gmtime(now))
