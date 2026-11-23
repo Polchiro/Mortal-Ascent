@@ -199,21 +199,22 @@
 
   /* the townsfolk's voices (web/town.py NPCS, by key): f the pitch, notes the little tune of their greeting
      (semitones), pace how fast they speak, end whether it falls (< 1) or rises (> 1), extra a sound of their trade */
+  var VOICE = 0.16;                         // how loud a voice is (the footsteps are about 0.06)
   var VOICES = {
-    gate:       {f: 150, notes: [0, 0, 3], pace: 0.13, wave: 'triangle', end: 0.94},                 // the warden: short, firm
-    blacksmith: {f: 120, notes: [0, 2, 0], pace: 0.15, wave: 'triangle', end: 0.92,                  // deep, with the anvil
-                 extra: function (t) { tone(2100, t, 0.5, 0.035, 'sine'); tone(3150, t, 0.3, 0.015, 'sine'); burst(t, 0.03, 0.05, 'highpass', 4000, 0.7, 0); }},
-    alchemist:  {f: 330, notes: [0, 4, 7, 4], pace: 0.11, wave: 'sine', end: 1.05,                   // Lan: light and quick
-                 extra: function (t) { burst(t, 0.3, 0.02, 'highpass', 5000, 0.7, 0.2); }},          // dried herbs rustle
-    merchant:   {f: 210, notes: [0, 5, 3, 7], pace: 0.1, wave: 'triangle', end: 1.08,                // lively, with coins
-                 extra: function (t) { [3100, 3700, 4200].forEach(function (f, i) { tone(f, t + i * 0.05, 0.18, 0.018, 'sine'); }); }},
-    elder:      {f: 110, notes: [0, -2, 0], pace: 0.24, wave: 'sine', end: 0.95},                    // slow and low
-    master:     {f: 135, notes: [0, 5], pace: 0.16, wave: 'triangle', end: 0.9},                     // two words, no more
-    arena:      {f: 165, notes: [0, 3, 5], pace: 0.12, wave: 'triangle', end: 1.04,                  // with a far gong
-                 extra: function (t) { tone(196, t, 1.6, 0.04, 'sine', 0, 190); tone(293, t, 1.1, 0.018, 'sine'); }},
-    stele:      {extra: function (t) { burst(t, 0.5, 0.05, 'lowpass', 500, 0.8, 0, 250); tone(98, t, 0.9, 0.035, 'sine'); }},   // stone
-    exit:       {extra: function (t) { burst(t, 0.6, 0.04, 'bandpass', 500, 1, 0, 900); }},          // a road's end: wind
-    other:      {f: 180, notes: [0, 2], pace: 0.14, wave: 'triangle', end: 1}
+    gate:       {f: 233, notes: [0, 0, 3], pace: 0.15, wave: 'triangle', end: 0.94},                 // the warden: short, firm
+    blacksmith: {f: 175, notes: [0, 2, 0], pace: 0.17, wave: 'triangle', end: 0.92,                  // deep, with the anvil
+                 extra: function (t) { tone(2100, t, 0.6, 0.12, 'sine'); tone(3150, t, 0.35, 0.05, 'sine'); burst(t, 0.04, 0.15, 'highpass', 4000, 0.7, 0); }},
+    alchemist:  {f: 440, notes: [0, 4, 7, 4], pace: 0.13, wave: 'sine', end: 1.05,                   // Lan: light and quick
+                 extra: function (t) { burst(t, 0.35, 0.07, 'highpass', 5000, 0.7, 0.2); }},         // dried herbs rustle
+    merchant:   {f: 330, notes: [0, 5, 3, 7], pace: 0.12, wave: 'triangle', end: 1.08,               // lively, with coins
+                 extra: function (t) { [3100, 3700, 4200].forEach(function (f, i) { tone(f, t + i * 0.05, 0.2, 0.06, 'sine'); }); }},
+    elder:      {f: 196, notes: [0, -2, 0], pace: 0.28, wave: 'triangle', end: 0.95},                // slow and low
+    master:     {f: 220, notes: [0, 5], pace: 0.18, wave: 'triangle', end: 0.9},                     // two words, no more
+    arena:      {f: 262, notes: [0, 3, 5], pace: 0.14, wave: 'triangle', end: 1.04,                  // with a far gong
+                 extra: function (t) { tone(196, t, 1.8, 0.12, 'triangle', 0, 190); tone(392, t, 1.2, 0.06, 'sine'); tone(588, t, 0.8, 0.03, 'sine'); }},
+    stele:      {extra: function (t) { burst(t, 0.6, 0.18, 'lowpass', 700, 0.8, 0, 350); tone(196, t, 0.9, 0.08, 'triangle', 0, 170); }},   // stone
+    exit:       {extra: function (t) { burst(t, 0.7, 0.14, 'bandpass', 500, 1, 0, 900); }},          // a road's end: wind
+    other:      {f: 262, notes: [0, 2], pace: 0.16, wave: 'triangle', end: 1}
   };
 
   /* the little sounds */
@@ -284,16 +285,17 @@
        the town's people has their own pitch and manner, and some a sound of their trade */
     talk: function (who) {
       var t = ctx.currentTime, v = VOICES[who] || VOICES.other;
-      burst(t, 0.22, 0.045, 'bandpass', 1800, 0.8, 0, 3200);                                // the scroll
+      burst(t, 0.28, 0.16, 'bandpass', 1800, 0.8, 0, 3200);                                 // the scroll
       if (v.extra) v.extra(t + 0.05);
       if (v.f) v.notes.forEach(function (n, i) {
-        var at = t + 0.16 + i * v.pace, f = v.f * Math.pow(2, n / 12);
-        tone(f, at, v.pace * 0.9, 0.045, v.wave, 0, f * (i === v.notes.length - 1 ? v.end : 1.03));
-        burst(at, v.pace * 0.7, 0.012, 'bandpass', f * 4, 4, 0);
+        var at = t + 0.2 + i * v.pace, f = v.f * Math.pow(2, n / 12), end = i === v.notes.length - 1 ? v.end : 1.03;
+        tone(f, at, v.pace * 0.95, VOICE, v.wave, 0, f * end);
+        tone(f * 2, at, v.pace * 0.8, VOICE * 0.45, 'sine', 0, f * 2 * end);     // an octave above: small speakers carry it
+        burst(at, v.pace * 0.7, VOICE * 0.25, 'bandpass', f * 4, 4, 0);
       });
     },
-    click: function () { var t = ctx.currentTime; tone(1175, t, 0.09, 0.04, 'triangle'); burst(t, 0.04, 0.03, 'highpass', 3000, 0.7, 0); },
-    bye: function () { burst(ctx.currentTime, 0.2, 0.035, 'bandpass', 2600, 0.8, 0, 1200); },
+    click: function () { var t = ctx.currentTime; tone(1175, t, 0.1, 0.12, 'triangle'); burst(t, 0.05, 0.08, 'highpass', 3000, 0.7, 0); },
+    bye: function () { burst(ctx.currentTime, 0.25, 0.12, 'bandpass', 2600, 0.8, 0, 1200); },
     task: function () {
       var t = ctx.currentTime;
       [523, 659, 784].forEach(function (f, i) { tone(f, t + i * 0.12, 1.6, 0.05); tone(f * 2.01, t + i * 0.12, 0.8, 0.012); });
