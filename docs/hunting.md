@@ -159,7 +159,13 @@ same random numbers; `_battle` builds the same fight).
   `scripts/make_heroine_walk.py` builds hers from five videos, one per view (front, front-right, right,
   back-right, back), each walking in place facing one way; it takes the stride that loops best from each and
   mirrors the right side for the left. New animations should come this way: one video per view, from a reference
-  image already turned to that view. `scripts/make_heroine_idle.py` builds her idle the same way from five standing
+  image already turned to that view. **Her run** (Nov 23, `hero_female_run.webp`, `WALK_SHEETS["female"]["run"]`) is
+  built by the same script with `--run` from five running videos (same five views; she turns to face her way in the
+  first two seconds of some, which are skipped). `huntmap.js` and `town.js` play it in place of the walk whenever she
+  moves at more than three quarters of full speed (so always on the keyboard), with a longer stride (`run.stride`,
+  140 px against the walk's 96) so her feet keep pace with the ground; a stroll (Shift, or the joystick pushed
+  gently) keeps the walk. Other players are drawn the same way. How fast she moves is unchanged (`SPEED`): only the
+  picture differs. The male has no run yet and walks at every speed. `scripts/make_heroine_idle.py` builds her idle the same way from five standing
   videos (`WALK_SHEETS["female"]["idle"]`; the map plays it while she stands still). As made, its "right" view is
   only a little more turned than front-right and its back views have long hair her walk lacks; remade videos from
   references cut out of her walk videos would fix both.

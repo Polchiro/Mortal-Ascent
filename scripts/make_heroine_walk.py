@@ -8,6 +8,11 @@ whose last frame best meets its first, takes 8 frames from it, cuts her out, and
 spot between her feet.
 
     python -m scripts.make_heroine_walk front.mp4 front_right.mp4 right.mp4 back_right.mp4 back.mp4
+    python -m scripts.make_heroine_walk --run front.mp4 front_right.mp4 right.mp4 back_right.mp4 back.mp4
+
+`--run` builds her run the same way from SHOAIB's five running videos (Nov 23; she runs in place, a quicker stride,
+and turns to face her way during the first two seconds of some of them: skipped), into hero_female_run.webp
+(looks.WALK_SHEETS["female"]["run"]: the maps play it at full speed and keep the walk for a stroll).
 
 Writes art/portraits/map/hero_female_walk.webp: the spec sheet, 8 rows (S SW W NW N NE E SE) x 8 frames, cells
 256 x 256, the point between the feet at (128, 232), about 200 px tall, and prints each row's standing frame
@@ -29,6 +34,9 @@ OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
 VIEWS = ["S", "SE", "E", "NE", "N"]     # the order the videos are given in
 SKIP = {"NE": 84}                       # her back-right video turns round for its first 3.5 s
 STRIDE = (36, 64)                       # frames in one stride, at most and least
+RUN_OUT = OUT.replace("_walk.webp", "_run.webp")
+RUN_SKIP = {v: 54 for v in VIEWS}       # the running videos: she turns to face her way, then settles into the run
+RUN_STRIDE = (19, 32)                   # a running stride is quicker
 
 
 def probe(video):
@@ -89,7 +97,8 @@ def row(cuts):
     return cells
 
 
-def main(videos):
+def main(videos, run=False):
+    out_path, skips, span = (RUN_OUT, RUN_SKIP, RUN_STRIDE) if run else (OUT, SKIP, STRIDE)
     if len(videos) != len(VIEWS):
         sys.exit(f"give the five videos in this order: {', '.join(VIEWS)}")
     from rembg import new_session
@@ -97,7 +106,7 @@ def main(videos):
     rows, stand = {}, {}
     for view, video in zip(VIEWS, videos):
         w, h = probe(video)
-        a, n = stride(video, SKIP.get(view, 0))
+        a, n = stride(video, skips.get(view, 0), span)
         frames = raw(video, w, h)
         picked = [frames[a + round(j * n / 8)] for j in range(8)]
         cuts = cut(picked, session)
@@ -111,10 +120,10 @@ def main(videos):
     bad = check(out)
     if bad:
         sys.exit("The sheet does not meet the spec:\n  " + "\n  ".join(bad))
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    out.save(OUT, "WEBP", quality=88, method=6)
-    print(f"wrote {OUT}; stand frames per row ({' '.join(ORDER)}): {[stand[MIRROR.get(d, d)] for d in ORDER]}")
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    out.save(out_path, "WEBP", quality=88, method=6)
+    print(f"wrote {out_path}; stand frames per row ({' '.join(ORDER)}): {[stand[MIRROR.get(d, d)] for d in ORDER]}")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main([a for a in sys.argv[1:] if a != "--run"], run="--run" in sys.argv)
