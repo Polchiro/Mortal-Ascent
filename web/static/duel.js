@@ -21,6 +21,12 @@
     $('mehpv').textContent = s.me.hp.toLocaleString() + ' / ' + s.me.max_hp.toLocaleString();
     $('themhp').style.width = pct(s.them) + '%';
     $('themhpv').textContent = s.them.hp.toLocaleString() + ' / ' + s.them.max_hp.toLocaleString();
+    [['me', s.me], ['them', s.them]].forEach(function (p) {      // Battle Qi: what each side has left for techniques
+      var bar = $(p[0] + 'qi'), val = $(p[0] + 'qiv');
+      if (!bar || p[1].max_bqi == null) return;
+      bar.style.width = Math.max(0, Math.round(100 * p[1].bqi / p[1].max_bqi)) + '%';
+      val.textContent = (p[0] === 'them' ? 'Battle Qi ' : '') + p[1].bqi + ' / ' + p[1].max_bqi;
+    });
   }
   function info(m) {
     $('ititle').textContent = m.label + (m.state ? ' · ' + m.state : '');
@@ -47,9 +53,9 @@
     menu.className = 'techmenu' + (ready.length ? '' : ' off');
     menu.innerHTML = '<summary class="actbtn"><img src="/art/icons/actions/attack_tech.webp" alt="" width="104" height="104">' +
       '<span class="alab">Techniques</span><span class="ast"></span><span class="ano">2</span></summary><div class="techpop" role="menu"></div>';
-    menu.querySelector('.ast').textContent = techs.length ? (ready.length ? ready.length + ' ready' : 'Recovering') : 'None equipped';
+    menu.querySelector('.ast').textContent = techs.length ? (ready.length ? ready.length + ' ready' : 'Not ready') : 'None equipped';
     var about = {label: 'Techniques', state: '', info: 'An attack technique counts as a Strike, a defense technique as a Guard. ' +
-      'After use, each recovers for a few turns before you can play it again.'};
+      'Each costs Battle Qi (10 comes back every turn) and recovers for a few turns after use.'};
     menu.querySelector('summary').addEventListener('mouseenter', function () { info(about); });
     menu.querySelector('summary').addEventListener('click', function (e) { if (!ready.length) e.preventDefault(); });
     techs.forEach(function (t) {

@@ -579,6 +579,7 @@ form.inline{display:inline}
 .bwarn p{margin:0}.bwarn .whead{font-size:17px}
 .bwarn.danger .whead{color:#FF8A7E;text-shadow:0 0 16px rgba(224,90,79,.8)}
 .bhp.qi div{background:linear-gradient(90deg,#2F5FA8,#7FA8D9)}
+.ehp.eqi{height:14px;margin-top:5px}.ehp.eqi div{background:linear-gradient(90deg,#2F5FA8,#7FA8D9)}.ehp.eqi span{font-size:10.5px}
 .brow .bl{min-width:68px}
 .bresult{position:absolute;left:6%;top:4%;transform:rotate(-6deg);pointer-events:none;animation:popword .5s cubic-bezier(.2,1.6,.4,1)}
 .bresult p{margin:0}

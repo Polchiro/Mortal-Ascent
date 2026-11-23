@@ -16,6 +16,7 @@ bot/passives.Kit). Technique effects and mastery count fully.
 """
 import random
 
+import battle
 import equipments
 import forge
 import pvp
@@ -72,6 +73,7 @@ class Duelist:
         self.fx = fx if fx is not None else gear.combat_fx(player)   # combat artifact effects (bot/gear.py)
         self.atk_t, self.def_t, self.flex_t = rules.split_techniques(techniques)
         self.cooldowns = {k: 0 for k in TECH_KEYS}
+        self.bqi = self.max_bqi = battle.BATTLE_QI_START     # Battle Qi: full at the start, the same for both sides
         self.pick = None                 # this turn's choice (secret until both have picked)
         self.last_move = None            # label of the move played last turn
         self.last_dealt = 0              # damage dealt last turn
@@ -79,7 +81,6 @@ class Duelist:
         self.staggered = False           # broken last turn: takes more damage this turn
         self.guard_weak = 0.0            # share of a Strike that slips through this player's next Guard
         self.healed = 0.0                # HP healed by Recover so far (capped per duel)
-        self.evaded_turn = -99           # last turn Evade triggered
         self.dealt = 0.0
         self.kit = kit if kit is not None else passives.kit_for(player)    # forged weapon / armor passives
         self.no_guard = False            # Thunder Edge: can't Guard this turn
@@ -104,11 +105,16 @@ class Duelist:
         t = self.tech(choice) if choice in TECH_KEYS else None
         return t if t and t["type"] == kind else None
 
+    def qi_cost(self, choice):
+        """Battle Qi this technique costs: by grade, as in beast fights (battle.TECHNIQUE_QI_COST)."""
+        t = self.tech(choice) if choice in TECH_KEYS else None
+        return battle.TECHNIQUE_QI_COST.get(t["grade"], 30) if t else 0
+
     def ready(self, choice):
         if self.no_guard and self.base(choice) == "guard":
             return False
         if choice in TECH_KEYS:
-            return self.tech(choice) is not None and self.cooldowns[choice] == 0
+            return self.tech(choice) is not None and self.cooldowns[choice] == 0 and self.bqi >= self.qi_cost(choice)
         return choice in MOVES
 
     def move_label(self, choice):
@@ -194,7 +200,9 @@ class Duel:
             if d.tech(choice) is None:
                 return "You have no technique of that kind equipped."
             left = d.cooldowns[choice]
-            return f"That technique is still recovering ({left} more turn{'s' if left != 1 else ''})."
+            if left:
+                return f"That technique is still recovering ({left} more turn{'s' if left != 1 else ''})."
+            return f"Not enough Battle Qi: it costs {d.qi_cost(choice)} and you have {d.bqi:.0f}."
         d.pick = choice
         d.timeouts = 0
         return None
@@ -295,10 +303,8 @@ class Duel:
                 share, note = pvp.CLASH_DAMAGE, "the two charges collide"
             else:                                       # Break beats Guard
                 note = "the guard shatters!"
-                if eff and eff[0] == "evade":
-                    if self.turn - dfn.evaded_turn > pvp.EVADE_COOLDOWN_TURNS and self.rng.random() < eff[1]:
-                        dfn.evaded_turn = self.turn
-                        return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} slips away (Evade)")
+                if eff and eff[0] == "evade":                                   # a dodge technique always slips a Break
+                    return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} slips away (Evade)")
                 held = break_held(dt, eff) if def_tech else 0
                 if held:
                     share, note = 1 - held, f"the guard still holds {held:.0%}"
@@ -362,6 +368,7 @@ class Duel:
             for k in d.cooldowns:
                 d.cooldowns[k] = max(0, d.cooldowns[k] - 1)
             if picks[d].endswith("_tech"):
+                d.bqi = max(0, d.bqi - d.qi_cost(picks[d]))                     # the technique's Battle Qi
                 d.cooldowns[picks[d]] = combat.cooldown_turns(d.tech(picks[d]))
                 reset = d.fx.get("cooldown_reset_chance")
                 if reset and self.rng.random() < reset:                         # Focus artifact
@@ -409,6 +416,8 @@ class Duel:
                 heal = min(d.max_hp - d.hp, max(1, round(d.max_hp * lotus)))
                 d.hp += heal
                 log.append(("herb", f"{d.name} — Lotus: +{heal:,}"))
+        for d in self.sides:
+            d.bqi = min(d.max_bqi, d.bqi + battle.BATTLE_QI_PER_TURN)           # a little Battle Qi back every turn
         if a.hp > 0 and b.hp > 0:
             for d in self.sides:
                 log += d.kit.end_turn(d, self.turn, d.cooldowns)

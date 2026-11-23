@@ -18,6 +18,7 @@ import time
 import discord
 from discord import app_commands
 
+import battle
 import pvp
 
 from . import db, gear
@@ -355,7 +356,9 @@ class DuelView(discord.ui.View):
         stamp = f"<t:{int(self._deadline)}:R>"
         locked = [x.name for x in d.sides if d.locked(x)]
         choosing = [x.name for x in d.sides if not d.locked(x)]
+        qi = " · ".join(f"{x.name} {x.bqi:.0f}/{x.max_bqi:.0f}" for x in d.sides)
         return (f"⚔️ **Friendly duel** · both pick in secret · time runs out {stamp}\n"
+                f"🔹 Battle Qi: {qi} (techniques cost it; +{battle.BATTLE_QI_PER_TURN} a turn)\n"
                 + (f"✅ Locked in: {', '.join(locked)}\n" if locked else "")
                 + (f"🤔 Choosing: {', '.join(choosing)}" if choosing else ""))
 

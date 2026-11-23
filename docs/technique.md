@@ -130,7 +130,7 @@ to damage and block; the 30% cap applies to **total damage in one turn**.
 | Counter | Reflects part of the blocked damage back |
 | Recover | Heals a % of max HP when it blocks |
 | Unbreakable | Break moves deal half of what gets past the block |
-| Evade | Chance to take no damage at all |
+| Evade | Always dodges a Break when used (and a beast's charged Strike), for its Battle Qi |
 
 ### Cooldowns in fights
 
@@ -183,7 +183,7 @@ Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
 | Viper Fang Finger | Attack | Finger | Pierce 25% |
 | Autumn Wind Kick | Attack | Leg | Combo: 3 hits × 40% |
 | Moon Mirror Palm | Defense | Palm | Counter 25% |
-| Drifting Mist Steps | Defense | Body | Evade 25% |
+| Drifting Mist Steps | Defense | Body | Evade (always dodges a Break) |
 | Rooted Mountain Stance | Defense | Body | Unbreakable |
 
 ### Earth grade
@@ -204,7 +204,7 @@ Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
 | Meteor-Falling Kick | Attack | Leg | Heavy ×1.5 |
 | Void Mirror Stance | Defense | Palm | Counter 40% |
 | Immortal Lotus Body | Defense | Body | Recover 12% |
-| Cloud-Walking Shadow | Defense | Body | Evade 40% |
+| Cloud-Walking Shadow | Defense | Body | Evade (always dodges a Break) |
 
 ## Training mastery
 

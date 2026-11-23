@@ -615,6 +615,8 @@ class Battle:
                             if dt:
                                 block += technique.DEFENSE_TECHNIQUE[dt["grade"]][0] * rules.mastery_mult(dt)
                             block = min(technique.MAX_DAMAGE_BLOCKED, block + t.kit.guard_block())   # Bulwark
+                            if dt and (tech_effect(dt) or (None,))[0] == "evade":
+                                block = 1.0                                     # a dodge technique: untouched, always
                         else:
                             block = 1.0
                         blocked = dmg * block
@@ -650,7 +652,7 @@ class Battle:
                         dmg *= battle.CLASH_DAMAGE
                     elif mine == "guard" and m == "break" and t.guard_tech():
                         eff = tech_effect(t.guard_tech())
-                        if eff and eff[0] == "evade" and self.rng.random() < eff[1]:
+                        if eff and eff[0] == "evade":                           # a dodge technique always slips a Break
                             dmg = 0
                             log.append(("shield", f"{t.name} slipped away from the {en}'s Break"))
                         else:

@@ -816,3 +816,30 @@ def test_the_discord_card_shows_the_unique_skill():
     d = card_data(b, "x")
     assert d["skill"] is None and "Roused" in d["enemy"]["statuses"]
     assert render_beast_fight(d).size == (EW, EH)
+
+
+def test_a_dodge_technique_always_slips_the_beasts_break_and_charged_strike():
+    """Nov 24: Drifting Mist Steps and Cloud-Walking Shadow always dodge when used (they rolled 25% / 40% before), for
+    their Battle Qi, which is unchanged."""
+    import battle
+    for name, grade in (("Drifting Mist Steps", "Mystic"), ("Cloud-Walking Shadow", "Heaven")):
+        techs = [TECHS[0], {"id": 2, "name": name, "type": "defense", "grade": grade, "mastery_exp": 0, "stage": 0}]
+        for seed in range(12):                                   # whatever the dice say
+            b = make_battle(seed=seed, techs=techs)
+            f = b.fighters[0]
+            assert f.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST[grade]
+            force(b, "break")
+            assert b.choose(1, "defense_tech") is None
+            b.resolve()
+            assert f.hp == f.max_hp and any("slipped away" in line for _, line in b.log), (name, seed)
+            assert f.bqi == f.max_bqi - battle.TECHNIQUE_QI_COST[grade] + battle.BATTLE_QI_PER_TURN
+        b = make_battle(seed=3, techs=techs)
+        force(b, "strike", kind="charged")
+        assert b.choose(1, "defense_tech") is None
+        b.resolve()
+        assert b.fighters[0].hp == b.fighters[0].max_hp          # a charged Strike too: untouched
+    plain = make_battle(seed=3)                                  # an ordinary Guard technique still only softens it
+    force(plain, "break")
+    plain.choose(1, "defense_tech")
+    plain.resolve()
+    assert plain.fighters[0].hp < plain.fighters[0].max_hp

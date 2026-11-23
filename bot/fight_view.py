@@ -76,7 +76,7 @@ def describe(tech):
              "counter": lambda: f"reflects {val:.0%} of blocked dmg",
              "recover": lambda: f"heals {val:.0%} HP on a block",
              "unbreakable": lambda: "Break hits you for half",
-             "evade": lambda: f"{val:.0%} chance to dodge a Break"}.get(kind)
+             "evade": lambda: "always dodges a Break"}.get(kind)
     return base + (f" · {extra()}" if extra else "")
 
 

@@ -40,6 +40,9 @@ def test_a_challenge_by_name_accepted_starts_a_duel(setup):
     assert sa["me"]["name"] == "Lin Feng" and sa["them"]["name"] == "Mei Xue" and sb["me"]["name"] == "Mei Xue"
     assert sa["turn"] == 1 and not sa["over"] and arena.lobby(conn, A)["in_duel"]
     assert "pick" not in sa["them"] and "moves" not in sa["them"]          # never what the other one may pick
+    assert sa["me"]["bqi"] == sa["me"]["max_bqi"] == sa["them"]["bqi"] == 100   # Battle Qi: both shown, both full
+    tech_ = [m for m in sa["me"]["moves"] if m["tech"]][0]
+    assert tech_["ready"] and "Battle Qi" in tech_["state"]                # the technique's cost on its button
 
 
 def test_a_declined_or_expired_challenge_is_gone(setup):

@@ -104,7 +104,9 @@ STARTING_TECHNIQUES = [
 #   counter:     share of blocked damage reflected
 #   recover:     share of max HP healed on block
 #   unbreakable: None (Break moves deal half damage)
-#   evade:       chance to take no damage
+#   evade:       a dodge technique: used in a fight or a duel it always slips a Break (and a beast's charged Strike),
+#                for its Battle Qi (bot/fight.py, bot/duel.py). The number is the old chance, which only the
+#                retired auto-fights still roll (bot/combat.py fight, bot/hunt.py team_fight)
 
 
 def _t(name, type_, grade, school, effect=None):

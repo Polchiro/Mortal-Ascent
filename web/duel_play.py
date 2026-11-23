@@ -44,11 +44,15 @@ def _move(s, key):
         icon = art_url(tech_kind(t["name"], players.TECH_BY_NAME.get(t["name"], {}).get("school", "Body"))) or \
             f"/art/icons/actions/{t['type']}_tech.webp"
     cd = s.cooldowns.get(key, 0) if t else 0
+    cost = s.qi_cost(key)
+    state = (f"{cost} Battle Qi" + (f" · ready in {cd} turn{'s' if cd != 1 else ''}" if cd
+                                   else " · not enough" if s.bqi < cost else "")) if t else ""
     as_ = "a Strike" if s.base(key) == "strike" else "a Guard"
     return {"key": key, "label": t["name"] if t else rules.MOVE_LABEL[key], "icon": icon, "ready": s.ready(key),
             "tech": bool(t), "kind": {"attack": "Attack technique", "defense": "Defense technique"}.get(t["type"], "")
-            if t else "", "state": (f"Ready in {cd} turn{'s' if cd != 1 else ''}" if cd else "Ready") if t else "",
-            "info": f"{t['name']}: counts as {as_}, with its effects. Recovers for a few turns after." if t else HINT[key]}
+            if t else "", "state": state,
+            "info": f"{t['name']}: counts as {as_}, with its effects. Costs {cost} Battle Qi and recovers for a few "
+                    "turns after." if t else HINT[key]}
 
 
 @dataclass
@@ -336,6 +340,7 @@ class Arena:
             def side(s, mine):
                 look = m.looks[s.uid]
                 out = {"uid": s.uid, "name": s.name, "hp": round(s.hp), "max_hp": round(s.max_hp),
+                       "bqi": round(s.bqi), "max_bqi": round(s.max_bqi),
                        "locked": d.locked(s), "staggered": s.staggered,
                        "poses": {p: looks.fighter(look, p) for p in ("idle", "windup", "strike", "guard")},
                        "isheet": looks.idle_sheet(look)}

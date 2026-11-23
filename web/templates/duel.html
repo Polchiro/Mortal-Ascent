@@ -16,6 +16,8 @@
       <p class="brealm">{{ s.me.realm }} · fights at {{ s.fair }}</p>
       <div class="brow"><img src="/art/icons/attr/hp.webp" alt="" width="20" height="20"><span class="bl">HP</span>
         <div class="bhp"><div id="mehp"></div></div><b id="mehpv"></b></div>
+      <div class="brow"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"><span class="bl">Battle Qi</span>
+        <div class="bhp qi"><div id="meqi"></div></div><b id="meqiv"></b></div>
       <p class="dlock" id="melock"></p>
     </div>
   </section>
@@ -26,6 +28,7 @@
       <p class="etags">Cultivator · {{ s.them.realm }}</p></div>
       <img class="dface" src="{{ s.them.face }}" alt="" width="72" height="72"></div>
     <div class="ehp"><div id="themhp"></div><span id="themhpv"></span></div>
+    <div class="ehp eqi" title="Their Battle Qi"><div id="themqi"></div><span id="themqiv"></span></div>
     <div class="bwarn" aria-live="polite"><p class="whead" id="dwarn">Friendly duel</p><p class="whint" id="themlock"></p></div>
   </section>
 
