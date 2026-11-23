@@ -227,6 +227,29 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
 
 The frame, tracker, dock and hint change nothing in the game; the tasks are the one part that pays (docs/world.md).
 
+## Fight sounds
+
+The beast fight and the Arena's duels have sound, made in the browser like the map's (`web/static/fight_sound.js`,
+no sound files). `fight.js` and `duel.js` tell it what just happened on screen (`FightSound.play(name)`); it never
+decides anything.
+
+| When | Sound |
+|---|---|
+| You choose a move | a tick |
+| Strike / Break goes in | the blade's whoosh (heavier for Break); Break first gathers Qi, then the ground booms |
+| Your blow lands | a cut and a thud (bigger when it takes a fifth of the enemy's HP or more) |
+| You are hit | a duller blow (bigger likewise) |
+| Blocked, Guarded, Deflected, Held | steel rings |
+| Missed / Evaded | a whoosh through air / a quick double swish |
+| A technique | Qi swells, then is let go: deeper and fuller the higher its grade (Mortal to Heaven) |
+| The beast attacks / roars | a snarl as it springs / a long roar (bigger for its last, and after a pounce) |
+| Heal, Stunned | a rising chime / a wobbling tone |
+| The beast falls, the fight is won | a last cry and a thud, then a short victory phrase with a gong |
+| A duel ends | victory or defeat |
+
+In a duel both fighters' moves sound together, a moment apart. The sounds follow the map's settings (the gear on
+the map: Sound On / Off and the volume), and start with your first click or key press on the page.
+
 ## The open world and the World Map
 
 The town, the Crossroads and the Moon Forest's three lands are one world you walk through (`/town`, `/crossroads`,

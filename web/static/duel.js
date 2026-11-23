@@ -10,6 +10,9 @@
   var $ = function (id) { return document.getElementById(id); };
   var main = $('duel');
   var shownTurn = S.last ? S.last.turn : 0, sending = false, acting = false, leftAt = Date.now(), left = S.left;
+  /* sound (web/static/fight_sound.js): told what just happened on screen; silent if it isn't there */
+  function fs(name, arg, delay) { var F = window.FightSound; if (F) F.play(name, arg, delay); }
+  var wasOver = !!S.over;                                      // the result's sound plays once, when the duel ends in front of you
 
   /* ── drawing the state ─────────────────────────────────────────── */
   function pct(side) { return Math.max(0, Math.round(100 * side.hp / side.max_hp)); }
@@ -103,6 +106,7 @@
     $('rsub').textContent = how + ' · ' + r.turns + ' turn' + (r.turns === 1 ? '' : 's');
     $('dresult').hidden = false;
     $('dflee').hidden = true;
+    if (!wasOver) { wasOver = true; fs(r.won ? 'victory' : r.draw ? 'block' : 'defeat', null, 250); }
     $('fme').classList.toggle('down', !r.won && !r.draw);
     $('fthem').classList.toggle('down', !!r.won);
   }
@@ -126,6 +130,11 @@
     if (t.lines && t.lines[0]) again($('dtoast'), t.lines[0]);
     again($('sayme'), mine.label + (mine.timed_out ? ' (too slow)' : ''));
     again($('saythem'), theirs.label + (theirs.timed_out ? ' (too slow)' : ''));
+    [mine, theirs].forEach(function (m, i) {                     // each side's move: a guard goes up, Qi gathers, a blade is drawn
+      if (/_tech$/.test(m.move)) fs('cast', 1, i * 60);
+      else if (m.base === 'guard') fs('guardup', null, i * 60);
+      else if (m.base === 'break') fs('gather', null, i * 60);
+    });
     [[fme, mine], [fthem, theirs]].forEach(function (p) {
       p[0].classList.add('acting');
       p[0].dataset.pose = p[1].base === 'guard' ? 'idle' : 'windup';
@@ -135,12 +144,17 @@
       [[fme, mine], [fthem, theirs]].forEach(function (p) {
         if (p[1].base !== 'guard') { p[0].dataset.pose = 'strike'; p[0].classList.add('lunge'); }
       });
+      [mine, theirs].forEach(function (m, i) { if (m.base !== 'guard' && !/_tech$/.test(m.move)) fs('swing', m.base, i * 70); });
       setTimeout(function () {
         [['me', fme, mine, theirs], ['them', fthem, theirs, mine]].forEach(function (p) {
-          var lost = p[2].lost;
-          if (lost > 0) { p[1].classList.add('hit'); pop(p[0], '−' + lost.toLocaleString(), 'hurt'); }
-          else if (lost < 0) pop(p[0], '+' + (-lost).toLocaleString(), 'heal');
-          else if (p[3].base !== 'guard') pop(p[0], p[2].base === 'guard' ? 'Blocked!' : 'Missed!', 'hit');
+          var lost = p[2].lost, max = (p[0] === 'me' ? S.me : S.them).max_hp, big = lost >= max * 0.2 ? 'big' : '';
+          if (lost > 0) {
+            p[1].classList.add('hit'); pop(p[0], '−' + lost.toLocaleString(), 'hurt');
+            fs(p[0] === 'me' ? 'hurt' : 'hit', big, p[0] === 'me' ? 0 : 60);          // you are hurt; your blow lands on them
+            if (p[3].base === 'break') fs('boom', null, 40);
+          }
+          else if (lost < 0) { pop(p[0], '+' + (-lost).toLocaleString(), 'heal'); fs('heal'); }
+          else if (p[3].base !== 'guard') { pop(p[0], p[2].base === 'guard' ? 'Blocked!' : 'Missed!', 'hit'); fs(p[2].base === 'guard' ? 'block' : 'miss'); }
         });
         bars(s);
         setTimeout(function () {
@@ -166,6 +180,7 @@
     return fetch('/duel/state', {cache: 'no-store'}).then(function (r) { return r.json(); }).then(apply);
   }
   function pick(key) {
+    fs('press');
     if (sending || acting || S.over || S.me.pick) return;
     sending = true;
     var body = new URLSearchParams({move: key, turn: S.turn});
