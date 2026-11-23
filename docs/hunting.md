@@ -122,7 +122,9 @@ same random numbers; `_battle` builds the same fight).
 - **The map:** a 24 x 24 tile diamond (2:1, 128 x 64 px tiles), the outer edge forest. A location with a painted
   map (`hunt_map.MAPS`: Moon Forest so far, `art/maps/moon_forest.webp`, SHOAIB's painting fitted to the diamond)
   shows it and blocks what stands on it (circles in tiles: the shrine, the old tree, boulders, the pond; the stream
-  is shallow and the stepping stones cross it). Server and page share one walkable test. Other locations keep the
+  is shallow and the stepping stones cross it). On it stand environment pieces (docs/environment.md: rocks, logs,
+  ferns, flowers, mushrooms, glowing spirit mushrooms), drawn back to front with you and the beast, the rocks and
+  logs blocking the way. Server and page share one walkable test. Other locations keep the
   ground drawn in code. Press **G** on the map for the tile grid, the walkable edge and the blocked circles, with your
   position, to check a map against its painting.
 - **The beasts hunt too:** a beast wanders about the spot the server put it on, notices you (a **!**) and charges;

@@ -265,9 +265,10 @@
     ctx.globalCompositeOperation = 'lighter';
     LIGHTS.forEach(function (l, i) {
       var q = toScreen(l[0], l[1]), fl = .85 + Math.sin(night * 3.1 + i * 1.7) * .08 + Math.sin(night * 7.3 + i) * .05;
-      var g = ctx.createRadialGradient(ox + q.x, oy + q.y, 2, ox + q.x, oy + q.y, 120 * fl);
+      var R = l[3] || 120, cy = oy + q.y - (l[3] ? R * 0.3 : 0);   // a small light (a glowing mushroom): round its caps
+      var g = ctx.createRadialGradient(ox + q.x, cy, 2, ox + q.x, cy, R * fl);
       g.addColorStop(0, hexA(l[2], .55 * fl)); g.addColorStop(.25, hexA(l[2], .18 * fl)); g.addColorStop(1, hexA(l[2], 0));
-      ctx.fillStyle = g; ctx.fillRect(ox + q.x - 130, oy + q.y - 130, 260, 260);
+      ctx.fillStyle = g; ctx.fillRect(ox + q.x - R * 1.1, cy - R * 1.1, R * 2.2, R * 2.2);
     });
     // fireflies
     flies.forEach(function (f) {
@@ -406,6 +407,76 @@
     ctx.fillStyle = 'rgba(235,203,134,.9)'; ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -9); ctx.lineTo(-4, 0); ctx.lineTo(-8, 9); ctx.closePath(); ctx.fill();
     ctx.restore();
   }
+  /* the map's pieces (web/env.py: rocks, logs, plants, mushrooms): each one picture, shared by every place it stands
+     (one Image per file), drawn back to front with you and the beast among them, as in town (town.js `layered`):
+     you go after every piece you overlap on screen and stand in front of (nearer than its point, or beyond a log's
+     footprint's back edges), so a rock hides you when you walk behind it, and your silhouette shows through it.
+     Off-screen pieces aren't drawn. Each casts a soft shadow on the ground (a log's lies along it). */
+  var PIECES = cfg.pieces || [], IMGS = {}, TONE = cfg.tone;
+  function toned(src, lit) {                       // the picture in the map's light, made once per file
+    var key = src + (lit ? '#lit' : ''), c = IMGS[key];
+    if (c) return c;
+    c = IMGS[key] = {complete: false, naturalWidth: 0};
+    var im = new Image();
+    im.onload = function () {
+      if (!TONE) { IMGS[key] = im; c.ready = im; return; }
+      var cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight;
+      var g = cv2.getContext('2d'); g.drawImage(im, 0, 0);
+      var k = lit ? TONE.map(function (v) { return (1 + v) / 2; }) : TONE;   // glowing pieces keep more colour
+      g.globalCompositeOperation = 'multiply';
+      g.fillStyle = 'rgb(' + k.map(function (v) { return Math.round(v * 255); }).join(',') + ')';
+      g.fillRect(0, 0, cv2.width, cv2.height);
+      g.globalCompositeOperation = 'destination-in'; g.drawImage(im, 0, 0);   // keep the picture's own outline
+      c.ready = cv2;
+    };
+    im.src = src;
+    return c;
+  }
+  PIECES.forEach(function (p) {
+    p.img = toned(p.src, p.lit);
+    p.depth = p.fp ? p.fp[0] + p.fp[2] / 2 + p.fp[1] + p.fp[3] / 2 : p.at[0] + p.at[1];
+    p.tall = p.rect[3] > 56;                      // tall enough that you'd lose sight of yourself behind it
+  });
+  PIECES.sort(function (a, b) { return a.depth - b.depth; });
+  var hiddenHero = false;
+  function onScreen(r, ox, oy) { return ox + r[0] < W && ox + r[0] + r[2] > 0 && oy + r[1] < H && oy + r[1] + r[3] > 0; }
+  function drawShadows(ox, oy) {
+    PIECES.forEach(function (q) {
+      if (!onScreen(q.rect, ox, oy)) return;
+      var p = toScreen(q.at[0], q.at[1]), s = q.shadow || {};
+      ctx.save(); ctx.translate(ox + p.x, oy + p.y); ctx.fillStyle = 'rgba(0,0,0,.34)'; ctx.beginPath();
+      if (s.len) { ctx.rotate(Math.atan2(TH / 2, s.axis === 'x' ? TW / 2 : -TW / 2)); ctx.ellipse(0, 0, s.len, s.wide, 0, 0, Math.PI * 2); }
+      else ctx.ellipse(0, 0, s.rx || 10, s.ry || 4, 0, 0, Math.PI * 2);
+      ctx.fill(); ctx.restore();
+    });
+  }
+  function drawPiece(q, ox, oy) {
+    var img = q.img.ready || (q.img.complete && q.img.naturalWidth ? q.img : null);
+    if (!img || !onScreen(q.rect, ox, oy)) return;
+    var r = q.rect;
+    if (q.flip) { ctx.save(); ctx.translate(ox + r[0] + r[2], oy + r[1]); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, r[2], r[3]); ctx.restore(); }
+    else ctx.drawImage(img, ox + r[0], oy + r[1], r[2], r[3]);
+  }
+  function layered(movers, ox, oy) {
+    movers.forEach(function (m) {
+      var p = toScreen(m.x, m.y), w = 40, top = p.y - m.h, slot = 0;
+      function over(q) { var r = q.rect; return !(p.x + w < r[0] || p.x - w > r[0] + r[2] || p.y < r[1] || top > r[1] + r[3]); }
+      PIECES.forEach(function (q, i) {
+        if (!over(q)) return;
+        var front = q.fp ? (m.x >= q.fp[0] + q.fp[2] - 0.25 || m.y >= q.fp[1] + q.fp[3] - 0.25) : m.x + m.y > q.depth;
+        if (front) slot = i + 1;
+      });
+      m.slot = slot;
+      if (m.hero) hiddenHero = PIECES.some(function (q, i) { return i >= slot && q.tall && over(q); });
+    });
+    movers.sort(function (a, b) { return a.slot - b.slot || (a.x + a.y) - (b.x + b.y); });
+    var out = [], k = 0;
+    for (var i = 0; i <= PIECES.length; i++) {
+      while (k < movers.length && movers[k].slot === i) out.push(movers[k++].f);
+      if (i < PIECES.length) out.push(drawPiece.bind(null, PIECES[i], ox, oy));
+    }
+    return out;
+  }
   function draw() {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     var hp = toScreen(hero.x, hero.y);
@@ -415,11 +486,16 @@
     if (painted) { if (painted.complete) ctx.drawImage(painted, ox - SIZE * TW / 2, oy, SIZE * TW, SIZE * TH); }
     else ctx.drawImage(ground, ox + gx0, oy + gy0);
     if (debug) drawDebug(ox, oy);
-    var list = [{y: hp.y, f: function () { drawHero(ox + hp.x, oy + hp.y); }}], bp = null;
-    if (beast) { bp = toScreen(beast.x, beast.y); list.push({y: bp.y, f: function () { drawBeast(ox + bp.x, oy + bp.y); }}); }
+    var movers = [{hero: true, x: hero.x, y: hero.y, h: 140, f: function () { drawHero(ox + hp.x, oy + hp.y); }}], bp = null;
+    if (beast) { bp = toScreen(beast.x, beast.y);
+      movers.push({x: beast.x, y: beast.y, h: beast.w, f: function () { drawBeast(ox + bp.x, oy + bp.y); }}); }
     drawHomePath(ox, oy);
+    drawShadows(ox, oy);
     drawPuffs(ox, oy);
-    list.sort(function (a, b) { return a.y - b.y; }).forEach(function (o) { o.f(); });
+    layered(movers, ox, oy).forEach(function (f) { f(); });
+    if (hiddenHero) {                                   // behind a rock or a log: your silhouette shows through
+      ctx.save(); ctx.globalAlpha = 0.45; drawHero(ox + hp.x, oy + hp.y); ctx.restore();
+    }
     drawAtmosphere(ox, oy);
     if (bp) pointer(ox, oy, bp);
   }
