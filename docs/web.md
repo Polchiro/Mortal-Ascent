@@ -195,7 +195,8 @@ below. docs/town.md.
   changes, e.g. when a trip is banked at the gate). The icons are drawn in code (SVG) until SHOAIB makes painted ones.
 - **Settings** (the gear at the top right of the walking pages): **Character size**, Small / Normal / Large /
   Largest. It draws you and the land closer up or further away (`UZ` in `town.js`); it is only how the page looks
-  and is kept on the device (`localStorage` `ma.size`), not in the game's save.
+  and is kept on the device (`localStorage` `ma.size`), not in the game's save. Also **Sound** On / Off and a volume
+  (`ma.sound`, `ma.vol`; docs/world.md "Sound").
 
 ## The map screen
 
@@ -213,6 +214,10 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
 - **The trip tracker** (top right, under the purse; only outside town): five diamonds for the trip's encounters,
   "Encounter 2 of 5", what you carry (not yet banked) and a reminder that losing a fight costs half of it. With no
   trip but the wilds quiet (resting, injured, in a team) it shows why. Hidden in town and when there is nothing to say.
+- **Today's tasks** (top right, above the trip tracker, in town too): the day's three world tasks with progress
+  (docs/world.md "Today's tasks").
+- **Other players** walking the same place, with their names and realms (docs/world.md "Other players").
+- **Sound** and its settings (docs/world.md "Sound").
 - **The dock** (bottom right): **Bag** (`/inventory`), **Character** (`/profile`), **Techniques**
   (`/profile#techniques`) and **Map** (`/world`, also the **M** key). Where you stood is kept, so you come back to the
   same spot.
@@ -220,7 +225,7 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   stays hidden; the **?** at the top right shows it again (`localStorage` `ma.keys`). On a phone it never shows (the
   joystick is there instead).
 
-Nothing here changes the game: no new rules, rewards or numbers, only what is already true, shown.
+The frame, tracker, dock and hint change nothing in the game; the tasks are the one part that pays (docs/world.md).
 
 ## The open world and the World Map
 

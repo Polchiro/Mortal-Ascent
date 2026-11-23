@@ -72,6 +72,10 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         elsewhere = away(uid, place)
         if elsewhere:
             return go(elsewhere)
+        if world.walker(uid) is None and not near:            # the website restarted: back where you last stood
+            was = with_conn(world.restore, uid)
+            if was and was != place:
+                return go(overworld.url(was))
 
         def build(c):
             p = db.get_player(c, uid)
@@ -116,6 +120,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
     @app.get("/wild/{key}", response_class=HTMLResponse)
     def wild_page(request: Request, key: str):
         user = current_user(request)
+        if user and world.walker(user["id"]) is None:         # the website restarted: back where you last stood
+            with_conn(world.restore, user["id"])
         w = world.walker(user["id"]) if user else None
         if user and (w is None or w.place != key or key not in overworld.WILD):   # you walk here, down the road
             return go(overworld.url(w.place) if w else "/town")
@@ -161,6 +167,14 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
                     "notice": " ".join(banked) if banked else None}
 
         return await post_json(request, move, "place", "key", "x", "y")
+
+    @app.post("/world/others")
+    async def world_others(request: Request):
+        """The other players walking here (asked about once a second): where they stand and how they look."""
+        def others(c, uid, place):
+            v = world.others(c, uid, place)
+            return {"gone": True} if v is None else {"others": v}
+        return await post_json(request, others, "place")
 
     @app.post("/world/state")
     async def world_state(request: Request):

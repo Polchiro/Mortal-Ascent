@@ -63,8 +63,12 @@ pages and `/world/...` requests), `web/static/town.js` (the one script that walk
 - **The server knows where you are.** The page reports your position (`/world/pos`); the server checks each step could
   really be walked (the hunting map's speed check) and that you are in the mouth before letting you through
   (`/world/move`). Typing `/wild/deep_woods` in the address bar while you stand in town just shows you the town.
-- **Reload or come back later:** you are where you were (for 30 minutes, `FRESH`; after that, or after the website
-  restarts, in town).
+- **Reload or come back later:** you are where you were (for 30 minutes, `FRESH`; after that, at the start of the
+  place you open).
+- **A restart keeps where you stood.** Your place and spot are saved in the database (`world_spots`: place, x, y,
+  time), when you come into a place and at most every 10 seconds while you walk (`SAVE_EVERY`). After the website
+  restarts, opening any map page puts you back there (`World.restore`). Only the place and spot are kept: a trip under
+  way still ends with a restart, as a hunt does, and herbs simply grow again.
 - **The five other roads are closed.** Mist lies over each, *Not open yet*, until its land is built. Nothing starts
   there: the old menu hunt is gone from the roads (`/crossroads/go` no longer exists). A road above your realm
   still shows its seal.
@@ -130,10 +134,51 @@ pages and `/world/...` requests), `web/static/town.js` (the one script that walk
   own; they come later. Until then the forest's finds are the seven above.
 - You choose which encounters to take (walk past a beast, look for glints), so a trip's mix can differ from
   `/explore`'s. The total is still 5 per rest.
-- Teams still gather in the lobby (`/explore`) and hunt the old way. Other players are not shown on the map.
+- Teams still gather in the lobby (`/explore`) and hunt the old way.
 - A look without a walking sheet can read the town's list and use Discord's `/gather` and `/explore`.
-- Where you stand and your herbs are kept in the website's memory: a restart puts everyone back in town (a trip
-  under way ends as a hunt does).
+- Your herbs, beasts and finds are kept in the website's memory: a restart rolls them again (a trip under way ends
+  as a hunt does). Where you stand is saved (above).
+
+## Other players
+
+Everyone walking the same place sees each other: their own walking sheet (male or female), their name in blue and
+their realm and layer over their head, walking smoothly to where the server last saw them. The page asks
+`/world/others` about once a second; the server answers the others in your place whose page spoke to it in the last
+15 seconds (`OTHERS_FRESH`; a closed tab fades out), the nearest 30 at most (`OTHERS_MAX`). They are shown by a
+random tag, never by their Discord id. Seeing is all for now: no talking, trading or fighting each other on the map,
+and they don't block your way. Code: `World.others` in `web/overworld.py`, `pollOthers` / `drawOther` in `town.js`.
+
+## Today's tasks
+
+Three tasks a day, the same all day and new at **midnight UTC**, picked for each player from five
+(`web/world_tasks.py`, `TASKS`):
+
+| Task | Counts | Pays (Mortal; × realm) |
+|---|---|---|
+| Pick 5 herbs out in the world | a herb gathered (not a look-alike or a miss) | 🪷 120 |
+| Defeat 2 beasts in the Moon Forest | a beast beaten out in the world | 🪷 150 |
+| Look into 2 glints in the grass | a find looked into | 🪷 120 |
+| Walk all the way to the Shrine Grove | coming into the Shrine Grove | 🪷 100 |
+| Bring a trip's finds home to town | a trip banked at the town gate | 🪷 120 |
+
+- A task **pays the moment it is done**; finishing all three adds 🪷 150 (`ALL_DONE_COINS`). Coins grow with the realm
+  exactly like the Discord quests (`bot/quests.coin_scale`: Mortal ×1 ... Martial Saint ×3.5). Every payment is in the
+  ledger ("World task: ...").
+- Progress is counted in the existing `daily_counts` table as `world:<task>`.
+- They are separate from the Discord `/daily` quests, which are unchanged; the same herb or beast counts for both.
+- On the map: **Today's Tasks** at the top right (click its title to fold it; folded at first on a phone), and a line
+  with a bell when one is done.
+
+## Sound
+
+Made in the browser (`web/static/sound.js`, Web Audio, no sound files). Each kind of place has its own bed, which
+crossfades as you walk on: the town (soft wind, the street's murmur, wind chimes), the Crossroads (wind over grass,
+a few crickets, birds) and the Moon Forest (wind in the trees, crickets all round, a far-off owl, a creaking branch).
+Little sounds: footsteps (stone in town, earth outside), a whoosh into the next land, a growl when a beast notices
+you (deeper for an Elite or a Beast King), kneeling at a herb, a chime when it is picked (a dull note when not), a
+glint's sparkle and a bell for a finished task. **Settings** (the gear) has Sound On / Off and a volume, kept on the
+device. Browsers allow sound only after a click or key press, so it starts with your first one, and it goes quiet
+while the tab is hidden.
 
 ## The Crossroads (`/crossroads`)
 

@@ -2,6 +2,13 @@
    talk box, the gathering panel, what you found, the trip's line, and the fade between places. #}
 <button class="mprompt" id="prompt" type="button"></button>
 <div class="stick" id="stick" aria-hidden="true"><div class="knob" id="knob"></div></div>
+<div class="wright">
+<section class="mplate wtasks" id="tasks" aria-label="Today's tasks" hidden>
+  <button type="button" class="thead" id="tasksHead" aria-expanded="true" aria-controls="tasksBody">
+    <span class="kicker">TODAY'S TASKS</span><b id="tasksCount"></b><i aria-hidden="true"></i>
+  </button>
+  <div id="tasksBody"><ul class="tlist" id="tasksList"></ul><p class="mhint" id="tasksBonus"></p></div>
+</section>
 <section class="mplate wtrip" id="trip" aria-label="Your trip" hidden>
   <p class="kicker" id="tripKicker">THE TRIP</p>
   <div class="tpips" id="tripPips" aria-hidden="true"></div>
@@ -9,6 +16,7 @@
   <ul class="tloot" id="tripLoot"></ul>
   <p class="mhint" id="tripLine"></p>
 </section>
+</div>
 <nav class="mdock" aria-label="Your things">
   <a class="dbtn" href="/inventory" title="Bag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7V6a4 4 0 0 1 8 0v1h2.2a1 1 0 0 1 1 .9l1 12a1 1 0 0 1-1 1.1H4.8a1 1 0 0 1-1-1.1l1-12a1 1 0 0 1 1-.9zm2 0h4V6a2 2 0 0 0-4 0zm-1.5 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm7 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/></svg><span>Bag</span></a>
   <a class="dbtn" href="/profile" title="Character"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a4.2 4.2 0 1 1 0 8.4A4.2 4.2 0 0 1 12 3zm0 10c4.6 0 8 2.3 8 5.2V21H4v-2.8C4 15.3 7.4 13 12 13z"/></svg><span>Character</span></a>
@@ -42,6 +50,13 @@
     <button type="button" class="hbtn ghost small" data-size="1.5">Largest</button>
   </div>
   <p class="mhint">Bigger shows you and the land closer up; smaller shows more of the land. Saved on this device.</p>
+  <p class="setlabel" id="soundLabel">Sound</p>
+  <div class="setrow" role="group" aria-labelledby="soundLabel">
+    <button type="button" class="hbtn ghost small" data-sound="on">On</button>
+    <button type="button" class="hbtn ghost small" data-sound="off">Off</button>
+  </div>
+  <input type="range" class="setvol" id="soundVol" min="0" max="100" step="5" value="60" aria-label="Volume">
 </section>
 <div class="wfade" id="fade" aria-hidden="true"></div>
+<script src="{{ asset('sound.js') }}" defer></script>
 <script src="{{ asset('town.js') }}" defer></script>

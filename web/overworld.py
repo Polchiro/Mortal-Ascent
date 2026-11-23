@@ -38,7 +38,7 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import crossroads, hunt_map, land, town
+from . import crossroads, hunt_map, land, town, world_tasks
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -86,6 +86,9 @@ ENTRANCES = {
 TRIGGER = 0.75                        # walk this close to an entrance and you go through
 ARRIVE_GAP = TRIGGER + 1.2            # you come out this far in, so you aren't sent straight back
 FRESH = 1800                          # a place you left less than this long ago keeps where you stood (a reload)
+OTHERS_FRESH = 15                     # another player shows while their page spoke to the server this recently (s)
+OTHERS_MAX = 30                       # at most this many others drawn (the nearest)
+SAVE_EVERY = 10                       # where you stand is saved at most this often while you walk (s)
 
 HERB_REACH = 1.6                      # how close (tiles) to kneel at a herb or look at a find
 HERB_REGROW = (45, 90)                # seconds before a picked herb grows again somewhere else: walking from herb
@@ -197,6 +200,10 @@ class Walker:
     gathering: tuple = None                   # (place, herb id) whose round is on screen
     ids: int = 0
     roll: tuple = None                        # ((trip, step), tier): the kind of beast this step of the trip offers
+    who: dict = None                          # how other players see you: name, realm, look (enter() fills it)
+    seen: float = 0.0                         # when this player's page last spoke to the server (shown to others)
+    saved: float = 0.0                        # when where you stand was last saved (save_spot)
+    tag: str = ""                             # how other pages tell you apart (not your Discord id)
 
 
 class World:
@@ -235,12 +242,70 @@ class World:
             else:
                 w.x, w.y = (arrival(place, near, side) if near in {k for p, k in ENTRANCES if p == place}
                             else start(place))
-            w.place, w.t = place, now
+            w.place, w.t, w.seen = place, now, now
             w.loose = place == "town"                         # the page may stand you by someone: nothing to gain
             w.gathering = None
+            w.who = _who(conn, uid) or w.who
+            if not w.tag:
+                w.tag = "%08x" % random.getrandbits(32)
+            self._save(conn, uid, w, now)
+        if place == "shrine_grove":
+            world_tasks.record(conn, uid, "shrine", now)
         if place == "town":
-            return self.hunts.world_home(conn, uid)
+            lines = self.hunts.world_home(conn, uid)
+            if lines is not None:
+                world_tasks.record(conn, uid, "bank", now)
+            return lines
         return None
+
+    # ── where you stood, kept through a restart (db.world_spots) ───
+
+    def _save(self, conn, uid, w, now):
+        try:
+            db.save_world_spot(conn, uid, w.place, w.x, w.y, now)
+            w.saved = now
+        except Exception:                                     # memory is the truth while running: a failed save
+            pass                                              # only loses the spot if the website restarts too
+
+    def restore(self, conn, uid):
+        """After the website restarted (nobody in memory yet): stand this player where they last stood, from the
+        database. The place they are in now (they may already be in memory), or None (never walked)."""
+        with self.lock:
+            w = self._w.get(uid)
+            if w is not None:
+                return w.place
+            row = db.world_spot(conn, uid)
+            if row is None or row["place"] not in PLACES:
+                return None
+            place, x, y = row["place"], row["x"], row["y"]
+            if not walkable(place, x, y):
+                x, y = start(place)
+            now = self.clock()
+            rng = self.rng_factory() if self.rng_factory else random.Random()
+            w = self._w[uid] = Walker(place, x, y, now, rng)
+            w.saved = now
+            return place
+
+    # ── the others walking here ─────────────────────────────────────
+
+    def others(self, conn, uid, place):
+        """The other players in this place whose page is open (spoke to the server in the last OTHERS_FRESH
+        seconds), nearest first, at most OTHERS_MAX: where they stand and how they look. Your own page asking
+        counts as being here."""
+        now = self.clock()
+        with self.lock:
+            me = self._w.get(uid)
+            if me is None or me.place != place:
+                return None
+            me.seen = now
+            out = []
+            for oid, o in self._w.items():
+                if oid == uid or o.place != place or now - o.seen > OTHERS_FRESH or not o.who:
+                    continue
+                out.append((math.dist((me.x, me.y), (o.x, o.y)),
+                            {"tag": o.tag, "x": round(o.x, 2), "y": round(o.y, 2), **o.who}))
+            out.sort(key=lambda d: d[0])
+            return [d for _, d in out[:OTHERS_MAX]]
 
     def report(self, conn, uid, place, x, y):
         """Where the page says you are. Answers where the server has you ({x, y}), or that you are elsewhere."""
@@ -262,6 +327,9 @@ class World:
                 w.loose = False
             else:
                 w.t = now
+            w.seen = now
+            if now - w.saved > SAVE_EVERY:
+                self._save(conn, uid, w, now)
         self.hunts.touch(uid)
         return {"x": w.x, "y": w.y}
 
@@ -404,6 +472,8 @@ class World:
             last = s.last[0] if s and s.last else None
             if last is not None and last.kind == "herb":
                 self._picked(w, conn, uid, place, hid)
+                if s.g.gathered and s.g.gathered[-1] is last.herb:     # picked, not a look-alike or too slow
+                    world_tasks.record(conn, uid, "herbs", self.clock())
 
     def _picked(self, w, conn, uid, place, hid):
         hs = w.herbs.get(place, [])
@@ -448,6 +518,7 @@ class World:
             purse = {"coins": f"{int(p['lotus_coins']):,}", "pearls": f"{int(p['moon_pearls']):,}"} if p else None
             return {"place": place, "herbs": herbs, "beasts": beasts, "finds": finds, "trip": trip, "purse": purse,
                     "hero": hero_view(conn, uid, p, trip, self.hunts.clock()) if p else None,
+                    "tasks": world_tasks.board(conn, uid, self.clock()),
                     "wary": bool(quiet), "quiet": _quiet_line(quiet),
                     "wander": hunt_map.WANDER, "notice": hunt_map.NOTICE, "reach": HERB_REACH,
                     "beastReach": hunt_map.REACH}
@@ -541,7 +612,8 @@ class World:
             if nf:
                 w.finds[place].append(nf)
             w.beasts.clear()                                  # a step deeper: the beasts out there change
-            return lines, None
+        world_tasks.record(conn, uid, "finds", self.clock())
+        return lines, None
 
     def defeated(self, uid):
         """Carried home from a lost fight: you wake up in town."""
@@ -579,6 +651,17 @@ def hero_view(conn, uid, p, trip=None, now=None):
     return {"name": p["name"], "realm": p["realm"], "layer": f"{rules.ordinal(p['layer'])} Layer",
             "face": looks.face(looks.of_player(p)), "hp": f"{max(0, int(hp)):,}", "max_hp": f"{int(max_hp):,}",
             "pct": max(0, min(100, round(hp / max(1, max_hp) * 100))), "status": status, "tone": tone}
+
+
+def _who(conn, uid):
+    """How other players see you on the map: name, realm and layer, and which walking sheet (male or female)."""
+    import looks
+    from bot import player as rules
+    p = db.get_player(conn, uid)
+    if p is None:
+        return None
+    look = looks.of_player(p)
+    return {"name": p["name"], "realm": f"{p['realm']} · {rules.ordinal(p['layer'])}", "look": looks.gender_of(look)}
 
 
 def _quiet_line(why):
@@ -649,6 +732,8 @@ def page_data(conn, world, uid, place, sheet, p, blocked, near=None):
         data = wild_data(sheet, place, hero)
     walk_exits(place, data)
     info = PLACES[place]
+    import looks
     data.update({"place": place, "title": info["title"], "kicker": info["kicker"], "url": info["url"],
+                 "sheets": looks.WALK_SHEETS,                 # how the other players walking here are drawn
                  "trigger": TRIGGER, "world": world.state(conn, uid, place)})
     return data
