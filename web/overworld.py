@@ -1,25 +1,26 @@
 """
-The open world (docs/world.md): the places you walk between, and what each player finds in them.
+The open world (docs/world.md): the town, the Crossroads and the lands of the Moon Forest, walked as one world.
 
-Places: Azure Cloud Town (web/town.py), the Crossroads outside its gate (web/crossroads.py) and Moon Forest
-(web/hunt_map.py MAPS: SHOAIB's painting with its environment pieces, web/env.py). They are joined by ENTRANCES:
-walk into one (the town gate, the end of a road, the forest's path out) and you come out of its partner on the next
-map, a few steps in. The page (web/static/town.js) walks every place the same way; the server knows which place you
-are in and where you stand (it checks each report could be walked, as on the hunting map), so nobody skips a road by
-typing an address or picks a herb from across the clearing.
+A place is the town (web/town.py), the Crossroads (web/crossroads.py) or a wild land (web/land.py LANDS: big, empty
+ground for now). They are joined by ENTRANCES: walk into one (the town gate, the mouth of a road or path at a land's
+edge) and you come out of its partner on the next place, as far to its side as you went in and still walking. The page
+(web/static/town.js) walks every place the same way; the server knows which place you are in and where you stand (it
+checks each report could be walked), so nobody skips a road by typing an address or picks a herb from across a field.
 
 What grows and roams there is each player's own, rolled by the server:
-  herbs    a few at a time in each place's herb areas, at random spots; picked, one regrows somewhere else a few
-           minutes later. Its grade is the gatherer's own (alchemy.herb_grade_odds: rare herbs stay as rare), its
-           type is the region's (alchemy.REGION_HERB_TYPES). Picking it is one round of the gathering game
-           (bot/gathering.py, web/gather_play.py).
-  beasts   in the wild places: walk near one and it may notice you and charge; walk up to one and you attack. Which
-           beast is the location's own roster and odds (hunting.pool, hunting.tier_odds for the trip's next step).
-  finds    in the wild places: a glint in the grass, now and then; one of /explore's finds (explore.ENCOUNTERS, at
+  herbs    a few at a time in each place, at random spots off the paths; picked, one regrows somewhere else a little
+           later. Its grade is the gatherer's own (alchemy.herb_grade_odds: rare herbs stay as rare), its type is the
+           region's (alchemy.REGION_HERB_TYPES). Picking it is one round of the gathering game (bot/gathering.py,
+           web/gather_play.py).
+  beasts   in the wild lands: walk near one and it may notice you and charge; walk up to one and you attack. Which
+           beast is the location's own roster and odds (hunting.pool, hunting.tier_odds for the trip's next step:
+           one roll a step, whichever land you are in).
+  finds    in the wild lands: a glint in the grass, now and then; one of /explore's finds (explore.ENCOUNTERS, at
            their odds among those found this way). A secret spot leans to the rare ones.
 A beast or a find is an encounter: the first starts a trip (the 30-minute explore rest), a trip holds
-hunting.MAX_ENCOUNTERS of them, and what you carry is banked when you walk back into town (web/hunt_play.py). With
-none left, or while resting or injured, the beasts keep their distance and nothing glints; herbs still grow.
+hunting.MAX_ENCOUNTERS of them across all the forest's lands, and what you carry is banked when you walk back into
+town (web/hunt_play.py). With none left, or while resting or injured, the beasts keep their distance and nothing
+glints; herbs still grow.
 
 Nothing here is kept in the database: like a hunt, it is lost if the website restarts (you start in town; a trip
 under way ends as a hunt does when the website restarts).
@@ -37,37 +38,52 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import crossroads, env, hunt_map, town
+from . import crossroads, hunt_map, land, town
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-WILD = {"moon_forest"}                    # wild places: a hunting ground's own map, with beasts and finds
+# The wild places: the open lands of a hunting ground (web/land.py), with its beasts and finds. Moon Forest is three
+# lands deep; a trip (and its 5 encounters) runs across all of them.
+WILD = {"forest_edge": "moon_forest", "deep_woods": "moon_forest", "shrine_grove": "moon_forest"}
+WILD_NAMES = {"forest_edge": ("Moon Forest: Forest Edge", "the forest's edge"),
+              "deep_woods": ("Moon Forest: Deep Woods", "the deep woods"),
+              "shrine_grove": ("Moon Forest: Shrine Grove", "the shrine's grove")}
 
 PLACES = {
     "town": {"title": town.NAME, "kicker": "MORTAL ASCENT · TOWN", "url": "/town", "safe": True},
     "crossroads": {"title": crossroads.NAME, "kicker": "MORTAL ASCENT · OUTSIDE THE GATE", "url": "/crossroads",
-                   "herbs": {"count": 5, "region": "crossroads", "where": "the meadow outside the town walls",
-                             "areas": [(9.0, 25.0, 3.0), (12.5, 22.0, 2.2), (9.5, 9.5, 3.0), (22.5, 9.0, 3.0),
-                                       (24.5, 22.0, 3.0), (6.5, 14.5, 2.0)]}},
-    "moon_forest": {"title": "Moon Forest", "kicker": "MORTAL ASCENT · THE WILDS", "url": "/wild/moon_forest",
-                    "loc": "moon_forest",
-                    "herbs": {"count": 6, "region": "moon_forest", "where": "the moonlit forest",
-                              "areas": [(6.4, 12.6, 2.4), (6.2, 16.4, 1.8), (10.4, 20.0, 2.2), (16.8, 17.8, 1.8),
-                                        (18.6, 8.2, 2.2), (11.4, 6.4, 2.2), (12.0, 12.0, 2.0)]},
-                    "beasts": {"count": 3},
-                    "finds": {"count": 1, "secret": [(4.8, 13.6), (5.4, 20.0), (20.8, 7.6), (16.0, 4.0)]}},
+                   "herbs": {"count": 10, "region": "crossroads", "where": "the meadow outside the town walls"}},
 }
+for _key, _loc in WILD.items():
+    PLACES[_key] = {"title": WILD_NAMES[_key][0], "kicker": "MORTAL ASCENT · THE WILDS", "url": f"/wild/{_key}",
+                    "loc": _loc, "land": True,
+                    "herbs": {"count": 14, "region": _loc, "where": WILD_NAMES[_key][1]},
+                    "beasts": {"count": 5},
+                    "finds": {"count": 1, "secret": land.LANDS[_key].get("secret", [])}}
 
-# The ways between places: (place, key) → where it is (tiles), where it leads, and the way in on the other side.
+# The entrances: walk into one and you come out of its partner. Each stands on an edge of its place (`side`: which
+# way is out), `half` wide to either side, and takes you once you are within `depth` of it. You come out as far to
+# the side of the partner as you went in, still walking the same way.
+def _gate(place, key):
+    g = land.LANDS[place]["gates"][key]
+    return {"at": g["at"], "side": g["side"], "half": land.ROAD_W / 2 + 0.5, "depth": 0.3}
+
+
+def _join(a, b):
+    """Two land gates, each other's way through."""
+    return {a: _gate(*a) | {"to": b[0], "arrive": b[1]}, b: _gate(*b) | {"to": a[0], "arrive": a[1]}}
+
+
 ENTRANCES = {
-    ("town", "gate_out"): {"at": (28.6, 16.0), "to": "crossroads", "arrive": "town_gate"},
-    ("crossroads", "town_gate"): {"at": (crossroads.GATE["x"], crossroads.GATE["y"]), "to": "town", "arrive": None},
-    ("crossroads", "road_moon_forest"): {"at": crossroads.ROADS["moon_forest"], "to": "moon_forest",
-                                         "arrive": "path_out"},
-    ("moon_forest", "path_out"): {"at": (20.9, 20.9), "to": "crossroads", "arrive": "road_moon_forest"},
+    ("town", "gate_out"): {"at": (28.6, 16.0), "side": "x1", "half": 0.8, "depth": 0.75,
+                           "to": "crossroads", "arrive": "town_gate"},
+    ("crossroads", "town_gate"): {"at": (crossroads.GATE["x"], crossroads.GATE["y"]), "side": "x0", "half": 0.9,
+                                  "depth": 0.75, "to": "town", "arrive": "gate_out"},
+    **_join(("crossroads", "road_moon_forest"), ("forest_edge", "north")),
+    **_join(("forest_edge", "south"), ("deep_woods", "north")),
+    **_join(("deep_woods", "east"), ("shrine_grove", "west")),
 }
 TRIGGER = 0.75                        # walk this close to an entrance and you go through
-AT_ENTRANCE = TRIGGER + 0.6           # ... the server's leeway on that
 ARRIVE_GAP = TRIGGER + 1.2            # you come out this far in, so you aren't sent straight back
 FRESH = 1800                          # a place you left less than this long ago keeps where you stood (a reload)
 
@@ -103,35 +119,42 @@ def place_of_url(path):
     return next((k for k, p in PLACES.items() if p["url"] == path), None)
 
 
-def _plan(place):
-    return hunt_map.plan(place) if place in WILD else None
-
-
 def walkable(place, x, y):
     if place == "town":
         return town.walkable(x, y)
     if place == "crossroads":
         return crossroads.walkable(x, y)
-    return hunt_map.walkable(x, y, _plan(place))
+    return land.walkable(place, x, y)
 
 
 def size(place):
-    return {"town": town.SIZE, "crossroads": crossroads.SIZE}.get(place, hunt_map.SIZE)
+    return town.SIZE if place == "town" else land.size(place)
 
 
 def start(place):
-    if place == "town":
-        return town.START
-    if place == "crossroads":
-        return crossroads.START
-    return hunt_map.start(_plan(place))
+    return town.START if place == "town" else tuple(land.LANDS[place]["start"])
 
 
-def arrival(place, key):
-    """Where you come in through this entrance: a few steps in from it, toward the place's middle."""
+def mouth(e, x, y):
+    """Where (x, y) stands against an entrance: (how far past it, outward; how far to its side)."""
+    (nx, ny), (tx, ty) = land.SIDES[e["side"]]
+    dx, dy = x - e["at"][0], y - e["at"][1]
+    return dx * nx + dy * ny, dx * tx + dy * ty
+
+
+def arrival(place, key, side=0.0):
+    """Where you come in through this entrance: a few steps in from it, `side` tiles to its side (as far as you
+    were to the side of the one you went into), or nearer its middle if nothing can stand there."""
     if key is None or (place, key) not in ENTRANCES:
         return start(place)
-    ex, ey = ENTRANCES[(place, key)]["at"]
+    e = ENTRANCES[(place, key)]
+    (nx, ny), (tx, ty) = land.SIDES[e["side"]]
+    lim = max(0.0, e["half"] - 0.4)
+    for s in (max(-lim, min(lim, side)), 0.0):
+        x, y = e["at"][0] - nx * ARRIVE_GAP + tx * s, e["at"][1] - ny * ARRIVE_GAP + ty * s
+        if all(walkable(place, x + dx, y + dy) for dx, dy in ((0, 0), (.3, 0), (-.3, 0), (0, .3), (0, -.3))):
+            return round(x, 3), round(y, 3)
+    ex, ey = e["at"]
     sx, sy = start(place)
     if math.dist((ex, ey), (sx, sy)) < ARRIVE_GAP:
         sx, sy = size(place) / 2, size(place) / 2
@@ -173,6 +196,7 @@ class Walker:
     finds: dict = field(default_factory=dict)     # place → [find]
     gathering: tuple = None                   # (place, herb id) whose round is on screen
     ids: int = 0
+    roll: tuple = None                        # ((trip, step), tier): the kind of beast this step of the trip offers
 
 
 class World:
@@ -192,7 +216,7 @@ class World:
 
     # ── where you are ───────────────────────────────────────────────
 
-    def enter(self, conn, uid, place, near=None):
+    def enter(self, conn, uid, place, near=None, side=0.0):
         """You open this place's page: you are here now. Where you stand: where you stood (a reload), or in from
         `near` (an entrance), or its start. Coming into town ends a trip under way and banks it: its lines."""
         now = self.clock()
@@ -209,7 +233,8 @@ class World:
             elif keep and now - keep[2] < FRESH and walkable(place, keep[0], keep[1]):
                 w.x, w.y = keep[0], keep[1]
             else:
-                w.x, w.y = arrival(place, near) if near in {k for p, k in ENTRANCES if p == place} else start(place)
+                w.x, w.y = (arrival(place, near, side) if near in {k for p, k in ENTRANCES if p == place}
+                            else start(place))
             w.place, w.t = place, now
             w.loose = place == "town"                         # the page may stand you by someone: nothing to gain
             w.gathering = None
@@ -256,7 +281,10 @@ class World:
         with self.lock:
             w = self._w.get(uid)
             at = self._at(w, place, x, y)
-            if e is None or at is None or math.dist(at, e["at"]) > AT_ENTRANCE:
+            if e is None or at is None:
+                return None
+            out, side = mouth(e, *at)
+            if out < -(e["depth"] + 0.9) or abs(side) > e["half"] + 0.6:
                 return None
             to = e["to"]
             loc = PLACES[to].get("loc")
@@ -266,7 +294,7 @@ class World:
                     return None
             if self.hunts.trip(uid) is not None and self.hunts.trip(uid).battle is not None:
                 return None
-        lines = self.enter(conn, uid, to, e["arrive"])
+        lines = self.enter(conn, uid, to, e["arrive"], side)
         return to, lines
 
     # ── what grows and roams there ──────────────────────────────────
@@ -292,13 +320,9 @@ class World:
 
     def _herb(self, w, conn, uid, place, ready):
         cfg = PLACES[place]["herbs"]
-        if place == "crossroads":
-            def ok(x, y):
-                return (any(math.dist((x, y), (cx, cy)) <= r for cx, cy, r in cfg["areas"])
-                        and crossroads.road_dist((x, y)) > crossroads.ROAD_W / 2 + 0.3)
-        else:
-            def ok(x, y):
-                return any(math.dist((x, y), (cx, cy)) <= r for cx, cy, r in cfg["areas"])
+
+        def ok(x, y):                             # anywhere off the paths (and not under the town wall)
+            return land.off_path(place, x, y) and (place != "crossroads" or x > crossroads.WALL_X + 2.5)
         apart = [((h["x"], h["y"]), HERB_ROOM) for h in w.herbs.get(place, [])]
         at = self._spot(w, place, ok, apart)
         if at is None:
@@ -347,10 +371,14 @@ class World:
             # One roll for the trip's next step, exactly as a hunt rolls its next beast (hunt_play.Hunts._roll):
             # one beast out there is of that kind, the rest are Normal. So an Elite or a Beast King is on offer no
             # more often than a hunt would meet one (and you may still choose a Normal beast instead).
+            # The roll is the step's, not the place's: every land of the forest offers the same kind until the trip
+            # moves on, so walking from land to land doesn't roll again.
             step = min((trip.step if trip else 0) + 1, hunting.MAX_ENCOUNTERS)
-            p = db.get_player(conn, uid)
-            luck = gear.artifact_bonus(p, "explore_luck") + gear.artifact_bonus(p, "rare_encounters")
-            tiers = [loot.pick(hunting.tier_odds(step, luck), w.rng)] + ["normal"] * (cfg["beasts"]["count"] - 1)
+            if w.roll is None or w.roll[0] != (id(trip) if trip else None, step):
+                p = db.get_player(conn, uid)
+                luck = gear.artifact_bonus(p, "explore_luck") + gear.artifact_bonus(p, "rare_encounters")
+                w.roll = ((id(trip) if trip else None, step), loot.pick(hunting.tier_odds(step, luck), w.rng))
+            tiers = [w.roll[1]] + ["normal"] * (cfg["beasts"]["count"] - 1)
             w.rng.shuffle(tiers)
             w.beasts[place] = []
             for tier in tiers:
@@ -481,7 +509,7 @@ class World:
             why = self.hunts.world_fight(conn, uid, loc, b)
             if why:
                 return _quiet_line(why) or why
-            w.beasts.pop(place, None)                         # the rest scatter: new ones come out after the fight
+            w.beasts.clear()                                  # the rest scatter: new ones come out after the fight
             return None
 
     def discover(self, conn, uid, place, fid, x, y):
@@ -509,7 +537,7 @@ class World:
             nf = self._find(w, place, self.clock() + w.rng.uniform(*FIND_REGROW))
             if nf:
                 w.finds[place].append(nf)
-            w.beasts.pop(place, None)                         # a step deeper: the beasts out there change
+            w.beasts.clear()                                  # a step deeper: the beasts out there change
             return lines, None
 
     def defeated(self, uid):
@@ -549,35 +577,31 @@ def _herb_picture(grade, type_):
 def walk_exits(place, data):
     """Mark this place's exits that you walk through (ENTRANCES), and add any it has no exit for yet."""
     have = {e["key"] for e in data.get("exits", [])}
-    for e in data.get("exits", []):
-        if (place, e["key"]) in ENTRANCES and e.get("state", "open") != "locked":
-            e["walk"] = True
-            e["go"] = []
+
+    def how(e):
+        return {"walk": True, "go": [], "out": list(land.SIDES[e["side"]][0]), "half": e["half"], "depth": e["depth"]}
+    for x in data.get("exits", []):
+        if (place, x["key"]) in ENTRANCES and x.get("state", "open") != "locked":
+            x.update(how(ENTRANCES[(place, x["key"])]))
     for (p, key), e in ENTRANCES.items():
         if p == place and key not in have:
             x, y = e["at"]
             to = PLACES[e["to"]]["title"]
             data.setdefault("exits", []).append({"key": key, "name": to, "title": "The way to " + to, "x": x, "y": y,
-                                                 "line": "", "go": [], "exit": True, "kind": "path", "state": "open",
-                                                 "glow": [x, y], "walk": True})
+                                                 "line": "", "exit": True, "kind": "path", "state": "open",
+                                                 "glow": [x, y], **how(e)})
     return data
 
 
+ZOOM = land.ZOOM
+
+
 def wild_data(sheet, place, hero):
-    """A wild place's page data, in the town page's shape (web/static/town.js walks every place)."""
-    m = _plan(place)
-    edge = m.get("edge", hunt_map.EDGE)
-    n = hunt_map.SIZE
-    half = n * 64
-    pieces = []
-    for p in env.pieces(place):
-        r = p["rect"]
-        pieces.append({**p, "rect": [r[0] + half, r[1], r[2], r[3]], "pass": True, "env": True})
-    return {"sheet": sheet, "size": n, "ground": m["art"], "area": [[edge, edge], [n - edge, edge], [n - edge, n - edge],
-            [edge, n - edge]], "inset": 0, "blocked": [list(c) for c in m.get("blocked", [])], "pieces": pieces,
-            "tone": env.TONE.get(place), "lights": [list(c) for c in m.get("lights", [])] + [list(c) for c in env.lights(place)],
-            "reach": 1.5, "scale": 1, "hero": {"x": hero[0], "y": hero[1]}, "near": None, "npcs": [], "exits": [],
-            "atmos": True}
+    """A wild land's page data, in the town page's shape (web/static/town.js walks every place)."""
+    return {"sheet": sheet, "size": land.size(place), "ground": land.ground(place), "zoom": ZOOM,
+            "area": [list(p) for p in land.area(place)], "inset": 0, "blocked": [], "pieces": [],
+            "tone": None, "lights": [], "reach": 1.5, "scale": land.SCALE, "hero": {"x": hero[0], "y": hero[1]},
+            "near": None, "npcs": [], "exits": [], "atmos": True}
 
 
 def page_data(conn, world, uid, place, sheet, p, blocked, near=None):

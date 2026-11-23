@@ -177,10 +177,12 @@ below. docs/town.md.
 
 ## The open world and the World Map
 
-The town, the Crossroads and the Moon Forest are one world you walk through (`/town`, `/crossroads`,
-`/wild/moon_forest`): reaching the gate or the end of the road takes you to the next place. Herbs grow to pick, beasts
+The town, the Crossroads and the Moon Forest's three lands are one world you walk through (`/town`, `/crossroads`,
+`/wild/forest_edge`, `/wild/deep_woods`, `/wild/shrine_grove`): walking out through a gate or a road's mouth takes you
+to the next place. The lands outside the town are big and, for now, bare ground (`web/land.py`), painted in code and
+loaded in chunks. Herbs grow to pick, beasts
 roam the forest and finds glint in the grass; beasts and finds make a trip of 5 encounters with the usual 30-minute
-rest, banked when you walk back into town. The other five roads still start the Solo Hunt. `/world` is the painted
+rest, banked when you walk back into town. The other five roads are closed until their lands are built. `/world` is the painted
 scroll of the whole land, only to look at (**M**). docs/world.md.
 
 ## Environment pieces

@@ -13,10 +13,9 @@ match the buildings' lighting. Nothing is stretched: every pixel is sampled from
 ground is as sharp as the textures however big the town is drawn.
 
     python -m scripts.make_town_ground              (re-quilts and repaints; deterministic)
-    python -m scripts.make_town_ground crossroads   (the Crossroads outside the gate: web/crossroads.py, docs/world.md)
     python -m scripts.make_town_ground lift grass=tile.png ...   (lifts new textures from Gemini tiles first)
 
-Writes art/maps/town.webp (or art/maps/crossroads.webp): WIDTH x WIDTH/2 for the 32 x 32 tile diamond (a tile
+Writes art/maps/town.webp: WIDTH x WIDTH/2 for the 32 x 32 tile diamond (a tile
 128 x 64 world px, so WIDTH 6144 is 1.5x the world: crisp when the page zooms in). Needs numpy and Pillow.
 
 A place's GROUND gives rectangles of "dirt" and "stone", optional "roads" (segments: start, end, width in tiles,
@@ -183,12 +182,6 @@ def main(argv):
             lift(src, os.path.join(TEX, f"{name}.png"))
             Image.open(os.path.join(TEX, f"{name}.png")).save(os.path.join(TEX, f"{name}.webp"), "WEBP", quality=92)
             os.remove(os.path.join(TEX, f"{name}.png"))
-    if argv[:1] == ["crossroads"]:
-        from web import crossroads
-        out = os.path.join(ROOT, "art", "maps", "crossroads.webp")
-        paint(textures(), place=crossroads).save(out, "WEBP", quality=84, method=6)
-        print(f"wrote {out}")
-        return
     paint(textures()).save(OUT, "WEBP", quality=84, method=6)
     print(f"wrote {OUT}")
 

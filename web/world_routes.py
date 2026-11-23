@@ -21,7 +21,7 @@ from starlette.concurrency import run_in_threadpool
 
 from bot import db
 
-from . import crossroads, gather_play, overworld, town
+from . import crossroads, gather_play, land, overworld, town
 from . import discord_oauth as oauth
 from .forge_play import rich
 from .profile import number
@@ -99,7 +99,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             request.session.pop("alchemy_pass", None)        # back in town: the alchemy hall needs Lan again
             request.session.pop("forge_pass", None)          # and the forge needs Tie
             return no_store(page(request, "town.html", town_name=town.NAME, ground=town.ART, npcs=town.NPCS, **ctx))
-        ground = crossroads.ART if place == "crossroads" else overworld.wild_data(None, place, (0, 0))["ground"]
+        ground = land.preview(place)
         return no_store(page(request, "place.html", ground=ground, exits=v["exits"], **ctx))
 
     @app.get("/town", response_class=HTMLResponse)
@@ -114,13 +114,18 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
 
     @app.get("/wild/{key}", response_class=HTMLResponse)
     def wild_page(request: Request, key: str):
-        if key not in overworld.WILD:
-            return go("/crossroads")
         user = current_user(request)
         w = world.walker(user["id"]) if user else None
-        if user and (w is None or w.place != key):           # you walk here: through the Crossroads' road
+        if user and (w is None or w.place != key or key not in overworld.WILD):   # you walk here, down the road
             return go(overworld.url(w.place) if w else "/town")
         return place_page(request, key)
+
+    @app.get("/world/back")
+    def world_back(request: Request):
+        """Back out into the world where you stand (after a fight out there)."""
+        user = current_user(request)
+        w = world.walker(user["id"]) if user else None
+        return go(overworld.url(w.place) if w else "/town")
 
     # ── the page talking to the server ───────────────────────────────
 

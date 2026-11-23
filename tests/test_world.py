@@ -141,7 +141,9 @@ def test_the_world_map_is_only_a_map(site):
 def test_the_world_map_opens_from_anywhere(site):
     app, login, _ = site
     a = login(WARRIOR)
-    a.post("/crossroads/go/moon_forest")
+    a.post("/explore/solo")
+    a.post("/party/location", data={"key": "moon_forest"})
+    a.post("/hunt/start")
     assert app.state.parties.of(WARRIOR).hunting
     assert a.get("/world").status_code == 200                               # even out hunting: it is only a map
     assert app.state.parties.of(WARRIOR).hunting

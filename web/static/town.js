@@ -36,7 +36,7 @@
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
   // this place (load() sets them; a new place swaps them all)
-  var PLACE, SIZE, AREA, BLOCKED, REACH, NPCS, PIECES, INSET, EXITS, SPOTS, K = 1, painted, TONE, LIGHTS, ATMOS, TRIGGER;
+  var PLACE, SIZE, AREA, BLOCKED, REACH, NPCS, PIECES, INSET, EXITS, SPOTS, K = 1, Z = 1, painted, GROUND, TONE, LIGHTS, ATMOS, TRIGGER;
   var HERBS = [], FINDS = [], BEASTS = [], WORLD = {}, IMGS = {};
 
   function toScreen(x, y) { return {x: (x - y) * TW / 2, y: (x + y) * TH / 2}; }
@@ -64,7 +64,7 @@
     DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
     // VIEW tiles across a wide screen; a tall phone keeps the cultivator a readable size instead
-    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72))) * K;
+    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72))) * K * Z;   // Z: the camera further back
   }
   window.addEventListener('resize', resize);
   window.addEventListener('townscale', function (e) { K = e.detail; resize(); });   // the demo's size buttons
@@ -108,10 +108,14 @@
     cfg = c;
     PLACE = c.place; SIZE = c.size; AREA = c.area; BLOCKED = c.blocked || []; REACH = c.reach; NPCS = c.npcs || [];
     PIECES = c.pieces || []; INSET = c.inset || 0; EXITS = c.exits || []; K = c.scale || 1; TONE = c.tone || null;
-    LIGHTS = c.lights || []; ATMOS = !!c.atmos; TRIGGER = c.trigger || 0.75;
+    LIGHTS = c.lights || []; ATMOS = !!c.atmos; TRIGGER = c.trigger || 0.75; Z = c.zoom || 1;
     SPOTS = NPCS.concat(EXITS.filter(function (e) { return !e.walk; }));
     resize();
-    painted = new Image(); painted.src = c.ground;
+    // the ground: one picture (the town), or a big land's chunks, fetched as you come near them, over a small
+    // picture of the whole land that shows until they arrive
+    GROUND = typeof c.ground === 'string' ? null : c.ground;
+    painted = new Image(); painted.src = GROUND ? GROUND.preview : c.ground;
+    if (GROUND) { GROUND.px = GROUND.chunk / GROUND.f; GROUND.got = {}; GROUND.set = {}; GROUND.have.forEach(function (k) { GROUND.set[k] = 1; }); }
     PIECES.forEach(function (p) {
       p.pic = p.env ? toned(p.src, p.lit) : plain(p.src);
       p.depth = p.fp ? p.fp[0] + p.fp[2] / 2 + p.fp[1] + p.fp[3] / 2 : p.at[0] + p.at[1];   // a footprint's middle
@@ -120,7 +124,8 @@
     });
     PIECES.sort(function (a, b) { return a.order - b.order; });
     NPCS.forEach(function (n) { if (n.src) n.pic = plain(n.src); n.t = Math.random() * 6; });
-    hero.x = c.hero.x; hero.y = c.hero.y; hero.moving = false; hero.still = 0;
+    hero.x = c.hero.x; hero.y = c.hero.y; hero.still = 0;
+    if (!swapped) hero.moving = false;                 // through a gate you keep walking
     // back from someone's page: in front of them; just through an exit: facing away from it
     var back = null;
     try { back = sessionStorage.getItem('town.from'); sessionStorage.removeItem('town.from'); } catch (e) {}
@@ -138,7 +143,7 @@
     EXITS.forEach(function (e) {
       var d = Math.hypot(hero.x - e.x, hero.y - e.y);
       armed[e.key] = d > 2.6;                      // just came out of it: it waits until you have walked away
-      if (!stood && d < 3.2) { face(hero.x + (hero.x - e.x), hero.y + (hero.y - e.y)); stood = true; }
+      if (!stood && !swapped && d < 3.2) { face(hero.x + (hero.x - e.x), hero.y + (hero.y - e.y)); stood = true; }
     });
     BEASTS = []; HERBS = []; FINDS = [];
     world(c.world || {});
@@ -225,7 +230,7 @@
   var fade = document.getElementById('fade');
   function goThrough(e) {
     if (through) return;
-    through = true; keys = {}; resetStick(); prompt.classList.remove('on');
+    through = true; prompt.classList.remove('on');           // the keys stay held: you walk on out the other side
     fade.classList.add('on');
     var t0 = performance.now();
     post('/world/move', {place: PLACE, key: e.key, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
@@ -239,7 +244,7 @@
           armed[e.key] = false;
         }
         fade.classList.remove('on');
-      }, Math.max(0, 320 - (performance.now() - t0)));
+      }, Math.max(0, 180 - (performance.now() - t0)));
     }).catch(function () { through = false; fade.classList.remove('on'); armed[e.key] = false; });
   }
 
@@ -536,9 +541,12 @@
       BEASTS.forEach(function (b) { beastStep(b, dt); });
       EXITS.forEach(function (e) {                                // walk into a gate or a path: through it
         if (!e.walk) return;
-        var d = Math.hypot(hero.x - e.x, hero.y - e.y);
+        var dx = hero.x - e.x, dy = hero.y - e.y, d = Math.hypot(dx, dy);
         if (d > 2.6) armed[e.key] = true;
-        if (armed[e.key] && d < TRIGGER) goThrough(e);
+        if (!armed[e.key]) return;
+        // its mouth: within `half` to either side of it, and as far out as `depth` short of it
+        var out = e.out ? dx * e.out[0] + dy * e.out[1] : null, side = e.out ? Math.abs(dx * e.out[1] + dy * e.out[0]) : 0;
+        if (out != null ? out > -e.depth && side < e.half : d < TRIGGER) goThrough(e);
       });
     }
     stepAtmosphere(dt);
@@ -700,7 +708,7 @@
       ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, 95, 44, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(255,226,170,' + (0.3 + 0.25 * b) + ')'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.ellipse(p.x, p.y, 66, 31, 0, 0, Math.PI * 2); ctx.stroke();
-    } else if (e.state === 'waiting') {
+    } else if (e.state === 'waiting' || e.state === 'closed') {
       ctx.globalCompositeOperation = 'source-over';
       for (var i = 0; i < 6; i++) {
         var a = glowT * 0.25 + i * 1.05, mx = p.x + Math.cos(a) * 40, my = p.y - 30 + Math.sin(a * 1.3) * 12;
@@ -733,7 +741,7 @@
     ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(e.name, p.x + 1, y + 1);
     ctx.fillStyle = e.state === 'locked' ? '#C9B79A' : close ? '#F6E2B0' : '#EBCB86'; ctx.fillText(e.name, p.x, y);
     ctx.font = '600 12px Inter, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(e.title, p.x + 1, y + 18);
-    ctx.fillStyle = e.state === 'locked' ? '#E8968C' : e.state === 'waiting' ? '#EBCB86' : 'rgba(230,223,207,.85)';
+    ctx.fillStyle = e.state === 'locked' ? '#E8968C' : e.state === 'waiting' ? '#EBCB86' : e.state === 'closed' ? '#AEB6C4' : 'rgba(230,223,207,.85)';
     ctx.fillText(e.title, p.x, y + 17);
     ctx.restore();
   }
@@ -745,12 +753,13 @@
     puffs = []; flies = []; mists = [];
     if (!ATMOS) return;
     var r = rnd(42), lo = 2, hi = SIZE - 2;
-    for (var i = 0; i < (CALM ? 14 : 38); i++) {
+    var crowd = Math.min(8, SIZE * SIZE / 576);                // a bigger land: as thick with them
+    for (var i = 0; i < (CALM ? 14 : 38) * crowd; i++) {
       var x, y, k = 0;
       do { x = lo + r() * (hi - lo); y = lo + r() * (hi - lo); } while (!walkable(x, y) && ++k < 20);
       flies.push({x: x, y: y, z: 18 + r() * 50, ph: r() * 6.3, sp: .25 + r() * .35, hue: r()});
     }
-    for (var j = 0; j < 7; j++) mists.push({x: lo + r() * (hi - lo), y: lo + r() * (hi - lo), r: 260 + r() * 320,
+    for (var j = 0; j < 7 * crowd; j++) mists.push({x: lo + r() * (hi - lo), y: lo + r() * (hi - lo), r: 260 + r() * 320,
       vx: (r() - .5) * .18, vy: (r() - .5) * .12, a: .05 + r() * .05});
   }
   function puff(x, y, size) {
@@ -815,7 +824,8 @@
     ty = vh >= full ? full / 2 : Math.max(vh / 2, Math.min(full - vh / 2, ty));
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12;
     ctx.setTransform(DPR * S, 0, 0, DPR * S, DPR * (W / 2 - cam.x * S), DPR * (H / 2 - cam.y * S));
-    if (painted.complete) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
+    if (painted.complete && painted.naturalWidth) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
+    if (GROUND) drawChunks(half, vw, vh);
     if (debug) drawDebug();
     drawShadows();
     drawPuffs();
@@ -844,6 +854,17 @@
     var v = ctx.createRadialGradient(cx, cy, R * 0.12, cx, cy, R * 0.66);
     v.addColorStop(0, 'rgba(6,8,18,0)'); v.addColorStop(0.5, 'rgba(6,8,18,.45)'); v.addColorStop(1, 'rgba(4,5,12,.9)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  }
+  function drawChunks(half, vw, vh) {                     // the land's ground near the camera, a chunk at a time
+    var px = GROUND.px, c0 = Math.floor((cam.x - vw / 2 + half) / px), c1 = Math.floor((cam.x + vw / 2 + half) / px);
+    var r0 = Math.floor((cam.y - vh / 2) / px), r1 = Math.floor((cam.y + vh / 2) / px);
+    for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) {
+      var k = c + '_' + r; if (!GROUND.set[k]) continue;
+      var im = GROUND.got[k];
+      if (!im) { im = GROUND.got[k] = new Image(); im.src = GROUND.base + 'c_' + k + '.webp?v=' + GROUND.v; }
+      // a hair over its square, so no seam shows between neighbours
+      if (im.complete && im.naturalWidth) ctx.drawImage(im, c * px - half - 0.5, r * px - 0.5, im.naturalWidth / GROUND.f + 1, im.naturalHeight / GROUND.f + 1);
+    }
   }
   function onScreen(r) {                                // a piece's rect against the view (world px, ground image space)
     var half = SIZE * TW / 2, vw = W / S, vh = H / S, l = r[0] - half;

@@ -55,45 +55,44 @@ def test_the_ways_out_stand_apart():
     assert math.dist(cr.START, (cr.GATE["x"], cr.GATE["y"])) > cr.REACH     # coming out doesn't ask you to go back in
 
 
-def test_roads_are_clear_and_pieces_stay_off_them():
-    for a, b in cr.roads():
-        for i in range(41):
-            t = i / 40
+def test_roads_are_clear_and_only_the_town_wall_stands_here():
+    from web import land
+    for a, b, _w in land.segments(cr.KEY):
+        for i in range(5):
+            t = i / 4
             p = (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
             if town.inside(*p, cr.AREA):
                 assert cr.walkable(*p), p                                  # nothing stands on a road
-    for b in cr.BUILDINGS:
-        assert b["img"] in town.kit() or (b["img"] + "_m") in town.kit()
+    assert {b["img"] for b in cr.BUILDINGS} <= {"wall_s", "wall_l", "gate"}  # an empty land: the town's wall and gate
+    for key, end in cr.ROADS.items():
+        assert cr.road_dist(end) < 0.2, key                                  # each road really ends where its exit is
+    assert cr.road_dist((cr.GATE["x"], cr.GATE["y"])) < 0.2
 
 
 def test_every_piece_has_its_picture_placed():
     placed = town.placed(cr.BUILDINGS, cr.PROPS, cr.SIZE)
     assert len(placed) == len(cr.BUILDINGS) + len(cr.PROPS)
-    assert sum(1 for b in cr.BUILDINGS if b["img"] in ("pine", "bush", "blossom", "boulders")) > 60   # a real forest
     import os
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     for q in placed:
         assert os.path.exists(os.path.join(root, q["src"].lstrip("/"))), q["src"]
-    from PIL import Image
-    im = Image.open(os.path.join(root, cr.ART.lstrip("/")))
-    assert im.size == (cr.SIZE * 128 * 1.5, cr.SIZE * 64 * 1.5)
+    assert os.path.exists(os.path.join(root, cr.ART.lstrip("/")))
 
 
-def test_roads_open_wait_or_are_sealed():
+def test_roads_are_open_closed_or_sealed():
     by = {e["key"]: e for e in cr.exits(_player("Martial Warrior"))}
     assert by["road_moon_forest"]["state"] == "open"
-    assert by["road_crimson_gorge"]["go"] == [["Enter Crimson Gorge", "/crossroads/go/crimson_gorge", "post"]]
+    # a road whose land isn't built starts nothing: the old menu hunt is gone from the roads
+    assert by["road_crimson_gorge"]["state"] == "closed" and by["road_crimson_gorge"]["go"] == []
+    assert by["road_crimson_gorge"]["title"] == "Not open yet" and "not open yet" in by["road_crimson_gorge"]["line"]
     assert by["road_frostpeak_mountains"]["state"] == "locked" and not by["road_frostpeak_mountains"]["go"]
     assert "Martial Master" in by["road_frostpeak_mountains"]["title"]
-    rest = {e["key"]: e for e in cr.exits(_player("Martial Warrior"), "resting from the last expedition for 9m")}
-    assert rest["road_moon_forest"]["state"] == "waiting" and not rest["road_moon_forest"]["go"]
-    assert "9m" in rest["road_moon_forest"]["line"] and rest["road_moon_forest"]["title"] == "Resting"
-    assert rest["road_frostpeak_mountains"]["state"] == "locked"
+    assert all(not e["go"] for e in by.values() if e["key"] != "town_gate")
 
 
 def test_the_page_data_is_the_town_pages_shape():
     d = cr.page_data({"src": "x"}, _player("Mortal"), near="road_moon_forest")
-    assert d["near"] == "road_moon_forest" and d["npcs"] == [] and d["ground"] == cr.ART
+    assert d["near"] == "road_moon_forest" and d["npcs"] == [] and d["ground"]["have"] and d["size"] == 60
     assert all(e["exit"] and len(e["glow"]) == 2 for e in d["exits"])
     assert cr.page_data({"src": "x"}, _player("Mortal"), near="nowhere")["near"] is None
 
@@ -141,7 +140,6 @@ def test_the_crossroads_needs_a_login(site):
     app, _, _ = site
     anon = TestClient(app, base_url="http://localhost:8000", follow_redirects=False)
     assert anon.get("/crossroads").headers["location"] == "/"
-    assert anon.post("/crossroads/go/moon_forest").headers["location"] == "/"
 
 
 def test_the_crossroads_is_walked(site):
@@ -153,70 +151,31 @@ def test_the_crossroads_is_walked(site):
     assert d["place"] == "crossroads" and d["sheet"]["src"]
     from web import overworld
     assert (d["hero"]["x"], d["hero"]["y"]) == overworld.arrival("crossroads", "town_gate")   # in from the gate
-    states = {e["key"]: e["state"] for e in d["exits"]}
-    assert states["road_crimson_gorge"] == "open" and states["road_celestial_forbidden_lands"] == "locked"
+    by = {e["key"]: e for e in d["exits"]}
+    assert by["road_crimson_gorge"]["state"] == "closed" and by["road_celestial_forbidden_lands"]["state"] == "locked"
+    assert by["road_moon_forest"]["walk"] and by["town_gate"]["walk"] and not by["road_crimson_gorge"].get("walk")
     assert a.get(cr.ART).status_code == 200
+    g = d["ground"]
+    assert a.get(f"{g['base']}c_{g['have'][0]}.webp").status_code == 200       # the ground comes in chunks
 
 
-def test_down_a_road_is_a_walked_solo_hunt(site):
+def test_no_road_starts_the_old_hunt(site):
     app, login, path = site
     a = login(WARRIOR)
-    assert a.post("/crossroads/go/crimson_gorge").headers["location"] == "/hunt"
-    party = app.state.parties.of(WARRIOR)
-    assert party.solo and party.hunting and party.location == "crimson_gorge"
-    assert app.state.hunts.get(party.id).map                                 # everyone walks now, not just admins
-    assert 'id="homeDlg"' in a.get("/hunt").text
+    assert a.post("/crossroads/go/crimson_gorge").status_code in (404, 405)
+    assert a.post("/crossroads/go/moon_forest").status_code in (404, 405)
+    assert app.state.parties.of(WARRIOR) is None
     c = db.connect(path)
-    assert db.cooldown_left(c, WARRIOR, "explore") > 0                       # the shared explore rest started
-    c.close()
-    assert a.get("/crossroads").headers["location"] == "/hunt"               # out hunting: that comes first
-    assert a.post("/crossroads/go/moon_forest").headers["location"] == "/hunt"
-
-
-def test_the_server_refuses_a_sealed_road(site):
-    app, login, path = site
-    a = login(WARRIOR)
-    assert a.post("/crossroads/go/frostpeak_mountains").headers["location"] == \
-        "/crossroads?near=road_frostpeak_mountains"
-    assert "needs Martial Master" in a.get("/crossroads").text
-    assert app.state.parties.of(WARRIOR) is None                             # nothing left behind
-    c = db.connect(path)
-    assert not db.cooldown_left(c, WARRIOR, "explore")                       # and no rest started
+    assert not db.cooldown_left(c, WARRIOR, "explore")
     c.close()
 
 
-def test_resting_can_not_set_out(site):
-    app, login, _ = site
+def test_resting_still_walks_the_forest_road(site):
+    _, login, _ = site
     b = login(RESTING)
     d = _data(b.get("/crossroads").text)
-    assert {e["key"]: e["state"] for e in d["exits"]}["road_moon_forest"] == "waiting"
-    assert b.post("/crossroads/go/moon_forest").headers["location"] == "/crossroads?near=road_moon_forest"
-    assert "resting from the last expedition" in b.get("/crossroads").text
-    assert app.state.parties.of(RESTING) is None
-
-
-def test_an_unknown_road_is_refused(site):
-    _, login, _ = site
-    a = login(WARRIOR)
-    assert a.post("/crossroads/go/the_moon").headers["location"] == "/crossroads"
-    assert "no such road" in a.get("/crossroads").text
-
-
-def test_heading_home_comes_back_up_the_same_road(site, monkeypatch):
-    app, login, _ = site
-    a = login(WARRIOR)
-    a.get("/crossroads")
-    a.post("/crossroads/go/moon_forest")
-    turn = re.search(r'name="turn" value="([^"]*)"', a.get("/hunt").text).group(1)
-    a.post("/hunt/act", data={"what": "return", "arg": "", "turn": turn})
-    assert "Back to the Crossroads" in a.get("/hunt").text
-    assert a.post("/hunt/done").headers["location"] == "/crossroads?near=road_moon_forest"
-    assert app.state.parties.of(WARRIOR) is None
-    d = _data(a.get("/crossroads?near=road_moon_forest").text)
-    from web import overworld
-    assert (d["hero"]["x"], d["hero"]["y"]) == overworld.arrival("crossroads", "road_moon_forest")
     road = {e["key"]: e for e in d["exits"]}["road_moon_forest"]
-    assert road["state"] == "waiting" and road["walk"]                      # resting, but the forest is open to walk
+    assert road["state"] == "open" and road["walk"]                         # resting: nothing to meet, but you can walk
     assert d["world"]["wary"] is True
 
 
@@ -229,10 +188,10 @@ def test_a_solo_hunt_still_choosing_is_dropped_and_a_team_goes_to_its_lobby(site
     assert a.get("/crossroads").headers["location"] == "/hunt"
 
 
-def test_a_look_without_a_walking_sheet_chooses_from_a_list(site, monkeypatch):
+def test_a_look_without_a_walking_sheet_reads_the_roads_from_a_list(site, monkeypatch):
     import looks
     monkeypatch.setattr(looks, "WALK_SHEETS", {})
     _, login, _ = site
     r = login(WARRIOR).get("/crossroads")
     assert r.status_code == 200 and 'id="map"' not in r.text and "THE ROADS" in r.text
-    assert 'action="/crossroads/go/crimson_gorge"' in r.text and 'href="/town"' in r.text
+    assert "/crossroads/go/" not in r.text and 'href="/town"' in r.text and "Not open yet" in r.text
