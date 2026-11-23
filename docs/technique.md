@@ -254,6 +254,51 @@ Three ways, all requiring the player's attention (no AFK).
   - /practice: first 5 sessions full EXP, next 5 at 50%, then 10%
   - /spar: first 3 sessions full EXP, then 50%
 
+## On the website: the training yard
+
+Talk to the **Martial Master** in Azure Cloud Town's training yard (or open `/training`). Same spar, same trials,
+same rewards: the fight is `bot/sparring.Spar` (the object `/spar` plays) and a finished spar gives exactly what
+`/spar` gives (the well-timed EXP, the win bonus, the daily rates, a trial's breakthrough or its 24-hour wait, the
+quest counts, the two-hour rest). The rest and the daily count are the same saved ones, so a spar on Discord counts
+here and the other way round. Code: `web/spar_play.py` (the referee), `web/spar_routes.py`,
+`web/templates/training.html`, `spar.html`, `web/static/spar.js`, `spar.css`. Tests: `tests/test_web_spar.py`.
+
+- **The yard** (`/training`): your equipped techniques with their mastery bars, a **Spar** button (with the
+  master's rest, your injury, and how many full-EXP spars are left today), and a gold **Take the trial** button on
+  each technique whose bar is full (with the trial's own 24-hour wait if it failed).
+- **The fight** (`/spar`) is the beast fight's screen: your cultivator on the left with their own frame-by-frame
+  movements (the stance, Strike, Break, Guard, and each technique's fist / palm / kick / finger / brace / deflect
+  movement with its picture), the Master on the right, the four big buttons (keys 1-4: Strike, Techniques, Guard,
+  Break), Yield (F) and Battle History (H). An ordinary spar is in the training yard at sunset; a trial in the hall
+  at night.
+- **Reading him:** his **tell**, when he gives one, is a line of brushwork above him ("His face gives nothing
+  away" when he doesn't). Fifteen **beads** across the top fill as the exchanges pass, each with the move he made
+  and gold / red / grey for won / lost / even: his rhythm is there to read. The page is never sent his move for the
+  exchange being played, only his tell and what he did in the exchanges already over.
+- **The opening:** after you Guard his Strike, the Techniques button and your attack technique glow gold
+  ("Perfect timing now!"). A well-timed technique flashes **Perfect timing!** and puts a gold dot on its bead; the
+  line under your HP counts them.
+- **The result** shows each technique's mastery bar filling, the notes (no well-timed technique, the daily rate, a
+  bar now ready for its trial) and, for a trial, the breakthrough or the wait.
+
+Only the web's own (none changes what a spar gives):
+
+| | Discord | Website |
+|---|---|---|
+| Time per exchange | 15 s | **20 s** (the round trip, as in the Arena) |
+| Buttons | shuffle every exchange | **stay put** (keys 1-4); the timer and three timeouts = forfeit still end an idle spar |
+| Walking away | three timeouts | three timeouts, or the **Yield** button (the same forfeit: nothing earned, the rest stays) |
+| A dodge or deflection technique | - | its sidestep / deflect movement plays only when his blow really was stopped; otherwise the plain Guard |
+
+**The Master is a still painting for now** (the town's Martial Master, `art/portraits/town/master.webp`): `spar.js`
+leans him back and lunges him for a Strike, gathers Qi at his feet for a Break, raises an arc of Qi for a Guard and
+knocks him back when he is hit. His own movements (stance, Strike, Guard, Break, hit, bow) are to come from
+SHOAIB's videos. `spar.js` has its own small frame player for your sheets (`looks.py`), so `fight.js` is untouched.
+
+A spar lives in the web server's memory, like a duel: a restart ends it unsaved (its rest stays, as when the bot
+restarts mid-spar). The website doesn't know about a spar under way on Discord, but the shared rest stops a second
+one from starting.
+
 ## How players get techniques
 
 1. **Start:** Iron Fist (attack) and Horse Stance Guard (defense)

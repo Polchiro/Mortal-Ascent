@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}The Training Yard · Mortal Ascent{% endblock %}
+{% block body_class %}arenabg{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('spar.css') }}">
+<style>body.arenabg{background:linear-gradient(rgba(8,10,16,.5),rgba(8,10,16,.9)),url(/art/scenes/practice_courtyard_sunset.jpg) center/cover fixed}</style>
+{% with page="town" %}{% include "_topbar.html" %}{% endwith %}
+
+{# The Martial Master's yard (web/spar_play.Hall.hall): sparring, and a mastery trial for each technique whose bar is full. #}
+<main class="arenalobby yard">
+  <section class="card yardhead">
+    <img class="yardmaster" src="/art/portraits/town/master.webp" alt="" width="184" height="507">
+    <div>
+      <p class="kicker">AZURE CLOUD TOWN · THE TRAINING YARD</p>
+      <h2>The Martial Master</h2>
+      <p class="sub">"Winning is not the lesson. Use your technique at the <b>right moment</b>, and it grows."</p>
+      {% if notice %}<p class="anotice" role="alert">{{ notice }}</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Spar with the Master</h2>
+    <p class="sub">He fights at your own realm and layer, in a hidden rhythm of moves. Up to {{ v.exchanges }} exchanges,
+      {{ v.seconds }} seconds each.</p>
+    <ul class="yardrules">
+      <li><b>Guard</b> beats Strike · <b>Break</b> beats Guard · <b>Strike</b> beats Break.</li>
+      <li>Mastery EXP comes <b>only from well-timed techniques</b>: your attack technique right after you Guard his
+        Strike, or your defense technique against his Strike.</li>
+      <li><b>+{{ v.per_use }}</b> EXP each time, and <b>+{{ v.win }}</b> more for each of those techniques if you win.</li>
+    </ul>
+    <div class="arow">
+      <div>
+        {% if v.hurt %}<b>You are injured</b><small>Rest for {{ v.hurt }} before sparring.</small>
+        {% elif v.wait %}<b>The master is resting</b><small>Spar again in {{ v.wait }}.</small>
+        {% else %}<b>The master is ready</b><small>After a spar he rests for {{ v.rest }}.</small>{% endif %}
+        <small class="aleft">{% if v.full_left %}{{ v.full_left }} full-EXP spar{{ "" if v.full_left == 1 else "s" }} left today.{% else %}You have sparred {{ v.today }} times today: mastery EXP ×{{ "%g" | format(v.rate) }}.{% endif %}</small>
+      </div>
+      <form method="post" action="/training/spar">
+        <button class="hbtn small" type="submit"{% if v.hurt or v.wait %} disabled{% endif %}>Spar</button></form>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Your techniques</h2>
+    <p class="sub">When a technique's mastery bar is full, it must pass a <b>trial</b>: the same fight against a stronger
+      Master. Win and it reaches its next stage.</p>
+    {% for t in v.techniques %}
+    <div class="arow ytech">
+      <img src="{{ t.icon }}" alt="" width="56" height="56">
+      <div class="ytbody">
+        <b>{{ t.name }}</b>
+        <small>{{ t.grade }} {{ t.type }} technique · {{ t.stage }}</small>
+        <div class="ybar{% if t.full %} full{% endif %}"><div style="width: {{ t.pct }}%"></div></div>
+        <small>{% if t.cap %}{{ "{:,}".format(t.exp) }} / {{ "{:,}".format(t.cap) }} mastery EXP{% if t.next %} → {{ t.next }}{% endif %}{% else %}Final stage reached{% endif %}</small>
+        {% if t.full and t.trial_wait %}<small class="aleft">Trial failed recently: retry in {{ t.trial_wait }}.</small>{% endif %}
+      </div>
+      {% if t.full %}
+      <form method="post" action="/training/spar"><input type="hidden" name="technique" value="{{ t.id }}">
+        <button class="hbtn small ytrial" type="submit"{% if v.hurt or v.wait or t.trial_wait %} disabled{% endif %}
+          title="The Master fights at ×{{ '%g' | format(t.strength) }} strength">Take the trial</button></form>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="sub">You have no techniques equipped. Equip some on your Profile first.</p>
+    {% endfor %}
+    <p class="sub">Only equipped techniques are shown. Change them on your <a href="/profile#techniques">Profile</a>.</p>
+  </section>
+
+  <p class="rback"><a class="hbtn ghost small" href="/town?near=master">Back to town</a></p>
+</main>
+{% endblock %}
