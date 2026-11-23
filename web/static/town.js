@@ -89,6 +89,26 @@
     });
     mark();
   })();
+  /* the controls hint (top left) fades once you know it: shown for a while on your first few visits, then only when
+     you press the "?" at the top right */
+  (function () {
+    var kk = document.getElementById('keys'), help = document.getElementById('helpBtn'), t = null, n = 0;
+    if (!kk) return;
+    try { n = parseInt(localStorage.getItem('ma.keys') || '0', 10) || 0; localStorage.setItem('ma.keys', n + 1); } catch (e) {}
+    function show(ms) { kk.classList.remove('gone'); clearTimeout(t); t = setTimeout(function () { kk.classList.add('gone'); }, ms); }
+    if (n < 3) show(14000); else kk.classList.add('gone');
+    if (help) help.addEventListener('click', function (e) { e.stopPropagation(); if (kk.classList.contains('gone')) show(10000); else { clearTimeout(t); kk.classList.add('gone'); } });
+  })();
+
+  /* the place's name: big in the middle for a moment as you come in, then only the small line under your frame */
+  var bannerT = null;
+  function banner() {
+    var b = document.getElementById('banner');
+    if (!b) return;
+    b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');
+    clearTimeout(bannerT); bannerT = setTimeout(function () { b.classList.remove('on'); }, 3200);
+  }
+  banner();
   window.addEventListener('townscale', function (e) { K = e.detail; resize(); });   // the demo's size buttons
 
   /* a picture in this place's light, made once per file (the wilds' pieces: painted in daylight, placed at night) */
@@ -172,6 +192,9 @@
     var t = document.getElementById('placeTitle'), k = document.getElementById('placeKicker');
     if (t && c.title) t.textContent = c.title;
     if (k && c.kicker) k.textContent = c.kicker;
+    var pl = document.getElementById('placeLine');
+    if (pl && c.title) pl.textContent = c.title;
+    if (swapped) banner();
     if (c.title) document.title = c.title + ' · Mortal Ascent';
     if (swapped && c.url) try { history.replaceState(null, '', c.url); } catch (e) {}
     cv.setAttribute('aria-label', (c.title || 'The map') + '. Walk with W A S D or the arrow keys, or the joystick; '
@@ -295,14 +318,44 @@
       b.home = {x: b.x, y: b.y}; b.state = 'idle'; b.timer = 0.8 + Math.random() * 1.5; b.face = 1; b.moving = 0; b.t = 0;
       return b;
     });
-    var lines = [];
-    if (v.trip) {
-      lines.push(v.trip.spent ? 'Trip: all ' + v.trip.steps + ' encounters met. Walk back to town to bank your finds.'
-        : 'Trip: encounter ' + v.trip.step + ' of ' + v.trip.steps + ' · HP ' + v.trip.hp + ' / ' + v.trip.max_hp
-          + ' · walk back to town to bank what you carry');
-    } else if (v.quiet) lines.push(v.quiet);
-    if (tripEl) { tripEl.textContent = lines.join(' '); tripEl.hidden = !lines.length; }
+    if (v.hero) hud(v.hero);
+    trip(v);
   }
+  /* the frame at the top left: HP, realm, injured or resting (web/overworld.py hero_view) */
+  function hud(h) {
+    var box = document.getElementById('hero');
+    if (!box) return;
+    var set = function (id, t) { var n = document.getElementById(id); if (n && n.textContent !== t) n.textContent = t; };
+    set('heroName', h.name); set('heroRealm', h.realm + ' · ' + h.layer); set('heroHp', 'HP ' + h.hp + ' / ' + h.max_hp);
+    var bar = document.getElementById('heroBar');
+    if (bar) { bar.firstElementChild.style.width = h.pct + '%'; bar.setAttribute('aria-valuenow', h.pct); bar.classList.toggle('low', h.pct <= 30); }
+    var st = document.getElementById('heroStatus');
+    if (st) { st.textContent = h.status || ''; st.hidden = !h.status; }
+    box.classList.toggle('t-hurt', h.tone === 'hurt'); box.classList.toggle('t-rest', h.tone === 'rest');
+  }
+
+  /* the trip tracker (outside town only): encounters met of 5, what you carry, and what to do next */
+  function trip(v) {
+    if (!tripEl) return;
+    var t = v.trip, el = function (id) { return document.getElementById(id); };
+    if (!t && !v.quiet) { tripEl.hidden = true; return; }
+    tripEl.hidden = false;
+    tripEl.classList.toggle('quiet', !t);
+    el('tripKicker').textContent = t ? 'THE TRIP' : 'THE WILDS';
+    var pips = el('tripPips'), count = el('tripCount'), loot = el('tripLoot');
+    pips.innerHTML = ''; loot.innerHTML = '';
+    if (t) {
+      for (var i = 1; i <= t.steps; i++) { var p = document.createElement('i'); if (i <= t.step) p.className = 'on'; pips.appendChild(p); }
+      count.textContent = t.spent ? 'All ' + t.steps + ' encounters met' : 'Encounter ' + t.step + ' of ' + t.steps;
+      (t.found && t.found.length ? t.found : ['Nothing yet']).forEach(function (f) { var li = document.createElement('li'); li.textContent = f; loot.appendChild(li); });
+      el('tripLine').textContent = t.spent ? 'Walk back to town to bank your finds.'
+        : 'Carried, not yet yours: walk back to town to bank it. Lose a fight and half is gone.';
+    } else {
+      count.textContent = ''; el('tripLine').textContent = v.quiet;
+    }
+    pips.hidden = !t; count.hidden = !t; loot.hidden = !t;
+  }
+
   var sayEl = document.getElementById('say'), sayT = null;
   function say(text, html) {
     if (!sayEl) return;

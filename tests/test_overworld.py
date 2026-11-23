@@ -485,3 +485,51 @@ def test_falling_in_the_wilds_carries_you_home(site):
     assert site.world.walker(UID).place == "town" and site.world.hunts.trip(UID) is None
     assert site.get("/town").status_code == 200
     assert site.get("/wild/forest_edge").headers["location"] == "/town"       # you walk back out from the gate
+
+
+# ── the map screen's frame (docs/web.md "The map screen") ─────────────────────────────────────────────────────────
+
+def test_the_frame_shows_who_you_are_and_your_hp(world, conn):
+    st = into_forest(world, conn)
+    h = st["hero"]
+    p = db.get_player(conn, UID)
+    full = rules.final_stats(p, db.get_techniques(conn, UID), db.equipped_weapon(conn, UID),
+                             db.equipped_armor(conn, UID))[0]
+    assert h["name"] == f"P{UID}" and h["realm"] == "Martial Warrior" and h["layer"] == "3rd Layer"
+    assert h["max_hp"] == f"{full:,}" and h["hp"] == h["max_hp"] and h["pct"] == 100
+    assert h["face"].endswith("_face.webp") and h["status"] is None
+
+
+def test_the_frame_says_injured_or_resting(world, conn):
+    db.set_cooldown(conn, UID, "explore", 600, world.now.t)
+    h = into_forest(world, conn)["hero"]
+    assert h["tone"] == "rest" and h["status"].startswith("Resting · ")
+    db.update_player(conn, UID, injured_until=world.now.t + 900)
+    h = world.state(conn, UID, "forest_edge")["hero"]
+    assert h["tone"] == "hurt" and h["status"] == "Injured · 15m"         # an injury comes before the rest
+
+
+def test_on_a_trip_the_frame_shows_the_trips_hp(world, conn):
+    st = into_forest(world, conn)
+    b = st["beasts"][0]
+    stand(world, UID, b["x"] + 0.5, b["y"])
+    assert world.engage(conn, UID, "forest_edge", b["id"], b["x"] + 0.5, b["y"]) is None
+    trip = world.hunts.trip_view(conn, UID)
+    h = world.state(conn, UID, "forest_edge")["hero"]
+    assert h["hp"] == f"{trip['hp']:,}" and h["max_hp"] == f"{trip['max_hp']:,}"
+    assert h["status"] is None                                            # the trip's own rest is not a status
+
+
+def test_the_map_screen_has_the_frame_tracker_and_dock(site):
+    for url in ("/town", "/crossroads"):
+        r = site.get(url).text
+        assert 'id="hero"' in r and "Shoaib" in r and "Martial Warrior · 3rd Layer" in r and 'id="heroHp"' in r
+        assert '_face.webp' in r and 'id="placeLine"' in r and 'id="banner"' in r and 'id="helpBtn"' in r
+        assert 'id="trip"' in r and 'id="tripPips"' in r
+        dock = r[r.index('class="mdock"'):]
+        for href in ('/inventory', '/profile', '/profile#techniques', '/world'):
+            assert f'href="{href}"' in dock
+    assert 'id="techniques"' in site.get("/profile").text                  # the dock's Techniques lands on them
+    site.get("/town")
+    st = site.post("/world/state", data={"place": "town"}).json()
+    assert st["hero"]["name"] == "Shoaib" and st["trip"] is None and st["quiet"] is None   # town: no tracker

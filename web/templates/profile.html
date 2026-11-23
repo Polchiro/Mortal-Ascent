@@ -208,7 +208,7 @@
         {% endfor %}
       </div>
 
-      <h3 class="subh">Techniques</h3>
+      <h3 class="subh" id="techniques">Techniques</h3>
       <div class="xtech">
         {% for s in p.slots %}
         <div class="tslot t-{{ s.slot | lower }}{% if s.locked %} locked{% endif %}">

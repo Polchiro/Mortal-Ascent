@@ -1484,8 +1484,17 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .tgo .hbtn{white-space:nowrap}
 
 /* ── the open world's panels (town.js, _walkui.html, docs/world.md): the trip, a passing line, gathering, a find ── */
-.wtrip{position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:3;max-width:min(720px,92vw);
-  padding:8px 16px;font:600 13px Inter,sans-serif;color:#E6DFCF;text-align:center}
+.wtrip{position:fixed;right:14px;top:66px;z-index:3;width:min(260px,calc(100vw - 28px));box-sizing:border-box;
+  padding:10px 14px 12px;font:600 13px Inter,sans-serif;color:#E6DFCF}
+.wtrip .tpips{display:flex;gap:6px;margin:8px 0 4px}
+.wtrip .tpips i{width:14px;height:14px;transform:rotate(45deg);border:1px solid rgba(201,164,92,.6);background:rgba(255,255,255,.04)}
+.wtrip .tpips i.on{background:linear-gradient(135deg,#F6E2B0,#C9A45C);box-shadow:0 0 6px rgba(235,203,134,.55)}
+.wtrip .tcount{margin:2px 0 6px;font:700 14px Cinzel,Georgia,serif;color:var(--ag3)}
+.wtrip .tloot{list-style:none;margin:0 0 8px;padding:6px 0 0;border-top:1px solid rgba(201,164,92,.2);max-height:120px;overflow:auto}
+.wtrip .tloot li{margin:0 0 3px;font-weight:500;font-size:12.5px}
+.wtrip .mhint{margin:0;line-height:1.4}
+.wtrip.quiet .mhint{margin-top:4px;color:#D8C7A4}
+.wtrip [hidden]{display:none}
 .wsay{position:fixed;left:50%;top:168px;transform:translateX(-50%);z-index:5;max-width:min(640px,92vw);animation:none}
 .gpanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:min(900px,94vw);max-height:92vh;
   overflow:auto;padding:18px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
@@ -1501,7 +1510,9 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 @media (max-width:760px){.gpanel{padding:12px}.gpanel .plantcard img{max-height:100px}}
 /* a phone: the name plate leaves room for the World Map button, the trip's line sits under it, and the prompt sits
    beside the thumb stick instead of on it */
-@media (max-width:640px){.mtools{flex-direction:column;align-items:flex-end;gap:6px}.mtools .hbtn{order:-1}.mhud{right:136px}.wtrip{top:172px;bottom:auto;font-size:12px;padding:6px 10px;width:max-content}
+@media (max-width:640px){.mtools{flex-direction:column;align-items:flex-end;gap:6px}.mtools .hbtn{order:-1}.mhud{right:136px}
+  .wtrip{top:auto;bottom:86px;right:10px;width:min(210px,calc(100vw - 180px));font-size:12px;padding:8px 10px}
+  .wtrip .tloot{max-height:64px}.wtrip .mhint{font-size:11px}
   .wsay{top:228px}.mprompt{left:auto;right:12px;transform:none;max-width:calc(100vw - 190px)}}
 
 /* ── the World Map (world.html, world.js, web/world.py, docs/world.md): the scroll, its markers and their cards ── */
@@ -2176,3 +2187,45 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .freveal .fraura.on{opacity:.95}
 .freveal[data-rarity="Mythical"] .fraura{filter:hue-rotate(-35deg) saturate(1.6)}
 .fagain{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ── the map screen's frame (_hud.html, town.js, docs/web.md "The map screen"): you, the place, the dock ───────── */
+.mhero{display:flex;gap:12px;align-items:center;padding:10px 14px 10px 10px;width:300px;box-sizing:border-box;pointer-events:auto}
+.mface{flex:none;width:64px;height:64px;border-radius:50%;overflow:hidden;border:2px solid var(--ag);
+  box-shadow:0 0 0 3px rgba(12,12,15,.85),0 0 12px rgba(201,164,92,.35);background:#15151a}
+.mface img{width:100%;height:100%;object-fit:cover;display:block}
+.mwho{display:flex;flex-direction:column;min-width:0;flex:1}
+.mname{font:800 17px Cinzel,Georgia,serif;color:var(--ag3);letter-spacing:.6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrealm{font:600 12px Inter,sans-serif;color:var(--jd);margin-top:1px}
+.mhpbar{position:relative;height:16px;margin-top:6px;border-radius:3px;background:rgba(255,255,255,.08);border:1px solid rgba(201,164,92,.3);overflow:hidden}
+.mhpbar div{height:100%;background:linear-gradient(90deg,#8E2F28,#D0584C);transition:width .4s ease}
+.mhpbar.low div{background:linear-gradient(90deg,#7A1E18,#B83A30);animation:mlow 1.2s ease-in-out infinite}
+.mhpbar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10.5px Inter,sans-serif;color:#FBEFE6;text-shadow:0 1px 2px #000}
+.mstatus{align-self:flex-start;margin-top:6px;padding:1px 8px;border-radius:999px;font:700 10.5px Inter,sans-serif;letter-spacing:.4px}
+.mstatus[hidden]{display:none}
+.mhero.t-hurt .mstatus{background:rgba(184,68,58,.22);border:1px solid rgba(224,122,111,.6);color:#F0C4BC}
+.mhero.t-rest .mstatus{background:rgba(94,147,201,.18);border:1px solid rgba(140,190,240,.5);color:#CFE3F7}
+.mhero.t-hurt .mface{border-color:#C0574C}
+@keyframes mlow{50%{opacity:.6}}
+.mplace{margin:-2px 0 0 4px;font:700 12.5px Cinzel,Georgia,serif;letter-spacing:.8px;color:var(--ag2);text-shadow:0 1px 3px #000}
+.mkeys{transition:opacity .8s ease}
+.mkeys.gone{opacity:0;visibility:hidden;transition:opacity .8s ease,visibility 0s .8s}
+.mtools .micon{font:800 16px Cinzel,Georgia,serif}
+.mbanner{position:fixed;left:50%;top:22vh;transform:translateX(-50%);z-index:2;text-align:center;pointer-events:none;opacity:0;
+  transition:opacity 1s ease;white-space:nowrap}
+.mbanner.on{opacity:1;transition:opacity .5s ease}
+.mbanner .kicker{margin:0;font:700 12px Inter,sans-serif;letter-spacing:4px;color:var(--ag);text-shadow:0 1px 4px #000}
+.mbanner h1{margin:4px 0 0;font:800 40px Cinzel,Georgia,serif;letter-spacing:2px;color:var(--ag3);
+  text-shadow:0 2px 12px rgba(0,0,0,.9),0 0 24px rgba(201,164,92,.35)}
+.mbanner h1::after{content:"";display:block;width:60%;height:1px;margin:10px auto 0;background:linear-gradient(90deg,transparent,var(--ag),transparent)}
+.mdock{position:fixed;right:14px;bottom:16px;z-index:3;display:flex;gap:8px}
+.dbtn{display:flex;flex-direction:column;align-items:center;gap:3px;width:62px;padding:8px 0 6px;border-radius:8px;text-decoration:none;
+  background:linear-gradient(180deg,rgba(24,24,28,.88),rgba(12,12,15,.92));border:1px solid rgba(201,164,92,.4);color:var(--ag2);
+  box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.dbtn svg{width:24px;height:24px;fill:currentColor}
+.dbtn span{font:600 10.5px Inter,sans-serif;letter-spacing:.3px}
+.dbtn:hover,.dbtn:focus-visible{border-color:var(--ag2);color:var(--ag3);background:rgba(36,32,24,.94);outline:none}
+@media (prefers-reduced-motion:reduce){.mbanner,.mbanner.on,.mkeys{transition:none}.mhpbar.low div{animation:none}}
+@media (max-width:640px){
+  .mhero{width:auto;gap:8px;padding:6px 10px 6px 6px}.mface{width:44px;height:44px}.mname{font-size:14px}.mrealm{font-size:11px}
+  .mhpbar{height:13px}.mbanner{top:22vh}.mbanner h1{font-size:24px}
+  .mprompt{bottom:78px}.mdock{right:10px;bottom:12px;gap:4px}.dbtn{width:52px;padding:6px 0 4px}.dbtn svg{width:20px;height:20px}.dbtn span{font-size:8.5px;letter-spacing:0}}

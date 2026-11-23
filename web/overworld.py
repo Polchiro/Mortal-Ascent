@@ -447,6 +447,7 @@ class World:
             p = db.get_player(conn, uid)
             purse = {"coins": f"{int(p['lotus_coins']):,}", "pearls": f"{int(p['moon_pearls']):,}"} if p else None
             return {"place": place, "herbs": herbs, "beasts": beasts, "finds": finds, "trip": trip, "purse": purse,
+                    "hero": hero_view(conn, uid, p, trip, self.hunts.clock()) if p else None,
                     "wary": bool(quiet), "quiet": _quiet_line(quiet),
                     "wander": hunt_map.WANDER, "notice": hunt_map.NOTICE, "reach": HERB_REACH,
                     "beastReach": hunt_map.REACH}
@@ -550,6 +551,34 @@ class World:
                 w.left[w.place] = (w.x, w.y, 0)
                 w.place, w.x, w.y, w.t = "town", *town.START, self.clock()
                 w.beasts.clear()
+
+
+# ── the character frame (docs/web.md "The map screen") ────────────────────────────────────────────────────────────
+
+def hero_view(conn, uid, p, trip=None, now=None):
+    """Who you are and how you are, for the frame at the top left of every map: name, realm and layer, the round
+    face, HP and why the wilds keep away from you. Only reads the game's own numbers (player.final_stats, the injury
+    and the explore rest); out on a trip the HP is the trip's, which a fight wears down."""
+    import looks
+    from bot import player as rules
+    now = time.time() if now is None else now
+    if trip:
+        hp, max_hp = trip["hp"], trip["max_hp"]
+    else:
+        max_hp = rules.final_stats(p, db.get_techniques(conn, uid), db.equipped_weapon(conn, uid),
+                                   db.equipped_armor(conn, uid))[0]
+        hp = max_hp
+    hurt = rules.injured_for(p, now)
+    rest = 0 if trip else db.cooldown_left(conn, uid, "explore", now)
+    if hurt:
+        status, tone = f"Injured · {rules.fmt_duration(hurt)}", "hurt"
+    elif rest:
+        status, tone = f"Resting · {rules.fmt_duration(rest)}", "rest"
+    else:
+        status, tone = None, None
+    return {"name": p["name"], "realm": p["realm"], "layer": f"{rules.ordinal(p['layer'])} Layer",
+            "face": looks.face(looks.of_player(p)), "hp": f"{max(0, int(hp)):,}", "max_hp": f"{int(max_hp):,}",
+            "pct": max(0, min(100, round(hp / max(1, max_hp) * 100))), "status": status, "tone": tone}
 
 
 def _quiet_line(why):
