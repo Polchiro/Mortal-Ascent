@@ -124,7 +124,7 @@ same random numbers; `_battle` builds the same fight).
 - **Who:** everyone on a Solo Hunt (down a road from the Crossroads, docs/world.md, or from `/explore`) whose look has a walking sheet
   (`looks.WALK_SHEETS`: the male and female cultivators). A look without one keeps the menus. Code: `web/hunt_map.py`, `Hunt.map` in `web/hunt_play.py`,
   `web/templates/hunt_map.html`, `web/static/huntmap.js`. Tests: `tests/test_hunt_map.py`.
-- **Walking:** W A S D or the arrow keys (Shift: stroll), or the on-screen joystick on touch screens; both feed one
+- **Walking:** W A S D or the arrow keys, or the on-screen joystick (running or walking: docs/world.md "Running") on touch screens; both feed one
   movement vector in screen space. The sheet row follows the direction (8 sectors with a little hysteresis); the
   frames advance with distance walked (one stride per 96 px at 120%), so the feet don't slide; standing still holds
   each row's feet-together frame.
@@ -163,9 +163,9 @@ same random numbers; `_battle` builds the same fight).
   built by the same script with `--run` from five running videos (same five views; she turns to face her way in the
   first two seconds of some, which are skipped). `huntmap.js` and `town.js` play it in place of the walk whenever she
   moves at more than three quarters of full speed (so always on the keyboard), with a longer stride (`run.stride`,
-  140 px against the walk's 96) so her feet keep pace with the ground; a stroll (Shift, or the joystick pushed
-  gently) keeps the walk. Other players are drawn the same way. How fast she moves is unchanged (`SPEED`): only the
-  picture differs. The male has no run yet and walks at every speed. `scripts/make_heroine_idle.py` builds her idle the same way from five standing
+  140 px against the walk's 96) so her feet keep pace with the ground; walking (or the joystick pushed
+  gently) keeps the walk. Other players are drawn the same way. Since Nov 24 the player chooses running or walking
+  and running is a quarter faster (docs/world.md "Running"). The male has no run sheet yet: he goes faster on his walk. `scripts/make_heroine_idle.py` builds her idle the same way from five standing
   videos (`WALK_SHEETS["female"]["idle"]`; the map plays it while she stands still). As made, its "right" view is
   only a little more turned than front-right and its back views have long hair her walk lacks; remade videos from
   references cut out of her walk videos would fix both.

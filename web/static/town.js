@@ -26,14 +26,42 @@
   'use strict';
   var TW = 128, TH = 64;                       // a tile, in the painting's pixels (the world)
   var SPEED = 150, STRIDE = 96, ZOOM = 1.2;     // world px/s; px per full stride (at 100%); character size
-  var SLOW = 0.45, VIEW = 12;                   // Shift: a stroll; tiles across the screen (at K = 1)
+  var VIEW = 12;                                // tiles across the screen (at K = 1)
+  /* Run or walk (docs/world.md "Running"). The player chooses: the round button at the bottom right, R, or Settings;
+     kept on this device (localStorage ma.gait), running by default. Holding Shift gives the other one for as long as
+     it is held. Walking is SPEED (as it always was); running is RUN_K times it, a little under a hunting beast's
+     chase (RUN.normal), and the server allows for it (hunt_map.SPEED). The joystick pushed gently still slows either. */
+  var RUN_K = 1.25, gait = 'run';
+  try { if (localStorage.getItem('ma.gait') === 'walk') gait = 'walk'; } catch (e) {}
+  function runningNow() { return (gait === 'run') !== !!keys.swap; }
+  function setGait(g) {
+    gait = g === 'walk' ? 'walk' : 'run';
+    try { localStorage.setItem('ma.gait', gait); } catch (e) {}
+    showGait();
+  }
+  function showGait() {
+    var b = document.getElementById('gaitBtn'), now = document.getElementById('gaitNow'), run = gait === 'run';
+    if (b) { b.setAttribute('aria-pressed', run); b.querySelector('small').textContent = run ? 'tap to walk' : 'tap to run'; }
+    if (now) now.textContent = run ? 'Run' : 'Walk';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gait]'), function (o) {
+      var on = o.dataset.gait === gait; o.classList.toggle('on', on); o.setAttribute('aria-pressed', on);
+    });
+  }
+  (function () {
+    var b = document.getElementById('gaitBtn');
+    if (b) b.addEventListener('click', function (e) { e.stopPropagation(); setGait(gait === 'run' ? 'walk' : 'run'); b.blur(); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-gait]'), function (o) {
+      o.addEventListener('click', function () { setGait(o.dataset.gait); });
+    });
+    showGait();
+  })();
   var CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
   var sheet = new Image(); sheet.src = SH.src;
   var IDLE = SH.idle, idle = null;
-  var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): at full speed; a stroll
+  var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): when running; a walk
   if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
@@ -225,12 +253,13 @@
     if (fOpen) { if (e.key === 'Escape' || e.key === 'Enter') { closeFind(); e.preventDefault(); } return; }
     if (dlgOpen) { if (e.key === 'Escape') { closeTalk(); e.preventDefault(); } return; }
     if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
-    if (e.key === 'Shift') keys.slow = true;
+    if (e.key === 'Shift') keys.swap = true;
+    if (e.code === 'KeyR' && !e.repeat && !e.ctrlKey && !e.metaKey) setGait(gait === 'run' ? 'walk' : 'run');
     if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') && near) { act(near); e.preventDefault(); }
     if (e.code === 'KeyG') debug = !debug;
     if (e.code === 'KeyM') location.href = '/world';             // the World Map (Back or M brings you back here)
   });
-  window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.slow = false; });
+  window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.swap = false; });
   window.addEventListener('blur', function () { keys = {}; resetStick(); });
   if (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window) {
     stick.classList.add('on'); var kk = document.getElementById('keys'); if (kk) kk.style.display = 'none';
@@ -252,7 +281,7 @@
   function inputVector() {
     if (busy()) return {x: 0, y: 0};
     var x = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), y = (keys.d ? 1 : 0) - (keys.u ? 1 : 0), m = Math.hypot(x, y);
-    if (m) { var s = keys.slow ? SLOW : 1; return {x: x / m * s, y: y / m * s}; }
+    if (m) return {x: x / m, y: y / m};
     return stickV;
   }
 
@@ -410,7 +439,7 @@
       var b = toScreen(o.x, o.y), px = Math.hypot(b.x - a.x, b.y - a.y);
       var row = sectorRow(Math.atan2(b.y - a.y, b.x - a.x));
       if (!o.moving || angDiff(ROW_ANGLE[row], ROW_ANGLE[o.dir]) > 30) o.dir = row;
-      o.running = !!sh.run && px / dt > SPEED * RUN_AT;            // they run as you do: at about full speed
+      o.running = !!sh.run && px / dt > SPEED * (1 + RUN_K) / 2;   // they run as you do: faster than a walk
       if (!o.moving) o.phase = (o.running ? sh.run.stand : sh.stand)[o.dir];
       o.moving = true;
       o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
@@ -734,11 +763,12 @@
     if (hero.moving) {
       var ang = Math.atan2(v.y, v.x), deg = (ang * 180 / Math.PI + 360) % 360;
       if (angDiff(deg, ROW_ANGLE[hero.dir]) > 28.5) hero.dir = sectorRow(ang);         // 22.5° + a little hysteresis
-      var sp = SPEED * m / K, vx = v.x / m * sp, vy = v.y / m * sp;
+      var fast = runningNow();
+      var sp = SPEED * (fast ? RUN_K : 1) * m / K, vx = v.x / m * sp, vy = v.y / m * sp;
       var nx = hero.x + (vx / (TW / 2) + vy / (TH / 2)) / 2 * dt, ny = hero.y + (vy / (TH / 2) - vx / (TW / 2)) / 2 * dt;
       if (walkable(nx, hero.y)) hero.x = nx;
       if (walkable(hero.x, ny)) hero.y = ny;
-      hero.running = !!HRUN && m > RUN_AT;
+      hero.running = fast && !!HRUN && m > RUN_AT;              // (no run sheet yet: he goes faster on his walk)
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
       hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * 8) % 8;

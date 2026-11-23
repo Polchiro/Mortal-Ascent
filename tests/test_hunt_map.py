@@ -197,3 +197,24 @@ def test_the_walk_sheets_meet_the_spec():
     for name in ("huntmap.js", "town.js"):                    # both maps play it, and neither changes how fast she moves
         js = open(os.path.join(root, "web", "static", name)).read()
         assert "HRUN = SH.run" in js and "hero.running ? HRUN.stride : STRIDE" in js and "var SPEED = 150" in js
+
+
+def test_running_is_the_players_choice_and_a_little_faster():
+    """docs/world.md "Running": a Run / Walk button (phone and computer), R and Shift, kept on the device; running is
+    1.25 times the walk, allowed by the server's position check and still slower than a hunting beast's chase."""
+    import os
+    import re
+    from web import hunt_map
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    js = open(os.path.join(root, "web", "static", "town.js")).read()
+    ui = open(os.path.join(root, "web", "templates", "_walkui.html")).read()
+    assert 'id="gaitBtn"' in ui and 'data-gait="run"' in ui and 'data-gait="walk"' in ui
+    assert "localStorage.setItem('ma.gait'" in js and "e.code === 'KeyR'" in js and "keys.swap" in js
+    speed = float(re.search(r"var SPEED = (\d+)", js).group(1))
+    run_k = float(re.search(r"var RUN_K = ([\d.]+)", js).group(1))
+    assert speed == 150 and 1.1 <= run_k <= 1.4                               # walking as before; running a little faster
+    assert abs(hunt_map.SPEED - 3.4 * run_k) < 0.01                           # the server allows exactly that
+    chase = float(re.search(r"var RUN = \{normal: ([\d.]+)", js).group(1))
+    assert hunt_map.SPEED < chase                                             # a beast that has seen you still catches you
+    t = 2.0                                                                   # two seconds of running straight up: believed
+    assert hunt_map.SPEED * t <= hunt_map.SPEED * hunt_map.SLACK * t + hunt_map.JUMP
