@@ -303,7 +303,7 @@ def test_the_female_guard_plays_frame_by_frame_with_its_own_timing(client):
     assert f'left: {sheet["box"][0] * 100}%' in page                           # her Guard has a cell of its own on the canvas
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
     assert abs(im.width / sheet["cols"] * 1.5 - sheet["box"][2] * 1024) < 2 and sheet["frames"] <= sheet["cols"] * sheet["rows"]
-    assert 0 < sheet["first"] < sheet["frames"] and 0 < sheet["ready"] <= 370      # raised before the beast's blow lands
+    assert 0 < sheet["first"] < sheet["frames"] and 0 < sheet["ready"] <= 700      # raised before the beast's blow lands (the quickest: 720 ms, fight.js RECIPES.gore)
 
 
 def test_battle_history_keeps_every_turn(client):
@@ -786,3 +786,26 @@ def test_frostpeak_plays_its_background_video_behind_the_fight(client):
     assert os.path.getsize(path) < 4 * 1024 * 1024                              # light enough for a page background
     assert "main.battle.bglive{isolation:isolate}" in css and "video.bgloop{" in css and "z-index:-1" in css
     assert "saveData" in js                                                     # not when the browser saves data
+
+
+def test_the_fight_loads_its_sheets_and_technique_pictures_up_front(client):
+    """Every picture a turn may need is named on the page when the fight opens (fight.js `keep`), so no move plays over
+    a sheet that is still loading; and her movements carry their own least time (looks `ms`). Presentation only."""
+    import json
+    import re
+    import looks
+    c = db.connect(client.path)
+    db.update_player(c, UID, appearance=json.dumps({"gender": "female"}))
+    c.close()
+    fight(client)
+    page = client.get("/explore/play").text
+    listed = json.loads(re.search(r"data-preload='([^']+)'", page).group(1).replace("&#34;", '"'))
+    assert looks.GUARD_SHEETS["female"]["src"] in listed and looks.ATTACK_SHEETS["female"]["strike"]["src"] in listed
+    assert looks.MOTION_SHEETS["fist"]["female"]["src"] in listed and "/art/fx/tech/iron_fist.webp" in listed   # Iron Fist, equipped
+    assert len(listed) == len(set(listed))
+    for src in listed:
+        assert client.get(src).status_code == 200, src
+    for motion in ("kick", "fist", "palm", "finger"):                          # nearer the beast's own pace than a 1.1 s cast
+        assert 1800 <= looks.MOTION_SHEETS[motion]["female"]["ms"] <= 2600
+    js = client.get("/static/fight.js").text
+    assert "function whenReady" in js and "msheet.dataset.ms" in js

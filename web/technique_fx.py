@@ -105,3 +105,11 @@ def of(name, grade, gender=None, happened=None):
     return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),
             "punches": fx.get("punches", [1]), "ms": GRADE_MS.get(grade, 1100),
             "art": [f"/art/fx/tech/{a}.webp" for a in fx["art"]]}
+
+
+def assets(name, gender=None):
+    """Everything the page may show for this technique, whatever happens on the turn: its movements (MOTIONS) and its
+    pictures, so the fight can load them before they are needed (explore_play.preload)."""
+    tid = technique_id(name)
+    looks_ = [fx for fx in (BY_GENDER.get(gender, {}).get(tid), TECH_FX.get(tid)) if fx]
+    return ([fx["motion"] for fx in looks_], [f"/art/fx/tech/{a}.webp" for fx in looks_ for a in fx["art"]])

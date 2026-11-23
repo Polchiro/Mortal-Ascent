@@ -659,7 +659,20 @@ kick or lunge is never cut off; the page places it from `box` (`explore_play.htm
 for two frames just before the sparks: those are left out. Her step forward in the Guard video is taken out, since
 the beast comes to her. The key frames (`jab`, `windup`, `release`, `back`, the Guard's `first`) and `hand` (her
 fist, palm, fingertip or foot at the release, where the effects leave from) are printed by the script and stored in
-`looks.MOTION_SHEETS` / `looks.GUARD_SHEETS`. Her brace, deflect and sidestep are still the earlier videos
+`looks.MOTION_SHEETS` / `looks.GUARD_SHEETS`.
+
+**Pace and loading (Nov 23).** Her moves were playing much faster than the beast's own attack (about 2.2 s for the
+Grey Wolf): a Mortal technique squeezed several seconds of her video into 1.1 s. Each of her movement sheets now has a
+least time (`ms` in `looks.MOTION_SHEETS`, about 2 s; `technique` in `fight.js` takes the longer of it and the
+grade's own time, Nine Dragons keeps its own), her Guard raises over 0.62 s and plays on at 66 ms a frame, and her
+Strike and Break are slowed by a quarter and an eighth (`blade` in `looks.ATTACK_SHEETS`). The stutter came from
+loading: a technique's frames and effect pictures were first asked for when its turn arrived. The page now names
+every picture the fighter's turns may need (`explore_play.preload`: Guard and attack sheets, each equipped
+technique's movement and pictures; `data-preload` on the fighter), `fight.js` loads and decodes them when the fight
+opens and keeps them (`keep`), and a turn is not acted out until its movement sheet is in (`whenReady`, at most
+2.5 s). Only how long a turn takes to watch changed: the server has already resolved it.
+
+Her brace, deflect and sidestep are still the earlier videos
 (`scripts/make_heroine_{brace,deflect,sidestep}.py`). Presentation only: timing, damage and rules are unchanged.
 
 ## Her Strike and Break
