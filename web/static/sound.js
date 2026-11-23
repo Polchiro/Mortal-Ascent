@@ -3,6 +3,9 @@
      town    a soft wind, a low murmur of the street and wind chimes now and then
      meadow  (the Crossroads) wind over grass, a few crickets and a bird now and then
      forest  (the Moon Forest) wind in the trees, crickets all round, an owl far off
+   Over the bed a quiet tune plays, made up as it goes (plucked strings and a bamboo flute; MUSIC below), in each
+   place's own mood; Settings has Music On / Off (ma.music). Talking to someone unrolls a scroll and plays a few
+   notes of their "voice" (VOICES), a choice clicks, leaving rustles.
    and a few little sounds: footsteps (stone in town, earth outside), the whoosh of walking into the next land, a
    beast's growl when it notices you, kneeling at a herb, a chime when it is picked (a dull note when not), the
    sparkle of a glint, a bell when a task is done.
@@ -14,8 +17,10 @@
 (function () {
   'use strict';
   var on = true, vol = 0.6, ctx = null, master = null, kind = null, beds = {}, wind = null, nextAt = {};
+  var music = true, musicBus = null;
   try {
     on = localStorage.getItem('ma.sound') !== 'off';
+    music = localStorage.getItem('ma.music') !== 'off';
     var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) vol = v0 / 100;
   } catch (e) {}
 
@@ -25,6 +30,7 @@
       if (!wake) return null;
       var A = window.AudioContext || window.webkitAudioContext; if (!A) return null;
       ctx = new A(); master = ctx.createGain(); master.gain.value = vol * vol; master.connect(ctx.destination);
+      musicBus = ctx.createGain(); musicBus.gain.value = music ? 1 : 0; musicBus.connect(master);
       if (kind) setBed(kind);
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
@@ -92,7 +98,69 @@
     wind.f.frequency.setTargetAtTime(b.windHz, t, 1.2);
     wind.hum.gain.cancelScheduledValues(t); wind.hum.gain.setTargetAtTime(k === 'town' ? 0.035 : 0, t, 1.2);
     nextAt = {};
+    if (tune.kind !== k) { tune.kind = k; tune.at = t + 2.5; tune.left = 0; tune.i = 2; }   // the next place's music, after a breath
   }
+
+  /* the music (docs/world.md "Sound"): no recording, a quiet tune made up as it goes, in the manner of a guzheng
+     (plucked strings on a five-note scale) with a bamboo flute now and then. Each kind of place has its own scale,
+     pace and mood: the town warm and unhurried, the Crossroads open and light, the forest slow, low and sparse.
+     It plays a phrase, rests, plays another; a low string marks each phrase's start. */
+  var MUSIC = {
+    town:   {root: 293.66, scale: [0, 2, 4, 7, 9],  beat: 0.46, len: [6, 10], rest: [3, 6],  v: 0.050, flute: 0.25, low: 0.5},
+    meadow: {root: 329.63, scale: [0, 2, 4, 7, 9],  beat: 0.52, len: [5, 8],  rest: [4, 8],  v: 0.045, flute: 0.4,  low: 0.5},
+    forest: {root: 220.00, scale: [0, 3, 5, 7, 10], beat: 0.72, len: [3, 6],  rest: [6, 12], v: 0.042, flute: 0.55, low: 0.5}
+  };
+  var tune = {kind: null, at: 0, left: 0, i: 2};
+  function mout(node, pan) {
+    if (ctx.createStereoPanner) { var p = ctx.createStereoPanner(); p.pan.value = pan || 0; node.connect(p); p.connect(musicBus); }
+    else node.connect(musicBus);
+  }
+  function hz(m, step) {                    // a step of the place's scale (may run over several octaves) as a pitch
+    var n = m.scale.length, oct = Math.floor(step / n), deg = ((step % n) + n) % n;
+    return m.root * Math.pow(2, oct + m.scale[deg] / 12);
+  }
+  function pluck(f, at, v, pan) {           // a plucked string: a quick bend up into the note, then it rings away
+    var len = 2.6, g = ctx.createGain(), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.setValueAtTime(Math.min(6000, f * 6), at); lp.frequency.exponentialRampToValueAtTime(f * 1.5, at + 1.2);
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(v, at + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    [[1, 'triangle', 1], [2, 'sine', 0.35], [3, 'sine', 0.12]].forEach(function (h) {
+      var o = ctx.createOscillator(), og = ctx.createGain();
+      o.type = h[1]; o.frequency.setValueAtTime(f * h[0] * 0.985, at); o.frequency.exponentialRampToValueAtTime(f * h[0], at + 0.05);
+      og.gain.value = h[2]; o.connect(og); og.connect(lp); o.start(at); o.stop(at + len + 0.05);
+    });
+    lp.connect(g); mout(g, pan);
+  }
+  function flute(f, at, len, v) {           // a bamboo flute: a soft breathy note that swells, wavers and fades
+    var o = ctx.createOscillator(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = f; vib.frequency.value = 5; vg.gain.setValueAtTime(0, at); vg.gain.linearRampToValueAtTime(f * 0.008, at + len * 0.6);
+    vib.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(v, at + len * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    o.connect(g); mout(g, 0.15); o.start(at); vib.start(at); o.stop(at + len + 0.05); vib.stop(at + len + 0.05);
+    var s = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), bg = ctx.createGain();           // its breath
+    s.buffer = noise(); bf.type = 'bandpass'; bf.frequency.value = f * 2; bf.Q.value = 3;
+    bg.gain.setValueAtTime(0.0001, at); bg.gain.exponentialRampToValueAtTime(v * 0.25, at + len * 0.3); bg.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    s.connect(bf); bf.connect(bg); mout(bg, 0.15); s.start(at, Math.random()); s.stop(at + len + 0.05);
+  }
+  setInterval(function () {                 // write the tune a little ahead of where it is playing
+    if (!ctx || !on || !music || ctx.state !== 'running' || !tune.kind) return;
+    var m = MUSIC[tune.kind] || MUSIC.forest, now = ctx.currentTime;
+    if (tune.at < now) tune.at = now + 0.1;
+    while (tune.at < now + 0.6) {
+      if (tune.left <= 0) {                 // a new phrase: a low string, and now and then a flute over it
+        tune.left = Math.round(rnd(m.len[0], m.len[1]));
+        tune.i = Math.max(0, Math.min(7, tune.i + Math.round(rnd(-2, 2))));
+        pluck(hz(m, 0) * m.low, tune.at, m.v * 0.9, -0.2);
+        if (Math.random() < m.flute) flute(hz(m, 5 + Math.floor(Math.random() * 4)), tune.at + m.beat, m.beat * rnd(4, 7), m.v * 0.5);
+      }
+      var r = Math.random(), step = r < 0.42 ? 1 : r < 0.84 ? -1 : r < 0.92 ? 2 : -2;       // mostly to the next note
+      tune.i += step; if (tune.i > 9) tune.i -= 3; if (tune.i < 0) tune.i += 3;
+      pluck(hz(m, tune.i), tune.at, m.v * rnd(0.7, 1), rnd(-0.3, 0.3));
+      if (Math.random() < 0.12) pluck(hz(m, tune.i + 2), tune.at + 0.03, m.v * 0.5, 0.2);    // two strings together
+      var d = Math.random() < 0.25 ? 2 : Math.random() < 0.3 ? 0.5 : 1;                     // long, short or even
+      tune.at += m.beat * d; tune.left--;
+      if (tune.left <= 0) tune.at += m.beat * rnd(m.rest[0], m.rest[1]);                    // and a rest
+    }
+  }, 100);
 
   var EVENTS = {
     cricket: function (t) {                // a short trill, somewhere to the side
@@ -127,6 +195,25 @@
     });
   }, 100);
 
+  /* the townsfolk's voices (web/town.py NPCS, by key): f the pitch, notes the little tune of their greeting
+     (semitones), pace how fast they speak, end whether it falls (< 1) or rises (> 1), extra a sound of their trade */
+  var VOICES = {
+    gate:       {f: 150, notes: [0, 0, 3], pace: 0.13, wave: 'triangle', end: 0.94},                 // the warden: short, firm
+    blacksmith: {f: 120, notes: [0, 2, 0], pace: 0.15, wave: 'triangle', end: 0.92,                  // deep, with the anvil
+                 extra: function (t) { tone(2100, t, 0.5, 0.035, 'sine'); tone(3150, t, 0.3, 0.015, 'sine'); burst(t, 0.03, 0.05, 'highpass', 4000, 0.7, 0); }},
+    alchemist:  {f: 330, notes: [0, 4, 7, 4], pace: 0.11, wave: 'sine', end: 1.05,                   // Lan: light and quick
+                 extra: function (t) { burst(t, 0.3, 0.02, 'highpass', 5000, 0.7, 0.2); }},          // dried herbs rustle
+    merchant:   {f: 210, notes: [0, 5, 3, 7], pace: 0.1, wave: 'triangle', end: 1.08,                // lively, with coins
+                 extra: function (t) { [3100, 3700, 4200].forEach(function (f, i) { tone(f, t + i * 0.05, 0.18, 0.018, 'sine'); }); }},
+    elder:      {f: 110, notes: [0, -2, 0], pace: 0.24, wave: 'sine', end: 0.95},                    // slow and low
+    master:     {f: 135, notes: [0, 5], pace: 0.16, wave: 'triangle', end: 0.9},                     // two words, no more
+    arena:      {f: 165, notes: [0, 3, 5], pace: 0.12, wave: 'triangle', end: 1.04,                  // with a far gong
+                 extra: function (t) { tone(196, t, 1.6, 0.04, 'sine', 0, 190); tone(293, t, 1.1, 0.018, 'sine'); }},
+    stele:      {extra: function (t) { burst(t, 0.5, 0.05, 'lowpass', 500, 0.8, 0, 250); tone(98, t, 0.9, 0.035, 'sine'); }},   // stone
+    exit:       {extra: function (t) { burst(t, 0.6, 0.04, 'bandpass', 500, 1, 0, 900); }},          // a road's end: wind
+    other:      {f: 180, notes: [0, 2], pace: 0.14, wave: 'triangle', end: 1}
+  };
+
   /* the little sounds */
   var lastStep = 0;
   var SFX = {
@@ -149,6 +236,20 @@
     picked: function () { var t = ctx.currentTime; tone(880, t, 0.5, 0.06); tone(1319, t + 0.1, 0.8, 0.05); },
     missed: function () { tone(196, ctx.currentTime, 0.5, 0.06, 'triangle', 0, 150); },
     glint: function () { var t = ctx.currentTime; [1568, 2093, 2637].forEach(function (f, i) { tone(f, t + i * 0.07, 0.4, 0.03); }); },
+    /* talking: the dialogue unrolls like a scroll, then a few notes of that person's "voice" (no words): each of
+       the town's people has their own pitch and manner, and some a sound of their trade */
+    talk: function (who) {
+      var t = ctx.currentTime, v = VOICES[who] || VOICES.other;
+      burst(t, 0.22, 0.045, 'bandpass', 1800, 0.8, 0, 3200);                                // the scroll
+      if (v.extra) v.extra(t + 0.05);
+      if (v.f) v.notes.forEach(function (n, i) {
+        var at = t + 0.16 + i * v.pace, f = v.f * Math.pow(2, n / 12);
+        tone(f, at, v.pace * 0.9, 0.045, v.wave, 0, f * (i === v.notes.length - 1 ? v.end : 1.03));
+        burst(at, v.pace * 0.7, 0.012, 'bandpass', f * 4, 4, 0);
+      });
+    },
+    click: function () { var t = ctx.currentTime; tone(1175, t, 0.09, 0.04, 'triangle'); burst(t, 0.04, 0.03, 'highpass', 3000, 0.7, 0); },
+    bye: function () { burst(ctx.currentTime, 0.2, 0.035, 'bandpass', 2600, 0.8, 0, 1200); },
     task: function () {
       var t = ctx.currentTime;
       [523, 659, 784].forEach(function (f, i) { tone(f, t + i * 0.12, 1.6, 0.05); tone(f * 2.01, t + i * 0.12, 0.8, 0.012); });
@@ -177,6 +278,18 @@
         mark();
       });
     });
+    var mbtns = document.querySelectorAll('[data-music]');
+    function markM() { Array.prototype.forEach.call(mbtns, function (b) { var m = (b.dataset.music === 'on') === music; b.classList.toggle('on', m); b.setAttribute('aria-pressed', m); }); }
+    Array.prototype.forEach.call(mbtns, function (b) {
+      b.addEventListener('click', function () {
+        music = b.dataset.music === 'on';
+        try { localStorage.setItem('ma.music', music ? 'on' : 'off'); } catch (e) {}
+        ac(true);
+        if (musicBus) musicBus.gain.setTargetAtTime(music ? 1 : 0, ctx.currentTime, 0.3);
+        markM();
+      });
+    });
+    markM();
     if (slider) slider.addEventListener('input', function () {
       vol = slider.value / 100;
       try { localStorage.setItem('ma.vol', slider.value); } catch (e) {}
