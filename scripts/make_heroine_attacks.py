@@ -62,7 +62,7 @@ def video_frames(video, numbers, crop):
     return {n: Image.fromarray(every[n]) for n in numbers}
 
 
-def cut_one(im, session, qi=True):
+def cut_one(im, session, qi=True, near=None):
     """Her alone: the cut-out, plus (qi) the blue Qi touching her, which the cutter fades, with a soft edge; the mark
     and loose sparks gone. The slash's arc is not kept (its pale glow can't be told from the backdrop cleanly): the
     fight draws its own sword trail."""
@@ -78,6 +78,9 @@ def cut_one(im, session, qi=True):
     lab, n = ndimage.label(ndimage.binary_dilation(solid, iterations=2))
     if n > 1:                                                                    # her, and whatever is joined to her
         sizes = ndimage.sum(solid, lab, range(1, n + 1))
+        if near is not None:                                                     # the piece where she was a moment ago:
+            over = ndimage.sum(solid & near, lab, range(1, n + 1))               # a painted blow can be bigger than she is
+            sizes = over if over.max() > 0 else sizes
         a[..., 3] = np.where(lab == 1 + int(np.argmax(sizes)), a[..., 3], 0)
     a[..., 3] = np.where(a[..., 3] < 20, 0, a[..., 3])
     return Image.fromarray(a, "RGBA")

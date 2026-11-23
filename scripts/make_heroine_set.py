@@ -21,9 +21,14 @@ the same spot), so two videos framed differently still give the same woman in th
 its own that holds the whole move (`box`: where it sits on the 1024 x 559 fight canvas, as shares; 1 cell px = 1.5
 canvas px, as every cultivator sheet), and ends on the spot it started from (`home`).
 
-    python -m scripts.make_heroine_set kick.mp4 guard.mp4 fist.mp4 palm.mp4 finger.mp4 [--cache DIR]
+    python -m scripts.make_heroine_set kick=kick.mp4 guard=block.mp4 fist=punch.mp4 palm=palm.mp4 finger=finger.mp4
+    python -m scripts.make_heroine_set brace=brace.mp4 deflect=deflection.mp4 sidestep=sidestep.mp4 [--cache DIR]
 
-Writes art/portraits/fight/hero_female_{kick,guard,fist,palm,finger}.webp and prints the entries for looks.py: the
+(any of the eight, each as name=video). Her brace, deflect and sidestep are from a second set of videos made the same
+way (MOVES below says what she does in each); for those the script also prints `body` (where her figure stands:
+middle, top, bottom, width) and, for the deflect, `tip` (her sleeve's tip, furthest behind her).
+
+Writes art/portraits/fight/hero_female_<name>.webp and prints the entries for looks.py: the
 key frames (`jab`, `windup`, `release`, `back`; the Guard's `first`), and `hand`: where the fist, palm, fingertip or
 foot is at the release, as shares of the fighter's box (the effects fly from there).
 Needs ffmpeg, numpy, Pillow, scipy and rembg.
@@ -34,11 +39,12 @@ import sys
 
 import numpy as np
 from PIL import Image
+from scipy import ndimage
 
 from scripts.make_heroine_attacks import (CANVAS, CELL_SCALE, COLS, OUT, body_x, cut_one, feet, home, solid,
                                           stance_first, video_frames)
 
-ORDER = ("kick", "guard", "fist", "palm", "finger")
+ORDER = ("kick", "guard", "fist", "palm", "finger", "brace", "deflect", "sidestep")
 
 
 def r(a, b, step=3):
@@ -61,27 +67,53 @@ MOVES = {
              "windup": 53, "release": 65, "back": 110, "jab": 53},
     "finger": {"frames": [0, 12, 24] + r(34, 61) + [67, 73, 79, 85, 91, 97, 103, 109, 115, 121] + r(124, 160),
                "windup": 49, "release": 55, "back": 124, "jab": 49},
+    # her three defences (fight.js `braced`, `deflected`, `sidestepped`), from SHOAIB's second set of videos:
+    # brace: she stands (the page starts her from frame 4), sinks into a wide, low stance with her forearm raised
+    # (settled at `release`, where `body` is measured), holds, and rises again (`back` on)
+    "brace": {"frames": [0, 10, 20, 28, 33] + r(36, 51) + [57, 66, 75, 84, 93, 102, 111] + r(117, 144),
+              "jab": 36, "release": 51, "back": 117, "body": 51},
+    # deflect: she turns into the blow (`jab`), meets it with her open palm (`release`, `hand`), carries it up and
+    # round behind her with her sleeve (furthest behind at `sweep`, where `tip` is) and settles (`back` on). The
+    # video paints the blow and a swirl of ink: what isn't joined to her is dropped.
+    "deflect": {"frames": [0, 12, 24, 30] + r(33, 96) + [99, 102] + r(105, 147),
+                "jab": 36, "release": 51, "sweep": 93, "back": 102},
+    # sidestep: played frame for frame at `fps`. She drops (`jab`) into a deep side lunge, under the blow's line at
+    # `release`, holds it, and rises (`back` on). Her slide across the video is taken out: the page gives the ground
+    # (`give`, a share of the scene's width) and takes it back.
+    "sidestep": {"frames": [0, 20, 22] + r(24, 42, 2) + [48, 56, 64, 72, 80, 88] + r(96, 128, 2),
+                 "jab": 24, "release": 40, "back": 96, "in_place": True, "fps": 12, "give": 0.06},
 }
 START = 0                                # the video frame that is her stance picture: each video is placed by it
 
 
 def cut_frames(kind, video, numbers, cache):
     from rembg import new_session
-    out, raw, session = {}, None, None
+    out, raw, session, last = {}, None, None, None
     for n in numbers:
         path = os.path.join(cache, kind, f"{n:03d}.png") if cache else None
+        if n in out:
+            continue
         if path and os.path.exists(path):
-            out[n] = Image.open(path).convert("RGBA")
+            out[n] = last = Image.open(path).convert("RGBA")
             continue
         if raw is None:
             raw = video_frames(video, numbers, (0, 0, 1280, 720))
             session = new_session("isnet-general-use")
-        out[n] = cut_one(raw[n], session, False)
+        near = ndimage.binary_dilation(solid(last), iterations=30) if last is not None else None
+        out[n] = cut_one(raw[n], session, False, near)       # her, where she was in the frame before (not a painted blow)
+        last = out[n]
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             out[n].save(path)
         print(f"  {kind} {n}", flush=True)
     return out
+
+
+def box_of(m, x, y):
+    """[middle, top, bottom, width] of the figure in mask `m` placed at (x, y), as shares of the fight canvas."""
+    ys, xs = np.where(m)
+    return [round(((xs.min() + xs.max()) / 2 + x) / CANVAS[0], 3), round((ys.min() + y) / CANVAS[1], 3),
+            round((ys.max() + y) / CANVAS[1], 3), round((xs.max() - xs.min()) / CANVAS[0], 3)]
 
 
 def reach(m):
@@ -127,12 +159,15 @@ def build(kind, video, ref, cache):
         travel = [v - body_x(cut[START]) for v in sm]
     placed = [(im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS), round(dx - travel[i] * s), round(dy))
               for i, im in enumerate(seq)]
-    boxes = [(b[0] + x, b[1] + y, b[2] + x, b[3] + y) for big, x, y in placed for b in [big.getbbox()]]
+    def tight(big):                                                              # her, not a faint haze the cutter leaves
+        ys, xs = np.where(solid(big))
+        return xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
+    boxes = [(b[0] + x, b[1] + y, b[2] + x, b[3] + y) for big, x, y in placed for b in [tight(big)]]
     X0, Y0 = min(b[0] for b in boxes) - 6, min(b[1] for b in boxes) - 6
     X1, Y1 = max(b[2] for b in boxes) + 6, max(b[3] for b in boxes) + 4
     cw, ch = round((X1 - X0) / CELL_SCALE), round((Y1 - Y0) / CELL_SCALE)
     frames = [big.crop((X0 - x, Y0 - y, X1 - x, Y1 - y)).resize((cw, ch), Image.LANCZOS) for big, x, y in placed]
-    at = {k: mv["frames"].index(mv[k]) for k in ("jab", "windup", "release", "back", "first") if k in mv}
+    at = {k: mv["frames"].index(mv[k]) for k in ("jab", "windup", "release", "sweep", "back", "first") if k in mv}
     frames = home(frames, at.get("back", len(frames) - 10))
     rows = -(-len(frames) // COLS)
     sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
@@ -146,16 +181,33 @@ def build(kind, video, ref, cache):
     entry.update(at)
     if "release" in at:
         big, x, y = placed[at["release"]]
-        hx, hy = reach(solid(big))
+        m = solid(big)
+        if kind == "brace":                                                      # her raised forearm, not her front foot
+            ys = np.where(m.any(1))[0]
+            m = m.copy()
+            m[ys.min() + int((ys.max() - ys.min()) * 0.5):] = False
+        hx, hy = reach(m)
         entry["hand"] = [round((hx + x) / CANVAS[0], 3), round((hy + y) / CANVAS[1], 3)]
         entry["shift"] = 0
+    if kind in ("brace", "deflect", "sidestep"):                                 # the defences: where her body stands
+        big, x, y = placed[mv["frames"].index(mv.get("body", START))]
+        entry["body"] = box_of(solid(big), x, y)
+    if "sweep" in at:                                                            # her sleeve's tip, furthest behind her
+        big, x, y = placed[at["sweep"]]
+        m = solid(big)
+        ys, xs = np.where(m)
+        far = xs <= xs.min() + 5
+        entry["tip"] = [round((xs.min() + x) / CANVAS[0], 3), round((ys[far].mean() + y) / CANVAS[1], 3)]
+    for k in ("fps", "give"):
+        if k in mv:
+            entry[k] = mv[k]
     print(f"{name}: {len(frames)} frames, {COLS} x {rows}, cell {cw} x {ch}")
     return entry
 
 
 def main(videos, cache=None):
     ref = solid(stance_first())
-    print(json.dumps({k: build(k, videos[k], ref, cache) for k in ORDER}, indent=1))
+    print(json.dumps({k: build(k, videos[k], ref, cache) for k in ORDER if k in videos}, indent=1))
 
 
 if __name__ == "__main__":
@@ -165,6 +217,7 @@ if __name__ == "__main__":
         i = args.index("--cache")
         cache = args[i + 1]
         del args[i:i + 2]
-    if len(args) != len(ORDER):
+    videos = dict(a.split("=", 1) for a in args if "=" in a)
+    if not videos or len(videos) != len(args) or set(videos) - set(ORDER):
         sys.exit(__doc__)
-    main(dict(zip(ORDER, args)), cache)
+    main(videos, cache)

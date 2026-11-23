@@ -151,16 +151,14 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  "brace": {"male": {"src": "/art/portraits/fight/hero_male_brace.webp", "frames": 33, "cols": 8, "rows": 5,
                                     "jab": 5, "release": 16, "back": 32, "shift": 0, "hand": [0.49, 0.29],
                                     "body": [0.462, 0.094, 0.902, 0.239]},
-                           # hers is her own, from SHOAIB's video of her (scripts/make_heroine_brace.py): standing,
-                           # hands rising into guard, settled in a wide stance at `release`, both palms up
-                           "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 39, "cols": 8, "rows": 5,
-                                      "jab": 5, "release": 16, "back": 38, "shift": 7 / 320, "hand": [0.6, 0.39],
-                                      "body": [0.523, 0.209, 0.937, 0.232]}},
-                 # "deflect": hers from SHOAIB's video of her (scripts/make_heroine_deflect.py), the movement every
-                 # deflection technique shares (web/technique_fx.py MOVES_FX; fight.js `deflected`): on guard, palm raised
-                 # (0-5); from `jab` she turns into the blow and reaches out to meet it at `release` (where `hand` is); she
-                 # carries it round and aside with a swirl of her sleeve, furthest behind her at `sweep` (where `tip` is);
-                 # from `back` she settles on guard again. No guarding stance: she never stands to take the blow.
+                           # hers (scripts/make_heroine_set.py, from her stance): she sinks into a wide, low stance,
+                           # her left forearm raised (settled at `release`), holds, and rises into her stance again
+                           "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 28, "cols": 8, "rows": 4, "jab": 5, "release": 10, "back": 18, "shift": 0, "hand": [0.604, 0.519], "body": [0.481, 0.259, 0.93, 0.31], "box": [0.3096, 0.1825, 0.334, 0.7603]}},
+                 # "deflect": hers from SHOAIB's video of her (scripts/make_heroine_set.py, from her stance), the movement every
+                 # deflection technique shares (web/technique_fx.py MOVES_FX; fight.js `deflected`): in her stance
+                 # (0-4); from `jab` she turns into the blow and meets it with her open palm at `release` (where `hand`
+                 # is); she carries it up and round behind her with her sleeve in a swirl of grey wind (painted in the
+                 # video), furthest behind her at `sweep` (where `tip` is); from `back` she settles into her stance.
                  # His is his own, from SHOAIB's video of him (scripts/make_hero_deflect.py): on guard, he reaches back
                  # (`jab`), sweeps a blue Qi arc round in front of him to turn the blow (`release`, `hand`), carries it
                  # down and across (`sweep`, `tip`) and settles on guard again (`back` on). The arc is painted in.
@@ -168,14 +166,11 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                                       "jab": 6, "release": 13, "sweep": 17, "back": 20, "shift": 2 / 320,
                                       "hand": [0.663, 0.479], "tip": [0.338, 0.690],
                                       "body": [0.454, 0.059, 0.918, 0.264]},
-                             "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 36, "cols": 8, "rows": 5,
-                                        "jab": 6, "release": 12, "sweep": 23, "back": 26, "shift": 4 / 320,
-                                        "hand": [0.663, 0.330], "tip": [0.329, 0.708],
-                                        "body": [0.520, 0.196, 0.937, 0.233]}},
-                 # "sidestep": hers from SHOAIB's video of her (scripts/make_heroine_sidestep.py), what Drifting
+                             "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 43, "cols": 8, "rows": 6, "jab": 5, "release": 10, "sweep": 24, "back": 27, "shift": 0, "hand": [0.696, 0.411], "tip": [0.297, 0.469], "body": [0.481, 0.195, 0.934, 0.211], "box": [0.2832, 0.1503, 0.5234, 0.7943]}},
+                 # "sidestep": hers from SHOAIB's video of her (scripts/make_heroine_set.py, from her stance), what Drifting
                  # Mist Steps and Cloud-Walking Shadow play when they slip the beast's Break (fight.js `sidestepped`):
-                 # on guard, palm raised (0-2); from `jab` she sweeps her sleeve and drops into a deep side lunge, out
-                 # of the blow's line at `release`; from `back` she rises into the same guard (by 22) and holds it.
+                 # in her stance (0-2); from `jab` she drops into a deep side lunge, under the blow's line at `release`,
+                 # holds it, and from `back` rises into her stance again.
                  # Played frame for frame at the video's own pace (`fps`), never sped up or stretched. `give`: the ground
                  # she gives and takes back, as a share of the scene's width.
                  # His, from SHOAIB's video of him (scripts/make_hero_sidestep.py): from standing he launches (`jab`)
@@ -184,9 +179,7 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  "sidestep": {"male": {"src": "/art/portraits/fight/hero_male_sidestep.webp", "frames": 24, "cols": 8, "rows": 3,
                                        "jab": 5, "release": 8, "back": 17, "fps": 12, "shift": 0, "give": 0,
                                        "hand": [0.637, 0.360], "body": [0.453, 0.059, 0.915, 0.248]},
-                              "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 27, "cols": 8, "rows": 4,
-                                         "jab": 3, "release": 10, "back": 14, "fps": 12, "shift": 47 / 320, "give": 0.06,
-                                         "hand": [0.719, 0.414], "body": [0.521, 0.196, 0.936, 0.243]}}}
+                              "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 36, "cols": 8, "rows": 5, "jab": 3, "release": 11, "back": 19, "fps": 12, "shift": 0, "give": 0.06, "hand": [0.64, 0.621], "body": [0.472, 0.195, 0.934, 0.211], "box": [0.1914, 0.1843, 0.5039, 0.873]}}}
 
 
 # walking about the hunting-ground map (web/static/huntmap.js, docs/hunting.md "The map"): the spec sheet, 8 rows

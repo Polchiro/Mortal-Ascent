@@ -428,7 +428,7 @@ a lair is fought with `bot/hunt.py`.
      them, Ancient Turtle Shell Art's dome (the man painted inside it erased), Immortal Lotus Body's lotus opening
      beneath. Parrying Arm deflects now (below), with both looks. Designs cleaned by `scripts/make_brace_fx.py`. When the beast guards too, the engine logs nothing for you,
      and nothing plays.
-   - `deflect` (`hero_female_deflect.webp`, `scripts/make_heroine_deflect.py`, from SHOAIB's video of her): the
+   - `deflect` (`hero_female_deflect.webp`, `scripts/make_heroine_set.py`, from SHOAIB's video of her, "Her movements" below): the
      deflection, for **both cultivators** (`technique_fx.MOVES_FX`), each with their own frames: hers sweeps her
      sleeve; his (`hero_male_deflect.webp`, `scripts/make_hero_deflect.py`, from SHOAIB's video of him) reaches back
      and sweeps a painted blue Qi arc round in front of him, his robes matched to his sword frames. Told below as she
@@ -446,7 +446,7 @@ a lair is fought with `bot/hunt.py`.
      of jade hands opens behind her and turns it round her; Void Mirror Stance's dark mirror forms before her palm and
      cracks as the blow hits it. Then what really happened, from the log: Deflected, a Break held, HP recovered, a
      counter. Designs cleaned by `scripts/make_deflect_fx.py`.
-   - `sidestep` (`hero_female_sidestep.webp`, `scripts/make_heroine_sidestep.py`, from SHOAIB's video of her): the
+   - `sidestep` (`hero_female_sidestep.webp`, `scripts/make_heroine_set.py`, from SHOAIB's video of her, "Her movements" below): the
      sidestep, for **both cultivators** (his: `hero_male_sidestep.webp`, `scripts/make_hero_sidestep.py`: a low dash
      in place, wrapped in swirls of blue Qi, then his own launch frames played back to rise out of it, as his video
      holds the dash to its end; no ground given, `give` 0). Told below as she plays it. For the two evade techniques, Drifting Mist Steps and Cloud-Walking
@@ -705,6 +705,9 @@ the move made with her free hand or her front leg):
 | `hero_female_fist.webp` | a quick jab, drawn back, a lunging punch | the Fist techniques |
 | `hero_female_palm.webp` | arm drawn back, a lunging open-palm strike | the Palm techniques |
 | `hero_female_finger.webp` | a deep lunge with two fingers thrust out | the Finger techniques |
+| `hero_female_brace.webp` | sinks into a wide, low stance with her forearm raised, holds, rises | the bracing defence techniques (Horse Stance Guard, Golden Bell Cover, ...) |
+| `hero_female_deflect.webp` | meets the blow with her open palm and carries it up and round behind her with her sleeve, in a swirl of grey wind | the deflection techniques (Parrying Arm, Flowing Stream Palm, ...) |
+| `hero_female_sidestep.webp` | drops into a deep side lunge under the blow, holds, rises | Drifting Mist Steps and Cloud-Walking Shadow, when they slip a Break |
 
 How they are kept from jumping: every video's first frame (her stance picture) is laid over her stance sheet's
 first frame, at the scale and place where the two outlines overlap most, and every frame of that video is placed the
@@ -727,8 +730,14 @@ technique's movement and pictures; `data-preload` on the fighter), `fight.js` lo
 opens and keeps them (`keep`), and a turn is not acted out until its movement sheet is in (`whenReady`, at most
 2.5 s). Only how long a turn takes to watch changed: the server has already resolved it.
 
-Her brace, deflect and sidestep are still the earlier videos
-(`scripts/make_heroine_{brace,deflect,sidestep}.py`). Presentation only: timing, damage and rules are unchanged.
+**Her brace, deflect and sidestep** (the last three rows) came in a second set of videos the same evening and are
+built by the same script (`python -m scripts.make_heroine_set brace=... deflect=... sidestep=...`), which also prints
+what their players need: `body` (where her figure stands), and for the deflect `tip` (her sleeve's tip, furthest
+behind her, at `sweep`). The deflect and sidestep videos paint the blow she meets (an ink blast, a white slash): it
+can be bigger than she is, so the cut keeps the piece standing where she was in the frame before, not the biggest
+one; the grey swirl joined to her sleeve in the deflect is kept. In the sidestep video she slides across the frame:
+that is taken out, and the page gives the ground and takes it back as before (`give`). So all eight of her fight
+movements, with her Strike, Break and stance, now start and end in the same stance. Presentation only: timing, damage and rules are unchanged.
 
 ## Her Strike and Break
 
