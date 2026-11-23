@@ -14,7 +14,12 @@
   function at(ms, f) { setTimeout(f, ms); }
   function play(v) { if (!v) return; var p = v.play(); if (p && p.catch) p.catch(function () {}); }
   try { sessionStorage.setItem('ma-forge-revealed', main.dataset.id); } catch (e) {}
-  if (!card.classList.contains('revealing')) { card.classList.add('revealed'); return; }
+  if (!card.classList.contains('revealing')) {
+    card.classList.add('revealed');
+    var a0 = box && box.querySelector('.fraura');           // seen already: the aura still turns around the piece
+    if (a0) { a0.classList.add('on'); play(a0); }
+    return;
+  }
   var after = Array.prototype.filter.call(card.children, function (el) { return el !== main && el.tagName !== 'SCRIPT'; });
   var shown;
   if (box) {
@@ -24,6 +29,8 @@
       box.classList.add('shown');
       Snd(box.classList.contains('grand') ? 'chime' : 'good');
     });
+    var aura = box.querySelector('.fraura');                // Legendary and Mythical: spirit energy turns around it
+    if (aura) at(1000, function () { aura.addEventListener('playing', function () { aura.classList.add('on'); }, {once: true}); play(aura); });
     if (glow && box.classList.contains('grand')) at(1200, function () {
       glow.currentTime = 2.6; glow.addEventListener('playing', function () { glow.classList.add('on'); }, {once: true}); play(glow);
     });

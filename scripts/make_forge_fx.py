@@ -16,12 +16,19 @@ The crops leave out Gemini's sparkle (about 1160, 600).
   REVEAL_FLASH s, when the piece appears; the page tints it to the rarity), static/forge_reveal.js;
 - art/forge/crack.mp4: a glowing bar cracking apart in sparks and smoke, for a failed forge (on black, `screen`);
 - art/forge/embers.mp4: embers drifting up through the whole workshop (on black, `screen`), a seamless loop;
+- art/forge/splash.mp4: water bursting up from the trough at a water quench (with the steam; on black, `screen`);
+- art/forge/aura.mp4: a ring of golden spirit energy turning behind a Legendary or Mythical piece (a loop, tinted);
+- art/forge/rune_circle.mp4 / rune_flash.mp4: a golden magic circle turning behind the piece while you carve (a loop,
+  before its flare), and its flare, played when a clean rune resonates;
+- art/forge/chisel.mp4: a burst of golden sparks where each good stroke is carved (from after the chisel leaves the
+  frame);
 - art/forge/tool_bellows.webp (+ sheets.json "tool" / "bellows"): the bellows alone, one pump from open to squeezed and
   open again (keyed from green; the stand and Gemini's mark in its corner cut away). The page steps it only while you
   pump.
 
     python -m scripts.make_forge_fx DIR [NAME ...]   (DIR holds the videos, named as SHOAIB sent them; NAMEs: only those,
-                                                     of fire steam oil_flare reveal_burst crack embers tool bellows)
+                                                     of fire steam oil_flare reveal_burst crack embers splash aura rune_circle
+                                                     rune_flash chisel tool bellows)
 Needs ffmpeg, numpy and Pillow.
 """
 import glob
@@ -45,8 +52,13 @@ FX = {
     "reveal_burst": ("Reveal_burst", 0, 6, "720:720:280:0", "540:540"),
     "crack": ("Failure_crack", 1.2, 7.2, "960:540:160:160", "640:360"),
     "embers": ("Drifting_embers", 0, 10, "1120:720:0:0", "700:450"),
+    "splash": ("Water_splash", 0.15, 3.65, "960:720:160:0", "480:360"),
+    "aura": ("Spirit_aura", 0, 10, "720:720:280:0", "480:480"),
+    "rune_circle": ("Rune_circle", 0, 4.6, "720:720:280:0", "540:540"),
+    "rune_flash": ("Rune_circle", 4.65, 7.15, "720:720:280:0", "540:540"),
+    "chisel": ("Chisel_spark", 1.3, 3.1, "600:600:340:60", "300:300"),
 }
-LOOPS = ("fire", "embers")
+LOOPS = ("fire", "embers", "aura", "rune_circle")
 REVEAL_FLASH, CRACK_AT = 1.0, 0.97                  # seconds into reveal_burst.mp4 / crack.mp4
 # the bellows: one pump (open at BELLOWS_FROM, squeezed halfway, open again at BELLOWS_TO), its crop in the video, and
 # the corner where a stand and Gemini's mark sit (cut away); NOZZLE: the nozzle's tip in the crop's pixels

@@ -58,15 +58,22 @@
         <div class="fqsheen" style="-webkit-mask-image: url({{ scene.blank }}); mask-image: url({{ scene.blank }})"></div>
         <video class="fqfx fqsteam" src="/art/forge/steam.mp4" muted playsinline preload="auto"></video>
         <video class="fqfx fqflare" src="/art/forge/oil_flare.mp4" muted playsinline preload="auto"></video>
+        <video class="fqfx fqsplash" src="/art/forge/splash.mp4" muted playsinline preload="auto"></video>
       </div>
       <canvas class="fover" width="960" height="540"></canvas>
       </div>
       <video class="fembers" src="/art/forge/embers.mp4" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video>
       <div class="fplate" id="fplate">
+        <div class="fcircle" aria-hidden="true">
+          <video class="fruneloop" src="/art/forge/rune_circle.mp4" muted loop playsinline preload="auto"></video>
+          <video class="frunefl" src="/art/forge/rune_flash.mp4" muted playsinline preload="auto"></video>
+        </div>
         <img class="fplateblank" src="{{ scene.blank }}" alt="">
         <canvas class="frune" width="720" height="380"></canvas>
         <video class="fruneglow" src="/art/forge/rune.mp4" muted playsinline preload="auto"></video>
       </div>
+      <video class="fchisel" src="/art/forge/chisel.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+      <video class="fchisel" src="/art/forge/chisel.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
       <canvas class="ffx" width="960" height="540" aria-hidden="true"></canvas>
       </div>
       <div class="fcombo" id="fcombo" aria-live="polite"></div>
@@ -130,6 +137,7 @@
     <div class="freveal{% if g.grand %} grand{% endif %}" id="freveal" data-id="{{ g.rid }}" data-rarity="{{ g.rarity }}" aria-hidden="true">
       <div class="frays"></div>
       <video class="frburst" src="/art/forge/reveal_burst.mp4" muted playsinline preload="auto"></video>
+      {% if g.grand %}<video class="fraura" src="/art/forge/aura.mp4" muted loop playsinline preload="auto"></video>{% endif %}
       <video class="frglow" src="/art/forge/rune.mp4" muted playsinline preload="auto"></video>
       <img class="fritem" src="{{ g.picture or g.art }}" alt="">
     </div>

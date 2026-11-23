@@ -842,6 +842,13 @@ glowing bar cracking apart in sparks and smoke (`art/forge/crack.mp4`; the page 
 broken (its last frame, `crack_end.jpg`, is the poster a reload shows). Each timeline starts when its video really plays,
 with a fallback if it never does. Once per forge (sessionStorage); reduced motion shows the finished result.
 
+**The third set** (`scripts/make_forge_fx.py`, all on black, `screen`): at a water quench his splash bursts from the
+trough's surface and the steam rolls up after it (`splash.mp4`); while you carve, his golden magic circle turns engraved
+in the stone under the piece (`rune_circle.mp4`, a loop cut from before its flare) and flares when a clean rune
+resonates (`rune_flash.mp4`, the flare itself); a burst of golden sparks (`chisel.mp4`, cut from after the chisel leaves
+the frame) flies where each good stroke is carved; and a Legendary or Mythical piece appears with a ring of spirit energy
+turning around it (`aura.mp4`, a loop tinted like its burst, still turning after a reload).
+
 **The second set of videos** (`scripts/make_forge_fx.py`): SHOAIB's pumping bellows (`tool_bellows.webp`, one pump keyed
 from his paler green screen with lower thresholds, the stand in its corner cut away) stand beside the furnace with the
 nozzle at the coal bed, and the painted ones on the wall are covered by the wall behind them. They pump only while you
