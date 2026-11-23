@@ -250,7 +250,7 @@
   };
 
   /* Recorded sounds (art/fx/sounds/, cut from SHOAIB's animation videos by scripts/make_fight_sound.py). sounds.json
-     lists them: {"swing": ["swing.mp3"], "hit:big": ["hit_big.mp3", "hit_big2.mp3"]}. A sound that has a recording
+     lists them: {"swing": [{"file": "swing.mp3", "lead": 0.16}], "hit:big": [...], "roar@wolf": [...]}. A sound that has a recording
      plays it (one of its takes, not the same twice running) instead of the one made in code; "hit:big" is used for
      a big hit if it is there, else "hit". They load when the page opens; until one is ready the made one plays. */
   var BASE = '/art/fx/sounds/', takes = {}, bufs = {}, lastTake = {};
@@ -260,7 +260,8 @@
   function loadTakes() {                                      // decoding needs the context, which needs a first click
     if (!ctx) return;
     Object.keys(takes).forEach(function (k) {
-      takes[k].forEach(function (file) {
+      takes[k].forEach(function (t) {
+        var file = fileOf(t);
         if (file in bufs) return;
         bufs[file] = null;
         fetch(BASE + file).then(function (r) { return r.arrayBuffer(); })
@@ -269,15 +270,32 @@
       });
     });
   }
-  function recorded(name, arg, at) {
-    var key = arg !== undefined && arg !== null && arg !== '' && takes[name + ':' + arg] ? name + ':' + arg : name;
-    var ready = (takes[key] || []).filter(function (f) { return bufs[f]; });
+  /* which takes answer this sound: the narrowest listed. For a beast's voice, its body's own first
+     ("roar:big@wolf", "roar@wolf"); `as` narrows a technique to its movement ("cast:kick"); then "hit:big"; then
+     "hit". */
+  function takesFor(name, arg, opts) {
+    var body = window.FightSound.body, tries = [];
+    var narrow = opts && opts.as ? opts.as : (arg !== undefined && arg !== null && arg !== '' ? arg : null);
+    if (body) { if (narrow !== null) tries.push(name + ':' + narrow + '@' + body); tries.push(name + '@' + body); }
+    if (narrow !== null) tries.push(name + ':' + narrow);
+    tries.push(name);
+    for (var i = 0; i < tries.length; i++) if (takes[tries[i]]) return tries[i];
+    return null;
+  }
+  function fileOf(t) { return typeof t === 'string' ? t : t.file; }
+  function recorded(name, arg, at, opts) {
+    var key = takesFor(name, arg, opts);
+    if (!key) return false;
+    var ready = takes[key].filter(function (t) { return bufs[fileOf(t)]; });
     if (!ready.length) return false;
     var pick = ready[Math.floor(Math.random() * ready.length)];
-    if (ready.length > 1 && pick === lastTake[key]) pick = ready[(ready.indexOf(pick) + 1) % ready.length];
-    lastTake[key] = pick;
+    if (ready.length > 1 && fileOf(pick) === lastTake[key]) pick = ready[(ready.indexOf(pick) + 1) % ready.length];
+    lastTake[key] = fileOf(pick);
+    /* `land` (ms): the blow lands that long from now, and the recording's own loudest moment is `lead` seconds
+       in: start it so the two meet */
+    if (opts && opts.land) at += Math.max(0, opts.land / 1000 - (pick.lead || 0));
     var src = ctx.createBufferSource(), g = ctx.createGain(), send = ctx.createGain();
-    src.buffer = bufs[pick]; g.gain.value = 0.9; send.gain.value = 0.12;
+    src.buffer = bufs[fileOf(pick)]; g.gain.value = 0.9; send.gain.value = 0.12;
     src.connect(g); g.connect(master); g.connect(send); send.connect(room);
     src.start(at);
     return true;
@@ -286,13 +304,14 @@
 
   window.FightSound = {
     /* which sounds have a recording ready (for checks) */
-    recorded: function () { return Object.keys(takes).filter(function (k) { return takes[k].some(function (f) { return bufs[f]; }); }); },
+    recorded: function () { return Object.keys(takes).filter(function (k) { return takes[k].some(function (t) { return bufs[fileOf(t)]; }); }); },
+    body: '',                                                 // the beast's body type (fight.js sets it): whose voice
     names: Object.keys(S),
     /* play a sound now, or `delay` ms from now */
-    play: function (name, arg, delay) {
+    play: function (name, arg, delay, opts) {
       if (!S[name] || !on || !ac(false) || ctx.state !== 'running') return;
       var at = ctx.currentTime + (delay || 0) / 1000;
-      try { if (recorded(name, arg, at)) return; } catch (e) {}
+      try { if (recorded(name, arg, at, opts)) return; } catch (e) {}
       K = LEVEL[name] || 1;
       try { S[name](at, arg); } catch (e) {}
       K = 1;

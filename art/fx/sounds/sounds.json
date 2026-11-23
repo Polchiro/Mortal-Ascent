@@ -1,1 +1,152 @@
-{}
+{
+ "block": [
+  {
+   "file": "block.mp3",
+   "lead": 0.08
+  }
+ ],
+ "boom": [
+  {
+   "file": "boom.mp3",
+   "lead": 0.14
+  }
+ ],
+ "cast:finger": [
+  {
+   "file": "cast_finger.mp3",
+   "lead": 0.1
+  }
+ ],
+ "cast:fist": [
+  {
+   "file": "cast_fist.mp3",
+   "lead": 0.26
+  }
+ ],
+ "cast:kick": [
+  {
+   "file": "cast_kick.mp3",
+   "lead": 0.22
+  }
+ ],
+ "cast:palm": [
+  {
+   "file": "cast_palm.mp3",
+   "lead": 0.36
+  }
+ ],
+ "death@wolf": [
+  {
+   "file": "death_wolf.mp3",
+   "lead": 0.34
+  }
+ ],
+ "dodge": [
+  {
+   "file": "dodge.mp3",
+   "lead": 0.1
+  }
+ ],
+ "gather": [
+  {
+   "file": "gather.mp3",
+   "lead": 0.4
+  }
+ ],
+ "guardup": [
+  {
+   "file": "guardup.mp3",
+   "lead": 0.16
+  }
+ ],
+ "hit": [
+  {
+   "file": "hit_punch.mp3",
+   "lead": 0.06
+  },
+  {
+   "file": "hit_palm.mp3",
+   "lead": 0.08
+  },
+  {
+   "file": "hit_finger.mp3",
+   "lead": 0.04
+  }
+ ],
+ "hit@wolf": [
+  {
+   "file": "hit_wolf.mp3",
+   "lead": 0.1
+  },
+  {
+   "file": "hit_wolf2.mp3",
+   "lead": 0.18
+  }
+ ],
+ "hurt": [
+  {
+   "file": "hurt.mp3",
+   "lead": 0.04
+  }
+ ],
+ "lunge@wolf": [
+  {
+   "file": "lunge_wolf.mp3",
+   "lead": 0.34
+  }
+ ],
+ "miss": [
+  {
+   "file": "miss.mp3",
+   "lead": 0.12
+  }
+ ],
+ "roar:big@ape": [
+  {
+   "file": "roar_quadruped_big.mp3",
+   "lead": 1.76
+  }
+ ],
+ "roar:big@cat": [
+  {
+   "file": "roar_quadruped_big.mp3",
+   "lead": 1.76
+  }
+ ],
+ "roar:big@wolf": [
+  {
+   "file": "roar_quadruped_big.mp3",
+   "lead": 1.76
+  }
+ ],
+ "roar@ape": [
+  {
+   "file": "roar_quadruped.mp3",
+   "lead": 0.84
+  }
+ ],
+ "roar@cat": [
+  {
+   "file": "roar_quadruped.mp3",
+   "lead": 0.84
+  }
+ ],
+ "roar@wolf": [
+  {
+   "file": "roar_quadruped.mp3",
+   "lead": 0.84
+  }
+ ],
+ "swing:break": [
+  {
+   "file": "swing_break.mp3",
+   "lead": 0.36
+  }
+ ],
+ "swing:strike": [
+  {
+   "file": "swing_strike.mp3",
+   "lead": 0.18
+  }
+ ]
+}

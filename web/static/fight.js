@@ -2,7 +2,7 @@
 (function () {
   var playing = null;
   /* sound (web/static/fight_sound.js): told what just happened on screen; silent if it isn't there */
-  function fs(name, arg, delay) { var F = window.FightSound; if (F) F.play(name, arg, delay); }
+  function fs(name, arg, delay, opts) { var F = window.FightSound; if (F) F.play(name, arg, delay, opts); }
 
   /* ── The combat action state ────────────────────────────────────────────────────────────────────────
      One place decides whether a move may be sent (docs/web.md, "One action per turn"). The phases have the
@@ -1957,6 +1957,7 @@
       step.phase = phase; if (cues) step.cues = (step.cues || []).concat(cues); steps.push(step);
     }
     var castTier = cast ? (TIER[cast.grade] || 0) : 0;
+    if (window.FightSound) window.FightSound.body = beastBox.dataset.body || '';         // whose voice the beast's sounds are
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
     var inside = cast && cast.fx && (cast.fx.motion === 'brace' || cast.fx.motion === 'deflect');
     if (inside) {
@@ -1965,7 +1966,7 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '']]); kinds.enemy = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
       else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting', [[60, 'lunge']]); kinds.enemy = 1; }
@@ -1973,7 +1974,7 @@
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier]]); kinds.me = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;
@@ -2013,7 +2014,7 @@
         Combat.set(steps[i].phase);                             // your action is done: now the beast's (or the other way round)
       }
       else {
-        if (step.cues) step.cues.forEach(function (c) { if (!c[3] && t >= c[0]) { c[3] = 1; fs(c[1], c[2]); } });
+        if (step.cues) step.cues.forEach(function (c) { if (!c[3] && t >= c[0]) { c[3] = 1; fs(c[1], c[2], 0, c[4]); } });
         step.render(Math.min(t, step.end));
       }
       requestAnimationFrame(frame);

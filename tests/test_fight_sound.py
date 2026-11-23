@@ -25,9 +25,14 @@ def test_the_list_the_page_reads_is_there_and_names_real_sounds():
     with open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8") as f:
         data = json.load(f)
     for name, takes in data.items():
-        assert name.split(":")[0] in mfs.NAMES, name
+        assert name.split("@")[0].split(":")[0] in mfs.NAMES, name
+        if "@" in name:
+            import beasts
+            assert name.split("@")[1] in beasts.BODY_TYPES, name
         for t in takes:
-            assert os.path.exists(os.path.join(ROOT, "art", "fx", "sounds", t)), t
+            path = os.path.join(ROOT, "art", "fx", "sounds", t["file"])
+            assert os.path.exists(path) and 2_000 < os.path.getsize(path) < 120_000, t   # there, and small
+            assert 0 <= t["lead"] < 4
     js = open(os.path.join(ROOT, "web", "static", "fight_sound.js"), encoding="utf-8").read()
     assert "/art/fx/sounds/" in js and "sounds.json" in js
     for name in mfs.NAMES:                                                # the script and the page agree on the names
@@ -49,7 +54,8 @@ def test_a_sound_is_found_cut_and_listed(tmp_path, monkeypatch):
     mfs.cut(video, "hit_big2", 1.1, 1.4)
     data = mfs.add("hit:big", "hit_big2")
     mfs.add("hit:big", "hit_big2")                                        # twice: listed once
-    assert data == {"hit:big": ["hit_big.mp3", "hit_big2.mp3"]} == mfs.listed()
+    assert data == mfs.listed() and [t["file"] for t in data["hit:big"]] == ["hit_big.mp3", "hit_big2.mp3"]
+    assert all(0 <= t["lead"] < 0.5 for t in data["hit:big"])
 
 
 @needs_ffmpeg

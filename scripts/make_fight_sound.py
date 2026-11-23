@@ -14,6 +14,16 @@ heal stun death victory defeat. It can be narrowed with a colon, as the fight as
 "hit:big", "roar:big" (the plain name is used when there is no narrower one). Giving the same NAME again with
 another --as KEY adds a second take: the fight picks one of a sound's takes at random, so it doesn't repeat itself.
 
+A beast's voice can be kept to its body type (beasts.BODY_TYPES) with an @: "roar@wolf", "death@wolf", "hit@wolf"
+(the yelp of a wolf that is struck). Other beasts keep the sound made in code until they have their own. A technique
+is narrowed by its movement (web/technique_fx.py): "cast:fist", "cast:palm", "cast:kick", "cast:finger".
+
+Each take's `lead` is written beside it: how many seconds into the cut its loudest moment is. The fight uses it to
+make a technique's recording land on the blow.
+
+--fade S fades the end out over S seconds (for a long sound cut short). --also NAME ... lists the same take under
+more names (one roar for several bodies).
+
 --gain (dB) makes one sound louder or quieter than the rest after the evening-out.
 """
 import argparse
@@ -70,7 +80,7 @@ def peak(video, start, end):
     return float(m.group(1)) if m else None
 
 
-def cut(video, key, start=None, end=None, gain=0.0):
+def cut(video, key, start=None, end=None, gain=0.0, fade=None):
     """Write art/fx/sounds/<key>.mp3 from the video's sound between start and end (seconds). Its length."""
     os.makedirs(OUT, exist_ok=True)
     out = os.path.join(OUT, key + ".mp3")
@@ -78,7 +88,7 @@ def cut(video, key, start=None, end=None, gain=0.0):
     if length <= 0.03:
         raise SystemExit("That part is empty: check --from and --to.")
     chain = [f"loudnorm=I={LOUDNESS}:TP=-1.5:LRA=11", f"volume={gain}dB",
-             f"afade=t=in:d={FADE}", f"afade=t=out:st={max(0, length - FADE * 4):.3f}:d={FADE * 4}"]
+             f"afade=t=in:d={FADE}", f"afade=t=out:st={max(0, length - (fade or FADE * 4)):.3f}:d={fade or FADE * 4}"]
     cmd = ["ffmpeg", "-v", "error", "-y"]
     if start is not None:
         cmd += ["-ss", str(start)]
@@ -97,12 +107,26 @@ def listed():
         return {}
 
 
+def lead(path):
+    """Seconds from the start of a sound file to its loudest moment (20 ms steps)."""
+    import array
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", path, "-ac", "1", "-ar", "8000", "-f", "s16le", "-"],
+                         capture_output=True, check=True).stdout
+    x = array.array("h", raw[:len(raw) // 2 * 2])
+    step, best, at = 160, -1, 0
+    for i in range(0, max(1, len(x) - step), step):
+        e = sum(v * v for v in x[i:i + step])
+        if e > best:
+            best, at = e, i
+    return round(at / 8000, 2)
+
+
 def add(name, key):
-    """List <key>.mp3 as a take of `name` in sounds.json (once)."""
+    """List <key>.mp3 as a take of `name` in sounds.json (once; cut again, its lead is measured again)."""
     data = listed()
-    takes = data.setdefault(name, [])
-    if key + ".mp3" not in takes:
-        takes.append(key + ".mp3")
+    takes = [t for t in data.get(name, []) if (t if isinstance(t, str) else t["file"]) != key + ".mp3"]
+    takes.append({"file": key + ".mp3", "lead": lead(os.path.join(OUT, key + ".mp3"))})
+    data[name] = takes
     with open(LIST, "w", encoding="utf-8") as f:
         json.dump(dict(sorted(data.items())), f, indent=1)
         f.write("\n")
@@ -118,6 +142,8 @@ def main():
     ap.add_argument("--to", dest="end", type=float)
     ap.add_argument("--gain", type=float, default=0.0)
     ap.add_argument("--as", dest="key")
+    ap.add_argument("--fade", type=float, help="seconds the end fades out over (a long roar cut short: 0.5)")
+    ap.add_argument("--also", nargs="*", default=[], help="more names this same take answers (roar@cat roar@ape)")
     a = ap.parse_args()
     video = a.video or a.name
     if not has_sound(video):
@@ -126,12 +152,13 @@ def main():
         for s, e in loud_parts(video):
             print(f"  {s:6.2f} - {e:6.2f} s   peak {peak(video, s, e)} dB")
         return
-    base = a.name.split(":")[0]
+    base = a.name.split("@")[0].split(":")[0]
     if base not in NAMES:
         raise SystemExit(f"'{base}' is not one of the fight's sounds: {', '.join(NAMES)}")
-    key = a.key or a.name.replace(":", "_")
-    length = cut(video, key, a.start, a.end, a.gain)
-    add(a.name, key)
+    key = a.key or a.name.replace(":", "_").replace("@", "_")
+    length = cut(video, key, a.start, a.end, a.gain, a.fade)
+    for name in [a.name] + a.also:
+        add(name, key)
     print(f"art/fx/sounds/{key}.mp3 ({length} s) is now the fight's '{a.name}'.")
 
 

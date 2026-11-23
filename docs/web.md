@@ -261,6 +261,24 @@ A sound listed there is played instead of the one made in code; one not listed s
 be narrowed (`swing:break`, `hit:big`, `roar:big`), and a second take of the same sound (`--as swing2`) makes the
 fight vary between them.
 
+What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos):
+
+| Sound | From |
+|---|---|
+| Strike's swing | her sword slash video |
+| Break: Qi gathering, the swing, the ground's boom | her Break video |
+| Guard raised, a blow blocked | her block video |
+| Your blow landing (three takes) | her punch, palm and finger videos |
+| You are hit; a miss; a dodge | her side kick and punch videos |
+| Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
+| A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
+| A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
+
+Still made in code: the move tick, heal, stun, victory and defeat, the defense techniques (brace, deflect,
+sidestep), and the voices of birds, serpents, turtles, insects and dragons, until they have videos with sound.
+A beast's voice is kept to its body type (`beasts.BODY_TYPES`, sent to the page as `data-body`) with an `@`:
+`roar@wolf`. `--also` lists one take under several names.
+
 In a duel both fighters' moves sound together, a moment apart. The sounds follow the map's settings (the gear on
 the map: Sound On / Off and the volume), and start with your first click or key press on the page.
 
