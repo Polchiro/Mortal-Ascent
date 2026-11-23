@@ -67,7 +67,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Herbalist Lan | the herb shop | `/town/visit/alchemist` → `/alchemy` (the only way in: alchemy is locked to her) |
 | Silk Merchant | the silk stalls | `/appearance` |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
-| Martial Master | the training yard, in front of the dummies | not open on the website yet: says so |
+| Martial Master | the training yard, in front of the dummies | The training yard (`/training`, docs/technique.md "On the website"): sparring and mastery trials |
 | Arena Keeper | in front of the arena, on its gate side | Duels at the Arena (`/arena`, docs/pvp.md) |
 | Stone Stele | the west side of the plaza (a thing, not a person) | The rankings (`/rankings`, `web/rankings.py`): realm, Lotus Coins, Moon Pearls and duels won |
 

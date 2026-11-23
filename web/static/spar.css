@@ -1,0 +1,137 @@
+/* The Martial Master's training yard (/training) and the spar's fight screen (/spar): web/templates/training.html,
+   spar.html, web/static/spar.js. The fight screen itself is style.css's .battle / .duelfight; only what the spar adds
+   is here. Presentation only: nothing here decides anything. */
+
+/* ── the yard ───────────────────────────────────────────────────────── */
+.yard .yardhead{display:flex;gap:18px;align-items:center}
+.yard .yardmaster{flex:none;height:150px;width:auto;filter:drop-shadow(0 8px 12px rgba(0,0,0,.6))}
+.yard .yardrules{margin:8px 0 6px;padding-left:20px;color:var(--cream);font-size:14.5px;line-height:1.55}
+.yard .hbtn:disabled{opacity:.4;cursor:default;filter:grayscale(.6)}
+.yard .ytech{align-items:center}
+.yard .ytech img{flex:none;border-radius:10px;background:radial-gradient(circle,rgba(232,194,122,.25),transparent 70%)}
+.yard .ytbody{flex:1;min-width:0}
+.ybar{height:10px;margin:6px 0 4px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.ybar div{height:100%;border-radius:999px;background:linear-gradient(90deg,#3FA884,#8BE3BF);transition:width 1.2s ease-out}
+.ybar.full div{background:linear-gradient(90deg,#C9973F,#FFE7A8);box-shadow:0 0 10px rgba(255,220,140,.8)}
+.yard .ytrial{border-color:#FFE7A8;background:linear-gradient(180deg,#FFE7A8,#C9973F);color:#2A1A04}
+
+/* ── the fight: you ─────────────────────────────────────────────────── */
+.sparfight .fighter .ssheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}
+.sparfight .fighter[data-pose=sheet] .ssheet.on{visibility:visible}
+.sparfight .fighter{transition:none}
+.sparfight .fighter.me{z-index:2}
+.sparfight .fighter .sfx,.sparfight .bscene>.sfx{position:absolute;pointer-events:none;z-index:3}
+.sparfight #stimed{color:var(--gold2,#FFE7A8)}
+
+/* ── the fight: the Master (a still painting for now; spar.js moves him) ── */
+.smaster{position:absolute;right:16%;bottom:5%;width:5.9%;aspect-ratio:184/507;z-index:1}
+.smbody{position:absolute;inset:0;transform-origin:50% 100%;will-change:transform}
+.smbody img{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
+.smaster::before{content:"";position:absolute;left:-30%;width:160%;bottom:-2%;height:6%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,0) 70%)}
+.smbody.breathe{animation:smbreathe 3.6s ease-in-out infinite}
+@keyframes smbreathe{50%{transform:scaleY(1.012) translateY(-.3%)}}
+.smbody.hit img{animation:smhit .42s ease-out}
+@keyframes smhit{0%{filter:brightness(2.4) saturate(.4) drop-shadow(0 0 14px #fff)}100%{filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}}
+.smbody.down img{filter:grayscale(.8) brightness(.6)}
+/* his Guard: an arc of pale Qi in front of him; his Break: Qi gathering at his feet */
+.smshield{position:absolute;left:-58%;top:6%;width:120%;height:88%;border-radius:50%;opacity:0;
+  border-left:5px solid rgba(190,225,255,.95);box-shadow:-10px 0 26px rgba(120,190,255,.75),inset 12px 0 22px -8px rgba(120,190,255,.55)}
+.smbody.guarding .smshield{animation:smshield 1.25s ease-out}
+@keyframes smshield{0%{opacity:0;transform:scaleX(.6)}22%{opacity:1;transform:none}70%{opacity:.9}100%{opacity:0}}
+.smqi{position:absolute;left:-45%;bottom:-3%;width:190%;height:16%;border-radius:50%;opacity:0;
+  border:3px solid rgba(255,170,80,.9);box-shadow:0 0 22px rgba(255,140,50,.85),inset 0 0 18px rgba(255,170,80,.6)}
+.smbody.gathering .smqi{animation:smqi .75s ease-in}
+@keyframes smqi{0%{opacity:0;transform:scale(1.5)}60%{opacity:1}100%{opacity:0;transform:scale(.35)}}
+.smbody.opened img{animation:smopen 1s ease-out}
+@keyframes smopen{0%,60%{filter:drop-shadow(0 0 18px #FFE08A) brightness(1.25)}100%{filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}}
+.smaster .dmg{left:50%;top:-8%}
+.smaster .dsay{top:-12%}
+
+/* his tell: a line of brushwork above him (only on exchanges where the server gives one) */
+.stell{position:absolute;right:-60%;bottom:112%;width:max-content;max-width:min(330px,34vw);margin:0;padding:8px 14px;border-radius:4px;
+  font:italic 600 14.5px/1.4 Georgia,serif;color:#2B2015;background:linear-gradient(180deg,#F1E3C2,#DDC79A);
+  border:1px solid #8A6B32;box-shadow:0 6px 18px rgba(0,0,0,.55);text-align:left}
+.stell::after{content:"";position:absolute;right:26%;top:100%;border:8px solid transparent;border-top-color:#DDC79A}
+.stell.blank{background:rgba(14,18,28,.78);color:var(--mist);border-color:rgba(232,194,122,.3);font-weight:500}
+.stell.blank::after{border-top-color:rgba(14,18,28,.78)}
+.stell:empty,.sparfight[data-phase=finished] .stell,.sparfight.acting .stell{display:none}
+.stell.go{animation:stell .5s ease-out}
+@keyframes stell{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.sparfight .dtoast{top:11%;font-size:14px;padding:7px 16px}
+.sparfight .bme .bstats{display:block}
+.sparfight .bme .brealm{white-space:nowrap}
+
+/* ── the fifteen exchanges: a bead each, with his move once it is played ── */
+.sbeads{position:absolute;left:50%;top:1.5%;transform:translateX(-50%);z-index:3;display:flex;gap:6px;margin:0;padding:6px 12px;list-style:none;
+  border-radius:999px;background:rgba(10,12,20,.72);border:1px solid rgba(232,194,122,.3)}
+.sbeads li{position:relative;width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);
+  display:grid;place-items:center}
+.sbeads li img{width:20px;height:20px;border-radius:50%}
+.sbeads li.win{border-color:#FFD777;box-shadow:0 0 8px rgba(255,215,119,.7)}
+.sbeads li.lose{border-color:#E45B4C;box-shadow:0 0 8px rgba(228,91,76,.6)}
+.sbeads li.tie{border-color:#9AA3B5}
+.sbeads li.now{border-color:#9FD0FF;animation:sbead 1.2s ease-in-out infinite alternate}
+.sbeads li.timed::after{content:"";position:absolute;right:-4px;top:-4px;width:9px;height:9px;border-radius:50%;background:#FFE08A;box-shadow:0 0 6px #FFE08A}
+.sbeads li.fresh{animation:sbeadin .5s ease-out}
+@keyframes sbead{to{box-shadow:0 0 10px rgba(159,208,255,.9)}}
+@keyframes sbeadin{from{transform:scale(1.7)}to{transform:none}}
+
+/* ── what just happened: one word, and the perfect-timing seal ───────── */
+.sword{position:absolute;left:50%;top:21%;transform:translateX(-50%);z-index:3;margin:0;opacity:0;white-space:nowrap;pointer-events:none;
+  font:800 italic clamp(26px,4.4vw,58px)/1 Cinzel,Georgia,serif;color:#E8F1FF;text-shadow:0 0 18px rgba(127,190,255,.9),0 3px 5px #000}
+.sword.win{color:#FFE7A8;text-shadow:0 0 20px rgba(255,200,90,.95),0 3px 5px #000}
+.sword.lose{color:#FF9A8E;text-shadow:0 0 20px rgba(228,91,76,.9),0 3px 5px #000}
+.sword.go{animation:sword 1.5s ease-out forwards}
+@keyframes sword{0%{opacity:0;transform:translateX(-50%) scale(1.7)}14%{opacity:1;transform:translateX(-50%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-14px)}}
+.sperfect{position:absolute;left:50%;top:34%;transform:translateX(-50%);z-index:3;margin:0;padding:8px 20px;opacity:0;white-space:nowrap;pointer-events:none;
+  border-radius:999px;font:700 clamp(14px,1.7vw,20px) Cinzel,Georgia,serif;color:#2A1A04;background:linear-gradient(180deg,#FFF1C4,#E3B552);
+  box-shadow:0 0 0 2px rgba(255,241,196,.5),0 0 34px rgba(255,205,96,.95)}
+.sperfect.go{animation:sperfect 2.1s ease-out forwards}
+@keyframes sperfect{0%{opacity:0;transform:translateX(-50%) scale(.5)}12%{opacity:1;transform:translateX(-50%) scale(1.12)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+.sfx.sseal{width:26%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:4px solid #FFE08A;
+  box-shadow:0 0 30px #FFD777,inset 0 0 26px rgba(255,215,119,.7);animation:sseal .9s ease-out forwards}
+@keyframes sseal{from{opacity:1;transform:translate(-50%,-50%) scale(.2) rotate(0)}to{opacity:0;transform:translate(-50%,-50%) scale(1.25) rotate(120deg)}}
+.sfx.sring{width:9%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid rgba(200,230,255,.95);
+  box-shadow:0 0 18px rgba(140,200,255,.9);animation:sseal .5s ease-out forwards}
+.sfx.sspark{width:12%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,#fff 0,rgba(255,231,168,.9) 22%,rgba(255,170,60,.5) 46%,transparent 70%);animation:sspark .42s ease-out forwards}
+@keyframes sspark{from{opacity:1;transform:translate(-50%,-50%) scale(.3)}to{opacity:0;transform:translate(-50%,-50%) scale(1.5)}}
+.sfx.spic{transform:translate(-50%,-50%);object-fit:contain}
+.sfx.sglow{width:20%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(255,224,138,.55),transparent 68%);animation:sspark 1s ease-out forwards}
+
+/* the opening: you just Guarded his Strike, so your attack technique now is perfect timing */
+.sparfight .techmenu.opening>summary,.sparfight .techbtn.opening{border-color:#FFE08A;box-shadow:0 0 0 2px rgba(255,224,138,.5),0 0 22px rgba(255,205,96,.9);animation:sopen 1s ease-in-out infinite alternate}
+@keyframes sopen{to{box-shadow:0 0 0 2px rgba(255,224,138,.8),0 0 34px rgba(255,205,96,1)}}
+
+/* ── the result ─────────────────────────────────────────────────────── */
+.sresult{gap:8px;padding:16px;background:rgba(6,8,14,.82);overflow:auto}
+.sresult .rsub{transform:none}
+.sgains{display:grid;gap:10px;width:min(460px,92%);margin-top:8px}
+.sgain{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;text-align:left;
+  background:rgba(14,18,28,.9);border:1px solid rgba(232,194,122,.35)}
+.sgain img{width:48px;height:48px;border-radius:8px}
+.sgain b{font-family:Cinzel,Georgia,serif;color:#F4ECDA}.sgain em{font-style:normal;color:#8BE3BF;font-weight:700;margin-left:8px}
+.sgain small{display:block;color:var(--mist);font-size:12.5px}
+.snotes{margin:6px 0 0;padding:0;list-style:none;max-width:min(520px,92%);color:var(--cream);font-size:14px;line-height:1.5}
+.snotes li.big{color:#FFE7A8;font:700 17px Cinzel,Georgia,serif}
+.sresult .dresbtns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+
+.sparfight.trial .benemy{border-color:rgba(255,215,119,.6)}
+.sparfight.trial .ename{color:#FFE7A8}
+
+@media (max-width:900px){
+  .sparfight .bbar{position:relative}.sparfight .techmenu{position:static}
+  .sparfight .techpop{left:50%;right:auto;transform:translateX(-50%)}
+  .smaster{width:8.2%;right:12%}
+  .sbeads{gap:3px;padding:4px 8px}.sbeads li{width:17px;height:17px;border-width:1.5px}.sbeads li img{width:13px;height:13px}
+  .stell{font-size:12.5px;max-width:46vw;right:-40%}
+}
+@media (max-width:560px){
+  .sword{top:33%}.sperfect{top:44%}
+  .smaster{width:15%;right:6%}
+  .sbeads{gap:2px;padding:3px 6px}.sbeads li{width:14px;height:14px}.sbeads li img{width:10px;height:10px}
+  .stell{right:0;max-width:60vw;font-size:12px;padding:6px 10px}
+}
+@media (prefers-reduced-motion:reduce){.smbody.breathe,.sbeads li.now{animation:none}}

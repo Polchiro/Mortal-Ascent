@@ -7,7 +7,9 @@ website, and later the other way round.
 **Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy**, **gathering**
 and **exploring (hunting alone or in parties of up to 4, docs/hunting.md) with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-**Next:** using items (Open, Take) from the inventory, training, and team hunts.
+Also built: **sparring with the Martial Master and mastery trials** (`/training`, `/spar`: "The training yard" below).
+
+**Next:** using items (Open, Take) from the inventory, Practice and Train in the training yard.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -308,6 +310,13 @@ by `scripts/make_env_assets.py` (`art/env/`, `web/env.py`). Moon Forest has the 
 
 `/arena` and `/duel`: friendly duels against other players, on the beast fight's screen. docs/pvp.md,
 "On the website".
+
+## The training yard
+
+`/training` and `/spar`: Discord's `/spar` and mastery trials in the browser, reached by talking to the **Martial
+Master** in town (no menu tab). The rules, the rewards and the page are in docs/technique.md, "On the website".
+Code: `web/spar_play.py` (the referee), `web/spar_routes.py`, `web/templates/training.html`, `spar.html`,
+`web/static/spar.js`, `spar.css`. Tests: `tests/test_web_spar.py`.
 
 ## Rankings
 
