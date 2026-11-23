@@ -88,6 +88,7 @@ ARRIVE_GAP = TRIGGER + 1.2            # you come out this far in, so you aren't 
 FRESH = 1800                          # a place you left less than this long ago keeps where you stood (a reload)
 OTHERS_FRESH = 15                     # another player shows while their page spoke to the server this recently (s)
 OTHERS_MAX = 30                       # at most this many others drawn (the nearest)
+OTHERS_EVERY = 0.9                    # a walking page is told who else is here at most this often (s), with its step
 SAVE_EVERY = 10                       # where you stand is saved at most this often while you walk (s)
 
 HERB_REACH = 1.6                      # how close (tiles) to kneel at a herb or look at a find
@@ -202,6 +203,7 @@ class Walker:
     roll: tuple = None                        # ((trip, step), tier): the kind of beast this step of the trip offers
     who: dict = None                          # how other players see you: name, realm, look (enter() fills it)
     seen: float = 0.0                         # when this player's page last spoke to the server (shown to others)
+    told: float = 0.0                         # when this player's page was last told who else is here
     saved: float = 0.0                        # when where you stand was last saved (save_spot)
     tag: str = ""                             # how other pages tell you apart (not your Discord id)
 
@@ -213,6 +215,7 @@ class World:
         self.rng_factory = rng_factory
         self.lock = threading.RLock()
         self._w = {}
+        self.with_conn = None                     # runs fn(conn, ...) on a fresh connection (the website sets it)
 
     def walker(self, uid):
         return self._w.get(uid)
@@ -297,7 +300,7 @@ class World:
             me = self._w.get(uid)
             if me is None or me.place != place:
                 return None
-            me.seen = now
+            me.seen = me.told = now
             out = []
             for oid, o in self._w.items():
                 if oid == uid or o.place != place or now - o.seen > OTHERS_FRESH or not o.who:
@@ -328,10 +331,28 @@ class World:
             else:
                 w.t = now
             w.seen = now
-            if now - w.saved > SAVE_EVERY:
-                self._save(conn, uid, w, now)
+            save = (w.place, w.x, w.y) if now - w.saved > SAVE_EVERY else None
+            if save:
+                w.saved = now
+            tell = now - w.told >= OTHERS_EVERY
+        if save:                                              # written outside the lock: a write to the file can
+            self._write_spot(conn, uid, save, now)            # take a while, and everyone's steps wait on the lock
         self.hunts.touch(uid)
-        return {"x": w.x, "y": w.y}
+        out = {"x": w.x, "y": w.y}
+        if tell:                                              # a walking page hears who else is here with its own
+            out["others"] = self.others(conn, uid, place) or []   # steps, and need not ask (one message, not two)
+        return out
+
+    def _write_spot(self, conn, uid, spot, now):
+        """Save where you stand. `conn` may be None (the page's step did not need the database): then one is opened
+        through `self.with_conn` just for this."""
+        try:
+            if conn is not None:
+                db.save_world_spot(conn, uid, *spot, now)
+            elif self.with_conn is not None:
+                self.with_conn(db.save_world_spot, uid, *spot, now)
+        except Exception:
+            pass
 
     def _at(self, w, place, x, y):
         """Report and check in one: you are in `place`, at a spot you could have walked to. (x, y) or None."""

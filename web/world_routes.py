@@ -31,6 +31,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
     hunts, gathers, explores = app.state.hunts, app.state.gathers, app.state.explores
     parties = hunts.parties
     world = app.state.world = overworld.World(hunts, gathers)
+    world.with_conn = with_conn
 
     def go(url):
         return RedirectResponse(url, status_code=303)
@@ -144,10 +145,21 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         out = await run_in_threadpool(with_conn, fn, user["id"], *[form.get(k) for k in keys])
         return no_store(JSONResponse(out))
 
+    async def post_quick(request, fn, *keys):
+        """As post_json, for the two messages a walking page sends all the time (its step, who else is here): they
+        only read and write the world in memory, so no database connection is opened for them (the busiest part of
+        the website with many players, scripts/load_test.py)."""
+        user = current_user(request)
+        if not user:
+            return JSONResponse({"gone": True})
+        form = await form_of(request)
+        out = await run_in_threadpool(fn, user["id"], *[form.get(k) for k in keys])
+        return no_store(JSONResponse(out))
+
     @app.post("/world/pos")
     async def world_pos(request: Request):
-        return await post_json(request, lambda c, uid, place, x, y: world.report(c, uid, place, x, y),
-                               "place", "x", "y")
+        return await post_quick(request, lambda uid, place, x, y: world.report(None, uid, place, x, y),
+                                "place", "x", "y")
 
     @app.post("/world/move")
     async def world_move(request: Request):
@@ -171,10 +183,10 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
     @app.post("/world/others")
     async def world_others(request: Request):
         """The other players walking here (asked about once a second): where they stand and how they look."""
-        def others(c, uid, place):
-            v = world.others(c, uid, place)
+        def others(uid, place):
+            v = world.others(None, uid, place)
             return {"gone": True} if v is None else {"others": v}
-        return await post_json(request, others, "place")
+        return await post_quick(request, others, "place")
 
     @app.post("/world/state")
     async def world_state(request: Request):

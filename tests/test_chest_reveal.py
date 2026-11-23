@@ -216,7 +216,7 @@ def test_old_chest_tiers_are_renamed_in_old_databases(tmp_path):
     db.add_item(conn, 1, **loot.chest("common"))
     conn.commit()
     conn.close()
-    conn = db.connect(path)
+    conn = db.connect(path, setup=True)       # as when the bot or the website starts again
     chests = {i["key"]: i for i in db.get_items(conn, 1, "chests")}
     assert set(chests) == {"common", "legendary"}
     assert chests["common"]["qty"] == 3 and chests["legendary"]["name"] == "Legendary Chest"

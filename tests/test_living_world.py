@@ -270,3 +270,39 @@ def test_the_fights_have_their_sounds():
         html = read("web", "templates", page)
         own = "asset('fight.js')" if page.startswith("explore") else "asset('duel.js')"
         assert html.index("asset('fight_sound.js')") < html.index(own)
+
+
+def test_a_database_is_set_up_once_not_on_every_connection(tmp_path, monkeypatch):
+    """The website connects for every request: the tables and the old-data renames are done once per file."""
+    calls = []
+    real = db._set_up
+    monkeypatch.setattr(db, "_set_up", lambda c: (calls.append(1), real(c))[1])
+    path = str(tmp_path / "once.db")
+    for _ in range(5):
+        db.connect(path).close()
+    assert len(calls) == 1
+    db.connect(path, setup=True).close()                                   # asked for: done again
+    assert len(calls) == 2
+    import os
+    os.remove(path)                                                        # a new file at the same place: set up again
+    c = db.connect(path)
+    assert len(calls) == 3 and c.execute("SELECT COUNT(*) FROM players").fetchone()[0] == 0
+    other = str(tmp_path / "other.db")                                     # and every other file its own first time
+    db.connect(other).close()
+    assert len(calls) == 4
+
+
+def test_a_walking_page_is_told_who_else_is_here_with_its_step(world, conn):
+    world.enter(conn, UID, "town")
+    world.enter(conn, OTHER, "town")
+    me = world.walker(UID)
+    r = world.report(None, UID, "town", me.x, me.y)                        # no database needed for a step
+    assert [o["name"] for o in r["others"]] == ["Nicolas"]
+    assert "others" not in world.report(None, UID, "town", me.x, me.y)     # told a moment ago: not again yet
+    world.now.t += ow.OTHERS_EVERY
+    assert "others" in world.report(None, UID, "town", me.x, me.y)
+    saved = []
+    world.with_conn = lambda fn, *a: saved.append(a)                       # the spot is saved through its own connection
+    world.now.t += ow.SAVE_EVERY + 1
+    world.report(None, UID, "town", me.x, me.y)
+    assert saved and saved[0][0] == UID and saved[0][1] == "town"

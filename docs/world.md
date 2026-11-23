@@ -148,6 +148,36 @@ their realm and layer over their head, walking smoothly to where the server last
 random tag, never by their Discord id. Seeing is all for now: no talking, trading or fighting each other on the map,
 and they don't block your way. Code: `World.others` in `web/overworld.py`, `pollOthers` / `drawOther` in `town.js`.
 
+## How many players
+
+`python -m scripts.load_test` measures it: it starts its own copy of the website with a throw-away database, logs in
+50, 100, 200, 300 and 500 test players, stands them all in the town and has each "page" send what a walking page
+sends, then reports how long the server takes to answer (`--idle 0.5`: half of them standing still; `--place`:
+another land). Measured on a 2-core machine shared with the test's own fake players (Nov 2026), everyone walking
+non-stop:
+
+| Players in one place | Before | Now |
+|---|---|---|
+| 50 | smooth | smooth |
+| 100 | laggy (1 answer in 20 took 0.5 s) | smooth (8 ms) |
+| 200 | broken (1 s) | smooth (76 ms) |
+| 300 | broken | ok (0.2 s) |
+| 500 | broken | broken (1.1 s) |
+
+What made the difference:
+- **The database is set up once**, not on every connection (`bot/db.py` `connect`): making the tables and renaming
+  old data read whole tables, and the website connects for every request. That was three quarters of the server's work.
+- **A step needs no database** (`/world/pos`, `/world/others`): they only touch the world in memory. Where you stand
+  is still saved every 10 seconds, on its own connection, outside the world's lock.
+- **One message instead of two while walking:** the answer to your step also says who else is here (about once a
+  second), so a walking page no longer asks separately; a page standing still asks once a second. Steps are sent
+  every 0.4 s (was 0.3 s).
+
+The limit now is one processor core running one copy of the website (about 700 answers a second on that machine).
+Past roughly 300 players walking at once, the next steps are channels (several copies of a place, about 40 players
+each, so nobody's screen is a crowd) and more than one copy of the website, which needs the world's memory shared
+between them. Not built yet.
+
 ## Today's tasks
 
 Three tasks a day, the same all day and new at **midnight UTC**, picked for each player from five

@@ -695,7 +695,7 @@ def test_saved_players_at_the_renamed_realms_keep_their_place(tmp_path):
                  "'Martial Master,Grand Martial Master,Martial Grandmaster')")
     conn.execute("INSERT INTO players (user_id, name, talent, created_at, realm) VALUES (2, 'B', 'Average', 0, 'Martial Grandmaster')")
     conn.commit(); conn.close()
-    conn = dbm.connect(path)
+    conn = dbm.connect(path, setup=True)     # as when the bot or the website starts again
     a, b = dbm.get_player(conn, 1), dbm.get_player(conn, 2)
     assert a["realm"] == "Grandmaster" and b["realm"] == "Martial Lord"
     assert a["king_kills"] == "Martial Master,Grandmaster,Martial Lord"

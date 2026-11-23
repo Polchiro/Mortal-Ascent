@@ -8,7 +8,9 @@ All functions take an open sqlite3.Connection so tests can use an in-memory
 database.
 """
 import json
+import os
 import sqlite3
+import threading
 import time
 
 import forge
@@ -196,10 +198,34 @@ TECHNIQUE_COLUMNS = {
 BAG_STACKABLE = {"manuals", "pills", "herbs", "materials", "chests"}   # gear is unique (rolled buffs, slots)
 
 
-def connect(path):
+# Database files this process has already set up (their tables made, their old data brought up to date). Setting up
+# is the same work every time, and the renaming of old data reads whole tables, so it is done once per file and
+# process, not on every connection: the website opens a connection for every request (hundreds a second with many
+# players walking, scripts/load_test.py), and that work was three quarters of everything the server did.
+_READY = set()              # absolute paths of the files that were set up
+_SETUP = threading.Lock()
+
+
+def connect(path, setup=None):
+    """A connection to the game's database. The first one to a file in this process makes its tables and brings old
+    data up to date (`setup=True` forces that again; a file deleted and made anew is noticed, having no tables)."""
     conn = sqlite3.connect(path, timeout=10)   # wait for another copy's write instead of failing
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    memory = path == ":memory:" or str(path).startswith("file:")
+    key = None if memory else os.path.abspath(path)
+    if setup is None:
+        setup = key not in _READY or conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'players'").fetchone() is None
+    if setup:
+        with _SETUP:
+            _set_up(conn)
+            if key:
+                _READY.add(key)
+    return conn
+
+
+def _set_up(conn):
     conn.executescript(SCHEMA)
     with conn:
         for table, cols in (("players", PLAYER_COLUMNS), ("techniques", TECHNIQUE_COLUMNS)):
@@ -210,7 +236,6 @@ def connect(path):
     replace_old_herbs(conn)
     rename_old_chests(conn)
     rename_old_realms(conn)
-    return conn
 
 
 # Realms 6 and 7 were renamed: Grand Martial Master became Grandmaster and Martial Grandmaster became Martial Lord.
