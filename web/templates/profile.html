@@ -4,22 +4,49 @@
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
+{# the realm's emblem: a lotus that opens one more petal with every realm, its number in the middle #}
+{% macro emblem(cls, numeral=true) %}
+<svg class="remblem {{ cls }}" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".55"/>
+  <circle cx="50" cy="50" r="43.5" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="1.2 3.4" opacity=".7"/>
+  {% for k in range(t.petals) %}<path d="M50 50 C43.5 39 43.5 24 50 10 C56.5 24 56.5 39 50 50Z" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.1" transform="rotate({{ (360 / t.petals * k) | round(2) }} 50 50)"/>{% endfor %}
+  {% if numeral %}<circle cx="50" cy="50" r="19" class="core"/><circle cx="50" cy="50" r="19" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="50" y="50" text-anchor="middle" dominant-baseline="central" class="num">{{ t.roman }}</text>
+  {% else %}<circle cx="50" cy="50" r="9" fill="none" stroke="currentColor" stroke-width="1.1"/>{% endif %}
+</svg>
+{% endmacro %}
 
 <main class="xprofile">
-  <!-- A. Identity -->
+  <!-- A. Identity: the cultivator on their stage, their gear at their sides, their power under their name -->
   <section class="xpanel identity" aria-label="Your cultivator">
     <span class="dragon l" aria-hidden="true"></span><span class="dragon r" aria-hidden="true"></span>
-    <div class="portrait">
+    <div class="portrait stage">
+      <span class="moon" aria-hidden="true"></span>
+      {{ emblem("back", false) }}
       <span class="aura" aria-hidden="true"></span>
-      <span class="seal" aria-hidden="true">{{ t.seal }}</span>
-      <img src="{{ p.portrait }}" alt="" width="550" height="445">
-      <span class="wisps" aria-hidden="true"></span>
+      <span class="formation" aria-hidden="true"><i></i><i></i></span>
+      <img src="{{ p.portrait }}" alt="" width="442" height="892">
+      <span class="motes" aria-hidden="true">{% for i in range(14) %}<i style="--i: {{ i }}"></i>{% endfor %}</span>
+      <span class="mist" aria-hidden="true"></span>
+      {% for w in worn %}
+      <a class="sgear g{{ loop.index }}{% if not w.item %} empty{% endif %}" href="/inventory?tab={{ w.tab }}{% if w.item %}&amp;item={{ w.item.id }}{% endif %}"
+        {%- if w.item %} style="--rc: {{ w.item.color }}"{% endif %} title="{{ w.slot }}: {{ w.item.name if w.item else 'empty' }}" aria-label="{{ w.slot }}: {{ w.item.name if w.item else 'empty' }}">
+        {% if w.item and w.item.picture %}<img src="{{ w.item.picture }}" alt="" width="48" height="48">{% else %}<span class="plus" aria-hidden="true">+</span>{% endif %}
+      </a>
+      {% endfor %}
     </div>
-    <h1 class="xname">{{ p.name }}</h1>
-    <p class="xrealm">{{ p.realm }} · {{ p.layer }} Layer</p>
+    <div class="nameplate">
+      <h1 class="xname">{{ p.name }}</h1>
+      <p class="xrealm">{{ p.realm }} · {{ p.layer }} Layer</p>
+    </div>
     <div class="titles">
       {% for text, kind in p.titles %}<span class="tchip {{ kind }}">{{ text }}</span>{% endfor %}
       <span class="tchip rank">#{{ p.rank }} on the realm ranks</span>
+    </div>
+    <div class="power" aria-label="Your strength in a fight">
+      <span><img src="/art/icons/attr/hp.webp" alt="" width="30" height="30"><b>{{ p.hp }}</b><small>HP</small></span>
+      <span><img src="/art/icons/attr/attack.webp" alt="" width="30" height="30"><b>{{ p.attack }}</b><small>Attack</small></span>
+      <span><img src="/art/icons/attr/defense.webp" alt="" width="30" height="30"><b>{{ p.defense }}</b><small>Defense</small></span>
     </div>
     {% if p.status %}<p class="xstatus">{{ p.status }}</p>{% endif %}
     {% if look_done %}<p class="gnotice" role="status">{{ look_done | rich | safe }}</p>{% endif %}
@@ -35,7 +62,7 @@
     <section class="xpanel" aria-labelledby="cult-h">
       <div class="phead orn"><h2 id="cult-h">Cultivation</h2><span class="sub">Realm {{ t.no }} of {{ t.of }}</span></div>
       <div class="cult">
-        <span class="realmseal" aria-hidden="true">{{ t.seal }}</span>
+        <span class="realmseal" title="Realm {{ t.no }} of {{ t.of }}">{{ emblem("") }}</span>
         <div class="cultmain">
           <p class="crealm">{{ p.realm }}<span>{{ p.phase }}</span></p>
           <div class="pips" role="img" aria-label="Layer {{ p.layer_no }} of {{ p.max_layer }}">

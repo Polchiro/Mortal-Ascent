@@ -133,3 +133,31 @@ def test_profile_redesign_sections(client, db_path):
     for name in ("hp", "qi", "attack", "defense"):
         assert client.get(f"/art/icons/attr/{name}.webp").status_code == 200
     assert client.get("/art/scenes/profile_hall.jpg").status_code == 200
+
+
+def test_profile_stage_shows_the_cultivator_with_gear_and_power(client, db_path):
+    """The stage (docs/web.md "The cultivator's stage"): the painting, four gear slots that link to the bag, and the
+    Attributes panel's own HP / Attack / Defense. Presentation only."""
+    import os
+    import re
+    from PIL import Image
+    ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    page = client.get("/profile").text
+    assert 'class="remblem back"' in page and 'class="num">I</text>' in page                 # the realm's lotus, no Chinese seal
+    assert not re.search(r"[\u4e00-\u9fff]", page)
+    assert 'class="portrait stage"' in page and 'class="formation"' in page and page.count('class="sgear ') == 4
+    assert page.count('class="sgear g') == 4 and page.count(" empty\" href=\"/inventory?tab=") == 4      # nothing worn yet
+    power = re.search(r'<div class="power".*?</div>', page, re.S).group(0)
+    shown = re.findall(r"<b>([^<]+)</b><small>(\w+)</small>", power)
+    assert [k for _, k in shown] == ["HP", "Attack", "Defense"]
+    for value, label in shown:                                               # the same numbers the Attributes panel shows
+        assert re.search(r'alabel">%s</span>\s*<b>%s[<\s]' % (label, re.escape(value)), page), label
+    sword = bag(db_path, "weapons")[0]
+    client.post("/inventory/equip", data={"item": sword["id"]})
+    page = client.get("/profile").text
+    assert f'class="sgear g1" href="/inventory?tab=weapons&amp;item={sword["id"]}"' in page
+    assert page.count(" empty\" href=\"/inventory?tab=") == 3
+    for g in ("male", "female"):                                             # tall, see-through, the figure down to the bottom edge
+        im = Image.open(os.path.join(ROOT, "art", "portraits", f"hero_{g}.webp"))
+        assert im.mode == "RGBA" and im.height > 1.8 * im.width
+        assert im.getchannel("A").getbbox()[3] >= im.height - 2

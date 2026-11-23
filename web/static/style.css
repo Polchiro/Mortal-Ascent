@@ -255,6 +255,68 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
 .portrait::after{content:"";position:absolute;left:16%;right:16%;bottom:3%;height:20px;border-radius:50%;background:radial-gradient(rgba(200,255,236,.55),transparent 70%)}
 .portrait img{position:relative;z-index:1;width:100%;height:92%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 0 14px rgba(200,255,236,.45)) drop-shadow(0 10px 16px rgba(0,0,0,.45))}
 .portrait .seal{display:none}
+/* the cultivator's stage (docs/web.md "The profile page"): the painting stands tall under a pale moon, on a slowly
+   turning Qi formation, motes of Qi rising round them, the realm's seal faint behind; their four gear slots at their
+   sides (links to the bag) and HP, Attack and Defense under the name. Pictures and links only: nothing here changes a number. */
+@media (min-width:901px){.xprofile{grid-template-columns:minmax(0,430px) minmax(0,1fr)}}
+.xprofile .identity{padding:14px 14px 26px;gap:10px}
+.portrait.stage{max-width:none;aspect-ratio:400/540;border-radius:2px;isolation:isolate;
+  background:radial-gradient(ellipse 70% 42% at 50% 24%,rgba(150,214,232,.26),transparent 70%),
+    radial-gradient(ellipse 90% 30% at 50% 100%,rgba(47,180,134,.30),transparent 70%),
+    linear-gradient(180deg,#0E2B38 0%,#0B202B 52%,#06141A 100%)}
+.stage .moon{position:absolute;left:50%;top:5%;width:64%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 42% 40%,rgba(236,250,255,.34),rgba(170,220,236,.16) 46%,rgba(120,190,210,.05) 64%,transparent 70%);
+  box-shadow:0 0 60px rgba(150,214,232,.18);animation:moonglow 7s ease-in-out infinite alternate}
+@keyframes moonglow{from{opacity:.75}to{opacity:1}}
+.remblem{display:block;width:100%;height:100%;color:var(--ag2)}
+.remblem .core{fill:#0B1A20}.remblem .num{font:800 19px Cinzel,Georgia,serif;fill:var(--ag3);letter-spacing:.5px}
+.realmseal .remblem{width:96%;height:96%;filter:drop-shadow(0 0 6px rgba(235,203,134,.45))}
+.stage .remblem.back{position:absolute;left:50%;top:7%;width:74%;height:auto;aspect-ratio:1;transform:translateX(-50%);color:#F6E2B0;opacity:.13;pointer-events:none;
+  animation:emblemturn 90s linear infinite}
+@keyframes emblemturn{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
+.portrait.stage .aura{inset:-6% -30% 6%;opacity:.38}
+.stage .formation{position:absolute;left:50%;bottom:-27%;width:104%;aspect-ratio:1;transform:translateX(-50%) rotateX(74deg);pointer-events:none}
+.stage .formation i{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(127,240,195,.55);
+  box-shadow:0 0 22px rgba(127,240,195,.5),inset 0 0 26px rgba(127,240,195,.28);animation:auraspin 26s linear infinite;
+  background:repeating-conic-gradient(from 0deg,rgba(191,248,226,.22) 0 2deg,transparent 2deg 22.5deg),radial-gradient(circle,rgba(127,240,195,.18),transparent 62%)}
+.stage .formation i+i{inset:17%;border:3px dashed rgba(246,226,176,.6);box-shadow:0 0 16px rgba(235,203,134,.35);animation-duration:18s;animation-direction:reverse;
+  background:repeating-conic-gradient(from 11deg,rgba(246,226,176,.2) 0 3deg,transparent 3deg 45deg)}
+.portrait.stage::after{left:24%;right:24%;bottom:4.5%;height:26px;z-index:1;background:radial-gradient(rgba(200,255,236,.6),transparent 70%)}
+.portrait.stage>img{position:absolute;left:50%;bottom:4.5%;z-index:2;width:auto;max-width:none;height:90%;transform:translateX(-50%);animation:herofloat 6s ease-in-out infinite;
+  filter:drop-shadow(0 0 16px rgba(190,240,255,.35)) drop-shadow(0 14px 14px rgba(0,0,0,.5))}
+@keyframes herofloat{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,-1.1%)}}
+.stage .motes{position:absolute;inset:0;z-index:3;pointer-events:none}
+.stage .motes i{position:absolute;bottom:4%;left:calc(8% + var(--i) * 6.4%);width:4px;height:4px;border-radius:50%;opacity:0;
+  background:#DFFFF2;box-shadow:0 0 8px 2px rgba(127,240,195,.8);animation:moterise calc(6s + var(--i) * .45s) linear calc(var(--i) * -1.37s) infinite}
+.stage .motes i:nth-child(3n){width:3px;height:3px;background:#FFF1C9;box-shadow:0 0 8px 2px rgba(235,203,134,.8)}
+.stage .motes i:nth-child(4n+1){width:6px;height:6px}
+@keyframes moterise{0%{transform:translate(0,0);opacity:0}12%{opacity:.9}70%{opacity:.55}100%{transform:translate(14px,-460px);opacity:0}}
+.stage .mist{position:absolute;left:-10%;right:-10%;bottom:0;height:24%;z-index:3;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(9,24,30,.55) 70%,rgba(9,18,24,.9));}
+.stage .sgear{position:absolute;z-index:4;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border-radius:4px;text-decoration:none;
+  background:linear-gradient(180deg,rgba(16,34,42,.9),rgba(8,16,22,.92));border:1px solid color-mix(in srgb,var(--rc,#C9A45C) 75%,transparent);
+  box-shadow:inset 0 0 0 3px rgba(8,16,22,.9),inset 0 0 0 4px color-mix(in srgb,var(--rc,#C9A45C) 35%,transparent),0 0 14px color-mix(in srgb,var(--rc,#C9A45C) 35%,transparent);
+  transition:transform .15s,box-shadow .15s}
+.stage .sgear:hover,.stage .sgear:focus-visible{transform:scale(1.08);box-shadow:inset 0 0 0 3px rgba(8,16,22,.9),inset 0 0 0 4px var(--rc,#EBCB86),0 0 20px color-mix(in srgb,var(--rc,#EBCB86) 60%,transparent)}
+.stage .sgear img{width:40px;height:40px;object-fit:contain;animation:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.stage .sgear.empty{border-style:dashed;border-color:rgba(201,164,92,.45);box-shadow:inset 0 0 0 3px rgba(8,16,22,.9)}
+.stage .sgear .plus{font:300 26px/1 Inter,Arial,sans-serif;color:rgba(235,203,134,.7)}
+.stage .sgear.g1{left:2.5%;top:17%}.stage .sgear.g2{left:2.5%;top:30%}.stage .sgear.g3{right:2.5%;top:17%}.stage .sgear.g4{right:2.5%;top:30%}
+.nameplate{position:relative;z-index:5;width:calc(100% - 28px);margin-top:-46px;padding:12px 14px 11px;
+  background:linear-gradient(180deg,rgba(18,36,44,.94),rgba(9,18,24,.96));border:1px solid rgba(201,164,92,.6);
+  box-shadow:inset 0 0 0 3px rgba(9,18,24,.9),inset 0 0 0 4px rgba(201,164,92,.2),0 10px 24px rgba(0,0,0,.5)}
+.nameplate::before,.nameplate::after{content:"";position:absolute;top:50%;width:10px;height:10px;background:var(--ag2);transform:translateY(-50%) rotate(45deg);box-shadow:0 0 10px rgba(235,203,134,.6)}
+.nameplate::before{left:-6px}.nameplate::after{right:-6px}
+.nameplate .xname{margin:0;overflow-wrap:anywhere}
+.power{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;margin-top:6px}
+.power span{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 4px 8px;border-radius:3px;
+  background:linear-gradient(180deg,rgba(14,28,36,.8),rgba(8,16,22,.85));border:1px solid rgba(201,164,92,.28)}
+.power img{width:30px;height:30px;object-fit:contain}
+.power b{font:800 20px/1.15 Cinzel,Georgia,serif;color:var(--ag3)}
+.power small{font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--mist)}
+@media (max-width:900px){.portrait.stage{max-width:430px}.nameplate{max-width:402px}.power{max-width:430px}}
+@media (max-width:560px){.stage .sgear{width:48px;height:48px}.stage .sgear img{width:38px;height:38px}}
+@media (prefers-reduced-motion:reduce){.stage .remblem.back,.stage .moon,.stage .formation i,.portrait.stage>img,.stage .motes i{animation:none}.stage .motes i{opacity:.6;bottom:calc(10% + var(--i) * 5%)}}
 .xname{margin:8px 0 0;font:800 34px/1.1 Cinzel,Georgia,serif;letter-spacing:3px;text-transform:uppercase;
   background:linear-gradient(180deg,#FFF1C9 10%,#EBCB86 45%,#B98A3E 90%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
 .xrealm{margin:0;font:700 16px Cinzel,Georgia,serif;letter-spacing:.5px;color:var(--cream)}
