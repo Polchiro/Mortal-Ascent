@@ -159,6 +159,8 @@
     var posed = main.querySelector('.beast.posed');             // load every pose picture now, so swaps are instant
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     ['/art/fx/break_burst.webp', '/art/fx/break_crater.webp'].forEach(function (src) { new Image().src = src; });   // Break's slam
+    var mine = main.querySelector('.fighter[data-preload]');    // this fighter's sheets and technique pictures, loaded and
+    if (mine) { try { JSON.parse(mine.dataset.preload).forEach(keep); } catch (e) {} }   // decoded now: no move waits for them
     var hist = main.querySelector('.bhist'), close = main.querySelector('.histclose');
     if (hist && close) close.addEventListener('click', function () { hist.open = false; hist.querySelector('summary').focus(); });
     drawDeath(main);                                           // a won fight on a fresh page: the body already down
@@ -175,6 +177,26 @@
       d.addEventListener('toggle', function () { if (d.open && !Combat.can()) d.open = false; });
     });
     Combat.paint();
+  }
+
+  /* Pictures the fight will need (looks sheets, technique art: explore_play.preload), kept loaded and decoded for the
+     whole fight. Before, a technique's frames were first asked for when its turn arrived, and the move played over a
+     blank or half-loaded sheet (it stuttered). `whenReady` holds a turn's acting until its movement sheet is in. */
+  var KEEP = {};
+  function keep(src) {
+    if (KEEP[src]) return KEEP[src];
+    var img = KEEP[src] = new Image();
+    img.src = src;
+    if (img.decode) img.decode().catch(function () {});
+    return img;
+  }
+  function whenReady(main, go) {
+    var el = main.querySelector('.fighter .msheet'), m = el && /url\(["']?([^"')]+)/.exec(el.style.backgroundImage || '');
+    var img = m && keep(m[1]), done = false;
+    if (!img || img.complete) return go();
+    function once() { if (done) return; done = true; go(); }
+    img.addEventListener('load', once); img.addEventListener('error', once);
+    setTimeout(once, 2500);                                     // a slow connection: play it anyway
   }
 
   function showVictory(main) {                                 // the panel is up: Continue is in reach (and on screen on a phone)
@@ -290,8 +312,11 @@
       Combat.set('player_turn');
       return;
     }
-    playing = played ? act(fresh, before) : null;               // act the turn out: dash, swing, hit, the beast's answer
-    if (!playing) setTimeout(function () { if (Combat.phase !== 'player_turn' && Combat.phase !== 'finished' && fresh.isConnected) Combat.set('player_turn'); }, SETTLE);
+    whenReady(fresh, function () {                              // its movement's frames are in: nothing plays blank
+      if (!fresh.isConnected) return;
+      playing = played ? act(fresh, before) : null;             // act the turn out: dash, swing, hit, the beast's answer
+      if (!playing) setTimeout(function () { if (Combat.phase !== 'player_turn' && Combat.phase !== 'finished' && fresh.isConnected) Combat.set('player_turn'); }, SETTLE);
+    });
   }
 
   function notice(main, text) {
@@ -1266,7 +1291,7 @@
       var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
       var JAB = msheet ? +msheet.dataset.jab : 5, OUT = msheet ? +msheet.dataset.release : 12, BACK = msheet ? +msheet.dataset.back : 21;
-      var dragons = X.play === 'dragons', end = X.ms;
+      var dragons = X.play === 'dragons', end = Math.max(X.ms, msheet && !dragons ? +msheet.dataset.ms || 0 : 0);   // a sheet's own least time (looks `ms`)
       /* the punches: each lands at `at` (ms), a jab or the lunge. One lunge for most; Nine Dragons throws four,
          jab-lunge-jab-lunge, each loosing X.punches[i] dragons (1-2-3-3: nine). */
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]

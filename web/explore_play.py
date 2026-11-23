@@ -607,6 +607,22 @@ def cast(b, f, gender=None):
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
+def preload(f, p):
+    """The pictures this fighter's turns may need (their Guard and attack sheets, and each equipped technique's
+    movement and effect pictures): the page loads them when the fight opens, so no move waits for its frames."""
+    look = looks.of_player(p)
+    out = [s["src"] for s in (looks.attack_sheets(look) or {}).values()]
+    g = looks.guard_sheet(look)
+    if g:
+        out.append(g["src"])
+    for t in (f.atk_t, f.def_t, f.flex_t):
+        if not t:
+            continue
+        motions, art = technique_fx.assets(t["name"], looks.gender_of(look))
+        out += [m["src"] for m in (looks.motion_sheet(look, k) for k in motions) if m] + art
+    return list(dict.fromkeys(out))
+
+
 def motion_of(b, f, p):
     """The frame-by-frame movement this turn's technique plays (web/technique_fx.py, looks.MOTION_SHEETS), or None."""
     look = looks.of_player(p)
@@ -673,6 +689,7 @@ def fight_view(conn, s, b, p, now, me=None):
                "sheet": looks.attack_sheet(looks.of_player(p)), "sheets": looks.attack_sheets(looks.of_player(p)),
                "gsheet": looks.guard_sheet(looks.of_player(p)),
                "msheet": motion_of(b, f, p), "isheet": looks.idle_sheet(looks.of_player(p)),
+               "preload": preload(f, p),
                "bqi": round(f.bqi), "max_bqi": f.max_bqi,
                "bqi_pct": max(0, min(100, round(f.bqi / max(1, f.max_bqi) * 100))),
                "delta": round(f.hp) - prev["me"] if "me" in prev else 0},
