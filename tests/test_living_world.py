@@ -249,3 +249,24 @@ def test_music_and_a_voice_for_everyone_in_town(site):
         assert re.search(rf"^\s+{place}:\s+\{{root:", js, re.M), place
     walk = open(os.path.join(root, "web", "static", "town.js"), encoding="utf-8").read()
     assert "snd('talk'" in walk and "snd('click')" in walk and "snd('bye')" in walk
+
+
+def test_the_fights_have_their_sounds():
+    import os
+    import re
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    def read(*p):
+        return open(os.path.join(root, *p), encoding="utf-8").read()
+    snd = read("web", "static", "fight_sound.js")
+    have = set(re.findall(r"^    (\w+): function \(t", snd, re.M))
+    assert {"press", "swing", "hit", "hurt", "block", "miss", "cast", "roar", "boom", "victory", "defeat"} <= have
+    for js in ("fight.js", "duel.js"):                                     # every sound a fight asks for exists
+        asked = set(re.findall(r"fs\('(\w+)'", read("web", "static", js)))
+        asked |= set(re.findall(r"\[[^\[\]]*?, '(\w+)'(?:, [^\[\]]*)?\]", "".join(
+            l for l in read("web", "static", js).splitlines() if "cues" in l or "add(" in l)))
+        assert asked and asked <= have, (js, asked - have)
+    for page in ("explore_play.html", "duel.html"):                        # loaded before the fight's own script
+        html = read("web", "templates", page)
+        own = "asset('fight.js')" if page.startswith("explore") else "asset('duel.js')"
+        assert html.index("asset('fight_sound.js')") < html.index(own)

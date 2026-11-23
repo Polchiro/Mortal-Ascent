@@ -1,6 +1,8 @@
 /* The fight screen: send a move without leaving the page (no jump to the top), then swap in the next turn. */
 (function () {
   var playing = null;
+  /* sound (web/static/fight_sound.js): told what just happened on screen; silent if it isn't there */
+  function fs(name, arg, delay) { var F = window.FightSound; if (F) F.play(name, arg, delay); }
 
   /* ── The combat action state ────────────────────────────────────────────────────────────────────────
      One place decides whether a move may be sent (docs/web.md, "One action per turn"). The phases have the
@@ -259,6 +261,7 @@
   window.addEventListener('resize', function () { drawDeath(document.querySelector('main.battle')); });
 
   function send(form, button) {
+    fs('press');
     Combat.set('submitting');                                   // before anything else: a second press finds the lock
     var token = ++Combat.token, sent = +document.querySelector('main.battle').dataset.turn;
     var data = new FormData(form);
@@ -433,6 +436,14 @@
     }
     function pop(box, cls, text) {
       if (BS && box === beastBox && /^hit/.test(cls)) BS.hit();   // it flinches in its own hit animation
+      var loud = / big/.test(cls) ? 'big' : '';                   // the sound of what the number or word says
+      if (/^hit/.test(cls)) fs('hit', loud);
+      else if (/^hurt/.test(cls)) fs('hurt', loud);
+      else if (/heal/.test(cls)) fs('heal');
+      else if (/stun/.test(cls)) fs('stun');
+      else if (/^(Blocked|Guarded|Deflected|Unbreakable|Held)/.test(text)) fs('block');
+      else if (/^Missed/.test(text)) fs('miss');
+      else if (/^(Evaded|Slipped)/.test(text)) fs('dodge');
       var n = document.createElement('span');
       n.className = 'tnum ' + cls; n.textContent = text; box.appendChild(n);
       setTimeout(function () { n.remove(); }, 1300);
@@ -471,10 +482,12 @@
        the blade comes down (`slam`): spikes of blue Qi, the split ground (art/fx/break_*.webp, scripts/make_break_fx.py),
        a shockwave, stones, a cloud of dust, and a hard shake. */
     function gathered() {
+      fs('gather');
       var g = at(fr, asheets.break ? 0.44 : 0.46, 0.96);
       fx('bqring', g[0], g[1], 760); fx('bqring q2', g[0], g[1], 900);
     }
     function slam() {
+      fs('boom');
       var f = at(br, 0.1, 0.96);
       fx('bcrater', f[0], f[1], 2600); fx('bburst', f[0], f[1], 1000); fx('bwave', f[0], f[1], 800); fx('bwave w2', f[0], f[1], 1000);
       fx('bflash', 50, 50, 450);
@@ -498,7 +511,7 @@
       var R = RECIPES[ev.act] || RECIPES.strike, done = false, began = false;
       if (ev.hit) hold('enemy');
       fighter.dataset.trail = R.slam ? 'slam' : ev.act;
-      return {end: R.end, render: function (t) {
+      return {end: R.end, cues: [[R.swing - 90, 'swing', ev.act]], render: function (t) {
         if (R.slam && t >= 0 && !began) { began = true; gathered(); }
         pose(t < 0 || t >= R.recover ? 'idle' : t < R.swing ? 'windup' : 'strike');
         var x = 0, y = 0;
@@ -528,7 +541,7 @@
         f = Math.max(0, Math.min(n - 1, Math.round(f)));
         sheet.style.backgroundPosition = (f % cols) / (cols - 1) * 100 + '% ' + Math.floor(f / cols) / (rows - 1) * 100 + '%';
       }
-      return {end: R.end, render: function (t) {
+      return {end: R.end, cues: [[R.swing - 90, 'swing', ev.act]], render: function (t) {
         if (R.slam && t >= 0 && !began) { began = true; gathered(); }
         if (t < 0 || t >= R.end) { pose('idle'); hero(0, 0); }
         else {
@@ -588,7 +601,8 @@
                               : Math.max(0, reachBeast - (A.reach || 0) * BS.width());
       }
       if (guard) { if (ev.counter) hold('enemy'); } else hold('me');
-      return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0), render: function (t) {
+      return {end: Math.max(R.end + (guard && ev.counter ? 200 : 0), guard ? R.hit + blockTime() : 0),
+              cues: (guard ? [[0, 'guardup']] : []).concat([[Math.max(0, R.rear - 60), 'lunge']]), render: function (t) {
         var x = 0, y = 0, rot = 0;
         if (A) {                                                // in place through the crouch, then the lunge home to you and back
           if (t < lunge) x = 0;
@@ -1939,7 +1953,10 @@
     }
 
     var steps = [], kinds = {};
-    function add(step, phase) { step.phase = phase; steps.push(step); }      // whose action this step shows
+    function add(step, phase, cues) {                            // whose action this step shows, and its sounds ([ms, name, arg])
+      step.phase = phase; if (cues) step.cues = (step.cues || []).concat(cues); steps.push(step);
+    }
+    var castTier = cast ? (TIER[cast.grade] || 0) : 0;
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
     var inside = cast && cast.fx && (cast.fx.motion === 'brace' || cast.fx.motion === 'deflect');
     if (inside) {
@@ -1948,19 +1965,19 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
-      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting'); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
+      if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting', [[60, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting', [[RECIPES.pounce.crouch - 80, 'lunge'], [RECIPES.pounce.hit, 'boom'], [RECIPES.pounce.home, 'roar', 'big']]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx) { add(technique(ev), 'player_acting'); kinds.me = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier]]); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;
-    if (dying) { add(dying, 'dying'); main.classList.remove('slain'); if (BS) BS.set('idle'); }   // .slain (the finished picture) returns in finish(); it stands until it falls
+    if (dying) { add(dying, 'dying', [[60, 'death']]); main.classList.remove('slain'); if (BS) BS.set('idle'); }   // .slain (the finished picture) returns in finish(); it stands until it falls
     if (!steps.length) return null;
     Combat.set(steps[0].phase);
     Object.keys(kinds).forEach(function (k) { main.classList.add('tl-' + k); });
@@ -1980,6 +1997,7 @@
       if (dying) {
         dying.clear(); main.classList.remove('dying'); main.classList.add('slain');
         showVictory(main);
+        if (cut !== true) fs('victory');
         if (cut !== true) Combat.set('finished');               // the fight is won: only the Victory panel's button is left
       }
       if (playing && playing.finish === finish) playing = null;
@@ -1994,7 +2012,10 @@
         if (i >= steps.length) return finish();
         Combat.set(steps[i].phase);                             // your action is done: now the beast's (or the other way round)
       }
-      else step.render(Math.min(t, step.end));
+      else {
+        if (step.cues) step.cues.forEach(function (c) { if (!c[3] && t >= c[0]) { c[3] = 1; fs(c[1], c[2]); } });
+        step.render(Math.min(t, step.end));
+      }
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
