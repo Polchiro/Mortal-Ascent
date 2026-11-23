@@ -131,6 +131,10 @@ Every herb has an age. Older herbs are rarer and make crafting easier.
 
 **No limit.** Gathering is the main grind: players can gather as long as they like.
 
+> **On the website** there is no Gather page: herbs grow on the walkable maps and each one you walk up to is one
+> round of this same game (docs/world.md "Herbs"). The grade odds are the same; the herb's *type* follows the region
+> (`alchemy.REGION_HERB_TYPES`). Everything below describes Discord's `/gather`, which is unchanged.
+
 ### How it works
 1. `/gather` opens **one gathering message** that updates in place
 2. The bot names the herb you are looking for and its description:

@@ -152,5 +152,5 @@ def test_town_gate_leads_to_the_crossroads(site):
     a = login(WARRIOR)
     r = a.get("/town")
     data = json.loads(re.search(r'id="mapdata">(.*?)</script>', r.text, re.S).group(1))
-    assert data["exits"][0]["go"][0][1] == "/crossroads?near=town_gate"
+    assert data["exits"][0]["key"] == "gate_out" and data["exits"][0]["walk"]   # walked through (web/overworld.py)
     assert a.get("/crossroads?near=town_gate").status_code == 200

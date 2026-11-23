@@ -10,7 +10,7 @@ Pages:
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
   /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
-  /gather     gathering herbs (/gather): find the right plant before time runs out (bot/gathering.py decides)
+  /gather     herbs grow out in the world now (web/world_routes.py): the old page sends you to town
   /town       the town hub: walk up to the townsfolk, who send you on to the pages above (web/town.py)
   /crossroads outside the town gate: walk down a road to a hunting ground (web/crossroads.py, web/hunt_routes.py)
   /world      the World Map, only to look at (web/world.py)
@@ -40,6 +40,7 @@ from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
 from . import alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, rankings, town
+from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -215,31 +216,6 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         request.session["forge_pass"] = time.time()
         return RedirectResponse("/forge", status_code=303)
-
-    @app.get("/town", response_class=HTMLResponse)
-    def town_page(request: Request, near: str = ""):
-        """The town hub (web/town.py). Everyone walks it whose look has a walking sheet (looks.WALK_SHEETS); a look
-        without one sees the painting and speaks to the townsfolk from a list."""
-        import looks
-        user = current_user(request)
-        if not user:
-            return RedirectResponse("/", status_code=303)
-        c = conn()
-        try:
-            p = db.get_player(c, user["id"])
-        finally:
-            c.close()
-        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
-        if p is None:
-            return page(request, "no_character.html", user=user, avatar=avatar)
-        sheet = looks.walk_sheet(looks.of_player(p))
-        data = town.page_data(sheet, near or None) if sheet else None
-        request.session.pop("alchemy_pass", None)        # back in town: the alchemy hall needs Lan again
-        request.session.pop("forge_pass", None)          # and the forge needs Tie
-        return page(request, "town.html", user=user, avatar=avatar, town_name=town.NAME, ground=town.ART,
-                    notice=request.session.pop("town_notice", None),
-                    walking=sheet is not None, map_json=town.page_json(data) if data else "", npcs=town.NPCS,
-                    coins=number(p["lotus_coins"]), pearls=number(p["moon_pearls"]))
 
     @app.get("/rankings", response_class=HTMLResponse)
     def rankings_page(request: Request, board: str = "realm"):
@@ -715,90 +691,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     gathers = app.state.gathers = gather_play.Gathers()
 
-    @app.get("/gather", response_class=HTMLResponse)
-    def gather_page(request: Request):
-        user = current_user(request)
-        if not user:
-            return RedirectResponse("/", status_code=303)
-        if with_conn(gathers.catch_up, user["id"]):
-            return RedirectResponse("/gather/play", status_code=303)
-        view = with_conn(gather_play.home_view, user["id"], gathers.clock())
-        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
-        if view is None:
-            return page(request, "no_character.html", user=user, avatar=avatar)
-        return page(request, "gather.html", v=view, user=user, avatar=avatar,
-                    error=request.session.pop("gather_error", None))
-
-    @app.post("/gather/begin")
-    async def gather_begin(request: Request):
-        user = current_user(request)
-        if not user:
-            return RedirectResponse("/", status_code=303)
-
-        def begin(c, uid):
-            s = gathers.get(uid)
-            if s and s.g.over:                       # a finished trip: start a fresh one
-                gathers.clear(uid)
-            return gathers.start(c, uid)[1]
-
-        error = await run_in_threadpool(with_conn, begin, user["id"])
-        if error:
-            request.session["gather_error"] = error
-            return RedirectResponse("/gather", status_code=303)
-        return RedirectResponse("/gather/play", status_code=303)
-
-    @app.get("/gather/play", response_class=HTMLResponse)
-    def gather_playing(request: Request):
-        user = current_user(request)
-        if not user:
-            return RedirectResponse("/", status_code=303)
-
-        def view(c, uid):
-            s = gathers.catch_up(c, uid)
-            return gather_play.play_view(c, s, gathers.clock()) if s else None
-
-        g = with_conn(view, user["id"])
-        if g is None:
-            return RedirectResponse("/gather", status_code=303)
-        avatar = oauth.avatar_url(user["id"], user.get("avatar"))
-        resp = page(request, "gather_play.html", g=g, user=user, avatar=avatar, coins=g["coins"], pearls=g["pearls"])
-        resp.headers["Cache-Control"] = "no-store"
-        return resp
-
-    def gather_step(name):
-        async def step(request: Request):
-            user = current_user(request)
-            if not user:
-                return RedirectResponse("/", status_code=303)
-            form = await form_of(request)
-            turn = num(form.get("turn"))
-            if name == "pick":
-                await run_in_threadpool(with_conn, gathers.pick, user["id"], form.get("key", ""), turn)
-            else:
-                await run_in_threadpool(with_conn, getattr(gathers, name), user["id"], turn)
-            return RedirectResponse("/gather/play", status_code=303)
-        return step
-
-    for _name in ("pick", "again", "stop"):
-        app.post(f"/gather/{_name}")(gather_step(_name))
-
-    @app.post("/gather/done")
-    def gather_done(request: Request):
-        user = current_user(request)
-        if user:
-            s = gathers.get(user["id"])
-            if s and s.g.over:
-                gathers.clear(user["id"])
-        return RedirectResponse("/gather", status_code=303)
-
-    @app.get("/gather/plant/{turn}/{key}.png")
-    def gather_plant(request: Request, turn: int, key: str):
-        """A choice's drawn plant, asked for by its place on the page (never by name)."""
-        user = current_user(request)
-        data = gathers.plant_png(user["id"], turn, key) if user else None
-        if data is None:
-            return Response(status_code=404)
-        return Response(data, media_type="image/png", headers={"Cache-Control": "no-store"})
+    # The open world: the town, the Crossroads, the wilds, herbs, beasts and finds (web/world_routes.py)
+    world_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/logout")
     def logout(request: Request):

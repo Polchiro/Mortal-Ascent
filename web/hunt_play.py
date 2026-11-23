@@ -11,6 +11,11 @@ Every member rolls their own rewards: nobody competes for a drop.
 
 The server referees: each member may send one move per turn; a team turn has TEAM_TURN_SECONDS, then whoever
 has not picked Guards (three in a row: flees), which is the bot's own timeout rule. Nobody joins halfway.
+
+A trip in the open world (web/overworld.py, docs/world.md) is a Solo Hunt too (`world`): it starts with your first
+encounter out there (and with it the 30-minute explore rest), each beast you meet or find you uncover is one of its
+MAX_ENCOUNTERS steps, and what you carry is banked when you walk back into town. Beasts and finds come from the
+world (where they stand, which one): the fight and the find themselves are the ones here and in bot/expedition.py.
 """
 import random
 import time
@@ -60,6 +65,7 @@ class Hunt:
     map: bool = False              # walk the hunting ground (web/hunt_map.py): the next beast waits on the map
     beast: dict = None             # map: the next beast, rolled already, and where it stands
     pos: dict = field(default_factory=dict)       # map: uid → (x, y, time) last known
+    world: bool = False            # a trip in the open world: beasts and finds come from web/overworld.py
 
     def active(self):
         return [u for u in self.order if u in self.exps]
@@ -91,8 +97,9 @@ class Hunts:
             return f"resting from the last expedition for {rules.fmt_duration(wait)}"
         return None
 
-    def start(self, conn, uid, walk=False):
-        """The leader sets out. None, or why not. `walk`: on the walkable map (web/hunt_map.py)."""
+    def start(self, conn, uid, walk=False, world=False):
+        """The leader sets out. None, or why not. `walk`: on the walkable map (web/hunt_map.py); `world`: a trip in
+        the open world (encounters come from web/overworld.py, nothing is spawned here)."""
         with self.lock:
             party = self.parties.of(uid)
             if party is None:
@@ -111,11 +118,14 @@ class Hunts:
                 db.set_cooldown(conn, m.uid, "explore", explore_rules.EXPLORE_COOLDOWN_MINUTES * 60, now)
                 exps[m.uid] = Expedition(conn, m.uid, rng)
                 m.ready = False
-            h = Hunt(party.id, hunting.location(party.location), rng, exps, party.uids(), touched=now, map=walk)
+            h = Hunt(party.id, hunting.location(party.location), rng, exps, party.uids(), touched=now,
+                     map=walk or world, world=world)
             self._h[party.id] = h
             party.hunting = True
             self.parties._bump(party)
-            if walk:
+            if world:
+                pass
+            elif walk:
                 h.pos = {u: (*hunt_map.start(hunt_map.plan(h.loc["key"])), now) for u in exps}
                 self._spawn(h)
             else:
@@ -233,6 +243,8 @@ class Hunts:
         h.v += 1
         if not h.exps:
             self._finish(h)
+        elif h.world:                                          # back out in the world, where you stood
+            h.beast = None
         elif h.map:                                            # back on the map: the next beast is already out there
             ended, lines = h.ended, h.lines
             if h.step < hunting.MAX_ENCOUNTERS:
@@ -397,6 +409,110 @@ class Hunts:
             self.parties.leave(uid)
             return None
 
+    # ── the open world (web/overworld.py) ───────────────────────────
+
+    def trip(self, uid):
+        """This player's open-world trip still under way, or None."""
+        with self.lock:
+            party = self.parties.of(uid)
+            h = self._h.get(party.id) if party else None
+            return h if h is not None and h.world and not h.over and uid in h.exps else None
+
+    def _trip(self, conn, uid, loc_key):
+        """The trip this encounter belongs to: the one under way, or a new one (which starts the explore rest).
+        (hunt, None) or (None, why not)."""
+        h = self.trip(uid)
+        if h is not None:
+            if h.step >= hunting.MAX_ENCOUNTERS:
+                return None, "spent"
+            return h, None
+        party = self.parties.of(uid)
+        if party is not None:
+            if not party.solo:
+                return None, "You are in a team: hunt with them from the lobby (ask the Gate Warden)."
+            if party.hunting:
+                return None, "Finish the hunt you are on first."
+            self.parties.leave(uid)                           # a Solo Hunt still choosing its ground
+        _, why = self.parties.create(conn, uid, "", False, True)
+        if why:
+            return None, why
+        why = self.parties.set_location(conn, uid, loc_key) or self.start(conn, uid, walk=True, world=True)
+        if why:
+            self.parties.leave(uid)
+            return None, why
+        return self.trip(uid), None
+
+    def world_fight(self, conn, uid, loc_key, beast):
+        """A beast met out in the world (`beast`: name, tier, role, as web/overworld.py rolled it): the fight of
+        this trip's next step. None, or why not."""
+        with self.lock:
+            h, why = self._trip(conn, uid, loc_key)
+            if h is None:
+                return why
+            if h.battle is not None:
+                return "You are already fighting."
+            h.step += 1
+            h.story, h.lines, h.ended, h.acked, h.notice = [], {}, None, set(), {}
+            self._battle(conn, h, beast["name"], beast["tier"], beast["role"])
+            h.touched = self.clock()
+            return None
+
+    def world_find(self, conn, uid, loc_key, kind):
+        """Something found out in the world: one of /explore's own finds (bot/expedition.Expedition._<kind>), this
+        trip's next step. (lines, None) or (None, why not)."""
+        with self.lock:
+            h, why = self._trip(conn, uid, loc_key)
+            if h is None:
+                return None, why
+            if h.battle is not None:
+                return None, "You are fighting."
+            e = h.exps[uid]
+            e.conn = conn
+            h.step += 1
+            h.story, h.lines, h.ended, h.acked, h.notice = [], {}, None, set(), {}
+            e.story = []
+            getattr(e, f"_{kind}")()
+            lines = [rich(x) for x in e.story if x]
+            h.touched = self.clock()
+            h.v += 1
+            return lines, None
+
+    def world_home(self, conn, uid):
+        """Back in town: the trip ends and what you carry is banked (bot/expedition.Expedition.finish). The lines
+        to show, or None (no trip)."""
+        h = self.catch_up(conn, uid)
+        with self.lock:
+            if h is None or not h.world or h.battle is not None:
+                return None
+            if h.over or uid not in h.exps:                    # it ended out there (night fell): what it banked
+                if uid not in h.results or h.results[uid].get("defeated"):
+                    return None
+            else:
+                self._home(conn, h, uid, why="You walk back through the town gate with what you carry.")
+                self._finish(h)
+            res = h.results.pop(uid, None)
+            self._h.pop(h.party_id, None)
+            self.parties.leave(uid)
+            return res["lines"] if res else []
+
+    def touch(self, uid):
+        """Walking about the world is not idling (MAP_IDLE_SECONDS)."""
+        with self.lock:
+            h = self.trip(uid)
+            if h is not None:
+                h.touched = self.clock()
+
+    def trip_view(self, conn, uid):
+        """The trip, for the world's HUD: how many of its encounters are used, HP, what is carried."""
+        h = self.catch_up(conn, uid)
+        with self.lock:
+            if h is None or not h.world or h.over or uid not in h.exps:
+                return None
+            e = h.exps[uid]
+            return {"step": h.step, "steps": hunting.MAX_ENCOUNTERS, "spent": h.step >= hunting.MAX_ENCOUNTERS,
+                    "hp": round(e.hp), "max_hp": round(e.max_hp), "found": ep.found_list(e),
+                    "fighting": h.battle is not None or (h.ended is not None and uid not in h.acked)}
+
     def walked(self, uid):
         """If this player's hunt is (or was) walked on the map (web/hunt_map.py): its ground's key; else None."""
         with self.lock:
@@ -452,7 +568,8 @@ def view(conn, hunts, h, uid):
     out = {"turn": hunts.version(h, uid), "location": loc["name"], "scene": f"/art/scenes/{loc['card']}.jpg",
            "step": h.step, "steps": hunting.MAX_ENCOUNTERS, "coins": number(p["lotus_coins"]),
            "pearls": number(p["moon_pearls"]), "act_url": "/hunt/act", "play_url": "/hunt", "done_url": "/hunt/done",
-           "notice": rich(h.notice[uid]) if h.notice.get(uid) else None}
+           "notice": rich(h.notice[uid]) if h.notice.get(uid) else None,
+           "world": h.world, "loc_key": loc["key"]}
     party = hunts.parties.of(uid)
     lead = party is not None and party.leader == uid
     if uid in h.results and (h.over or uid not in h.exps):
@@ -460,6 +577,7 @@ def view(conn, hunts, h, uid):
         out["result"] = h.results[uid]
         out["solo"] = party.solo if party else True
         out["walked"] = h.map                               # back to the Crossroads (web/crossroads.py), not Explore
+        out["world"] = h.world                              # an open-world trip: back to town (defeated) or out there
         return out
     b = h.battle if h.battle is not None else (h.ended if h.ended is not None and uid not in h.acked else None)
     if b is not None and b.fighter(uid) is not None:

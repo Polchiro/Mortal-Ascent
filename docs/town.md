@@ -46,14 +46,13 @@ buttons; it walks the town as soon as its sheet is added.
   you.
 - **Coming in:** at the gate (`town.START`), also when you come back in from the Crossroads. After you leave through
   someone's dialogue, coming back puts you in front of them (the page remembers it for the browser tab).
-- **Going out:** the gate is the way out of town (`town.EXITS`, docs/world.md). Walk to it, within `REACH` of the spot
-  just inside its doors, and a **Leave town** button appears; press **E** for *The Town Gate* and **Go out to the
-  Crossroads** (`/crossroads`, where the roads to the hunting grounds begin). The spot is behind the wall from where the camera looks, so the page lights the
-  gate's doorway instead (`glow`: pale blue light spilling out of the doors onto the road, motes rising, brighter when
-  you are close enough to leave; calm with reduced motion). **M** or the **World Map** button opens the World Map,
-  only to look at (Back or M returns you here).
-- **The server doesn't follow you.** Nothing on the map changes the game, so unlike the hunting map there are no
-  position reports.
+- **Going out:** walk into the gate's doorway and you are on the Crossroads (docs/world.md): no button. The spot is
+  behind the wall from where the camera looks, so the page lights the doorway instead (`glow`: pale blue light
+  spilling out of the doors onto the road, motes rising; calm with reduced motion). **M** or the **World Map**
+  button opens the World Map, only to look at (Back or M returns you here).
+- **Coming home:** walking in through the gate banks what a trip in the wilds carried; a banner lists it.
+- **The server follows you** as in every place of the open world (`web/overworld.py`): the page reports where you
+  stand, so that you can only leave through the gate.
 
 ## The townsfolk
 
@@ -63,7 +62,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 
 | Who | Where | Sends you to |
 |---|---|---|
-| Gate Warden | the gate | Look at the World Map (`/world`, docs/world.md), Hunt with a team (`/explore`), Gather herbs (`/gather`) |
+| Gate Warden | the gate | Look at the World Map (`/world`, docs/world.md), Hunt with a team (`/explore`). He also tells you herbs grow outside the gate |
 | Blacksmith Tie | the forge | `/town/visit/blacksmith` → `/forge` (the only way in: the forge is locked to him) |
 | Herbalist Lan | the herb shop | `/town/visit/alchemist` → `/alchemy` (the only way in: alchemy is locked to her) |
 | Silk Merchant | the silk stalls | `/appearance` |
