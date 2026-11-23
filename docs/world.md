@@ -182,7 +182,8 @@ while the tab is hidden.
 
 **Footsteps** are recorded: cut from SHOAIB's walking videos (Gemini / Veo videos carry sound) by
 `scripts/make_step_sound.py`, which finds each step in a video's sound, keeps the cleanest few, evens them and writes
-`art/fx/sounds/step_<look>_<n>.mp3`, listed in `art/fx/sounds/sounds.json` as `step@female` / `step@male`. A look's
+`art/fx/sounds/step_<look>_<n>.mp3`, listed by look in `art/fx/sounds/steps.json` (apart from the fights'
+`sounds.json`). A look's
 walking sheet names whose steps it takes (`looks.WALK_SHEETS[...]["steps"]`); each step plays one of them at random,
 never the same twice running and a little higher or lower each time, softened on earth (the videos' floor is hard).
 They play in every walkable place and on a party's hunting map; a look with none keeps the step made in code. The

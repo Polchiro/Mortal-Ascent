@@ -217,17 +217,16 @@
   };
 
   /* Recorded footsteps (docs/world.md "Sound"): cut from SHOAIB's walking videos by scripts/make_step_sound.py
-     into art/fx/sounds/ and listed in its sounds.json as "step@female", "step@male". The walker (town.js tells it
+     into art/fx/sounds/ and listed in its steps.json: {"female": [{"file": ...}], "male": [...]}. The walker (town.js tells it
      the hero's look: looks.WALK_SHEETS[...]["steps"]) steps with one of their takes at random, never the same twice
      running, a little higher or lower each time; on earth it is softened (the videos' floor is hard). A look with
      no recording, or before they have loaded, keeps the step made in code. */
   var walker = '', stepTakes = {}, stepBufs = {}, lastTake = '';
   function loadSteps() {
-    fetch('/art/fx/sounds/sounds.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+    fetch('/art/fx/sounds/steps.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
       Object.keys(j || {}).forEach(function (k) {
-        if (k.indexOf('step@') !== 0) return;
-        stepTakes[k.slice(5)] = j[k].map(function (t) { return typeof t === 'string' ? t : t.file; });
-        stepTakes[k.slice(5)].forEach(function (file) {
+        stepTakes[k] = j[k].map(function (t) { return typeof t === 'string' ? t : t.file; });
+        stepTakes[k].forEach(function (file) {
           if (file in stepBufs) return;
           stepBufs[file] = null;
           fetch('/art/fx/sounds/' + file).then(function (r) { return r.arrayBuffer(); })

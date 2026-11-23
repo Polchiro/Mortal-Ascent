@@ -14,7 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def test_every_walking_look_has_recorded_steps():
     table = json.load(open(ms.LIST))
     for gender, sheet in looks.WALK_SHEETS.items():
-        takes = table.get("step@" + sheet["steps"])
+        takes = table.get(sheet["steps"])
         assert takes and len(takes) >= 3, gender
         for t in takes:
             assert os.path.getsize(os.path.join(ms.OUT, t["file"])) > 1000

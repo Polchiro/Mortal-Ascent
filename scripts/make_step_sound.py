@@ -7,7 +7,7 @@ WHO is the look whose steps they are ("female", "male": looks.WALK_SHEETS[...]["
 footstep in the videos' sound (a short, loud hit well above the quiet around it), keeps the cleanest `--takes` of
 them spread over the videos, cuts each from just before its hit to the end of its tail, evens their loudness, fades
 their ends so they never click, and writes art/fx/sounds/step_<WHO>_<n>.mp3. It lists them in
-art/fx/sounds/sounds.json as "step@<WHO>" (replacing any earlier ones); sound.js plays one of them at random for each
+art/fx/sounds/steps.json under WHO (replacing any earlier ones); sound.js plays one of them at random for each
 step, instead of the step it makes in code.
 """
 import argparse
@@ -17,7 +17,9 @@ import subprocess
 
 import numpy as np
 
-from scripts.make_fight_sound import LIST, OUT, has_sound
+from scripts.make_fight_sound import OUT, has_sound
+
+LIST = os.path.join(OUT, "steps.json")    # {look: [{"file": ..., "lead": ...}]}, apart from the fights' sounds.json
 
 RATE = 44100
 HOP = RATE // 100                       # the loudness is looked at every 10 ms
@@ -110,9 +112,11 @@ def main(argv=None):
         write(y, os.path.join(OUT, name))
         listed.append({"file": name, "lead": BEFORE})
         print(f"{name}: {args.videos[v]} at {at:.2f} s")
-    with open(LIST) as f:
-        table = json.load(f)
-    table[f"step@{args.who}"] = listed
+    table = {}
+    if os.path.exists(LIST):
+        with open(LIST) as f:
+            table = json.load(f)
+    table[args.who] = listed
     with open(LIST, "w") as f:
         json.dump(dict(sorted(table.items())), f, indent=1)
         f.write("\n")
