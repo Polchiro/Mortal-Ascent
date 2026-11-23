@@ -9,8 +9,6 @@ Explore's hunting pages (docs/hunting.md):
   /hunt/v             a small JSON version number the lobby and hunt pages poll to know when to reload
   /hunt/pos           the map page reporting where you walk (web/hunt_map.py)
   /world              the World Map: the town and the hunting grounds on one painted scroll (web/world.py), to look at
-  /crossroads/go/<key>  set out down a road from the Crossroads (web/world_routes.py has the page) to a ground that has
-                        no walkable world map yet: a Solo Hunt on its hunting map
 
 Every POST only asks web/parties.py or web/hunt_play.py; they decide.
 """
@@ -195,7 +193,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if kind == "lobby":
             return no_store(page(request, "hunt_lobby.html", v=v, user=user, avatar=avatar(user), error=error(request)))
         if v["mode"] == "map" and v.get("world"):               # a trip in the open world: back out there
-            return go(f"/wild/{v['loc_key']}")
+            return go("/world/back")
         if v["mode"] == "map":                                   # walking the hunting ground (web/hunt_map.py)
             return no_store(page(request, "hunt_map.html", g=v, user=user, avatar=avatar(user), error=error(request)))
         if v["mode"] == "fight":                                 # the shared fight screen
@@ -273,7 +271,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             if res.get("defeated"):                             # carried home: you wake up in town
                 app.state.world.defeated(uid)
                 return go("/town")
-            return go(f"/wild/{h.loc['key']}")
+            return go("/world/back")
         walked = hunts.walked(uid)                              # a walked Solo Hunt ends back at the Crossroads,
         party = hunts.dismiss(uid)                              # at the end of the road it went down
         return go("/hunt" if party else f"/crossroads?near=road_{walked}" if walked else "/explore")
@@ -299,34 +297,5 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if v is None:
             return page(request, "no_character.html", user=user, avatar=avatar(user))
         return no_store(page(request, "world.html", v=v, art=world.ART, user=user, avatar=avatar(user)))
-
-    @app.post("/crossroads/go/{key}")
-    def crossroads_go(request: Request, key: str):
-        """Down a road from the Crossroads: a Solo Hunt on this ground. Every check is the Solo Hunt's own (realm,
-        injury, rest: Parties.start_problems, Hunts.blocked); if one fails nothing is started."""
-        user = current_user(request)
-        if not user:
-            return go("/")
-        uid = user["id"]
-        if world.place(key) is None:
-            flash(request, "There is no such road.")
-            return go("/crossroads")
-        if parties.of(uid) is not None:
-            return go("/hunt")
-
-        def set_out(c):
-            _, why = parties.create(c, uid, "", False, True)
-            if why:
-                return why
-            why = parties.set_location(c, uid, key) or hunts.start(c, uid, walk=hunt_play.walks(c, uid))
-            if why:
-                parties.leave(uid)                               # nothing started: no party left behind
-            return why
-
-        why = with_conn(set_out)
-        if why:
-            flash(request, why)
-            return go(f"/crossroads?near=road_{key}")
-        return go("/hunt")
 
     return explore_play

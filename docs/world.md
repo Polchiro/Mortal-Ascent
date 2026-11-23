@@ -1,7 +1,8 @@
 # The world: walking from the town to the wilds, and the World Map
 
 The town, the Crossroads and the Moon Forest are **one world you walk through**. Walk out of **Azure Cloud Town**'s
-gate and you are on **the Crossroads**; walk down the Moon Forest road and you are in the **Moon Forest**. No menus,
+gate and you are on **the Crossroads**; walk down the Moon Forest road and you are in the **Moon Forest**, three
+large lands deep. No menus,
 no "Enter" button: reaching the gate or the end of a road takes you through. Herbs grow at random spots to pick,
 beasts roam the forest, and now and then something glints in the grass. The **World Map** (press **M**) is only a
 picture of the land: you can't travel from it.
@@ -11,34 +12,67 @@ round (`bot/gathering.py`), the hunting ground's beasts and odds (`hunting.py`),
 (`bot/expedition.py`), the 5 encounters and the 30-minute rest. Discord's commands are unchanged.
 
 ```
- Azure Cloud Town ══the gate══► THE CROSSROADS ══the Moon Forest road══► MOON FOREST
-   safe: no herbs,                 herbs to pick                          herbs, beasts, finds
-   your trip is banked here        (no beasts)                            (a trip of 5 encounters)
-                                       └── the other five roads: still the old Solo Hunt (below)
+ Azure Cloud Town ═gate═► THE CROSSROADS ═road═► FOREST EDGE ═path═► DEEP WOODS ═path═► SHRINE GROVE
+   safe: no herbs,          60 x 60 tiles          70 x 70             70 x 70             70 x 70
+   your trip is              herbs                  └────────── Moon Forest: herbs, beasts, finds ──────────┘
+   banked here               (no beasts)                        (one trip of 5 encounters across all three)
+                                └── the other five roads: closed, "not open yet"
 ```
 
-Code: `web/overworld.py` (the places, the entrances, what grows and roams, the checks), `web/world_routes.py` (the
+**The land is empty for now, on purpose.** Outside the town there is only ground: grass, forest floor, dirt roads
+and paths, a paved junction and clearings. The lands are laid out and sized first so the world can be walked and
+judged; trees, rocks and buildings are then placed on it piece by piece. The earlier painted Moon Forest clearing and
+its pieces (docs/environment.md) are set aside until then (team hunts still use that painting, docs/hunting.md).
+Walking from the town gate to the Shrine Grove takes about four minutes.
+
+Code: `web/land.py` (the lands: size, ground, paths, gates), `scripts/make_land.py` (paints their ground),
+`web/overworld.py` (the places, the entrances, what grows and roams, the checks), `web/world_routes.py` (the
 pages and `/world/...` requests), `web/static/town.js` (the one script that walks every place),
 `web/templates/_walkui.html`, `town.html`, `place.html`; the trip in `web/hunt_play.py` (`world_fight`, `world_find`,
 `world_home`). Tests: `tests/test_overworld.py`, `tests/test_web_gather.py`, `tests/test_crossroads.py`.
 
+## The lands (`web/land.py`)
+
+- **A land** is a diamond of the town's own 2:1 tiles, any size (`LANDS[key]["size"]`). Its entry says what the
+  ground is: the base texture, the paths (waypoints, drawn as smooth curves), round patches of other ground
+  (clearings, the paved junction), its light (`tint`), and its gates.
+- **The ground is painted in code** from the town's four textures (grass, dirt, forest floor, stone paving):
+  `python -m scripts.make_land` (or `python -m scripts.make_land forest_edge` for one; about a minute each). Change
+  a path or a size in `land.py`, run it, and the land is repainted.
+- **In chunks.** The picture of a 70-tile land would be 8960 x 4480 px, so it is cut into 1024 px squares
+  (`art/maps/land/<key>/c_<col>_<row>.webp`, about 1 MB a land in all). The page fetches only the squares near the
+  camera, over a small preview of the whole land. A land can be as big as you like at no cost to the player.
+- **One size everywhere.** Every land is drawn as big against you as the town is (`land.SCALE` 1.4), so grass, paths
+  and later trees are the same size from the gate to the grove. Outside the town the camera stands further back
+  (`land.ZOOM` 0.7): you see more land around you.
+- **Everything is walkable** except the dark rim (`edge` tiles in from the diamond's side) and, on the Crossroads,
+  the town's wall and gate. Nothing else stands there yet.
+- **Adding a land:** an entry in `LANDS` with a gate on the edge facing its neighbour, one line in
+  `overworld.ENTRANCES` (`_join`) and, for a new region, its key in `overworld.WILD`. Then paint it.
+
 ## Walking between places
 
-- **Entrances** (`overworld.ENTRANCES`): the town gate ↔ the Crossroads' gate; the end of the Moon Forest road ↔ the
-  forest's path out. Walk within `TRIGGER` (0.75 tiles) of one and the screen fades to the next place, a few steps
-  in from the matching entrance. The page doesn't reload: the script swaps the map (`load`), so it is quick.
-- **You can't bounce.** An entrance only works after you have walked a little away from where you arrived.
+- **Entrances** (`overworld.ENTRANCES`): the town gate ↔ the Crossroads' gate; the Moon Forest road ↔ Forest Edge;
+  Forest Edge ↔ Deep Woods; Deep Woods ↔ Shrine Grove. Each is the **mouth** of a road at a land's edge: walk out
+  through it (anywhere across the road's width) and a short fade takes you to the next land. The page doesn't
+  reload: the script swaps the map (`load`).
+- **You keep walking.** You come out as far to the side of the road as you went in, facing the same way, with your
+  keys still held, so you walk straight on. A land's gate is always on the edge opposite its partner's, and the road
+  carries on past the rim in the same ground, so the next land picks it up.
+- **You can't bounce.** You arrive a couple of tiles inside, and the mouth only takes you when you walk back out to it.
 - **The server knows where you are.** The page reports your position (`/world/pos`); the server checks each step could
-  really be walked (the hunting map's speed check) and that you are at the entrance before letting you through
-  (`/world/move`). Typing `/wild/moon_forest` in the address bar while you stand in town just shows you the town.
+  really be walked (the hunting map's speed check) and that you are in the mouth before letting you through
+  (`/world/move`). Typing `/wild/deep_woods` in the address bar while you stand in town just shows you the town.
 - **Reload or come back later:** you are where you were (for 30 minutes, `FRESH`; after that, or after the website
   restarts, in town).
-- **A place you can't enter:** a road whose realm you haven't reached stays sealed, as before.
+- **The five other roads are closed.** Mist lies over each, *Not open yet*, until its land is built. Nothing starts
+  there: the old menu hunt is gone from the roads (`/crossroads/go` no longer exists). A road above your realm
+  still shows its seal.
 
 ## Herbs (the Crossroads and the Moon Forest)
 
-- **Where:** a few glowing herbs at a time (5 on the Crossroads, 6 in the forest), at random spots inside each place's
-  herb areas (`PLACES[...]["herbs"]["areas"]`), never on a rock, in the pond, or by an entrance. **Each player has
+- **Where:** glowing herbs (10 at a time on the Crossroads, 14 in each forest land), at random spots anywhere off
+  the paths, never by an entrance. The lands are far bigger than before, so herbs are further apart. **Each player has
   their own herbs**: nobody can take yours.
 - **Picking one:** walk up (within 1.6 tiles) and press **E**. A panel opens over the map with **one round of the
   gathering game**: the herb to find, the look-alike plants, the timer. Right pick → the herb goes in your bag;
@@ -64,18 +98,19 @@ pages and `/world/...` requests), `web/static/town.js` (the one script that walk
 - **The Gather page is gone from the website** (`/gather` sends you to town with a note; the Gather tab and the Gate
   Warden's "Gather herbs" are removed). Discord's `/gather` is untouched.
 
-## Beasts and finds (the Moon Forest)
+## Beasts and finds (the Moon Forest's three lands)
 
 - **A trip** is the open world's expedition: it starts with your first encounter, holds **5 encounters**
   (`hunting.MAX_ENCOUNTERS`), and starts the **30-minute explore rest** when it starts, exactly as a hunt or
   `/explore` does. Beasts and finds both count. A line at the bottom shows *Trip: 2 of 5 · HP · what you carry*.
-- **Beasts:** three roam the forest. Come near and one may notice you (a **!**), then charge: that is the fight. Or
+- **Beasts:** five roam each land. Come near and one may notice you (a **!**), then charge: that is the fight. Or
   walk up and press **E** to attack first. The fight is the hunt's own fight screen, with the same beast strength
   and the same rewards. Win and you are back on the same spot, HP and loot carried on.
 - **Which beasts:** for each step of the trip the server makes **one** roll with the hunt's own odds
-  (`hunting.tier_odds`): one of the three is that kind, the other two are Normal. So an Elite or a Beast King is on
-  offer no more often than a hunt would meet one.
-- **Finds:** a soft golden glint, one at a time, sometimes at one of the forest's four secret spots. Press **E**: it
+  (`hunting.tier_odds`): in each land one beast is that kind and the rest are Normal, and walking from land to land
+  doesn't roll again. So an Elite or a Beast King is on offer no more often than a hunt would meet one.
+- **Finds:** a soft golden glint, one at a time in each land, sometimes at one of its secret spots (the far
+  clearings at the ends of the side paths). Press **E**: it
   is one of `/explore`'s own finds with `/explore`'s own loot: a treasure chest, a herb patch, a peaceful clearing,
   an ore vein, a stone tablet, a blessed land or a wandering hermit (`overworld.FINDS`, at their `/explore` odds
   among themselves; a secret spot gives only the last three). A new one appears elsewhere 4 to 8 minutes later.
@@ -102,33 +137,23 @@ pages and `/world/...` requests), `web/static/town.js` (the one script that walk
 
 ## The Crossroads (`/crossroads`)
 
-Code: `web/crossroads.py` (the layout, the roads), the page in `web/world_routes.py`, `web/templates/place.html`.
-Tests: `tests/test_crossroads.py`.
+Code: `web/crossroads.py` (the wall and gate, the roads' ends), its land in `web/land.py`, the page in
+`web/world_routes.py`, `web/templates/place.html`. Tests: `tests/test_crossroads.py`.
 
-- **Built like the town, from the town's pieces.** The ground is painted in code from the town's textures by
-  `python -m scripts.make_town_ground crossroads` (`art/maps/crossroads.webp`): grass, the forest floor beyond the
-  rim, and the dirt roads (`GROUND["roads"]`: segments at any angle, `ROAD_W` wide). On it stand:
-  - the town wall and gate along the top-left edge, seen from outside, with the gate's doors at `DOOR`;
-  - a forest of pines, bushes, blossom trees and boulders round the rim (`_forest`: placed once, the same every
-    time, never on a road, by a road's end or before the wall, and further from a road on the side nearer the
-    camera, so a crown doesn't hide you);
-  - lantern posts at the junction.
-  The pieces SHOAIB is making (a signpost for the junction, bamboo for the Moon Forest road's edge, meadow flowers,
-  road-marker pillars) drop in when they come.
-- **Same size and feel as the town:** the same 2:1 tiles, `SCALE`, camera, night and walking. You come out of the gate
-  (`START`, a few steps down its road). Back from a hunt, you stand at the end of the road you came along.
+- **An open meadow, 60 x 60 tiles,** with a paved junction in the middle and seven winding dirt roads: one from the
+  town gate and one to each hunting ground, at the land's edge in its direction on the World Map (Celestial Forbidden
+  Lands up the top corner, Frostpeak north-west, Thunderfall north-east, Crimson Gorge east, the Ancient Battlefield
+  south-east, Moon Forest south). Toward the Moon Forest road the forest's floor creeps into the grass.
+- **The only things standing on it** are the town's own wall and gate along the x0 edge, seen from outside.
 - **The ways out:**
 
-| Way out | Where | What it does |
-|---|---|---|
-| The town gate | the top-left edge; its doorway lit blue | walk in: you are in town (a trip is banked) |
-| The Moon Forest road | the south edge | walk off its end: you are in the Moon Forest |
-| The other five roads | the map's edge in each one's direction on the World Map | walk up and press **E**: **Enter …** starts the old Solo Hunt there (`POST /crossroads/go/<key>`, docs/hunting.md), until that ground gets its own map |
+| Way out | What it does |
+|---|---|
+| The town gate (its doorway lit blue) | walk in: you are in town (a trip is banked) |
+| The Moon Forest road | walk off its end: you are in the forest's edge |
+| The other five roads | mist, *Not open yet*; or the seal of runes if your realm is too low |
 
-- **A road's end** carries the place's name and realms: **open** (a ring of warm light), **resting / injured** (grey
-  mist, for the five old roads) or **sealed** (a turning disc of golden runes, *Sealed: needs …*: your realm is too
-  low). The server checks again whatever the page showed.
-- **Teams** still gather and set out from `/explore` (the Gate Warden's **Hunt with a team**).
+- **Teams** still gather and set out from `/explore` (the Gate Warden's **Hunt with a team**), on the old hunting map.
 
 ## The World Map (`/world`)
 
@@ -150,8 +175,9 @@ Code: `web/world.py`, `web/templates/world.html`, `web/static/world.js`. The pic
 
 ## Still to come
 
-- **The Crossroads' look:** its trees are the town's and were scattered by code; SHOAIB is making new pieces (or a
-  painting) for it, with the signpost, bamboo, meadow flowers and road markers.
+- **Objects, in rounds:** SHOAIB makes a batch (trees first), they are placed by hand, he looks, we adjust. Trees and
+  rocks will block the way and hide you as the town's buildings do (the drawing and collision code is already there).
+- **The painted Moon Forest clearing** back as a landmark inside the forest, if still wanted.
 - **SHOAIB's picking animations** for kneeling at a herb.
-- **The other five hunting grounds as walkable places,** each with its herbs (`REGION_HERB_TYPES` is ready), then
-  `/explore`'s remaining encounters.
+- **The other five hunting grounds** as lands of their own (`REGION_HERB_TYPES` is ready), then `/explore`'s
+  remaining encounters.

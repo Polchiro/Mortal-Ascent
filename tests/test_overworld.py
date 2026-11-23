@@ -48,8 +48,8 @@ def world():
 
 def into_forest(world, conn, uid=UID):
     world.enter(conn, uid, "crossroads")
-    world.enter(conn, uid, "moon_forest", "path_out")
-    return world.state(conn, uid, "moon_forest")
+    world.enter(conn, uid, "forest_edge", "north")
+    return world.state(conn, uid, "forest_edge")
 
 
 def stand(world, uid, x, y):
@@ -70,7 +70,7 @@ def test_every_entrance_leads_somewhere_and_back():
         x, y = ow.arrival(e["to"], e["arrive"])
         assert ow.walkable(e["to"], x, y)
         if e["arrive"]:                                                       # out far enough not to go straight back
-            assert math.dist((x, y), ow.ENTRANCES[(e["to"], e["arrive"])]["at"]) > ow.ARRIVE_GAP
+            assert math.dist((x, y), ow.ENTRANCES[(e["to"], e["arrive"])]["at"]) > ow.ARRIVE_GAP - 1e-6
 
 
 def test_you_walk_from_town_to_the_forest_and_back(world, conn):
@@ -85,12 +85,52 @@ def test_you_walk_from_town_to_the_forest_and_back(world, conn):
     road = ow.ENTRANCES[("crossroads", "road_moon_forest")]["at"]
     assert world.move(conn, UID, "crossroads", "road_moon_forest", *road) is None   # the road is far from the gate
     stand(world, UID, road[0], road[1] - 0.5)
-    assert world.move(conn, UID, "crossroads", "road_moon_forest", *road)[0] == "moon_forest"
-    out = ow.ENTRANCES[("moon_forest", "path_out")]["at"]
-    stand(world, UID, out[0] - 0.5, out[1] - 0.5)
-    assert world.move(conn, UID, "moon_forest", "path_out", *out)[0] == "crossroads"
+    assert world.move(conn, UID, "crossroads", "road_moon_forest", *road)[0] == "forest_edge"
+    for place, key, to in (("forest_edge", "south", "deep_woods"), ("deep_woods", "east", "shrine_grove"),
+                           ("shrine_grove", "west", "deep_woods"), ("deep_woods", "north", "forest_edge")):
+        at = ow.ENTRANCES[(place, key)]["at"]
+        stand(world, UID, *at)
+        assert world.move(conn, UID, place, key, *at)[0] == to               # three lands deep, and back
+    out = ow.ENTRANCES[("forest_edge", "north")]["at"]
+    stand(world, UID, out[0] - 0.5, out[1] + 0.5)
+    assert world.move(conn, UID, "forest_edge", "north", out[0] - 0.5, out[1] + 0.5)[0] == "crossroads"
     w = world.walker(UID)
     assert math.dist((w.x, w.y), road) < 3                                   # back at the end of the forest road
+
+
+def test_you_come_out_as_far_to_the_side_as_you_went_in(world, conn):
+    world.enter(conn, UID, "crossroads")
+    road = ow.ENTRANCES[("crossroads", "road_moon_forest")]
+    for side in (-1.0, 0.0, 0.9):
+        stand(world, UID, road["at"][0] + side, road["at"][1])
+        assert world.move(conn, UID, "crossroads", "road_moon_forest", road["at"][0] + side, road["at"][1])
+        w = world.walker(UID)
+        into = ow.ENTRANCES[("forest_edge", "north")]["at"]
+        assert w.x == pytest.approx(into[0] + side) and w.y == pytest.approx(into[1] + ow.ARRIVE_GAP)
+        back = (w.x, into[1])
+        stand(world, UID, *back)
+        assert world.move(conn, UID, "forest_edge", "north", *back)[0] == "crossroads"
+        w = world.walker(UID)
+        assert w.x == pytest.approx(road["at"][0] + side)                    # and the same on the way back
+    stand(world, UID, road["at"][0] + 4, road["at"][1])                      # beside the road, not in its mouth
+    assert world.move(conn, UID, "crossroads", "road_moon_forest", road["at"][0] + 4, road["at"][1]) is None
+
+
+def test_the_lands_are_big_and_their_paths_meet_at_the_gates():
+    from web import land
+    assert land.size("crossroads") >= 60 and all(land.size(k) >= 70 for k in ow.WILD)
+    for (place, key), e in ow.ENTRANCES.items():
+        if place == "town":
+            continue
+        assert not land.off_path(place, *e["at"], room=0), (place, key)       # a path runs out through every gate
+        (nx, ny), _ = land.SIDES[e["side"]]
+        beyond = (e["at"][0] + nx * 4, e["at"][1] + ny * 4)
+        assert not land.off_path(place, *beyond, room=0), (place, key)        # and on past the rim
+        if e["to"] != "town":
+            assert land.SIDES[ow.ENTRANCES[(e["to"], e["arrive"])]["side"]][0] == (-nx, -ny)   # out one side, in the other
+    for k in land.LANDS:
+        g = land.ground(k)
+        assert g["have"] and g["chunk"] == 1024
 
 
 def test_reports_are_checked_like_the_hunting_map(world, conn):
@@ -100,7 +140,7 @@ def test_reports_are_checked_like_the_hunting_map(world, conn):
     assert world.report(conn, UID, "crossroads", x0 + 0.2, y0) == {"x": pytest.approx(x0 + 0.2), "y": y0}
     world.now.t += 0.1
     assert world.report(conn, UID, "crossroads", x0 + 8, y0)["x"] == pytest.approx(x0 + 0.2)   # too fast: put back
-    assert world.report(conn, UID, "moon_forest", 19, 19)["url"] == "/crossroads"      # you are not there
+    assert world.report(conn, UID, "forest_edge", 19, 19)["url"] == "/crossroads"      # you are not there
 
 
 def test_a_reload_keeps_where_you_stood(world, conn):
@@ -119,7 +159,8 @@ def test_herbs_grow_in_their_areas_off_the_road(world, conn):
     assert len(hs) == cfg["count"]
     for h in hs:
         assert ow.walkable("crossroads", h["x"], h["y"])
-        assert any(math.dist((h["x"], h["y"]), (cx, cy)) <= r for cx, cy, r in cfg["areas"])
+        from web import land
+        assert land.off_path("crossroads", h["x"], h["y"])
         assert all(math.dist((h["x"], h["y"]), e["at"]) >= ow.QUIET for (p, _), e in ow.ENTRANCES.items()
                    if p == "crossroads")
     assert world.state(conn, UID, "town") is None                            # you are not there
@@ -139,13 +180,13 @@ def test_regions_favour_their_herb_types_and_grades_keep_their_odds(world, conn)
     world.enter(conn, UID, "crossroads")
     w = world.walker(UID)
     p = db.get_player(conn, UID)
-    for place in ("crossroads", "moon_forest"):
+    for place in ("crossroads", "forest_edge"):
         types, grades = collections.Counter(), collections.Counter()
         for _ in range(3000):
             h = world._herb(w, conn, UID, place, 0)
             types[h["type"]] += 1
             grades[h["grade"]] += 1
-        want = alchemy.REGION_HERB_TYPES[place]
+        want = alchemy.REGION_HERB_TYPES[ow.PLACES[place]["herbs"]["region"]]
         for t, share in want.items():
             assert abs(types[t] / 3000 - share) < 0.04, (place, t)
         for g, share in alchemy.herb_grade_odds(p["realm"]).items():          # rare herbs stay rare
@@ -160,10 +201,10 @@ def test_beasts_roam_the_wilds_only(world, conn):
     st = into_forest(world, conn)
     loc = hunting.location("moon_forest")
     names = {b[0] for b in hunting.pool(loc)}
-    assert len(st["beasts"]) == ow.PLACES["moon_forest"]["beasts"]["count"]
+    assert len(st["beasts"]) == ow.PLACES["forest_edge"]["beasts"]["count"]
     w = world.walker(UID)
     for b in st["beasts"]:
-        assert b["name"] in names and ow.walkable("moon_forest", b["x"], b["y"])
+        assert b["name"] in names and ow.walkable("forest_edge", b["x"], b["y"])
         assert math.dist((b["x"], b["y"]), (w.x, w.y)) >= ow.BEAST_GAP
     assert sum(1 for b in st["beasts"] if b["tier"] != "normal") <= 1        # one roll a step, as a hunt
     world.enter(conn, UID, "crossroads")
@@ -175,8 +216,9 @@ def test_special_beasts_are_on_offer_no_more_often_than_a_hunt_meets_them(world,
     w = world.walker(UID)
     n, special = 4000, 0
     for _ in range(n):
-        w.beasts.pop("moon_forest", None)
-        st = world.state(conn, UID, "moon_forest")
+        w.beasts.clear()
+        w.roll = None                                                         # as if a new step each time
+        st = world.state(conn, UID, "forest_edge")
         kinds = [b["tier"] for b in st["beasts"]]
         assert sum(1 for k in kinds if k != "normal") <= 1
         special += any(k != "normal" for k in kinds)
@@ -184,27 +226,39 @@ def test_special_beasts_are_on_offer_no_more_often_than_a_hunt_meets_them(world,
     assert abs(special / n - (1 - odds["normal"])) < 0.02
 
 
+def test_walking_from_land_to_land_does_not_roll_the_step_again(world, conn):
+    into_forest(world, conn)
+    w = world.walker(UID)
+    seen = set()
+    for _ in range(60):                                                       # in and out of all three lands
+        for place, key in (("forest_edge", "north"), ("deep_woods", "north"), ("shrine_grove", "west")):
+            world.enter(conn, UID, place, key)
+            w.beasts.pop(place, None)                                         # even if its beasts are rolled afresh
+            seen.add(tuple(sorted(b["tier"] for b in world.state(conn, UID, place)["beasts"])))
+    assert len(seen) == 1                                                     # one roll for the step, whatever you walk
+
+
 def test_meeting_a_beast_starts_a_trip_and_the_rest(world, conn):
     st = into_forest(world, conn)
     b = st["beasts"][0]
-    assert world.engage(conn, UID, "moon_forest", b["id"], b["x"], b["y"])   # too far from where you stand
+    assert world.engage(conn, UID, "forest_edge", b["id"], b["x"], b["y"])   # too far from where you stand
     stand(world, UID, b["x"] + 0.8, b["y"])
-    assert world.engage(conn, UID, "moon_forest", b["id"], b["x"] + 0.8, b["y"]) is None
+    assert world.engage(conn, UID, "forest_edge", b["id"], b["x"] + 0.8, b["y"]) is None
     trip = world.hunts.trip(UID)
     assert trip is not None and trip.step == 1 and trip.battle is not None and trip.world
     assert trip.battle.enemy["name"] == b["name"]                            # the beast you met
     assert db.cooldown_left(conn, UID, "explore", world.now.t) > 0            # the 30-minute explore rest
-    assert world.walker(UID).beasts.get("moon_forest") is None                # the others scatter
+    assert world.walker(UID).beasts.get("forest_edge") is None                # the others scatter
 
 
 def test_a_find_is_an_explore_find_and_a_step(world, conn):
     st = into_forest(world, conn)
     f = st["finds"][0]
     stand(world, UID, f["x"], f["y"])
-    lines, why = world.discover(conn, UID, "moon_forest", f["id"], f["x"], f["y"])
+    lines, why = world.discover(conn, UID, "forest_edge", f["id"], f["x"], f["y"])
     assert why is None and lines
     assert world.hunts.trip(UID).step == 1
-    assert f["id"] not in [x["id"] for x in world.state(conn, UID, "moon_forest")["finds"]]
+    assert f["id"] not in [x["id"] for x in world.state(conn, UID, "forest_edge")["finds"]]
 
 
 def test_finds_keep_explores_odds_and_secret_spots_the_rare_ones():
@@ -221,29 +275,29 @@ def _spend(world, conn, n):
     """n encounters through finds (the quickest way to use up a trip in a test)."""
     for _ in range(n):
         w = world.walker(UID)
-        f = next(iter(w.finds["moon_forest"]), None)
+        f = next(iter(w.finds["forest_edge"]), None)
         f["ready"] = 0
         stand(world, UID, f["x"], f["y"])
-        lines, why = world.discover(conn, UID, "moon_forest", f["id"], f["x"], f["y"])
+        lines, why = world.discover(conn, UID, "forest_edge", f["id"], f["x"], f["y"])
         assert why is None, why
 
 
 def test_a_trip_holds_five_encounters_then_the_wilds_go_quiet(world, conn):
     into_forest(world, conn)
-    world.state(conn, UID, "moon_forest")
+    world.state(conn, UID, "forest_edge")
     _spend(world, conn, hunting.MAX_ENCOUNTERS)
-    st = world.state(conn, UID, "moon_forest")
+    st = world.state(conn, UID, "forest_edge")
     assert st["trip"]["spent"] and st["wary"] and st["finds"] == [] and "spent" in st["quiet"]
     b = st["beasts"][0]
     stand(world, UID, b["x"] + 0.5, b["y"])
-    assert "spent" in world.engage(conn, UID, "moon_forest", b["id"], b["x"] + 0.5, b["y"])
+    assert "spent" in world.engage(conn, UID, "forest_edge", b["id"], b["x"] + 0.5, b["y"])
     assert world.hunts.trip(UID).step == hunting.MAX_ENCOUNTERS               # no sixth
     assert st["herbs"]                                                        # herbs still grow
 
 
 def test_walking_into_town_banks_the_trip(world, conn):
     into_forest(world, conn)
-    world.state(conn, UID, "moon_forest")
+    world.state(conn, UID, "forest_edge")
     trip = None
     for _ in range(3):
         _spend(world, conn, 1)
@@ -264,7 +318,7 @@ def test_resting_or_injured_means_nothing_to_meet(world, conn):
     assert st["wary"] and st["finds"] == [] and st["herbs"] and "resting" in st["quiet"]
     b = st["beasts"][0]
     stand(world, UID, b["x"] + 0.5, b["y"])
-    assert "resting" in world.engage(conn, UID, "moon_forest", b["id"], b["x"] + 0.5, b["y"])
+    assert "resting" in world.engage(conn, UID, "forest_edge", b["id"], b["x"] + 0.5, b["y"])
     assert world.hunts.trip(UID) is None
 
 
@@ -278,11 +332,11 @@ def test_beasts_wait_while_you_gather(world, conn):
     st = into_forest(world, conn)
     h = st["herbs"][0]
     stand(world, UID, h["x"], h["y"])
-    s, why = world.gather(conn, UID, "moon_forest", h["id"], h["x"], h["y"])
+    s, why = world.gather(conn, UID, "forest_edge", h["id"], h["x"], h["y"])
     assert why is None
-    b = world.walker(UID).beasts["moon_forest"][0]
+    b = world.walker(UID).beasts["forest_edge"][0]
     stand(world, UID, b["x"] + 0.5, b["y"])
-    assert world.engage(conn, UID, "moon_forest", b["id"], b["x"] + 0.5, b["y"]) == "You are gathering."
+    assert world.engage(conn, UID, "forest_edge", b["id"], b["x"] + 0.5, b["y"]) == "You are gathering."
 
 
 def test_carried_home_after_a_defeat(world, conn):
@@ -320,9 +374,9 @@ def site(tmp_path, monkeypatch):
 
 def test_you_cant_type_your_way_into_the_forest(site):
     site.get("/town")
-    assert site.get("/wild/moon_forest").headers["location"] == "/town"
+    assert site.get("/wild/forest_edge").headers["location"] == "/town"
     site.get("/crossroads")
-    assert site.get("/wild/moon_forest").headers["location"] == "/crossroads"
+    assert site.get("/wild/forest_edge").headers["location"] == "/crossroads"
     assert site.get("/wild/nowhere").headers["location"] == "/crossroads"
 
 
@@ -332,14 +386,16 @@ def test_moving_answers_the_next_place(site):
     stand(site.world, UID, road[0], road[1] - 0.4)
     v = site.post("/world/move", data={"place": "crossroads", "key": "road_moon_forest", "x": road[0],
                                        "y": road[1]}).json()
-    assert v["to"] == "moon_forest" and v["url"] == "/wild/moon_forest"
+    assert v["to"] == "forest_edge" and v["url"] == "/wild/forest_edge"
     d = v["data"]
-    assert d["place"] == "moon_forest" and d["ground"] == "/art/maps/moon_forest.webp" and d["atmos"]
+    assert d["place"] == "forest_edge" and d["ground"]["base"] == "/art/maps/land/forest_edge/" and d["atmos"]
+    assert d["size"] == 70 and d["zoom"] < 1 and d["pieces"] == []            # a big, empty land
     assert d["world"]["beasts"] and d["world"]["herbs"]
-    assert any(e["key"] == "path_out" and e["walk"] for e in d["exits"])
-    assert all(p["env"] and p["pass"] for p in d["pieces"])
-    assert site.get("/wild/moon_forest").status_code == 200                  # now you are there: a reload works
-    bad = site.post("/world/move", data={"place": "moon_forest", "key": "path_out", "x": 3, "y": 3}).json()
+    north = next(e for e in d["exits"] if e["key"] == "north")
+    assert north["walk"] and north["out"] == [0, -1] and north["half"] > 1 and any(e["key"] == "south" for e in d["exits"])
+    assert site.get("/wild/forest_edge").status_code == 200                  # now you are there: a reload works
+    assert site.get("/wild/moon_forest").headers["location"] == "/wild/forest_edge"   # an old address: where you are
+    bad = site.post("/world/move", data={"place": "forest_edge", "key": "north", "x": 30, "y": 30}).json()
     assert bad["stay"]
 
 
@@ -368,7 +424,7 @@ def _meet_a_beast(site):
                                        "y": road[1]}).json()
     b = v["data"]["world"]["beasts"][0]
     stand(site.world, UID, b["x"] + 0.6, b["y"])
-    out = site.post("/world/engage", data={"place": "moon_forest", "id": b["id"], "x": b["x"] + 0.6,
+    out = site.post("/world/engage", data={"place": "forest_edge", "id": b["id"], "x": b["x"] + 0.6,
                                            "y": b["y"]}).json()
     assert out["fight"] == "/hunt"
     return b
@@ -381,7 +437,7 @@ def _turn(site):
 
 def test_after_a_fight_you_are_back_where_you_stood(site):
     b = _meet_a_beast(site)
-    assert site.get("/wild/moon_forest").headers["location"] == "/hunt"       # mid-fight: the fight comes first
+    assert site.get("/wild/forest_edge").headers["location"] == "/hunt"       # mid-fight: the fight comes first
     trip = site.world.hunts.trip(UID)
     for _ in range(40):
         if trip.battle is None:
@@ -393,13 +449,14 @@ def test_after_a_fight_you_are_back_where_you_stood(site):
         site.post("/hunt/act", data={"what": "move", "arg": "strike", "turn": _turn(site)})
     assert trip.battle is None and "Victory!" in site.get("/hunt").text
     site.post("/hunt/act", data={"what": "continue", "arg": "", "turn": _turn(site)})
-    assert site.get("/hunt").headers["location"] == "/wild/moon_forest"       # back out in the world
-    r = site.get("/wild/moon_forest")
+    assert site.get("/hunt").headers["location"] == "/world/back"             # back out in the world,
+    assert site.get("/world/back").headers["location"] == "/wild/forest_edge"  # where you stand
+    r = site.get("/wild/forest_edge")
     assert r.status_code == 200
     w = site.world.walker(UID)
     assert (w.x, w.y) == pytest.approx((b["x"] + 0.6, b["y"]))                # where you stood
-    st = site.post("/world/state", data={"place": "moon_forest"}).json()
-    assert st["trip"]["step"] == 1 and not st["wary"] and len(st["beasts"]) == 3   # new beasts are out
+    st = site.post("/world/state", data={"place": "forest_edge"}).json()
+    assert st["trip"]["step"] == 1 and not st["wary"] and len(st["beasts"]) == 5   # new beasts are out
     assert b["id"] not in [x["id"] for x in st["beasts"]]
 
 
@@ -418,4 +475,4 @@ def test_falling_in_the_wilds_carries_you_home(site):
     assert site.post("/hunt/done").headers["location"] == "/town"
     assert site.world.walker(UID).place == "town" and site.world.hunts.trip(UID) is None
     assert site.get("/town").status_code == 200
-    assert site.get("/wild/moon_forest").headers["location"] == "/town"       # you walk back out from the gate
+    assert site.get("/wild/forest_edge").headers["location"] == "/town"       # you walk back out from the gate

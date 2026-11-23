@@ -107,11 +107,12 @@ only show what those allow. The browser never sees which beast is coming or how 
 
 ## The open world (Moon Forest)
 
-The Moon Forest is no longer entered as a Solo Hunt: you walk into it from the Crossroads, and its beasts and finds
-make a **trip** (docs/world.md "Beasts and finds"). A trip is a hunt underneath (`Hunt.world` in `web/hunt_play.py`):
+The Moon Forest is no longer entered as a Solo Hunt: you walk into it from the Crossroads (three open lands,
+`web/land.py`), and its beasts and finds make a **trip** (docs/world.md "Beasts and finds"). A trip is a hunt underneath (`Hunt.world` in `web/hunt_play.py`):
 the same party of one, the same `Expedition`, the same fights, the same 5 encounters, rest, defeat and banking. Only
-*when* an encounter happens changes (you walk into it), and beasts no longer respawn one at a time: three roam, one of
-them rolled with the step's own odds. Team hunts there, and Solo Hunts on the other five grounds, work as below.
+*when* an encounter happens changes (you walk into it), and beasts no longer respawn one at a time: five roam each
+land, one of them rolled with the step's own odds. The Crossroads' roads no longer start a Solo Hunt (the other five
+are closed until their lands are built); team hunts and a Solo Hunt from `/explore` work as below.
 
 ## The map (Solo Hunt)
 

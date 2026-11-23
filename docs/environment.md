@@ -5,6 +5,10 @@ draws them in its 2D canvas like the town's buildings: back to front with you an
 behind a rock and in front of a fern. There is no 3D engine: a piece is a picture of an object, drawn at the map's
 camera angle (docs/town.md, docs/hunting.md "The map").
 
+> **Where they stand now:** the open world's lands (docs/world.md) are bare ground for the moment, to be dressed
+> piece by piece. These pieces and the painted Moon Forest clearing they were placed on are still used by the hunting
+> map (team hunts, docs/hunting.md "The map"), and are ready to be placed on the lands.
+
 Code: `web/env.py` (what each asset is, where each map's pieces stand), `scripts/make_env_assets.py` (cuts the
 pictures), `web/hunt_map.py` (a map's pieces and their blocks), `web/static/huntmap.js` (drawing them).
 Tests: `tests/test_env.py`.

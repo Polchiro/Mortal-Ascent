@@ -119,10 +119,10 @@ def test_a_right_pick_stores_the_herb_and_it_regrows_elsewhere(client, db_path):
     assert out["mode"] == "result" and any("You gather" in x or "pull it free" in x for x in out["result"])
     assert any(c["state"] == "right" for c in out["choices"]) and all(c["name"] for c in out["choices"])
     ids = [x["id"] for x in out["world"]["herbs"]]
-    assert h["id"] not in ids and len(ids) == 4                               # picked: gone, one regrowing
+    assert h["id"] not in ids and len(ids) == 9                               # picked: gone, one regrowing
     client.now[0] += 91
     st = client.post("/world/state", data={"place": "crossroads"}).json()
-    assert len(st["herbs"]) == 5 and h["id"] not in [x["id"] for x in st["herbs"]]
+    assert len(st["herbs"]) == 10 and h["id"] not in [x["id"] for x in st["herbs"]]
 
 
 def test_a_decoy_poisons_and_resets_the_streak(client, db_path):
