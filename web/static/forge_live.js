@@ -65,6 +65,16 @@
   var qsheets = {water: Sheet(scene.querySelector('.fqwater')), oil: Sheet(scene.querySelector('.fqoil'))};
   var qset = scene.querySelector('.fqset'), plate = $('fplate'), runeCv = scene.querySelector('.frune'), rctx = runeCv.getContext('2d');
   var runeGlow = scene.querySelector('.fruneglow');
+  var runeLoop = scene.querySelector('.fruneloop'), runeFlash = scene.querySelector('.frunefl');
+  var chisels = scene.querySelectorAll('.fchisel'), chiselN = 0;
+  function chisel(p) {                        // a burst of golden sparks where a good stroke was carved
+    if (!chisels.length || calm) return;
+    var v = chisels[chiselN++ % chisels.length];
+    v.style.left = (p.x * 100) + '%'; v.style.top = (p.y * 100) + '%';
+    v.currentTime = 0; v.classList.add('on'); var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
+  }
+  chisels.forEach(function (v) { v.addEventListener('ended', function () { v.classList.remove('on'); }); });
+  if (runeFlash) runeFlash.addEventListener('ended', function () { runeFlash.classList.remove('on'); });
   // SHOAIB's effects for when the smith is hidden (scripts/make_forge_fx.py): the hammer alone, the furnace fire,
   // the steam and the oil's fire at the plunge, and the hot piece over the trough
   var tool = Sheet(scene.querySelector('.ftool')), fire = scene.querySelector('.ffire');
@@ -77,7 +87,7 @@
     v.currentTime = 0; v.classList.add('on');
     var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
   }
-  [qfx.water, qfx.oil].forEach(function (v) { if (v) v.addEventListener('ended', function () { v.classList.remove('on'); }); });
+  [qfx.water, qfx.oil, scene.querySelector('.fqsplash')].forEach(function (v) { if (v) v.addEventListener('ended', function () { v.classList.remove('on'); }); });
 
   // ── the feel of each action: floating points, a combo, sparks, a shake and a hit-stop. Display only: the server
   //    alone scores (the points shown on an action are what the bot's own rule gives it) ──
@@ -694,7 +704,10 @@
     var half = p.window[s.medium] / 2, off = Math.abs(s.temp - p.target), sheet = qsheets[s.medium];
     if (sheet) s.anim = {t: performance.now(), from: Math.max(0, sheet.m.impact - 4)};
     qset.classList.add('dipped');
-    if (noSmith()) setTimeout(function () { playFx(qfx[s.medium]); }, 180);
+    if (noSmith()) {
+      if (s.medium === 'water') { setTimeout(function () { playFx(scene.querySelector('.fqsplash')); }, 100); setTimeout(function () { playFx(qfx.water); }, 420); }
+      else setTimeout(function () { playFx(qfx.oil); }, 180);
+    }
     var guess = off <= half / 2 ? p.max[s.medium] : off <= half ? Math.round(p.max[s.medium] / 2) : 2;
     var qw = at(qblank && noSmith() ? qblank : qset, 0.5, 0.5), mx = p.max[s.medium];
     Snd(s.medium === 'water' ? 'hiss' : 'roar');
@@ -717,6 +730,7 @@
       var p = c.pub;
       c.st = {i: 0, path: null, marks: []};
       plate.classList.remove('resonate');
+      if (runeLoop && !calm) { runeLoop.currentTime = 0; var rp = runeLoop.play(); if (rp && rp.catch) rp.catch(function () {}); }
       var clue = $('lclue');
       clue.innerHTML = p.clue.map(function (k, i) { return '<span class="chip' + (i === 0 ? ' now' : '') + '" data-i="' + i + '"><b>' + STROKE[k][0] + '</b> ' + STROKE[k][1] + '</span>'; }).join('');
       clue.classList.remove('faded'); show('lclue', true);
@@ -832,10 +846,11 @@
       var wp = {x: (rr.left + end.x / runeCv.width * rr.width - R.left) / R.width, y: (rr.top + end.y / runeCv.height * rr.height - R.top) / R.height};
       var n = hit(r.ok);
       if (!r.ok) { popup('✗<small>It wanted a ' + STROKE[r.want][1].toLowerCase() + ' (' + STROKE[r.want][0] + ')</small>', 'bad', wp); burst(wp, 'bad', 12); Snd('bad'); }
-      else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][1] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 18); }
+      else { popup('+' + fmtPts(20 / p.count) + '<small>' + STROKE[what][1] + (n >= 2 ? ' · ×' + n : '') + '</small>', n >= 3 ? 'great' : 'good', wp); burst(wp, n >= 3 ? 'great' : 'good', 10); chisel(wp); }
       if (r.over && c.st.marks.every(function (m) { return m.ok; })) {
         setTimeout(function () {
           c.st.resonate = performance.now();
+          if (runeFlash && !calm) { runeFlash.currentTime = 0; runeFlash.classList.add('on'); var fp = runeFlash.play(); if (fp && fp.catch) fp.catch(function () {}); }
           plate.classList.remove('resonate'); void plate.offsetWidth; plate.classList.add('resonate');
           popup('The rune resonates!', 'great', {x: 0.5, y: 0.3}); burst({x: 0.5, y: 0.45}, 'great', 60); shake(false);
         }, 350);
@@ -957,6 +972,7 @@
     clearInterval(promptTimer);
     hctx.clearRect(0, 0, heatCv.width, heatCv.height); sctx.clearRect(0, 0, spotCv.width, spotCv.height);
     heatCv.classList.remove('out', 'away');
+    if (runeLoop) runeLoop.pause();
   }
   function apply(state) {
     if (!state || state.gone) { location.replace('/forge'); return; }
