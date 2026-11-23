@@ -1,4 +1,5 @@
-/* The open world's sound (docs/web.md "The map screen"), made in the browser with Web Audio: no sound files.
+/* The open world's sound (docs/web.md "The map screen"), made in the browser with Web Audio: no sound files but
+   the footsteps.
    Each kind of place has its own bed, which crossfades as you walk from one to the next:
      town    a soft wind, a low murmur of the street and wind chimes now and then
      meadow  (the Crossroads) wind over grass, a few crickets and a bird now and then
@@ -6,7 +7,7 @@
    Over the bed a quiet tune plays, made up as it goes (plucked strings and a bamboo flute; MUSIC below), in each
    place's own mood; Settings has Music On / Off (ma.music). Talking to someone unrolls a scroll and plays a few
    notes of their "voice" (VOICES), a choice clicks, leaving rustles.
-   and a few little sounds: footsteps (stone in town, earth outside), the whoosh of walking into the next land, a
+   and a few little sounds: footsteps (recorded from SHOAIB's videos, see `recordedStep`; stone in town, earth outside), the whoosh of walking into the next land, a
    beast's growl when it notices you, kneeling at a herb, a chime when it is picked (a dull note when not), the
    sparkle of a glint, a bell when a task is done.
 
@@ -32,6 +33,7 @@
       ctx = new A(); master = ctx.createGain(); master.gain.value = vol * vol; master.connect(ctx.destination);
       musicBus = ctx.createGain(); musicBus.gain.value = music ? 1 : 0; musicBus.connect(master);
       if (kind) setBed(kind);
+      loadSteps();                          // the recorded footsteps, decoded now it is awake
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
@@ -215,10 +217,52 @@
   };
 
   /* the little sounds */
+  /* Recorded footsteps (art/fx/sounds/step_*.mp3, cut from SHOAIB's walking and running videos by
+     scripts/make_step_sound.py; steps.json lists them by gait). A footfall plays one of its gait's takes, never the
+     same twice running, a little different in pitch and loudness each time; softer and duller on earth than on the
+     town's stone. A gait with no takes of its own borrows the other's (a walk: the run's, quieter and lower), and
+     with none at all the step made in code is kept. */
+  var STEP_BASE = '/art/fx/sounds/', stepTakes = {}, stepBufs = {}, lastTake = '';
+  var STEP_LEVEL = {run: 0.5, walk: 0.34};
+  function loadSteps() {                    // decoding needs the context: called once it is awake
+    Object.keys(stepTakes).forEach(function (g) {
+      stepTakes[g].forEach(function (file) {
+        if (stepBufs[file] !== undefined) return;
+        stepBufs[file] = null;
+        fetch(STEP_BASE + file).then(function (r) { return r.arrayBuffer(); })
+          .then(function (b) { return new Promise(function (ok, no) { ctx.decodeAudioData(b, ok, no); }); })
+          .then(function (buf) { stepBufs[file] = buf; }).catch(function () {});
+      });
+    });
+  }
+  fetch(STEP_BASE + 'steps.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; })
+    .then(function (j) { stepTakes = j || {}; if (ctx) loadSteps(); }).catch(function () {});
+  function recordedStep(surface, gait, t) {
+    if (ctx && !Object.keys(stepBufs).length) loadSteps();
+    var own = stepTakes[gait] && stepTakes[gait].length ? gait : gait === 'walk' ? 'run' : 'walk';
+    var ready = (stepTakes[own] || []).filter(function (f) { return stepBufs[f]; });
+    if (!ready.length) return false;
+    var pick = ready.filter(function (f) { return f !== lastTake; });
+    var file = (pick.length ? pick : ready)[Math.floor(Math.random() * (pick.length || ready.length))];
+    lastTake = file;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), borrowed = own !== gait;
+    src.buffer = stepBufs[file];
+    src.playbackRate.value = rnd(0.94, 1.06) * (borrowed && gait === 'walk' ? 0.9 : 1);
+    g.gain.value = STEP_LEVEL[gait] * rnd(0.8, 1) * (surface === 'stone' ? 1 : 0.85);
+    var last = src;
+    if (surface !== 'stone') {              // earth: the click of the sole taken off
+      var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2600; f.Q.value = 0.5;
+      src.connect(f); last = f;
+    }
+    last.connect(g); out(g, rnd(-0.08, 0.08)); src.start(t);
+    return true;
+  }
+
   var lastStep = 0;
   var SFX = {
-    step: function (surface) {
+    step: function (surface, gait) {
       var t = ctx.currentTime; if (t - lastStep < 0.12) return; lastStep = t;
+      if (recordedStep(surface, gait === 'run' ? 'run' : 'walk', t)) return;
       if (surface === 'stone') burst(t, 0.07, 0.05 * rnd(0.7, 1), 'bandpass', rnd(1500, 2100), 1.5, rnd(-0.1, 0.1));
       else burst(t, 0.11, 0.06 * rnd(0.7, 1), 'lowpass', rnd(500, 750), 0.7, rnd(-0.1, 0.1));
     },
@@ -257,10 +301,14 @@
   };
 
   window.MASound = {
-    place: function (k) { kind = k; if (ac()) setBed(k); }
+    place: function (k) { kind = k; if (ac()) setBed(k); },
+    steps: function () {                    // which gaits have recorded footsteps ready, and how many (for checks)
+      var o = {}; Object.keys(stepTakes).forEach(function (g) { o[g] = stepTakes[g].filter(function (f) { return stepBufs[f]; }).length; });
+      return o;
+    }
   };
   Object.keys(SFX).forEach(function (k) {
-    window.MASound[k] = function (a) { if (on && ac() && ctx.state === 'running') SFX[k](a); };
+    window.MASound[k] = function (a, b) { if (on && ac() && ctx.state === 'running') SFX[k](a, b); };
   });
 
   /* Settings: Sound On / Off and the volume */
