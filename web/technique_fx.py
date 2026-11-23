@@ -6,7 +6,8 @@ read it. Keyed by the technique's id in technique.TECHNIQUES; a technique missin
     motion   the shared movement (looks.MOTION_SHEETS): "fist" is SHOAIB's punch video, a jab then a lunging punch;
              "palm" his palm video, a lunging two-handed palm push; "kick" a kick, shared by both genders: its
              timing and effects are defined once, and each look plays it with its own frames (looks.MOTION_SHEETS)
-             or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`);
+             or, until it has them, with its own three poses and a lunge and hop (fight.js `technique`): she has
+             hers (hero_female_kick.webp, scripts/make_heroine_set.py), he has none yet;
              "finger" his finger-jab video, a lunge with two fingers thrust out; "brace" his brace video, arms
              crossed up into guard in a wide stance: the Body defense techniques that stand their ground, played
              inside the beast's attack (fight.js `braced`); "deflect" the deflection videos (MOVES_FX below, hers

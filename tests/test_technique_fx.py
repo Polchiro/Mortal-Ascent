@@ -26,7 +26,7 @@ def test_the_punch_techniques_have_their_looks():
 
 def test_her_finger_jab_is_her_own():
     her = looks.motion_sheet({"gender": "female"}, "finger")
-    assert her["src"].endswith("hero_female_finger.webp") and her["frames"] == 28
+    assert her["src"].endswith("hero_female_finger.webp") and her["frames"] == 36
     assert 0 < her["jab"] <= her["windup"] < her["release"] < her["back"] < her["frames"]
     assert all(0 < q < 1 for q in her["hand"])
 
@@ -99,11 +99,18 @@ def test_the_movement_frames_exist_for_both_cultivators():
     from PIL import Image
     for motion in looks.MOTION_SHEETS:
         genders = ("male", "female")
-        assert set(looks.MOTION_SHEETS[motion]) == set(genders)
-        for gender in genders:
+        assert set(looks.MOTION_SHEETS[motion]) == ({"female"} if motion == "kick" else set(genders))   # his kick: not made yet
+        for gender in looks.MOTION_SHEETS[motion]:
             sheet = looks.motion_sheet({"gender": gender}, motion)
             path = os.path.join(ROOT, sheet["src"].lstrip("/"))
-            assert gender in sheet["src"] and Image.open(path).size == (320 * sheet["cols"], 360 * sheet["rows"])
+            size = Image.open(path).size
+            if "box" in sheet:                                 # a cell of its own on the fight canvas, at 1.5 canvas px a pixel
+                cell = (size[0] / sheet["cols"], size[1] / sheet["rows"])
+                assert abs(cell[0] * 1.5 - sheet["box"][2] * 1024) < 2 and abs(cell[1] * 1.5 - sheet["box"][3] * 559) < 2
+                assert sheet["box"][0] >= 0 and sheet["box"][0] + sheet["box"][2] <= 1 and sheet["box"][1] + sheet["box"][3] <= 1
+            else:
+                assert size == (320 * sheet["cols"], 360 * sheet["rows"])
+            assert gender in sheet["src"]
             assert sheet["frames"] <= sheet["cols"] * sheet["rows"]
             assert 0 < sheet["jab"] <= sheet["release"] < sheet["back"] < sheet["frames"]
             assert all(0 < q < 1 for q in sheet["hand"])
@@ -263,3 +270,36 @@ def test_a_sidestepped_unique_skill_is_acted_out_by_the_sidestep_alone():
            ("roar", f"{beast} — {skill['name']}: {skill['roused']}")]
     ev = explore_play.events(log, F)
     assert [e["act"] for e in ev] == ["tech"] and ev[0]["slipped"]            # no second, harmless pounce on her
+
+
+def test_her_kick_is_her_own_and_the_four_kick_techniques_play_it():
+    """Her kick video (scripts/make_heroine_set.py): the kick techniques play her frames; he keeps the hop until his."""
+    her = looks.motion_sheet({"gender": "female"}, "kick")
+    assert her["src"].endswith("hero_female_kick.webp") and os.path.exists(os.path.join(ROOT, her["src"].lstrip("/")))
+    assert 0 < her["windup"] < her["release"] < her["back"] < her["frames"] <= her["cols"] * her["rows"]
+    assert her["hand"][0] > 0.7 and 0.3 < her["hand"][1] < 0.5                 # her foot, out at chest height
+    assert looks.motion_sheet({"gender": "male"}, "kick") is None
+    for name in ("Crescent Sweep", "Swift Swallow Kick", "Autumn Wind Kick", "Meteor-Falling Kick"):
+        assert technique_fx.of(name, "Mortal", "female")["motion"] == "kick"
+
+
+def test_her_new_moves_start_and_end_in_her_stance():
+    """Each of her Nov 23 sheets starts and ends where her stance stands: no jump between the stance and the move."""
+    import numpy as np
+    from PIL import Image
+
+    def box_on_canvas(sheet, frame):
+        im = Image.open(os.path.join(ROOT, sheet["src"].lstrip("/")))
+        cw, ch = im.width // sheet["cols"], im.height // sheet["rows"]
+        cell = im.crop(((frame % sheet["cols"]) * cw, (frame // sheet["cols"]) * ch, (frame % sheet["cols"] + 1) * cw, (frame // sheet["cols"] + 1) * ch))
+        ys, xs = np.where(np.asarray(cell.getchannel("A")) > 60)
+        x0, y0, s = (sheet["box"][0] * 1024, sheet["box"][1] * 559, 1.5) if "box" in sheet else (208 + sheet.get("shift", 0) * 480, 3, 1.5)
+        return x0 + xs.min() * s, y0 + ys.min() * s, x0 + xs.max() * s, y0 + ys.max() * s
+
+    stance = box_on_canvas(looks.IDLE_SHEETS["female"], 0)
+    sheets = [looks.GUARD_SHEETS["female"]] + [looks.MOTION_SHEETS[m]["female"] for m in ("kick", "fist", "palm", "finger")]
+    for sheet in sheets:
+        for frame in (0, sheet["frames"] - 1):
+            b = box_on_canvas(sheet, frame)
+            assert abs(b[1] - stance[1]) <= 8 and abs(b[3] - stance[3]) <= 14, (sheet["src"], frame, b, stance)   # head and feet
+            assert abs(b[2] - stance[2]) <= 30, (sheet["src"], frame, b, stance)                                    # her front
