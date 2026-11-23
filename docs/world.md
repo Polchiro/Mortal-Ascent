@@ -19,7 +19,11 @@ round (`bot/gathering.py`), the hunting ground's beasts and odds (`hunting.py`),
                                 └── the other five roads: closed, "not open yet"
 ```
 
-**The land is empty for now, on purpose.** Outside the town there is only ground: grass, forest floor, dirt roads
+**Forest Edge is the first land being dressed:** rocks, fallen logs, ferns, mushrooms, flowers and long grass stand
+on it in hand-placed groups (docs/environment.md "Dressing a land in groups"); rocks and logs block the way. Trees
+come next, when their pictures are made. The Crossroads, Deep Woods and Shrine Grove are still bare.
+
+**The rest is empty for now, on purpose.** Outside the town there is only ground: grass, forest floor, dirt roads
 and paths, a paved junction and clearings. The lands are laid out and sized first so the world can be walked and
 judged; trees, rocks and buildings are then placed on it piece by piece. The earlier painted Moon Forest clearing and
 its pieces (docs/environment.md) are set aside until then (team hunts still use that painting, docs/hunting.md).

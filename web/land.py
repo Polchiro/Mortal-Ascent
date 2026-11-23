@@ -112,9 +112,22 @@ def area(key):
     return [(e, e), (n - e, e), (n - e, n - e), (e, n - e)]
 
 
+_BLOCKS = {}
+
+
+def blocks(key):
+    """Where this land's pieces (web/env.py: rocks, logs) block the way: circles (x, y, radius) in tiles."""
+    if key not in _BLOCKS:
+        from . import env
+        _BLOCKS[key] = env.blocks(key, 1 / SCALE)
+    return _BLOCKS[key]
+
+
 def walkable(key, x, y):
     n, e = LANDS[key]["size"], LANDS[key]["edge"]
-    return e < x < n - e and e < y < n - e
+    if not (e < x < n - e and e < y < n - e):
+        return False
+    return not any(math.hypot(x - bx, y - by) <= r for bx, by, r in blocks(key))
 
 
 def _curve(pts, step=1.0):

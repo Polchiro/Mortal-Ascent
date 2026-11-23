@@ -102,3 +102,81 @@ def test_the_pictures_are_served(tmp_path, monkeypatch):
     c = TestClient(app)
     for name in env.ASSETS:
         assert c.get("/" + env.path(name)).status_code == 200
+
+
+# ── the open lands, dressed in groups (web/env.py GROUPS / DRESSED, web/land.py) ────────────────────────────────
+import pytest  # noqa: E402
+
+from web import land  # noqa: E402
+
+
+def test_a_lands_groups_are_made_of_known_pieces_and_stand_on_its_ground():
+    cat = env.catalog()
+    for key, groups in env.DRESSED.items():
+        assert key in land.LANDS
+        n, e = land.size(key), land.LANDS[key]["edge"]
+        for group, x, y, mirror, scale in groups:
+            assert group in env.GROUPS and 0.6 <= scale <= 1.4
+        for name, x, y, s, flip in env.LAND_PLACED[key]:
+            assert name in env.ASSETS and name in cat
+            assert e < x < n - e and e < y < n - e, (key, name, x, y)       # on the ground you can walk
+    for group, items in env.GROUPS.items():                                 # a group is small: an arrangement, not a field
+        assert all(math.hypot(dx, dy) <= 2.2 for _, dx, dy, _, _ in items), group
+
+
+def test_mirroring_a_group_mirrors_it_on_screen():
+    env.DRESSED["_t"] = [("boulders", 10, 10, False, 1.0), ("boulders", 10, 10, True, 1.0)]
+    try:
+        d = env.dressed("_t")
+    finally:
+        del env.DRESSED["_t"]
+    half = len(d) // 2
+    for a, b in zip(d[:half], d[half:]):
+        assert a[0] == b[0] and a[4] != b[4]                                 # the same piece, flipped
+        assert (a[1] - 10, a[2] - 10) == pytest.approx((b[2] - 10, b[1] - 10))   # its offset's axes swapped
+
+
+def test_nothing_blocks_a_lands_roads_gates_or_hidden_spots():
+    for key in env.DRESSED:
+        cfg = land.LANDS[key]
+        for bx, by, r in land.blocks(key):
+            assert land.off_path(key, bx, by, room=r + 0.3), (key, bx, by)   # clear of every road and path
+            for g in cfg["gates"].values():
+                assert math.dist((bx, by), g["at"]) > 4
+            for s in cfg.get("secret", []):
+                assert math.dist((bx, by), s) > r + 1.0                      # you can stand on a hidden spot
+
+
+def test_a_lands_pieces_are_your_size_and_block_for_the_server_and_the_page_alike():
+    from web import overworld
+    key = "forest_edge"
+    d = overworld.wild_data({"src": "x", "cell": 256, "feet": [128, 232], "stand": [0] * 8}, key, (40.0, 6.5))
+    assert [tuple(c) for c in d["blocked"]] == land.blocks(key) and d["blocked"]     # the same circles
+    bx, by, r = land.blocks(key)[0]
+    assert not land.walkable(key, bx, by) and land.walkable(key, bx + r + 0.2, by)
+    assert len(d["pieces"]) == len(env.LAND_PLACED[key]) > 300
+    boulder = next(p for p in d["pieces"] if p["src"].endswith("boulder_01.webp"))
+    scale = next(s for n, _, _, s, _ in env.LAND_PLACED[key] if n == "boulder_01")
+    assert boulder["rect"][3] == pytest.approx(124 * scale / land.SCALE, abs=0.2)    # as big beside you as on the old map
+    assert boulder["env"] and boulder["pass"] and d["tone"] and d["lights"]          # tinted to the night; mushrooms glow
+    half = land.size(key) * 64
+    assert all(0 < p["rect"][0] < 2 * half for p in d["pieces"])                     # on the land's own picture
+
+
+def test_every_corner_of_a_dressed_land_can_still_be_walked_to():
+    key = "forest_edge"
+    cfg, n, step = land.LANDS[key], land.size(key), 0.5
+    cells = int(n / step)
+    ok = [[land.walkable(key, i * step, j * step) for j in range(cells)] for i in range(cells)]
+    sx, sy = cfg["start"]
+    seen, todo = {(int(sx / step), int(sy / step))}, [(int(sx / step), int(sy / step))]
+    while todo:
+        i, j = todo.pop()
+        for a, b in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)):
+            if 0 <= a < cells and 0 <= b < cells and ok[a][b] and (a, b) not in seen:
+                seen.add((a, b))
+                todo.append((a, b))
+    free = sum(v for row in ok for v in row)
+    assert len(seen) == free                                              # no pocket is walled off by rocks and logs
+    for g in cfg["gates"].values():
+        assert (int(g["at"][0] / step), int(g["at"][1] / step)) in seen

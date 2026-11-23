@@ -5,9 +5,9 @@ draws them in its 2D canvas like the town's buildings: back to front with you an
 behind a rock and in front of a fern. There is no 3D engine: a piece is a picture of an object, drawn at the map's
 camera angle (docs/town.md, docs/hunting.md "The map").
 
-> **Where they stand now:** the open world's lands (docs/world.md) are bare ground for the moment, to be dressed
-> piece by piece. These pieces and the painted Moon Forest clearing they were placed on are still used by the hunting
-> map (team hunts, docs/hunting.md "The map"), and are ready to be placed on the lands.
+> **Where they stand now:** on the old painted Moon Forest clearing (team hunts, docs/hunting.md "The map"), and on
+> the open world's **Forest Edge** (docs/world.md), dressed in groups (below). Deep Woods and Shrine Grove are still
+> bare ground. There are no trees yet: they need SHOAIB's pictures.
 
 Code: `web/env.py` (what each asset is, where each map's pieces stand), `scripts/make_env_assets.py` (cuts the
 pictures), `web/hunt_map.py` (a map's pieces and their blocks), `web/static/huntmap.js` (drawing them).
@@ -55,6 +55,31 @@ length), scale about 0.6–1.4, flip mirrored left to right. A flat picture can'
 mirroring, scale and variants (`_02`, `_03`). A log as drawn lies along the map's y axis (on screen lower-left to
 upper-right), mirrored along the x axis. Press **G** on the map for the tile grid, your position and every blocked
 circle, to place by eye. Placing pieces by hand, in groups that fit the painting, looks better than scattering them.
+
+## Dressing a land in groups
+
+A land (70 x 70 tiles) is too big to place piece by piece, and single pieces dotted about look scattered. So a land
+is dressed in small arrangements:
+
+- `GROUPS` (in `web/env.py`): each group composed once, pieces at offsets (tiles) round the group's own spot.
+  `boulders` (a boulder, its small stones, a fern and grass), `fallen` (a long trunk with ferns at its ends and
+  mushrooms along it), `nook` (a broken log crowded with mushrooms), `flowers`, `spirit` (a glowing ring of spirit
+  mushrooms), `stones`, `tufts` (long grass), `ferns`, `pebble` (one wayside stone).
+- `DRESSED[land]`: where each group is set down by hand, `(group, x, y, mirrored, scale)`. Mirroring a group mirrors
+  it on screen (its offsets swap axes and every piece flips), so one arrangement gives two looks.
+
+**Forest Edge** has 87 groups (520 pieces): flowers and long grass in the northern meadow, ferns and fallen trunks
+where the trees' floor begins, boulders and stones off the road (never on it), and a ring of spirit mushrooms by
+each hidden spot and in the far corners.
+
+A land is drawn bigger against you than the old painted map (`land.SCALE`), so its pieces are made that much smaller
+(`env.pieces(key, 1 / SCALE)`) and stay the same size beside the cultivator. Rocks and logs block the way: the
+server's `land.walkable` and the page use the same circles (`land.blocks`), and herbs, beasts and finds only appear
+where you can stand. Tests check that nothing blocks a road, a gate or a hidden spot and that no pocket of the land
+is walled off.
+
+To add or move a group: edit `DRESSED`, press **G** on the map for the grid and your position. No picture has to
+be made again (the ground is not repainted).
 
 ## How they are drawn
 

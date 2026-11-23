@@ -1006,8 +1006,11 @@
   function drawLights() {
     if (!LIGHTS.length && !flies.length) return;
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var lw = W / S / 2 + 160, lh = H / S / 2 + 160;
     LIGHTS.forEach(function (l, i) {
-      var q = toScreen(l[0], l[1]), fl = .85 + Math.sin(glowT * 3.1 + i * 1.7) * .08 + Math.sin(glowT * 7.3 + i) * .05;
+      var q = toScreen(l[0], l[1]), fl;
+      if (Math.abs(q.x - cam.x) > lw || Math.abs(q.y - cam.y) > lh) return;       // off screen: a big land has many
+      fl = .85 + Math.sin(glowT * 3.1 + i * 1.7) * .08 + Math.sin(glowT * 7.3 + i) * .05;
       var R = l[3] || 120, cy = q.y - (l[3] ? R * 0.3 : 0);         // a small light (a glowing mushroom): round its caps
       var g = ctx.createRadialGradient(q.x, cy, 2, q.x, cy, R * fl);
       g.addColorStop(0, hexA(l[2], .55 * fl)); g.addColorStop(.25, hexA(l[2], .18 * fl)); g.addColorStop(1, hexA(l[2], 0));

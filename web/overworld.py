@@ -732,10 +732,17 @@ ZOOM = land.ZOOM
 
 
 def wild_data(sheet, place, hero):
-    """A wild land's page data, in the town page's shape (web/static/town.js walks every place)."""
+    """A wild land's page data, in the town page's shape (web/static/town.js walks every place). Its pieces (rocks,
+    logs, plants: web/env.py) are drawn among you and the beasts; the ones that block are in `blocked`, the same
+    circles the server checks (land.walkable)."""
+    from . import env
+    k, half = 1 / land.SCALE, land.size(place) * 64
+    pieces = [{**p, "rect": [p["rect"][0] + half, p["rect"][1], p["rect"][2], p["rect"][3]], "pass": True, "env": True}
+              for p in env.pieces(place, k)]
     return {"sheet": sheet, "size": land.size(place), "ground": land.ground(place), "zoom": ZOOM,
-            "area": [list(p) for p in land.area(place)], "inset": 0, "blocked": [], "pieces": [],
-            "tone": None, "lights": [], "reach": 1.5, "scale": land.SCALE, "hero": {"x": hero[0], "y": hero[1]},
+            "area": [list(p) for p in land.area(place)], "inset": 0, "blocked": [list(c) for c in land.blocks(place)],
+            "pieces": pieces, "tone": env.LAND_TONE.get(place), "lights": [list(c) for c in env.lights(place, k)],
+            "reach": 1.5, "scale": land.SCALE, "hero": {"x": hero[0], "y": hero[1]},
             "near": None, "npcs": [], "exits": [], "atmos": True}
 
 

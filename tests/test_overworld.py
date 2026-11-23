@@ -399,7 +399,7 @@ def test_moving_answers_the_next_place(site):
     assert v["to"] == "forest_edge" and v["url"] == "/wild/forest_edge"
     d = v["data"]
     assert d["place"] == "forest_edge" and d["ground"]["base"] == "/art/maps/land/forest_edge/" and d["atmos"]
-    assert d["size"] == 70 and d["zoom"] < 1 and d["pieces"] == []            # a big, empty land
+    assert d["size"] == 70 and d["zoom"] < 1 and d["pieces"] and d["blocked"]    # a big land, dressed (web/env.py)
     assert d["world"]["beasts"] and d["world"]["herbs"]
     north = next(e for e in d["exits"] if e["key"] == "north")
     assert north["walk"] and north["out"] == [0, -1] and north["half"] > 1 and any(e["key"] == "south" for e in d["exits"])
