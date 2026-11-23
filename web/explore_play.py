@@ -401,6 +401,15 @@ def home_view(conn, uid, explores):
             "cooldown": explore_rules.EXPLORE_COOLDOWN_MINUTES, "realm": p["realm"]}
 
 
+def beast_body(name):
+    """The beast's body type (beasts.BODY_TYPES: wolf, cat, bird ...), for its recorded voice; None if unknown."""
+    import beasts
+    try:
+        return beasts.body_of(name)
+    except KeyError:
+        return None
+
+
 def found_list(exp):
     from bot import loot
     out = [f"🪷 {exp.coins:,}"] if exp.coins else []
@@ -700,6 +709,7 @@ def fight_view(conn, s, b, p, now, me=None):
                   "art": poses["poses"]["idle"]["src"] if poses else
                          f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
                   "roar": beast_roar(e) if beast else None,
+                  "body": beast_body(e["name"]) if beast else None,
                   "poses": poses, "pose": "crouch" if poses and winding and "crouch" in poses["poses"] else "idle",
                   "sheets": beast_sheets.sheets(e.get("slug")) if beast and not poses else None,
                   "delta": round(e["hp"]) - prev["enemy"] if "enemy" in prev else 0},

@@ -253,6 +253,32 @@ through air, out-of-tune partials for steel, a rough buzz through throat shapes 
 little overdrive and a short echo, so a blow has punch and sits in a place. `LEVEL` in `fight_sound.js` sets how
 loud each is against the others.
 
+**Recorded sounds from the animation videos.** SHOAIB's Gemini / Veo videos carry sound, and a fight sound can be
+taken from one: `python -m scripts.make_fight_sound --listen video.mp4` prints where the video is loud, and
+`python -m scripts.make_fight_sound swing video.mp4 --from 1.2 --to 1.6` cuts that part into
+`art/fx/sounds/swing.mp3` (one channel, loudness evened, ends faded) and lists it in `art/fx/sounds/sounds.json`.
+A sound listed there is played instead of the one made in code; one not listed still plays the made one. A name can
+be narrowed (`swing:break`, `hit:big`, `roar:big`), and a second take of the same sound (`--as swing2`) makes the
+fight vary between them.
+
+What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos):
+
+| Sound | From |
+|---|---|
+| Strike's swing | her sword slash video |
+| Break: Qi gathering, the swing, the ground's boom | her Break video |
+| Guard raised, a blow blocked | her block video |
+| Your blow landing (three takes) | her punch, palm and finger videos |
+| You are hit; a miss; a dodge | her side kick and punch videos |
+| Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
+| A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
+| A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
+
+Still made in code: the move tick, heal, stun, victory and defeat, the defense techniques (brace, deflect,
+sidestep), and the voices of birds, serpents, turtles, insects and dragons, until they have videos with sound.
+A beast's voice is kept to its body type (`beasts.BODY_TYPES`, sent to the page as `data-body`) with an `@`:
+`roar@wolf`. `--also` lists one take under several names.
+
 In a duel both fighters' moves sound together, a moment apart. The sounds follow the map's settings (the gear on
 the map: Sound On / Off and the volume), and start with your first click or key press on the page.
 
