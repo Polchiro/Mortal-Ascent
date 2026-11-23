@@ -81,7 +81,7 @@ def test_old_herbs_are_swapped_for_new_ones(tmp_path):
         conn.execute("INSERT INTO items (user_id, category, key, name, qty) VALUES (1, 'materials', "
                      "'Moonlight Fern', 'Moonlight Fern', 1)")
     conn.close()
-    conn = db.connect(str(path))
+    conn = db.connect(str(path), setup=True)   # as when the bot or the website starts again
     assert db.get_items(conn, 1, "materials") == []
     bag = {h["name"]: h["qty"] for h in db.get_items(conn, 1, "herbs")}
     assert bag == {"Iron Root": 3, "Dew Leaf": 3}

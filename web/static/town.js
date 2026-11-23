@@ -262,13 +262,14 @@
   var sentAt = 0;
   function report(force) {
     var now = performance.now();
-    if (!force && now - sentAt < 300) return;
+    if (!force && now - sentAt < 400) return;
     sentAt = now;
     var at = PLACE;
     post('/world/pos', {place: PLACE, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
       if (v.gone) { location.replace('/'); return; }
       if (v.url && !through) { location.replace(v.url); return; }               // the server has you elsewhere
       if (at === PLACE && v.x != null && Math.hypot(v.x - hero.x, v.y - hero.y) > 1.2) { hero.x = v.x; hero.y = v.y; }
+      if (at === PLACE && v.others) seeOthers(v.others);                         // told with the step: no need to ask
     }).catch(function () {});
   }
   function poll() {
@@ -372,13 +373,17 @@
     if (!sheetImgs[sh.src]) { var im = new Image(); im.src = sh.src; sheetImgs[sh.src] = im; }
     return {sh: sh, img: sheetImgs[sh.src]};
   }
-  function pollOthers() {
-    if (document.hidden || through || !PLACE) return;
+  var toldAt = 0;
+  function pollOthers() {                        // standing still: ask. Walking: your steps' answers already say.
+    if (document.hidden || through || !PLACE || performance.now() - toldAt < 950) return;
     var at = PLACE;
-    post('/world/others', {place: PLACE}).then(function (v) {
-      if (at !== PLACE || !v.others) return;
+    post('/world/others', {place: PLACE}).then(function (v) { if (at === PLACE && v.others) seeOthers(v.others); }).catch(function () {});
+  }
+  function seeOthers(list) {
+    toldAt = performance.now();
+    {
       var seen = {};
-      v.others.forEach(function (o) {
+      list.forEach(function (o) {
         seen[o.tag] = true;
         var m = OTHERS[o.tag];
         if (!m) {
@@ -389,7 +394,7 @@
         if (Math.hypot(m.x - o.x, m.y - o.y) > 6) { m.x = o.x; m.y = o.y; }      // too far behind: just there
       });
       Object.keys(OTHERS).forEach(function (k) { if (!seen[k]) delete OTHERS[k]; });
-    }).catch(function () {});
+    }
   }
   setInterval(pollOthers, 1000);
   function stepOthers(dt) {

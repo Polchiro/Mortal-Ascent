@@ -137,7 +137,8 @@ def test_reports_are_checked_like_the_hunting_map(world, conn):
     world.enter(conn, UID, "crossroads")
     w = world.walker(UID)
     x0, y0 = w.x, w.y
-    assert world.report(conn, UID, "crossroads", x0 + 0.2, y0) == {"x": pytest.approx(x0 + 0.2), "y": y0}
+    r = world.report(conn, UID, "crossroads", x0 + 0.2, y0)
+    assert (r["x"], r["y"]) == (pytest.approx(x0 + 0.2), y0) and r["others"] == []   # and who else is here: nobody
     world.now.t += 0.1
     assert world.report(conn, UID, "crossroads", x0 + 8, y0)["x"] == pytest.approx(x0 + 0.2)   # too fast: put back
     assert world.report(conn, UID, "forest_edge", 19, 19)["url"] == "/crossroads"      # you are not there
