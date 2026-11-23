@@ -9,6 +9,7 @@
     <div><p class="kicker">BLACKSMITH · {{ v.rank | upper }}</p><h1 class="title">The Forge</h1>
     <p class="sub">Forge a passive onto your weapon, armor or artifact. Five stages, 100 points: under 50 the materials are lost.</p></div>
     <span class="chip">{{ v.exp }} blacksmith EXP</span>
+    <a class="btn btn-gold ghost small totown" href="/town?near=blacksmith">← Back to town</a>
   </section>
 
   {% if error %}<p class="ferror" role="alert">{{ error }}</p>{% endif %}

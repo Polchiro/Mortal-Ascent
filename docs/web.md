@@ -105,6 +105,13 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 `/forge` is the bot's `/forge` (docs/forge.md, section 5) in the browser, with the same engine:
 `bot/forging.py` makes the plan, takes the materials, runs the five stages and writes the passive.
 
+**Reached only through Blacksmith Tie in town**, the same way alchemy is through Lan. There is no Forge tab. Tie's
+"Enter the forge" goes to `/town/visit/blacksmith`, which gives a pass (session) and opens `/forge`; opening `/forge`
+or starting a forge without it sends you to the town, in front of Tie (`/town?near=blacksmith`), with a note. Each
+click in the forge keeps the pass (it lapses after 30 idle minutes); arriving in town ends it. A forge in progress is
+never locked out, so a refresh mid-forge is safe. "← Back to town" (on the gear page, and on the result next to Forge
+again) returns you in front of Tie.
+
 1. **Choose:** the player's weapons, armor and artifacts (worn first) with their passive slots; the action
    (Enchant / Reroll / Replace, and the slot to lock for Replace); an optional essence, fuel and quench liquid.
 2. **Cost:** the materials (with how many they have), the Lotus Coins, the difficulty and anything missing.

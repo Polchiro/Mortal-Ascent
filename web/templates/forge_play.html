@@ -164,7 +164,10 @@
     <div class="newpassive" style="border-color: {{ p.color }}"><b style="color: {{ p.color }}">{{ p.name }}</b> · {{ p.rarity }}<span class="sub">{{ p.text }}</span></div>
     {% endfor %}
     {% for l in g.lines %}<p class="pline">{{ l | safe }}</p>{% endfor %}
-    <form method="post" action="/forge/done"><button class="btn btn-gold" type="submit">Forge again</button></form>
+    <div class="fagain">
+      <form method="post" action="/forge/done"><button class="btn btn-gold" type="submit">Forge again</button></form>
+      <form method="post" action="/forge/done"><input type="hidden" name="to" value="town"><button class="btn btn-gold ghost" type="submit">← Back to town</button></form>
+    </div>
   </section>
   {% endif %}
 </main>
