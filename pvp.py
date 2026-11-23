@@ -35,4 +35,3 @@ STAGGER_DAMAGE_BONUS = 1.25  # a Break that beats a Guard staggers: the broken p
 INTENSITY_START_TURN = 10    # rising intensity: from this turn on...
 INTENSITY_PER_TURN = 0.10    # ...all damage +10% per turn (turn 10 = +10%, turn 11 = +20%, ...); the 30% cap still holds
 RECOVER_MAX_PER_DUEL = 0.50  # Recover (defense technique) heals at most this share of max HP in one duel
-EVADE_COOLDOWN_TURNS = 1     # after an Evade triggers, it can't trigger again the next turn

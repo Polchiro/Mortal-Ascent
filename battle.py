@@ -54,6 +54,21 @@ BATTLE_QI_PER_TURN = 10       # back at the end of every turn
 BATTLE_QI_GOOD_GUARD = 25     # back when a Guard fully blocks a normal Strike
 TECHNIQUE_QI_COST = {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 50}
 CHILLED_QI_COST = 10          # techniques cost this much more while Chilled
+# Deflection techniques (the Counter ones: Parrying Arm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
+# Deflection, Void Mirror Stance), Nov 24: used against a Break they turn it aside DEFLECT_BREAK_CHANCE of the time
+# (no damage, and their Counter share of it goes back at the attacker); otherwise they hold their block % as before.
+# For that they cost DEFLECT_QI_EXTRA more Battle Qi than their grade. In beast fights and duels alike.
+DEFLECT_BREAK_CHANCE = 0.80
+DEFLECT_QI_EXTRA = 15
+
+
+def technique_qi(tech, effect):
+    """Battle Qi a technique costs, before statuses: its grade's, plus the deflections' extra."""
+    return TECHNIQUE_QI_COST.get(tech["grade"], 30) + (DEFLECT_QI_EXTRA if effect and effect[0] == "counter" else 0)
+
+
+# Duels use Battle Qi too (bot/duel.py, Nov 24): the same start (no Spirit bonus: a duel is fair), the same costs and
+# the same BATTLE_QI_PER_TURN back, on top of each technique's rest.
 
 # Reading the beast must beat spamming Strike (tested with 600-fight simulations per build, Nov 2026):
 BLOCKED_STRIKE_STUN = True   # a Strike into the enemy's Guard leaves you Stunned (only Guard next turn)

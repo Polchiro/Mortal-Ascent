@@ -816,3 +816,54 @@ def test_the_discord_card_shows_the_unique_skill():
     d = card_data(b, "x")
     assert d["skill"] is None and "Roused" in d["enemy"]["statuses"]
     assert render_beast_fight(d).size == (EW, EH)
+
+
+def test_a_dodge_technique_always_slips_the_beasts_break_and_charged_strike():
+    """Nov 24: Drifting Mist Steps and Cloud-Walking Shadow always dodge when used (they rolled 25% / 40% before), for
+    their Battle Qi, which is unchanged."""
+    import battle
+    for name, grade in (("Drifting Mist Steps", "Mystic"), ("Cloud-Walking Shadow", "Heaven")):
+        techs = [TECHS[0], {"id": 2, "name": name, "type": "defense", "grade": grade, "mastery_exp": 0, "stage": 0}]
+        for seed in range(12):                                   # whatever the dice say
+            b = make_battle(seed=seed, techs=techs)
+            f = b.fighters[0]
+            assert f.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST[grade]
+            force(b, "break")
+            assert b.choose(1, "defense_tech") is None
+            b.resolve()
+            assert f.hp == f.max_hp and any("slipped away" in line for _, line in b.log), (name, seed)
+            assert f.bqi == f.max_bqi - battle.TECHNIQUE_QI_COST[grade] + battle.BATTLE_QI_PER_TURN
+        b = make_battle(seed=3, techs=techs)
+        force(b, "strike", kind="charged")
+        assert b.choose(1, "defense_tech") is None
+        b.resolve()
+        assert b.fighters[0].hp == b.fighters[0].max_hp          # a charged Strike too: untouched
+    plain = make_battle(seed=3)                                  # an ordinary Guard technique still only softens it
+    force(plain, "break")
+    plain.choose(1, "defense_tech")
+    plain.resolve()
+    assert plain.fighters[0].hp < plain.fighters[0].max_hp
+
+
+def test_a_deflection_turns_a_break_aside_four_times_in_five_and_costs_more():
+    """Nov 24: the Counter techniques (the deflections) turn a beast's Break aside battle.DEFLECT_BREAK_CHANCE of the
+    time: no damage, their Counter share of it back at the beast. Otherwise they hold their block % as before. They
+    cost battle.DEFLECT_QI_EXTRA more Battle Qi than their grade."""
+    import battle
+    techs = [TECHS[0], {"id": 2, "name": "Parrying Arm", "type": "defense", "grade": "Mortal", "mastery_exp": 0, "stage": 0}]
+    turned = 0
+    for seed in range(200):
+        b = make_battle(seed=seed, techs=techs)
+        f, hp0 = b.fighters[0], b.enemy["hp"]
+        assert f.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"] + battle.DEFLECT_QI_EXTRA == 45
+        force(b, "break")
+        assert b.choose(1, "defense_tech") is None
+        b.resolve()
+        line = next((text for _, text in b.log if "Parrying Arm:" in text), "")
+        if "deflected the Break" in line:
+            turned += 1
+            assert f.hp == f.max_hp and b.enemy["hp"] < hp0 and "countered for" in line     # untouched, and it hits back
+        else:
+            assert f.hp < f.max_hp and "holds 20% of the Break" in line                    # as before
+    assert 0.72 * 200 <= turned <= 0.88 * 200
+    assert make_battle().fighters[0].qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"]   # Horse Stance Guard: no extra

@@ -156,7 +156,7 @@ def details(item, player, learned_names=()):
             effects.append(technique_effect(t["effect"]))
         import battle
         cd = combat.cooldown_turns(dict(t, stage=0))
-        effects.append(f"Costs {battle.TECHNIQUE_QI_COST.get(t['grade'], 30)} Battle Qi against beasts; "
+        effects.append(f"Costs {battle.technique_qi(t, t.get('effect'))} Battle Qi in fights and duels; "
                        f"rests {cd} turn{'s' if cd > 1 else ''} in duels and spars")
         need = technique.GRADES[t["grade"]]
         if t["name"] in learned_names:
@@ -331,6 +331,11 @@ def technique_effect(eff):
         return f"Heavy ×{val} (rests 1 turn longer)"
     if kind == "unbreakable":
         return "Unbreakable: Break moves deal half damage"
+    if kind == "evade":
+        return "Evade: always dodges a Break"
+    if kind == "counter":
+        import battle
+        return f"Counter {val:.0%}; turns a Break aside {battle.DEFLECT_BREAK_CHANCE:.0%} of the time"
     return f"{kind.title()} {val:.0%}"
 
 

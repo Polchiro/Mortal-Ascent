@@ -6,6 +6,7 @@ import time
 
 import pytest
 
+import battle
 import pvp
 import stats
 from bot import admin, db, duel_view
@@ -263,25 +264,44 @@ def test_recover_heals_at_most_half_max_hp_per_duel():
     b.hp = 1
     for _ in range(40):
         b.cooldowns["defense_tech"] = 0
+        b.bqi = b.max_bqi                                        # (and Battle Qi enough: this is about the heal's cap)
         play(d, "strike", "defense_tech")
         d.turn = 1                                               # keep the duel going, no intensity
     assert b.healed == pytest.approx(b.max_hp * pvp.RECOVER_MAX_PER_DUEL, abs=1)
     assert b.hp <= 1 + b.max_hp * pvp.RECOVER_MAX_PER_DUEL
 
 
-def test_evade_cannot_trigger_two_turns_in_a_row():
-    mist = tech("Drifting Mist Steps", "defense", "Mystic", tid=3)
-    d = make(techs2=[mist])
-    b = d.sides[1]
-    play(d, "break", "defense_tech")
-    assert b.hp == b.max_hp                                      # evaded (the chance always succeeds here)
-    b.cooldowns["defense_tech"] = 0
-    play(d, "break", "defense_tech")
-    assert b.hp < b.max_hp                                       # not again the very next turn
-    b.cooldowns["defense_tech"] = 0
-    hp = b.hp
-    play(d, "break", "defense_tech")
-    assert b.hp == hp                                            # a turn later it works again
+def test_a_dodge_technique_always_slips_a_break_for_its_battle_qi():
+    """Nov 24: used in a duel, Drifting Mist Steps and Cloud-Walking Shadow always dodge a Break (no chance, no
+    'not two turns in a row'). What limits them is their Battle Qi and their rest."""
+    for name, grade in (("Drifting Mist Steps", "Mystic"), ("Cloud-Walking Shadow", "Heaven")):
+        d = make(techs2=[tech(name, "defense", grade, tid=3)], rng=random.Random(7))
+        b = d.sides[1]
+        cost = battle.TECHNIQUE_QI_COST[grade]
+        assert b.bqi == b.max_bqi == battle.BATTLE_QI_START and b.qi_cost("defense_tech") == cost
+        casts = 0
+        while b.ready("defense_tech"):                           # turn after turn (its rest waived): every one dodged
+            play(d, "break", "defense_tech")
+            casts += 1
+            assert b.hp == b.max_hp and any("slips away" in line for _, line in d.log)
+            b.cooldowns["defense_tech"] = 0
+        assert casts == {"Mystic": 3, "Heaven": 2}[grade]        # then the Battle Qi has run out
+        assert b.bqi == battle.BATTLE_QI_START - casts * (cost - battle.BATTLE_QI_PER_TURN) < cost
+        assert "Not enough Battle Qi" in d.choose(b.uid, "defense_tech")
+
+
+def test_duel_techniques_cost_battle_qi_and_it_comes_back_each_turn():
+    d = make()
+    a, b = d.sides
+    assert a.bqi == b.bqi == battle.BATTLE_QI_START              # the same for both: a duel is fair
+    cost = a.qi_cost("attack_tech")
+    assert cost == battle.TECHNIQUE_QI_COST[a.atk_t["grade"]] and a.qi_cost("strike") == 0
+    play(d, "attack_tech", "guard")
+    assert a.bqi == battle.BATTLE_QI_START - cost + battle.BATTLE_QI_PER_TURN
+    assert b.bqi == battle.BATTLE_QI_START                       # plain moves are free, and Battle Qi never overfills
+    a.bqi = 0
+    a.cooldowns["attack_tech"] = 0
+    assert not a.ready("attack_tech") and a.ready("strike")
 
 
 def test_ko_ends_the_duel():
@@ -439,3 +459,20 @@ def test_a_defense_technique_holds_part_of_a_break():
     lost_tech = tech_.sides[1].max_hp - tech_.sides[1].hp
     assert lost_plain > 0 and lost_tech == pytest.approx(lost_plain * 0.8, abs=2)   # Mortal: holds 20%
     assert tech_.sides[1].staggered                                                # Break still wins the exchange
+
+
+def test_a_deflection_turns_a_break_aside_in_a_duel_and_costs_more():
+    arm = tech("Parrying Arm", "defense", "Mortal", tid=3)
+    turned, n = 0, 200
+    for seed in range(n):
+        d = make(techs2=[arm], rng=random.Random(seed))
+        a, b = d.sides
+        assert b.qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"] + battle.DEFLECT_QI_EXTRA
+        play(d, "break", "defense_tech")
+        if any("deflected by" in line for _, line in d.log):
+            turned += 1
+            assert b.hp == b.max_hp and a.hp < a.max_hp and not b.staggered      # untouched, countered, guard not shattered
+        else:
+            assert b.hp < b.max_hp and b.staggered
+    assert 0.72 * n <= turned <= 0.88 * n
+    assert a.qi_cost("attack_tech") == battle.TECHNIQUE_QI_COST[a.atk_t["grade"]]   # other techniques: no extra

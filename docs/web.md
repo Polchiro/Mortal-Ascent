@@ -451,8 +451,8 @@ a lair is fought with `bot/hunt.py`.
      in place, wrapped in swirls of blue Qi, then his own launch frames played back to rise out of it, as his video
      holds the dash to its end; no ground given, `give` 0). Told below as she plays it. For the two evade techniques, Drifting Mist Steps and Cloud-Walking
      Shadow (`technique_fx.MOVES_FX`, `"on": "evade"`). It plays **whenever the technique leaves the cultivator
-     untouched** (`explore_play.untouched`): the engine rolls the evade against the beast's Break (`bot/fight.py`,
-     unchanged) and logs "slipped away from the ... Break" ("Slipped away"), or the technique takes a Strike with a
+     untouched** (`explore_play.untouched`): the engine has the technique slip the beast's Break every time it is used (`bot/fight.py`;
+     since Nov 24, it rolled a chance before) and logs "slipped away from the ... Break" ("Slipped away"), or the technique takes a Strike with a
      full block, as a Guard does ("blocked 100%": "Evaded", with the Guard's counter). `explore_play.events` marks the
      technique's event `evaded` (and `slipped` for the Break). When a Break gets through instead, held in part, the
      technique keeps its CSS look. A beast's unique skill that is sidestepped is acted out by the sidestep alone (no

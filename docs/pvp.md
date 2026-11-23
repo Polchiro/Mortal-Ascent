@@ -27,6 +27,12 @@ the card `render_duel` in `cards/battle.py`.
   charged attacks, so the Bell (钟) does nothing here.
 - **Technique effects and mastery count fully** (damage multipliers, Combo, Pierce, Heavy, Stagger, Counter,
   Recover, Unbreakable, Evade).
+- **Battle Qi (Nov 24).** Both players start with **100 Battle Qi** (`battle.BATTLE_QI_START`; no Spirit bonus, a
+  duel is fair) and get **10 back at the end of every turn**. A technique costs its grade's Battle Qi, the same as
+  in a beast fight (`battle.TECHNIQUE_QI_COST`: Mortal 30, Yellow 35, Mystic 40, Earth 45, Heaven 50; the deflections 15 more), **on top of
+  its rest** (the cooldown turns, unchanged). Strike, Guard and Break are free. Without enough Battle Qi the
+  technique can't be picked ("Not enough Battle Qi"). Both players' Battle Qi is shown (the website's two blue
+  bars; a line under the Discord card), so you can see when the other one can't afford a technique.
 - **No pills.** **Flee = forfeit** (it counts as a loss).
 
 ## Turns
@@ -53,7 +59,10 @@ the card `render_duel` in `cards/battle.py`.
 - **Stagger:** the broken player takes **+25% damage** on the next turn. (Unlike a beast, a player does not lose
   the turn: both always pick.)
 - Defense technique extras work as in beast fights: **Counter** reflects part of a blocked Strike back,
-  **Recover** heals on a block, **Unbreakable** halves a Break, **Evade** may dodge a Break.
+  **Recover** heals on a block, **Unbreakable** halves a Break, and a dodge technique (**Evade**: Drifting Mist Steps, Cloud-Walking Shadow)
+  **always slips a Break** when it is played (Nov 24; it was a chance before). A deflection (a **Counter**
+  technique) **turns a Break aside 80% of the time**: no damage, the guard is not shattered (no Stagger), and its
+  Counter share goes back at the attacker (capped like any hit); the other 20% it holds its block % as before.
 - An attack technique with **Stagger** weakens the other player's next Guard (that share of a Strike slips through).
 
 ## Fair-fight rules
@@ -64,7 +73,7 @@ the card `render_duel` in `cards/battle.py`.
 | Rising intensity | From **turn 10**, all damage **+10% per turn** (turn 10 = +10%, turn 11 = +20%, …) |
 | Turn limit | After **turn 20**, the player with the higher **% of HP left** wins; a **draw** if equal |
 | Recover | Heals at most **50% of max HP** per duel |
-| Evade | Can't trigger **two turns in a row** |
+| Evade | Always dodges a Break; limited by its Battle Qi and its rest (the old "not two turns in a row" rule is gone) |
 | Knock-out | 0 HP loses; both at 0 on the same turn is a draw |
 
 ## The card

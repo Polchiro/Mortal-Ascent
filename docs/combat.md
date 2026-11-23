@@ -92,8 +92,15 @@ players use their techniques more often (about 75% of turns when reading the bea
   Heavy hits harder, Stagger weakens the beast's next Guard (Nine Dragons: it cannot Guard at all).
 - **Defense technique** = a Guard with extras: it **holds its block % of a Break** (20% Mortal to 50% Heaven;
   a plain Guard holds nothing), so it's the safe pick when you can't read the beast. Counter reflects blocked
-  damage, Recover heals on a block, Unbreakable halves what's left of a Break, Evade may dodge a Break.
-  Against a charged attack it adds its block % to the Guard.
+  damage, Recover heals on a block, Unbreakable halves what's left of a Break. A dodge technique (Evade: Drifting Mist Steps, Cloud-Walking Shadow)
+  **always slips a Break** when you use it, and a charged Strike too (Nov 24: it rolled 25% / 40% before, which read
+  as the move failing); what limits it is its Battle Qi (40 / 50, unchanged).
+  A **deflection** (the Counter techniques: Parrying Arm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
+  Deflection, Void Mirror Stance) **turns a Break aside 80% of the time** (`battle.DEFLECT_BREAK_CHANCE`, Nov 24):
+  no damage, and its Counter share of the Break goes back at the beast ("deflected the Break"). The other 20% it
+  holds its block % as before ("Held 20%"). For that the deflections cost **15 more Battle Qi** than their grade
+  (`battle.DEFLECT_QI_EXTRA`: 45 Mortal to 65 Heaven).
+  Against a charged attack the others add their block % to the Guard.
 - +20 mastery EXP per use, as before.
 
 ## Telegraphed moves
