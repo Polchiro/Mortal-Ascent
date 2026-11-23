@@ -612,7 +612,9 @@ def cast(b, f, gender=None):
     from .profile import art_url
     return {"name": t["name"], "id": technique_fx.technique_id(t["name"]), "kind": t["type"], "school": school,
             "effect": shown, "landed": landed, "grade": t["grade"], "color": GRADE_COLOR.get(t["grade"], "#E8C27A"),
-            "fx": technique_fx.of(t["name"], t["grade"], gender, "evade" if untouched(t, mine) else shown),
+            # a dodge technique plays its sidestep when it dodged, and also when no blow came at all (nothing logged)
+            "fx": technique_fx.of(t["name"], t["grade"], gender,
+                                  "evade" if untouched(t, mine) or (effect == "evade" and not mine) else shown),
             "icon": art_url(tech_kind(t["name"], info.get("school", "Body"))) or f"/art/icons/actions/{t['type']}_tech.webp"}
 
 
@@ -805,6 +807,12 @@ def events(log, f):
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
             if dmg:
                 out.append({"who": "enemy", "act": "attack", "dmg": dmg})
+    used = next((t for t in (f.def_t, flex) if t and t.get("type", "defense") == "defense" and getattr(f, "last_move", None) == t["name"]), None)
+    if used and not any(x["who"] == "me" and x["act"] == "tech" for x in out):
+        # the defence technique was used and the beast struck no blow at it (it Guarded, or was Staggered): the engine
+        # logs nothing for it, but the cultivator still makes the movement (fight.js: "idle", nothing to take or slip)
+        out.insert(0, {"who": "me", "act": "tech", "hit": False, "dmg": 0, "blocked": False, "hold": 0, "heal": 0,
+                       "counter": 0, "idle": True})
     return out
 
 

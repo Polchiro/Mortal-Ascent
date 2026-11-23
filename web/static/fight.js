@@ -1584,10 +1584,14 @@
        what really happened, read from the server's log: Blocked, a Break held (part of it still hurts), HP recovered,
        a counter. `hitEv`: the beast's blow, when part of it got through. The effects are placed around the braced
        figure (`body`), so they fit either look. */
+    /* A sheet's `pace` (looks.py): the brace and the deflection, and the beast's blow they answer, play this much
+       slower than their recipes say, so they can be followed. */
+    function paced(o, k) { var out = {}; Object.keys(o).forEach(function (n) { out[n] = /knock/.test(n) ? o[n] : o[n] * k; }); return out; }
+    var PACE = msheet && +msheet.dataset.pace || 1;
     function braced(ev, hitEv) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = RECIPES.beast;
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = paced(RECIPES.beast, PACE);
       var attacked = !!(hitEv || ev.blocked || ev.hold);
-      var HIT = attacked ? R.hit : 900, END = attacked ? Math.max(R.end + (ev.counter ? 220 : 0), R.hit + 1000) : 1700;
+      var HIT = attacked ? R.hit : 900 * PACE, END = attacked ? Math.max(R.end + (ev.counter ? 220 : 0), R.hit + 1000 * PACE) : 1700 * PACE;
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
       var SET = msheet ? +msheet.dataset.release : 16;
       var Bd = msheet && msheet.dataset.body ? msheet.dataset.body.split(',').map(Number) : [0.46, 0.12, 0.92, 0.24];
@@ -1644,7 +1648,7 @@
             {transform: 'translate(-50%,-84%) scale(1.04)', opacity: 1, offset: 0.85}, {transform: 'translate(-50%,-88%) scale(1.08)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
         parry: function () {}
       };
-      var FORM_AT = Math.max(200, HIT - 420);
+      var FORM_AT = Math.max(200 * PACE, HIT - 420 * PACE);
       function struck() {                                           // the beast's blow meets the brace
         var h = at(fr, HAND[0], HAND[1]);
         burst('tspark', h[0], h[1], X.play === 'parry' ? '#FFE6A0' : tc);
@@ -1702,9 +1706,9 @@
        there is time to read it: DEFLECT below. */
     var DEFLECT = {charge: 380, hit: 600, glance: 780, home: 1180, turn: 320, sweep: 430, back: 560};
     function deflected(ev, hitEv) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, D = DEFLECT;
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, D = paced(DEFLECT, PACE);
       var attacked = !!(hitEv || ev.blocked || ev.hold);
-      var HIT = D.hit, END = Math.max(HIT + 1150 + (ev.counter ? 200 : 0), attacked ? D.home + 300 : 0);
+      var HIT = D.hit, END = Math.max(HIT + 1150 * PACE + (ev.counter ? 200 : 0), attacked ? D.home + 300 : 0);
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
       var JAB = msheet ? +msheet.dataset.jab : 6, REL = msheet ? +msheet.dataset.release : 12;
       var SWEEP = msheet && msheet.dataset.sweep ? +msheet.dataset.sweep : 23, BACK = msheet ? +msheet.dataset.back : 26;
@@ -1779,7 +1783,7 @@
             {duration: life, fill: 'forwards'}); }]
       };
       var F = FORM[X.play] || [HIT, function () {}];
-      var FORM_AT = Math.max(0, F[0]), FX_END = X.play === 'hands' ? END - 160 : HIT + 640;
+      var FORM_AT = Math.max(0, F[0]), FX_END = X.play === 'hands' ? END - 160 : HIT + 640 * PACE;
       function struck() {                                           // her hand meets the blow and turns it aside
         var spark = X.play === 'glance' ? '#FFE6A0' : tc;
         burst('tspark', C[0], C[1], spark);
@@ -1876,7 +1880,7 @@
         if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(1.7)'}, {filter: 'brightness(1)'}], {duration: 380});
         var p = stood;
         burst('tspark', p[0], p[1], X.play === 'cloud_steps' ? '#FFF1C8' : '#CFE6FF');
-        pop(fighter, 'word', ev.slipped ? 'Slipped away' : 'Evaded');
+        pop(fighter, 'word', ev.idle ? 'Shadow step' : ev.slipped ? 'Slipped away' : 'Evaded');
       }
       return {end: END, render: function (t) {
         if (t < 0) return;
@@ -1892,7 +1896,8 @@
         else if (t < HIT) { var c = span(t, charge, HIT); x = 0.02 * W - lunge * c * c; rot = -7 * c; }
         else if (t < HIT + 220) { var g = ease(span(t, HIT, HIT + 220)); x = -land - past * g; y = 0.012 * W * g; rot = -7 + 4 * g; }
         else if (t < HIT + 820) { var r = inout(span(t, HIT + 220, HIT + 820)); x = (-land - past) * (1 - r); y = 0.012 * W * (1 - r) - 0.02 * W * Math.sin(Math.PI * r); rot = -3 * (1 - r); }
-        bpose(t < charge ? 'crouch' : t < HIT + 220 ? 'leap' : 'idle');
+        if (ev.idle) { x = y = rot = 0; bpose('idle'); }            // no blow came (the beast Guarded): it stays where it is
+        else bpose(t < charge ? 'crouch' : t < HIT + 220 ? 'leap' : 'idle');
         animal(x, y, rot, 0);
         // her: the video's frames one for one, and the ground she gives and takes back
         if (msheet && t < END - 60) { pose('motion'); show(t / MS); } else pose(msheet ? 'idle' : t < END - 60 ? 'windup' : 'idle');
@@ -1967,9 +1972,9 @@
     }
     events.forEach(function (ev) {
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', [[0, 'guardup'], [120, 'lunge']]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && ev.evaded && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), 'beast_acting', [[60, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup']] : [[0, 'guardup'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup']] : [[0, 'guardup'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && (ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), ev.idle ? 'player_acting' : 'beast_acting', ev.idle ? [] : [[60, 'lunge']]); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting', [[RECIPES.pounce.crouch - 80, 'lunge'], [RECIPES.pounce.hit, 'boom'], [RECIPES.pounce.home, 'roar', 'big']]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }

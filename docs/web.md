@@ -457,7 +457,7 @@ a lair is fought with `bot/hunt.py`.
      technique's event `evaded` (and `slipped` for the Break). When a Break gets through instead, held in part, the
      technique keeps its CSS look. A beast's unique skill that is sidestepped is acted out by the sidestep alone (no
      second, harmless pounce). Played inside the beast's Break (`sidestepped` in `fight.js`): her frames one for one at the video's
-     own pace (`fps`, 12 a second), never sped up, stretched or cropped. On guard, she sweeps her sleeve and drops
+     own pace (`fps`, 10 a second since Nov 24, was 12), never sped up, stretched or cropped. On guard, she sweeps her sleeve and drops
      into a deep side lunge, out of the Break's line as it arrives, then rises into the same guard and idles; she
      gives a little ground and takes it back. Her afterimages (the technique's picture, cleaned by
      `scripts/make_sidestep_fx.py`) are left on the spot she left, and the Break passes through them: Drifting Mist
@@ -738,6 +738,16 @@ can be bigger than she is, so the cut keeps the piece standing where she was in 
 one; the grey swirl joined to her sleeve in the deflect is kept. In the sidestep video she slides across the frame:
 that is taken out, and the page gives the ground and takes it back as before (`give`). So all eight of her fight
 movements, with her Strike, Break and stance, now start and end in the same stance. Presentation only: timing, damage and rules are unchanged.
+
+**Defences you can watch (Nov 24).** Two things. (1) When the beast struck no blow that turn (it Guarded), the
+engine logs nothing for a defence technique, so the page played nothing: Cloud-Walking Shadow "did not show".
+`explore_play.events` now adds the technique's event itself, marked `idle`, when the defence technique was the turn's
+move and the log has none; `cast` gives an evade technique its sidestep look on such a turn too. `fight.js` plays the
+sidestep ("Shadow step"), the brace or the deflect with the beast standing still: no lunge, no hit, no numbers.
+(2) The brace and deflect were over in about 1.4 to 1.75 s. Their sheets carry `pace` (1.5 in `looks.MOTION_SHEETS`,
+`data-pace` on the sheet, `paced` in `fight.js`): every beat of the exchange, the beast's charge included, is
+stretched by it, so they take about 2 to 2.6 s; the sidestep plays at 10 frames a second (her 3.6 s, his 2.4 s).
+Presentation only: the server has already resolved the turn; nothing in the rules, Battle Qi or damage changed.
 
 ## Her Strike and Break
 
