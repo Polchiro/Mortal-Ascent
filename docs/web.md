@@ -247,6 +247,12 @@ decides anything.
 | The beast falls, the fight is won | a last cry and a thud, then a short victory phrase with a gong |
 | A duel ends | victory or defeat |
 
+The sounds are built from noise, impact and clashing metal, never a clean note on its own (a clean note is what
+makes a game sound "beep"): a crack at the instant of contact, a dull thud for weight, filtered noise for a blade
+through air, out-of-tune partials for steel, a rough buzz through throat shapes for the beast. They pass through a
+little overdrive and a short echo, so a blow has punch and sits in a place. `LEVEL` in `fight_sound.js` sets how
+loud each is against the others.
+
 In a duel both fighters' moves sound together, a moment apart. The sounds follow the map's settings (the gear on
 the map: Sound On / Off and the volume), and start with your first click or key press on the page.
 

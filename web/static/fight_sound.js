@@ -22,8 +22,8 @@
 
    Only sound: it is told what happened and never decides anything. It shares the map's settings (the gear there:
    Sound On / Off and the volume, localStorage ma.sound / ma.vol), so someone who turned sound off hears nothing here
-   either. Browsers allow sound only after a click or key press; choosing a move is one. Pitches are kept in the range
-   small laptop and phone speakers can play. */
+   either. Browsers allow sound only after a click or key press; choosing a move is one. They are built from noise,
+   impact and clashing metal (see below), never a clean note alone, and sit in a short echo. */
 (function () {
   'use strict';
   var on = true, vol = 0.6, ctx = null, master = null, nbuf = null;
@@ -32,6 +32,17 @@
     var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) vol = v0 / 100;
   } catch (e) {}
 
+  /* How the sounds are built. A real blow is mostly noise, not a note: a sharp crack, a thud of the body behind it
+     and the room answering. So nothing here plays a clean tone on its own (that is what makes a sound a "beep"):
+       crack   a few milliseconds of raw noise: the instant of contact
+       thud    low, dull noise falling fast, with a short drop in pitch under it: weight
+       whoosh  noise through a moving filter: something cutting the air
+       metal   many clashing partials that are NOT in tune with each other, each dying at its own speed, struck
+               with a crack: steel
+       voice   a rough buzz and breath pushed through the shapes of a throat, shaking unevenly: a beast
+     Everything goes through `drive` (a little overdrive, which makes a hit punch instead of tick) and partly into
+     `room` (an echo made from decaying noise), so a blow sits in a place instead of in your ear. */
+  var drive = null, room = null;
   function ac(wake) {
     if (!on) return null;
     if (!ctx) {
@@ -39,7 +50,20 @@
       var A = window.AudioContext || window.webkitAudioContext; if (!A) return null;
       ctx = new A(); master = ctx.createGain(); master.gain.value = vol * vol;
       var comp = ctx.createDynamicsCompressor();               // several sounds at once (a hit, a ring, a boom) stay clean
+      comp.threshold.value = -14; comp.ratio.value = 5; comp.attack.value = 0.002; comp.release.value = 0.18;
       master.connect(comp); comp.connect(ctx.destination);
+      drive = ctx.createWaveShaper();                          // soft overdrive: tanh
+      var curve = new Float32Array(1024);
+      for (var i = 0; i < 1024; i++) { var x = i / 511.5 - 1; curve[i] = Math.tanh(2.6 * x); }
+      drive.curve = curve; drive.connect(master);
+      var len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // the room: 1.3 s of dying noise
+      for (var ch = 0; ch < 2; ch++) {
+        var d = ir.getChannelData(ch);
+        for (var k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3.2) * (k < 400 ? k / 400 : 1);
+      }
+      var conv = ctx.createConvolver(), wet = ctx.createGain(), dark = ctx.createBiquadFilter();
+      conv.buffer = ir; dark.type = 'lowpass'; dark.frequency.value = 4200; wet.gain.value = 0.5;
+      room = ctx.createGain(); room.connect(conv); conv.connect(dark); dark.connect(wet); wet.connect(master);
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
@@ -53,102 +77,174 @@
     for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     return (nbuf = b);
   }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function out(g, wet) { g.connect(drive); if (wet) { var s = ctx.createGain(); s.gain.value = wet; g.connect(s); s.connect(room); } }
+  /* how loud each sound is against the others (measured: a hit should be as strong as a technique's blast) */
+  var LEVEL = {hit: 2.4, hurt: 2.4, press: 0.6, swing: 0.6, miss: 0.6, dodge: 0.6, gather: 0.5, guardup: 0.6, cast: 0.55, heal: 1.2, block: 1.3}, K = 1;
   function env(g, at, len, v, attack) {
-    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(v, at + (attack || Math.min(0.01, len / 4)));
+    v *= K;
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(v, at + (attack || 0.003));
     g.gain.exponentialRampToValueAtTime(0.0001, at + len);
   }
-  function tone(f, at, len, v, type, f2, attack) {
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(f, at);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, at + len);
-    env(g, at, len, v, attack); o.connect(g); g.connect(master); o.start(at); o.stop(at + len + 0.05);
-  }
-  function air(at, len, v, type, f, f2, q, attack) {            // filtered noise: whooshes, thuds, cracks
+  /* noise through a filter that may move (f → f2): whooshes, thuds, cracks, breath */
+  function air(at, len, v, type, f, f2, q, attack, wet) {
     var s = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
     s.buffer = noise(); fl.type = type; fl.frequency.setValueAtTime(f, at); fl.Q.value = q || 0.8;
     if (f2) fl.frequency.exponentialRampToValueAtTime(f2, at + len);
-    env(g, at, len, v, attack); s.connect(fl); fl.connect(g); g.connect(master); s.start(at, Math.random()); s.stop(at + len + 0.05);
+    /* a narrow filter lets little of the noise through: make up for it, so `v` means "this loud" whatever the filter */
+    var mid = f2 ? Math.sqrt(f * f2) : f, band = type === 'lowpass' ? mid : type === 'highpass' ? Math.max(2000, 20000 - mid) : mid / (q || 0.8);
+    env(g, at, len, v * Math.min(4.5, 0.42 * Math.sqrt(22050 / band)), attack); s.connect(fl); fl.connect(g); out(g, wet == null ? 0.25 : wet);
+    s.start(at, Math.random()); s.stop(at + len + 0.05);
   }
-  function growl(at, len, v, f, f2, wob) {                      // a rough voice: a saw through a low filter, shaking
-    var o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
-    o.type = 'sawtooth'; o.frequency.setValueAtTime(f, at); o.frequency.exponentialRampToValueAtTime(f2, at + len);
-    fl.type = 'lowpass'; fl.frequency.setValueAtTime(1400, at); fl.frequency.exponentialRampToValueAtTime(600, at + len); fl.Q.value = 2;
-    l.frequency.value = wob || 24; lg.gain.value = v * 0.45; l.connect(lg); lg.connect(g.gain);
-    env(g, at, len, v, 0.05); o.connect(fl); fl.connect(g); g.connect(master);
-    o.start(at); l.start(at); o.stop(at + len + 0.05); l.stop(at + len + 0.05);
+  function crack(at, v) { air(at, 0.012, v, 'highpass', 900, 0, 0.5, 0.001, 0.3); }
+  /* weight: dull noise falling fast, and a short pitch drop under it (heard as a thump, not a note) */
+  function thud(at, v, size) {
+    size = size || 1;
+    air(at, 0.14 * size, v * 1.6, 'lowpass', 900 / size, 220 / size, 0.9, 0.002, 0.35);
+    air(at, 0.08 * size, v * 0.8, 'bandpass', 420 / size, 240 / size, 1.2, 0.002, 0.35);     // the part small speakers can play
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(330 / size, at); o.frequency.exponentialRampToValueAtTime(95 / size, at + 0.07 * size);
+    env(g, at, 0.1 * size, v * 0.55, 0.002); o.connect(g); out(g, 0.2); o.start(at); o.stop(at + 0.2 * size);
   }
+  /* steel: partials out of tune with each other (so it clangs instead of singing), a little rough, each dying at its
+     own speed, the high ones first */
+  var STEEL = [1, 1.41, 1.93, 2.58, 3.17, 3.96, 4.81, 5.93];
+  function metal(at, base, len, v, wet) {
+    STEEL.forEach(function (r, i) {
+      var o = ctx.createOscillator(), g = ctx.createGain(), f = base * r * rnd(0.985, 1.015);
+      o.type = i % 3 === 0 ? 'triangle' : 'sine'; o.frequency.setValueAtTime(f * 1.02, at); o.frequency.exponentialRampToValueAtTime(f, at + 0.03);
+      env(g, at, len / (1 + i * 0.45), v / (1 + i * 0.35), 0.001);
+      o.connect(g); out(g, wet == null ? 0.5 : wet); o.start(at); o.stop(at + len + 0.05);
+    });
+    air(at, len * 0.5, v * 0.5, 'bandpass', base * 3.3, base * 2.6, 14, 0.001, 0.5);      // the blade's hiss under the ring
+  }
+  /* a throat: a rough buzz (two saws a little apart) and breath, through the shapes of a mouth, shaking unevenly */
+  function voice(at, len, v, f, f2, open) {
+    var g = ctx.createGain(), mix = ctx.createGain(), shake = ctx.createGain();
+    [1, 1.012, 0.5].forEach(function (m) {
+      var o = ctx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f * m, at); o.frequency.exponentialRampToValueAtTime(f2 * m, at + len);
+      o.connect(mix); o.start(at); o.stop(at + len + 0.05);
+    });
+    var br = ctx.createBufferSource(), bg = ctx.createGain(); br.buffer = noise(); bg.gain.value = 0.7; br.connect(bg); bg.connect(mix);
+    br.start(at, Math.random()); br.stop(at + len + 0.05);
+    [[open ? 620 : 420, 5], [open ? 1150 : 900, 6], [2300, 7]].forEach(function (p, i) {    // the mouth: three resonances
+      var b = ctx.createBiquadFilter(), bgain = ctx.createGain(); b.type = 'bandpass'; b.frequency.setValueAtTime(p[0], at);
+      b.frequency.exponentialRampToValueAtTime(p[0] * 0.75, at + len); b.Q.value = p[1]; bgain.gain.value = [1, 0.7, 0.3][i];
+      mix.connect(b); b.connect(bgain); bgain.connect(shake);
+    });
+    [[31, 0.35], [47, 0.2], [7, 0.25]].forEach(function (l) {                               // the rattle: never even
+      var lo = ctx.createOscillator(), lg = ctx.createGain(); lo.frequency.value = l[0] * rnd(0.9, 1.1); lg.gain.value = l[1];
+      lo.connect(lg); lg.connect(shake.gain); lo.start(at); lo.stop(at + len + 0.05);
+    });
+    env(g, at, len, v, Math.min(0.08, len / 4)); shake.connect(g); out(g, 0.45);
+  }
+  /* a struck string (the victory and defeat phrases): bright at the pluck, then mellow as it rings away */
+  function pluck(at, f, v, len) {
+    var g = ctx.createGain(), lp = ctx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(7000, f * 7), at); lp.frequency.exponentialRampToValueAtTime(f * 1.5, at + len * 0.5);
+    [[1, 'sawtooth', 0.6], [2.003, 'triangle', 0.3], [0.5, 'sine', 0.4]].forEach(function (h) {
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = h[1]; og.gain.value = h[2];
+      o.frequency.setValueAtTime(f * h[0] * 0.98, at); o.frequency.exponentialRampToValueAtTime(f * h[0], at + 0.04);
+      o.connect(og); og.connect(lp); o.start(at); o.stop(at + len + 0.05);
+    });
+    env(g, at, len, v, 0.004); lp.connect(g); out(g, 0.6);
+  }
+  function drum(at, v, size) { crack(at, v * 0.4); thud(at, v, size || 1.5); air(at, 0.5, v * 0.25, 'lowpass', 300, 90, 0.8, 0.005, 0.7); }
 
   var S = {
-    press: function (t) { tone(880, t, 0.08, 0.14, 'triangle'); air(t, 0.04, 0.08, 'highpass', 3500); },
-    swing: function (t, a) {
-      var heavy = a === 'break';
-      air(t, heavy ? 0.34 : 0.24, heavy ? 0.42 : 0.34, 'bandpass', heavy ? 500 : 800, heavy ? 2600 : 3600, 1.4, 0.08);
-      tone(heavy ? 1400 : 2100, t + 0.05, 0.3, 0.05, 'sine', heavy ? 1700 : 2600);          // the blade sings
+    press: function (t) { thud(t, 0.22, 0.55); air(t, 0.03, 0.3, 'bandpass', 1400, 700, 1, 0.001, 0.1); },   // a soft tap of wood, no note
+    swing: function (t, a) {                                                                 // steel cutting air
+      var heavy = a === 'break', len = heavy ? 0.38 : 0.26;
+      air(t, len, heavy ? 0.5 : 0.42, 'bandpass', heavy ? 380 : 620, heavy ? 2400 : 4200, 2.2, len * 0.55, 0.3);
+      air(t + len * 0.35, len * 0.7, 0.2, 'highpass', 3800, 7000, 0.7, len * 0.3, 0.3);      // the edge
+      if (heavy) air(t, len, 0.3, 'lowpass', 240, 480, 1, len * 0.6, 0.3);
     },
-    hit: function (t, a) {
+    hit: function (t, a) {                                                                   // your blade bites
       var big = a === 'big';
-      air(t, big ? 0.22 : 0.14, big ? 0.6 : 0.45, 'lowpass', 1800, 500, 0.8);                // the thud
-      air(t, 0.07, 0.3, 'highpass', 3000);                                                   // the cut
-      tone(big ? 240 : 300, t, big ? 0.3 : 0.18, big ? 0.45 : 0.32, 'triangle', big ? 110 : 150);
-      if (big) { tone(160, t + 0.02, 0.45, 0.3, 'triangle', 80); air(t + 0.03, 0.4, 0.2, 'lowpass', 900, 250); }
+      crack(t, big ? 0.9 : 0.7);
+      air(t, 0.09, big ? 0.6 : 0.5, 'bandpass', 2600, 1100, 1.1, 0.001, 0.3);                // the slice through
+      thud(t + 0.004, big ? 0.95 : 0.8, big ? 1.6 : 1.3);
+      metal(t, big ? 1500 : 1900, big ? 0.3 : 0.2, big ? 0.1 : 0.08, 0.4);                   // a short ring off the blade
+      if (big) { air(t + 0.03, 0.5, 0.35, 'lowpass', 500, 110, 0.8, 0.01, 0.8); thud(t + 0.05, 0.5, 2.2); }
     },
-    hurt: function (t, a) {
+    hurt: function (t, a) {                                                                  // a blow to the body
       var big = a === 'big';
-      air(t, big ? 0.24 : 0.16, big ? 0.55 : 0.42, 'lowpass', 1300, 380, 0.8);
-      tone(big ? 210 : 260, t, big ? 0.34 : 0.22, big ? 0.42 : 0.32, 'square', big ? 100 : 130);
-      if (big) tone(520, t + 0.03, 0.4, 0.1, 'sine', 300);
+      crack(t, big ? 0.6 : 0.45);
+      thud(t, big ? 1.0 : 0.85, big ? 1.8 : 1.45);
+      air(t, 0.07, big ? 0.45 : 0.35, 'bandpass', 1300, 600, 1, 0.001, 0.3);                 // the smack
+      air(t + 0.03, 0.18, 0.14, 'bandpass', 3000, 1500, 0.8, 0.02, 0.3);                     // cloth
+      if (big) air(t + 0.04, 0.45, 0.3, 'lowpass', 420, 100, 0.8, 0.01, 0.8);
     },
-    block: function (t) {                                                                    // steel on steel
-      air(t, 0.05, 0.4, 'highpass', 2500);
-      [[1244, 0.5, 0.22], [1865, 0.38, 0.14], [2637, 0.3, 0.1], [3520, 0.2, 0.06]].forEach(function (p) { tone(p[0], t, p[1], p[2], 'triangle'); });
+    block: function (t) {                                                                    // steel stops steel
+      crack(t, 0.9); thud(t, 0.35, 0.8);
+      metal(t, rnd(1050, 1250), 0.75, 0.34, 0.6);
+      metal(t + 0.012, rnd(1700, 1900), 0.4, 0.16, 0.6);                                     // the second blade answers
     },
-    miss: function (t) { air(t, 0.22, 0.25, 'bandpass', 2400, 5000, 1.2, 0.07); },
-    dodge: function (t) { air(t, 0.14, 0.28, 'bandpass', 1500, 4000, 1.5, 0.04); air(t + 0.12, 0.16, 0.2, 'bandpass', 3000, 1200, 1.5, 0.04); },
-    guardup: function (t) { air(t, 0.12, 0.25, 'bandpass', 900, 1600, 1.2); tone(740, t + 0.03, 0.25, 0.12, 'triangle'); tone(1110, t + 0.03, 0.2, 0.07, 'triangle'); },
-    gather: function (t) {
-      tone(220, t, 0.6, 0.18, 'sawtooth', 780, 0.4); tone(440, t, 0.6, 0.1, 'sine', 1560, 0.45);
-      air(t, 0.6, 0.18, 'bandpass', 600, 3200, 2, 0.5);
+    miss: function (t) { air(t, 0.24, 0.3, 'bandpass', 1500, 4800, 1.8, 0.1, 0.3); },
+    dodge: function (t) {
+      air(t, 0.16, 0.3, 'bandpass', 900, 3200, 1.6, 0.06, 0.3); air(t + 0.03, 0.2, 0.16, 'highpass', 4000, 0, 0.7, 0.05, 0.3);   // robes
+      thud(t + 0.17, 0.25, 0.7);                                                             // the foot comes down
     },
-    boom: function (t) {
-      tone(200, t, 0.7, 0.6, 'triangle', 55); tone(300, t, 0.3, 0.3, 'square', 90);
-      air(t, 0.7, 0.6, 'lowpass', 1400, 200, 0.7); air(t + 0.06, 0.5, 0.2, 'highpass', 2000, 4000, 0.7);       // stones
-      [0.12, 0.2, 0.31, 0.4].forEach(function (d) { air(t + d, 0.05, 0.14, 'bandpass', 1800 + Math.random() * 1500, 0, 3); });
+    guardup: function (t) {                                                                  // the blade brought across, feet set
+      air(t, 0.16, 0.3, 'bandpass', 700, 2200, 1.6, 0.08, 0.3);
+      metal(t + 0.09, 2100, 0.25, 0.07, 0.5); thud(t + 0.1, 0.35, 0.9);
     },
-    cast: function (t, a) {                                     // Qi swells (0.45 s), then is let go
-      var g = Math.max(0, Math.min(4, +a || 0)), base = 392 / (1 + g * 0.12), v = 0.16 + g * 0.03;
-      tone(base, t, 0.5, v, 'sine', base * 2, 0.4); tone(base * 1.5, t, 0.5, v * 0.6, 'sine', base * 3, 0.42);
-      air(t, 0.5, 0.14 + g * 0.02, 'bandpass', 800, 4500, 2.5, 0.45);
+    gather: function (t) {                                                                   // Qi drawn in: wind closing on you, the ground humming
+      air(t, 0.65, 0.4, 'bandpass', 300, 2600, 3.5, 0.55, 0.5);
+      air(t, 0.65, 0.3, 'lowpass', 120, 320, 1.2, 0.5, 0.5);
+      air(t + 0.3, 0.35, 0.16, 'highpass', 5000, 9000, 0.7, 0.3, 0.5);
+    },
+    boom: function (t) {                                                                     // the ground breaks
+      crack(t, 1.0); thud(t, 1.2, 2.4); thud(t + 0.03, 0.8, 1.4);
+      air(t, 1.1, 0.8, 'lowpass', 900, 70, 0.7, 0.005, 0.9);                                 // the rumble rolling off
+      air(t + 0.02, 0.3, 0.4, 'bandpass', 1800, 500, 0.9, 0.003, 0.5);                       // rock splitting
+      for (var i = 0; i < 9; i++) { var d = 0.1 + Math.random() * 0.6; crack(t + d, 0.12 + Math.random() * 0.15); thud(t + d, 0.12, 0.6); }   // stones landing
+    },
+    cast: function (t, a) {                                     // Qi gathers like wind rising (0.47 s), then is loosed like a thunderclap
+      var g = Math.max(0, Math.min(4, +a || 0));
+      air(t, 0.5, 0.36 + g * 0.03, 'bandpass', 260, 2400 + g * 300, 4, 0.44, 0.5);
+      air(t, 0.5, 0.22 + g * 0.04, 'lowpass', 110, 300, 1.2, 0.42, 0.5);
+      air(t + 0.25, 0.25, 0.14, 'highpass', 5200, 9000, 0.7, 0.2, 0.5);
       var r = t + 0.47;
-      air(r, 0.4 + g * 0.08, 0.4 + g * 0.04, 'bandpass', 3000, 500, 1, 0.02);
-      tone(base * 2, r, 0.5 + g * 0.1, v * 1.2, 'triangle', base * 0.9);
-      [1, 1.25, 1.5, 2].slice(0, 2 + Math.min(2, g)).forEach(function (m, i) { tone(base * 4 * m, r + 0.04 * i, 0.5, 0.06, 'sine'); });
-      if (g >= 3) tone(110, r, 0.7, 0.3, 'triangle', 60);
+      crack(r, 0.8 + g * 0.05);
+      air(r, 0.5 + g * 0.1, 0.6 + g * 0.05, 'bandpass', 3400, 320, 1.1, 0.004, 0.7);         // the blast tearing outward
+      thud(r, 0.7 + g * 0.1, 1.4 + g * 0.3);
+      air(r + 0.02, 0.7 + g * 0.2, 0.3 + g * 0.08, 'lowpass', 700, 80, 0.8, 0.01, 0.9);      // and rolling away
+      if (g >= 2) for (var i = 0; i < g; i++) crack(r + 0.06 + Math.random() * 0.25, 0.25);  // it crackles
     },
-    lunge: function (t) { growl(t, 0.32, 0.4, 260, 160, 30); air(t + 0.08, 0.22, 0.25, 'bandpass', 700, 2600, 1.2, 0.06); },
+    lunge: function (t) {                                                                    // it springs: a snarl, claws on earth
+      voice(t, 0.38, 0.6, 210, 150, false);
+      air(t + 0.1, 0.24, 0.3, 'bandpass', 500, 2400, 1.4, 0.1, 0.3); thud(t + 0.02, 0.3, 1.1);
+    },
     roar: function (t, a) {
-      var big = a === 'big', len = big ? 1.5 : 1.0;
-      growl(t, len, big ? 0.55 : 0.45, big ? 190 : 230, big ? 120 : 150, 19);
-      growl(t, len * 0.9, big ? 0.3 : 0.22, big ? 285 : 345, big ? 170 : 220, 23);
-      air(t, len, big ? 0.3 : 0.2, 'bandpass', 900, 500, 1.2, 0.1);
+      var big = a === 'big', len = big ? 1.7 : 1.15;
+      voice(t, len, big ? 0.85 : 0.7, big ? 150 : 185, big ? 95 : 120, true);
+      voice(t + 0.03, len * 0.9, big ? 0.4 : 0.3, big ? 228 : 280, big ? 140 : 180, true);
+      air(t, len, big ? 0.3 : 0.2, 'lowpass', 260, 110, 1, 0.12, 0.9);                       // the chest under it
+      if (big) thud(t, 0.5, 2.2);
     },
-    heal: function (t) { [659, 880, 1319].forEach(function (f, i) { tone(f, t + i * 0.09, 0.6, 0.14); }); air(t, 0.5, 0.06, 'highpass', 5000, 0, 0.7, 0.2); },
-    stun: function (t) {
-      var o = ctx.createOscillator(), g = ctx.createGain(), l = ctx.createOscillator(), lg = ctx.createGain();
-      o.type = 'triangle'; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(420, t + 0.7);
-      l.frequency.value = 11; lg.gain.value = 90; l.connect(lg); lg.connect(o.frequency);
-      env(g, t, 0.7, 0.2, 0.03); o.connect(g); g.connect(master); o.start(t); l.start(t); o.stop(t + 0.8); l.stop(t + 0.8);
+    heal: function (t) {                                                                     // warmth: a soft bell in a hall, breath
+      [523, 784, 1047].forEach(function (f, i) { pluck(t + i * 0.1, f, 0.12, 1.1); });
+      air(t, 0.7, 0.12, 'bandpass', 1800, 4200, 2, 0.4, 0.8);
     },
-    death: function (t) {
-      growl(t, 0.9, 0.4, 240, 110, 14); air(t + 0.75, 0.35, 0.5, 'lowpass', 900, 220);       // a last cry, and it falls
-      tone(180, t + 0.75, 0.4, 0.4, 'triangle', 70);
+    stun: function (t) {                                                                     // the skull rings
+      thud(t, 0.8, 1.6); crack(t, 0.5); metal(t + 0.02, 2600, 0.9, 0.09, 0.9);
+      air(t + 0.05, 0.8, 0.14, 'bandpass', 3400, 2200, 18, 0.2, 0.9);
     },
-    victory: function (t) {
-      [523, 659, 784, 1047].forEach(function (f, i) { var a = t + i * 0.13; tone(f, a, 1.2, 0.2, 'triangle'); tone(f * 2, a, 0.6, 0.06, 'sine'); });
-      tone(196, t + 0.5, 2.2, 0.25, 'triangle', 190); tone(392, t + 0.5, 1.6, 0.12, 'sine'); tone(1568, t + 0.55, 1.4, 0.08, 'sine');   // a gong under it
+    death: function (t) {                                                                    // a last cry, and the body comes down
+      voice(t, 0.95, 0.65, 200, 85, true);
+      thud(t + 0.8, 1.0, 2.3); air(t + 0.8, 0.5, 0.4, 'lowpass', 600, 100, 0.8, 0.005, 0.8); air(t + 0.84, 0.3, 0.2, 'bandpass', 2400, 900, 0.8, 0.01, 0.4);
     },
-    defeat: function (t) {
-      [392, 330, 262, 196].forEach(function (f, i) { tone(f, t + i * 0.22, 0.9, 0.2, 'triangle', f * 0.97); });
-      air(t + 0.7, 0.9, 0.2, 'lowpass', 600, 200);
+    victory: function (t) {                                                                  // a drum, strings rising, a gong
+      drum(t, 0.9, 1.8);
+      [392, 523, 587, 784].forEach(function (f, i) { pluck(t + 0.18 + i * 0.14, f, 0.26, 1.6); });
+      drum(t + 0.8, 0.8, 2); metal(t + 0.8, 196, 2.6, 0.2, 0.9); metal(t + 0.8, 311, 1.8, 0.1, 0.9);
+    },
+    defeat: function (t) {                                                                   // two slow drums, strings falling
+      drum(t, 0.9, 2.2); drum(t + 0.6, 0.7, 2.6);
+      [330, 294, 220].forEach(function (f, i) { pluck(t + 0.15 + i * 0.3, f, 0.2, 1.8); });
+      air(t + 0.6, 1.4, 0.2, 'lowpass', 300, 90, 0.8, 0.3, 0.9);
     }
   };
 
@@ -157,7 +253,9 @@
     /* play a sound now, or `delay` ms from now */
     play: function (name, arg, delay) {
       if (!S[name] || !on || !ac(false) || ctx.state !== 'running') return;
+      K = LEVEL[name] || 1;
       try { S[name](ctx.currentTime + (delay || 0) / 1000, arg); } catch (e) {}
+      K = 1;
     }
   };
 })();
