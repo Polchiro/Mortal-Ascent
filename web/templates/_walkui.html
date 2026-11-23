@@ -20,5 +20,16 @@
   <div id="fBody"></div>
   <div class="tgo"><button type="button" class="hbtn small" id="fClose">Walk on</button></div>
 </section>
+<section class="mplate setpanel" id="setPanel" aria-label="Settings" hidden>
+  <p class="kicker">SETTINGS</p>
+  <p class="setlabel" id="sizeLabel">Character size</p>
+  <div class="setrow" role="group" aria-labelledby="sizeLabel">
+    <button type="button" class="hbtn ghost small" data-size="0.8">Small</button>
+    <button type="button" class="hbtn ghost small" data-size="1">Normal</button>
+    <button type="button" class="hbtn ghost small" data-size="1.25">Large</button>
+    <button type="button" class="hbtn ghost small" data-size="1.5">Largest</button>
+  </div>
+  <p class="mhint">Bigger shows you and the land closer up; smaller shows more of the land. Saved on this device.</p>
+</section>
 <div class="wfade" id="fade" aria-hidden="true"></div>
 <script src="{{ asset('town.js') }}" defer></script>

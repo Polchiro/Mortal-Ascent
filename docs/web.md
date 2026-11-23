@@ -175,6 +175,16 @@ late right answer is still "too slow". You must be standing by the herb, and eac
 `/town` (the **Town** tab) is the walkable town hub: walk up to the townsfolk, who send you on to the pages
 below. docs/town.md.
 
+## The purse and the settings
+
+- **The purse** (`web/templates/_purse.html`): Moon Pearls and Lotus Coins as two pills with their icons, at the top
+  right of every page (the top bar, and beside **World Map** on the walking pages). On the walking pages the numbers
+  stay fresh without a reload (`/world/state` sends `purse`; `town.js` updates them, with a small pulse when one
+  changes, e.g. when a trip is banked at the gate). The icons are drawn in code (SVG) until SHOAIB makes painted ones.
+- **Settings** (the gear at the top right of the walking pages): **Character size**, Small / Normal / Large /
+  Largest. It draws you and the land closer up or further away (`UZ` in `town.js`); it is only how the page looks
+  and is kept on the device (`localStorage` `ma.size`), not in the game's save.
+
 ## The open world and the World Map
 
 The town, the Crossroads and the Moon Forest's three lands are one world you walk through (`/town`, `/crossroads`,

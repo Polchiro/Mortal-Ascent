@@ -380,6 +380,15 @@ def test_you_cant_type_your_way_into_the_forest(site):
     assert site.get("/wild/nowhere").headers["location"] == "/crossroads"
 
 
+def test_the_purse_is_at_the_top_right_and_kept_fresh(site):
+    r = site.get("/town")
+    assert 'class="pursepill pearls"' in r.text and 'class="pursepill coins"' in r.text and 'id="setBtn"' in r.text
+    assert 'data-size="1.5"' in r.text                                        # the character size setting
+    st = site.post("/world/state", data={"place": "town"}).json()
+    assert set(st["purse"]) == {"coins", "pearls"} and "," in st["purse"]["coins"] or st["purse"]["coins"].isdigit()
+    assert 'class="pursepill coins"' in site.get("/profile").text             # and on the other pages' top bar
+
+
 def test_moving_answers_the_next_place(site):
     site.get("/crossroads")
     road = ow.ENTRANCES[("crossroads", "road_moon_forest")]["at"]

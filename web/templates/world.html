@@ -6,11 +6,12 @@
   <div class="mplate">
     <p class="kicker">MORTAL ASCENT · THE WORLD</p>
     <h1>The World Map</h1>
-    <span class="mhint">You are {{ v.realm }} · {{ v.coins }} Lotus · {{ v.pearls }} Pearls</span>
+    <span class="mhint">You are {{ v.realm }}</span>
   </div>
 </div>
 
 <div class="mtools">
+  {% with coins=v.coins, pearls=v.pearls %}{% include "_purse.html" %}{% endwith %}
   <a class="hbtn ghost small" href="/town" id="wback">Back</a>
 </div>
 
