@@ -97,6 +97,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
                    notice=notice, notice_html=bool(v["banked"]))
         if place == "town":
             request.session.pop("alchemy_pass", None)        # back in town: the alchemy hall needs Lan again
+            request.session.pop("forge_pass", None)          # and the forge needs Tie
             return no_store(page(request, "town.html", town_name=town.NAME, ground=town.ART, npcs=town.NPCS, **ctx))
         ground = crossroads.ART if place == "crossroads" else overworld.wild_data(None, place, (0, 0))["ground"]
         return no_store(page(request, "place.html", ground=ground, exits=v["exits"], **ctx))

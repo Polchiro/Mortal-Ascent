@@ -47,6 +47,7 @@ def client(db_path, monkeypatch):
     c.now = [1000.0]
     app.state.forges.clock = lambda: c.now[0]
     c.forges = app.state.forges
+    c.get("/town/visit/blacksmith")                                       # Blacksmith Tie opens the forge
     return c
 
 
@@ -247,7 +248,9 @@ def test_the_forge_art_is_served(client):
     for path in ("/art/forge/workshop.jpg", "/art/forge/workshop.mp4", "/art/forge/anvil.webp", "/art/forge/male_hammer.webp", "/art/forge/sparks.mp4",
                  "/art/forge/fire.mp4", "/art/forge/steam.mp4", "/art/forge/oil_flare.mp4", "/art/forge/tool_hammer.webp",
                  "/art/forge/bellows.webp", "/art/forge/bellows_wall.webp", "/art/forge/tool_bellows.webp",
-                 "/art/forge/reveal_burst.mp4", "/art/forge/crack.mp4", "/art/forge/crack_end.jpg", "/art/forge/embers.mp4"):
+                 "/art/forge/reveal_burst.mp4", "/art/forge/crack.mp4", "/art/forge/crack_end.jpg", "/art/forge/embers.mp4",
+                 "/art/forge/splash.mp4", "/art/forge/aura.mp4", "/art/forge/rune_circle.mp4", "/art/forge/rune_flash.mp4",
+                 "/art/forge/chisel.mp4"):
         assert client.get(path).status_code == 200, path
 
 
@@ -342,7 +345,8 @@ def test_the_live_forge_page_has_its_hud_and_forecast(client, db_path):
     begin(client, db_path, "live")
     page = client.get("/forge/play").text
     for part in ('id="fcast"', 'id="fcfill"', 'class="fcam"', 'class="fhud"', 'class="ffx"', 'id="fcombo"',
-                 'class="ftoolbel"', 'class="fbelwall"', 'class="fqsheen"', 'class="fembers"'):
+                 'class="ftoolbel"', 'class="fbelwall"', 'class="fqsheen"', 'class="fembers"', 'class="fqfx fqsplash"',
+                 'class="fruneloop"', 'class="frunefl"', 'class="fchisel"'):
         assert part in page, part
     state = client.get("/forge/live").json()
     assert state["forecast"]["cap"] == "Rare" and state["forecast"]["total"] == 0
@@ -360,3 +364,39 @@ def test_the_result_plays_the_burst_or_the_crack(client, db_path):
     s.outcome["rarity"] = None                                     # the other way round, on the same page
     page = client.get("/forge/play").text
     assert 'id="fcrackbox"' in page and 'poster="/art/forge/crack_end.jpg"' in page
+
+
+# ── reached through Blacksmith Tie ────────────────────────────────────
+
+def test_the_forge_is_locked_to_blacksmith_tie(client, db_path):
+    client.get("/town")                                                   # back in town: the pass ends
+    r = client.get("/forge")
+    assert r.status_code == 303 and r.headers["location"] == "/town?near=blacksmith"
+    assert begin(client, db_path).headers["location"] == "/town?near=blacksmith"   # nor can a forge start
+    town = client.get("/town?near=blacksmith").text
+    assert "Blacksmith Tie keeps the forge" in town and '"near": "blacksmith"' in town
+    assert 'href="/forge"' not in town.split("</header>")[0]              # no Forge tab
+    assert "/town/visit/blacksmith" in town                               # Tie's way in
+    r = client.get("/town/visit/blacksmith")                              # talk to him
+    assert r.headers["location"] == "/forge" and client.get("/forge").status_code == 200
+
+
+def test_a_forge_in_progress_is_never_locked_out(client, db_path):
+    begin(client, db_path, "live")
+    client.get("/town")                                                   # wandered off mid-forge
+    assert client.get("/forge").headers["location"] == "/forge/play"
+    assert client.get("/forge/play").status_code == 200
+
+
+def test_back_to_town_from_the_forge(client, db_path):
+    assert "Back to town" in client.get("/forge").text
+    begin(client, db_path)
+    play_to_the_end(client)
+    page = client.get("/forge/play").text
+    assert "Back to town" in page and "Forge again" in page
+    r = client.post("/forge/done", data={"to": "town"})
+    assert r.status_code == 303 and r.headers["location"] == "/town?near=blacksmith" and client.forges.get(UID) is None
+    client.get(r.headers["location"])                                     # arriving in town ends the visit
+    assert client.get("/forge").headers["location"] == "/town?near=blacksmith"
+    client.get("/town/visit/blacksmith"); begin(client, db_path); play_to_the_end(client)
+    assert client.post("/forge/done").headers["location"] == "/forge"     # forge again: straight back in

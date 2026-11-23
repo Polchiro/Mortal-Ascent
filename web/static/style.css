@@ -2071,3 +2071,25 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .fcrackbox.shake .fcrack{animation:fcrackshake .1s linear 5}   /* by its margin, not a transform: a moving layer would lose the blend and show its black */
 @keyframes fcrackshake{25%{margin-left:-7px;margin-top:2px}75%{margin-left:6px;margin-top:-2px}}
 .result.revealing>.freveal,.result.revealing>.fcrackbox{opacity:1;transform:none}   /* the stage of the reveal itself stays */
+
+/* ── SHOAIB's third set of forge videos (scripts/make_forge_fx.py), all on black, laid on with `screen` ── */
+/* the water splash bursts from the trough's surface, the steam rising after it */
+.fqset .fqsplash{left:38.7%;top:8.5%;width:60%}
+/* Inscribe: the golden circle turns, engraved in the stone under the piece; a clean rune makes it flare */
+.fplate .fcircle{position:absolute;inset:0;overflow:hidden;border-radius:18px;pointer-events:none}
+.fplate .fruneloop,.fplate .frunefl{position:absolute;left:50%;top:50%;height:150%;aspect-ratio:1;transform:translate(-50%,-50%);mix-blend-mode:screen;pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle,#000 55%,transparent 71%);mask-image:radial-gradient(circle,#000 55%,transparent 71%)}
+.fplate .fruneloop{opacity:.3}
+.fplate .frunefl{opacity:0;transition:opacity .2s}
+.fplate .frunefl.on{opacity:1}
+/* a burst of golden sparks where each good stroke was carved */
+.fscene .fchisel{position:absolute;width:16%;aspect-ratio:1;transform:translate(-50%,-50%);mix-blend-mode:screen;opacity:0;pointer-events:none;z-index:5;
+  -webkit-mask-image:radial-gradient(circle,#000 45%,transparent 70%);mask-image:radial-gradient(circle,#000 45%,transparent 70%)}
+.fscene .fchisel.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.fplate .fruneloop{display:none}}
+/* the reveal: a ring of spirit energy turns around a Legendary or Mythical piece, tinted like its burst */
+.freveal .fraura{position:absolute;inset:-14%;width:128%;height:128%;mix-blend-mode:screen;opacity:0;pointer-events:none;transition:opacity .8s;
+  -webkit-mask-image:radial-gradient(circle,#000 58%,transparent 71%);mask-image:radial-gradient(circle,#000 58%,transparent 71%)}
+.freveal .fraura.on{opacity:.95}
+.freveal[data-rarity="Mythical"] .fraura{filter:hue-rotate(-35deg) saturate(1.6)}
+.fagain{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}

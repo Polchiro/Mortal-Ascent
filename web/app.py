@@ -209,6 +209,14 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         request.session["alchemy_pass"] = time.time()
         return RedirectResponse("/alchemy", status_code=303)
 
+    @app.get("/town/visit/blacksmith")
+    def town_visit_blacksmith(request: Request):
+        """Blacksmith Tie opens the forge (web/town.py NPCS): the only way into /forge (forge_allowed)."""
+        if not current_user(request):
+            return RedirectResponse("/", status_code=303)
+        request.session["forge_pass"] = time.time()
+        return RedirectResponse("/forge", status_code=303)
+
     @app.get("/rankings", response_class=HTMLResponse)
     def rankings_page(request: Request, board: str = "realm"):
         """The Stone Stele's rankings (web/rankings.py): read from the stele in town."""
@@ -345,6 +353,24 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         finally:
             c.close()
 
+    FORGE_PASS_SECONDS = 30 * 60                  # a visit to Tie lasts this long without a click in the forge
+
+    def forge_allowed(request, uid):
+        """The forge is reached only through Blacksmith Tie in town (/town/visit/blacksmith sets the pass), like
+        alchemy through Lan. A forge in progress is always allowed, so a refresh mid-forge never throws you out. Each
+        visit to the forge keeps the pass fresh; going back to town ends it."""
+        if forges.get(uid):
+            return True
+        t = request.session.get("forge_pass")
+        if t and time.time() - t < FORGE_PASS_SECONDS:
+            request.session["forge_pass"] = time.time()
+            return True
+        return False
+
+    def to_tie(request):
+        request.session["town_notice"] = "Blacksmith Tie keeps the forge. Talk to him to forge your gear."
+        return RedirectResponse("/town?near=blacksmith", status_code=303)
+
     @app.get("/forge", response_class=HTMLResponse)
     def forge_page(request: Request, item: str = "", action: str = "", essence: str = "", fuel: str = "",
                    liquid: str = "", lock: str = ""):
@@ -353,6 +379,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             return RedirectResponse("/", status_code=303)
         if with_conn(forges.catch_up, user["id"]):
             return RedirectResponse("/forge/play", status_code=303)
+        if not forge_allowed(request, user["id"]):
+            return to_tie(request)
         view = with_conn(forge_play.setup_view, user["id"], num(item), action or None, essence or None,
                          fuel or None, liquid or None, num(lock))
         avatar = oauth.avatar_url(user["id"], user.get("avatar"))
@@ -366,6 +394,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         user = current_user(request)
         if not user:
             return RedirectResponse("/", status_code=303)
+        if not forge_allowed(request, user["id"]):
+            return to_tie(request)
         form = await form_of(request)
 
         def begin(c, uid):
@@ -449,13 +479,14 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return RedirectResponse("/forge/play", status_code=303)
 
     @app.post("/forge/done")
-    def forge_done(request: Request):
+    async def forge_done(request: Request):
         user = current_user(request)
+        to_town = (await form_of(request)).get("to") == "town"
         if user:
             s = forges.get(user["id"])
             if s and s.outcome is not None:
                 forges.clear(user["id"])
-        return RedirectResponse("/forge", status_code=303)
+        return RedirectResponse("/town?near=blacksmith" if to_town else "/forge", status_code=303)
 
     crafts = app.state.crafts = alchemy_play.Crafts()
     ALCHEMY_PASS_SECONDS = 30 * 60                # a visit to Lan lasts this long without a click in the hall

@@ -105,6 +105,13 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 `/forge` is the bot's `/forge` (docs/forge.md, section 5) in the browser, with the same engine:
 `bot/forging.py` makes the plan, takes the materials, runs the five stages and writes the passive.
 
+**Reached only through Blacksmith Tie in town**, the same way alchemy is through Lan. There is no Forge tab. Tie's
+"Enter the forge" goes to `/town/visit/blacksmith`, which gives a pass (session) and opens `/forge`; opening `/forge`
+or starting a forge without it sends you to the town, in front of Tie (`/town?near=blacksmith`), with a note. Each
+click in the forge keeps the pass (it lapses after 30 idle minutes); arriving in town ends it. A forge in progress is
+never locked out, so a refresh mid-forge is safe. "← Back to town" (on the gear page, and on the result next to Forge
+again) returns you in front of Tie.
+
 1. **Choose:** the player's weapons, armor and artifacts (worn first) with their passive slots; the action
    (Enchant / Reroll / Replace, and the slot to lock for Replace); an optional essence, fuel and quench liquid.
 2. **Cost:** the materials (with how many they have), the Lotus Coins, the difficulty and anything missing.
@@ -832,6 +839,13 @@ get a bigger burst, turning rays and his rune glow. Then the new passive and the
 glowing bar cracking apart in sparks and smoke (`art/forge/crack.mp4`; the page shakes it as it breaks) and it stays
 broken (its last frame, `crack_end.jpg`, is the poster a reload shows). Each timeline starts when its video really plays,
 with a fallback if it never does. Once per forge (sessionStorage); reduced motion shows the finished result.
+
+**The third set** (`scripts/make_forge_fx.py`, all on black, `screen`): at a water quench his splash bursts from the
+trough's surface and the steam rolls up after it (`splash.mp4`); while you carve, his golden magic circle turns engraved
+in the stone under the piece (`rune_circle.mp4`, a loop cut from before its flare) and flares when a clean rune
+resonates (`rune_flash.mp4`, the flare itself); a burst of golden sparks (`chisel.mp4`, cut from after the chisel leaves
+the frame) flies where each good stroke is carved; and a Legendary or Mythical piece appears with a ring of spirit energy
+turning around it (`aura.mp4`, a loop tinted like its burst, still turning after a reload).
 
 **The second set of videos** (`scripts/make_forge_fx.py`): SHOAIB's pumping bellows (`tool_bellows.webp`, one pump keyed
 from his paler green screen with lower thresholds, the stand in its corner cut away) stand beside the furnace with the

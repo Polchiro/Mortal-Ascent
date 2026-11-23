@@ -63,8 +63,8 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Who | Where | Sends you to |
 |---|---|---|
 | Gate Warden | the gate | Look at the World Map (`/world`, docs/world.md), Hunt with a team (`/explore`). He also tells you herbs grow outside the gate |
-| Blacksmith Tie | the forge | `/forge` |
-| Herbalist Lan | the herb shop | `/alchemy` |
+| Blacksmith Tie | the forge | `/town/visit/blacksmith` → `/forge` (the only way in: the forge is locked to him) |
+| Herbalist Lan | the herb shop | `/town/visit/alchemist` → `/alchemy` (the only way in: alchemy is locked to her) |
 | Silk Merchant | the silk stalls | `/appearance` |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
 | Martial Master | the training yard, in front of the dummies | not open on the website yet: says so |
