@@ -187,3 +187,13 @@ def test_the_walk_sheets_meet_the_spec():
     idle = looks.WALK_SHEETS["female"]["idle"]
     assert make_hero_walk.check(Image.open(make_heroine_idle.OUT)) == []
     assert idle["src"] == "/art/portraits/map/hero_female_idle.webp" and idle["cols"] == 8 and idle["loop"] > 1
+    run = looks.WALK_SHEETS["female"]["run"]                  # her run: the same rows and cells, played at full speed
+    assert make_hero_walk.check(Image.open(make_heroine_walk.RUN_OUT)) == []
+    assert run["src"] == "/art/portraits/map/hero_female_run.webp" and len(run["stand"]) == 8
+    assert all(0 <= f < 8 for f in run["stand"]) and run["stride"] > 96      # a longer step than the walk's
+    assert "run" not in looks.WALK_SHEETS["male"]             # his is not made yet: he walks at every speed
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for name in ("huntmap.js", "town.js"):                    # both maps play it, and neither changes how fast she moves
+        js = open(os.path.join(root, "web", "static", name)).read()
+        assert "HRUN = SH.run" in js and "hero.running ? HRUN.stride : STRIDE" in js and "var SPEED = 150" in js

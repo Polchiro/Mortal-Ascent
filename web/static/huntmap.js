@@ -309,6 +309,8 @@
   var sheet = new Image(); sheet.src = SH.src;
   var IDLE = SH.idle, idle = null;
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
+  var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): at full speed; a stroll
+  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
   var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60;
   function update(dt) {
     if (engaging) return;
@@ -321,9 +323,10 @@
       var nx = hero.x + (vx / (TW / 2) + vy / (TH / 2)) / 2 * dt, ny = hero.y + (vy / (TH / 2) - vx / (TW / 2)) / 2 * dt;
       if (walkable(nx, hero.y)) hero.x = nx;
       if (walkable(hero.x, ny)) hero.y = ny;
-      if (!was) hero.phase = STAND[hero.dir];
+      hero.running = !!HRUN && m > RUN_AT;
+      if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
-      hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM) * 8) % 8;
+      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM) * 8) % 8;
       if ((before < 4 && hero.phase >= 4) || hero.phase < before) puff(hero.x, hero.y, 0.45);   // a foot comes down
       hero.frame = Math.floor(hero.phase);
       report(false);
@@ -371,7 +374,10 @@
       ctx.save(); ctx.globalAlpha *= t - a;
       ctx.drawImage(idle, b * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
       ctx.restore();
-    } else if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+    } else {
+      var pic = hero.moving && hero.running && runPic.complete && runPic.naturalWidth ? runPic : sheet;
+      if (pic.complete) ctx.drawImage(pic, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+    }
   }
   function drawBeast(x, y) {
     if (!bimg.complete || !bimg.naturalWidth) return;

@@ -193,11 +193,16 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
 # S SW W NW N NE E SE x 8 frames of 256 x 256, feet at (128, 232). His is cut from SHOAIB's walk video
 # (scripts/make_hero_walk.py; SW, W, NW are mirrored: he never faced left in it). `stand`: each row's frame with the
 # feet closest together, held while he stands still (no idle sheet yet). A look without a sheet keeps the menus.
+# `run` (hers, from SHOAIB's five running videos, scripts/make_heroine_walk.py --run): the same rows and cells, played
+# at full speed in place of the walk (huntmap.js, town.js), `stride` screen px to one full stride (a longer step than
+# the walk's 96), `stand` the frame each row starts from. The speed she moves at is the same: only the picture changes.
 WALK_SHEETS = {"male": {"src": "/art/portraits/map/hero_male_walk.webp", "cell": 256, "feet": [128, 232],
                         "rows": 8, "cols": 8, "stand": [5, 2, 2, 3, 1, 3, 2, 2]},
                "female": {"src": "/art/portraits/map/hero_female_walk.webp", "cell": 256, "feet": [128, 232],
                           "rows": 8, "cols": 8, "stand": [6, 3, 6, 2, 7, 2, 6, 3],
-                          "idle": {"src": "/art/portraits/map/hero_female_idle.webp", "cols": 8, "loop": 3.33}}}
+                          "idle": {"src": "/art/portraits/map/hero_female_idle.webp", "cols": 8, "loop": 3.33},
+                          "run": {"src": "/art/portraits/map/hero_female_run.webp", "stride": 140,
+                                  "stand": [7, 5, 3, 4, 1, 4, 3, 5]}}}
 
 
 def walk_sheet(look):

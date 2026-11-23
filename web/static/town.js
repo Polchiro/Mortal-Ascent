@@ -33,6 +33,8 @@
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
   var sheet = new Image(); sheet.src = SH.src;
   var IDLE = SH.idle, idle = null;
+  var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): at full speed; a stroll
+  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
   // this place (load() sets them; a new place swaps them all)
@@ -370,7 +372,8 @@
   function sheetFor(look) {
     var sh = SHEETS[look] || SH;
     if (!sheetImgs[sh.src]) { var im = new Image(); im.src = sh.src; sheetImgs[sh.src] = im; }
-    return {sh: sh, img: sheetImgs[sh.src]};
+    if (sh.run && !sheetImgs[sh.run.src]) { var rm = new Image(); rm.src = sh.run.src; sheetImgs[sh.run.src] = rm; }
+    return {sh: sh, img: sheetImgs[sh.src], run: sh.run ? sheetImgs[sh.run.src] : null};
   }
   function pollOthers() {
     if (document.hidden || through || !PLACE) return;
@@ -402,16 +405,18 @@
       var b = toScreen(o.x, o.y), px = Math.hypot(b.x - a.x, b.y - a.y);
       var row = sectorRow(Math.atan2(b.y - a.y, b.x - a.x));
       if (!o.moving || angDiff(ROW_ANGLE[row], ROW_ANGLE[o.dir]) > 30) o.dir = row;
-      if (!o.moving) o.phase = sh.stand[o.dir];
+      o.running = !!sh.run && px / dt > SPEED * RUN_AT;            // they run as you do: at about full speed
+      if (!o.moving) o.phase = (o.running ? sh.run.stand : sh.stand)[o.dir];
       o.moving = true;
-      o.phase = (o.phase + px / (STRIDE * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
+      o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
     });
   }
   function drawOther(o, x, y) {
     var f = sheetFor(o.look), sh = f.sh, s = 0.5 * ZOOM, d = sh.cell * s;
     shadow(x, y, 26 * ZOOM, 9 * ZOOM, .36);
-    if (f.img.complete && f.img.naturalWidth)
-      ctx.drawImage(f.img, o.frame * sh.cell, o.dir * sh.cell, sh.cell, sh.cell, x - sh.feet[0] * s, y - sh.feet[1] * s, d, d);
+    var pic = o.moving && o.running && f.run && f.run.complete && f.run.naturalWidth ? f.run : f.img;
+    if (pic.complete && pic.naturalWidth)
+      ctx.drawImage(pic, o.frame * sh.cell, o.dir * sh.cell, sh.cell, sh.cell, x - sh.feet[0] * s, y - sh.feet[1] * s, d, d);
   }
   function otherLabel(o, x, y) {                 // drawn over everything, so a name never hides behind a stall
     var sh = sheetFor(o.look).sh, s = 0.5 * ZOOM, d = sh.cell * s;
@@ -728,9 +733,10 @@
       var nx = hero.x + (vx / (TW / 2) + vy / (TH / 2)) / 2 * dt, ny = hero.y + (vy / (TH / 2) - vx / (TW / 2)) / 2 * dt;
       if (walkable(nx, hero.y)) hero.x = nx;
       if (walkable(hero.x, ny)) hero.y = ny;
-      if (!was) hero.phase = STAND[hero.dir];
+      hero.running = !!HRUN && m > RUN_AT;
+      if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
-      hero.phase = (hero.phase + sp * dt / (STRIDE * ZOOM / K) * 8) % 8;
+      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * 8) % 8;
       if ((before < 4 && hero.phase >= 4) || hero.phase < before) {
         if (ATMOS) puff(hero.x, hero.y, 0.45);
         snd('step', PLACE === 'town' ? 'stone' : 'earth');
@@ -784,7 +790,10 @@
       ctx.save(); ctx.globalAlpha *= t - a;                    // *=: also right when drawn faded through a wall
       ctx.drawImage(idle, b * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
       ctx.restore();
-    } else if (sheet.complete) ctx.drawImage(sheet, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+    } else {
+      var pic = hero.moving && hero.running && runPic.complete && runPic.naturalWidth ? runPic : sheet;
+      if (pic.complete) ctx.drawImage(pic, hero.frame * CELL, hero.dir * CELL, CELL, CELL, dx, dy, d, d);
+    }
   }
   function label(n, x, y, close) {
     ctx.save(); ctx.textAlign = 'center';
