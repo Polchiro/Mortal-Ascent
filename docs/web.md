@@ -274,6 +274,13 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
+**His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
+Break (Qi gathering, the swing, the boom), his Guard raised and a blow blocked, and his fist, kick, palm and finger
+techniques (10 takes, `*_male.mp3`). A cultivator's own take is listed with a `#`: `swing:strike#male`,
+`cast:kick#male`. The fight page says whose moves it is playing (`data-voice` on the fighter, `FightSound.voice`),
+and `fight_sound.js` tries the `#` take first, then the plain one, so she keeps hers and anything he has no take
+for stays shared. Duels play the shared sounds for both fighters.
+
 Still made in code: the move tick, heal, stun, victory and defeat, the defense techniques (brace, deflect,
 sidestep), and the voices of birds, serpents, turtles, insects and dragons, until they have videos with sound.
 A beast's voice is kept to its body type (`beasts.BODY_TYPES`, sent to the page as `data-body`) with an `@`:
@@ -738,6 +745,21 @@ can be bigger than she is, so the cut keeps the piece standing where she was in 
 one; the grey swirl joined to her sleeve in the deflect is kept. In the sidestep video she slides across the frame:
 that is taken out, and the page gives the ground and takes it back as before (`give`). So all eight of her fight
 movements, with her Strike, Break and stance, now start and end in the same stance. Presentation only: timing, damage and rules are unchanged.
+
+**His movements (Nov 24): the new male.** The male cultivator was repainted to match her (white and blue robes),
+and SHOAIB made his fight videos from his stance picture, as hers were: stance, Strike, Break, Guard (block), fist
+(punch), kick, palm and finger. `scripts/make_hero_set.py` builds them all with her tools
+(`python -m scripts.make_hero_set stance=... strike=... break=... guard=... fist=... kick=... palm=... finger=...`):
+the stance loop first (placed where a cultivator stands, 72 frames, 5.08 s), then every other video laid on that
+stance by its own first frame, so he goes stance, move, stance without a jump. His sheets are entered exactly as
+hers (`looks.IDLE_SHEETS`, `ATTACK_SHEETS["male"]` with a sheet and `blade` timing per move, `GUARD_SHEETS`,
+`MOTION_SHEETS[...]["male"]` with `box` and `ms`), so he plays at her pace: Strike 1.95 s, Break 2.53 s, Guard raised
+over 0.62 s then 66 ms a frame, techniques no shorter than 2 to 2.2 s. He now has a kick of his own (the hop is gone).
+The Qi painted in his Strike and Break videos is kept where it is joined to him. His three still poses
+(`hero_male_idle/windup/strike.webp`) are frames of the new sheets. The old one-sheet attack (the passage on "The
+**male** cultivator's attack" above) is no longer played. **Still the old male:** brace, deflect and sidestep
+(`hero_male_brace/deflect/sidestep.webp`) and his walk on the maps, until SHOAIB's videos of the new male for them.
+Presentation only.
 
 **Defences you can watch (Nov 24).** Two things. (1) When the beast struck no blow that turn (it Guarded), the
 engine logs nothing for a defence technique, so the page played nothing: Cloud-Walking Shadow "did not show".

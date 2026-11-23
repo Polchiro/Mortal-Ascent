@@ -53,7 +53,7 @@
     {% endif %}
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
     {% if F.enemy.statuses %}<p class="chips sover senemy" aria-label="Beast statuses">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
-    <div class="fighter{% if F.me.tip %} sworded{% endif %}{% if F.me.sheet %} sheeted{% endif %}{% if F.me.isheet %} stanced{% endif %}" aria-hidden="true" data-pose="idle"{% if F.me.tip %} data-tip="{{ F.me.tip }}"{% endif %}{% if F.me.preload %} data-preload='{{ F.me.preload | tojson }}'{% endif %}>
+    <div class="fighter{% if F.me.tip %} sworded{% endif %}{% if F.me.sheet %} sheeted{% endif %}{% if F.me.isheet %} stanced{% endif %}" aria-hidden="true" data-pose="idle"{% if F.me.voice %} data-voice="{{ F.me.voice }}"{% endif %}{% if F.me.tip %} data-tip="{{ F.me.tip }}"{% endif %}{% if F.me.preload %} data-preload='{{ F.me.preload | tojson }}'{% endif %}>
       <div class="poses">
         {% for pose, src in F.me.poses.items() %}{% if not (pose == "idle" and F.me.isheet) %}<img class="pose p-{{ pose }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
         <img class="trailfx" src="/art/fx/slash.webp" alt="" width="1024" height="559">

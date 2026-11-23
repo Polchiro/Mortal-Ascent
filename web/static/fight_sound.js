@@ -277,6 +277,8 @@
     var body = window.FightSound.body, tries = [];
     var narrow = opts && opts.as ? opts.as : (arg !== undefined && arg !== null && arg !== '' ? arg : null);
     if (body) { if (narrow !== null) tries.push(name + ':' + narrow + '@' + body); tries.push(name + '@' + body); }
+    var voice = window.FightSound.voice;                      // the cultivator's own take first ("swing:strike#male")
+    if (voice) { if (narrow !== null) tries.push(name + ':' + narrow + '#' + voice); tries.push(name + '#' + voice); }
     if (narrow !== null) tries.push(name + ':' + narrow);
     tries.push(name);
     for (var i = 0; i < tries.length; i++) if (takes[tries[i]]) return tries[i];
@@ -306,6 +308,7 @@
     /* which sounds have a recording ready (for checks) */
     recorded: function () { return Object.keys(takes).filter(function (k) { return takes[k].some(function (t) { return bufs[fileOf(t)]; }); }); },
     body: '',                                                 // the beast's body type (fight.js sets it): whose voice
+    voice: '',                                                // the cultivator's ("male"): his own recordings first (fight.js sets it)
     names: Object.keys(S),
     /* play a sound now, or `delay` ms from now */
     play: function (name, arg, delay, opts) {

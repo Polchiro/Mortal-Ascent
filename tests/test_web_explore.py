@@ -243,7 +243,7 @@ def test_the_fight_scene_has_the_poses_and_the_turns_events(client):
     b.intent = {"move": "break", "kind": "normal", "target": b.fighters[0], "name": "Break"}
     act(client, "move", "strike")
     page = client.get("/explore/play").text
-    for pose in ("idle", "windup", "strike"):
+    for pose in ("windup", "strike"):                                  # (the idle still gives way to his stance loop)
         assert f'class="pose p-{pose}" src="/art/portraits/fight/hero_male_{pose}.webp"' in page
     assert 'src="/art/fx/slash.webp"' in page and client.get("/art/fx/slash.webp").status_code == 200
     assert 'data-pose="idle"' in page and 'data-bar="me"' in page and 'data-bar="enemy"' in page
@@ -254,14 +254,18 @@ def test_the_male_sword_attack_plays_frame_by_frame(client):
     import looks
     fight(client)
     page = client.get("/explore/play").text
-    sheet = looks.ATTACK_SHEETS["male"]
-    assert 'class="sheetfx asheet" data-act="strike"' in page and 'class="sheetfx asheet" data-act="break"' in page
-    assert sheet["src"] in page and " sheeted" in page and "data-blade" not in page      # his: one sheet, the page's timing
-    assert f'data-frames="{sheet["frames"]}"' in page and client.get(sheet["src"]).status_code == 200
     from PIL import Image
     import os
-    im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
-    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert 'class="sheetfx asheet" data-act="strike"' in page and 'class="sheetfx asheet" data-act="break"' in page
+    assert " sheeted" in page and "data-blade" in page                # his own sheets and timing, as hers (Nov 24)
+    for act in ("strike", "break"):
+        sheet = looks.ATTACK_SHEETS["male"][act]
+        assert sheet["src"] in page and client.get(sheet["src"]).status_code == 200
+        im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
+        cell = (im.size[0] / sheet["cols"], im.size[1] / sheet["rows"])
+        assert abs(cell[0] * 1.5 - sheet["box"][2] * 1024) < 2 and abs(cell[1] * 1.5 - sheet["box"][3] * 559) < 2
+        keys = sheet["blade"]["keys"]
+        assert keys[-1][1] == sheet["frames"] - 1 and keys == sorted(keys) and sheet["blade"]["end"] >= 1900   # no faster than hers
     assert set(looks.attack_sheets({"gender": "female"})) == {"strike", "break"}   # hers: her own sheets (test below)
 
 
@@ -282,8 +286,9 @@ def test_the_male_guard_plays_frame_by_frame(client):
     sheet = looks.GUARD_SHEETS["male"]
     assert 'class="sheetfx gsheet"' in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
     im = Image.open(os.path.join(os.path.dirname(os.path.dirname(__file__)), sheet["src"].lstrip("/")))
-    assert im.size == (320 * sheet["cols"], 360 * sheet["rows"]) and sheet["frames"] <= sheet["cols"] * sheet["rows"]
-    assert 'data-first=' not in page and '--shift' not in page.split('gsheet', 1)[1].split('</div>', 1)[0]   # his defaults
+    cell = (im.size[0] / sheet["cols"], im.size[1] / sheet["rows"])
+    assert abs(cell[0] * 1.5 - sheet["box"][2] * 1024) < 2 and sheet["frames"] <= sheet["cols"] * sheet["rows"]
+    assert f'data-first="{sheet["first"]}"' in page and sheet["ms"] == looks.GUARD_SHEETS["female"]["ms"]    # his own, at her pace
 
 
 def test_the_female_guard_plays_frame_by_frame_with_its_own_timing(client):
@@ -638,12 +643,14 @@ def test_the_female_stance_plays_while_she_stands(client):
     assert "querySelectorAll('.asheet')" in client.get("/static/fight.js").text   # only .asheet is an attack, never the stance
 
 
-def test_the_male_cultivator_keeps_his_still_idle(client):
+def test_the_male_cultivator_has_his_stance_too(client):
     import looks
     fight(client)
     page = client.get("/explore/play").text
-    assert looks.idle_sheet({"gender": "male"}) is None and looks.idle_sheet(None) is None
-    assert " stanced" not in page and "isheet" not in page
+    sheet = looks.idle_sheet({"gender": "male"})
+    assert sheet["src"].endswith("hero_male_stance.webp") and sheet["frames"] == sheet["cols"] * sheet["rows"]
+    assert " stanced" in page and sheet["src"] in page and client.get(sheet["src"]).status_code == 200
+    assert 'data-voice="male"' in page                                 # his own recordings are asked for (fight_sound.js)
 
 
 # ── Animated beasts (web/beast_sheets.py, art/beasts/sheets/<slug>/; docs/web.md "Animated beasts") ──────────────

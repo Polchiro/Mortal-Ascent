@@ -147,8 +147,9 @@ def fit(ref, im, s0):
     return best[1:]
 
 
-def build(kind, video, ref, cache):
-    mv = MOVES[kind]
+def build(kind, video, ref, cache, moves=None, prefix="hero_female"):
+    """`moves`, `prefix`: another cultivator's own table and file names (scripts/make_hero_set.py builds his)."""
+    mv = (moves or MOVES)[kind]
     cut = cut_frames(kind, video, [START] + mv["frames"], cache)
     s, dx, dy = fit(ref, cut[START], feet(ref)[2] / feet(solid(cut[START]))[2])    # her stance picture onto her stance
     seq = [cut[n] for n in mv["frames"]]
@@ -167,18 +168,20 @@ def build(kind, video, ref, cache):
     X1, Y1 = max(b[2] for b in boxes) + 6, max(b[3] for b in boxes) + 4
     cw, ch = round((X1 - X0) / CELL_SCALE), round((Y1 - Y0) / CELL_SCALE)
     frames = [big.crop((X0 - x, Y0 - y, X1 - x, Y1 - y)).resize((cw, ch), Image.LANCZOS) for big, x, y in placed]
-    at = {k: mv["frames"].index(mv[k]) for k in ("jab", "windup", "release", "sweep", "back", "first") if k in mv}
+    at = {k: mv["frames"].index(mv[k]) for k in ("jab", "windup", "release", "sweep", "back", "first", "hit") if k in mv}
     frames = home(frames, at.get("back", len(frames) - 10))
     rows = -(-len(frames) // COLS)
     sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.alpha_composite(f, ((i % COLS) * cw, (i // COLS) * ch))
-    name = f"hero_female_{kind}.webp"
+    name = f"{prefix}_{kind}{'_sheet' if 'hit' in mv else ''}.webp"
     sheet.save(os.path.join(OUT, name), quality=84, method=6)
     entry = {"src": f"/art/portraits/fight/{name}", "frames": len(frames), "cols": COLS, "rows": rows,
              "box": [round(X0 / CANVAS[0], 4), round(Y0 / CANVAS[1], 4), round((X1 - X0) / CANVAS[0], 4),
                      round((Y1 - Y0) / CANVAS[1], 4)]}
     entry.update(at)
+    if "hit" in at:                                                              # a sword attack: how far the blade reaches
+        entry["tip"] = round(max(b[2] for b in boxes[at["hit"]:at["hit"] + 3]) / CANVAS[0], 4)
     if "release" in at:
         big, x, y = placed[at["release"]]
         m = solid(big)

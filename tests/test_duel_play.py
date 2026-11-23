@@ -127,7 +127,7 @@ def test_you_cannot_duel_while_in_one(setup):
     assert arena.join_queue(conn, A) == "You are already in a duel."
 
 
-def test_her_stance_plays_in_a_duel_and_his_still_stays(setup):
+def test_both_stances_play_in_a_duel(setup):
     import json
     import os
 
@@ -139,7 +139,7 @@ def test_her_stance_plays_in_a_duel_and_his_still_stays(setup):
     arena.challenge(conn, A, "Mei Xue")
     arena.answer(conn, B, A, accept=True)
     sa = arena.state(conn, A)
-    assert sa["me"]["isheet"] is None and sa["them"]["isheet"] == looks.IDLE_SHEETS["female"]
+    assert sa["me"]["isheet"] == looks.IDLE_SHEETS["male"] and sa["them"]["isheet"] == looks.IDLE_SHEETS["female"]
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(
         os.path.join(os.path.dirname(os.path.dirname(__file__)), "web", "templates")))
     html = env.get_template("_stance.html").render(isheet=sa["them"]["isheet"])

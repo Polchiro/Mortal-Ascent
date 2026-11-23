@@ -18,6 +18,9 @@ A beast's voice can be kept to its body type (beasts.BODY_TYPES) with an @: "roa
 (the yelp of a wolf that is struck). Other beasts keep the sound made in code until they have their own. A technique
 is narrowed by its movement (web/technique_fx.py): "cast:fist", "cast:palm", "cast:kick", "cast:finger".
 
+A cultivator's own sound is kept to him or her with a #: "swing:strike#male", "cast:kick#male", "block#male" (the
+new male's, from his Nov 24 videos). The other cultivator keeps the plain one.
+
 Each take's `lead` is written beside it: how many seconds into the cut its loudest moment is. The fight uses it to
 make a technique's recording land on the blow.
 
@@ -152,10 +155,10 @@ def main():
         for s, e in loud_parts(video):
             print(f"  {s:6.2f} - {e:6.2f} s   peak {peak(video, s, e)} dB")
         return
-    base = a.name.split("@")[0].split(":")[0]
+    base = a.name.split("#")[0].split("@")[0].split(":")[0]
     if base not in NAMES:
         raise SystemExit(f"'{base}' is not one of the fight's sounds: {', '.join(NAMES)}")
-    key = a.key or a.name.replace(":", "_").replace("@", "_")
+    key = a.key or a.name.replace(":", "_").replace("@", "_").replace("#", "_")
     length = cut(video, key, a.start, a.end, a.gain, a.fade)
     for name in [a.name] + a.also:
         add(name, key)
