@@ -138,7 +138,7 @@
   function ready(c) { return c.ready || (c.img && c.img.complete && c.img.naturalWidth ? c.img : null); }
 
   /* sound (web/static/sound.js): the place's ambience and a few little sounds; silent if it isn't there */
-  function snd(name, arg) { var S = window.MASound; if (S && S[name]) try { S[name](arg); } catch (e) {} }
+  function snd(name, arg, more) { var S = window.MASound; if (S && S[name]) try { S[name](arg, more); } catch (e) {} }
 
   /* the hero */
   var ROW_ANGLE = [90, 135, 180, 225, 270, 315, 0, 45];      // each row's facing, screen degrees (0 right, clockwise)
@@ -739,7 +739,7 @@
       hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * 8) % 8;
       if ((before < 4 && hero.phase >= 4) || hero.phase < before) {
         if (ATMOS) puff(hero.x, hero.y, 0.45);
-        snd('step', PLACE === 'town' ? 'stone' : 'earth');
+        snd('step', PLACE === 'town' ? 'stone' : 'earth', hero.running ? 'run' : 'walk');
       }
       hero.frame = Math.floor(hero.phase);
       hero.still = 0;

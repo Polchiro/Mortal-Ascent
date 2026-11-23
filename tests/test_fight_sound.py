@@ -63,3 +63,35 @@ def test_a_video_without_sound_says_so(tmp_path):
     video = str(tmp_path / "quiet.mp4")
     _video(video, sound=False)
     assert not mfs.has_sound(video)
+
+
+def test_the_recorded_footsteps_are_listed_and_the_maps_ask_for_them_by_gait():
+    """Her running footsteps, cut from the running videos (scripts/make_step_sound.py, docs/world.md "Sound")."""
+    from scripts import make_step_sound as mss
+    listed = json.load(open(mss.LIST))
+    assert set(listed) <= set(mss.GAITS) and len(listed["run"]) == mss.TAKES
+    for names in listed.values():
+        for name in names:
+            path = os.path.join(mss.OUT, name)
+            assert os.path.exists(path) and 1000 < os.path.getsize(path) < 12000, name      # a short, small take
+    sound = open(os.path.join(ROOT, "web", "static", "sound.js")).read()
+    town = open(os.path.join(ROOT, "web", "static", "town.js")).read()
+    assert "steps.json" in sound and "function recordedStep" in sound
+    assert "snd('step', PLACE === 'town' ? 'stone' : 'earth', hero.running ? 'run' : 'walk')" in town
+
+
+@needs_ffmpeg
+def test_footfalls_are_found_and_the_cleanest_cut(tmp_path, monkeypatch):
+    from scripts import make_step_sound as mss
+    monkeypatch.setattr(mss, "OUT", str(tmp_path / "sounds"))
+    monkeypatch.setattr(mss, "LIST", str(tmp_path / "sounds" / "steps.json"))
+    video = str(tmp_path / "steps.mp4")                       # 8 s: a short knock of noise every half second
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=160x90:r=24:d=8",
+                    "-f", "lavfi", "-i", "anoisesrc=d=8:c=pink:a=0.5", "-af", "volume='if(lt(mod(t,0.5),0.06),1,0)':eval=frame",
+                    "-c:a", "aac", "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p", video], check=True)
+    falls = mss.footfalls(mss.sound(video))
+    assert 12 <= len(falls) <= 17 and all(abs((b[0] - a[0]) - 0.5) < 0.06 for a, b in zip(falls, falls[1:]))
+    mss.main("walk", [video])
+    listed = json.load(open(mss.LIST))
+    assert listed == {"walk": [f"step_walk_{i}.mp3" for i in range(1, mss.TAKES + 1)]}
+    assert all(os.path.getsize(os.path.join(mss.OUT, n)) > 500 for n in listed["walk"])

@@ -171,14 +171,25 @@ Three tasks a day, the same all day and new at **midnight UTC**, picked for each
 
 ## Sound
 
-Made in the browser (`web/static/sound.js`, Web Audio, no sound files). Each kind of place has its own bed, which
+Made in the browser (`web/static/sound.js`, Web Audio, no sound files but the footsteps). Each kind of place has its own bed, which
 crossfades as you walk on: the town (soft wind, the street's murmur, wind chimes), the Crossroads (wind over grass,
 a few crickets, birds) and the Moon Forest (wind in the trees, crickets all round, a far-off owl, a creaking branch).
-Little sounds: footsteps (stone in town, earth outside), a whoosh into the next land, a growl when a beast notices
+Little sounds: footsteps (recorded, see below; stone in town, earth outside), a whoosh into the next land, a growl when a beast notices
 you (deeper for an Elite or a Beast King), kneeling at a herb, a chime when it is picked (a dull note when not), a
 glint's sparkle and a bell for a finished task. **Settings** (the gear) has Sound On / Off, a volume and Music On / Off,
 kept on the device. Browsers allow sound only after a click or key press, so it starts with your first one, and it goes quiet
 while the tab is hidden.
+
+**Footsteps from the videos (Nov 23).** SHOAIB's walking and running videos carry sound: one footfall after
+another. `python -m scripts.make_step_sound run front.mp4 ...` finds the footfalls, keeps the six most ordinary
+clean ones (from as many of the videos as it can), and writes them as `art/fx/sounds/step_run_1..6.mp3` (0.3 s each,
+about 4 KB), listed by gait in `art/fx/sounds/steps.json`. On every footfall (twice a stride, as before) `town.js`
+tells `sound.js` the ground and the gait (`step('stone' | 'earth', 'run' | 'walk')`), and it plays one of that
+gait's takes: never the same twice running, a little different in pitch and loudness each time, duller and softer
+on earth than on the town's stone. Running steps are from her five running videos. **Walking has no takes of its
+own yet** (her walk videos were not given with them): until `make_step_sound walk ...` is run on them, a walking
+step plays a running take, quieter and a little lower. With no takes at all (or before they have loaded) the step
+made in code is kept.
 
 **Music.** Over each bed a quiet tune plays, made up as it goes (no recording): plucked strings in the manner of a
 guzheng on a five-note scale, a low string at the start of each phrase and a bamboo flute now and then, with rests
