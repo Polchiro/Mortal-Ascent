@@ -268,8 +268,12 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
   background:radial-gradient(circle at 42% 40%,rgba(236,250,255,.34),rgba(170,220,236,.16) 46%,rgba(120,190,210,.05) 64%,transparent 70%);
   box-shadow:0 0 60px rgba(150,214,232,.18);animation:moonglow 7s ease-in-out infinite alternate}
 @keyframes moonglow{from{opacity:.75}to{opacity:1}}
-.portrait.stage .seal{display:block;position:absolute;left:50%;top:11%;transform:translateX(-50%);font:400 210px/1 "Noto Serif SC","Songti SC",SimSun,serif;
-  color:rgba(246,226,176,.075);text-shadow:0 0 30px rgba(235,203,134,.12);pointer-events:none;user-select:none}
+.remblem{display:block;width:100%;height:100%;color:var(--ag2)}
+.remblem .core{fill:#0B1A20}.remblem .num{font:800 19px Cinzel,Georgia,serif;fill:var(--ag3);letter-spacing:.5px}
+.realmseal .remblem{width:96%;height:96%;filter:drop-shadow(0 0 6px rgba(235,203,134,.45))}
+.stage .remblem.back{position:absolute;left:50%;top:7%;width:74%;height:auto;aspect-ratio:1;transform:translateX(-50%);color:#F6E2B0;opacity:.13;pointer-events:none;
+  animation:emblemturn 90s linear infinite}
+@keyframes emblemturn{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
 .portrait.stage .aura{inset:-6% -30% 6%;opacity:.38}
 .stage .formation{position:absolute;left:50%;bottom:-27%;width:104%;aspect-ratio:1;transform:translateX(-50%) rotateX(74deg);pointer-events:none}
 .stage .formation i{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(127,240,195,.55);
@@ -311,8 +315,8 @@ body.hallbg.profilebg .xprofile .xpanel{background:radial-gradient(ellipse at 50
 .power b{font:800 20px/1.15 Cinzel,Georgia,serif;color:var(--ag3)}
 .power small{font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--mist)}
 @media (max-width:900px){.portrait.stage{max-width:430px}.nameplate{max-width:402px}.power{max-width:430px}}
-@media (max-width:560px){.portrait.stage .seal{font-size:170px}.stage .sgear{width:48px;height:48px}.stage .sgear img{width:38px;height:38px}}
-@media (prefers-reduced-motion:reduce){.stage .moon,.stage .formation i,.portrait.stage>img,.stage .motes i{animation:none}.stage .motes i{opacity:.6;bottom:calc(10% + var(--i) * 5%)}}
+@media (max-width:560px){.stage .sgear{width:48px;height:48px}.stage .sgear img{width:38px;height:38px}}
+@media (prefers-reduced-motion:reduce){.stage .remblem.back,.stage .moon,.stage .formation i,.portrait.stage>img,.stage .motes i{animation:none}.stage .motes i{opacity:.6;bottom:calc(10% + var(--i) * 5%)}}
 .xname{margin:8px 0 0;font:800 34px/1.1 Cinzel,Georgia,serif;letter-spacing:3px;text-transform:uppercase;
   background:linear-gradient(180deg,#FFF1C9 10%,#EBCB86 45%,#B98A3E 90%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
 .xrealm{margin:0;font:700 16px Cinzel,Georgia,serif;letter-spacing:.5px;color:var(--cream)}

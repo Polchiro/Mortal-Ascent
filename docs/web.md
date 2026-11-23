@@ -56,7 +56,10 @@ forms or links changed. The appearance page keeps the plain panels (`.xpanel` wi
 **The cultivator's stage** (Nov 23, `.portrait.stage` in `style.css`). The left panel is a tall stage instead of a
 small framed picture: the player's painting (`looks.portrait`, cut by `scripts/make_hero_portrait.py` from SHOAIB's
 new paintings of the male and female cultivator) stands large under a pale moon, on a slowly turning Qi formation,
-with motes of Qi rising round them, the realm's seal faint behind, and a gentle float. At their sides are the four
+with motes of Qi rising round them, the realm's emblem faint behind (slowly turning), and a gentle float. **The
+realm emblem** (the `emblem` macro in `profile.html`, `realm_track` in `web/profile.py`) is a gold lotus that opens
+one more petal with every realm (5 for Mortal), with the realm's number in Roman numerals in the middle; it also
+stands in the Cultivation panel's medallion, in place of the Chinese character shown before. At their sides are the four
 gear slots (weapon, armor, the two artifacts: `worn`, the same data as the Equipment panel), each a link to that
 item or tab in the bag, coloured by rarity, a `+` when empty. Under the stage a name plate (name, realm and layer),
 the title chips, and HP / Attack / Defense as three plaques (`p.hp`, `p.attack`, `p.defense`, the Attributes panel's

@@ -4,6 +4,17 @@
 {% block body %}
 {% with page="profile", coins=p.coins, pearls=p.pearls %}{% include "_topbar.html" %}{% endwith %}
 {% set t = p.track %}
+{# the realm's emblem: a lotus that opens one more petal with every realm, its number in the middle #}
+{% macro emblem(cls, numeral=true) %}
+<svg class="remblem {{ cls }}" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="47" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".55"/>
+  <circle cx="50" cy="50" r="43.5" fill="none" stroke="currentColor" stroke-width=".6" stroke-dasharray="1.2 3.4" opacity=".7"/>
+  {% for k in range(t.petals) %}<path d="M50 50 C43.5 39 43.5 24 50 10 C56.5 24 56.5 39 50 50Z" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.1" transform="rotate({{ (360 / t.petals * k) | round(2) }} 50 50)"/>{% endfor %}
+  {% if numeral %}<circle cx="50" cy="50" r="19" class="core"/><circle cx="50" cy="50" r="19" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="50" y="50" text-anchor="middle" dominant-baseline="central" class="num">{{ t.roman }}</text>
+  {% else %}<circle cx="50" cy="50" r="9" fill="none" stroke="currentColor" stroke-width="1.1"/>{% endif %}
+</svg>
+{% endmacro %}
 
 <main class="xprofile">
   <!-- A. Identity: the cultivator on their stage, their gear at their sides, their power under their name -->
@@ -11,7 +22,7 @@
     <span class="dragon l" aria-hidden="true"></span><span class="dragon r" aria-hidden="true"></span>
     <div class="portrait stage">
       <span class="moon" aria-hidden="true"></span>
-      <span class="seal" aria-hidden="true">{{ t.seal }}</span>
+      {{ emblem("back", false) }}
       <span class="aura" aria-hidden="true"></span>
       <span class="formation" aria-hidden="true"><i></i><i></i></span>
       <img src="{{ p.portrait }}" alt="" width="442" height="892">
@@ -51,7 +62,7 @@
     <section class="xpanel" aria-labelledby="cult-h">
       <div class="phead orn"><h2 id="cult-h">Cultivation</h2><span class="sub">Realm {{ t.no }} of {{ t.of }}</span></div>
       <div class="cult">
-        <span class="realmseal" aria-hidden="true">{{ t.seal }}</span>
+        <span class="realmseal" title="Realm {{ t.no }} of {{ t.of }}">{{ emblem("") }}</span>
         <div class="cultmain">
           <p class="crealm">{{ p.realm }}<span>{{ p.phase }}</span></p>
           <div class="pips" role="img" aria-label="Layer {{ p.layer_no }} of {{ p.max_layer }}">

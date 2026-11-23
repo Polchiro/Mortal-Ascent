@@ -13,7 +13,6 @@ from bot import crafting, db, forging, points
 from bot import player as rules
 from bot.sheet import data as sheet
 from cards import art_icons
-from cards.theme import REALM_CHAR
 
 ATTR_ICON = "/art/icons/attr/{}.webp"
 ART_ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art")
@@ -90,11 +89,16 @@ def titles(player):
     return out
 
 
+ROMAN = ("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
+
+
 def realm_track(realm, layer, max_layer):
     """Realm n of N, the layer pips and the next realm's name."""
     order = rules.REALM_ORDER
     i = order.index(realm)
-    return {"no": i + 1, "of": len(order), "seal": REALM_CHAR.get(realm, "武"),
+    return {"no": i + 1, "of": len(order),
+            # the realm's emblem on the page: its number, and a lotus with one more petal every realm
+            "roman": ROMAN[i] if i < len(ROMAN) else str(i + 1), "petals": 5 + i,
             "next": order[i + 1] if i + 1 < len(order) else None,
             "pips": [{"n": n, "on": n <= layer, "now": n == layer} for n in range(1, max_layer + 1)]}
 
