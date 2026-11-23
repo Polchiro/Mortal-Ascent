@@ -154,4 +154,4 @@ def test_a_look_without_a_walking_sheet_talks_from_a_list(client, db_path, monke
     monkeypatch.setattr(looks, "WALK_SHEETS", {k: v for k, v in looks.WALK_SHEETS.items() if k != "female"})
     r = client.get("/town")
     assert r.status_code == 200 and 'id="map"' not in r.text and "THE TOWNSFOLK" in r.text
-    assert 'href="/forge"' in r.text and "Martial Master" in r.text
+    assert 'href="/town/visit/blacksmith"' in r.text and "Martial Master" in r.text

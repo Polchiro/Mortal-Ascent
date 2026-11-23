@@ -2071,3 +2071,4 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   -webkit-mask-image:radial-gradient(circle,#000 58%,transparent 71%);mask-image:radial-gradient(circle,#000 58%,transparent 71%)}
 .freveal .fraura.on{opacity:.95}
 .freveal[data-rarity="Mythical"] .fraura{filter:hue-rotate(-35deg) saturate(1.6)}
+.fagain{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
