@@ -64,9 +64,31 @@
     DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
     // VIEW tiles across a wide screen; a tall phone keeps the cultivator a readable size instead
-    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72))) * K * Z;   // Z: the camera further back
+    S = Math.min(1.6, Math.max(0.55, W / (VIEW * TW), H / (VIEW * TW * 0.72))) * K * Z * UZ;   // Z: the camera further back
   }
   window.addEventListener('resize', resize);
+
+  /* settings (the gear at the top right): how big you and the land are drawn. Only how it looks; kept on this device. */
+  var UZ = 1;
+  try { var z0 = parseFloat(localStorage.getItem('ma.size')); if (z0 >= 0.8 && z0 <= 1.5) UZ = z0; } catch (e) {}
+  (function () {
+    var btn = document.getElementById('setBtn'), panel = document.getElementById('setPanel');
+    if (!btn || !panel) return;
+    var opts = panel.querySelectorAll('[data-size]');
+    function mark() { Array.prototype.forEach.call(opts, function (o) { var on = Math.abs(parseFloat(o.dataset.size) - UZ) < 0.01; o.classList.toggle('on', on); o.setAttribute('aria-pressed', on); }); }
+    function show(on) { panel.hidden = !on; btn.setAttribute('aria-expanded', on); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); show(panel.hidden); });
+    panel.addEventListener('click', function (e) { e.stopPropagation(); });
+    document.addEventListener('click', function () { show(false); });
+    window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { show(false); btn.focus(); } });
+    Array.prototype.forEach.call(opts, function (o) {
+      o.addEventListener('click', function () {
+        UZ = parseFloat(o.dataset.size); try { localStorage.setItem('ma.size', UZ); } catch (e) {}
+        mark(); resize();
+      });
+    });
+    mark();
+  })();
   window.addEventListener('townscale', function (e) { K = e.detail; resize(); });   // the demo's size buttons
 
   /* a picture in this place's light, made once per file (the wilds' pieces: painted in daylight, placed at night) */
@@ -252,6 +274,13 @@
   var tripEl = document.getElementById('trip');
   function world(v) {
     WORLD = v;
+    if (v.purse) {                                                  // the purse at the top right, as it stands now
+      ['coins', 'pearls'].forEach(function (k) {
+        Array.prototype.forEach.call(document.querySelectorAll('.js-' + k), function (n) {
+          if (n.textContent !== v.purse[k]) { n.textContent = v.purse[k]; n.parentNode.classList.remove('bump'); void n.offsetWidth; n.parentNode.classList.add('bump'); }
+        });
+      });
+    }
     HERBS = (v.herbs || []).map(function (h) {
       var old = HERBS.find && HERBS.find(function (o) { return o.id === h.id; });
       h.t = old ? old.t : Math.random() * 6; h.pic = plain(h.picture); return h;

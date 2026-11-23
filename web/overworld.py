@@ -444,7 +444,9 @@ class World:
                       for b in (w.beasts.get(place) or [])]
             finds = [] if quiet else [{"id": f["id"], "x": f["x"], "y": f["y"], "secret": f["secret"]}
                                       for f in w.finds.get(place, []) if f["ready"] <= now]
-            return {"place": place, "herbs": herbs, "beasts": beasts, "finds": finds, "trip": trip,
+            p = db.get_player(conn, uid)
+            purse = {"coins": f"{int(p['lotus_coins']):,}", "pearls": f"{int(p['moon_pearls']):,}"} if p else None
+            return {"place": place, "herbs": herbs, "beasts": beasts, "finds": finds, "trip": trip, "purse": purse,
                     "wary": bool(quiet), "quiet": _quiet_line(quiet),
                     "wander": hunt_map.WANDER, "notice": hunt_map.NOTICE, "reach": HERB_REACH,
                     "beastReach": hunt_map.REACH}
