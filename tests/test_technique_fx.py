@@ -197,7 +197,7 @@ def test_the_sidesteps_play_at_the_videos_pace_and_end_on_their_feet():
     her, him = (looks.motion_sheet({"gender": g}, "sidestep") for g in ("female", "male"))
     assert her["frames"] == 36 and him["frames"] == 24               # every 2nd frame of the 24 fps videos (her hold thinned)
     for d in (her, him):
-        assert d["fps"] == 12
+        assert d["fps"] == 10                                            # slowed a little so the dodge can be read
         assert 0 < d["jab"] < d["release"] < d["back"] < d["frames"]
         assert len(d["body"]) == 4 and all(0 < q < 1 for q in d["hand"])
     assert her["give"] > 0 and him["give"] == 0                     # she gives ground; he dashes in place
@@ -317,3 +317,34 @@ def test_her_defences_are_from_her_stance_videos():
     assert b["hand"][1] < 0.6 and b["hand"][0] > b["body"][0]             # her raised forearm, not her front foot
     for sheet in (b, d, s):
         assert sheet["shift"] == 0 and len(sheet["box"]) == 4 and len(sheet["body"]) == 4
+
+
+def test_a_defence_technique_still_plays_when_the_beast_strikes_no_blow():
+    """The beast Guarded: the engine logs nothing for the defence technique, but the page still shows its movement."""
+    class F:
+        name = "Shoaib"
+        atk_t = None
+        def_t = {"name": "Cloud-Walking Shadow", "type": "defense", "grade": "Heaven"}
+        last_move = "Cloud-Walking Shadow"
+    log = [("shield", "Leopard guards")]
+    ev = explore_play.events(log, F)
+    mine = [e for e in ev if e["who"] == "me"]
+    assert len(mine) == 1 and mine[0]["act"] == "tech" and mine[0]["idle"] and not mine[0].get("evaded")
+    class B:
+        pass
+    B.log = log
+    for gender in ("female", "male"):
+        assert explore_play.cast(B, F, gender)["fx"]["motion"] == "sidestep"
+    F.last_move = "Strike"                                    # the technique was not this turn's move: nothing extra
+    assert not [e for e in explore_play.events(log, F) if e.get("idle")]
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "(ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep'" in js
+
+
+def test_brace_and_deflect_play_slower_than_the_beasts_charge():
+    for gender in ("female", "male"):
+        for move in ("brace", "deflect"):
+            assert looks.motion_sheet({"gender": gender}, move)["pace"] == 1.5
+    html = open(os.path.join(ROOT, "web", "templates", "explore_play.html"), encoding="utf-8").read()
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "data-pace" in html and "msheet.dataset.pace" in js

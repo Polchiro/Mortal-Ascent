@@ -113,6 +113,9 @@ IDLE_SHEETS = {"female": {"src": "/art/portraits/fight/hero_female_stance.webp",
 # "palm": SHOAIB's palm video (scripts/make_hero_palm.py): on guard (0-4), both arms drawn back (5-9), a lunging
 # two-handed palm push (out at `release`), held, then rising back to guard (`back` on).
 # `hand`: where the fist or palms are at the release, as shares of the fighter's box (effects fly from there).
+# `pace` (brace, deflect; Nov 24): how much slower than first made these play, with the beast's blow they answer
+# (fight.js `braced`, `deflected` stretch their whole timeline by it): at 1 they were over in about a second and a
+# half and could barely be followed. The sidesteps play frame for frame at `fps`: 10 now, 12 (the video's pace) before.
 # `ms`: the least time the whole movement takes on screen (fight.js `technique`): a low-grade cast (1.1 s) would
 # rush several seconds of her video, so her movements play at a pace nearer the beast's own attack (about 2 s).
 # Her kick, fist, palm and finger are from SHOAIB's Nov 23 videos (scripts/make_heroine_set.py): each starts and ends
@@ -149,11 +152,11 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # beast's blow is taken. `hand` is the crossed forearms; `body` the braced figure (middle, top of the
                  # head, feet, width), as shares of the fighter's box: the effects are placed and sized around it.
                  "brace": {"male": {"src": "/art/portraits/fight/hero_male_brace.webp", "frames": 33, "cols": 8, "rows": 5,
-                                    "jab": 5, "release": 16, "back": 32, "shift": 0, "hand": [0.49, 0.29],
+                                    "jab": 5, "release": 16, "back": 32, "pace": 1.5, "shift": 0, "hand": [0.49, 0.29],
                                     "body": [0.462, 0.094, 0.902, 0.239]},
                            # hers (scripts/make_heroine_set.py, from her stance): she sinks into a wide, low stance,
                            # her left forearm raised (settled at `release`), holds, and rises into her stance again
-                           "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 28, "cols": 8, "rows": 4, "jab": 5, "release": 10, "back": 18, "shift": 0, "hand": [0.604, 0.519], "body": [0.481, 0.259, 0.93, 0.31], "box": [0.3096, 0.1825, 0.334, 0.7603]}},
+                           "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 28, "cols": 8, "rows": 4, "jab": 5, "release": 10, "back": 18, "pace": 1.5, "shift": 0, "hand": [0.604, 0.519], "body": [0.481, 0.259, 0.93, 0.31], "box": [0.3096, 0.1825, 0.334, 0.7603]}},
                  # "deflect": hers from SHOAIB's video of her (scripts/make_heroine_set.py, from her stance), the movement every
                  # deflection technique shares (web/technique_fx.py MOVES_FX; fight.js `deflected`): in her stance
                  # (0-4); from `jab` she turns into the blow and meets it with her open palm at `release` (where `hand`
@@ -163,10 +166,10 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # (`jab`), sweeps a blue Qi arc round in front of him to turn the blow (`release`, `hand`), carries it
                  # down and across (`sweep`, `tip`) and settles on guard again (`back` on). The arc is painted in.
                  "deflect": {"male": {"src": "/art/portraits/fight/hero_male_deflect.webp", "frames": 32, "cols": 8, "rows": 4,
-                                      "jab": 6, "release": 13, "sweep": 17, "back": 20, "shift": 2 / 320,
+                                      "jab": 6, "release": 13, "sweep": 17, "back": 20, "pace": 1.5, "shift": 2 / 320,
                                       "hand": [0.663, 0.479], "tip": [0.338, 0.690],
                                       "body": [0.454, 0.059, 0.918, 0.264]},
-                             "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 43, "cols": 8, "rows": 6, "jab": 5, "release": 10, "sweep": 24, "back": 27, "shift": 0, "hand": [0.696, 0.411], "tip": [0.297, 0.469], "body": [0.481, 0.195, 0.934, 0.211], "box": [0.2832, 0.1503, 0.5234, 0.7943]}},
+                             "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 43, "cols": 8, "rows": 6, "jab": 5, "release": 10, "sweep": 24, "back": 27, "pace": 1.5, "shift": 0, "hand": [0.696, 0.411], "tip": [0.297, 0.469], "body": [0.481, 0.195, 0.934, 0.211], "box": [0.2832, 0.1503, 0.5234, 0.7943]}},
                  # "sidestep": hers from SHOAIB's video of her (scripts/make_heroine_set.py, from her stance), what Drifting
                  # Mist Steps and Cloud-Walking Shadow play when they slip the beast's Break (fight.js `sidestepped`):
                  # in her stance (0-2); from `jab` she drops into a deep side lunge, under the blow's line at `release`,
@@ -177,9 +180,9 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # into a low dash in swirls of blue Qi (`release`), then rises out of it (`back` on: his launch played
                  # back, as the video holds the dash to its end). He dashes in place: no ground given.
                  "sidestep": {"male": {"src": "/art/portraits/fight/hero_male_sidestep.webp", "frames": 24, "cols": 8, "rows": 3,
-                                       "jab": 5, "release": 8, "back": 17, "fps": 12, "shift": 0, "give": 0,
+                                       "jab": 5, "release": 8, "back": 17, "fps": 10, "shift": 0, "give": 0,
                                        "hand": [0.637, 0.360], "body": [0.453, 0.059, 0.915, 0.248]},
-                              "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 36, "cols": 8, "rows": 5, "jab": 3, "release": 11, "back": 19, "fps": 12, "shift": 0, "give": 0.06, "hand": [0.64, 0.621], "body": [0.472, 0.195, 0.934, 0.211], "box": [0.1914, 0.1843, 0.5039, 0.873]}}}
+                              "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 36, "cols": 8, "rows": 5, "jab": 3, "release": 11, "back": 19, "fps": 10, "shift": 0, "give": 0.06, "hand": [0.64, 0.621], "body": [0.472, 0.195, 0.934, 0.211], "box": [0.1914, 0.1843, 0.5039, 0.873]}}}
 
 
 # walking about the hunting-ground map (web/static/huntmap.js, docs/hunting.md "The map"): the spec sheet, 8 rows
