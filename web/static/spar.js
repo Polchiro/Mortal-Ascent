@@ -3,8 +3,9 @@
 
    Your cultivator plays the same frame-by-frame movements as in a beast fight (looks.py: the stance, Strike, Break,
    Guard, and the techniques' fist / palm / kick / finger / brace / deflect / sidestep), stepped by this file's own
-   small player, so nothing in fight.js is touched. The Martial Master is a still painting for now: he leans, lunges,
-   raises a guard of Qi and is knocked back in code, until he has movements of his own. */
+   small player, so nothing in fight.js is touched. The Martial Master plays his own (web/spar_master.py: the stance
+   he breathes in, Strike, Guard, Break, his stagger when he is hit and his bow, each with the video's own sound), holds his tell's pose while you
+   choose when he gives one, and steps to you and is knocked back in code. Without his sheets he is a still picture. */
 (function () {
   var main = document.getElementById('spar');
   if (!main) return;
@@ -26,6 +27,93 @@
   Object.keys(SPEC).forEach(function (k) { new Image().src = SPEC[k].src; });
   ['/art/fx/slash.webp', '/art/fx/break_burst.webp'].forEach(function (src) { new Image().src = src; });
   body.classList.add('breathe');
+
+  /* ── the Master's movements, frame by frame ───────────────────── */
+  var revealing = false;
+  var MS = S.master.sheets ? S.master.sheets.sheets : null, msheets = {}, mMode = 'idle', mT0 = performance.now(), mPlay = null;
+  fthem.querySelectorAll('.smsheet').forEach(function (el) { msheets[el.dataset.name] = el; });
+  var LEAD = {strike: 800, guard: 650, 'break': 1200};           // ms he moves before his blow lands
+  var soundOn = true, soundVol = 0.6;
+  try {
+    soundOn = localStorage.getItem('ma.sound') !== 'off';
+    var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) soundVol = v0 / 100;
+  } catch (e0) {}
+  if (MS) Object.keys(MS).forEach(function (k) { new Image().src = MS[k].src; });
+  function mshow(name, f) {
+    var sp = MS[name], el = msheets[name];
+    f = Math.max(0, Math.min(sp.frames - 1, f));
+    el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
+      (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
+    Object.keys(msheets).forEach(function (k) { msheets[k].classList.toggle('on', k === name); });
+  }
+  function mframe(name, tm) {                                    // the frame at `tm` ms into the movement
+    var at = MS[name].at, i = 0;
+    while (i + 1 < at.length && at[i + 1] <= tm) i++;
+    return i;
+  }
+  function mposed() {                                            // standing: breathing, or holding his tell's pose
+    if (!MS) return;
+    var pose = !S.over && S.tell_pose && MS[S.tell_pose] && MS[S.tell_pose].tell != null ? S.tell_pose : null;
+    mMode = pose ? 'tell' : 'idle';
+    if (pose) mshow(pose, MS[pose].tell);
+  }
+  function mloop(now) {
+    if (MS) {
+      if (mMode === 'idle') mshow('stance', mframe('stance', (now - mT0) % MS.stance.loop));
+      else if (mMode === 'play' && mPlay) {
+        var tm = (now - mPlay.t0) * mPlay.speed, last = MS[mPlay.name].at[MS[mPlay.name].frames - 1];
+        mshow(mPlay.name, mframe(mPlay.name, tm));
+        if (tm >= last + 120) { var cb = mPlay.done; mPlay = null; mposed(); if (cb) cb(); }
+      }
+    }
+    requestAnimationFrame(mloop);
+  }
+  function mplay(name, speed, done) {                            // one movement through (his bow), then back to standing
+    if (!MS || !MS[name]) { if (done) done(); return; }
+    mMode = 'play'; mPlay = {name: name, speed: speed, t0: performance.now(), done: done};
+  }
+  function msound(move, HIT) {                                   // the video's own sound, its blow on the moment HIT
+    var snd = MS && MS[move] && MS[move].sound;
+    if (!snd || !soundOn) return false;
+    var a = new Audio(snd.src), start = HIT - snd.lead;
+    a.volume = Math.min(1, soundVol * 1.1);
+    if (start < 0) { try { a.currentTime = -start / 1000; } catch (e1) {} }
+    setTimeout(function () { a.play().catch(function () {}); }, Math.max(0, start));
+    return a;
+  }
+  /* where he is in his movement, t ms into the exchange: he reaches `hit` exactly as the exchange is decided, and
+     comes back to his stance faster than the video does */
+  function mtime(move, t, HIT, soft, held, cut) {
+    var sp = MS[move], x = t - HIT, tell = sp.at[sp.tell], lead = LEAD[move];
+    if (cut) return Math.min(sp.hit - 330, x <= 0 ? mtime(move, t, HIT, false, held) : sp.hit);   // struck before it lands: he never lets it go
+    if (soft) {                                                  // a Guard nothing lands on: up, held, down again
+      if (x <= 0) return held ? tell : tell * Math.max(0, 1 + x / lead);
+      return Math.max(0, tell - Math.max(0, x - 550) * 1.6);
+    }
+    if (x <= 0) {
+      var run = lead - 250, from = Math.max(tell, sp.hit - run);
+      if (x < -run) return held ? tell : tell * Math.max(0, Math.min(1, (x + lead) / 250));
+      return from + (sp.hit - from) * (1 + x / run);
+    }
+    return sp.hit + (x < 450 ? x : 450 + (x - 450) * 2.4);
+  }
+  function mlength(move, soft) {                                 // ms after HIT until he is back in his stance
+    var sp = MS[move];
+    if (soft) return 550 + sp.at[sp.tell] / 1.6;
+    return 450 + Math.max(0, sp.at[sp.frames - 1] - sp.hit - 450) / 2.4;
+  }
+
+  /* petals on the wind (an ordinary spar is out in the yard) */
+  (function () {
+    var box = $('spetals');
+    if (!box || S.trial) return;
+    for (var i = 0; i < 16; i++) {
+      var p = document.createElement('i'), sz = 7 + Math.random() * 7;
+      p.style.left = (20 + Math.random() * 100) + '%'; p.style.width = sz + 'px'; p.style.height = sz * 0.7 + 'px';
+      p.style.animationDuration = (9 + Math.random() * 9) + 's'; p.style.animationDelay = (-Math.random() * 18) + 's';
+      box.appendChild(p);
+    }
+  })();
 
   /* ── small helpers ─────────────────────────────────────────────── */
   function ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
@@ -119,6 +207,7 @@
     var tell = $('stell');
     tell.classList.toggle('blank', !s.has_tell);
     if (s.over) tell.textContent = ''; else again(tell, s.tell || '');
+    if (!acting && mMode !== 'play') mposed();
   }
   function history(s) {
     var box = $('histbody'); box.textContent = '';
@@ -156,11 +245,16 @@
       if (/^Breakthrough/.test(text)) li.className = 'big';
       n.appendChild(li);
     });
-    $('sresult').hidden = false; $('syield').hidden = true;
+    $('sresult').classList.toggle('won', won); $('semblem').hidden = !(r.trial && r.trial.passed);
+    $('syield').hidden = true;
+    if (window.SparMusic) window.SparMusic.stop();
+    if (revealing) return;
+    revealing = !wasOver;
+    var reveal = function () { revealing = false; $('sresult').hidden = false; if (!wasOver) { wasOver = true; fs(won ? 'victory' : 'defeat'); } };
+    if (wasOver || r.outcome === 'forfeit') reveal(); else { mMode = 'idle'; mplay('bow', 3.2, reveal); setTimeout(reveal, 3600); }
     $('ititle').textContent = won ? 'Well fought' : 'The master bows';
     $('itext').textContent = 'The master rests for ' + r.again + ' before he spars again.';
     body.classList.remove('breathe'); body.classList.toggle('down', won);
-    if (!wasOver) { wasOver = true; fs(won ? 'victory' : 'defeat', null, 250); }
   }
   function draw(s, fresh) {
     S = s; bars(s); beads(s, fresh); status(s); moves(s); history(s); result(s); lock();
@@ -185,6 +279,10 @@
     if (n.animate) n.animate(frames, {duration: life, easing: 'ease-out', fill: 'forwards'});
     setTimeout(function () { n.remove(); }, life + 40);
     return n;
+  }
+  function dust(p) {
+    pic('/art/spar/dust.webp', p, 24, 900, [{opacity: 0, transform: 'translate(-50%,-70%) scale(.5)'}, {opacity: 0.8, transform: 'translate(-50%,-85%) scale(.9)', offset: 0.2},
+      {opacity: 0, transform: 'translate(-50%,-105%) scale(1.25)'}]);
   }
   function pop(box, text, kind) {
     var el = document.createElement('p');
@@ -264,7 +362,7 @@
     var move = e.master.move, close = e.me.base !== 'guard';     // you came to him: he only needs a short step
     var gap = Math.max(0, G.mr.left - (G.fr.left + G.fr.width * 0.6));
     var step = close ? G.W * 0.03 : Math.max(G.W * 0.03, gap - G.W * 0.012);
-    var lost = e.master.lost > 0, knock = G.W * (lost ? 0.022 + 0.03 * Math.min(1, e.master.lost / (S.master.max_hp * 0.3)) : 0);
+    var lost = e.master.lost > 0, knock = (MS && MS.hit ? 0.35 : 1) * G.W * (lost ? 0.022 + 0.03 * Math.min(1, e.master.lost / (S.master.max_hp * 0.3)) : 0);
     return function (t) {
       var x = 0, y = 0, rot = 0, sq = 1, h = t - HIT;
       if (move === 'strike') {
@@ -279,6 +377,7 @@
         x = G.W * 0.006 * (ease(span(t, HIT - 420, HIT - 160)) - inout(span(t, HIT + 320, HIT + 700)));
         rot = 2 * (ease(span(t, HIT - 420, HIT - 160)) - inout(span(t, HIT + 320, HIT + 700)));
       }
+      if (MS) { rot = 0; sq = 1; if (move === 'guard') x = 0; if (move === 'break') y = 0; }
       if (h >= 0 && knock) { x += knock * (ease(span(h, 0, 80)) - ease(span(h, 140, 520))); rot += 5 * (ease(span(h, 0, 80)) - ease(span(h, 140, 520))); }
       return [x, y, rot, sq];
     };
@@ -290,10 +389,11 @@
     var chest = at(mr, 0.42, 0.36), mine = at(fr, 0.46, 0.5);
     if (m.lost > 0) {
       var big = m.lost >= S.master.max_hp * 0.2;
-      pop(fthem, '−' + m.lost.toLocaleString(), 'hit'); fx('sspark', chest, 450); fs('hit', big ? 'big' : '');
+      pop(fthem, '−' + m.lost.toLocaleString(), 'hit'); fx('sspark', chest, 450); if (!plan.hitSound) fs('hit', big ? 'big' : '');
       body.classList.remove('hit'); void body.offsetWidth; body.classList.add('hit');
       if (!me.tech && me.base === 'strike') pic('/art/fx/slash.webp', chest, 22, 420, [{opacity: 0, transform: 'translate(-70%,-50%) scale(.6)'},
         {opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.3}, {opacity: 0, transform: 'translate(-40%,-50%) scale(1.1)'}]);
+      if (big || plan.slam) dust(at(mr, 0.5, 0.97));
       if (plan.slam) {
         fs('boom'); var feet = at(mr, 0.5, 0.97);
         pic('/art/fx/break_burst.webp', feet, 26, 800, [{opacity: 0, transform: 'translate(-50%,-70%) scale(.4)'},
@@ -302,13 +402,14 @@
       if (big && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
         {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
     } else if (me.base !== 'guard') {
-      if (m.move === 'guard') { pop(fthem, 'Blocked', 'hit'); fx('sring', chest, 520); fs('block'); }
+      if (m.move === 'guard') { pop(fthem, 'Blocked', 'hit'); fx('sring', chest, 520); if (!plan.hisSound) fs('block'); body.classList.add('guarding'); }
       else if (e.outcome === 'lose') { pop(fthem, 'Too slow', 'hit'); fs('miss'); }
     }
     if (me.lost > 0) {
       pop(poses, '−' + me.lost.toLocaleString(), 'hurt'); fx('sspark', mine, 450);
       fs('hurt', me.lost >= S.me.max_hp * 0.2 ? 'big' : '', 40);
-      if (m.move === 'break') fs('boom', null, 60);
+      if (m.move === 'break') { if (!plan.hisSound) fs('boom', null, 60); dust(at(fr, 0.46, 0.93)); }
+      if (m.move === 'strike') pic('/art/spar/ripple.webp', mine, 15, 520, [{opacity: 0.95, transform: 'translate(-50%,-50%) scale(.25)'}, {opacity: 0, transform: 'translate(-50%,-50%) scale(1.25)'}]);
       fme.classList.remove('hit'); void fme.offsetWidth; fme.classList.add('hit');
     } else if (me.lost < 0) { pop(poses, '+' + (-me.lost).toLocaleString(), 'heal'); fs('heal'); }
     else if (m.move !== 'guard') {
@@ -333,15 +434,26 @@
     stand();
     var sr = scene.getBoundingClientRect();
     var G = {W: sr.width, fr: fme.getBoundingClientRect(), mr: body.getBoundingClientRect()};
-    var plan = mine(e, G), HIT = plan.hit, END = Math.max(plan.end, HIT + 950) + 120;
-    var him = his(e, G, HIT), start = null, fired = false, cues = (plan.cues || []).slice();
+    var plan = mine(e, G), mv = e.master.move;
+    var held = S.tell_pose === mv;                              // he is already in this move's first pose
+    var soft = mv === 'guard' && e.me.base === 'guard';
+    var cut = mv === 'break' && e.outcome === 'win';            // your Strike lands first: his Break never comes
+    var struck = !!(MS && MS.hit && e.master.lost > 0);        // your blow lands: his own stagger, from the moment it does         // nothing lands on his guard
+    var D = MS ? Math.max(0, LEAD[mv] - plan.hit) : 0;          // you wait for him: both blows meet at HIT
+    var HIT = plan.hit + D, END = Math.max(plan.end + D, HIT + (MS ? (struck ? 500 + Math.max(0, MS.hit.at[MS.hit.frames - 1] - 500) / 2.4 : cut ? 900 : mlength(mv, soft)) : 950)) + 120;
+    var him = his(e, G, HIT), start = null, fired = false;
+    var cues = (plan.cues || []).map(function (c) { return [c[0] + D, c[1], c[2]]; });
     body.classList.remove('breathe');
+    if (MS) { mMode = 'act'; mPlay = null; plan.hisSound = !soft && !(struck && mv === 'guard') && msound(mv, HIT);
+      plan.hitSound = struck && msound('hit', HIT);
+      if (cut && plan.hisSound) setTimeout(function () { plan.hisSound.pause(); }, HIT + 40); }
     again($('sayme'), e.me.label + (e.timed_out ? ' (too slow)' : ''));
     again($('saythem'), e.master.label);
     if (e.line) again($('dtoast'), e.line);
-    if (e.master.move === 'guard') { setTimeout(function () { body.classList.add('guarding'); fs('guardup', null, 40); }, Math.max(0, HIT - 420)); }
-    if (e.master.move === 'break') { setTimeout(function () { body.classList.add('gathering'); }, Math.max(0, HIT - 780)); }
-    if (e.master.move !== 'guard') cues.push([Math.max(0, HIT - 200), 'swing', e.master.move]);
+    if (!MS) {
+      if (mv === 'guard') fs('guardup', null, Math.max(0, HIT - 380));
+      else cues.push([Math.max(0, HIT - 200), 'swing', mv]);
+    }
     if (plan.art) {                                              // the technique's own picture: over you, or flying to him
       setTimeout(function () {
         var fr = fme.getBoundingClientRect(), mr = body.getBoundingClientRect();
@@ -361,8 +473,14 @@
       if (start === null) start = now;
       var t = now - start;
       while (cues.length && t >= cues[0][0]) { var c = cues.shift(); fs(c[1], c[2]); }
-      plan.render(Math.min(t, plan.end));
-      if (t >= plan.end) stand();
+      plan.render(Math.max(0, Math.min(t - D, plan.end)));
+      if (t - D >= plan.end) stand();
+      if (MS) {
+        var x = t - HIT;
+        if (struck && x >= -MS.hit.hit) mshow('hit', mframe('hit', MS.hit.hit + (x < 500 ? x : 500 + (x - 500) * 2.4)));
+        else if (cut && x > 520) mshow('stance', 0);
+        else mshow(mv, mframe(mv, mtime(mv, t, HIT, soft, held, cut)));
+      }
       var m = him(t);
       body.style.transform = 'translate(' + m[0] + 'px,' + m[1] + 'px) rotate(' + m[2] + 'deg) scaleY(' + m[3] + ')';
       if (t >= HIT && !fired) { fired = true; impact(e, next, plan, G); }
@@ -370,7 +488,7 @@
       stand(); body.style.transform = '';
       body.classList.remove('guarding', 'gathering', 'hit', 'opened'); fme.classList.remove('hit');
       if (!next.over) body.classList.add('breathe');
-      acting = false; done();
+      acting = false; S = next; mposed(); done();
     }
     cues.sort(function (a, b) { return a[0] - b[0]; });
     requestAnimationFrame(frame);
@@ -436,4 +554,7 @@
   }, 200);
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !acting && !sending) fetchState(); });
   draw(S);
+  requestAnimationFrame(mloop);
+  if (!S.over && !S.last) mplay('bow', 2.6);
+  if (!S.over && window.SparMusic) window.SparMusic.start(S.trial ? 'trial' : 'spar');
 })();

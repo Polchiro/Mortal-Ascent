@@ -316,7 +316,8 @@ by `scripts/make_env_assets.py` (`art/env/`, `web/env.py`). Moon Forest has the 
 `/training` and `/spar`: Discord's `/spar` and mastery trials in the browser, reached by talking to the **Martial
 Master** in town (no menu tab). The rules, the rewards and the page are in docs/technique.md, "On the website".
 Code: `web/spar_play.py` (the referee), `web/spar_routes.py`, `web/templates/training.html`, `spar.html`,
-`web/static/spar.js`, `spar.css`. Tests: `tests/test_web_spar.py`.
+`web/static/spar.js`, `spar.css`, `spar_music.js`, `web/spar_master.py` (the Master's movements, `art/spar/`).
+Tests: `tests/test_web_spar.py`.
 
 ## Rankings
 

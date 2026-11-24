@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Spar · Mortal Ascent{% endblock %}
-{% block body_class %}wildsbg{% endblock %}
+{% block body_class %}wildsbg sparbg{% endblock %}
 {% block body %}
 <link rel="stylesheet" href="{{ asset('spar.css') }}">
-<style>body.wildsbg{background-image:linear-gradient(rgba(8,10,16,.45),rgba(8,10,16,.88)),url({{ s.arena }})}</style>
+<style>body.wildsbg{background-image:linear-gradient(rgba(8,10,16,{{ ".45" if s.trial else ".12" }}),rgba(8,10,16,{{ ".88" if s.trial else ".5" }})),url({{ s.arena }})}</style>
 {% with page="town" %}{% include "_topbar.html" %}{% endwith %}
 
 {# The beast fight's own screen (the .battle styles), with the Martial Master where the beast stands: drawn by spar.js
@@ -46,14 +46,27 @@
       <p class="dsay" id="sayme"></p>
     </div>
 
-    <div class="smaster" id="fthem" aria-hidden="true">
+    {% set M = s.master.sheets %}
+    <div class="smaster{% if M %} sheeted{% endif %}" id="fthem" aria-hidden="true"{% if M %} style="aspect-ratio: {{ M.aspect }}"{% endif %}>
       <p class="stell" id="stell"></p>
-      <div class="smbody" id="smbody"><img src="{{ s.master.img }}" alt="" width="184" height="507"><span class="smshield"></span><span class="smqi"></span></div>
+      <div class="smbody" id="smbody">
+        <div class="smflip" id="smflip">
+          <img class="smstill" src="{{ s.master.img }}" alt="">
+          {%- if M %}{% for name, S in M.sheets.items() %}
+          <div class="smsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+          {%- endfor %}{% endif %}
+        </div>
+        <img class="smshield" src="/art/spar/shield.webp" alt="">
+      </div>
       <p class="dsay" id="saythem"></p>
     </div>
 
+    {% if not s.trial %}<img class="sfront left" src="/art/spar/front_left.webp" alt=""><img class="sfront right" src="/art/spar/front_right.webp" alt="">{% endif %}
+    <div class="spetals" id="spetals" aria-hidden="true"></div>
+
     <div class="dresult sresult" id="sresult" hidden>
-      <p class="kicker" id="rkick"></p><p class="rword" id="rtitle"></p><p class="rsub" id="rsub"></p>
+      <img class="semblem" id="semblem" src="/art/spar/emblem.webp" alt="" hidden>
+      <p class="kicker" id="rkick"></p><p class="rword sbanner" id="rtitle"></p><p class="rsub" id="rsub"></p>
       <div class="sgains" id="sgains"></div>
       <ul class="snotes" id="snotes"></ul>
       <div class="dresbtns"><form method="post" action="/spar/done"><button class="btn btn-gold" type="submit">Back to the training yard</button></form>
@@ -91,5 +104,6 @@
 </main>
 <script type="application/json" id="sstate">{{ s | tojson }}</script>
 <script src="{{ asset('fight_sound.js') }}" defer></script>
+<script src="{{ asset('spar_music.js') }}" defer></script>
 <script src="{{ asset('spar.js') }}" defer></script>
 {% endblock %}

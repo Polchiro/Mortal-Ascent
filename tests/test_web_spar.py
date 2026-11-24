@@ -1,5 +1,6 @@
 """Sparring with the Martial Master on the website (web/spar_play.py, docs/technique.md "On the website")."""
 import json
+import os
 import random
 import urllib.parse
 
@@ -12,6 +13,7 @@ from bot import player as rules
 from web import spar_play, town
 
 A = 111
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Clock:
@@ -90,7 +92,8 @@ def test_the_page_is_never_told_his_move_for_this_exchange(setup):
         s = hall.state(conn, A)
         shown = json.dumps({k: v for k, v in s.items() if k not in ("last", "beads", "history")})
         assert '"pattern"' not in shown and "master_move" not in shown
-        assert set(s["master"]) == {"name", "img", "hp", "max_hp", "tag", "staggered"}       # nothing about his choice
+        assert set(s["master"]) == {"name", "img", "sheets", "hp", "max_hp", "tag", "staggered"}   # nothing about his choice
+        assert s["tell_pose"] == (sp.master if sp.tell else None)       # his tell as a pose: only when his words give it too
         assert len(s["beads"]) == sp.turn - 1                                               # only exchanges already over
         assert s["has_tell"] == bool(sp.tell)
         hall.pick(conn, A, "guard", sp.turn)
@@ -304,6 +307,26 @@ def test_a_spar_counts_for_the_quests(setup):
     finally:
         spar_play.quests.record = real
     assert seen == ["spar", "spar_win"]
+
+
+def test_the_masters_movements_are_there():
+    from web import spar_master
+    data = spar_master.sheets()
+    assert data and {"stance", "strike", "guard", "break", "bow", "hit"} <= set(data["sheets"])
+    for name, sh in data["sheets"].items():
+        assert len(sh["at"]) == sh["frames"] <= sh["cols"] * sh["rows"] and sh["at"] == sorted(sh["at"]), name
+        assert os.path.exists(os.path.join(ROOT, sh["src"].lstrip("/"))), name
+    for move in ("strike", "guard", "break"):
+        sh = data["sheets"][move]
+        assert 0 < sh["at"][sh["tell"]] < sh["hit"] < sh["at"][-1]
+        assert os.path.exists(os.path.join(ROOT, sh["sound"]["src"].lstrip("/"))) and sh["sound"]["lead"] > 0
+    hit = data["sheets"]["hit"]
+    assert 0 < hit["hit"] < hit["at"][-1] and os.path.exists(os.path.join(ROOT, hit["sound"]["src"].lstrip("/")))
+    assert data["sheets"]["stance"]["loop"] > data["sheets"]["stance"]["at"][-1]
+    assert spar_master.still() == "/art/spar/master/still.webp"
+    for pic in ("yard.jpg", "header.jpg", "seal.webp", "ripple.webp", "shield.webp", "dust.webp", "emblem.webp",
+                "banner_win.webp", "banner_lose.webp", "front_left.webp", "front_right.webp"):
+        assert os.path.exists(os.path.join(ROOT, "art", "spar", pic)), pic
 
 
 def test_the_martial_master_opens_the_yard():

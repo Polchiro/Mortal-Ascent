@@ -3,8 +3,10 @@
    is here. Presentation only: nothing here decides anything. */
 
 /* ── the yard ───────────────────────────────────────────────────────── */
-.yard .yardhead{display:flex;gap:18px;align-items:center}
-.yard .yardmaster{flex:none;height:150px;width:auto;filter:drop-shadow(0 8px 12px rgba(0,0,0,.6))}
+main.yard .yardhead{position:relative;min-height:250px;display:flex;align-items:flex-end;justify-content:flex-end;overflow:hidden;
+  background:linear-gradient(90deg,rgba(10,12,20,0) 30%,rgba(10,12,20,.82) 62%),url(/art/spar/header.jpg) 0 22%/cover no-repeat}
+.yard .yardhead>div{width:min(430px,58%);text-align:left}
+@media (max-width:640px){main.yard .yardhead{min-height:330px;background:linear-gradient(180deg,rgba(10,12,20,0) 30%,rgba(10,12,20,.94) 60%),url(/art/spar/header.jpg) 6% 0/auto 100% no-repeat}.yard .yardhead>div{width:100%}}
 .yard .yardrules{margin:8px 0 6px;padding-left:20px;color:var(--cream);font-size:14.5px;line-height:1.55}
 .yard .hbtn:disabled{opacity:.4;cursor:default;filter:grayscale(.6)}
 .yard .ytech{align-items:center}
@@ -23,29 +25,45 @@
 .sparfight .fighter .sfx,.sparfight .bscene>.sfx{position:absolute;pointer-events:none;z-index:3}
 .sparfight #stimed{color:var(--gold2,#FFE7A8)}
 
-/* ── the fight: the Master (a still painting for now; spar.js moves him) ── */
-.smaster{position:absolute;right:16%;bottom:5%;width:5.9%;aspect-ratio:184/507;z-index:1}
+/* ── standing on the ground: the yard's picture is pinned to the bottom of the page, so its paving is always
+   under the fighters' feet ── */
+body.wildsbg.sparbg{background-position:50% 100%}
+@media (min-width:901px){.sparfight .bscene .fighter.me{left:7%}}
+
+/* ── the fight: the Master. .smaster is the box round his standing figure; each movement's sheet sits on it by
+   its own `box` (web/spar_master.py). He is painted facing right, so .smflip turns him to face you. ── */
+.smaster{position:absolute;right:21%;bottom:6.5%;width:5.9%;aspect-ratio:184/507;z-index:1}
+.smaster.sheeted{width:11.5%}
 .smbody{position:absolute;inset:0;transform-origin:50% 100%;will-change:transform}
-.smbody img{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
-.smaster::before{content:"";position:absolute;left:-30%;width:160%;bottom:-2%;height:6%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,0) 70%)}
-.smbody.breathe{animation:smbreathe 3.6s ease-in-out infinite}
+.smflip{position:absolute;inset:0;transform:scaleX(-1)}
+.smstill{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
+.smaster.sheeted .smstill{visibility:hidden}
+.smsheet{position:absolute;background-repeat:no-repeat;visibility:hidden;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
+.smsheet.on{visibility:visible}
+.smaster::before{content:"";position:absolute;left:8%;width:84%;bottom:-1.5%;height:6%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,rgba(0,0,0,0) 72%)}
+.smbody.breathe .smstill{animation:smbreathe 3.6s ease-in-out infinite}
 @keyframes smbreathe{50%{transform:scaleY(1.012) translateY(-.3%)}}
-.smbody.hit img{animation:smhit .42s ease-out}
-@keyframes smhit{0%{filter:brightness(2.4) saturate(.4) drop-shadow(0 0 14px #fff)}100%{filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}}
-.smbody.down img{filter:grayscale(.8) brightness(.6)}
-/* his Guard: an arc of pale Qi in front of him; his Break: Qi gathering at his feet */
-.smshield{position:absolute;left:-58%;top:6%;width:120%;height:88%;border-radius:50%;opacity:0;
-  border-left:5px solid rgba(190,225,255,.95);box-shadow:-10px 0 26px rgba(120,190,255,.75),inset 12px 0 22px -8px rgba(120,190,255,.55)}
-.smbody.guarding .smshield{animation:smshield 1.25s ease-out}
-@keyframes smshield{0%{opacity:0;transform:scaleX(.6)}22%{opacity:1;transform:none}70%{opacity:.9}100%{opacity:0}}
-.smqi{position:absolute;left:-45%;bottom:-3%;width:190%;height:16%;border-radius:50%;opacity:0;
-  border:3px solid rgba(255,170,80,.9);box-shadow:0 0 22px rgba(255,140,50,.85),inset 0 0 18px rgba(255,170,80,.6)}
-.smbody.gathering .smqi{animation:smqi .75s ease-in}
-@keyframes smqi{0%{opacity:0;transform:scale(1.5)}60%{opacity:1}100%{opacity:0;transform:scale(.35)}}
-.smbody.opened img{animation:smopen 1s ease-out}
-@keyframes smopen{0%,60%{filter:drop-shadow(0 0 18px #FFE08A) brightness(1.25)}100%{filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}}
+.smbody.hit .smflip{animation:smhit .42s ease-out}
+@keyframes smhit{0%{filter:brightness(2.4) saturate(.4)}100%{filter:none}}
+.smbody.down .smflip{filter:brightness(.8)}
+/* his Guard holding: a crescent of Qi in front of him */
+.smshield{position:absolute;left:-34%;top:12%;width:62%;opacity:0;pointer-events:none}
+.smbody.guarding .smshield{animation:smshield 1.1s ease-out}
+@keyframes smshield{0%{opacity:0;transform:scale(.7)}18%{opacity:.95;transform:scale(1.05)}30%{transform:none}70%{opacity:.8}100%{opacity:0;transform:scale(1.08)}}
+.smbody.opened .smflip{animation:smopen 1s ease-out}
+@keyframes smopen{0%,60%{filter:drop-shadow(0 0 16px #FFE08A) brightness(1.2)}100%{filter:none}}
 .smaster .dmg{left:50%;top:-8%}
 .smaster .dsay{top:-12%}
+
+/* ── the yard alive: a branch and a lantern close to the eye, swaying, and petals on the wind ── */
+.sfront{position:absolute;top:0;z-index:2;pointer-events:none;filter:brightness(.82) drop-shadow(0 10px 14px rgba(0,0,0,.4))}
+.sfront.left{left:-1%;width:25%;top:12%;transform-origin:0 0;animation:sfsway 7s ease-in-out infinite alternate}
+.sfront.right{right:-1%;width:15%;top:13%;transform-origin:85% 0;animation:sfsway 5.5s ease-in-out infinite alternate-reverse}
+@keyframes sfsway{from{transform:rotate(-1.4deg)}to{transform:rotate(1.6deg)}}
+.spetals{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.spetals i{position:absolute;top:-4%;width:10px;height:7px;border-radius:80% 10% 80% 10%;background:linear-gradient(135deg,#FFE3EC,#F2A7BE);opacity:.85;
+  animation:spetal linear infinite}
+@keyframes spetal{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(-34vw,105vh) rotate(540deg)}}
 
 /* his tell: a line of brushwork above him (only on exchanges where the server gives one) */
 .stell{position:absolute;right:-60%;bottom:112%;width:max-content;max-width:min(330px,34vw);margin:0;padding:8px 14px;border-radius:4px;
@@ -89,8 +107,7 @@
   box-shadow:0 0 0 2px rgba(255,241,196,.5),0 0 34px rgba(255,205,96,.95)}
 .sperfect.go{animation:sperfect 2.1s ease-out forwards}
 @keyframes sperfect{0%{opacity:0;transform:translateX(-50%) scale(.5)}12%{opacity:1;transform:translateX(-50%) scale(1.12)}20%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
-.sfx.sseal{width:26%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:4px solid #FFE08A;
-  box-shadow:0 0 30px #FFD777,inset 0 0 26px rgba(255,215,119,.7);animation:sseal .9s ease-out forwards}
+.sfx.sseal{width:24%;aspect-ratio:1;transform:translate(-50%,-50%);background:url(/art/spar/seal.webp) center/contain no-repeat;animation:sseal 1.1s ease-out forwards}
 @keyframes sseal{from{opacity:1;transform:translate(-50%,-50%) scale(.2) rotate(0)}to{opacity:0;transform:translate(-50%,-50%) scale(1.25) rotate(120deg)}}
 .sfx.sring{width:9%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid rgba(200,230,255,.95);
   box-shadow:0 0 18px rgba(140,200,255,.9);animation:sseal .5s ease-out forwards}
@@ -104,6 +121,15 @@
 /* the opening: you just Guarded his Strike, so your attack technique now is perfect timing */
 .sparfight .techmenu.opening>summary,.sparfight .techbtn.opening{border-color:#FFE08A;box-shadow:0 0 0 2px rgba(255,224,138,.5),0 0 22px rgba(255,205,96,.9);animation:sopen 1s ease-in-out infinite alternate}
 @keyframes sopen{to{box-shadow:0 0 0 2px rgba(255,224,138,.8),0 0 34px rgba(255,205,96,1)}}
+
+/* ── the result: a brush stroke behind the title, the lotus behind a breakthrough ── */
+.sresult .sbanner{position:relative;z-index:0;padding:.35em 1.3em;transform:none}
+.sresult .sbanner::before{content:"";position:absolute;inset:-18% -4%;z-index:-1;background:url(/art/spar/banner_lose.webp) center/100% 100% no-repeat;opacity:.95}
+.sresult.won .sbanner{color:#FFF6DC;text-shadow:0 0 14px rgba(120,70,0,.9),0 2px 4px #000}
+.sresult.won .sbanner::before{background-image:url(/art/spar/banner_win.webp)}
+.semblem{position:absolute;left:50%;top:44%;width:min(520px,70%);transform:translate(-50%,-50%);opacity:.3;pointer-events:none;animation:semblem 26s linear infinite}
+@keyframes semblem{to{transform:translate(-50%,-50%) rotate(360deg)}}
+.sresult>*:not(.semblem){position:relative}
 
 /* ── the result ─────────────────────────────────────────────────────── */
 .sresult{gap:8px;padding:16px;background:rgba(6,8,14,.82);overflow:auto}
@@ -121,17 +147,49 @@
 .sparfight.trial .benemy{border-color:rgba(255,215,119,.6)}
 .sparfight.trial .ename{color:#FFE7A8}
 
+/* a phone or a narrow window: the panels stack round the scene, so the page's picture no longer lines up with the
+   fighters. The yard is drawn on the scene itself, its paving along the scene's bottom, under their feet. */
+@media (max-width:900px){
+  .battle.sparfight>.bscene{background:linear-gradient(rgba(8,10,16,0),rgba(8,10,16,.22)),var(--arena) 50% 100%/cover no-repeat;border-radius:12px;overflow:hidden}
+  .sparfight .bscene .fighter.me{bottom:3%}.sparfight .smaster{bottom:7%}
+}
 @media (max-width:900px){
   .sparfight .bbar{position:relative}.sparfight .techmenu{position:static}
   .sparfight .techpop{left:50%;right:auto;transform:translateX(-50%)}
-  .smaster{width:8.2%;right:12%}
+  .smaster.sheeted{width:17%;right:10%}.sfront.left{width:38%}.sfront.right{width:22%}
   .sbeads{gap:3px;padding:4px 8px}.sbeads li{width:17px;height:17px;border-width:1.5px}.sbeads li img{width:13px;height:13px}
   .stell{font-size:12.5px;max-width:46vw;right:-40%}
 }
 @media (max-width:560px){
   .sword{top:33%}.sperfect{top:44%}
-  .smaster{width:15%;right:6%}
+  .smaster.sheeted{width:30%;right:2%}.sfront{display:none}
   .sbeads{gap:2px;padding:3px 6px}.sbeads li{width:14px;height:14px}.sbeads li img{width:10px;height:10px}
   .stell{right:0;max-width:60vw;font-size:12px;padding:6px 10px}
 }
-@media (prefers-reduced-motion:reduce){.smbody.breathe,.sbeads li.now{animation:none}}
+/* ── a phone: both panels side by side and slim, four small buttons in a row, so the fight itself gets the room ── */
+@media (max-width:560px){
+  .battle.sparfight{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"me enemy" "scene scene" "bar bar" "side hist" "info info";gap:6px;padding:6px}
+  .sparfight>.bme{gap:6px;padding:5px 8px 5px 5px;border-radius:26px 10px 10px 26px;align-items:center}
+  .sparfight .bface{width:34px;height:34px}
+  .sparfight .bname{font-size:13px;line-height:1.1}.sparfight .bme .brealm{display:none}
+  .sparfight .brow{gap:4px;font-size:10.5px}.sparfight .brow img,.sparfight .brow .bl{display:none}
+  .sparfight .bhp{height:9px}.sparfight .brow b{font-size:10.5px}
+  .sparfight #stimed{font-size:9.5px;line-height:1.2;margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sparfight>.benemy{padding:5px 8px}
+  .sparfight .ename{font-size:13px;line-height:1.1}.sparfight .etags{display:none}
+  .sparfight .ehp{height:13px;margin-top:3px}.sparfight .ehp span{font-size:10px}
+  .sparfight .bwarn{margin-top:3px;padding-top:2px;border-top:none}
+  .sparfight .bwarn .whead{font-size:10.5px}.sparfight .whint{display:none}
+  .battle.sparfight>.bscene{height:clamp(250px,84vw,54vh)}
+  .sparfight .bbar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .sparfight .bbar .actbtn{padding:4px 2px 5px}
+  .sparfight .bbar .actbtn img{max-width:34px}
+  .sparfight .alab{font-size:11px}.sparfight .ast{font-size:9.5px}.sparfight .ano{display:none}
+  .sparfight .bside,.sparfight .bhist{justify-self:stretch}.sparfight .bside{justify-content:flex-start}.sparfight .bhist{justify-self:end}
+  .sparfight .bside{align-items:center}.sparfight .sidebtn{padding:3px 9px 3px 3px;font-size:11.5px;align-self:center}.sparfight .sidebtn img{width:24px;height:24px}
+  .sparfight .histbtn{padding:4px 9px 4px 6px;font-size:11.5px}
+  .sparfight .binfo{padding:8px 10px}.sparfight .binfo .ititle{font-size:13px}.sparfight .binfo .itext{font-size:11.5px;line-height:1.35}
+  .sparfight .turnchip{font-size:10px;padding:2px 8px}
+  .sparfight .dtoast{top:10%;font-size:12px;padding:5px 12px;max-width:80%}
+}
+@media (prefers-reduced-motion:reduce){.smbody.breathe .smstill,.sbeads li.now,.sfront,.semblem{animation:none}.spetals{display:none}}
