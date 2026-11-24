@@ -547,6 +547,26 @@ def test_the_art_is_there_and_fits():
             assert abs(x - tp.BODY[name][0]) < 12 and abs(y - tp.BODY[name][1]) < 13, name
 
 
+def test_the_guide_explains_everything_with_the_games_own_numbers(client):
+    g = tp.guide(2)
+    assert [t["n"] for t in g["tiers"]] == [1, 2, 3, 4, 5] and [t["built"] for t in g["tiers"]] == [True, True, False, False, False]
+    assert [t["conds"] for t in g["tiers"]] == ["none", "0-1", "1", "1-2", "2"]          # the bot's own table
+    assert {e["name"] for e in g["events"]} == {"Wandering Hermit", "Epiphany", "Rival Disciple"}
+    assert [e["chance"] for e in g["events"]] == [round(challenges.EVENTS[k]["chance"] * 100)
+                                                  for k in ("wandering_hermit", "epiphany", "rival_disciple")]
+    assert len(g["conditions"]) == 4 and len(g["boons"]) == 4 and g["harmony"] == tp.HARMONY
+    assert g["gate"] == {"most": 3, "hold": 4} and g["breath"] == {"secs": 4.0, "refill": 5.0}
+    assert g["hours"] == training.TRAIN_REWARD_HOURS and g["rest"] == training.TRAIN_COOLDOWN_MINUTES
+    assert client.get("/town/visit/keeper").headers["location"] == "/train"
+    page = client.get("/train").text
+    assert 'id="tguide"' in page and 'id="tguidebtn"' in page and 'id="tqbtn"' in page
+    for part in ("The goal", "Controls", "Reading the map", "Score and Stability", "Harmony and blessings",
+                 "How it ends", "Tiers", "Conditions", "Events", "Reward and rest", "Tips",
+                 "Wandering Hermit", "Epiphany", "Rival Disciple", "Heavy Rain", "Night Training", "Drunken Master",
+                 "Old Injury", "Deep Breath", "Strong Seals", "Qi deviation", "Tier 1 (yours)"):
+        assert part in page, part
+
+
 def test_the_train_pages_need_a_login(tmp_path):
     settings = web_app.Settings(client_id="cid", client_secret="secret", db_path=str(tmp_path / "x.db"), session_secret="t")
     cl = TestClient(web_app.create_app(settings), base_url="http://localhost:8000", follow_redirects=False)

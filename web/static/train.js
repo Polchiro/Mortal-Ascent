@@ -165,6 +165,7 @@
         trav[p.id] = (trav[p.id] || 0) + (b.edge === p.edge ? p.pos - b.pos : (c.lens[b.edge] || 0) - b.pos + Math.max(0, p.pos));
       });
       st.events.forEach(onEvent);
+      seenTips();
     }
     if (breathing && !st.breathing && st.breath === 0) { breathing = false; $('tbreathe').classList.remove('on'); act('B'); }
   }
@@ -203,6 +204,19 @@
       var dn = cyc().nodes.dantian; if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 34, life: 1500, t: performance.now()});
       again($('tbanner'), e[3] + 1 < 3 ? 'Cycle ' + (e[3] + 1) + ' complete. The Dantian compresses…' : 'Third cycle complete.');
     }
+  }
+  function seenTips() {                                         // what has just appeared for the first time
+    var c = cyc();
+    if (st.pulses.some(function (p) { return p.dark && p.done == null; }))
+      tip('dark', 'Dark Qi! Turn the junctions so it leaves by a white lotus (a palm or a sole), never into the Dantian.');
+    if (Object.keys(c.nodes).some(function (id) { return c.nodes[id].type === 'knot'; }))
+      tip('knot', 'A knot blocks a channel: Qi that reaches it is lost. Send the gold round it.');
+    Object.keys(st.gates).forEach(function (g) {
+      if (!st.gates[g].open && st.pulses.some(function (p) { return p.wait === g && p.done == null; }))
+        tip('gate', 'Held at the gate. Open it again (Shift + its number) before the red ring fills, or it bursts.');
+    });
+    if (st.choosing != null) tip('boon', 'Open a meridian: pick a blessing (1 or 2). It lasts the rest of the session.');
+    if (st.harmony >= 3) tip('harmony', 'Harmony ' + st.harmony + ': keep it clean. Every ' + PLAN.harmony + ' in a row refills your Breath.');
   }
   function onCycle() {
     var c = cyc();
@@ -564,7 +578,13 @@
   function draw(now) {
     var elapsed = running ? now - t0 - S.settle : -1, frac = 0;
     if (running && elapsed >= 0) {
-      if (!settled) { settled = true; main.dataset.phase = 'flow'; if (S.hints.length) say(S.hints[0]); }
+      if (!settled) {
+        settled = true; main.dataset.phase = 'flow';
+        /* this session's conditions and event, every time (they change from session to session) */
+        S.conditions.forEach(function (c) { tipQ.push(c.name + ': ' + c.text + '.'); });
+        if (S.event) tipQ.push(S.event.text);
+        if (S.hints.length) tipQ.unshift(S.hints[0]);
+      }
       advance(elapsed);
       frac = st.over ? 0 : Math.max(0, Math.min(1, (elapsed - st.tick * TICK) / TICK));
       if (S.hints.length && st.cycle === 0 && elapsed > 12000 && !draw.hint3) { draw.hint3 = true; say(S.hints[2]); }
@@ -576,6 +596,7 @@
     if (shake > 0 && !reduced) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.88; if (shake < 0.5) shake = 0; }
     cx.translate(sx, sy);
     var mapIn = main.dataset.phase === 'ready' ? 0.35 : running ? Math.min(1, (now - t0) / S.settle) : 1;
+    if (running) tips(now);
     if (HERO) drawChar(now); else body(0.55 + 0.45 * mapIn);
     mapIn *= mapDim;
     var c = st.pause_until != null ? upcoming() : cyc();
@@ -787,6 +808,57 @@
     var el = $('tcheer'); el.innerHTML = '<span></span><small></small>';
     el.firstChild.textContent = title; el.lastChild.textContent = line;
     el.className = 'tcheer'; void el.offsetWidth; el.className = 'tcheer go';
+  }
+
+  /* ── How to play: the guide. It opens by itself the first time; then from the start card or the ? button. It
+     never pauses the meditation (the Qi keeps flowing), so the first time it shows before you begin. ── */
+  var GUIDE_SEEN = 'ma.train.guide.seen', pages = [], page = 0;
+  (function () {
+    var box = $('tguide'), nav = $('tgnav');
+    box.querySelectorAll('.tgbody section').forEach(function (sec) { pages.push(sec.dataset.p); });
+    function go(i) {
+      page = Math.max(0, Math.min(pages.length - 1, i));
+      box.querySelectorAll('.tgbody section').forEach(function (sec, j) { sec.classList.toggle('on', j === page); });
+      nav.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.p === pages[page]); });
+      $('tgpage').textContent = (page + 1) + ' / ' + pages.length;
+      $('tgprev').style.visibility = page ? 'visible' : 'hidden';
+      $('tgnext').textContent = page < pages.length - 1 ? 'Next →' : 'Done';
+      box.querySelector('.tgbody').scrollTop = 0;
+      var on = nav.querySelector('button.on'); if (on && on.scrollIntoView && window.innerWidth < 900) on.scrollIntoView({block: 'nearest', inline: 'center'});
+    }
+    window.trainGuide = function (open, at) {
+      if (!open) { box.hidden = true; return; }
+      $('tglive').hidden = !running;
+      box.hidden = false; go(at == null ? page : pages.indexOf(at) >= 0 ? pages.indexOf(at) : at);
+      try { localStorage.setItem(GUIDE_SEEN, '1'); } catch (e) {}
+    };
+    nav.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { go(pages.indexOf(b.dataset.p)); }); });
+    $('tgprev').addEventListener('click', function () { go(page - 1); });
+    $('tgnext').addEventListener('click', function () { if (page < pages.length - 1) go(page + 1); else trainGuide(false); });
+    $('tgclose').addEventListener('click', function () { trainGuide(false); });
+    $('tguidebtn').addEventListener('click', function () { trainGuide(true, 0); });
+    $('tqbtn').addEventListener('click', function () { trainGuide(box.hidden, running ? 'controls' : null); });
+    document.addEventListener('keydown', function (e) {
+      if (box.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); trainGuide(false); }
+      else if (e.key === 'ArrowRight') go(page + 1);
+      else if (e.key === 'ArrowLeft') go(page - 1);
+    }, true);
+    var seen = false;
+    try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch (e) {}
+    if (!seen && !S.result && !S.begun) trainGuide(true, 0);
+  })();
+
+  /* first-time tips: the moment something new appears, one line says what to do (each once per browser) */
+  var tipQ = [], tipT = 0;
+  function tip(key, text) {
+    var k = 'ma.train.tip.' + key;
+    try { if (localStorage.getItem(k) === '1') return; localStorage.setItem(k, '1'); } catch (e) {}
+    tipQ.push(text);
+  }
+  function tips(now) {
+    if (!tipQ.length || now < tipT) return;
+    say(tipQ.shift()); tipT = now + 5200;
   }
 
   /* Leave: walking away earns nothing and the rest stays, so it asks once; after the result it goes back */

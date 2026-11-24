@@ -92,6 +92,47 @@ body.trainbg footer.privacy{display:none}
 .tboonclock{height:4px;margin-top:12px;border-radius:99px;background:rgba(120,235,190,.15);overflow:hidden}
 .tboonclock div{height:100%;width:100%;background:#7debc0}
 
+/* How to play: the guide, a book of short pages (train.html, web/train_play.guide) */
+.tqbtn{pointer-events:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(16,11,8,.78);color:var(--gold2);
+  font:800 17px Cinzel,Georgia,serif;cursor:pointer;flex:none}
+.tqbtn:hover{background:rgba(60,40,16,.9)}
+.tguide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:20;width:min(860px,94%);height:min(560px,90%);display:grid;
+  grid-template-columns:190px 1fr;grid-template-rows:auto 1fr auto;border-radius:14px;overflow:hidden;
+  background:#0b0d12;border:1px solid var(--line);box-shadow:0 0 0 100vmax rgba(4,4,8,.55),0 18px 50px rgba(0,0,0,.7);isolation:isolate}
+.tguide[hidden]{display:none}
+.tghead{grid-column:1/3;display:flex;align-items:center;gap:12px;padding:12px 16px 10px;border-bottom:1px solid var(--line)}
+.tghead h2{margin:0;color:var(--gold2);font:700 21px Cinzel,Georgia,serif}
+.tghead .kicker{margin:0}
+.tglive{margin:0 0 0 auto;padding:3px 10px;border-radius:99px;background:rgba(255,120,90,.15);border:1px solid rgba(255,140,110,.5);color:#ffc9bb;font-size:12px}
+.tglive[hidden]{display:none}
+.tgclose{margin-left:auto;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--cream);cursor:pointer;font-size:15px}
+.tglive:not([hidden])+.tgclose{margin-left:0}
+.tgnav{display:flex;flex-direction:column;gap:2px;padding:10px 8px;border-right:1px solid var(--line);overflow:auto}
+.tgnav button{text-align:left;padding:7px 10px;border-radius:8px;border:0;background:transparent;color:var(--mist);font:600 13.5px Georgia,serif;cursor:pointer}
+.tgnav button:hover{background:rgba(255,255,255,.05);color:var(--cream)}
+.tgnav button.on{background:rgba(232,194,122,.16);color:var(--gold2)}
+.tgbody{padding:14px 22px;overflow:auto;color:var(--cream);font-size:14.5px;line-height:1.55}
+.tgbody section{display:none}.tgbody section.on{display:block}
+.tgbody h3{margin:0 0 8px;color:var(--gold2);font:700 18px Cinzel,Georgia,serif}
+.tgbody p{margin:0 0 10px}.tgbody ul{margin:0 0 10px;padding-left:18px}.tgbody li{margin-bottom:5px}
+.tgbody b.gold{color:#ffd66b}.tgbody b.dark{color:#c39bff}
+.tgrow{display:flex;align-items:center;gap:12px;margin:0 0 10px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}
+.tgrow p{margin:0;flex:1}.tgrow img{flex:none;object-fit:contain}
+.tgdot{flex:none;width:22px;height:22px;border-radius:50%}
+.tgdot.gd{background:radial-gradient(#fffbe8,#ffd66b 45%,#c98a1a);box-shadow:0 0 10px rgba(255,214,107,.8)}
+.tgdot.dk{background:radial-gradient(#3c1460,#9a5cff 60%,#4a1f80);box-shadow:0 0 10px rgba(154,92,255,.7)}
+.tgin{vertical-align:middle;object-fit:contain}
+.tgtable{width:100%;border-collapse:collapse;margin:0 0 10px}
+.tgtable th{width:30%;text-align:left;vertical-align:top;padding:7px 10px 7px 0;color:var(--gold2);font:700 13.5px Georgia,serif}
+.tgtable th small{display:block;color:var(--mist);font:400 12px Georgia,serif}
+.tgtable td{padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.tgtable.small td,.tgtable.small th{padding-top:5px;padding-bottom:5px;font-size:13.5px}
+.tgtable tr.mine th,.tgtable tr.mine td{background:rgba(232,194,122,.1)}
+.tgtable i{color:var(--mist);display:inline;position:static;border:0;padding:0;margin:0;background:none;width:auto;height:auto}
+.tgtable i.soon{color:#ffd9a0}
+.tgfoot{grid-column:1/3;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid var(--line)}
+.tgfoot span{color:var(--mist);font-size:12px}
+
 /* phones: the Breathe button under the scene */
 .tpads{display:none;width:100%}
 .tbreathe{max-width:none;width:100%}
@@ -108,6 +149,11 @@ body.trainbg footer.privacy{display:none}
   .thint{font-size:12.5px;top:14%}.tcheer{font-size:26px}
   .pintro,.presult{position:fixed;z-index:60}
   .tboon{position:fixed;z-index:60}.tboons{flex-direction:column}
+  .tguide{position:fixed;z-index:70;width:96vw;height:90vh;grid-template-columns:1fr;grid-template-rows:auto auto 1fr auto}
+  .tghead{grid-column:1}.tgfoot{grid-column:1}.tghead h2{font-size:17px}.tglive{display:none}
+  .tgnav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line);padding:6px}
+  .tgnav button{white-space:nowrap;font-size:12.5px;padding:6px 9px}
+  .tgbody{padding:12px 14px;font-size:14px}.tgtable th{width:36%}
   .tscene{isolation:auto}
 }
 

@@ -28,6 +28,7 @@ from dataclasses import dataclass
 
 import challenges
 import looks
+import training
 
 from bot import db, trainer
 from bot import player as players
@@ -76,6 +77,59 @@ EVENT_TEXT = {"wandering_hermit": "A Wandering Hermit watches: the hardest netwo
               "epiphany": "Epiphany! Everything flows today: Qi +50%.",
               "rival_disciple": "A rival disciple waits. After the third cycle they push 6 dark pulses into you: "
                                 f"expel {RIVAL_WINS} for Qi ×2."}
+# The guide (train.html "How to play"): every number in it comes from here, the bot's tables or the rules, so it
+# can't drift from the game. What each tier adds (tiers 3-5 are described as they are designed; they play tier 2's
+# network until they are built, BUILT_TIERS).
+TIER_GUIDE = {1: ("Mortal, Apprentice, Warrior", "One flow from the crown, 2 junctions, 1 gate, 10 pulses a cycle. "
+                  "Learn to steer. The first cycle is all gold; dark Qi joins from the second."),
+              2: ("Expert, Master", "A second flow starts from a palm: 3-4 junctions, 2 gates, 12 pulses a cycle. From "
+                  "the second cycle a knot blocks one line into the Dantian, so send the gold round it."),
+              3: ("Grandmaster, Lord", "Both palms flow: 5 junctions, 14 pulses. Cracked lines leak, and one stretch "
+                  "reverses its flow every 8 seconds."),
+              4: ("King, Emperor", "Crown, palms and a sole: 6 junctions, 3 gates with limited uses, 15 pulses. Two "
+                  "pulses that meet merge into a surge that needs a clear path."),
+              5: ("Ancestor, Saint", "All five points, 7-8 junctions, 16 pulses. Blue spirit Qi must rise to the brow "
+                  "(the upper Dantian) while gold sinks to the belly.")}
+CONDITION_GUIDE = {"heavy_rain": "Qi flows 25% faster. Set junctions earlier than you think.",
+                   "night_training": "Pulses are grey until the last 40% of their trip, and the Next strip is dark. "
+                                     "Watch each pulse, not the strip.",
+                   "drunken_master": "The Next strip is wrong 1 time in 4. The pulse itself always shows its true "
+                                     "colour: trust the pulse.",
+                   "old_injury": "One limb's channel is injured (red dashes): Qi crawls through it at 60% speed, and "
+                                 "your Breath runs out twice as fast."}
+EVENT_GUIDE = {"wandering_hermit": "The session moves to a mountain peak: the hardest network with two conditions. "
+                                   "Qi ×5.",
+               "epiphany": "Everything you gather today sticks: +50% Qi. Nothing changes in how you play.",
+               "rival_disciple": f"After the third cycle a rival pushes {RIVAL_PULSES} dark pulses into you. Expel "
+                                 f"{RIVAL_WINS} or more for Qi ×2. It doesn't change your score."}
+
+
+def guide(tier):
+    """Everything the "How to play" guide shows, from the game's own numbers."""
+    ev = challenges.EVENTS
+    lo_hi = {t: challenges.CONDITIONS_PER_TIER[t] for t in TIER_GUIDE}
+    stab = sim.STABILITY
+    return {
+        "tier": tier, "built": BUILT_TIERS,
+        "tiers": [{"n": t, "realms": r, "text": x, "built": t <= BUILT_TIERS,
+                   "conds": "none" if lo_hi[t] == (0, 0) else f"{lo_hi[t][0]}-{lo_hi[t][1]}" if lo_hi[t][0] != lo_hi[t][1]
+                   else str(lo_hi[t][0])} for t, (r, x) in TIER_GUIDE.items()],
+        "conditions": [{"name": plain(trainer.CONDITION_NAMES[c]), "text": CONDITION_GUIDE[c]} for c in CONDITIONS],
+        "condition_bonus": round(challenges.CONDITION_EXP_BONUS * 100),
+        "events": [{"name": k.replace("_", " ").title(), "chance": round(ev[k]["chance"] * 100), "text": EVENT_GUIDE[k]}
+                   for k in ("wandering_hermit", "epiphany", "rival_disciple")],
+        "boons": [{"name": n, "text": t} for n, t in BOON_TEXT.values()],
+        "harmony": HARMONY, "choose": CHOOSE * TICK // 1000,
+        "stability": {"gold_lost": -stab["gold_lost"], "dark_in": -stab["dark_in"], "burst": -stab["burst"],
+                      "clean": stab["clean"]},
+        "gate": {"most": GATE["most"], "hold": GATE["hold"] * TICK // 1000},
+        "breath": {"secs": BREATH["max"] // BREATH["drain"] * TICK / 1000,
+                   "refill": BREATH["max"] // BREATH["refill"] * TICK / 1000},
+        "hours": training.TRAIN_REWARD_HOURS, "rest": training.TRAIN_COOLDOWN_MINUTES,
+        "low": round(challenges.LOW_SCORE_THRESHOLD * 100), "low_rate": round(challenges.LOW_SCORE_EXP_RATE * 100),
+    }
+
+
 HINTS = ["Turn the junction so the gold goes down to the Dantian.",
          "Dark Qi out through a palm!",
          "Hold Space (or Breathe) to slow everything down."]
@@ -524,6 +578,7 @@ class Chamber:
                 "event": {"key": s.event, "name": s.event.replace("_", " ").title(), "text": EVENT_TEXT[s.event]}
                 if s.event else None,
                 "hints": HINTS if s.plan["tier"] == 1 else [],
+                "guide": guide(s.tier),
                 "me": {"name": s.player["name"], "gender": looks.gender_of(look), "face": looks.face(look)},
                 "begin": LINES["begin"],
                 "chamber": scene_art(s.event), "hero": hero_art(looks.gender_of(look)), "fx": fx_art(),

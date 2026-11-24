@@ -240,6 +240,19 @@ tier 2's network for now; the reward formula is the same at every tier.
 
   The scroll lists the blessings you took and your best Harmony.
 
+### How to play: the guide in the game
+Train has a full guide (SHOAIB, Nov 25: "Train is very confusing"). It opens by itself the first time someone plays
+(`localStorage ma.train.guide.seen`), and after that from **How to play** on the start card or the **?** button in the
+top bar during play. It never pauses the meditation: opened during play it says so, and starts on Controls. Its
+eleven pages: the goal, controls, reading the map, score and Stability, Harmony and blessings, how it ends, tiers
+(yours marked), conditions, events, reward and rest, tips. Every number in it comes from the game itself
+(`web/train_play.guide`: the rules, the bot's tables in challenges.py and training.py), so it can't go out of date.
+
+**First-time tips**: the moment something new appears, one quiet line says what to do, once per browser: the first
+dark pulse, the first knot, the first pulse held at a gate, the first blessing card, and Harmony reaching 3. And at
+the start of **every** session, the same line reminds you of that session's conditions and event (they change each
+time), one after another.
+
 ### The networks (tiers 1-2)
 | Tier | Realms | Sources | Junctions | Gates | Pulses a cycle | New idea |
 |---|---|---|---|---|---|---|

@@ -33,6 +33,7 @@
         <small>Next</small><span id="tnext"></span>
       </div>
       <div class="ptally"><b id="tscore">–</b><small id="tcycle">Cycle 1 / 3</small><small class="tharm" id="tharm"></small></div>
+      <button class="tqbtn" id="tqbtn" type="button" title="How to play" aria-label="How to play">?</button>
       <form class="pleave" id="tleave" method="post" action="/train/yield">
         <button type="submit" title="Leave the meditation"><img src="/art/icons/actions/flee.webp" alt="" width="26" height="26"><span>Leave</span></button></form>
     </header>
@@ -72,9 +73,146 @@
       </ul>
       <div class="pbtns">
         <button class="btn btn-gold" id="tbegin" type="button">Begin meditation</button>
+        <button class="hbtn small" id="tguidebtn" type="button">How to play</button>
         <form method="post" action="/train/yield"><button class="hbtn ghost small" type="submit">Walk away</button></form>
       </div>
       <p class="sub">Your rest has already begun: walking away earns nothing.</p>
+    </div>
+
+    <!-- How to play: the whole guide. Every number comes from the game (web/train_play.guide) -->
+    {% set G = s.guide %}{% set F = s.fx %}
+    <div class="tguide" id="tguide" hidden role="dialog" aria-label="How to play Meridian Circulation">
+      <header class="tghead">
+        <div><p class="kicker">HOW TO PLAY</p><h2>Meridian Circulation</h2></div>
+        <p class="tglive" id="tglive">The Qi keeps flowing while this is open.</p>
+        <button class="tgclose" id="tgclose" type="button" aria-label="Close the guide">✕</button>
+      </header>
+      <nav class="tgnav" id="tgnav">
+        <button data-p="goal">The goal</button><button data-p="controls">Controls</button><button data-p="map">Reading the map</button>
+        <button data-p="score">Score and Stability</button><button data-p="harmony">Harmony and blessings</button>
+        <button data-p="endings">How it ends</button><button data-p="tiers">Tiers</button>
+        <button data-p="conditions">Conditions</button><button data-p="events">Events</button>
+        <button data-p="reward">Reward and rest</button><button data-p="tips">Tips</button>
+      </nav>
+      <div class="tgbody">
+        <section data-p="goal">
+          <h3>The goal</h3>
+          <p>You sit in meditation and look inward: your body becomes a map of meridians (glowing channels), and pulses of
+            Qi flow along them. You never strike. You <b>steer</b>.</p>
+          <div class="tgrow"><i class="tgdot gd"></i><p><b class="gold">Gold Qi</b> is pure. Send it into the <b>Dantian</b>,
+            the golden orb in your belly.</p>{% if F.dantian %}<img src="{{ F.dantian }}" alt="" width="54" height="54">{% endif %}</div>
+          <div class="tgrow"><i class="tgdot dk"></i><p><b class="dark">Dark Qi</b> is turbid. Push it out through an <b>exit</b>:
+            the white lotus on a palm or a sole. Never let it reach the Dantian.</p>{% if F.lotus %}<img src="{{ F.lotus }}" alt="" width="54" height="54">{% endif %}</div>
+          <p>A session is <b>three cycles</b> of about 35 seconds. Pulses enter at the <b>source</b> points (the softly
+            glowing dots: the crown, and at higher tiers a palm or a sole) and travel along the channels at a steady speed.</p>
+        </section>
+        <section data-p="controls">
+          <h3>Controls</h3>
+          <table class="tgtable">
+            <tr><th>Junction</th><td>A jade ring with a number and an <b>arrow</b>. The arrow shows which way the next pulse
+              will go. Click it, or press its <b>number</b> (1-8), to switch it. A pulse reads the junction the moment it arrives.</td></tr>
+            <tr><th>Gate</th><td>A red talisman seal{% if F.seal %} <img class="tgin" src="{{ F.seal }}" alt="" width="20" height="34">{% endif %}.
+              Click it, or press <b>Shift + its number</b>, to close it: pulses stop and wait in front. Open it again and
+              they flow on. A gate <b>bursts</b> if a pulse waits {{ G.gate.hold }} s or {{ G.gate.most }} pulses pile up:
+              the waiting Qi is lost. A red ring round the gate shows how close it is.</td></tr>
+            <tr><th>Breathe</th><td>Hold <b>Space</b> (on a phone, hold the big Breathe button) to slow all Qi to 40%. It uses
+              the jade <b>Breath</b> bar on the left: about {{ "%g" | format(G.breath.secs) }} s when full, refilling in
+              {{ "%g" | format(G.breath.refill) }} s once you let go.</td></tr>
+            <tr><th>Blessing</th><td>Between cycles, press <b>1</b> or <b>2</b> (or click) to take a blessing.</td></tr>
+          </table>
+        </section>
+        <section data-p="map">
+          <h3>Reading the map</h3>
+          <ul>
+            <li><b>Next</b> (top middle): the colours of the next 3 pulses, so you can set junctions before they arrive.</li>
+            <li>The flowing dashes along each channel show which way Qi moves in it.</li>
+            <li>Round the Dantian: the <b>gold ring</b> fills as this cycle's gold arrives; the outer ring is your
+              <b>Stability</b> (green, then amber, then red).</li>
+            <li>Top right: your score so far, the cycle (1 / 3) and your Harmony.</li>
+            <li>A <b>knot</b>{% if F.knot %} <img class="tgin" src="{{ F.knot }}" alt="" width="26" height="26">{% endif %}
+              on a channel blocks it: any Qi that reaches it is lost. Route around it.</li>
+            <li>A channel drawn in <b>red dashes</b> is injured (Old Injury): Qi is slow there.</li>
+            <li>Between cycles the map shifts a little: a gate moves, a knot appears or moves.</li>
+          </ul>
+        </section>
+        <section data-p="score">
+          <h3>Score and Stability</h3>
+          <p>Your score (0-100%) is <b>60%</b> gold delivered + <b>25%</b> dark expelled + <b>15%</b> Stability left, out of
+            every pulse in the three cycles. With no dark Qi at all, gold counts 85%.</p>
+          <p><b>Stability</b> starts at 100:</p>
+          <table class="tgtable small">
+            <tr><th>Gold lost</th><td>−{{ G.stability.gold_lost }} (out an exit, or into a knot)</td></tr>
+            <tr><th>Dark into the Dantian</th><td>−{{ G.stability.dark_in }}</td></tr>
+            <tr><th>A gate bursts</th><td>−{{ G.stability.burst }}</td></tr>
+            <tr><th>A pulse handled cleanly</th><td>+{{ G.stability.clean }} (never above 100)</td></tr>
+          </table>
+          <p>At 0 Stability you suffer <b>Qi deviation</b>: the session ends at once and every pulse not yet delivered counts
+            as lost. It never costs Qi you already have.</p>
+        </section>
+        <section data-p="harmony">
+          <h3>Harmony and blessings</h3>
+          <p><b>Harmony</b> counts the pulses you handle cleanly <b>in a row</b> (gold in, dark out). Anything else sets it
+            back to 0. Every <b>{{ G.harmony }}</b> in a row is a <b>Qi Resonance</b>: your Breath bar is full again. Harmony
+            never changes your score.</p>
+          <p><b>Open a meridian.</b> When the first and second cycles end, choose one of two blessings for the rest of the
+            session ({{ G.choose }} s to decide, or the first is taken):</p>
+          <table class="tgtable small">{% for b in G.boons %}<tr><th>{{ b.name }}</th><td>{{ b.text }}</td></tr>{% endfor %}</table>
+        </section>
+        <section data-p="endings">
+          <h3>How it ends</h3>
+          <table class="tgtable small">
+            <tr><th>85% or more</th><td><b>Meridians clear!</b> A Qi surge and a golden bloom.</td></tr>
+            <tr><th>70-84%</th><td><b>Well guided.</b> A smaller surge.</td></tr>
+            <tr><th>50-69%</th><td><b>The Qi drifts.</b></td></tr>
+            <tr><th>Under {{ G.low }}%</th><td><b>The Qi scatters.</b> Grey mist rises, and the session pays only {{ G.low_rate }}% of its Qi.</td></tr>
+            <tr><th>Stability 0</th><td><b>Qi deviation.</b> The session ends early.</td></tr>
+          </table>
+          <p>Then the scroll opens with your score, what you delivered, your best Harmony and the Qi you gained.</p>
+        </section>
+        <section data-p="tiers">
+          <h3>Tiers</h3>
+          <p>Your realm sets the tier, as on Discord's /train. Each tier adds one new idea; the first cycle is always the calmest.</p>
+          <table class="tgtable small">{% for t in G.tiers %}
+            <tr{% if t.n == G.tier %} class="mine"{% endif %}><th>Tier {{ t.n }}{% if t.n == G.tier %} (yours){% endif %}<small>{{ t.realms }}</small></th>
+              <td>{{ t.text }} <i>Conditions: {{ t.conds }}.</i>{% if not t.built %} <i class="soon">Coming soon: until then it plays tier {{ G.built }}.</i>{% endif %}</td></tr>{% endfor %}
+          </table>
+        </section>
+        <section data-p="conditions">
+          <h3>Conditions</h3>
+          <p>Higher tiers roll conditions that change how a session plays. Each one adds <b>+{{ G.condition_bonus }}% Qi</b>.
+            This session's conditions are listed on the start card and in the corner.</p>
+          <table class="tgtable small">{% for c in G.conditions %}<tr><th>{{ c.name }}</th><td>{{ c.text }}</td></tr>{% endfor %}</table>
+        </section>
+        <section data-p="events">
+          <h3>Events</h3>
+          <p>Now and then a session brings a surprise. It is announced on the start card.</p>
+          <table class="tgtable small">{% for e in G.events %}<tr><th>{{ e.name }}<small>{{ e.chance }}% of sessions</small></th><td>{{ e.text }}</td></tr>{% endfor %}</table>
+        </section>
+        <section data-p="reward">
+          <h3>Reward and rest</h3>
+          <ul>
+            <li>You gain <b>{{ G.hours }} hours of your Qi rate × your score</b> in Internal Qi, +{{ G.condition_bonus }}% for each
+              condition, times any event bonus. The same as Discord's /train.</li>
+            <li>Under {{ G.low }}% you get only {{ G.low_rate }}% of that.</li>
+            <li>After a session your meridians rest for <b>{{ G.rest }} minutes</b>, shared with Discord's /train. The rest
+              begins the moment Sister Jing seats you, so walking away earns nothing.</li>
+            <li>Breakthroughs and Spirit Dew happen just as they do on Discord.</li>
+          </ul>
+        </section>
+        <section data-p="tips">
+          <h3>Tips</h3>
+          <ul>
+            <li>Look at the <b>Next</b> strip, and set each junction before its pulse arrives, not as it arrives.</li>
+            <li>Two pulses close together, different colours, same junction? <b>Breathe</b> to slow them, or <b>close a
+              gate</b> to hold the second one back, then switch the junction.</li>
+            <li>Open a closed gate before the red ring fills.</li>
+            <li>Gold is worth more than dark: if you must lose one, lose the dark.</li>
+            <li>Save your Breath for busy moments; a Qi Resonance refills it.</li>
+          </ul>
+        </section>
+      </div>
+      <footer class="tgfoot"><button class="hbtn ghost small" id="tgprev" type="button">← Back</button>
+        <span id="tgpage"></span><button class="hbtn small" id="tgnext" type="button">Next →</button></footer>
     </div>
 
     <!-- after: the scroll -->
