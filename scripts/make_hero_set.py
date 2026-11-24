@@ -15,7 +15,10 @@ low in his right hand:
 - fist: a quick jab with his left fist (1.4 s), drawn back, a deep lunging punch (3.6 s), held, back by 7.5 s;
 - kick: he gathers, snaps a front kick out (2.4 s), holds it (to 4 s), draws the leg back (by 5.5 s);
 - palm: a step, then an open-palm push from a low stance (2.3 s), held (to 4.8 s), back by 6 s;
-- finger: a step, then a deep lunge with two fingers thrust out (2.5 s), held (to 5.3 s), back by 6.3 s.
+- finger: a step, then a deep lunge with two fingers thrust out (2.5 s), held (to 5.3 s), back by 6.3 s;
+- brace: he sinks into a wide horse stance (1.0-2.0 s), holds (to 4.5 s), rises (by 5.6 s);
+- deflect: he turns into the blow, meets it with his palm (2.2 s), spins it away in a white arc (3.2-4.0 s), settles;
+- sidestep: he drops low and slides back (1.1-1.8 s), holds (to 4.2 s), rises (by 5.8 s).
 The slow parts are thinned and the fast ones kept whole (MOVES `frames`). Every frame is cut out (rembg); the painted
 Qi, Gemini's mark and loose sparks are dropped (the fight draws its own trails and bursts), and the Break's burst
 frames are left out as hers are. His leap across the Break video is taken out (`in_place`): the fight's dash carries him.
@@ -24,7 +27,8 @@ The stance is placed on the fight canvas where a cultivator stands (FEET, TALL),
 other video is laid on that stance by its own first frame.
 
     python -m scripts.make_hero_set stance=stance.mp4 strike=strike.mp4 break=break.mp4 guard=block.mp4 \\
-        fist=punch.mp4 kick=kick.mp4 palm=palm.mp4 finger=finger.mp4 [--cache DIR]
+        fist=punch.mp4 kick=kick.mp4 palm=palm.mp4 finger=finger.mp4 \\
+        brace=brace.mp4 deflect=deflect.mp4 sidestep=sidestep.mp4 [--cache DIR]
 
 (any of them, each as name=video; the stance must exist before the others). Writes art/portraits/fight/hero_male_*.webp
 (and the still poses hero_male_idle / windup / strike.webp) and prints the entries for looks.py.
@@ -40,7 +44,7 @@ from PIL import Image
 from scripts.make_heroine_attacks import CANVAS, COLS, OUT, STANCE_AT, feet, solid, video_frames
 from scripts.make_heroine_set import build, cut_frames, r
 
-ORDER = ("strike", "break", "guard", "fist", "kick", "palm", "finger")
+ORDER = ("strike", "break", "guard", "fist", "kick", "palm", "finger", "brace", "deflect", "sidestep")
 FEET, TALL = (472, 523), 440             # where his feet stand on the 1024 x 559 canvas, and how tall he is (px)
 ROWS = 9                                 # the stance: COLS x ROWS frames fill the grid, stepped through in CSS
 LOOP = (72, 150)                         # the stance loop: 3 s to 6.25 s of video
@@ -61,6 +65,17 @@ MOVES = {
              "windup": 48, "release": 60, "back": 108, "jab": 48},
     "finger": {"frames": [0, 14, 26] + r(32, 65) + [71, 77, 83, 89, 95, 101, 107, 113, 119, 125] + r(128, 158),
                "windup": 50, "release": 62, "back": 128, "jab": 50},
+    # his three defences (the second batch of videos, Nov 24), keyed as hers (scripts/make_heroine_set.py):
+    # brace: he sinks into a wide horse stance (from `jab`, set at `release`, where `body` is), holds, rises (`back` on)
+    "brace": {"frames": [0, 10, 20, 26] + r(30, 48) + [54, 63, 72, 81, 90, 99, 108] + r(111, 138),
+              "jab": 30, "release": 45, "back": 111, "body": 45},
+    # deflect: he turns in (`jab`), meets the blow with his open palm (`release`), carries it up and spins it away
+    # behind him in a white arc (furthest behind at `sweep`), and settles (`back` on)
+    "deflect": {"frames": [0, 12, 24, 30] + r(33, 102) + [105, 108] + r(111, 138),
+                "jab": 36, "release": 54, "sweep": 96, "back": 108},
+    # sidestep: he drops and slides back out of the way (from `jab`, down at `release`), holds low, rises (`back` on)
+    "sidestep": {"frames": [0, 20, 24] + r(26, 44, 2) + [48, 56, 64, 72, 80, 88, 96] + r(102, 140, 2),
+                 "jab": 26, "release": 42, "back": 102, "in_place": True, "fps": 10, "give": 0.06}
 }
 
 

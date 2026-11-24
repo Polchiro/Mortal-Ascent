@@ -2,7 +2,7 @@
 (function () {
   var playing = null;
   /* sound (web/static/fight_sound.js): told what just happened on screen; silent if it isn't there */
-  function fs(name, arg, delay, opts) { var F = window.FightSound; if (F) F.play(name, arg, delay, opts); }
+  function fs(name, arg, delay, opts) { var F = window.FightSound; return F ? F.play(name, arg, delay, opts) : false; }
 
   /* ── The combat action state ────────────────────────────────────────────────────────────────────────
      One place decides whether a move may be sent (docs/web.md, "One action per turn"). The phases have the
@@ -434,6 +434,7 @@
       beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg)';
       beast.style.filter = flash > 0.05 ? beastFilter + ' brightness(' + (1 + 1.8 * flash) + ') saturate(' + (1 - 0.6 * flash) + ')' : '';
     }
+    var stepped = false;                                          // the sidestep's own recording has played (sidestepped)
     function pop(box, cls, text) {
       if (BS && box === beastBox && /^hit/.test(cls)) BS.hit();   // it flinches in its own hit animation
       var loud = / big/.test(cls) ? 'big' : '';                   // the sound of what the number or word says
@@ -441,9 +442,9 @@
       else if (/^hurt/.test(cls)) fs('hurt', loud);
       else if (/heal/.test(cls)) fs('heal');
       else if (/stun/.test(cls)) fs('stun');
-      else if (/^(Blocked|Guarded|Deflected|Unbreakable|Held)/.test(text)) fs('block');
+      else if (/^(Blocked|Guarded|Deflected|Unbreakable|Held)/.test(text)) fs('block', /^Deflected/.test(text) ? 'deflect' : '');
       else if (/^Missed/.test(text)) fs('miss');
-      else if (/^(Evaded|Slipped)/.test(text)) fs('dodge');
+      else if (/^(Evaded|Slipped|Shadow step)/.test(text)) { if (!stepped) fs('dodge'); stepped = false; }   // (his step has sounded already)
       var n = document.createElement('span');
       n.className = 'tnum ' + cls; n.textContent = text; box.appendChild(n);
       setTimeout(function () { n.remove(); }, 1300);
@@ -1890,6 +1891,7 @@
           if (tier >= 3) { scene.insertBefore(fx('tdim', 50, 50, END, {'--life': END + 'ms'}), fighter); fx('tpillar', feet[0], feet[1], Math.round(END * 0.6), {'--tc': tc}); }
           if (tier >= 4) scene.insertBefore(fx('theaven', 50, 50, END, {'--life': END + 'ms'}), fighter);
         }
+        if (t >= STEP_IN && once('step')) stepped = fs('dodge', 'step', 0, {exact: true}) === true;   // the step's own recording, as it starts
         // the beast's Break: a crouch, a leap to where she stood, through the afterimages and a little past, then home
         var x = 0, y = 0, rot = 0, lunge = reachBeast - 0.03 * W + 0.02 * W, past = 0.012 * W, land = reachBeast - 0.03 * W;
         if (t < charge) { var q = ease(span(t, 0, charge)); x = 0.02 * W * q; rot = 5 * q; }
@@ -1973,8 +1975,8 @@
     }
     events.forEach(function (ev) {
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup']] : [[0, 'guardup'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup']] : [[0, 'guardup'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup', 'brace']] : [[0, 'guardup', 'brace'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup', 'deflect']] : [[0, 'guardup', 'deflect'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
       else if (ev.act === 'tech' && (ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), ev.idle ? 'player_acting' : 'beast_acting', ev.idle ? [] : [[60, 'lunge']]); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting', [[RECIPES.pounce.crouch - 80, 'lunge'], [RECIPES.pounce.hit, 'boom'], [RECIPES.pounce.home, 'roar', 'big']]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }

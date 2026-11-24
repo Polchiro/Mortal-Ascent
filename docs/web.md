@@ -281,7 +281,10 @@ Break (Qi gathering, the swing, the boom), his Guard raised and a blow blocked, 
 techniques (10 takes, `*_male.mp3`). A cultivator's own take is listed with a `#`: `swing:strike#male`,
 `cast:kick#male`. The fight page says whose moves it is playing (`data-voice` on the fighter, `FightSound.voice`),
 and `fight_sound.js` tries the `#` take first, then the plain one, so she keeps hers and anything he has no take
-for stays shared. Duels play the shared sounds for both fighters.
+for stays shared. Duels play the shared sounds for both fighters. His defences have theirs as well, asked for by the
+move: the brace's stomp (`guardup:brace#male`), the deflect's step in and its spin away (`guardup:deflect#male`,
+`block:deflect#male`, on the word "Deflected"), and the sidestep's rush as he drops (`dodge:step#male`, played with
+`exact` so only a cultivator with that recording gets it, and the dodge sound on the word is then left out).
 
 Still made in code: the move tick, heal, stun, victory and defeat, the defense techniques (brace, deflect,
 sidestep), and the voices of birds, serpents, turtles, insects and dragons, until they have videos with sound.
@@ -767,8 +770,11 @@ hers (`looks.IDLE_SHEETS`, `ATTACK_SHEETS["male"]` with a sheet and `blade` timi
 over 0.62 s then 66 ms a frame, techniques no shorter than 2 to 2.2 s. He now has a kick of his own (the hop is gone).
 The Qi painted in his Strike and Break videos is kept where it is joined to him. His three still poses
 (`hero_male_idle/windup/strike.webp`) are frames of the new sheets. The old one-sheet attack (the passage on "The
-**male** cultivator's attack" above) is no longer played. **Still the old male:** brace, deflect and sidestep
-(`hero_male_brace/deflect/sidestep.webp`) and his walk on the maps, until SHOAIB's videos of the new male for them.
+**male** cultivator's attack" above) is no longer played. His brace, deflect and sidestep followed the
+same day from three more videos (same script: `brace=... deflect=... sidestep=...`), keyed and paced as hers: brace
+and deflect with `pace` 1.5, the sidestep at 10 frames a second (40 frames, 4 s) giving ground (`give`) as she does;
+Cloud-Walking Shadow and Drifting Mist Steps both play it. **Still the old male:** his walk on the maps, until
+SHOAIB's videos of the new male for it.
 Presentation only.
 
 **Defences you can watch (Nov 24).** Two things. (1) When the beast struck no blow that turn (it Guarded), the

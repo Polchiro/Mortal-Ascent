@@ -1,5 +1,7 @@
 """Fight sounds taken from SHOAIB's animation videos (scripts/make_fight_sound.py, web/static/fight_sound.js)."""
 import json
+
+import looks
 import os
 import shutil
 import subprocess
@@ -111,3 +113,20 @@ def test_the_new_male_has_his_own_recordings_and_the_page_asks_for_them():
     assert "name + ':' + narrow + '#' + voice" in js and "name + '#' + voice" in js
     assert "FightSound.voice = fighter.dataset.voice" in open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
     assert 'data-voice="{{ F.me.voice }}"' in open(os.path.join(ROOT, "web", "templates", "explore_play.html"), encoding="utf-8").read()
+
+
+def test_his_three_defences_have_their_own_recordings():
+    """The new male's brace, deflect and sidestep sound as in his videos; each is asked for by the move's own name."""
+    with open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    for name in ("guardup:brace#male", "guardup:deflect#male", "block:deflect#male", "dodge:step#male"):
+        assert name in data, name
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "[0, 'guardup', 'brace']" in js and "[0, 'guardup', 'deflect']" in js
+    assert "fs('block', /^Deflected/.test(text) ? 'deflect' : '')" in js
+    assert "stepped = fs('dodge', 'step', 0, {exact: true}) === true" in js       # as he drops, and not again on the word
+    fsjs = open(os.path.join(ROOT, "web", "static", "fight_sound.js"), encoding="utf-8").read()
+    assert "opts.exact" in fsjs                                        # only its own recording: she gets nothing extra
+    for motion in ("brace", "deflect", "sidestep"):                    # and the pictures are the new male's
+        him = looks.motion_sheet({"gender": "male"}, motion)
+        assert "box" in him and (him.get("pace") == 1.5 or him.get("fps") == 10)

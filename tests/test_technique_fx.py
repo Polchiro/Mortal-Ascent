@@ -195,12 +195,13 @@ def test_the_sidesteps_are_the_two_evades_and_play_only_when_the_evade_worked():
 
 def test_the_sidesteps_play_at_the_videos_pace_and_end_on_their_feet():
     her, him = (looks.motion_sheet({"gender": g}, "sidestep") for g in ("female", "male"))
-    assert her["frames"] == 36 and him["frames"] == 24               # every 2nd frame of the 24 fps videos (her hold thinned)
+    assert her["frames"] == 36 and him["frames"] == 40               # every 2nd frame of the 24 fps videos (the hold thinned)
     for d in (her, him):
         assert d["fps"] == 10                                            # slowed a little so the dodge can be read
         assert 0 < d["jab"] < d["release"] < d["back"] < d["frames"]
         assert len(d["body"]) == 4 and all(0 < q < 1 for q in d["hand"])
-    assert her["give"] > 0 and him["give"] == 0                     # she gives ground; he dashes in place
+    assert her["give"] > 0 and him["give"] > 0                      # both give ground and take it back
+    assert "box" in him and him["src"].endswith("hero_male_sidestep.webp")   # the new male's own (make_hero_set.py)
 
 
 def test_a_slipped_break_is_the_evade_techniques_event():
