@@ -261,7 +261,8 @@ same rewards: the fight is `bot/sparring.Spar` (the object `/spar` plays) and a 
 `/spar` gives (the well-timed EXP, the win bonus, the daily rates, a trial's breakthrough or its 24-hour wait, the
 quest counts, the two-hour rest). The rest and the daily count are the same saved ones, so a spar on Discord counts
 here and the other way round. Code: `web/spar_play.py` (the referee), `web/spar_routes.py`,
-`web/templates/training.html`, `spar.html`, `web/static/spar.js`, `spar.css`. Tests: `tests/test_web_spar.py`.
+`web/templates/training.html`, `spar.html`, `web/static/spar.js`, `spar.css`, `spar_music.js`, `web/spar_master.py`.
+Tests: `tests/test_web_spar.py`.
 
 - **The yard** (`/training`): your equipped techniques with their mastery bars, a **Spar** button (with the
   master's rest, your injury, and how many full-EXP spars are left today), and a gold **Take the trial** button on
@@ -290,10 +291,30 @@ Only the web's own (none changes what a spar gives):
 | Walking away | three timeouts | three timeouts, or the **Yield** button (the same forfeit: nothing earned, the rest stays) |
 | A dodge or deflection technique | - | its sidestep / deflect movement plays only when his blow really was stopped; otherwise the plain Guard |
 
-**The Master is a still painting for now** (the town's Martial Master, `art/portraits/town/master.webp`): `spar.js`
-leans him back and lunges him for a Strike, gathers Qi at his feet for a Break, raises an arc of Qi for a Guard and
-knocks him back when he is hit. His own movements (stance, Strike, Guard, Break, hit, bow) are to come from
-SHOAIB's videos. `spar.js` has its own small frame player for your sheets (`looks.py`), so `fight.js` is untouched.
+**The Master's movements** (`art/spar/master/`, `web/spar_master.py`; cut from SHOAIB's videos by
+`scripts/make_master_sheets.py`, which says what he does in each): the **stance** he breathes in, **Strike** (a palm),
+**Guard** (forearms raised; a blow lands on them in sparks), **Break** (gold Qi gathered, then slammed) and his **bow**
+(when the spar begins, and before the result). `spar.js` plays them frame by frame at the videos' pace up to the moment
+the exchange is decided, then brings him back to his stance faster than the video does; your own move waits for his,
+so both land together. Each has the video's own **sound**, timed to that moment.
+
+- **His tell is also a pose.** On an exchange where he gives a tell he holds that move's first pose while you choose
+  (hands at his hips for a Strike, forearms up for a Guard, Qi rising for a Break). It shows no more than his words
+  do (each tell names one move), and on the other exchanges he only breathes.
+- **Only what happened is shown:** a Guard nothing lands on is raised and lowered, without the sparks; a Break you
+  struck first never lets its Qi go.
+- He has no "hit" movement yet: he is knocked back and flashes in code. Without his sheets he is a still picture.
+
+**The yard** (`art/spar/`, prepared by `scripts/make_spar_art.py`): an ordinary spar's background is the training
+yard seen from the side (`yard.jpg`, pinned to the bottom of the page so its paving is under the fighters' feet), with
+a blossom branch and a lantern close to the eye that sway, and petals on the wind (made in code). A trial is still in
+the old hall at night. Effects: the gold **seal** for perfect timing, a **ripple** where his palm lands on you, a
+**shield** of Qi when his Guard stops your blow, **dust** at the feet on heavy blows, a brush-stroke **banner** behind
+the result's title and the **lotus emblem** behind a breakthrough. The yard's page has his painting as its header.
+
+**Music** (`web/static/spar_music.js`): made in the browser like the map's tune, no recording: a slow drum, a low
+string and a plucked five-note tune with a flute now and then; a trial is a little faster and lower. It follows the
+map's settings (Sound, volume, Music On / Off) and stops when the spar ends.
 
 A spar lives in the web server's memory, like a duel: a restart ends it unsaved (its rest stays, as when the bot
 restarts mid-spar). The website doesn't know about a spar under way on Discord, but the shared rest stops a second

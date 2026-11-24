@@ -30,11 +30,11 @@ import technique
 from bot import db, mastery, quests, sparring
 from bot import player as players
 
-from . import technique_fx
+from . import spar_master, technique_fx
 
 TURN_SECONDS = 20                          # the bot's 15, plus a little for the web round trip (as web/duel_play.py)
-MASTER = {"name": "Martial Master", "img": "/art/portraits/town/master.webp"}
-YARD = "/art/scenes/practice_courtyard_sunset.jpg"      # an ordinary spar: the training yard
+MASTER = {"name": "Martial Master"}
+YARD = "/art/spar/yard.jpg"                             # an ordinary spar: the training yard, seen from the side
 HALL = "/art/scenes/spar_hall.jpg"                      # a mastery trial: the hall at night
 TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")
 HINT = {"strike": "Beats Break. Into his Guard nothing lands. Same move: you trade blows at half.",
@@ -349,10 +349,12 @@ class Hall:
                        "poses": {p: looks.fighter(look, p) for p in looks.POSES}, "isheet": looks.idle_sheet(look),
                        "sheets": sheets, "art": art,
                        "moves": [self._move(sp, k) for k, _ in sp.choices()]},
-                "master": {**MASTER, "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
+                "master": {**MASTER, "img": spar_master.still(), "sheets": spar_master.sheets(), "hp": round(sp.m_hp), "max_hp": round(sp.m_max),
                            "tag": f"Trial · ×{sp.strength:g} strength" if s.trial else "Sparring · your realm and layer",
                            "staggered": sp.m_staggered},
                 "tell": None if s.over else plain(sp.hint()), "has_tell": bool(sp.tell) and not s.over,
+                # the tell as a pose: the same thing his words say (each tell names one move), never more
+                "tell_pose": sp.master if sp.tell and not s.over else None,
                 "opening": sp.blocked_strike and not s.over,
                 "timed": timed, "per_use": technique.SPAR_EXP_PER_TIMED_USE, "win": technique.SPAR_WIN_EXP,
                 "beads": [{"turn": t["turn"], "his": t["master"]["move"], "outcome": t["outcome"], "timed": t["timed"]}
