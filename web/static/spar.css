@@ -66,6 +66,15 @@ body.wildsbg.sparbg{background-position:50% 100%}
 .smaster .dmg{left:50%;top:-8%}
 .smaster .dsay{top:-12%}
 
+/* the yard's video: behind the whole page (style.css's .bgloop), its paving along the bottom like the still's; on a
+   narrow screen inside the scene (.sloop), where the still is drawn too */
+main.sparfight>video.bgloop{object-position:50% 100%}
+main.sparfight>.bgshade{background:linear-gradient(180deg,rgba(8,10,16,.12),rgba(8,10,16,.5))}
+.sparfight .bscene>video.sloop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 100%;z-index:0;
+  pointer-events:none;opacity:0;transition:opacity .8s}
+.sparfight .bscene>video.sloop.on{opacity:1}
+.sparfight.yardlive .sfront.right{display:none}
+
 /* ── the yard alive: a branch and a lantern close to the eye, swaying, and petals on the wind ── */
 .sfront{position:absolute;top:0;z-index:2;pointer-events:none;filter:brightness(.82) drop-shadow(0 10px 14px rgba(0,0,0,.4))}
 .sfront.left{left:-1%;width:25%;top:12%;transform-origin:0 0;animation:sfsway 7s ease-in-out infinite alternate}

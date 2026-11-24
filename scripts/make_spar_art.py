@@ -1,7 +1,7 @@
 """Prepare the spar's still pictures from SHOAIB's Nov 24 Gemini images (art/spar/; docs/technique.md "On the website").
 
     python -m scripts.make_spar_art seal=a.png ripple=b.png yard=c.png front=d.png shield=e.png dust=f.png \
-        emblem=g.png banners=h.png header=i.png
+        emblem=g.png banners=h.png header=i.png ambience=yard_video.mp4
 
 - seal, ripple, shield, dust, emblem (painted on black): black becomes clear (how bright a pixel is, is how solid it
   is), Gemini's sparkle is blanked, the picture is trimmed to what is painted.
@@ -10,7 +10,12 @@
   front_right, each trimmed.
 - yard (the arena's background) and header (the Master in the yard): Gemini's sparkle painted out; saved as JPEG.
 
-Needs numpy, Pillow, scipy and opencv (for painting out the sparkle).
+- ambience=<the yard's background video>: its own sound (a soft wind and chimes), made into a loop with no seam (its
+  last 1.5 s faded into its first) and raised until it is plainly heard (art/spar/yard.wav; a WAV so it loops with no
+  gap). The moving picture itself is made by scripts/make_background_loop.py (art/spar/yard.mp4), and yard.jpg is that
+  loop's first frame, so the still and the video are the same picture.
+
+Needs numpy, Pillow, scipy, opencv (for painting out the sparkle) and ffmpeg (for the ambience).
 """
 import os
 import sys
@@ -79,9 +84,31 @@ def paint_out(path):
     return cv2.cvtColor(cv2.inpaint(im, m, 7, cv2.INPAINT_TELEA), cv2.COLOR_BGR2RGB)
 
 
+def ambience(video, loop=1.5, rate=24000, level=0.11):
+    import subprocess
+    import wave
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-vn", "-ac", "1", "-ar", str(rate), "-af", "highpass=f=70",
+                          "-f", "s16le", "-"], capture_output=True, check=True).stdout
+    x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+    n = int(loop * rate)
+    fade = np.linspace(0, 1, n, dtype=np.float32)
+    head = x[:n] * np.sqrt(fade) + x[-n:] * np.sqrt(1 - fade)           # the end flows into the start
+    y = np.concatenate([head, x[n:-n]])
+    y *= level / max(1e-6, float(np.sqrt((y ** 2).mean())))            # how loud it is on the whole
+    y = np.tanh(y * 1.2) / 1.2                                          # and no peak clips
+    with wave.open(os.path.join(OUT, "yard.wav"), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes((np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes())
+    print("yard.wav", f"{len(y) / rate:.1f} s")
+
+
 def main(args):
     os.makedirs(OUT, exist_ok=True)
     got = dict(a.split("=", 1) for a in args)
+    if "ambience" in got:
+        ambience(got["ambience"])
     for name, width in (("seal", 640), ("ripple", 640), ("shield", 520), ("dust", 760), ("emblem", 720)):
         if name in got:
             save(trim(from_black(got[name], 1.25 if name in ("dust", "shield") else 1.0)), name, width)

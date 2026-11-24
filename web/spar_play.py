@@ -37,6 +37,8 @@ from . import spar_master, technique_fx
 TURN_SECONDS = 20                          # the bot's 15, plus a little for the web round trip (as web/duel_play.py)
 MASTER = {"name": "Martial Master"}
 YARD = "/art/spar/yard.jpg"                             # an ordinary spar: the training yard, seen from the side
+YARD_VIDEO = "/art/spar/yard.mp4"                       # the yard alive (scripts/make_background_loop.py); yard.jpg is its first frame
+YARD_SOUND = "/art/spar/yard.wav"                       # the video's own wind and chimes, looped (scripts/make_spar_art.py)
 HALL = "/art/scenes/spar_hall.jpg"                      # a mastery trial: the hall at night
 TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")
 HINT = {"strike": "Beats Break. Into his Guard nothing lands. Same move: you trade blows at half.",
@@ -400,6 +402,7 @@ class Hall:
                 "v": s.v, "turn": sp.turn, "shown_turn": turn, "max_turns": sparring.MAX_TURNS,
                 "seconds": TURN_SECONDS, "left": 0 if s.over else max(0, round(s.deadline - self.clock())),
                 "trial": s.trial, "arena": HALL if s.trial else YARD,
+                "yard_video": None if s.trial else YARD_VIDEO, "yard_sound": None if s.trial else YARD_SOUND,
                 "title": (f"Mastery trial: {s.focus['name']}" + (f" → {nxt}" if nxt else "")) if s.trial
                          else "Sparring with the Master",
                 "me": {"name": s.player["name"], "realm": f"{s.player['realm']} · Layer {s.player['layer']}",

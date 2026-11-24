@@ -294,7 +294,11 @@
     8750,
     8917,
     9333
-   ]
+   ],
+   "sound": {
+    "src": "/art/spar/master/bow.mp3",
+    "from": 450
+   }
   },
   "hit": {
    "src": "/art/spar/master/hit.webp",

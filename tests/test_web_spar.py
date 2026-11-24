@@ -252,6 +252,19 @@ def test_a_trial_needs_a_full_bar_and_an_equipped_technique(setup):
     assert hall.start(conn, A, fist) == "Equip Iron Fist to take its trial."
 
 
+def test_the_yard_is_alive_in_a_spar_and_a_trial_is_in_the_hall(setup):
+    conn, clock, hall = setup
+    hall.start(conn, A)
+    s = hall.state(conn, A)
+    assert (s["arena"], s["yard_video"], s["yard_sound"]) == (spar_play.YARD, spar_play.YARD_VIDEO, spar_play.YARD_SOUND)
+    hall.give_up(conn, A)
+    hall.done(A)
+    clock.t += technique.SPAR_COOLDOWN_MINUTES * 60 + 1
+    hall.start(conn, A, fill_bar(conn))
+    s = hall.state(conn, A)
+    assert s["arena"] == spar_play.HALL and s["yard_video"] is None and s["yard_sound"] is None
+
+
 def test_passing_a_trial_raises_the_stage(setup):
     conn, clock, hall = setup
     fist = fill_bar(conn)
@@ -388,7 +401,9 @@ def test_the_masters_movements_are_there():
     assert 0 < hit["hit"] < hit["at"][-1] and os.path.exists(os.path.join(ROOT, hit["sound"]["src"].lstrip("/")))
     assert data["sheets"]["stance"]["loop"] > data["sheets"]["stance"]["at"][-1]
     assert spar_master.still() == "/art/spar/master/still.webp"
-    for pic in ("yard.jpg", "header.jpg", "seal.webp", "ripple.webp", "shield.webp", "dust.webp", "emblem.webp",
+    bow = data["sheets"]["bow"]["sound"]                         # the bow's own sound, started where the video's does
+    assert bow["from"] >= 0 and os.path.exists(os.path.join(ROOT, bow["src"].lstrip("/")))
+    for pic in ("yard.mp4", "yard.wav", "yard.jpg", "header.jpg", "seal.webp", "ripple.webp", "shield.webp", "dust.webp", "emblem.webp",
                 "banner_win.webp", "banner_lose.webp", "front_left.webp", "front_right.webp"):
         assert os.path.exists(os.path.join(ROOT, "art", "spar", pic)), pic
 
