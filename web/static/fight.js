@@ -1312,7 +1312,9 @@
       var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var DS = dragons && X.sheets || null, FIN = R + 420, FMS = 40;   // Nine Dragons' finale: starts as the ninth arrives, 40 ms a frame
+      if (DS) end = FIN + DS.finale.frames * FMS + 150;
+      var LAND = dragons ? (DS ? FIN + DS.finale.boom * FMS : R + 420) : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       var PULL = Math.round((JAB + WIND) / 2);                       // on the way back from the jab
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
@@ -1337,6 +1339,22 @@
         n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w * BIG + '%';
         n.style.setProperty('--tc', tc);
         scene.appendChild(n); made.push(n);
+        setTimeout(function () { n.remove(); }, life);
+        return n;
+      }
+      function strip(src, S, cls, p, w, life, play) {               // a moving picture: a strip of frames played once over `play` ms
+        var n = document.createElement('div');
+        n.className = 'tart tstrip ' + cls;
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w * BIG + '%';
+        n.style.backgroundImage = 'url(' + src + ')'; n.style.backgroundSize = S.cols * 100 + '% ' + S.rows * 100 + '%';
+        scene.appendChild(n); made.push(n);
+        var t0 = performance.now();
+        (function step() {
+          if (!n.parentNode) return;
+          var f = Math.min(S.frames - 1, Math.floor((performance.now() - t0) / play * S.frames));
+          n.style.backgroundPosition = (f % S.cols) / (S.cols - 1) * 100 + '% ' + (S.rows > 1 ? Math.floor(f / S.cols) / (S.rows - 1) * 100 : 0) + '%';
+          requestAnimationFrame(step);
+        })();
         setTimeout(function () { n.remove(); }, life);
         return n;
       }
@@ -1523,14 +1541,15 @@
       function loose(i, t) {
         var p = punches[i], n = X.punches[i] || 1;
         if (t < p.at || !once('punch' + i)) return;
+        fs('cast', 'dragon', 0, {exact: true});                     // the dragon's roar, from the video
         var from = fist(p.kind);
         for (var k = 0; k < n; k++) {
           var to = at(br, 0.28 + 0.06 * k, 0.24 + 0.2 * ((flown + k) % 3)), d = px(to, from);
-          var dg = pic(X.art[1 + (flown + k) % 3], 'tglow tdragon', to, 13, 520);
-          dg.animate([{transform: T(d[0], d[1], 0.45, -8), opacity: 0}, {transform: T(d[0] * 0.55, d[1] * 0.55 - 14, 0.8, 4), opacity: 1, offset: 0.35},
-            {transform: T(0, 0, 1, 0), opacity: 1, offset: 0.8}, {transform: T(10, 0, 1.15, 0), opacity: 0}],
-            {duration: 480, delay: 70 * k, easing: 'ease-in', fill: 'both'});
-          (function (q) { setTimeout(function () { burst('tspark', q[0], q[1], '#FFD978'); }, 400 + 70 * k); })(to);
+          var dg = strip(X.art[1], DS.fly, 'tdragon', to, 24, 640 + 80 * k, 560);   // it flies writhing, head first
+          dg.animate([{transform: T(d[0] - 0.04 * W, d[1], 0.4, -6), opacity: 0}, {transform: T(d[0] * 0.6, d[1] * 0.6 - 12, 0.75, 3), opacity: 1, offset: 0.3},
+            {transform: T(-0.03 * W, 0, 1, 0), opacity: 1, offset: 0.8}, {transform: T(0.05 * W, 0, 1.1, 0), opacity: 0}],
+            {duration: 560, delay: 80 * k, easing: 'ease-in', fill: 'both'});
+          (function (q) { setTimeout(function () { burst('tspark', q[0], q[1], '#FFD978'); }, 460 + 80 * k); })(to);
         }
         flown += n;
       }
@@ -1567,12 +1586,17 @@
         animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (0.03 * W) * 4, k2[1]);
         if (dragons) {
           punches.forEach(function (_, i) { loose(i, t); });
-          if (t >= LAND && once('finale')) {
-            var n = pic(X.art[0], 'tglow tcoil', at(br, 0.42, 0.6), 34, 1400);
-            n.animate([{transform: T(0, 0.12 * W, 0.6), opacity: 0}, {transform: T(0, 0, 1), opacity: 1, offset: 0.3},
-              {transform: T(0, -0.04 * W, 1.06), opacity: 1, offset: 0.75}, {transform: T(0, -0.1 * W, 1.12), opacity: 0}],
-              {duration: 1360, easing: 'ease-out', fill: 'forwards'});
+          if (t >= FIN && once('rise')) {                             // all nine burst from the ground under the beast and coil up
+            var life = DS.finale.frames * FMS, g = at(br, 0.42, 0.97);
+            var fw = Math.min(70, g[1] / 100 * scene.clientHeight * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
+            var n = strip(X.art[0], DS.finale, 'tfinale', [g[0], g[1]], fw / BIG, life + 60, life);
+            n.style.transform = 'translate(-50%,-99%)';
+            n.animate([{opacity: 1}, {opacity: 1, offset: 0.88}, {opacity: 0}], {duration: life, fill: 'forwards'});
+            if (!fs('gather', 'dragons', 0, {exact: true})) fs('gather');
+          }
+          if (t >= LAND && once('finale')) {                          // they explode in golden light: the blow lands
             fx('bflash', 50, 50, 450);
+            if (!fs('boom', 'dragons', 0, {exact: true})) fs('boom');
             lands();
           }
         } else PLAY[X.play](t - R);
@@ -1982,7 +2006,7 @@
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', cast.fx.play === 'dragons' ? [] : [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;
