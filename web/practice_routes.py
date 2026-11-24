@@ -1,9 +1,9 @@
 """
-Practice's routes (docs/technique.md "Practice on the website"): a real-time drill with Senior Sister Xue, chosen
-from the training yard (/training). Every POST only asks web/practice_play.Hall; it decides and it grades.
+Practice's routes (docs/technique.md "Practice on the website"): a real-time drill with Senior Sister Xue, who
+stands in Azure Cloud Town (web/town.py NPCS "sister"); /practice is her page when no drill is running. Every POST only asks web/practice_play.Hall; it decides and it grades.
 
   POST /practice/start     technique=<id>            set the drill up (the rest starts now, as on Discord)
-  GET  /practice           the drill page            GET /practice/state   the drill as JSON
+  GET  /practice           her page, or the drill           GET /practice/state   the drill as JSON
   POST /practice/go                                  the countdown is over: the drill's clock starts
   POST /practice/submit    JSON {"inputs": [[t ms, lane, "d" | "u"], ...]}   grade and pay it (answers the result)
   POST /practice/yield                               walk away (nothing earned, the rest stays)
@@ -57,8 +57,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/practice")
         why = elsewhere(uid) or await run_in_threadpool(with_conn, hall.start, uid, num(form.get("technique")))
         if why:
-            request.session["training_notice"] = why
-            return go("/training#practice")
+            request.session["practice_notice"] = why
         return go("/practice")
 
     @app.get("/practice", response_class=HTMLResponse)
@@ -68,8 +67,13 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/")
         uid = user["id"]
         state = hall.state(uid)
-        if state is None:
-            return go("/training#practice")
+        if state is None:                                        # no drill: Senior Sister Xue, and what to practise
+            view, money = with_conn(lambda c: (hall.hall(c, uid), purse(c, uid)))
+            if view is None:
+                return go("/")
+            return no_store(page(request, "practice_hall.html", pv=view, user=user,
+                                 avatar=oauth.avatar_url(uid, user.get("avatar")),
+                                 notice=request.session.pop("practice_notice", None), **money))
         money = with_conn(purse, uid)
         return no_store(page(request, "practice.html", s=state, user=user,
                              avatar=oauth.avatar_url(uid, user.get("avatar")), **money))
@@ -106,13 +110,13 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         user = current_user(request)
         if user:
             hall.give_up(user["id"])
-        return go("/training#practice")
+        return go("/practice")
 
     @app.post("/practice/done")
     def practice_done(request: Request):
         user = current_user(request)
         if user:
             hall.done(user["id"])
-        return go("/training#practice")
+        return go("/practice")
 
     return hall

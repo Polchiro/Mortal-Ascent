@@ -324,13 +324,13 @@ Code: `web/spar_play.py` (the referee), `web/spar_routes.py`, `web/templates/tra
 `web/static/spar.js`, `spar.css`, `spar_music.js`, `web/spar_master.py` (the Master's movements, `art/spar/`).
 Tests: `tests/test_web_spar.py`.
 
-**Practice** (`/practice`, from the yard's Practice buttons): a half-minute real-time drill of one technique with
+**Practice** (`/practice`, from Senior Sister Xue in town; `practice_hall.html` is her page): a half-minute real-time drill of one technique with
 Senior Sister Xue (striking targets for attack techniques, meeting blows for defence techniques), graded by the server
 and paid with the bot's own practice rewards. docs/technique.md, "Practice on the website". Code:
 `web/practice_play.py` (pattern, grading, the pay), `web/practice_routes.py`, `web/templates/practice.html`,
 `web/static/practice.js`, `practice.css`; art `art/practice/`. Tests: `tests/test_web_practice.py`.
 
-**Train** (`/train`, from the yard's Train card): Meridian Circulation, a two-minute meditation. Pulses of Qi flow
+**Train** (`/train`, from Sister Jing by the pond in town): Meridian Circulation, a two-minute meditation. Pulses of Qi flow
 along the meridians of your seated body; turn junctions, close gates and hold your breath so gold reaches the Dantian
 and dark Qi leaves by a palm or sole. Paid with the bot's own /train reward and its 60-minute rest. docs/training.md,
 "Train on the website". Code: `web/train_play.py`, `web/train_sim.py` and its copy `web/static/train_sim.js`,
