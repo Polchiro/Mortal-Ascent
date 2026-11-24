@@ -1026,6 +1026,22 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .tart.tleaf{filter:drop-shadow(0 0 8px rgba(255,170,60,.7))}
 .tart.tfire{z-index:4;filter:drop-shadow(0 0 18px #FF8A2A) drop-shadow(0 0 40px rgba(255,140,40,.5))}
 .tart.tstrip{background-repeat:no-repeat;opacity:1}
+/* a Heaven technique's cutscene (fight.js `cutscene`): bars, the name written large, a Skip button */
+.tcine{position:absolute;left:0;right:0;height:11%;background:#000;z-index:7;pointer-events:none;animation:tcine .45s ease-out both}
+.tcine.top{top:0;transform-origin:50% 0}.tcine.bot{bottom:0;transform-origin:50% 100%}
+@keyframes tcine{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.tcard{position:absolute;left:50%;top:44%;z-index:8;pointer-events:none;text-align:center;white-space:nowrap;transform:translate(-50%,-50%);
+  opacity:0;animation:tcard var(--life,1600ms) ease-out forwards;font-family:Georgia,"Times New Roman",serif}
+.tcard small{display:block;letter-spacing:.5em;text-transform:uppercase;font-size:clamp(9px,1.3vw,15px);color:#FFE9B0;text-shadow:0 0 8px #000,0 0 14px #C98A1B}
+.tcard b{display:block;font-size:clamp(20px,4.6vw,54px);font-weight:700;letter-spacing:.04em;
+  background:linear-gradient(180deg,#FFF6D8,#FFD24A 55%,#B8791A);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 #3a1d00) drop-shadow(0 0 16px rgba(255,200,80,.75))}
+@keyframes tcard{0%{opacity:0;transform:translate(-50%,-50%) scale(1.5);letter-spacing:.3em}16%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  78%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.12)}}
+.battle.cutscene .castcall,.battle.cutscene .bfeed{visibility:hidden}
+.tskip{position:absolute;right:13%;bottom:14%;z-index:9;pointer-events:auto;cursor:pointer;font:600 12px/1 system-ui,sans-serif;color:#F3E6C4;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,220,150,.5);border-radius:999px;padding:7px 12px}
+.tskip:hover{background:rgba(60,40,10,.8)}
 .tart.tdragon{aspect-ratio:400/190;filter:drop-shadow(0 0 8px #FFD24A) brightness(1.1)}
 .tart.tfinale{aspect-ratio:16/9;z-index:5;filter:brightness(1.08);   /* the video's edges fade out: no frame shows */
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent),linear-gradient(180deg,transparent,#000 14%,#000 95%,transparent);

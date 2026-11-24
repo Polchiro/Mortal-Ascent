@@ -64,6 +64,11 @@ def test_nine_dragons_plays_moving_dragons_from_the_videos():
     assert technique_fx.of("Iron Fist", "Mortal")["sheets"] is None
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
     assert "FIN + DS.finale.boom * FMS" in js and "function strip(" in js
+    # it plays as a cutscene: bars, its name written large, slower punches, and a Skip that still lands the blow
+    assert "function cutscene()" in js and "var CUT = dragons && !!X.sheets" in js and "self.end -= skipBy" in js
+    css = open(os.path.join(ROOT, "web", "static", "style.css"), encoding="utf-8").read()
+    for cls in (".tcine", ".tcard", ".tskip", ".battle.cutscene .castcall"):
+        assert cls in css
     for cue in ("fs('cast', 'dragon', 0, {exact: true})", "fs('gather', 'dragons', 0, {exact: true})", "fs('boom', 'dragons', 0, {exact: true})"):
         assert cue in js                                              # the videos' own sound
     import json

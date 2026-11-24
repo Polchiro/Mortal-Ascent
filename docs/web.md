@@ -439,6 +439,12 @@ a lair is fought with `bot/hunt.py`.
      the Heaven grade's 2.7 s. `technique_fx` carries the strips' frame counts (`sheets`); `strip` in `fight.js`
      plays them. Sound from the videos: a roar per punch (`cast:dragon`), the rising (`gather:dragons`) and the
      explosion (`boom:dragons`). Presentation only.
+     **A cutscene (Nov 24).** Nine Dragons now plays as one (`cutscene` in `fight.js`, `CUT`), about 6.6 s: black
+     bars close in (`.tcine`), "Heaven Technique" and its name are written large across the scene (`.tcard`, 1.1 s)
+     while the camera closes on the cultivator, the four punches come 1.4 times slower, and the finale plays at
+     60 ms a frame with the camera closing on the beast. The small name plate and the turn's lines stay hidden
+     until the blow lands (`.battle.cutscene`). A **Skip** button (`.tskip`) jumps to the explosion: the damage
+     lands as always and the turn ends sooner. The other Heaven techniques get theirs as their videos arrive.
    - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
      frames (`hero_<gender>_kick.webp` in `looks.MOTION_SHEETS`, made from that look's own picture so it keeps
      its appearance) or, until it has them, with its own three poses and a hop into the kick. **She has hers**
