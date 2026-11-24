@@ -209,13 +209,21 @@
   var MOVE = SPEC[D.motion] ? D.motion : (!STRIKE && SPEC.guard ? 'guard' : null);
   function show(name, f) {
     var sp = SPEC[name], el = sheets[name];
-    f = Math.max(0, Math.min(sp.frames - 1, Math.round(f)));
+    f = Math.max(0, Math.min(sp.frames - 1, Math.round(f))); cur = f;
     el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
       (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
     Object.keys(sheets).forEach(function (k) { sheets[k].classList.toggle('on', k === name); });
+    clearTimeout(blendK); fme.classList.remove('blend');
     fme.dataset.pose = 'sheet';
   }
-  function stand() { anim = null; fme.dataset.pose = 'idle'; Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); }
+  var cur = 0, blendK = null;                                   // the frame shown now
+  function hero(x) { poses.style.transform = x ? 'translateX(' + x.toFixed(1) + 'px)' : ''; }
+  /* back to the stance: the movement's last frame fades out over the stance for a moment, instead of a jump */
+  function stand() {
+    anim = null; hero(0); fme.dataset.pose = 'idle'; fme.classList.add('blend');
+    clearTimeout(blendK);
+    blendK = setTimeout(function () { fme.classList.remove('blend'); Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); }, 180);
+  }
   function keyed(keys, t) {
     var f = keys[keys.length - 1][1];
     for (var j = 1; j < keys.length; j++) {
@@ -229,27 +237,42 @@
     var rel = Math.min(sp.release || n, n);
     return {set: Math.min(sp.windup || sp.jab || 0, rel), out: rel, back: Math.min(sp.back || rel, n), n: n};
   }
-  /* one movement: 'strike' (out and back), 'hold' (out, held until let go), 'charge' (drawn back, held) */
-  function act(kind) {
+  /* how far to step in so the hand meets the target of `lane` (striking only), px */
+  function reach(lane) {
+    if (!STRIKE || lane == null || !target || !SPEC[MOVE] || !SPOTS[lane]) return 0;
+    var hand = SPEC[MOVE].hand || [0.72, 0.4], f = fme.getBoundingClientRect(), r = target.getBoundingClientRect();
+    var dx = r.left + r.width * SPOTS[lane][0] - (f.left + f.width * hand[0]);
+    return Math.max(0, Math.min(scene.clientWidth * 0.3, dx - r.width * 0.06));
+  }
+  /* one movement: 'strike' (out and back), 'hold' (out, held until let go), 'charge' (drawn back, held). A new one
+     starts from the frame shown now, so quick blows flow into each other instead of snapping back to the start */
+  function act(kind, lane) {
     if (!MOVE) {                                                // no movement of its own: the two still poses
       fme.dataset.pose = kind === 'charge' ? 'windup' : 'strike';
       if (kind === 'strike') { clearTimeout(act.k); act.k = setTimeout(function () { fme.dataset.pose = 'idle'; }, 260); }
       return;
     }
-    var F = frames();
-    if (kind === 'charge') anim = {keys: [[0, 0], [260, F.set]], t0: performance.now(), hold: true};
-    else if (kind === 'hold') anim = {keys: [[0, F.set], [110, F.out]], t0: performance.now(), hold: true};
-    else anim = {keys: [[0, F.set], [80, F.out], [230, F.out], [430, F.back], [620, F.n]], t0: performance.now()};
+    var F = frames(), from = anim && fme.dataset.pose === 'sheet' ? Math.min(cur, F.out) : F.set;
+    var go = reach(lane), x0 = anim ? (anim.x || 0) : 0;
+    if (kind === 'charge') anim = {keys: [[0, anim ? cur : 0], [300, F.set]], t0: performance.now(), hold: true, dx: [[0, x0], [300, 0]]};
+    else if (kind === 'hold') anim = {keys: [[0, from], [120, F.out]], t0: performance.now(), hold: true};
+    else {
+      var mid = Math.round((F.out + F.back) / 2);
+      anim = {keys: [[0, from], [90, F.out], [210, F.out], [380, mid], [560, F.back], [760, F.n]], t0: performance.now(),
+              dx: [[0, x0], [90, go], [230, go], [560, 0]]};
+    }
   }
   function release() {                                          // let go of a charge or a brace
     if (!MOVE) { fme.dataset.pose = 'strike'; clearTimeout(act.k); act.k = setTimeout(function () { fme.dataset.pose = 'idle'; }, 260); return; }
-    var F = frames();
-    anim = {keys: [[0, F.out], [180, F.out], [380, F.back], [560, F.n]], t0: performance.now()};
+    var F = frames(), go = reach(release.lane);
+    anim = {keys: [[0, cur], [90, F.out], [240, F.out], [480, F.back], [700, F.n]], t0: performance.now(),
+            dx: [[0, 0], [90, go], [260, go], [560, 0]]};
   }
   function animate(now) {
     if (anim) {
       var t = now - anim.t0, last = anim.keys[anim.keys.length - 1][0];
       show(MOVE, keyed(anim.keys, Math.min(t, last)));
+      if (anim.dx) { anim.x = keyed(anim.dx, Math.min(t, anim.dx[anim.dx.length - 1][0])); hero(anim.x); }
       if (!anim.hold && t > last + 30) stand();
     }
   }
@@ -379,7 +402,7 @@
         (p.kind === 'charge' ? visible(p, t) : Math.abs(t - p.at) <= W.good);
     }).sort(function (a, b) { return Math.abs(t - a.at) - Math.abs(t - b.at); })[0];
     if (c) {
-      if (c.kind === 'tap') { act('strike'); settle(c, mark(c, t) || 'miss', t); }
+      if (c.kind === 'tap') { act('strike', c.lane); settle(c, mark(c, t) || 'miss', t); }
       else if (c.kind === 'brace') {
         var m = mark(c, t); act('hold'); held[lane] = c; c.got = m;
         if (els[c.i]) els[c.i].classList.add('held');
@@ -389,7 +412,7 @@
       return;
     }
     var f = P.filter(function (p) { return p.lane === lane && p.kind === 'feint' && res[p.i] == null && visible(p, t); })[0];
-    act('strike');
+    act('strike', lane);
     if (f) settle(f, 'struck', t);
     else { strays++; streak = 0; $('pstreak').textContent = 0; pop(pt(STRIKE ? target : fme, STRIKE ? SPOTS[lane][0] : 0.6, STRIKE ? SPOTS[lane][1] : (MARKS[lane] || [0, 0.9])[1]), '·', 'stray'); }
     pad(lane, true);
@@ -403,7 +426,7 @@
     delete held[lane];
     var t = now();
     fme.classList.remove('charging');
-    release();
+    release.lane = lane; release();
     if (c.kind === 'charge') { res[c.i] = null; settle(c, mark(c, t) || 'miss', t); }
     else if (t < c.at + c.hold - 90) { settle(c, c.got === 'perfect' ? 'good' : 'miss', t); if (c.got) pop(pt(fme, 0.5, 0.1), 'Let go too soon', 'miss'); }
     else settle(c, c.got || 'miss', t);

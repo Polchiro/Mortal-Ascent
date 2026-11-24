@@ -63,6 +63,10 @@ body.practicebg footer.privacy{display:none}
 .practice[data-mode=defend] .pscene .fighter.pme{left:2%}
 .pme .ssheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}
 .pme[data-pose=sheet] .ssheet.on{visibility:visible}
+/* back to the stance: the last frame of the movement fades out over it */
+.pme.blend .ssheet.on{visibility:visible;animation:pblend .18s ease-out forwards}
+@keyframes pblend{from{opacity:1}to{opacity:0}}
+.pme .poses{transition:none}
 .pme.charging .poses{filter:drop-shadow(0 0 14px rgba(255,170,60,.95))}
 .pme.hurt .poses{animation:phurt .4s ease-out}
 @keyframes phurt{0%{filter:none}20%{filter:sepia(1) saturate(5) hue-rotate(-30deg) brightness(.9);transform:translateX(-10px)}100%{filter:none}}

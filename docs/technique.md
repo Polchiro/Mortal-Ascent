@@ -406,7 +406,7 @@ nothing. One thing at a time: a drill and a spar never run together.
 **Her movements** (she is painted facing right, so the page mirrors her to face you) are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
 --instructor`): she raises her hand and cuts the air to begin (the drill starts on the cut, with a 3-2-1), watches with
 a hand on her hip while you work, and **claps** for a score of 70% or more or puts both hands on her hips and shakes
-her head below it. Each video's own sound is raised to full level when cut and played loud over the music. A great
+her head below it. Each video's own sound is raised to full level when cut and played loud over the music. Your character steps in so the hand meets the target, each blow starts from where the last one is (quick blows flow into each other), and the return to the stance fades instead of jumping. A great
 score on the wooden dummy breaks it (`broken.webp`).
 
 **The hall:** SHOAIB's painting (`art/practice/hall.jpg`) with dust drifting in the sunbeams (made in code), and the
