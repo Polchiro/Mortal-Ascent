@@ -397,11 +397,11 @@ class Battle:
 
     # ── resolving a turn ──────────────────────────────────────────────
 
-    def _hit_enemy(self, f, skill=1.0, pierce=0.0, hits=1, share=1.0):
+    def _hit_enemy(self, f, skill=1.0, pierce=0.0, hits=1, share=1.0, sure=False):
         e = self.enemy
         total = 0.0
         for _ in range(hits):
-            if e["dodge"] and self.rng.random() < e["dodge"]:
+            if not sure and e["dodge"] and self.rng.random() < e["dodge"]:     # (sure: battle.sure_hit)
                 continue
             total += combat.damage(f.attack * status_mult(f, "attack_mult"), e["defense"], e["max_hp"], skill * share, pierce, self.rng,
                                    cap=combat.hit_cap(e))
@@ -530,8 +530,9 @@ class Battle:
             if base == "break":
                 skill = battle.BREAK_SKILL
             hidden = "hidden" in e["statuses"]
+            sure = battle.sure_hit(at)                # a Heaven attack technique always lands
             f.kit.moved(base)
-            if base == "strike" and hidden:
+            if base == "strike" and hidden and not sure:
                 log.append(("strike", f"{f.name} — {label}: the {en} is hidden, it misses!"))
                 continue
             share, note = 1.0, ""
@@ -543,7 +544,9 @@ class Battle:
                     note = "interrupts the charge!"
             elif m == "guard":
                 if base == "strike":
-                    if weak <= 0 and f.kit.can_pierce_guard():
+                    if sure:
+                        note = "a Heaven technique: no guard can stop it!"
+                    elif weak <= 0 and f.kit.can_pierce_guard():
                         note = "Heaven-Splitting: no guard can stop it!"
                     elif weak <= 0:
                         log.append(("shield", f"{f.name} — {label}: blocked by the {en}'s guard"))
@@ -574,7 +577,7 @@ class Battle:
             mult, more_pierce, more_hits, kit_lines = f.kit.attack_mods(
                 base, self.turn, vs_beast=e["kind"] == "beast", target_staggered="staggered" in e["statuses"],
                 target_hp_frac=e["hp"] / e["max_hp"], own_hp_frac=f.hp / f.max_hp, combo=combo)
-            dmg = self._hit_enemy(f, skill, min(0.95, pierce + more_pierce), hits + more_hits, share * mult)
+            dmg = self._hit_enemy(f, skill, min(0.95, pierce + more_pierce), hits + more_hits, share * mult, sure=sure)
             stun, dealt_lines = f.kit.dealt(f, dmg, base, e)
             if stun and e["hp"] > 0:
                 e["no_guard"] = True

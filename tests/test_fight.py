@@ -867,3 +867,24 @@ def test_a_deflection_turns_a_break_aside_four_times_in_five_and_costs_more():
             assert f.hp < f.max_hp and "holds 20% of the Break" in line                    # as before
     assert 0.72 * 200 <= turned <= 0.88 * 200
     assert make_battle().fighters[0].qi_cost("defense_tech") == battle.TECHNIQUE_QI_COST["Mortal"]   # Horse Stance Guard: no extra
+
+
+def test_a_heaven_attack_technique_always_lands_on_a_beast():
+    """Nov 25 (SHOAIB): an ultimate cannot be Guarded, dodged or missed. Lower grades still can."""
+    heaven = [{"id": 1, "name": "Nine Dragons Ascending Fist", "type": "attack", "grade": "Heaven", "mastery_exp": 0, "stage": 0}, TECHS[1]]
+    for setup in ("guard", "hidden", "swift"):
+        for techs, lands in ((heaven, True), (TECHS, False)):
+            b = make_battle(techs=techs)
+            b.fighters[0].bqi = b.fighters[0].max_bqi = 500
+            force(b, "guard" if setup == "guard" else "break")
+            if setup == "hidden":
+                b.enemy["statuses"]["hidden"] = 2
+            if setup == "swift":
+                b.enemy["dodge"] = 1.0                                 # it dodges everything it can
+            assert b.choose(1, "attack_tech") is None
+            b.resolve()
+            assert (b.enemy["hp"] < b.enemy["max_hp"]) == lands, (setup, techs[0]["name"])
+            if setup == "guard":
+                assert ("stunned" in b.fighters[0].statuses) == (not lands)       # nor is the caster Stunned by the Guard
+    assert data.sure_hit(heaven[0]) and not data.sure_hit(TECHS[0])
+    assert not data.sure_hit({"type": "defense", "grade": "Heaven"}) and not data.sure_hit(None)

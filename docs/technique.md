@@ -198,6 +198,9 @@ Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
 
 ### Heaven grade
 Heaven techniques are **ultimates** (Nov 25): attacks hit for ×3.00 (was ×2.00), defences hold 65% (was 50%), their
+**A Heaven attack technique always lands** (Nov 25, `battle.sure_hit`): it cannot miss a Hidden enemy or be dodged
+(Swift beasts, the Feather artifact), and no Guard or defence technique stops it; the caster is not Stunned by a
+Guard. A clash with the enemy's own Strike still halves it. Beast fights and duels alike. Their
 effects are about half again stronger (Pierce 40% to 60%, Counter 40% to 60%, Recover 12% to 20%; Meteor-Falling
 Kick keeps Heavy ×1.5, which multiplies the ×3.00: ×4.5 a Strike, was ×3), and they cost **70 Battle Qi** (was 50; Void Mirror Stance 85). Everywhere: beast fights, duels, spars, Discord.
 
