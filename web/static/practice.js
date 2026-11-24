@@ -292,7 +292,7 @@
   /* ── unarmed: your own movements for the drill (art/practice/hero/<gender>/, scripts/make_practice_hero.py) ──
      stance loops between blows; strike (or kick, or finger, by the technique): out to full reach and back (the video
    played in reverse), aimed at the target's height (haim: a lean and a crouch round the feet); a sidestep technique
-   ducks under the high blow and jumps the low one;
+   ducks under the high blow and jumps the low one; a deflection technique sweeps every blow aside;
      block: the arms come up and cross, held while a brace is held (the blow is absorbed), then down; struck: when a
      blow gets through. Each movement's own sound is loud; a new movement cuts in at once. */
   var HERO = S.me.hero ? S.me.hero.sheets : null, hsheets = {}, hanim = null, hcur = {name: 'stance', f: 0}, hT0 = performance.now();
@@ -354,7 +354,7 @@
     if (dodge === 'duck') {
       K = HERO.duck.keys;
       hanim = kind === 'hold' ? {name: 'duck', keys: [[0, K.set], [150, K.down]], t0: now, hold: true}
-        : {name: 'duck', keys: [[0, K.set], [150, K.down], [400, K.down], [700, 0]], t0: now};
+        : {name: 'duck', keys: [[0, K.set], [200, K.down], [430, K.down], [760, K.set]], t0: now};
       hsound('duck');
       return;
     }
@@ -363,6 +363,14 @@
       hanim = kind === 'hold' ? {name: 'jump', keys: [[0, K.set], [170, K.apex]], t0: now, hold: true}
         : {name: 'jump', keys: [[0, K.set], [170, K.apex], [380, K.apex], [650, K.land], [720, HERO.jump.frames - 1]], t0: now};
       hsound('jump');
+      return;
+    }
+    /* a deflection technique sweeps every blow aside, high, middle or low, instead of taking it on crossed arms */
+    if (block && D.motion === 'deflect' && HERO.deflect) {
+      K = HERO.deflect.keys;
+      hanim = kind === 'hold' ? {name: 'deflect', keys: [[0, K.set], [240, K.swept]], t0: now, hold: true}
+        : {name: 'deflect', keys: [[0, K.set], [240, K.swept], [420, K.swept], [740, K.set]], t0: now};
+      hsound('deflect');
       return;
     }
     if (block) {
@@ -386,7 +394,8 @@
       hanim = {name: 'block', keys: [[0, hcur.f], [260, K.set], [380, 0]], t0: now};
       return;
     }
-    if (hcur.name === 'duck') { hanim = {name: 'duck', keys: [[0, hcur.f], [300, 0]], t0: now}; return; }
+    if (hcur.name === 'duck') { hanim = {name: 'duck', keys: [[0, hcur.f], [330, HERO.duck.keys.set]], t0: now}; return; }
+    if (hcur.name === 'deflect') { hanim = {name: 'deflect', keys: [[0, hcur.f], [320, HERO.deflect.keys.set]], t0: now}; return; }
     if (hcur.name === 'jump') {
       hanim = {name: 'jump', keys: [[0, hcur.f], [280, HERO.jump.keys.land], [340, HERO.jump.frames - 1]], t0: now};
       return;

@@ -146,6 +146,26 @@
     "src": "/art/practice/hero/male/duck.mp3"
    }
   },
+  "deflect": {
+   "src": "/art/practice/hero/male/deflect.webp",
+   "frames": 49,
+   "cols": 15,
+   "rows": 4,
+   "fps": 24,
+   "box": [
+    -0.4362,
+    -0.1381,
+    1.6862,
+    1.1451
+   ],
+   "keys": {
+    "set": 0,
+    "swept": 41
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/deflect.mp3"
+   }
+  },
   "jump": {
    "src": "/art/practice/hero/male/jump.webp",
    "frames": 38,

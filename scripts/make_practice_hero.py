@@ -3,7 +3,7 @@ Your character's unarmed movements in Practice (docs/technique.md "Practice on t
 videos (Veo 3.1 Fast, 1920x1080 or 1280x720, a plain grey backdrop, the character side-on facing right):
 
   python -m scripts.make_practice_hero female stance=<video> strike=<video> block=<video> struck=<video>
-                                             [kick=<video>] [finger=<video>] [duck=<video>] [jump=<video>]
+                                             [kick=<video>] [finger=<video>] [duck=<video>] [jump=<video>] [deflect=<video>]
 
 writes art/practice/hero/<gender>/<move>.webp (a sprite sheet), <move>.mp3 (its sound, raised to full level) and
 sheets.json. Each move keeps only the part of its video the drill needs (MOVES, per character): the videos are 8 s
@@ -43,6 +43,7 @@ LOUD = -1.0
 #   struck  the blow lands, the stagger, the recovery; the page fades back to the stance after it
 #   duck    (optional, sidestep techniques) down under a high blow (`down`: the lowest frame); the page reverses up
 #   jump    (optional, sidestep techniques) up over a low sweep (`apex`: the highest frame) and down to `land`
+#   deflect (optional, deflection techniques) the forearm meets the blow and sweeps it aside (`swept`)
 # "alone": only the biggest piece (the character) is kept: Flow drew a smear of the sweep under the jump.
 # "thin": Flow drew a blade or needle past the fingers of the finger strike; everything thinner than a fist to the
 # right of the hand is cut away, so the hands stay empty.
@@ -57,6 +58,10 @@ MOVES = {
         "finger": {"cut": (2.3, 2.95, 24), "sound": (2.75, 3.2), "keys": {"set": 2.35, "out": "reach"}, "thin": True},
         "jump": {"cut": (1.8, 4.6, 24), "sound": (2.7, 3.2), "keys": {"set": 1.9, "apex": "highest", "land": 4.45},
                  "alone": True},
+        # she sweeps low into the crouch; Flow drew a blade in her hand on the way down ("thin" cuts it away)
+        "duck": {"cut": (1.0, 2.8, 24), "sound": (1.6, 2.2), "keys": {"set": 1.0, "down": "lowest"}, "alone": True,
+                 "thin": True},
+        "deflect": {"cut": (1.6, 2.7, 24), "sound": (2.1, 2.6), "keys": {"set": 1.6, "swept": 2.45}},
     },
     "male": {
         "stance": {"cut": (0.0, 7.67, 12), "loop": True},
@@ -66,6 +71,8 @@ MOVES = {
         "kick": {"cut": (3.25, 4.05, 24), "sound": (3.85, 4.5), "keys": {"set": 3.3, "out": "reach"}},
         "finger": {"cut": (2.2, 3.0, 24), "sound": (2.35, 2.9), "keys": {"set": 2.25, "out": "reach"}, "thin": True},
         "duck": {"cut": (1.5, 3.2, 24), "sound": (1.9, 2.6), "keys": {"set": 1.6, "down": "lowest"}},
+        # the sleeves swirl off him in loose arcs as he sweeps: only the man is kept
+        "deflect": {"cut": (1.6, 3.6, 24), "sound": (2.0, 2.6), "keys": {"set": 1.6, "swept": 3.3}, "alone": True},
         # from the moment his feet leave the floor: before it, Flow's smear of the sweep runs through his feet
         "jump": {"cut": (2.75, 4.3, 24), "sound": (2.95, 3.5), "keys": {"set": 2.75, "apex": "highest", "land": 4.1},
                  "alone": True},
@@ -155,8 +162,8 @@ def build(gender, videos):
         a, b, fps = spec["cut"]
         with tempfile.TemporaryDirectory() as tmp:
             files = frames_of(videos[name], a, b, fps, tmp)
-            cuts[name] = [cut(np.asarray(Image.open(f).convert("RGB")).astype(np.float32), spec.get("alone"))
-                          for f in files]
+            cuts[name] = [np.clip(cut(np.asarray(Image.open(f).convert("RGB")).astype(np.float32), spec.get("alone")),
+                                  0, 255).astype(np.uint8) for f in files]      # bytes, not floats: 4x less memory
         if spec.get("thin"):
             cuts[name] = [empty_hand(f) for f in cuts[name]]
         if name == "stance":
