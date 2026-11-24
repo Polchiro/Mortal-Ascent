@@ -1573,7 +1573,6 @@
       function cutscene() {
         var el = function (tag, cls, text) { var n = document.createElement(tag); n.className = cls; if (text) n.textContent = text; scene.appendChild(n); made.push(n); return n; };
         main.classList.add('cutscene');                             // the small name plate and the turn's lines wait for the blow
-        el('span', 'tcine top'); el('span', 'tcine bot');
         var card = el('div', 'tcard');
         card.style.setProperty('--life', INTRO + 500 + 'ms');
         var a = document.createElement('small'); a.textContent = (cast.grade || 'Heaven') + ' Technique';
