@@ -11,7 +11,8 @@ saved cooldown, so a spar on Discord and one here can't overlap.
 The server referees: the page only sends which button was pressed. It is never told the master's move for the
 exchange being played, only his tell (when he gives one) and what he did in the exchanges already over.
 
-Only the web's own: TURN_SECONDS (the bot's 15 plus the web's round trip, as in the Arena), no shuffled buttons
+Only the web's own: how hard the Master is to read grows with your realm (READS below; Discord's /spar does not),
+TURN_SECONDS (the bot's 15 plus the web's round trip, as in the Arena), no shuffled buttons
 (the keys 1-4 stay put; the timer and the three-timeouts forfeit still end an idle spar), and a Yield button that
 does what three timeouts do. Spars live in this process's memory, like duels: a restart ends one unsaved (its
 rest stays, as when the bot restarts).
@@ -29,6 +30,7 @@ import technique
 
 from bot import db, mastery, quests, sparring
 from bot import player as players
+from bot.trainer import HIDDEN_SIGNS, STANCES, TELLS
 
 from . import spar_master, technique_fx
 
@@ -43,6 +45,62 @@ HINT = {"strike": "Beats Break. Into his Guard nothing lands. Same move: you tra
 WORD = {("win", "guard"): "Opening!", ("win", "strike"): "Struck first!", ("win", "break"): "Guard broken!",
         ("lose", "guard"): "Blocked!", ("lose", "strike"): "Too slow!", ("lose", "break"): "He breaks your guard!",
         ("tie", "guard"): "Standoff", ("tie", "strike"): "Clash!", ("tie", "break"): "Clash!"}
+
+
+# How hard the Master is to read, by your realm. WEBSITE ONLY (SHOAIB, Nov 24): Discord's /spar keeps the first row
+# for everyone. His stats are untouched (still your own realm and layer); only his reading changes:
+#   tells   the chance he shows a tell on an exchange        rhythm  how many moves his repeating pattern has
+#   breaks  the chance he leaves his rhythm on an exchange   feints  the share of his tells that describe the wrong
+#           move, with a small sign of the real one in the words (bot/trainer.HIDDEN_SIGNS, as Read the Master does)
+# The first row is bot/sparring's own numbers, and for those realms the spar is bot/sparring.Spar untouched.
+READS = [
+    {"upto": "Martial Warrior", "tells": sparring.TELL_CHANCE, "rhythm": (3, 4), "breaks": sparring.PATTERN_BREAK_CHANCE, "feints": 0.0},
+    {"upto": "Grandmaster", "tells": 0.40, "rhythm": (3, 5), "breaks": 0.20, "feints": 0.10},
+    {"upto": "Martial Emperor", "tells": 0.35, "rhythm": (4, 5), "breaks": 0.25, "feints": 0.20},
+    {"upto": "Martial Saint", "tells": 0.30, "rhythm": (4, 6), "breaks": 0.30, "feints": 0.30},
+]
+
+
+def read_of(realm):
+    """The READS row for a realm (with `band`: 0 the gentlest)."""
+    order = players.REALM_ORDER
+    at = order.index(realm) if realm in order else 0
+    for band, row in enumerate(READS):
+        if at <= order.index(row["upto"]):
+            return {**row, "band": band}
+    return {**READS[-1], "band": len(READS) - 1}
+
+
+class YardSpar(sparring.Spar):
+    """bot/sparring.Spar with the Master's reading set by READS. Everything else (the counters, the damage, the
+    techniques, the artifacts, what earns mastery EXP) is the bot's, untouched."""
+
+    def __init__(self, player, *args, **kwargs):
+        self.read = read_of(player["realm"])
+        self.feint = None                    # the move his tell pretends, on an exchange where it lies
+        self._rhythm_set = False
+        super().__init__(player, *args, **kwargs)
+
+    def _next(self):
+        r = self.read
+        self.feint = None
+        if r["band"] == 0:
+            return super()._next()           # the bot's own, roll for roll
+        if not self._rhythm_set:
+            self._rhythm_set = True
+            self.pattern = [self.rng.choice(STANCES) for _ in range(self.rng.randint(*r["rhythm"]))]
+        self.turn += 1
+        st = self.pattern[(self.turn - 1) % len(self.pattern)]
+        if self.rng.random() < r["breaks"]:
+            st = self.rng.choice(STANCES)
+        self.master = st
+        self.tell = None
+        if self.rng.random() < r["tells"]:
+            if self.rng.random() < r["feints"]:
+                self.feint = self.rng.choice([m for m in STANCES if m != st])
+                self.tell = f"{self.rng.choice(TELLS[self.feint])} {HIDDEN_SIGNS[st]}"
+            else:
+                self.tell = self.rng.choice(TELLS[st])
 
 
 def plain(text):
@@ -140,7 +198,7 @@ class Hall:
             p = db.get_player(conn, uid)
             techs = db.get_techniques(conn, uid)
             strength = technique.TRIAL_MASTER_STRENGTH[players.stage_of(focus) + 1] if focus else 1.0
-            spar = sparring.Spar(p, techs, db.equipped_weapon(conn, uid), strength, self.rng,
+            spar = YardSpar(p, techs, db.equipped_weapon(conn, uid), strength, self.rng,
                                  armor=db.equipped_armor(conn, uid))
             # the rest starts now, not when the spar ends (bot/client.claim_session): it is saved, so it holds
             # through a restart and against a second spar on Discord
@@ -295,7 +353,7 @@ class Hall:
                     "rate": players.daily_rate(technique.SPAR_DAILY_RATES, done_today),
                     "per_use": technique.SPAR_EXP_PER_TIMED_USE, "win": technique.SPAR_WIN_EXP,
                     "rest": players.fmt_duration(technique.SPAR_COOLDOWN_MINUTES * 60),
-                    "exchanges": sparring.MAX_TURNS, "seconds": TURN_SECONDS}
+                    "exchanges": sparring.MAX_TURNS, "seconds": TURN_SECONDS, "read": read_of(p["realm"])}
 
     def _move(self, sp, key):
         t = sp.tech(key) if key in TECH_KEYS else None
@@ -354,7 +412,8 @@ class Hall:
                            "staggered": sp.m_staggered},
                 "tell": None if s.over else plain(sp.hint()), "has_tell": bool(sp.tell) and not s.over,
                 # the tell as a pose: the same thing his words say (each tell names one move), never more
-                "tell_pose": sp.master if sp.tell and not s.over else None,
+                # (a feint's pose is the move it pretends: the sign of the real one is only in the words)
+                "tell_pose": (sp.feint or sp.master) if sp.tell and not s.over else None,
                 "opening": sp.blocked_strike and not s.over,
                 "timed": timed, "per_use": technique.SPAR_EXP_PER_TIMED_USE, "win": technique.SPAR_WIN_EXP,
                 "beads": [{"turn": t["turn"], "his": t["master"]["move"], "outcome": t["outcome"], "timed": t["timed"]}
