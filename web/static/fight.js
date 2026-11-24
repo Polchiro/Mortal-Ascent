@@ -1575,6 +1575,7 @@
         main.classList.add('cutscene');                             // the small name plate and the turn's lines wait for the blow
         var card = el('div', 'tcard');
         card.style.setProperty('--life', INTRO + 500 + 'ms');
+        setTimeout(function () { card.remove(); }, INTRO + 700);
         var a = document.createElement('small'); a.textContent = (cast.grade || 'Heaven') + ' Technique';
         var b = document.createElement('b'); b.textContent = cast.name || '';
         card.appendChild(a); card.appendChild(b);
@@ -1681,6 +1682,7 @@
         n.style.backgroundImage = 'url(' + X.art[0] + ')'; n.style.backgroundSize = S.cols * 100 + '% ' + S.rows * 100 + '%';
         if (S.behind) { n.style.zIndex = 'auto'; scene.insertBefore(n, fighter); } else scene.appendChild(n);
         made.push(n);
+        setTimeout(function () { made.forEach(function (m) { m.remove(); }); main.classList.remove('cutscene'); }, self.end + 1500);   // never left behind
         n.style.opacity = 1; n.animate([{opacity: 0}, {opacity: 1}], {duration: 350});
         fs('gather', S.sound, 0, {exact: true});
         var skip = el('button', 'tskip', 'Skip ▸▸'); skip.type = 'button';
@@ -1698,6 +1700,7 @@
         node.style.backgroundPosition = (f % S.cols) / (S.cols - 1) * 100 + '% ' + Math.floor(f / S.cols) / (S.rows - 1) * 100 + '%';
         node.style.opacity = 1;
         if (t > HIT + TAIL - 300) node.style.opacity = Math.max(0, (HIT + TAIL - t) / 300);
+        if (t >= HIT + TAIL - 20) node.remove();                    // played out
       }
       return (self = {end: Math.max(inner.end + PRE, HIT + TAIL), pre: PRE, render: function (t) {
         if (t < 0) return;
