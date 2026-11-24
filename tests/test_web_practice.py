@@ -341,9 +341,10 @@ def client(tmp_path, monkeypatch):
 
 
 def test_a_drill_through_the_routes(client):
-    r = client.get("/training")
+    yard = client.get("/training")                                                    # the Master's yard: Spar only
+    assert yard.status_code == 200 and 'action="/practice/start"' not in yard.text and 'action="/train/start"' not in yard.text
+    r = client.get("/practice")                                                       # no drill yet: her page
     assert r.status_code == 200 and "Practice with Senior Sister Xue" in r.text and 'action="/practice/start"' in r.text
-    assert client.get("/practice").headers["location"] == "/training#practice"          # no drill yet
     c = db.connect(client.db_path)
     tid = {t["name"]: t["id"] for t in db.get_techniques(c, UID)}["Iron Fist"]
     assert client.post("/practice/start", data={"technique": tid}).headers["location"] == "/practice"
@@ -362,8 +363,8 @@ def test_a_drill_through_the_routes(client):
     out = client.post("/practice/submit", json={"inputs": perfect(s["prompts"])}).json()
     assert out["error"] is None and out["result"]["score"] == 1.0 and out["result"]["gained"] > 0
     assert client.get("/practice/state").json()["result"]["score"] == 1.0                # a reload shows the result
-    assert client.post("/practice/done").headers["location"] == "/training#practice"
-    r = client.get("/training")
+    assert client.post("/practice/done").headers["location"] == "/practice"
+    r = client.get("/practice")
     assert "She is resting your hands" in r.text
     c.close()
 
@@ -375,8 +376,17 @@ def test_a_spar_and_a_drill_never_run_together(client):
     assert client.post("/practice/start", data={"technique": tid}).headers["location"] == "/practice"
     assert client.post("/training/spar").headers["location"] == "/training"
     assert not client.app.state.hall.busy(UID)
-    assert client.post("/practice/yield").headers["location"] == "/training#practice"
-    assert client.get("/practice").headers["location"] == "/training#practice"
+    assert client.post("/practice/yield").headers["location"] == "/practice"
+    assert "Practice with Senior Sister Xue" in client.get("/practice").text
+
+
+def test_senior_sister_xue_stands_in_town():
+    from web import town
+    npc = {n["key"]: n for n in town.NPCS}["sister"]
+    assert npc["name"] == pp.NAME and ["Practise a technique", "/practice"] in npc["go"]
+    assert os.path.exists(os.path.join(ROOT, npc["src"].lstrip("/")))
+    master = {n["key"]: n for n in town.NPCS}["master"]
+    assert all("/practice" not in g[1] and "/train" != g[1] for g in master["go"])
 
 
 def test_the_practice_pages_need_a_login(tmp_path):

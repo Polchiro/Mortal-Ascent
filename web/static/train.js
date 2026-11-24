@@ -659,7 +659,7 @@
           if (j.result) return result(j.result, true);
           if (j.error && /isn't over/.test(j.error) && tries < 5) return setTimeout(function () { send(tries + 1); }, 1000);
           again($('tbanner'), j.error || 'The meditation is over.', 'warn');
-          setTimeout(function () { location.href = '/training#train'; }, 2500);
+          setTimeout(function () { location.href = '/town?near=keeper'; }, 2500);
         })
         .catch(function () { if (tries < 5) setTimeout(function () { send(tries + 1); }, 1500); });
     };

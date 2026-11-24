@@ -549,7 +549,8 @@ class Hall:
             }
 
     def hall(self, conn, uid):
-        """Practice's part of the training yard: the rest, today's sessions, each technique's drill."""
+        """Senior Sister Xue's page (/practice with no drill running): the rest, today's sessions, your equipped
+        techniques and each one's drill."""
         with self.lock:
             self.tick()
             now = self.clock()
@@ -559,9 +560,15 @@ class Hall:
             wait = db.cooldown_left(conn, uid, "practice", now)
             today = db.daily_count(conn, uid, "practice", now)
             full = technique.PRACTICE_DAILY_RATES[0][0]
-            drills = {}
+            drills, techs = {}, []
             for t in db.get_techniques(conn, uid):
                 dr = drill_of(t)
+                cap = players.mastery_cap(t)
+                stage = players.stage_of(t)
+                techs.append({"id": t["id"], "name": t["name"], "grade": t["grade"], "type": t["type"], "icon": _icon(t),
+                              "stage": technique.MASTERY_STAGES[stage]["name"], "exp": t["mastery_exp"], "cap": cap,
+                              "pct": round(100 * min(1, t["mastery_exp"] / cap)) if cap else 100,
+                              "full": players.bar_full(t)})
                 drills[t["id"]] = {"mode": dr["mode"], "name": DRILL_NAMES[dr["mode"]],
                                    "icon": "/art/practice/icon_strike.webp" if dr["mode"] == "strike" else
                                    ("/art/practice/icon_breath.webp" if dr["motion"] == "brace" else
@@ -570,7 +577,7 @@ class Hall:
                     "full_left": max(0, full - today),
                     "rate": players.daily_rate(technique.PRACTICE_DAILY_RATES, today),
                     "rest": players.fmt_duration(trainer.cooldown_seconds(p, now, "practice")),
-                    "base": technique.PRACTICE_BASE_EXP, "drills": drills, "busy": self.busy(uid),
+                    "base": technique.PRACTICE_BASE_EXP, "drills": drills, "techniques": techs, "busy": self.busy(uid),
                     "name": NAME, "title": TITLE}
 
 

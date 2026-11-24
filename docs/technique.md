@@ -373,8 +373,10 @@ one from starting.
 **WEBSITE ONLY (SHOAIB, Nov 24).** Discord's `/practice` keeps its four challenges (challenges.md). On the website,
 Practice is a different game from Spar: a **real-time reaction drill** of one technique, about half a minute long,
 with its own teacher, **Senior Sister Xue, the Drill Instructor** (a placeholder name, easy to change: `NAME` in
-`web/practice_play.py`), in a bright wooden training hall. It is chosen in the training yard (`/training`, the
-**Practice** button beside each technique whose bar isn't full); the drill is `/practice`.
+`web/practice_play.py`), in a bright wooden training hall. **She is one of the townsfolk
+(SHOAIB, Nov 25): she stands by the dummies in Azure Cloud Town, apart from the Martial Master, whose yard is for Spar
+and trials only.** Talking to her opens `/practice`: her page, with each equipped technique's mastery bar and a
+**Practice** button beside each whose bar isn't full. The same address shows the drill while one is running.
 
 **The drill is chosen by the technique** (`drill_of`; its movement from `web/technique_fx.py`, its effect from the
 bot's technique table):

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Practice · Mortal Ascent{% endblock %}
+{% block body_class %}arenabg{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('spar.css') }}">
+<link rel="stylesheet" href="{{ asset('practice.css') }}">
+<style>body.arenabg{background:linear-gradient(rgba(14,10,6,.5),rgba(10,8,6,.9)),url(/art/practice/hall.jpg) center/cover fixed}</style>
+{% with page="town" %}{% include "_topbar.html" %}{% endwith %}
+
+{# Senior Sister Xue's page (web/practice_play.Hall.hall): /practice when no drill is running. She stands by the dummies
+   in Azure Cloud Town (web/town.py NPCS "sister"); Practice is hers, apart from the Martial Master's yard (Spar). #}
+<main class="arenalobby yard">
+  <section class="card pcard" id="practice">
+    <img class="pportrait" src="/art/practice/portrait.jpg" alt="{{ pv.name }}" width="112" height="112">
+    <div class="pbody">
+      <p class="kicker">AZURE CLOUD TOWN · THE DRILL HALL</p>
+      <h2>Practice with {{ pv.name }}</h2>
+      <p class="sub">The {{ pv.title | lower }}. "Pick one technique. I'll drill it until your body knows it."</p>
+      {% if notice %}<p class="anotice" role="alert">{{ notice }}</p>{% endif %}
+      <ul class="yardrules">
+        <li>A <b>half-minute drill</b> in real time, shaped by the technique: <b>attack</b> techniques strike targets as
+          their rings close; <b>defense</b> techniques meet blows high, middle or low as they land.</li>
+        <li>The better your timing, the more mastery EXP: up to <b>{{ pv.base }}</b> a drill, more with a condition or an
+          event. The drill grows faster at each mastery stage.</li>
+      </ul>
+      <div class="arow">
+        <div>
+          {% if pv.wait %}<b>She is resting your hands</b><small>Practise again in {{ pv.wait }}.</small>
+          {% else %}<b>She is ready</b><small>After a drill you rest for {{ pv.rest }}.</small>{% endif %}
+          <small class="aleft">{% if pv.full_left %}{{ pv.full_left }} full-EXP drill{{ "" if pv.full_left == 1 else "s" }} left today.{% else %}You have practised {{ pv.today }} times today: mastery EXP ×{{ "%g" | format(pv.rate) }}.{% endif %}</small>
+        </div>
+        <small class="sub">Choose a technique below.</small>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Your techniques</h2>
+    <p class="sub">Practice fills a technique's mastery bar. When the bar is full, it must pass its <b>trial</b> with the
+      <a href="/training">Martial Master</a> before it can be practised again.</p>
+    {% for t in pv.techniques %}
+    {% set d = pv.drills.get(t.id) %}
+    <div class="arow ytech">
+      <img src="{{ t.icon }}" alt="" width="56" height="56">
+      <div class="ytbody">
+        <b>{{ t.name }}</b>
+        <small>{{ t.grade }} {{ t.type }} technique · {{ t.stage }}{% if d %} · {{ d.name }}{% endif %}</small>
+        <div class="ybar{% if t.full %} full{% endif %}"><div style="width: {{ t.pct }}%"></div></div>
+        <small>{% if t.cap %}{{ "{:,}".format(t.exp) }} / {{ "{:,}".format(t.cap) }} mastery EXP{% else %}Final stage reached{% endif %}</small>
+      </div>
+      {% if d and not t.full and t.cap %}
+      <form method="post" action="/practice/start"><input type="hidden" name="technique" value="{{ t.id }}">
+        <button class="hbtn small pbtn" type="submit"{% if pv.wait %} disabled{% endif %} title="{{ d.name }}">
+          <img src="{{ d.icon }}" alt="" width="26" height="26">Practice</button></form>
+      {% elif t.full %}
+      <a class="hbtn ghost small" href="/training">Trial first</a>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="sub">You have no techniques equipped. Equip some on your Profile first.</p>
+    {% endfor %}
+    <p class="sub">Only equipped techniques are shown. Change them on your <a href="/profile#techniques">Profile</a>.</p>
+  </section>
+
+  <p class="rback"><a class="hbtn ghost small" href="/town?near=sister">Back to town</a></p>
+</main>
+{% endblock %}

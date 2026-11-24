@@ -179,8 +179,8 @@ or a sole). You never strike: you steer. The full design: the Claude Doc "Train 
 
 **No teacher in the meditation (SHOAIB, Nov 25).** You sit alone. Hints and the opening line show as a quiet line of
 text under the top bar, and your own character answers at the end (below). **Sister Jing**, keeper of the Quiet
-Pavilion, stands by the pond in Azure Cloud Town: "Sit and meditate" seats you (`/town/visit/keeper`, the same as the
-training yard's Train button; leaving returns you to her).
+Pavilion, stands by the pond in Azure Cloud Town: "Sit and meditate" seats you (`/town/visit/keeper`);
+leaving returns you to her. She is the only way in: Train is no longer in the Martial Master's training yard.
 
 **How a session ends** (worked out on the page from its own count, which the server's matches):
 

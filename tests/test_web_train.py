@@ -394,9 +394,9 @@ def client(tmp_path, monkeypatch):
 
 
 def test_a_session_through_the_routes(client):
-    r = client.get("/training")
-    assert r.status_code == 200 and "Meridian Circulation" in r.text and 'action="/train/start"' in r.text
-    assert client.get("/train").headers["location"] == "/training#train"
+    r = client.get("/training")                                                   # Train left the Master's yard
+    assert r.status_code == 200 and 'action="/train/start"' not in r.text
+    assert client.get("/train").headers["location"] == "/town?near=keeper"
     assert client.post("/train/start").headers["location"] == "/train"
     assert client.get("/training").headers["location"] == "/train"                 # a session under way
     page = client.get("/train")
@@ -410,8 +410,8 @@ def test_a_session_through_the_routes(client):
     out = client.post("/train/submit", json={"actions": careful(s["plan"])[1]}).json()
     assert out["error"] is None and out["result"]["score"] >= 0.95 and out["result"]["gained"] > 0
     assert client.get("/train/state").json()["result"]["score"] == out["result"]["score"]
-    assert client.post("/train/done").headers["location"] == "/training#train"
-    assert "Your meridians are resting" in client.get("/training").text
+    assert client.post("/train/done").headers["location"] == "/town?near=keeper"
+    assert client.post("/train/start").headers["location"] == "/town?near=keeper"     # resting: back to Sister Jing
 
 
 def test_one_thing_at_a_time(client):
@@ -421,9 +421,9 @@ def test_one_thing_at_a_time(client):
     c = db.connect(client.db_path)
     tid = db.get_techniques(c, UID)[0]["id"]
     c.close()
-    assert client.post("/practice/start", data={"technique": tid}).headers["location"] == "/training#practice"
-    assert client.post("/train/yield").headers["location"] == "/training#train"
-    assert client.get("/train").headers["location"] == "/training#train"
+    assert client.post("/practice/start", data={"technique": tid}).headers["location"] == "/practice"
+    assert client.post("/train/yield").headers["location"] == "/town?near=keeper"
+    assert client.get("/train").headers["location"] == "/town?near=keeper"
 
 
 def test_sister_jing_seats_you(client):

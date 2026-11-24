@@ -187,6 +187,10 @@ NPCS = [
      "src": "/art/spar/master/town.webp", "h": 128,          # the Master of the spar (scripts/make_master_sheets.py)
      "line": "So you want to test your techniques? Step into the yard. I'll match your strength blow for blow; show me you can read a fight.",
      "go": [["Enter the training yard", "/training"]]},
+    {"key": "sister", "name": "Senior Sister Xue", "title": "Practice", "x": 21.2, "y": 10.8,    # by the first dummy: Practice
+     "src": "/art/practice/instructor/town.webp", "h": 126,   # the drill instructor (scripts/make_practice_art.py town=1)
+     "line": "Sloppy hands make sloppy techniques. Pick one, and I'll drill it into you until your body knows it without asking.",
+     "go": [["Practise a technique", "/practice"]]},          # her hall, then a drill (web/practice_routes.py)
     {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 25.4, "y": 22.4,
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "The ring is open. Name a cultivator to challenge, or wait for whoever steps up next. Friendly bouts only: nobody leaves hurt.",
