@@ -1026,6 +1026,7 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .tart.tleaf{filter:drop-shadow(0 0 8px rgba(255,170,60,.7))}
 .tart.tfire{z-index:4;filter:drop-shadow(0 0 18px #FF8A2A) drop-shadow(0 0 40px rgba(255,140,40,.5))}
 .tart.tstrip{background-repeat:no-repeat;opacity:1}
+.tart.tfinale.theld{-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 90%,transparent);-webkit-mask-composite:source-over;mask-composite:add;filter:none}   /* a Heaven defence's effect, set on the cultivator */
 /* a Heaven technique's cutscene (fight.js `cutscene`): bars, the name written large, a Skip button */
 .tcine{position:absolute;left:0;right:0;height:11%;background:#000;z-index:7;pointer-events:none;animation:tcine .45s ease-out both}
 .tcine.top{top:0;transform-origin:50% 0}.tcine.bot{bottom:0;transform-origin:50% 100%}

@@ -38,17 +38,22 @@ TECH_FX = {
                                     # (`boom`: the frame of the explosion, where the damage lands)
                                     "art": ["nine_dragons_finale", "nine_dragons_fly"],
                                     "sheets": {"fly": {"frames": 16, "cols": 8, "rows": 2},
-                                               "finale": {"frames": 50, "cols": 8, "rows": 7, "boom": 29}}},
+                                               "finale": {"frames": 50, "cols": 8, "rows": 7, "boom": 29, "anchor": [0.5, 0.99],
+                                                          "sound": "dragons", "lead": 520}}},
     # the palm techniques, from SHOAIB's designs (Gemini), all played with the palm push
     "twin_palm_strike": {"motion": "palm", "play": "prints", "art": ["twin_palm_strike_1", "twin_palm_strike_2"]},
     "rolling_thunder_palm": {"motion": "palm", "play": "vortex", "art": ["rolling_thunder_palm"]},
     "thousand_shadow_palm": {"motion": "palm", "play": "fan", "art": ["thousand_shadow_palm"]},
-    "heaven_rending_palm": {"motion": "palm", "play": "descend", "art": ["heaven_rending_palm"]},
+    # the Heaven attacks play long, with a moving effect from SHOAIB's videos (scripts/make_heaven_fx.py; `sheets`
+    # below): `anchor` is the point of the video frame set on the ground under the beast, `boom` the frame the blow lands on
+    "heaven_rending_palm": {"motion": "palm", "play": "descend", "art": ["heaven_rending_palm_fx"],
+                            "sheets": {"finale": {"frames": 70, "cols": 8, "rows": 9, "boom": 42, "anchor": [0.5, 0.97], "sound": "palm"}}},
     # the kick techniques, from SHOAIB's designs (Gemini, scripts/make_kick_fx.py), all played with the kick
     "crescent_sweep": {"motion": "kick", "play": "sweep", "art": ["crescent_sweep"]},
     "swift_swallow_kick": {"motion": "kick", "play": "streak", "art": ["swift_swallow_kick"], "mirror": True},
     "autumn_wind_kick": {"motion": "kick", "play": "whirl", "art": ["autumn_wind_kick"]},
-    "meteor_falling_kick": {"motion": "kick", "play": "meteor", "art": ["meteor_falling_kick"]},
+    "meteor_falling_kick": {"motion": "kick", "play": "meteor", "art": ["meteor_falling_kick_fx"],
+                            "sheets": {"finale": {"frames": 66, "cols": 8, "rows": 9, "boom": 34, "anchor": [0.47, 0.86], "sound": "meteor"}}},
     # the finger techniques, from SHOAIB's designs (Gemini, scripts/make_finger_fx.py), both played with the jab:
     # a beam whose tail stays on the fingertip and whose head reaches the beast
     "viper_fang_finger": {"motion": "finger", "play": "beam", "art": ["viper_fang_finger"]},
@@ -63,7 +68,11 @@ TECH_FX = {
     "rooted_mountain_stance": {"motion": "brace", "play": "roots", "art": ["rooted_mountain_stance"]},
     "golden_bell_cover": {"motion": "brace", "play": "bell", "art": ["golden_bell_cover"]},
     "ancient_turtle_shell_art": {"motion": "brace", "play": "shell", "art": ["ancient_turtle_shell_art"]},
-    "immortal_lotus_body": {"motion": "brace", "play": "lotus", "art": ["immortal_lotus_body"]},
+    # a Heaven defence plays long too (fight.js `heavenly`): `pre` ms of its effect forming before the exchange, `tall`
+    # the video frame's height in body heights, `anchor` the point of the frame set on the cultivator (`on`: feet, hand
+    # or body), `behind` them or in front, `late` a third sound this long after the blow
+    "immortal_lotus_body": {"motion": "brace", "play": "lotus", "art": ["immortal_lotus_body_fx"],
+                            "sheets": {"finale": {"frames": 59, "cols": 8, "rows": 8, "boom": 27, "pre": 2200, "tall": 2.3, "anchor": [0.5, 0.86], "on": "feet", "behind": True, "sound": "lotus"}}},
 }
 
 # The deflections and sidesteps, from SHOAIB's designs (Gemini, scripts/make_deflect_fx.py, make_sidestep_fx.py), for
@@ -76,12 +85,14 @@ MOVES_FX = {
     "crane_wing_deflection": {"motion": "deflect", "play": "crane", "art": ["crane_wing_deflection"]},
     "moon_mirror_palm": {"motion": "deflect", "play": "moon", "art": ["moon_mirror_palm"]},
     "thousand_hands_deflection": {"motion": "deflect", "play": "hands", "art": ["thousand_hands_deflection"]},
-    "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance"]},
+    "void_mirror_stance": {"motion": "deflect", "play": "void", "art": ["void_mirror_stance_fx"],
+                           "sheets": {"finale": {"frames": 53, "cols": 8, "rows": 7, "boom": 8, "pre": 2000, "tall": 1.2, "anchor": [0.24, 0.47], "on": "hand", "behind": False, "sound": "void", "late": [1200, "block"]}}},
     # the sidesteps, both played with the sidestep (fight.js `sidestepped`), and only `on` a turn the technique left
     # the cultivator untouched (explore_play.untouched): the Break slipped, or a Strike taken with a full block; the
     # blow passes through the afterimages. When a Break gets through (held in part), the technique keeps its CSS look.
     "drifting_mist_steps": {"motion": "sidestep", "play": "mist_steps", "art": ["drifting_mist_steps"], "on": "evade"},
-    "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow"], "on": "evade"},
+    "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow_fx"], "on": "evade",
+                             "sheets": {"finale": {"frames": 47, "cols": 8, "rows": 6, "boom": 16, "pre": 1800, "tall": 1.5, "anchor": [0.5, 0.5], "on": "body", "behind": True, "sound": "cloud"}}},
 }
 BY_GENDER = {"female": MOVES_FX, "male": MOVES_FX}   # looks one cultivator could have in place of TECH_FX
 

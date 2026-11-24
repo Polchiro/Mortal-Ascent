@@ -65,13 +65,13 @@ def test_nine_dragons_plays_moving_dragons_from_the_videos():
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
     assert "FIN + DS.finale.boom * FMS" in js and "function strip(" in js
     # it plays as a cutscene: bars, its name written large, slower punches, and a Skip that still lands the blow
-    assert "function cutscene()" in js and "var CUT = dragons && !!X.sheets" in js and "self.end -= skipBy" in js
+    assert "function cutscene()" in js and "var CUT = !!(X.sheets && X.sheets.finale && !X.sheets.finale.pre)" in js and "self.end -= skipBy" in js
     css = open(os.path.join(ROOT, "web", "static", "style.css"), encoding="utf-8").read()
     assert "function written(text)" in js and "if (CUT) { if (ev.hit) drop('enemy'); written(" in js   # the damage, above the explosion
     assert "function zoom(" not in js                                # no camera zoom: it pushed the scene over the page
     for cls in (".tcine", ".tcard", ".tskip", ".tbig", ".battle.cutscene .castcall"):
         assert cls in css
-    for cue in ("fs('cast', 'dragon', 0, {exact: true})", "fs('gather', 'dragons', 0, {exact: true})", "fs('boom', 'dragons', 0, {exact: true})"):
+    for cue in ("fs('cast', 'dragon', 0, {exact: true})", "fs('gather', snd, 0, {exact: true})", "fs('boom', DS.finale.sound, 0, {exact: true})"):
         assert cue in js                                              # the videos' own sound
     import json
     data = json.load(open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8"))
@@ -179,7 +179,7 @@ def test_the_deflections_are_the_six_deflection_techniques_with_their_art():
         fx = technique_fx.MOVES_FX[tid]
         assert technique.TECHNIQUES[tid]["type"] == "defense"
         assert fx["motion"] == "deflect" and fx["play"] in technique_fx.PLAYS
-        assert fx["art"] == [tid]                                     # its own picture for each, no placeholder
+        assert fx["art"] == [tid + ("_fx" if fx.get("sheets") else "")]   # its own picture for each (a Heaven one: its moving effect)
         assert os.path.exists(os.path.join(ROOT, "art", "fx", "tech", tid + ".webp")), tid
 
 
@@ -188,7 +188,7 @@ def test_both_cultivators_deflect_each_with_their_own_frames():
         t = technique.TECHNIQUES[tid]
         for gender in ("female", "male"):
             fx = technique_fx.of(t["name"], t["grade"], gender)
-            assert fx["motion"] == "deflect" and fx["art"] == [f"/art/fx/tech/{tid}.webp"]
+            assert fx["motion"] == "deflect" and fx["art"] == [f"/art/fx/tech/{tid}{'_fx' if fx['sheets'] else ''}.webp"]
     him, her = (looks.motion_sheet({"gender": g}, "deflect") for g in ("male", "female"))
     assert him["src"].endswith("hero_male_deflect.webp") and her["src"].endswith("hero_female_deflect.webp")
     # every technique looks the same for both (each played with their own frames)
@@ -212,11 +212,11 @@ def test_the_sidesteps_are_the_two_evades_and_play_only_when_the_evade_worked():
     for tid in SIDESTEPS:
         t = technique.TECHNIQUES[tid]
         fx = technique_fx.MOVES_FX[tid]
-        assert fx["motion"] == "sidestep" and fx["play"] in technique_fx.PLAYS and fx["art"] == [tid]
+        assert fx["motion"] == "sidestep" and fx["play"] in technique_fx.PLAYS and fx["art"] == [tid + ("_fx" if fx.get("sheets") else "")]
         assert os.path.exists(os.path.join(ROOT, "art", "fx", "tech", tid + ".webp")), tid
         for gender in ("female", "male"):
             fx = technique_fx.of(t["name"], t["grade"], gender, "evade")
-            assert fx["motion"] == "sidestep" and fx["art"] == [f"/art/fx/tech/{tid}.webp"]
+            assert fx["motion"] == "sidestep" and fx["art"] == [f"/art/fx/tech/{tid}{'_fx' if fx['sheets'] else ''}.webp"]
             for other in (None, "", "hold"):                          # held the Break, or the beast only struck
                 assert technique_fx.of(t["name"], t["grade"], gender, other) is None  # the CSS look, as before
 
@@ -379,3 +379,31 @@ def test_brace_and_deflect_play_slower_than_the_beasts_charge():
     html = open(os.path.join(ROOT, "web", "templates", "explore_play.html"), encoding="utf-8").read()
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
     assert "data-pace" in html and "msheet.dataset.pace" in js
+
+
+def test_every_heaven_technique_plays_long_with_its_own_moving_effect_and_sound():
+    """SHOAIB's rule for the grade (Nov 24): long, its name written large, a moving effect with the video's sound, the
+    damage written large, a Skip; no black bars."""
+    import json
+    from PIL import Image
+    heaven = {tid: t for tid, t in technique.TECHNIQUES.items() if t["grade"] == "Heaven"}
+    assert len(heaven) == 6
+    sounds = json.load(open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8"))
+    for tid, t in heaven.items():
+        fx = technique_fx.of(t["name"], "Heaven", "male", "evade")
+        s = fx["sheets"]["finale"]
+        im = Image.open(os.path.join(ROOT, fx["art"][0].lstrip("/")))
+        assert im.mode == "RGBA" and im.size[0] % s["cols"] == 0 and im.size[1] % s["rows"] == 0, tid
+        assert s["cols"] * (s["rows"] - 1) < s["frames"] <= s["cols"] * s["rows"] and 0 < s["boom"] < s["frames"]
+        assert len(s["anchor"]) == 2 and {"gather:" + s["sound"], "boom:" + s["sound"]} <= set(sounds), tid
+        if t["type"] == "defense":                                    # the effect forms first, then the exchange plays
+            assert s["pre"] >= 1500 and s["tall"] > 1 and s["on"] in ("feet", "hand", "body")
+            assert s["pre"] + (s["frames"] - s["boom"]) * 50 >= 3000
+        else:                                                         # an attack: title, the move, the effect at 60 ms a frame
+            assert "pre" not in s and 1100 + 700 + s["frames"] * 60 >= 4500
+    for tid, t in technique.TECHNIQUES.items():                       # and no other grade does
+        if t["grade"] != "Heaven":
+            assert not (technique_fx.of(t["name"], t["grade"], "male", "evade") or {}).get("sheets"), tid
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "function heavenly(inner)" in js and js.count("heavenly(") == 4          # brace, deflect and sidestep go through it
+    assert "tcine" not in js
