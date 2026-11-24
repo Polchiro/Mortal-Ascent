@@ -125,6 +125,67 @@
    "sound": {
     "src": "/art/practice/hero/male/finger.mp3"
    }
+  },
+  "duck": {
+   "src": "/art/practice/hero/male/duck.webp",
+   "frames": 41,
+   "cols": 13,
+   "rows": 4,
+   "fps": 24,
+   "box": [
+    -0.2101,
+    0.0407,
+    1.8271,
+    0.9982
+   ],
+   "keys": {
+    "set": 2,
+    "down": 23
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/duck.mp3"
+   }
+  },
+  "deflect": {
+   "src": "/art/practice/hero/male/deflect.webp",
+   "frames": 49,
+   "cols": 15,
+   "rows": 4,
+   "fps": 24,
+   "box": [
+    -0.4362,
+    -0.1381,
+    1.6862,
+    1.1451
+   ],
+   "keys": {
+    "set": 0,
+    "swept": 41
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/deflect.mp3"
+   }
+  },
+  "jump": {
+   "src": "/art/practice/hero/male/jump.webp",
+   "frames": 38,
+   "cols": 24,
+   "rows": 2,
+   "fps": 24,
+   "box": [
+    0.016,
+    -0.1451,
+    1.0293,
+    1.0389
+   ],
+   "keys": {
+    "set": 0,
+    "apex": 17,
+    "land": 32
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/jump.mp3"
+   }
   }
  }
 }

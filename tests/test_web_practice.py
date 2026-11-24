@@ -310,6 +310,12 @@ def test_both_characters_have_their_unarmed_movements():
             assert all(0 <= k < sp["frames"] for k in sp.get("keys", {}).values())
         assert hero["sheets"]["stance"]["loop"]
         assert all(hero["sheets"][m]["hand"] for m in ("strike", "kick", "finger"))
+        jump = hero["sheets"]["jump"]["keys"]                       # sidestep techniques jump the low sweep
+        assert jump["set"] <= jump["apex"] <= jump["land"]
+        duck = hero["sheets"]["duck"]["keys"]                       # and duck the high blow
+        assert duck["set"] < duck["down"]
+        deflect = hero["sheets"]["deflect"]["keys"]                 # deflection techniques sweep the blow aside
+        assert deflect["set"] < deflect["swept"]
     assert pp.hero_sheets("nobody") is None                      # no art: the sword fighter's movements stand in
 
 

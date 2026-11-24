@@ -420,8 +420,12 @@ drill both characters fight with empty hands, with movements of their own: a bre
 blows; a **strike** (the punch: out to full reach, then played back in reverse) for fist and palm techniques, a
 **kick** for kick techniques and a **finger** jab for finger techniques; a **block** (arms up and crossed, held while
 a brace is held) for every defending drill; and **struck** when a blow gets through. Each movement's own sound is
-raised to full level and played loud. Flow drew a blade past the fingers of the finger strike; the script cuts it
-away. Her big kick went to the left, so the small front kick before it is the one used. Spar keeps the sword
+raised to full level and played loud. A **sidestep** technique dodges instead: it **ducks** under the
+sandbag and **jumps** the log (the staff, in the middle, is still blocked); a **deflection** technique sweeps every blow
+aside with a forearm (its own video); the stances keep the block. Every strike, kick and jab is **aimed at its target's height** (head,
+arms, leg; high, middle, low on the post): the page leans the figure round its feet, crouches it for a low target,
+and lets it rise a little for a high one, so the fist or foot lands on the ring, not always at the video's own
+height. Flow drew a blade past the fingers of the finger strike; the script cuts it away. Her big kick went to the left, so the small front kick before it is the one used. Spar keeps the sword
 fighters. Your character steps in so the hand meets the target, each blow starts from where the last one is (quick blows flow into each other), and the return to the stance fades instead of jumping. A great
 score on the wooden dummy breaks it (`broken.webp`).
 

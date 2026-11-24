@@ -125,6 +125,67 @@
    "sound": {
     "src": "/art/practice/hero/female/finger.mp3"
    }
+  },
+  "jump": {
+   "src": "/art/practice/hero/female/jump.webp",
+   "frames": 69,
+   "cols": 24,
+   "rows": 3,
+   "fps": 24,
+   "box": [
+    -0.0269,
+    -0.1509,
+    1.1796,
+    1.1655
+   ],
+   "keys": {
+    "set": 2,
+    "apex": 41,
+    "land": 64
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/jump.mp3"
+   }
+  },
+  "duck": {
+   "src": "/art/practice/hero/female/duck.webp",
+   "frames": 44,
+   "cols": 15,
+   "rows": 3,
+   "fps": 24,
+   "box": [
+    -0.2275,
+    0.0418,
+    1.8593,
+    0.9782
+   ],
+   "keys": {
+    "set": 0,
+    "down": 24
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/duck.mp3"
+   }
+  },
+  "deflect": {
+   "src": "/art/practice/hero/female/deflect.webp",
+   "frames": 28,
+   "cols": 17,
+   "rows": 2,
+   "fps": 24,
+   "box": [
+    -0.2246,
+    -0.0782,
+    1.6048,
+    1.0909
+   ],
+   "keys": {
+    "set": 0,
+    "swept": 20
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/deflect.mp3"
+   }
   }
  }
 }

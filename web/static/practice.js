@@ -218,9 +218,17 @@
   }
   var cur = 0, blendK = null;                                   // the frame shown now
   function hero(x) { (heroEl || poses).style.transform = x ? 'translateX(' + x.toFixed(1) + 'px)' : ''; }
+  /* unarmed: aimed at the target's height. k (0 to 1) is how far into the aim: step in by x, lean by rot degrees
+     (forward to strike low, back to strike high), crouch (sy below 1) or rise (sy above 1), all round the feet, and
+     for a target still higher, lift off the floor a little (y) */
+  function heroAim(k, a) {
+    if (!heroEl) return hero(k * ((a && a.x) || 0));
+    heroEl.style.transform = k && a ? 'translate(' + (k * a.x).toFixed(1) + 'px,' + (k * (a.y || 0)).toFixed(1) + 'px) rotate(' + (k * a.rot).toFixed(2) +
+      'deg) scaleY(' + (1 - k * (1 - a.sy)).toFixed(4) + ')' : '';
+  }
   /* back to the stance: the movement's last frame fades out over the stance for a moment, instead of a jump */
   function stand() {
-    if (HERO) { hanim = null; hero(0); return; }
+    if (HERO) { hanim = null; heroAim(0); return; }
     anim = null; hero(0); fme.dataset.pose = 'idle'; fme.classList.add('blend');
     clearTimeout(blendK);
     blendK = setTimeout(function () { fme.classList.remove('blend'); Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); }, 180);
@@ -283,7 +291,8 @@
 
   /* ── unarmed: your own movements for the drill (art/practice/hero/<gender>/, scripts/make_practice_hero.py) ──
      stance loops between blows; strike (or kick, or finger, by the technique): out to full reach and back (the video
-   played in reverse);
+   played in reverse), aimed at the target's height (haim: a lean and a crouch round the feet); a sidestep technique
+   ducks under the high blow and jumps the low one; a deflection technique sweeps every blow aside;
      block: the arms come up and cross, held while a brace is held (the blow is absorbed), then down; struck: when a
      blow gets through. Each movement's own sound is loud; a new movement cuts in at once. */
   var HERO = S.me.hero ? S.me.hero.sheets : null, hsheets = {}, hanim = null, hcur = {name: 'stance', f: 0}, hT0 = performance.now();
@@ -316,18 +325,54 @@
     var a = new Audio(snd.src); a.volume = LOUD();
     var p = a.play(); if (p && p.catch) p.catch(function () {});
   }
-  function hreach(lane) {
+  /* how to bring the strike's fist (or foot) to the target of `lane`: the target's top, middle or bottom, not always
+     the height the video strikes at. Worked out from the figure at rest (its CSS box), so it never compounds */
+  function haim(lane) {
     var sp = HERO[SMOVE];
-    if (!STRIKE || lane == null || !target || !sp.hand || !SPOTS[lane]) return 0;
-    var h = heroEl.getBoundingClientRect(), r = target.getBoundingClientRect();
-    var dx = r.left + r.width * SPOTS[lane][0] - (h.left + h.width * sp.hand[0]);
-    return Math.max(0, Math.min(scene.clientWidth * 0.25, dx - r.width * 0.05));
+    if (!STRIKE || lane == null || !target || !sp.hand || !SPOTS[lane]) return null;
+    var f = fme.getBoundingClientRect(), r = target.getBoundingClientRect();
+    var hh = f.height * 0.742, hw = hh * (S.me.hero.aspect || 0.5), hl = f.left + f.width * 0.381, ht = f.top + f.height * 0.195;
+    var P = [hl + hw / 2, ht + hh], H = [hl + hw * sp.hand[0], ht + hh * sp.hand[1]];
+    var T = [r.left + r.width * SPOTS[lane][0], r.top + r.height * SPOTS[lane][1]];
+    var rx = H[0] - P[0], ry = H[1] - P[1], up = -ry, dy = T[1] - H[1], margin = r.width * 0.05;
+    var sy = dy > 0 ? Math.max(0.8, 1 - dy * 0.55 / up) : Math.min(1.06, 1 - dy * 0.3 / up), ry2 = ry * sy;
+    var x = T[0] - H[0] - margin, lim = 0.38;
+    var rot = Math.atan2(T[1] - P[1], T[0] - (P[0] + x)) - Math.atan2(ry2, rx);
+    rot = Math.max(-lim, Math.min(lim, rot));
+    var hx = rx * Math.cos(rot) - ry2 * Math.sin(rot), hy = rx * Math.sin(rot) + ry2 * Math.cos(rot);
+    x = Math.max(-scene.clientWidth * 0.04, Math.min(scene.clientWidth * 0.3, T[0] - (P[0] + hx) - margin));
+    var y = Math.max(-hh * 0.16, Math.min(0, T[1] - (P[1] + hy)));      // still short of a high target: a rising strike
+    return {x: x, y: y, rot: rot * 180 / Math.PI, sy: sy};
   }
   function hfrom(name, k) { return hcur.name === name && hanim ? hcur.f : HERO[name].keys[k]; }
   function hAct(kind, lane) {
-    var K, now = performance.now(), x0 = hanim ? (hanim.x || 0) : 0;
+    var K, now = performance.now(), k0 = hanim && hanim.k ? hanim.k : 0;
     var block = !STRIKE && lane < 3, counter = !STRIKE && lane === 3;
     if (counter && D.effect !== 'counter') return;               // a breath: she stays in her stance
+    /* a sidestep technique dodges: under the sandbag, over the log (the staff, in the middle, is still blocked) */
+    var dodge = block && D.motion === 'sidestep' ? (lane === 0 && HERO.duck ? 'duck' : lane === 2 && HERO.jump ? 'jump' : null) : null;
+    if (dodge === 'duck') {
+      K = HERO.duck.keys;
+      hanim = kind === 'hold' ? {name: 'duck', keys: [[0, K.set], [150, K.down]], t0: now, hold: true}
+        : {name: 'duck', keys: [[0, K.set], [200, K.down], [430, K.down], [760, K.set]], t0: now};
+      hsound('duck');
+      return;
+    }
+    if (dodge === 'jump') {
+      K = HERO.jump.keys;
+      hanim = kind === 'hold' ? {name: 'jump', keys: [[0, K.set], [170, K.apex]], t0: now, hold: true}
+        : {name: 'jump', keys: [[0, K.set], [170, K.apex], [380, K.apex], [650, K.land], [720, HERO.jump.frames - 1]], t0: now};
+      hsound('jump');
+      return;
+    }
+    /* a deflection technique sweeps every blow aside, high, middle or low, instead of taking it on crossed arms */
+    if (block && D.motion === 'deflect' && HERO.deflect) {
+      K = HERO.deflect.keys;
+      hanim = kind === 'hold' ? {name: 'deflect', keys: [[0, K.set], [240, K.swept]], t0: now, hold: true}
+        : {name: 'deflect', keys: [[0, K.set], [240, K.swept], [420, K.swept], [740, K.set]], t0: now};
+      hsound('deflect');
+      return;
+    }
     if (block) {
       K = HERO.block.keys;
       var end = HERO.block.frames - 1, from = hfrom('block', 'set');
@@ -337,9 +382,9 @@
       return;
     }
     K = HERO[SMOVE].keys;
-    var go = hreach(lane), set = hfrom(SMOVE, 'set');
-    if (kind === 'charge') { hanim = {name: SMOVE, keys: [[0, set], [300, K.set]], t0: now, hold: true, dx: [[0, x0], [300, 0]]}; return; }
-    hanim = {name: SMOVE, keys: [[0, set], [100, K.out], [220, K.out], [500, 0]], t0: now, dx: [[0, x0], [100, go], [240, go], [500, 0]]};
+    var aim = haim(lane), set = hfrom(SMOVE, 'set');
+    if (kind === 'charge') { hanim = {name: SMOVE, keys: [[0, set], [300, K.set]], t0: now, hold: true, aim: hanim && hanim.aim, dk: [[0, k0], [300, 0]]}; return; }
+    hanim = {name: SMOVE, keys: [[0, set], [100, K.out], [220, K.out], [500, 0]], t0: now, aim: aim, dk: [[0, Math.min(k0, 0.5)], [100, 1], [240, 1], [500, 0]]};
     hsound(SMOVE);
   }
   function hRelease() {
@@ -349,8 +394,14 @@
       hanim = {name: 'block', keys: [[0, hcur.f], [260, K.set], [380, 0]], t0: now};
       return;
     }
-    var S2 = HERO[SMOVE].keys, go = hreach(release.lane);
-    hanim = {name: SMOVE, keys: [[0, hcur.f], [100, S2.out], [260, S2.out], [540, 0]], t0: now, dx: [[0, 0], [100, go], [280, go], [540, 0]]};
+    if (hcur.name === 'duck') { hanim = {name: 'duck', keys: [[0, hcur.f], [330, HERO.duck.keys.set]], t0: now}; return; }
+    if (hcur.name === 'deflect') { hanim = {name: 'deflect', keys: [[0, hcur.f], [320, HERO.deflect.keys.set]], t0: now}; return; }
+    if (hcur.name === 'jump') {
+      hanim = {name: 'jump', keys: [[0, hcur.f], [280, HERO.jump.keys.land], [340, HERO.jump.frames - 1]], t0: now};
+      return;
+    }
+    var S2 = HERO[SMOVE].keys, aim = haim(release.lane);
+    hanim = {name: SMOVE, keys: [[0, hcur.f], [100, S2.out], [260, S2.out], [540, 0]], t0: now, aim: aim, dk: [[0, 0], [100, 1], [280, 1], [540, 0]]};
     hsound(SMOVE);
   }
   function hStruck() {                                            // a blow got through
@@ -363,8 +414,9 @@
     if (hanim) {
       var t = now - hanim.t0, last = hanim.keys[hanim.keys.length - 1][0];
       hshow(hanim.name, keyed(hanim.keys, Math.min(t, last)));
-      if (hanim.dx) { hanim.x = keyed(hanim.dx, Math.min(t, hanim.dx[hanim.dx.length - 1][0])); hero(hanim.x); }
-      if (!hanim.hold && t > last + 30) { hanim = null; hero(0); hT0 = now; }
+      if (hanim.dk) { hanim.k = keyed(hanim.dk, Math.min(t, hanim.dk[hanim.dk.length - 1][0])); heroAim(hanim.k, hanim.aim); }
+      else heroAim(0);
+      if (!hanim.hold && t > last + 30) { hanim = null; heroAim(0); hT0 = now; }
       return;
     }
     var st = HERO.stance;
