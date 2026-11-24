@@ -3,10 +3,11 @@ Your character's unarmed movements in Practice (docs/technique.md "Practice on t
 videos (Veo 3.1 Fast, 1920x1080 or 1280x720, a plain grey backdrop, the character side-on facing right):
 
   python -m scripts.make_practice_hero female stance=<video> strike=<video> block=<video> struck=<video>
+                                             [kick=<video>] [finger=<video>]
 
 writes art/practice/hero/<gender>/<move>.webp (a sprite sheet), <move>.mp3 (its sound, raised to full level) and
-sheets.json. Each move keeps only the part of its video the drill needs (MOVES): the videos are 8 s long and the
-character stands still around the move.
+sheets.json. Each move keeps only the part of its video the drill needs (MOVES, per character): the videos are 8 s
+long and the character stands still around the move. kick and finger are optional: without them the strike stands in.
 
 The character is cut by colour, not by brightness: the robes are light blue, lighter than the grey in places, so
 anything that isn't the flat grey (lighter, darker or bluer) is the character; the biggest piece is kept, and Gemini's
@@ -31,18 +32,38 @@ SCALE = 0.42                           # sheet px per video px: she is ~600 px t
 PAD = 6
 LOUD = -1.0
 
-# what each move keeps: (from s, to s, fps), the sound (from s, to s), and its key frames (as seconds into the video)
+# What each move keeps of its video, for each character: "cut" (from s, to s, frames a second), "sound" (from s, to s)
+# and its key frames (seconds into the video). The videos differ (Flow never moves twice the same way), so each has
+# its own times, found by looking at the frames.
+#   stance  standing between blows: a loop ("loop": the script finds the two most alike frames near the ends); no
+#           sound (a loop of breath tires)
+#   strike  the punch, from drawn back (`set`) to the fist at full reach (`out`); the page plays it back in reverse
+#           to return. Also kick and finger (optional): the same, for kick and finger techniques
+#   block   the arms come up and cross (`up`), the blow is absorbed until the end; the page reverses to return
+#   struck  the blow lands, the stagger, the recovery; the page fades back to the stance after it
+# "thin": Flow drew a blade or needle past the fingers of the finger strike; everything thinner than a fist to the
+# right of the hand is cut away, so the hands stay empty.
 MOVES = {
-    # standing between blows: the whole video, looping (it ends as it begins); no sound (a loop of breath tires)
-    "stance": {"cut": (0.0, 7.67, 12), "loop": True},
-    # the punch: from the stance to the fist at full reach (the rest turns to the camera); the page plays it back
-    # in reverse to return. `set` is where the step begins, `out` the fist fully out
-    "strike": {"cut": (0.0, 1.25, 24), "sound": (1.22, 1.95), "keys": {"set": 0.5, "out": "reach"}},
-    # the block: the arms come up and cross (`up`), the blow is absorbed until `end`; the page reverses to return
-    "block": {"cut": (0.5, 3.6, 24), "sound": (2.5, 3.25), "keys": {"set": 0.8, "up": 2.05}},
-    # struck: the blow lands (`hit`), the stagger, the recovery; the page fades back to the stance after it
-    "struck": {"cut": (1.0, 4.6, 24), "sound": (2.05, 2.95), "keys": {"hit": 1.85}},
+    "female": {
+        "stance": {"cut": (0.0, 7.67, 12), "loop": True},
+        "strike": {"cut": (0.0, 1.25, 24), "sound": (1.22, 1.95), "keys": {"set": 0.5, "out": "reach"}},
+        "block": {"cut": (0.5, 3.6, 24), "sound": (2.5, 3.25), "keys": {"set": 0.8, "up": 2.05}},
+        "struck": {"cut": (1.0, 4.6, 24), "sound": (2.05, 2.95), "keys": {"hit": 1.85}},
+        # her big kick goes to the left; the small front kick before it (to the right) is the one kept
+        "kick": {"cut": (2.0, 2.65, 24), "sound": (2.45, 2.88), "keys": {"set": 2.05, "out": "reach"}},
+        "finger": {"cut": (2.3, 2.95, 24), "sound": (2.75, 3.2), "keys": {"set": 2.35, "out": "reach"}, "thin": True},
+    },
+    "male": {
+        "stance": {"cut": (0.0, 7.67, 12), "loop": True},
+        "strike": {"cut": (2.3, 3.05, 24), "sound": (2.45, 3.05), "keys": {"set": 2.3, "out": "reach"}},
+        "block": {"cut": (1.2, 4.9, 16), "sound": (2.95, 3.5), "keys": {"set": 1.3, "up": 2.5}},
+        "struck": {"cut": (1.2, 5.0, 16), "sound": (1.55, 2.15), "keys": {"hit": 1.5}},
+        "kick": {"cut": (3.25, 4.05, 24), "sound": (3.85, 4.5), "keys": {"set": 3.3, "out": "reach"}},
+        "finger": {"cut": (2.2, 3.0, 24), "sound": (2.35, 2.9), "keys": {"set": 2.25, "out": "reach"}, "thin": True},
+    },
 }
+NEEDED = ("stance", "strike", "block", "struck")
+FIST = 16                              # px (at 1280x720): anything thinner than this past the hand is a blade
 
 
 def frames_of(video, a, b, fps, folder):
@@ -81,6 +102,25 @@ def cut(im):
     return np.dstack([col, a * 255])
 
 
+def empty_hand(rgba):
+    """Cut away what is thinner than a fist to the right of the hand (a blade, a needle)."""
+    tall = (rgba[..., 3] > 128).sum(axis=0)
+    thick = np.nonzero(tall >= FIST)[0]
+    if len(thick):
+        rgba[:, thick.max() + 2:, 3] = 0
+    return rgba
+
+
+def best_loop(frames):
+    """(first, last) frames of the most seamless loop: an early frame and a late one that look most alike."""
+    small = [np.asarray(Image.fromarray(np.clip(f, 0, 255).astype(np.uint8), "RGBA").resize((160, 90)))
+             .astype(np.float32) for f in frames]
+    n = len(small)
+    pairs = [(np.abs(small[a] - small[b]).mean(), a, b) for a in range(0, max(1, n // 8)) for b in range(n - n // 5, n)]
+    _, a, b = min(pairs)
+    return a, b
+
+
 def bbox(alpha, thr=128):
     ys, xs = np.nonzero(alpha > thr)
     return xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
@@ -101,18 +141,23 @@ def build(gender, videos):
     url = f"/art/practice/hero/{gender}"
     os.makedirs(out, exist_ok=True)
     cuts, base = {}, None
-    for name, spec in MOVES.items():
+    moves = {n: spec for n, spec in MOVES[gender].items() if n in videos}
+    for name, spec in moves.items():
         a, b, fps = spec["cut"]
         with tempfile.TemporaryDirectory() as tmp:
             files = frames_of(videos[name], a, b, fps, tmp)
             cuts[name] = [cut(np.asarray(Image.open(f).convert("RGB")).astype(np.float32)) for f in files]
+        if spec.get("thin"):
+            cuts[name] = [empty_hand(f) for f in cuts[name]]
         if name == "stance":
-            base = bbox(cuts[name][0][..., 3])                 # her standing figure: the unit every box is in
+            base = bbox(cuts[name][0][..., 3])                 # the standing figure: the unit every box is in
+            first, last = best_loop(cuts[name])
+            cuts[name] = cuts[name][first:last]
         print(name, len(cuts[name]), "frames")
     bx0, by0, bx1, by1 = base
     bw, bh = bx1 - bx0, by1 - by0
     sheets = {}
-    for name, spec in MOVES.items():
+    for name, spec in moves.items():
         frames = cuts[name]
         boxes = [bbox(f[..., 3], 40) for f in frames]
         x0 = max(0, min(b[0] for b in boxes) - PAD)
@@ -157,8 +202,7 @@ def build(gender, videos):
 
 def main(args):
     gender, videos = args[0], dict(a.split("=", 1) for a in args[1:])
-    missing = set(MOVES) - set(videos)
-    if gender not in ("male", "female") or missing:
+    if gender not in MOVES or set(NEEDED) - set(videos):
         sys.exit(__doc__)
     build(gender, videos)
 
