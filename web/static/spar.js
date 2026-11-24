@@ -4,7 +4,7 @@
    Your cultivator plays the same frame-by-frame movements as in a beast fight (looks.py: the stance, Strike, Break,
    Guard, and the techniques' fist / palm / kick / finger / brace / deflect / sidestep), stepped by this file's own
    small player, so nothing in fight.js is touched. The Martial Master plays his own (web/spar_master.py: the stance
-   he breathes in, Strike, Guard, Break, his stagger when he is hit and his bow, each with the video's own sound), holds his tell's pose while you
+   he breathes in, Strike, Guard, Break, his stagger when he is hit, his bow, and the knee he takes when you beat him, each with the video's own sound), holds his tell's pose while you
    choose when he gives one, and steps to you and is knocked back in code. Without his sheets he is a still picture. */
 (function () {
   var main = document.getElementById('spar');
@@ -284,10 +284,12 @@
     if (revealing) return;
     revealing = !wasOver;
     var reveal = function () { revealing = false; $('sresult').hidden = false; if (!wasOver) { wasOver = true; fs(won ? 'victory' : 'defeat'); } };
-    if (wasOver || r.outcome === 'forfeit') reveal(); else { mMode = 'idle'; mplay('bow', 2.4, reveal); setTimeout(reveal, 4600); }
+    if (wasOver || r.outcome === 'forfeit') reveal();
+    else if (won && MS && MS.kneel) { mMode = 'idle'; mplay('kneel', 1); setTimeout(reveal, 2900); }   // beaten: down on one knee, at the video's own pace so its sound lands; the result comes while he kneels
+    else { mMode = 'idle'; mplay('bow', 2.4, reveal); setTimeout(reveal, 4600); }
     $('ititle').textContent = won ? 'Well fought' : 'The master bows';
     $('itext').textContent = 'The master rests for ' + r.again + ' before he spars again.';
-    body.classList.remove('breathe'); body.classList.toggle('down', won);
+    body.classList.remove('breathe'); body.classList.toggle('down', won && !(MS && MS.kneel));
   }
   function draw(s, fresh) {
     S = s; bars(s); beads(s, fresh); status(s); moves(s); history(s); result(s); lock();

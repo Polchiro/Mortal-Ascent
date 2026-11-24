@@ -12,10 +12,14 @@ facing right, each starting in his fighting stance:
   burst of light (2.9 s), holds the low lunge and rises (5.4-7.5 s);
 - bow: he stands, presses fist into palm, bows his head and returns to his stance (its frame of him standing at ease
   is also saved as town.webp: the Martial Master you walk up to in Azure Cloud Town);
+- kneel: beaten, he drops onto one knee (0.4-1.7 s; the knee lands at 1.5 s), a hand on his raised knee and his head
+  bowed, holds it (to 4.4 s), and rises back to his stance (by 7.7 s). Played when you win. There is no light in this
+  one, so only the man is kept (`light`: False): Gemini's stray sparkles near him would otherwise be taken for Qi;
 - hit: a blow lands on his chest (0.5 s), he is thrown a step back with an arm flung out, catches himself and comes
   back to his stance (by 4 s). The sheet starts just before the blow.
 
-No cut-out model is needed: the backdrop is flat grey, so the man is everything darker than it (filled in), and
+No cut-out model is needed: the backdrop is flat grey, so the man is everything darker than it (filled in, except
+where the backdrop itself shows through him, as between his legs when he kneels), and
 light (Qi, sparks: brighter than the backdrop) is kept as light, with its colour taken back out of the grey. Gemini's
 sparkle is blanked. The slow parts are thinned and the fast ones kept whole (MOVES `frames`: the video frames taken);
 each frame's own time is kept (`at`, ms from the first), so the page plays the move at the video's pace.
@@ -28,7 +32,7 @@ Sounds: the videos' own, cut round the moment (art/spar/master/<move>.mp3; `lead
 hit) and made as loud as they go without clipping (the videos are quiet; LOUD: the peak they are raised to). The bow
 has its whole sound (cloth, the fist into the palm, his feet): `from` is the ms into the movement where it starts.
 
-    python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4 hit=hit.mp4
+    python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4 hit=hit.mp4 kneel=kneel.mp4
 
 Needs ffmpeg, numpy, Pillow and scipy.
 """
@@ -72,6 +76,8 @@ MOVES = {
     "hit": {"frames": [9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28, 31, 35, 39, 43, 47, 51, 55, 59,
                        63, 67, 71, 75, 79, 83, 87, 91, 95],
             "hit": 12, "sound": (0.35, 2.05, 0.55)},
+    "kneel": {"frames": every(8, 44, 2) + [50, 70, 90, 104] + every(106, 186, 3) + [190],
+              "light": False, "sound": (0.55, 7.40, 0.55)},
     "bow": {"frames": every(1, 69, 4) + [75, 90] + every(105, 145, 4) + [152] + every(159, 215, 4) + [225],
             "sound": (0.45, 8.80, 0.45)},
 }
@@ -86,8 +92,8 @@ def backdrop(im):
     return np.median(np.concatenate([e.reshape(-1, 3) for e in edge]), axis=0)
 
 
-def cut(im):
-    """(RGBA float 0-255 with straight alpha, the man's own mask): the man solid, light kept as light."""
+def cut(im, light=True):
+    """(RGBA float 0-255 with straight alpha, the man's own mask): the man solid, light kept as light (unless not `light`)."""
     im = im.copy()
     bg = backdrop(im)
     x0, y0, x1, y1 = MARK
@@ -98,11 +104,15 @@ def cut(im):
     if n > 1:                                                   # only the biggest piece is him
         body = ndi.binary_fill_holes(lab == 1 + int(np.argmax(ndi.sum(body, lab, range(1, n + 1)))))
     d = np.abs(im - bg).max(axis=2)
+    gaps, n = ndi.label(ndi.binary_opening(body & (d < 7), iterations=2))    # backdrop seen through him (between his legs)
+    for i in range(1, n + 1):
+        if (gaps == i).sum() > 300:
+            body &= ~ndi.binary_dilation(gaps == i, iterations=2)
     soft = np.clip((d - 9) / 22, 0, 1) * ndi.binary_dilation(body, iterations=2)
     a_body = np.maximum(body.astype(np.float32), soft)
     a_glow = np.clip(((im - bg).clip(0).max(axis=2) - 6) / 70, 0, 1)
     reach = ndi.distance_transform_edt(~body)                   # light fades out away from him
-    a_glow *= np.clip((GLOW_REACH - reach) / FEATHER, 0, 1)
+    a_glow *= np.clip((GLOW_REACH - reach) / FEATHER, 0, 1) if light else 0
     a = np.maximum(a_body, a_glow)
     col = im.copy()
     light = (a_body < 0.5) & (a > 0.02)
@@ -125,7 +135,7 @@ def build(name, video, spec):
                 .save(os.path.join(OUT, "town.webp"), quality=90)
         for n in spec["frames"]:
             im = np.asarray(Image.open(os.path.join(tmp, f"{n:03d}.png")).convert("RGB")).astype(np.float32)
-            cuts.append(cut(im)[0])
+            cuts.append(cut(im, spec.get("light", True))[0])
     if name == "stance":                                        # his standing picture: the yard's page, and the fallback
         bx0, by0, bx1, by1 = BASE
         Image.fromarray(cuts[0][by0:by1, bx0:bx1].astype(np.uint8), "RGBA").save(os.path.join(OUT, "still.webp"), quality=90)
