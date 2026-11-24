@@ -69,7 +69,8 @@ def test_nine_dragons_plays_moving_dragons_from_the_videos():
     css = open(os.path.join(ROOT, "web", "static", "style.css"), encoding="utf-8").read()
     assert "function written(text)" in js and "if (CUT) { if (ev.hit) drop('enemy'); written(" in js   # the damage, above the explosion
     assert "function zoom(" not in js                                # no camera zoom: it pushed the scene over the page
-    for cls in (".tcine", ".tcard", ".tskip", ".tbig", ".battle.cutscene .castcall"):
+    assert ".tcine" not in css and "tcine" not in js               # no black bars (SHOAIB, Nov 24): only the length
+    for cls in (".tcard", ".tskip", ".tbig", ".battle.cutscene .castcall"):
         assert cls in css
     for cue in ("fs('cast', 'dragon', 0, {exact: true})", "fs('gather', snd, 0, {exact: true})", "fs('boom', DS.finale.sound, 0, {exact: true})"):
         assert cue in js                                              # the videos' own sound
