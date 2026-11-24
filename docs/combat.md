@@ -80,7 +80,7 @@ A fight energy, separate from cultivation's Internal Qi (it never touches your c
 | Start of every fight | 100 (`battle.BATTLE_QI_START`) + 2 per **Spirit** point (attributes.md) |
 | Back every turn | +10 (`BATTLE_QI_PER_TURN`), never above the start |
 | A good Guard (fully blocks a normal Strike) | +25 more (`BATTLE_QI_GOOD_GUARD`) |
-| Technique cost | Mortal 30 · Yellow 35 · Mystic 40 · Earth 45 · Heaven 50 (`TECHNIQUE_QI_COST`) |
+| Technique cost | Mortal 30 · Yellow 35 · Mystic 40 · Earth 45 · Heaven 70 (`TECHNIQUE_QI_COST`; Heaven was 50 until Nov 25: an ultimate) |
 | Chilled | techniques cost +10 |
 
 Gear that touched cooldowns works on Battle Qi here: **Focus** (artifact) gives a chance that a technique costs
@@ -90,11 +90,11 @@ players use their techniques more often (about 75% of turns when reading the bea
 
 - **Attack technique** = a stronger Strike. Combo hits several times, Pierce ignores defense,
   Heavy hits harder, Stagger weakens the beast's next Guard (Nine Dragons: it cannot Guard at all).
-- **Defense technique** = a Guard with extras: it **holds its block % of a Break** (20% Mortal to 50% Heaven;
+- **Defense technique** = a Guard with extras: it **holds its block % of a Break** (20% Mortal to 65% Heaven;
   a plain Guard holds nothing), so it's the safe pick when you can't read the beast. Counter reflects blocked
   damage, Recover heals on a block, Unbreakable halves what's left of a Break. A dodge technique (Evade: Drifting Mist Steps, Cloud-Walking Shadow)
   **always slips a Break** when you use it, and a charged Strike too (Nov 24: it rolled 25% / 40% before, which read
-  as the move failing); what limits it is its Battle Qi (40 / 50, unchanged).
+  as the move failing); what limits it is its Battle Qi (40 / 70; Heaven was 50 until Nov 25).
   A **deflection** (the Counter techniques: Parrying Arm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
   Deflection, Void Mirror Stance) **turns a Break aside 80% of the time** (`battle.DEFLECT_BREAK_CHANCE`, Nov 24):
   no damage, and its Counter share of the Break goes back at the beast ("deflected the Break"). The other 20% it

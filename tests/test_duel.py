@@ -285,7 +285,7 @@ def test_a_dodge_technique_always_slips_a_break_for_its_battle_qi():
             casts += 1
             assert b.hp == b.max_hp and any("slips away" in line for _, line in d.log)
             b.cooldowns["defense_tech"] = 0
-        assert casts == {"Mystic": 3, "Heaven": 2}[grade]        # then the Battle Qi has run out
+        assert casts == {"Mystic": 3, "Heaven": 1}[grade]        # then the Battle Qi has run out (Heaven: 70 since Nov 25)
         assert b.bqi == battle.BATTLE_QI_START - casts * (cost - battle.BATTLE_QI_PER_TURN) < cost
         assert "Not enough Battle Qi" in d.choose(b.uid, "defense_tech")
 

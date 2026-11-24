@@ -63,7 +63,7 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 | Yellow | ×1.35 | +4% |
 | Mystic | ×1.50 | +6% |
 | Earth | ×1.70 | +9% |
-| Heaven | ×2.00 | +12% |
+| Heaven | ×3.00 | +12% |
 
 ### Defense techniques
 
@@ -73,10 +73,10 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 | Yellow | 25% | +4% |
 | Mystic | 30% | +6% |
 | Earth | 40% | +9% |
-| Heaven | 50% | +12% |
+| Heaven | 65% | +12% |
 
 - Mastery multiplier applies to all four values
-  (e.g. Heaven attack at Return to Simplicity = ×2.00 × 1.50 = ×3.00 damage)
+  (e.g. Heaven attack at Return to Simplicity = ×3.00 × 1.50 = ×4.50 damage)
 - "Damage blocked" counts against a **Break** too: Break still beats Guard (you're staggered), but a defense
   technique holds its block % of the Break (a plain Guard holds nothing). Unbreakable then halves what's left.
   It also adds to a plain Guard's 50% against a charged attack.
@@ -197,13 +197,17 @@ Mystic = forces of nature, Earth = landscapes and legends, Heaven = cosmic.
 | Thousand Hands Deflection | Defense | Palm | Counter 30% |
 
 ### Heaven grade
+Heaven techniques are **ultimates** (Nov 25): attacks hit for ×3.00 (was ×2.00), defences hold 65% (was 50%), their
+effects are about half again stronger (Pierce 40% to 60%, Counter 40% to 60%, Recover 12% to 20%; Meteor-Falling
+Kick keeps Heavy ×1.5, which multiplies the ×3.00: ×4.5 a Strike, was ×3), and they cost **70 Battle Qi** (was 50; Void Mirror Stance 85). Everywhere: beast fights, duels, spars, Discord.
+
 | Technique | Type | School | Effect |
 |---|---|---|---|
-| Heaven-Rending Palm | Attack | Palm | Pierce 40% |
+| Heaven-Rending Palm | Attack | Palm | Pierce 60% |
 | Nine Dragons Ascending Fist | Attack | Fist | Stagger: opponent can't Guard next turn |
 | Meteor-Falling Kick | Attack | Leg | Heavy ×1.5 |
-| Void Mirror Stance | Defense | Palm | Counter 40% |
-| Immortal Lotus Body | Defense | Body | Recover 12% |
+| Void Mirror Stance | Defense | Palm | Counter 60% |
+| Immortal Lotus Body | Defense | Body | Recover 20% |
 | Cloud-Walking Shadow | Defense | Body | Evade (always dodges a Break) |
 
 ## Training mastery

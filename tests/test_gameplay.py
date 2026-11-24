@@ -699,3 +699,20 @@ def test_saved_players_at_the_renamed_realms_keep_their_place(tmp_path):
     a, b = dbm.get_player(conn, 1), dbm.get_player(conn, 2)
     assert a["realm"] == "Grandmaster" and b["realm"] == "Martial Lord"
     assert a["king_kills"] == "Martial Master,Grandmaster,Martial Lord"
+
+
+def test_heaven_techniques_are_ultimates():
+    """Nov 25 (SHOAIB): Heaven attacks hit for 3x a Strike, their effects are about half again stronger, their
+    defences hold 65%, and they cost 70 Battle Qi (the deflection 15 more). No other grade changed."""
+    import battle
+    import technique
+    assert technique.ATTACK_TECHNIQUE["Heaven"] == (3.00, 0.12) and technique.ATTACK_TECHNIQUE["Earth"] == (1.70, 0.09)
+    assert technique.DEFENSE_TECHNIQUE["Heaven"] == (0.65, 0.12) and technique.DEFENSE_TECHNIQUE["Earth"] == (0.40, 0.09)
+    assert technique.DEFENSE_TECHNIQUE["Heaven"][0] <= technique.MAX_DAMAGE_BLOCKED
+    T = technique.TECHNIQUES
+    assert T["heaven_rending_palm"]["effect"] == ("pierce", 0.60) and T["meteor_falling_kick"]["effect"] == ("heavy", 1.5)   # x 3.00 = 4.5x a Strike
+    assert T["void_mirror_stance"]["effect"] == ("counter", 0.60) and T["immortal_lotus_body"]["effect"] == ("recover", 0.20)
+    assert T["nine_dragons_ascending_fist"]["effect"] == ("stagger", 1.0)
+    assert battle.TECHNIQUE_QI_COST == {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 70}
+    assert battle.technique_qi(T["void_mirror_stance"], T["void_mirror_stance"]["effect"]) == 85
+    assert battle.TECHNIQUE_QI_COST["Heaven"] <= battle.BATTLE_QI_START       # still castable from a full bar
