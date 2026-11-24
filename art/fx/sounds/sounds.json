@@ -17,6 +17,12 @@
    "lead": 0.32
   }
  ],
+ "block:void": [
+  {
+   "file": "block_void.mp3",
+   "lead": 0.58
+  }
+ ],
  "boom": [
   {
    "file": "boom.mp3",
@@ -29,16 +35,46 @@
    "lead": 0.14
   }
  ],
+ "boom:cloud": [
+  {
+   "file": "boom_cloud.mp3",
+   "lead": 0.68
+  }
+ ],
  "boom:dragons": [
   {
    "file": "boom_dragons.mp3",
-   "lead": 0.56
+   "lead": 0.42
+  }
+ ],
+ "boom:lotus": [
+  {
+   "file": "boom_lotus.mp3",
+   "lead": 0.42
+  }
+ ],
+ "boom:meteor": [
+  {
+   "file": "boom_meteor.mp3",
+   "lead": 0.62
+  }
+ ],
+ "boom:palm": [
+  {
+   "file": "boom_palm.mp3",
+   "lead": 1.98
+  }
+ ],
+ "boom:void": [
+  {
+   "file": "boom_void.mp3",
+   "lead": 0.52
   }
  ],
  "cast:dragon": [
   {
    "file": "cast_dragon.mp3",
-   "lead": 0.28
+   "lead": 0.26
   }
  ],
  "cast:finger": [
@@ -119,10 +155,40 @@
    "lead": 0.58
   }
  ],
+ "gather:cloud": [
+  {
+   "file": "gather_cloud.mp3",
+   "lead": 0.36
+  }
+ ],
  "gather:dragons": [
   {
    "file": "gather_dragons.mp3",
-   "lead": 0.7
+   "lead": 0.42
+  }
+ ],
+ "gather:lotus": [
+  {
+   "file": "gather_lotus.mp3",
+   "lead": 0.72
+  }
+ ],
+ "gather:meteor": [
+  {
+   "file": "gather_meteor.mp3",
+   "lead": 0.64
+  }
+ ],
+ "gather:palm": [
+  {
+   "file": "gather_palm.mp3",
+   "lead": 0.86
+  }
+ ],
+ "gather:void": [
+  {
+   "file": "gather_void.mp3",
+   "lead": 0.4
   }
  ],
  "guardup": [

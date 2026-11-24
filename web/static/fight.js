@@ -1311,15 +1311,15 @@
          jab-lunge-jab-lunge, each loosing X.punches[i] dragons (1-2-3-3: nine). */
       /* Nine Dragons plays as a cutscene (`CUT`): bars close in and its name is shown for INTRO ms, the punches come
          slower (x1.4), the finale plays at 60 ms a frame. `S` maps the plain timing onto the cutscene's. */
-      var CUT = dragons && !!X.sheets, INTRO = 1100;
+      var CUT = !!(X.sheets && X.sheets.finale && !X.sheets.finale.pre), INTRO = 1100;   // (every Heaven attack: technique_fx `sheets`)
       function S(ms) { return CUT ? INTRO + ms * 1.4 : ms; }
       var punches = dragons ? [{at: S(360), kind: 'jab'}, {at: S(640), kind: 'lunge'}, {at: S(960), kind: 'jab'}, {at: S(1240), kind: 'lunge'}]
-                            : [{at: Math.round(end * 0.45), kind: 'lunge'}];
+                            : [{at: CUT ? INTRO + 700 : Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var DS = dragons && X.sheets || null, FIN = R + 520, FMS = 60;   // Nine Dragons' finale: starts as the ninth arrives, 60 ms a frame
+      var DS = CUT ? X.sheets : null, FIN = R + (DS && DS.finale.lead || 0), FMS = 60;   // Nine Dragons' finale: starts as the ninth arrives, 60 ms a frame
       var skipBy = 0, self = null;                                    // the cutscene skipped: this much time jumped
       if (DS) end = FIN + DS.finale.frames * FMS + 150;
-      var LAND = dragons ? (DS ? FIN + DS.finale.boom * FMS : R + 420) : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = DS ? FIN + DS.finale.boom * FMS : dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       var PULL = Math.round((JAB + WIND) / 2);                       // on the way back from the jab
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
@@ -1573,9 +1573,9 @@
       function cutscene() {
         var el = function (tag, cls, text) { var n = document.createElement(tag); n.className = cls; if (text) n.textContent = text; scene.appendChild(n); made.push(n); return n; };
         main.classList.add('cutscene');                             // the small name plate and the turn's lines wait for the blow
-        el('span', 'tcine top'); el('span', 'tcine bot');
         var card = el('div', 'tcard');
         card.style.setProperty('--life', INTRO + 500 + 'ms');
+        setTimeout(function () { card.remove(); }, INTRO + 700);
         var a = document.createElement('small'); a.textContent = (cast.grade || 'Heaven') + ' Technique';
         var b = document.createElement('b'); b.textContent = cast.name || '';
         card.appendChild(a); card.appendChild(b);
@@ -1623,26 +1623,26 @@
         poses.style.filter = tier >= 1 && t < R + 200 ? 'drop-shadow(0 0 ' + (4 + 4 * tier) + 'px ' + tc + ')' : '';
         var k2 = ev.hit ? knocked(t - LAND, (0.02 + 0.006 * tier) * W) : [0, 0];
         animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (0.03 * W) * 4, k2[1]);
-        if (dragons) {
-          punches.forEach(function (_, i) { loose(i, t); });
+        if (dragons) punches.forEach(function (_, i) { loose(i, t); });
+        if (CUT) {
           if (t >= FIN && once('rise')) {                             // all nine burst from the ground under the beast and coil up
-            var life = DS.finale.frames * FMS, g = at(br, 0.42, 0.97);
-            var fw = Math.min(105, g[1] / 100 * scene.clientHeight * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
+            var life = DS.finale.frames * FMS, g = at(br, 0.42, 0.97), A = DS.finale.anchor || [0.5, 0.99], snd = DS.finale.sound;
+            var fw = Math.min(105, g[1] / 100 * scene.clientHeight / A[1] * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
             var f0 = skipBy ? DS.finale.boom - 2 : 0;                 // skipped: straight to the explosion
             var n = strip(X.art[0], DS.finale, 'tfinale', [g[0], g[1]], fw / BIG, life + 60, life, f0);
-            n.style.transform = 'translate(-50%,-99%)';
+            n.style.transform = 'translate(' + -A[0] * 100 + '%,' + -A[1] * 100 + '%)';
             n.animate([{opacity: 1}, {opacity: 1, offset: 0.88}, {opacity: 0}], {duration: life, fill: 'forwards'});
-            if (!skipBy && !fs('gather', 'dragons', 0, {exact: true})) fs('gather');
+            if (!skipBy && !fs('gather', snd, 0, {exact: true})) fs('gather');
           }
           if (t >= LAND && once('finale')) {                          // they explode in golden light: the blow lands
             main.classList.remove('cutscene');
             made.forEach(function (n) { if (/tskip/.test(n.className)) n.remove(); });
             fx('bflash', 50, 50, 450);
-            if (!fs('boom', 'dragons', 0, {exact: true})) fs('boom');
+            if (!fs('boom', DS.finale.sound, 0, {exact: true})) fs('boom');
             lands();
           }
-        } else PLAY[X.play](t - R);
-      }, clear: function () { main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); }});
+        } else if (!dragons) PLAY[X.play](t - R);
+      }, release: R, clear: function () { main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); }});
     }
 
     /* A Body defense technique that braces (web/technique_fx.py "brace"), played inside the beast's attack: the fighter
@@ -1655,6 +1655,68 @@
        slower than their recipes say, so they can be followed. */
     function paced(o, k) { var out = {}; Object.keys(o).forEach(function (n) { out[n] = /knock/.test(n) ? o[n] : o[n] * k; }); return out; }
     var PACE = msheet && +msheet.dataset.pace || 1;
+    /* A Heaven defence plays long (SHOAIB's rule for the grade: long, its name written large, a moving effect with its
+       own sound, a Skip; no black bars). `inner` is the technique's ordinary exchange (braced, deflected, sidestepped):
+       it plays whole, after `pre` ms in which the effect forms; the effect's `boom` frame falls on the beast's blow
+       (`inner.hit`), and the rest of it plays out at 50 ms a frame. */
+    function heavenly(inner) {
+      var X = cast.fx, S = X.sheets && X.sheets.finale;
+      if (!S || !S.pre) return inner;
+      var PRE = S.pre, HIT = PRE + (inner.hit || 0), TAIL = (S.frames - S.boom) * 50;
+      var did = {}, made = [], skipBy = 0, node = null, self;
+      var num = function (k, d) { return msheet && msheet.dataset[k] ? msheet.dataset[k].split(',').map(Number) : d; };
+      var Bd = num('body', [0.5, 0.15, 0.94, 0.24]), HAND = num('hand', [0.62, 0.4]);
+      function el(tag, cls, text) { var n = document.createElement(tag); n.className = cls; if (text) n.textContent = text; scene.appendChild(n); made.push(n); return n; }
+      function start() {
+        main.classList.add('cutscene');
+        var card = el('div', 'tcard'); card.style.setProperty('--life', Math.min(PRE, 1600) + 'ms');
+        var a = document.createElement('small'); a.textContent = (cast.grade || 'Heaven') + ' Technique';
+        var b = document.createElement('b'); b.textContent = cast.name || '';
+        card.appendChild(a); card.appendChild(b);
+        var p = S.on === 'hand' ? at(fr, HAND[0], HAND[1]) : at(fr, Bd[0], S.on === 'feet' ? Bd[2] : (Bd[1] + Bd[2]) / 2);
+        var n = node = document.createElement('div');
+        n.className = 'tart tstrip tfinale theld';
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%';
+        n.style.width = fr.height * (Bd[2] - Bd[1]) * S.tall * 16 / 9 / W * 100 + '%';
+        n.style.transform = 'translate(' + -S.anchor[0] * 100 + '%,' + -S.anchor[1] * 100 + '%)';
+        n.style.backgroundImage = 'url(' + X.art[0] + ')'; n.style.backgroundSize = S.cols * 100 + '% ' + S.rows * 100 + '%';
+        if (S.behind) { n.style.zIndex = 'auto'; scene.insertBefore(n, fighter); } else scene.appendChild(n);
+        made.push(n);
+        setTimeout(function () { made.forEach(function (m) { m.remove(); }); main.classList.remove('cutscene'); }, self.end + 1500);   // never left behind
+        n.style.opacity = 1; n.animate([{opacity: 0}, {opacity: 1}], {duration: 350});
+        fs('gather', S.sound, 0, {exact: true});
+        var skip = el('button', 'tskip', 'Skip ▸▸'); skip.type = 'button';
+        skip.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var now = self.now || 0, to = HIT - 300;
+          if (skipBy || now >= PRE) return;                          // only the forming is skipped: the exchange plays
+          skipBy = Math.max(0, Math.min(PRE, to) - now); self.end -= skipBy;
+          card.remove(); skip.remove();
+        });
+      }
+      function show(t) {                                             // the effect's frame: forming up to the blow, then playing out
+        var f = t < HIT ? S.boom * t / HIT : S.boom + (t - HIT) / 50;
+        f = Math.max(0, Math.min(S.frames - 1, Math.floor(f)));
+        node.style.backgroundPosition = (f % S.cols) / (S.cols - 1) * 100 + '% ' + Math.floor(f / S.cols) / (S.rows - 1) * 100 + '%';
+        node.style.opacity = 1;
+        if (t > HIT + TAIL - 300) node.style.opacity = Math.max(0, (HIT + TAIL - t) / 300);
+        if (t >= HIT + TAIL - 20) node.remove();                    // played out
+      }
+      return (self = {end: Math.max(inner.end + PRE, HIT + TAIL), pre: PRE, render: function (t) {
+        if (t < 0) return;
+        self.now = t; t += skipBy;
+        if (!did.start) { did.start = 1; start(); }
+        show(t);
+        if (t >= HIT && !did.hit) {
+          did.hit = 1; main.classList.remove('cutscene');
+          made.forEach(function (n) { if (/tskip/.test(n.className)) n.remove(); });
+          fs('boom', S.sound, 0, {exact: true});
+        }
+        if (S.late && t >= HIT + S.late[0] && !did.late) { did.late = 1; fs(S.late[1], S.sound, 0, {exact: true}); }
+        if (t >= PRE) inner.render(Math.min(t - PRE, inner.end));
+      }, clear: function () { main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); if (inner.clear) inner.clear(); }});
+    }
+    function later(cues, ms) { return ms ? cues.map(function (c) { var d = c.slice(); d[0] += ms; return d; }) : cues; }   // a step's sounds, after its `pre`
     function braced(ev, hitEv) {
       var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = paced(RECIPES.beast, PACE);
       var attacked = !!(hitEv || ev.blocked || ev.hold);
@@ -1676,6 +1738,7 @@
       function art(cls, p, w, behind) {                             // the technique's picture at p, w% of the scene wide
         var n = document.createElement('img');
         n.className = 'tart tbrace ' + cls; n.src = X.art[0]; n.alt = '';
+        if (X.sheets) n.style.display = 'none';                     // a Heaven technique: its moving effect plays instead (`heavenly`)
         n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%'; n.style.setProperty('--tc', tc);
         if (behind) scene.insertBefore(n, fighter); else scene.appendChild(n);
         made.push(n);
@@ -1727,7 +1790,7 @@
         if (hitEv && hitEv.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', hitEv.dmg), '−' + hitEv.dmg); }
         pop(fighter, 'word', ev.hold ? (cast.effect === 'unbreakable' ? 'Unbreakable!' : 'Held ' + ev.hold + '%') : 'Blocked');
       }
-      return {end: END, render: function (t) {
+      return {end: END, hit: HIT, render: function (t) {
         if (t < 0) return;
         if (once('start')) {                                        // the grade's spectacle, as for every technique
           if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
@@ -1802,6 +1865,7 @@
       function art(cls, p, w, behind) {                             // the technique's picture at p, w% of the scene wide
         var n = document.createElement('img');
         n.className = 'tart tbrace ' + cls; n.src = X.art[0]; n.alt = '';
+        if (X.sheets) n.style.display = 'none';                     // a Heaven technique: its moving effect plays instead (`heavenly`)
         n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%'; n.style.setProperty('--tc', tc);
         if (behind) scene.insertBefore(n, fighter); else scene.appendChild(n);
         made.push(n);
@@ -1861,7 +1925,7 @@
         if (hitEv && hitEv.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', hitEv.dmg), '−' + hitEv.dmg); }
         pop(fighter, 'word', ev.hold ? 'Held ' + ev.hold + '%' : 'Deflected');
       }
-      return {end: END, render: function (t) {
+      return {end: END, hit: HIT, render: function (t) {
         if (t < 0) return;
         if (once('start')) {                                        // the grade's spectacle, as for every technique
           if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
@@ -1932,6 +1996,7 @@
         var n = document.createElement('img');
         n.className = 'tart tbrace tsidestep ' + (X.play === 'cloud_steps' ? 'tcloudsteps' : 'tmiststeps');
         n.src = X.art[0]; n.alt = '';
+        if (X.sheets) n.style.display = 'none';
         n.style.left = stood[0] + '%'; n.style.top = stood[1] + '%'; n.style.width = wide(ASPECT[X.play] || 0.38, 0.95) + '%';
         n.style.setProperty('--tc', tc);
         scene.insertBefore(n, fighter); made.push(n); FX = n;
@@ -1949,7 +2014,7 @@
         burst('tspark', p[0], p[1], X.play === 'cloud_steps' ? '#FFF1C8' : '#CFE6FF');
         pop(fighter, 'word', ev.idle ? 'Shadow step' : ev.slipped ? 'Slipped away' : 'Evaded');
       }
-      return {end: END, render: function (t) {
+      return {end: END, hit: HIT, render: function (t) {
         if (t < 0) return;
         if (once('start')) {                                        // the grade's spectacle, as for every technique
           var feet = at(fr, Bd[0], Bd[2]);
@@ -2041,14 +2106,14 @@
     }
     events.forEach(function (ev) {
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { add(braced(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup', 'brace']] : [[0, 'guardup', 'brace'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { add(deflected(ev, braceHit), 'beast_acting', ev.idle ? [[0, 'guardup', 'deflect']] : [[0, 'guardup', 'deflect'], [120 * PACE, 'lunge']]); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && (ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep') { add(sidestepped(ev), ev.idle ? 'player_acting' : 'beast_acting', ev.idle ? [] : [[60, 'lunge']]); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { var hs = heavenly(braced(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'brace']] : [[0, 'guardup', 'brace'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { var hs = heavenly(deflected(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'deflect']] : [[0, 'guardup', 'deflect'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
+      else if (ev.act === 'tech' && (ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep') { var hs = heavenly(sidestepped(ev)); add(hs, ev.idle ? 'player_acting' : 'beast_acting', later(ev.idle ? [] : [[60, 'lunge']], hs.pre)); kinds.enemy = 1; }
       else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting', [[RECIPES.pounce.crouch - 80, 'lunge'], [RECIPES.pounce.hit, 'boom'], [RECIPES.pounce.home, 'roar', 'big']]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', cast.fx.play === 'dragons' ? [] : [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', cast.fx.play === 'dragons' ? [] : [[Math.max(0, (cast.fx.sheets ? ts.release : Math.round(ts.end * 0.45)) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;

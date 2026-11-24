@@ -439,6 +439,10 @@ a lair is fought with `bot/hunt.py`.
      the Heaven grade's 2.7 s. `technique_fx` carries the strips' frame counts (`sheets`); `strip` in `fight.js`
      plays them. Sound from the videos: a roar per punch (`cast:dragon`), the rising (`gather:dragons`) and the
      explosion (`boom:dragons`). Presentation only.
+     (The black bars were removed the same day at SHOAIB's ask: the length stays, the bars go.)
+     **Second design (Nov 25).** SHOAIB redrew it as one video: a winged golden dragon (the dragons loosed, 8
+     frames), then a pillar of light with dragons coiling up it and swarming round, and a burst on the ground (the
+     finale, 59 frames; the blow lands on the burst). Same script, same rules, its own three sounds re-cut.
      **A cutscene (Nov 24).** Nine Dragons now plays as one (`cutscene` in `fight.js`, `CUT`), about 6.6 s: black
      bars close in (`.tcine`), "Heaven Technique" and its name are written large across the scene (`.tcard`, 1.1 s)
      , the four punches come 1.4 times slower, and the finale plays at 60 ms a frame. (The camera zoom it first
@@ -446,7 +450,25 @@ a lair is fought with `bot/hunt.py`.
      damage is written large above the explosion (`written`, `.tbig`), where the fire cannot cover it; on a narrow
      scene the finale is drawn up to the scene's full width. The small name plate and the turn's lines stay hidden
      until the blow lands (`.battle.cutscene`). A **Skip** button (`.tskip`) jumps to the explosion: the damage
-     lands as always and the turn ends sooner. The other Heaven techniques get theirs as their videos arrive.
+     lands as always and the turn ends sooner.
+     **Heaven techniques: the long play (Nov 24). SHOAIB's rule for the grade:** every Heaven technique plays long
+     (about 5 to 7 s) and special: "Heaven Technique" and its name written large in gold, a moving effect cut from
+     his video of it with the video's own sound, the damage written large when the blow lands, and a Skip button.
+     No black bars. All six have it. The effects are strips of frames (`<technique>_fx.webp`,
+     `scripts/make_heaven_fx.py`), described in `technique_fx` under `sheets.finale` (`frames`, `boom`: the frame
+     the blow lands on, `anchor`, `sound`).
+     - *Attacks* (Meteor-Falling Kick, Heaven-Rending Palm; Nine Dragons as above) play in `technique` (`CUT`): the
+       title (1.1 s), the kick or palm, then the effect at 60 ms a frame set on the ground under the beast
+       (`anchor`); the damage lands on `boom` (the meteor striking, the giant hand slamming down).
+     - *Defences* (Immortal Lotus Body, Void Mirror Stance, Cloud-Walking Shadow) play through `heavenly`, which
+       wraps the ordinary exchange (`braced`, `deflected`, `sidestepped`): for `pre` ms the effect forms on the
+       cultivator (the lotus blooms behind them; the mirror hangs before the hand; the cloud figure stands where
+       they stand), then the exchange plays whole with the effect's `boom` frame on the beast's blow (the pillar of
+       light; violet lightning shot back; the figure gone in trails of cloud), and the rest plays out at 50 ms a
+       frame. Skip jumps over the forming only. The older still pictures of these six are no longer drawn.
+     - Sounds: `gather:<sound>` as the effect starts, `boom:<sound>` on the blow (Void Mirror also `block:void` as it
+       shatters), each played with `exact` so nothing else is put in its place.
+     A new Heaven technique must be given the same: a video of its effect on black, a `sheets.finale` entry, sounds.
    - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
      frames (`hero_<gender>_kick.webp` in `looks.MOTION_SHEETS`, made from that look's own picture so it keeps
      its appearance) or, until it has them, with its own three poses and a hop into the kick. **She has hers**
