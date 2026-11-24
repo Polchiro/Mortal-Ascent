@@ -403,7 +403,7 @@ the Martial Master comes first.
 its full length and grades every target itself. The page's own clock times the presses, so a slow connection costs
 nothing. One thing at a time: a drill and a spar never run together.
 
-**Her movements** are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
+**Her movements** (she is painted facing right, so the page mirrors her to face you) are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
 --instructor`): she raises her hand and cuts the air to begin (the drill starts on the cut, with a 3-2-1), watches with
 a hand on her hip while you work, and **claps** for a score of 70% or more or puts both hands on her hips and shakes
 her head below it. Each video's own sound is raised to full level when cut and played loud over the music. A great

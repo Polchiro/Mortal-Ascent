@@ -35,9 +35,9 @@
     <!-- Senior Sister Xue -->
     {% set I = s.instructor %}{% set IS = I.sheets %}
     <div class="pteacher{% if IS %} sheeted{% endif %}" id="pteacher" aria-hidden="true"{% if IS %} style="aspect-ratio: {{ IS.aspect }}"{% endif %}>
-      {% if IS %}{% for name, S in IS.sheets.items() %}
+      {% if IS %}<div class="ptflip">{% for name, S in IS.sheets.items() %}
       <div class="ptsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
-      {%- endfor %}{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
+      {%- endfor %}</div>{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
       <p class="psay" id="psay"></p>
     </div>
 

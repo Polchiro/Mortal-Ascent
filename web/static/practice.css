@@ -36,9 +36,11 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
 .pchips li.ev{border-color:var(--gold);color:var(--gold2)}
 
 /* Senior Sister Xue: the box round her standing figure; each movement's sheet sits on it by its own `box` */
-.pteacher{position:absolute;right:4%;bottom:5%;height:68%;aspect-ratio:.3947;z-index:2}
-.practice[data-mode=defend] .pteacher{right:1.5%;height:60%;bottom:12%}
+.pteacher{position:absolute;right:5%;bottom:6%;height:56%;aspect-ratio:.3947;z-index:2}
+.practice[data-mode=defend] .pteacher{right:2.5%;height:50%;bottom:12%}
 .pteacher::before{content:"";position:absolute;left:4%;width:92%;bottom:-1.5%;height:5%;border-radius:50%;background:radial-gradient(rgba(40,20,8,.55),rgba(40,20,8,0) 70%)}
+/* she is painted facing right: .ptflip turns her to face you (her speech bubble stays outside it, unturned) */
+.ptflip{position:absolute;inset:0;transform:scaleX(-1)}
 .ptsheet{position:absolute;background-repeat:no-repeat;visibility:hidden;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
 .ptsheet.on{visibility:visible}
 .ptstill{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
@@ -47,7 +49,7 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
 .psay.go{animation:psay 5.5s ease-out forwards}
 @keyframes psay{0%{opacity:0;transform:translateY(6px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
 .practice[data-phase=result] .psay.go{animation:psay 60s ease-out forwards}
-.practice[data-phase=result] .psay{top:-10%}
+.practice[data-phase=result] .psay{display:none}                 /* her line is on the scroll */
 
 /* you */
 .practice .pscene .fighter.pme{left:-8%;bottom:1%;width:66%;z-index:3}
@@ -176,7 +178,7 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
   .practice .pscene .fighter.pme{width:84%;left:-22%}
   .practice[data-mode=defend] .pscene .fighter.pme{left:-12%}
   .ptarget{left:44%;height:56%}.ptarget.t-dummy{left:38%;height:46%}
-  .pteacher{height:62%;right:1%}
+  .pteacher{height:52%;right:2%}
   .phud{padding:6px 8px;gap:8px}.ptech img{width:34px;height:34px}.ptech b{font-size:13px}.ptech small{display:none}
   .ptally b{font-size:18px}.pchips{top:46px;left:8px}.pchips li{font-size:10.5px;padding:2px 7px}
   .psay{font-size:12px;max-width:52vw;right:20%}
