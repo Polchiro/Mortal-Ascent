@@ -50,6 +50,32 @@ def test_nine_dragons_looses_nine_dragons_one_to_three_a_punch():
     assert sum(punches) == 9 and all(1 <= n <= 3 for n in punches)
 
 
+def test_nine_dragons_plays_moving_dragons_from_the_videos():
+    """One flying dragon per dragon loosed, and the finale (they coil up and explode), as strips of frames."""
+    from PIL import Image
+    fx = technique_fx.of("Nine Dragons Ascending Fist", "Heaven")
+    assert [a.rsplit("/", 1)[1] for a in fx["art"]] == ["nine_dragons_finale.webp", "nine_dragons_fly.webp"]
+    for key, src in (("finale", fx["art"][0]), ("fly", fx["art"][1])):
+        s = fx["sheets"][key]
+        im = Image.open(os.path.join(ROOT, src.lstrip("/")))
+        assert im.mode == "RGBA" and im.size[0] % s["cols"] == 0 and im.size[1] % s["rows"] == 0
+        assert s["cols"] * (s["rows"] - 1) < s["frames"] <= s["cols"] * s["rows"]
+    assert 0 < fx["sheets"]["finale"]["boom"] < fx["sheets"]["finale"]["frames"]      # the damage lands on the explosion
+    assert technique_fx.of("Iron Fist", "Mortal")["sheets"] is None
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "FIN + DS.finale.boom * FMS" in js and "function strip(" in js
+    # it plays as a cutscene: bars, its name written large, slower punches, and a Skip that still lands the blow
+    assert "function cutscene()" in js and "var CUT = dragons && !!X.sheets" in js and "self.end -= skipBy" in js
+    css = open(os.path.join(ROOT, "web", "static", "style.css"), encoding="utf-8").read()
+    for cls in (".tcine", ".tcard", ".tskip", ".battle.cutscene .castcall"):
+        assert cls in css
+    for cue in ("fs('cast', 'dragon', 0, {exact: true})", "fs('gather', 'dragons', 0, {exact: true})", "fs('boom', 'dragons', 0, {exact: true})"):
+        assert cue in js                                              # the videos' own sound
+    import json
+    data = json.load(open(os.path.join(ROOT, "art", "fx", "sounds", "sounds.json"), encoding="utf-8"))
+    assert {"cast:dragon", "gather:dragons", "boom:dragons"} <= set(data)
+
+
 def test_the_kick_techniques_share_one_kick_for_both_genders():
     leg = {tid for tid, t in technique.TECHNIQUES.items() if t["school"] == "Leg"}
     assert leg == {"crescent_sweep", "swift_swallow_kick", "autumn_wind_kick", "meteor_falling_kick"}

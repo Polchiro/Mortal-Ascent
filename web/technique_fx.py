@@ -33,8 +33,12 @@ TECH_FX = {
     "raging_bull_fist": {"motion": "fist", "play": "charge", "art": ["raging_bull_fist"], "mirror": True},
     "mountain_shattering_fist": {"motion": "fist", "play": "rise", "art": ["mountain_shattering_fist"]},
     "nine_dragons_ascending_fist": {"motion": "fist", "play": "dragons", "punches": [1, 2, 3, 3],    # nine in all
-                                    "art": ["nine_dragons_ascending_fist", "nine_dragons_head_1", "nine_dragons_head_2",
-                                            "nine_dragons_head_3"]},
+                                    # moving, from SHOAIB's videos (scripts/make_dragon_fx.py): one dragon flying, played
+                                    # for each dragon loosed; and the finale, the dragons coiling up and exploding
+                                    # (`boom`: the frame of the explosion, where the damage lands)
+                                    "art": ["nine_dragons_finale", "nine_dragons_fly"],
+                                    "sheets": {"fly": {"frames": 16, "cols": 8, "rows": 2},
+                                               "finale": {"frames": 50, "cols": 8, "rows": 7, "boom": 29}}},
     # the palm techniques, from SHOAIB's designs (Gemini), all played with the palm push
     "twin_palm_strike": {"motion": "palm", "play": "prints", "art": ["twin_palm_strike_1", "twin_palm_strike_2"]},
     "rolling_thunder_palm": {"motion": "palm", "play": "vortex", "art": ["rolling_thunder_palm"]},
@@ -103,7 +107,7 @@ def of(name, grade, gender=None, happened=None):
     if not fx:
         return None
     return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),
-            "punches": fx.get("punches", [1]), "ms": GRADE_MS.get(grade, 1100),
+            "punches": fx.get("punches", [1]), "ms": GRADE_MS.get(grade, 1100), "sheets": fx.get("sheets"),
             "art": [f"/art/fx/tech/{a}.webp" for a in fx["art"]]}
 
 

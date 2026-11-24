@@ -1309,16 +1309,23 @@
       var dragons = X.play === 'dragons', end = Math.max(X.ms, msheet && !dragons ? +msheet.dataset.ms || 0 : 0);   // a sheet's own least time (looks `ms`)
       /* the punches: each lands at `at` (ms), a jab or the lunge. One lunge for most; Nine Dragons throws four,
          jab-lunge-jab-lunge, each loosing X.punches[i] dragons (1-2-3-3: nine). */
-      var punches = dragons ? [{at: 360, kind: 'jab'}, {at: 640, kind: 'lunge'}, {at: 960, kind: 'jab'}, {at: 1240, kind: 'lunge'}]
+      /* Nine Dragons plays as a cutscene (`CUT`): bars close in and its name is shown for INTRO ms, the punches come
+         slower (x1.4), the finale plays at 60 ms a frame. `S` maps the plain timing onto the cutscene's. */
+      var CUT = dragons && !!X.sheets, INTRO = 1100;
+      function S(ms) { return CUT ? INTRO + ms * 1.4 : ms; }
+      var punches = dragons ? [{at: S(360), kind: 'jab'}, {at: S(640), kind: 'lunge'}, {at: S(960), kind: 'jab'}, {at: S(1240), kind: 'lunge'}]
                             : [{at: Math.round(end * 0.45), kind: 'lunge'}];
       var R = punches[punches.length - 1].at;                       // the last release
-      var LAND = dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var DS = dragons && X.sheets || null, FIN = R + 520, FMS = 60;   // Nine Dragons' finale: starts as the ninth arrives, 60 ms a frame
+      var skipBy = 0, self = null;                                    // the cutscene skipped: this much time jumped
+      if (DS) end = FIN + DS.finale.frames * FMS + 150;
+      var LAND = dragons ? (DS ? FIN + DS.finale.boom * FMS : R + 420) : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
       var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       var PULL = Math.round((JAB + WIND) / 2);                       // on the way back from the jab
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
       var keys = dragons                                              // [ms, frame]: jab, lunge, (pulled back) jab, lunge
-        ? [[0, 0], [300, JAB - 1], [360, JAB], [440, PULL], [560, WIND], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
-           [900, JAB - 1], [960, JAB], [1040, PULL], [1160, WIND], [1240, OUT], [1400, OUT + 4]].concat(settle)
+        ? [[0, 0]].concat([[300, JAB - 1], [360, JAB], [440, PULL], [560, WIND], [640, OUT], [740, OUT + 2], [820, BACK + 3], [821, 2],
+           [900, JAB - 1], [960, JAB], [1040, PULL], [1160, WIND], [1240, OUT], [1400, OUT + 4]].map(function (k) { return [S(k[0]), k[1]]; })).concat(settle)
         : [[0, 0], [R - 90, WIND], [R, OUT], [R + 120, OUT + 2]].concat(settle);
       if (ev.hit) hold('enemy');
 
@@ -1337,6 +1344,22 @@
         n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w * BIG + '%';
         n.style.setProperty('--tc', tc);
         scene.appendChild(n); made.push(n);
+        setTimeout(function () { n.remove(); }, life);
+        return n;
+      }
+      function strip(src, S, cls, p, w, life, play, f0) {           // a moving picture: a strip of frames played once over `play` ms (from frame `f0`)
+        var n = document.createElement('div');
+        n.className = 'tart tstrip ' + cls;
+        n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w * BIG + '%';
+        n.style.backgroundImage = 'url(' + src + ')'; n.style.backgroundSize = S.cols * 100 + '% ' + S.rows * 100 + '%';
+        scene.appendChild(n); made.push(n);
+        var t0 = performance.now() - (f0 || 0) / S.frames * play;
+        (function step() {
+          if (!n.parentNode) return;
+          var f = Math.min(S.frames - 1, Math.floor((performance.now() - t0) / play * S.frames));
+          n.style.backgroundPosition = (f % S.cols) / (S.cols - 1) * 100 + '% ' + (S.rows > 1 ? Math.floor(f / S.cols) / (S.rows - 1) * 100 : 0) + '%';
+          requestAnimationFrame(step);
+        })();
         setTimeout(function () { n.remove(); }, life);
         return n;
       }
@@ -1523,20 +1546,55 @@
       function loose(i, t) {
         var p = punches[i], n = X.punches[i] || 1;
         if (t < p.at || !once('punch' + i)) return;
+        fs('cast', 'dragon', 0, {exact: true});                     // the dragon's roar, from the video
         var from = fist(p.kind);
         for (var k = 0; k < n; k++) {
           var to = at(br, 0.28 + 0.06 * k, 0.24 + 0.2 * ((flown + k) % 3)), d = px(to, from);
-          var dg = pic(X.art[1 + (flown + k) % 3], 'tglow tdragon', to, 13, 520);
-          dg.animate([{transform: T(d[0], d[1], 0.45, -8), opacity: 0}, {transform: T(d[0] * 0.55, d[1] * 0.55 - 14, 0.8, 4), opacity: 1, offset: 0.35},
-            {transform: T(0, 0, 1, 0), opacity: 1, offset: 0.8}, {transform: T(10, 0, 1.15, 0), opacity: 0}],
-            {duration: 480, delay: 70 * k, easing: 'ease-in', fill: 'both'});
-          (function (q) { setTimeout(function () { burst('tspark', q[0], q[1], '#FFD978'); }, 400 + 70 * k); })(to);
+          var dg = strip(X.art[1], DS.fly, 'tdragon', to, 24, 640 + 80 * k, 560);   // it flies writhing, head first
+          dg.animate([{transform: T(d[0] - 0.04 * W, d[1], 0.4, -6), opacity: 0}, {transform: T(d[0] * 0.6, d[1] * 0.6 - 12, 0.75, 3), opacity: 1, offset: 0.3},
+            {transform: T(-0.03 * W, 0, 1, 0), opacity: 1, offset: 0.8}, {transform: T(0.05 * W, 0, 1.1, 0), opacity: 0}],
+            {duration: 560, delay: 80 * k, easing: 'ease-in', fill: 'both'});
+          (function (q) { setTimeout(function () { burst('tspark', q[0], q[1], '#FFD978'); }, 460 + 80 * k); })(to);
         }
         flown += n;
       }
 
-      return {end: end, render: function (t) {
+      /* The cutscene's dressing: black bars close in from top and bottom, the technique's name is written large across
+         the scene, the camera closes on the cultivator; a Skip button jumps to the explosion (the damage still lands). */
+      var cam = null;
+      function zoom(p, k, ms) {
+        if (!scene.animate) return;
+        if (cam) cam.cancel();
+        scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
+        cam = scene.animate([{transform: 'scale(1)'}, {transform: 'scale(' + k + ')'}], {duration: ms, easing: 'ease-out', fill: 'forwards'});
+      }
+      function unzoom() { if (cam) { cam.cancel(); cam = null; scene.style.transformOrigin = ''; } }
+      function cutscene() {
+        var el = function (tag, cls, text) { var n = document.createElement(tag); n.className = cls; if (text) n.textContent = text; scene.appendChild(n); made.push(n); return n; };
+        main.classList.add('cutscene');                             // the small name plate and the turn's lines wait for the blow
+        el('span', 'tcine top'); el('span', 'tcine bot');
+        var card = el('div', 'tcard');
+        card.style.setProperty('--life', INTRO + 500 + 'ms');
+        var a = document.createElement('small'); a.textContent = (cast.grade || 'Heaven') + ' Technique';
+        var b = document.createElement('b'); b.textContent = cast.name || '';
+        card.appendChild(a); card.appendChild(b);
+        var skip = el('button', 'tskip', 'Skip ▸▸'); skip.type = 'button';
+        skip.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (skipBy || !self) return;
+          var now = self.now || 0, to = LAND - 2 * FMS;
+          if (now >= to) return;
+          skipBy = to - now; self.end -= skipBy;                    // the turn ends that much sooner
+          did.rise = false; unzoom();
+          made.forEach(function (n) { if (/tfinale|tdragon|tcard/.test(n.className)) n.remove(); });
+          skip.remove();
+        });
+        zoom(at(fr, 0.5, 0.45), 1.12, INTRO + 400);
+      }
+      return (self = {end: end, render: function (t) {
         if (t < 0) return;
+        self.now = t; t += skipBy;
+        if (CUT && once('cut')) cutscene();
         if (once('start')) {                                          // the grade's spectacle around the whole cast
           var feet = at(fr, msheet ? 0.44 : 0.46, 0.96);
           if (tier >= 2) { fx('tqring', feet[0], feet[1], 760, {'--tc': tc}); fx('tqring q2', feet[0], feet[1], 900, {'--tc': tc}); }
@@ -1567,16 +1625,25 @@
         animal(BS ? 0 : k2[0], 0, BS ? 0 : k2[0] / (0.03 * W) * 4, k2[1]);
         if (dragons) {
           punches.forEach(function (_, i) { loose(i, t); });
-          if (t >= LAND && once('finale')) {
-            var n = pic(X.art[0], 'tglow tcoil', at(br, 0.42, 0.6), 34, 1400);
-            n.animate([{transform: T(0, 0.12 * W, 0.6), opacity: 0}, {transform: T(0, 0, 1), opacity: 1, offset: 0.3},
-              {transform: T(0, -0.04 * W, 1.06), opacity: 1, offset: 0.75}, {transform: T(0, -0.1 * W, 1.12), opacity: 0}],
-              {duration: 1360, easing: 'ease-out', fill: 'forwards'});
+          if (t >= FIN && once('rise')) {                             // all nine burst from the ground under the beast and coil up
+            var life = DS.finale.frames * FMS, g = at(br, 0.42, 0.97);
+            var fw = Math.min(70, g[1] / 100 * scene.clientHeight * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
+            var f0 = skipBy ? DS.finale.boom - 2 : 0;                 // skipped: straight to the explosion
+            var n = strip(X.art[0], DS.finale, 'tfinale', [g[0], g[1]], fw / BIG, life + 60, life, f0);
+            if (CUT && !skipBy) zoom(at(br, 0.45, 0.6), 1.1, LAND - FIN);   // the camera closes on the beast as they rise
+            n.style.transform = 'translate(-50%,-99%)';
+            n.animate([{opacity: 1}, {opacity: 1, offset: 0.88}, {opacity: 0}], {duration: life, fill: 'forwards'});
+            if (!skipBy && !fs('gather', 'dragons', 0, {exact: true})) fs('gather');
+          }
+          if (t >= LAND && once('finale')) {                          // they explode in golden light: the blow lands
+            unzoom(); main.classList.remove('cutscene');
+            made.forEach(function (n) { if (/tskip/.test(n.className)) n.remove(); });
             fx('bflash', 50, 50, 450);
+            if (!fs('boom', 'dragons', 0, {exact: true})) fs('boom');
             lands();
           }
         } else PLAY[X.play](t - R);
-      }, clear: function () { made.forEach(function (n) { n.remove(); }); }};
+      }, clear: function () { unzoom(); main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); }});
     }
 
     /* A Body defense technique that braces (web/technique_fx.py "brace"), played inside the beast's attack: the fighter
@@ -1982,7 +2049,7 @@
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
-      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
+      else if (ev.act === 'tech' && cast && cast.fx) { var ts = technique(ev); add(ts, 'player_acting', cast.fx.play === 'dragons' ? [] : [[Math.max(0, Math.round(ts.end * 0.45) - 470), 'cast', castTier, 0, {as: cast.fx.motion, land: 470}]]); kinds.me = 1; }
       else if (ev.act === 'tech') add({end: RECIPES.tech.end, render: function () {}}, 'player_acting');
     });
     var dying = end ? death(end) : null;

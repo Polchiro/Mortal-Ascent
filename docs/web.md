@@ -431,6 +431,20 @@ a lair is fought with `bot/hunt.py`.
      Fist's bull charges from the fist; Mountain-Shattering Fist bursts a mountain up under it. Nine Dragons
      Ascending Fist, the Heaven one, throws four punches (jab, lunge, jab, lunge) loosing 1, 2, 3 and 3 golden
      dragons, nine in all, then all nine rise around the beast in one coil as the damage lands.
+     **Nine Dragons, moving (Nov 24).** Its pictures are now moving ones, from SHOAIB's two videos of golden light on
+     black (`scripts/make_dragon_fx.py`: black becomes clear, each pixel's opacity is its brightness). Each dragon
+     loosed is a writhing dragon flying from the fist (`nine_dragons_fly.webp`, 16 frames); the finale
+     (`nine_dragons_finale.webp`, 50 frames at 40 ms) bursts from the ground under the beast, coils up with
+     lightning, and explodes: the damage lands on the explosion (`boom`), so the cast lasts about 4 s, longer than
+     the Heaven grade's 2.7 s. `technique_fx` carries the strips' frame counts (`sheets`); `strip` in `fight.js`
+     plays them. Sound from the videos: a roar per punch (`cast:dragon`), the rising (`gather:dragons`) and the
+     explosion (`boom:dragons`). Presentation only.
+     **A cutscene (Nov 24).** Nine Dragons now plays as one (`cutscene` in `fight.js`, `CUT`), about 6.6 s: black
+     bars close in (`.tcine`), "Heaven Technique" and its name are written large across the scene (`.tcard`, 1.1 s)
+     while the camera closes on the cultivator, the four punches come 1.4 times slower, and the finale plays at
+     60 ms a frame with the camera closing on the beast. The small name plate and the turn's lines stay hidden
+     until the blow lands (`.battle.cutscene`). A **Skip** button (`.tskip`) jumps to the explosion: the damage
+     lands as always and the turn ends sooner. The other Heaven techniques get theirs as their videos arrive.
    - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
      frames (`hero_<gender>_kick.webp` in `looks.MOTION_SHEETS`, made from that look's own picture so it keeps
      its appearance) or, until it has them, with its own three poses and a hop into the kick. **She has hers**
