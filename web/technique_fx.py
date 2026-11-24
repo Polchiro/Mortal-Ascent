@@ -34,11 +34,12 @@ TECH_FX = {
     "mountain_shattering_fist": {"motion": "fist", "play": "rise", "art": ["mountain_shattering_fist"]},
     "nine_dragons_ascending_fist": {"motion": "fist", "play": "dragons", "punches": [1, 2, 3, 3],    # nine in all
                                     # moving, from SHOAIB's videos (scripts/make_dragon_fx.py): one dragon flying, played
-                                    # for each dragon loosed; and the finale, the dragons coiling up and exploding
+                                    # for each dragon loosed; and the finale (his second design, Nov 25): a pillar of light, dragons coiling up it
+                                    # and swarming round, a burst on the ground
                                     # (`boom`: the frame of the explosion, where the damage lands)
                                     "art": ["nine_dragons_finale", "nine_dragons_fly"],
-                                    "sheets": {"fly": {"frames": 16, "cols": 8, "rows": 2},
-                                               "finale": {"frames": 50, "cols": 8, "rows": 7, "boom": 29, "anchor": [0.5, 0.99],
+                                    "sheets": {"fly": {"frames": 8, "cols": 8, "rows": 1},
+                                               "finale": {"frames": 59, "cols": 8, "rows": 8, "boom": 31, "anchor": [0.5, 0.94],
                                                           "sound": "dragons", "lead": 520}}},
     # the palm techniques, from SHOAIB's designs (Gemini), all played with the palm push
     "twin_palm_strike": {"motion": "palm", "play": "prints", "art": ["twin_palm_strike_1", "twin_palm_strike_2"]},

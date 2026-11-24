@@ -1,5 +1,8 @@
-"""Build Nine Dragons Ascending Fist's moving effects from SHOAIB's two videos (Gemini / Veo, 1920 x 1080, 24 fps,
-golden light on pure black; docs/web.md "Nine Dragons, moving"):
+"""Build Nine Dragons Ascending Fist's moving effects from SHOAIB's video (Gemini / Veo, 1920 x 1080, 24 fps,
+golden light on pure black; docs/web.md "Nine Dragons, moving"). Since Nov 25 both come from his second design, one
+video: a winged golden dragon flies in (frames 0-36), a pillar of light rises with dragons coiling up it and
+swarming round (42-126), and a burst of light spreads on the ground under them (132, the blow). The first design
+(two videos: a wingless dragon, a coil that exploded) is described below as it was built:
 
 - fly: one golden dragon flying to the right, body undulating. The stretch where the whole dragon is in frame is cut
   into a strip that follows it (art/fx/tech/nine_dragons_fly.webp); fight.js plays it for each dragon loosed by a punch.
@@ -10,7 +13,7 @@ golden light on pure black; docs/web.md "Nine Dragons, moving"):
 Black becomes clear: each pixel's opacity is its brightness, its colour is kept at full strength, so the light lies
 over the scene as light does. Prints the entries for web/technique_fx.py (SHEETS).
 
-    python -m scripts.make_dragon_fx fly.mp4 finale.mp4
+    python -m scripts.make_dragon_fx fly.mp4 finale.mp4        (the same video twice for the second design)
 
 Needs ffmpeg, numpy and Pillow.
 """
@@ -24,11 +27,11 @@ from PIL import Image
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "fx", "tech")
 COLS = 8
-FLY = list(range(54, 86, 2))                       # the whole dragon in frame
+FLY = list(range(20, 36, 2))                       # the whole dragon in frame
 FLY_CELL = (400, 190)
-FINALE = list(range(0, 32, 2)) + list(range(34, 80, 4)) + list(range(82, 126, 2))
-BOOM = 84                                          # the video frame of the explosion
-FINALE_CELL = (480, 270)
+FINALE = list(range(38, 62, 2)) + list(range(64, 126, 4)) + list(range(126, 188, 2))
+BOOM = 132                                         # the video frame of the explosion
+FINALE_CELL = (400, 225)
 
 
 def frames(video, picks, size=None):

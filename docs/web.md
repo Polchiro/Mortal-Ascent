@@ -440,6 +440,9 @@ a lair is fought with `bot/hunt.py`.
      plays them. Sound from the videos: a roar per punch (`cast:dragon`), the rising (`gather:dragons`) and the
      explosion (`boom:dragons`). Presentation only.
      (The black bars were removed the same day at SHOAIB's ask: the length stays, the bars go.)
+     **Second design (Nov 25).** SHOAIB redrew it as one video: a winged golden dragon (the dragons loosed, 8
+     frames), then a pillar of light with dragons coiling up it and swarming round, and a burst on the ground (the
+     finale, 59 frames; the blow lands on the burst). Same script, same rules, its own three sounds re-cut.
      **A cutscene (Nov 24).** Nine Dragons now plays as one (`cutscene` in `fight.js`, `CUT`), about 6.6 s: black
      bars close in (`.tcine`), "Heaven Technique" and its name are written large across the scene (`.tcard`, 1.1 s)
      , the four punches come 1.4 times slower, and the finale plays at 60 ms a frame. (The camera zoom it first

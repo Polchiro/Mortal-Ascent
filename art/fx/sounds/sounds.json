@@ -44,7 +44,7 @@
  "boom:dragons": [
   {
    "file": "boom_dragons.mp3",
-   "lead": 0.56
+   "lead": 0.42
   }
  ],
  "boom:lotus": [
@@ -74,7 +74,7 @@
  "cast:dragon": [
   {
    "file": "cast_dragon.mp3",
-   "lead": 0.28
+   "lead": 0.26
   }
  ],
  "cast:finger": [
@@ -164,7 +164,7 @@
  "gather:dragons": [
   {
    "file": "gather_dragons.mp3",
-   "lead": 0.7
+   "lead": 0.42
   }
  ],
  "gather:lotus": [
