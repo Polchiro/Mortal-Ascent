@@ -12,6 +12,8 @@
   rollers and the tassel stay).
 - portrait (Senior Sister Xue's face) and hall (the drill's background: a bright wooden training hall, side view):
   the sparkle painted out; saved as JPEG.
+- town=1: the first frame of her "watching" sheet (art/practice/instructor/watch.webp), trimmed, becomes
+  instructor/town.webp: Senior Sister Xue as you walk up to her in Azure Cloud Town (web/town.py NPCS).
 - ambience=<video> (the instructor's "watching" video): its quiet room sound (the hall's air, cloth, a bird outside)
   becomes hall.wav, a seamless loop played under the drill's music (raised, softened above 6 kHz).
 
@@ -89,6 +91,17 @@ def main(args):
     if "hall" in got:
         Image.fromarray(art.paint_out(got["hall"])).save(os.path.join(OUT, "hall.jpg"), quality=90)
         print("hall")
+    if "town" in got:                                           # `town=1`: Senior Sister Xue as she stands in town
+        import json
+        folder = os.path.join(OUT, "instructor")
+        with open(os.path.join(folder, "sheets.json")) as fh:
+            sp = json.load(fh)["sheets"]["watch"]
+        sheet = Image.open(os.path.join(folder, "watch.webp")).convert("RGBA")
+        fw, fh_ = sheet.width // sp["cols"], sheet.height // sp["rows"]
+        im = sheet.crop((0, 0, fw, fh_))
+        im = im.crop(im.split()[3].point(lambda v: 255 if v > 24 else 0).getbbox())
+        im.save(os.path.join(folder, "town.webp"), quality=90)
+        print("instructor/town", im.size)
     if "ambience" in got:
         art.ambience(got["ambience"], level=0.07, name="hall.wav", out=OUT, lowpass=6000)
 

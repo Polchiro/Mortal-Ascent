@@ -3,8 +3,6 @@
 {% block body_class %}arenabg{% endblock %}
 {% block body %}
 <link rel="stylesheet" href="{{ asset('spar.css') }}">
-<link rel="stylesheet" href="{{ asset('practice.css') }}">
-<link rel="stylesheet" href="{{ asset('train.css') }}">
 <style>body.arenabg{background:linear-gradient(rgba(8,10,16,.5),rgba(8,10,16,.9)),url(/art/spar/yard.jpg) center/cover fixed}</style>
 {% with page="town" %}{% include "_topbar.html" %}{% endwith %}
 
@@ -46,62 +44,10 @@
     </div>
   </section>
 
-  {% if pv %}
-  <section class="card pcard" id="practice">
-    <img class="pportrait" src="/art/practice/portrait.jpg" alt="{{ pv.name }}" width="112" height="112">
-    <div class="pbody">
-      <h2>Practice with {{ pv.name }}</h2>
-      <p class="sub">The {{ pv.title | lower }}. "Pick one technique. I'll drill it until your body knows it."</p>
-      <ul class="yardrules">
-        <li>A <b>half-minute drill</b> in real time, shaped by the technique: <b>attack</b> techniques strike targets as
-          their rings close; <b>defense</b> techniques meet blows high, middle or low as they land.</li>
-        <li>The better your timing, the more mastery EXP: up to <b>{{ pv.base }}</b> a drill, more with a condition or an
-          event. The drill grows faster at each mastery stage.</li>
-      </ul>
-      <div class="arow">
-        <div>
-          {% if pv.wait %}<b>She is resting your hands</b><small>Practise again in {{ pv.wait }}.</small>
-          {% else %}<b>She is ready</b><small>After a drill you rest for {{ pv.rest }}.</small>{% endif %}
-          <small class="aleft">{% if pv.full_left %}{{ pv.full_left }} full-EXP drill{{ "" if pv.full_left == 1 else "s" }} left today.{% else %}You have practised {{ pv.today }} times today: mastery EXP ×{{ "%g" | format(pv.rate) }}.{% endif %}</small>
-        </div>
-        <small class="sub">Choose a technique below.</small>
-      </div>
-    </div>
-  </section>
-  {% endif %}
-
-  {% if tv %}
-  {# Train: Meridian Circulation (web/train_play.Chamber.hall). No teacher: a drawn Dantian is its picture. #}
-  <section class="card pcard traincard" id="train">
-    {% if tv.badge %}<img class="pportrait tbadge" src="{{ tv.badge }}" alt="" width="112" height="112">
-    {% else %}<div class="tportrait" aria-hidden="true"></div>{% endif %}
-    <div class="pbody">
-      <h2>Train: Meridian Circulation</h2>
-      <p class="sub">Sit alone in the quiet chamber and look inward. Guide the Qi; don't chase it. (Sister Jing, by
-        the pond in town, will seat you too.)</p>
-      <ul class="yardrules">
-        <li>A <b>two-minute meditation</b>: pulses of Qi flow along your meridians. Turn the <b>junctions</b> so <b>gold</b>
-          reaches your Dantian and <b>dark</b> Qi leaves through a palm or sole; close <b>gates</b> to hold Qi back; hold your
-          <b>breath</b> to slow it all.</li>
-        <li>Pays like Discord's /train: <b>4 hours of your Qi rate × your score</b>, more with a condition or an event.
-          Tier {{ tv.tier }} at your realm.{% if tv.prototype %} <i>(Prototype: tiers 3-5 play tier 2's network for now.)</i>{% endif %}</li>
-      </ul>
-      <div class="arow">
-        <div>
-          {% if tv.wait %}<b>Your meridians are resting</b><small>Train again in {{ tv.wait }}.</small>
-          {% else %}<b>The chamber is quiet</b><small>After a session you rest for {{ tv.rest }} (shared with Discord's /train).</small>{% endif %}
-        </div>
-        <form method="post" action="/train/start">
-          <button class="hbtn small" type="submit"{% if tv.wait %} disabled{% endif %}>Train</button></form>
-      </div>
-    </div>
-  </section>
-  {% endif %}
-
   <section class="card">
     <h2>Your techniques</h2>
     <p class="sub">When a technique's mastery bar is full, it must pass a <b>trial</b>: the same fight against a stronger
-      Master. Win and it reaches its next stage.{% if pv %} Until then, <b>Practice</b> fills it.{% endif %}</p>
+      Master. Win and it reaches its next stage. Until then, practising with <b>Senior Sister Xue</b> (by the dummies in town) fills it.</p>
     {% for t in v.techniques %}
     <div class="arow ytech">
       <img src="{{ t.icon }}" alt="" width="56" height="56">
@@ -112,12 +58,6 @@
         <small>{% if t.cap %}{{ "{:,}".format(t.exp) }} / {{ "{:,}".format(t.cap) }} mastery EXP{% if t.next %} → {{ t.next }}{% endif %}{% else %}Final stage reached{% endif %}</small>
         {% if t.full and t.trial_wait %}<small class="aleft">Trial failed recently: retry in {{ t.trial_wait }}.</small>{% endif %}
       </div>
-      {% set d = pv.drills.get(t.id) if pv else None %}
-      {% if d and not t.full and t.cap %}
-      <form method="post" action="/practice/start"><input type="hidden" name="technique" value="{{ t.id }}">
-        <button class="hbtn small pbtn" type="submit"{% if pv.wait %} disabled{% endif %} title="{{ d.name }}">
-          <img src="{{ d.icon }}" alt="" width="26" height="26">Practice</button></form>
-      {% endif %}
       {% if t.full %}
       <form method="post" action="/training/spar"><input type="hidden" name="technique" value="{{ t.id }}">
         <button class="hbtn small ytrial" type="submit"{% if v.hurt or v.wait or t.trial_wait %} disabled{% endif %}

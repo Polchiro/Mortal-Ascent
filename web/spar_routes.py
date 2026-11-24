@@ -2,8 +2,8 @@
 The training yard's routes (docs/technique.md "On the website"): /training (the Martial Master's yard) and /spar
 (the fight). Every POST only asks web/spar_play.Hall; it decides.
 
-  GET  /training          the yard: your techniques' mastery, Spar, a trial for each full bar, Practice
-                          (Senior Sister Xue's drills: web/practice_routes.py) and Train (web/train_routes.py)
+  GET  /training          the yard: your techniques' mastery, Spar, and a trial for each full bar. Practice and
+                          Train have their own townsfolk (Senior Sister Xue: /practice; Sister Jing: /train)
   POST /training/spar     technique=<id> (optional: that technique's mastery trial)   begin
   GET  /spar              the fight page       GET /spar/state   the fight as JSON
   POST /spar/pick         move=..., turn=n     play a move (answers JSON: an error, and the new state)
@@ -59,7 +59,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/practice")
         if train and train["busy"]:
             return go("/train")
-        return no_store(page(request, "training.html", v=view, pv=practice, tv=train, user=user, avatar=avatar,
+        return no_store(page(request, "training.html", v=view, user=user, avatar=avatar,
                              notice=request.session.pop("training_notice", None), **money))
 
     @app.post("/training/spar")

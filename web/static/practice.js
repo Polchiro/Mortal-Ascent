@@ -600,7 +600,7 @@
           if (j.result) return result(j.result, true);
           if (j.error && /isn't over/.test(j.error) && tries < 4) return setTimeout(function () { send(tries + 1); }, 900);
           again($('pbanner'), j.error || 'The drill is over.', 'warn');
-          setTimeout(function () { location.href = '/training#practice'; }, 2500);
+          setTimeout(function () { location.href = '/practice'; }, 2500);
         })
         .catch(function () { if (tries < 4) setTimeout(function () { send(tries + 1); }, 1500); });
     };
@@ -648,7 +648,7 @@
   }
 
   /* Leave (the corner): walking away from a drill earns nothing and the rest stays, so it asks once; after the
-     result it is simply the way back to the training yard */
+     result it is simply the way back to her */
   (function () {
     var form = $('pleave'), label = form.querySelector('span'), sure = false, k = null;
     form.addEventListener('submit', function (e) {

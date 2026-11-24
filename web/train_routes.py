@@ -1,6 +1,6 @@
 """
-Train's routes (docs/training.md "Train on the website"): Meridian Circulation, a ~2-minute meditation chosen from the
-training yard (/training). Every POST only asks web/train_play.Chamber; it decides and it scores.
+Train's routes (docs/training.md "Train on the website"): Meridian Circulation, a ~2-minute meditation with Sister Jing, by the
+pond in town (web/town.py NPCS "keeper"). Every POST only asks web/train_play.Chamber; it decides and it scores.
 
   POST /train/start                                  set the session up (the 60-minute rest starts now, as on Discord)
   GET  /train          the meditation page           GET /train/state   the session as JSON
@@ -54,8 +54,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/train")
         why = elsewhere(uid) or await run_in_threadpool(with_conn, chamber.start, uid)
         if why:
-            request.session["training_notice"] = why
-            return go("/training#train")
+            request.session["town_notice"] = why
+            return go("/town?near=keeper")
         return go("/train")
 
     @app.get("/town/visit/keeper")
@@ -83,7 +83,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         uid = user["id"]
         state = chamber.state(uid)
         if state is None:
-            return go("/training#train")
+            return go("/town?near=keeper")
         money = with_conn(purse_of, uid)
         return no_store(page(request, "train.html", s=state, user=user,
                              avatar=oauth.avatar_url(uid, user.get("avatar")), **money))
@@ -116,8 +116,9 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         return no_store(JSONResponse({"error": why, "result": result}))
 
     def back(request):
-        """Where you came from: Sister Jing by the pond, or the training yard."""
-        return go("/town?near=keeper" if request.session.pop("train_from", None) == "keeper" else "/training#train")
+        """Back to Sister Jing by the pond: Train is hers alone (it left the Martial Master's yard)."""
+        request.session.pop("train_from", None)
+        return go("/town?near=keeper")
 
     @app.post("/train/yield")
     def train_yield(request: Request):
