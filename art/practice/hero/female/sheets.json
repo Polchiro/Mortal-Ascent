@@ -3,7 +3,7 @@
  "sheets": {
   "stance": {
    "src": "/art/practice/hero/female/stance.webp",
-   "frames": 94,
+   "frames": 93,
    "cols": 21,
    "rows": 5,
    "fps": 12,
@@ -76,6 +76,54 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/struck.mp3"
+   }
+  },
+  "kick": {
+   "src": "/art/practice/hero/female/kick.webp",
+   "frames": 16,
+   "cols": 16,
+   "rows": 1,
+   "fps": 24,
+   "box": [
+    0.1228,
+    -0.0436,
+    1.4132,
+    1.0255
+   ],
+   "hand": [
+    1.509,
+    0.4764
+   ],
+   "keys": {
+    "set": 1,
+    "out": 14
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/kick.mp3"
+   }
+  },
+  "finger": {
+   "src": "/art/practice/hero/female/finger.webp",
+   "frames": 17,
+   "cols": 17,
+   "rows": 1,
+   "fps": 24,
+   "box": [
+    -0.1377,
+    0.0455,
+    1.2754,
+    0.9382
+   ],
+   "hand": [
+    1.1168,
+    0.3855
+   ],
+   "keys": {
+    "set": 1,
+    "out": 16
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/finger.mp3"
    }
   }
  }

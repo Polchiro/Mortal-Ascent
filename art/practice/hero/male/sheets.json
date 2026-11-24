@@ -1,0 +1,130 @@
+{
+ "aspect": 0.6655,
+ "sheets": {
+  "stance": {
+   "src": "/art/practice/hero/male/stance.webp",
+   "frames": 66,
+   "cols": 20,
+   "rows": 4,
+   "fps": 12,
+   "box": [
+    -0.2261,
+    -0.0106,
+    1.2686,
+    1.023
+   ],
+   "loop": true
+  },
+  "strike": {
+   "src": "/art/practice/hero/male/strike.webp",
+   "frames": 19,
+   "cols": 19,
+   "rows": 1,
+   "fps": 24,
+   "box": [
+    -0.242,
+    0.0655,
+    1.3271,
+    0.9416
+   ],
+   "hand": [
+    1.0612,
+    0.2602
+   ],
+   "keys": {
+    "set": 0,
+    "out": 18
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/strike.mp3"
+   }
+  },
+  "block": {
+   "src": "/art/practice/hero/male/block.webp",
+   "frames": 61,
+   "cols": 14,
+   "rows": 5,
+   "fps": 16,
+   "box": [
+    -0.5426,
+    0.0053,
+    1.7766,
+    1.0159
+   ],
+   "keys": {
+    "set": 2,
+    "up": 21
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/block.mp3"
+   }
+  },
+  "struck": {
+   "src": "/art/practice/hero/male/struck.webp",
+   "frames": 63,
+   "cols": 11,
+   "rows": 6,
+   "fps": 16,
+   "box": [
+    -0.4468,
+    0.0,
+    2.1649,
+    1.0088
+   ],
+   "keys": {
+    "hit": 5
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/struck.mp3"
+   }
+  },
+  "kick": {
+   "src": "/art/practice/hero/male/kick.webp",
+   "frames": 20,
+   "cols": 15,
+   "rows": 2,
+   "fps": 24,
+   "box": [
+    -0.4548,
+    -0.0035,
+    1.617,
+    1.0018
+   ],
+   "hand": [
+    1.141,
+    0.3257
+   ],
+   "keys": {
+    "set": 1,
+    "out": 19
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/kick.mp3"
+   }
+  },
+  "finger": {
+   "src": "/art/practice/hero/male/finger.webp",
+   "frames": 20,
+   "cols": 17,
+   "rows": 2,
+   "fps": 24,
+   "box": [
+    -0.3404,
+    0.0248,
+    1.4574,
+    0.9735
+   ],
+   "hand": [
+    1.0984,
+    0.4867
+   ],
+   "keys": {
+    "set": 1,
+    "out": 19
+   },
+   "sound": {
+    "src": "/art/practice/hero/male/finger.mp3"
+   }
+  }
+ }
+}

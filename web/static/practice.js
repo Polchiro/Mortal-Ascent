@@ -282,11 +282,14 @@
   }
 
   /* ── unarmed: your own movements for the drill (art/practice/hero/<gender>/, scripts/make_practice_hero.py) ──
-     stance loops between blows; strike: out to the fist's full reach and back (the video played in reverse);
+     stance loops between blows; strike (or kick, or finger, by the technique): out to full reach and back (the video
+   played in reverse);
      block: the arms come up and cross, held while a brace is held (the blow is absorbed), then down; struck: when a
      blow gets through. Each movement's own sound is loud; a new movement cuts in at once. */
   var HERO = S.me.hero ? S.me.hero.sheets : null, hsheets = {}, hanim = null, hcur = {name: 'stance', f: 0}, hT0 = performance.now();
   var heroEl = fme.querySelector('.phero');
+  /* which movement strikes: kick techniques kick and finger techniques jab, when those videos were made; else the punch */
+  var SMOVE = HERO && HERO[D.motion] && (D.motion === 'kick' || D.motion === 'finger') ? D.motion : 'strike';
   if (HERO) {
     fme.querySelectorAll('.hsheet').forEach(function (el) { hsheets[el.dataset.name] = el; });
     Object.keys(HERO).forEach(function (k) {
@@ -314,7 +317,7 @@
     var p = a.play(); if (p && p.catch) p.catch(function () {});
   }
   function hreach(lane) {
-    var sp = HERO.strike;
+    var sp = HERO[SMOVE];
     if (!STRIKE || lane == null || !target || !sp.hand || !SPOTS[lane]) return 0;
     var h = heroEl.getBoundingClientRect(), r = target.getBoundingClientRect();
     var dx = r.left + r.width * SPOTS[lane][0] - (h.left + h.width * sp.hand[0]);
@@ -333,11 +336,11 @@
       hsound('block');
       return;
     }
-    K = HERO.strike.keys;
-    var go = hreach(lane), set = hfrom('strike', 'set');
-    if (kind === 'charge') { hanim = {name: 'strike', keys: [[0, set], [300, K.set]], t0: now, hold: true, dx: [[0, x0], [300, 0]]}; return; }
-    hanim = {name: 'strike', keys: [[0, set], [100, K.out], [220, K.out], [500, 0]], t0: now, dx: [[0, x0], [100, go], [240, go], [500, 0]]};
-    hsound('strike');
+    K = HERO[SMOVE].keys;
+    var go = hreach(lane), set = hfrom(SMOVE, 'set');
+    if (kind === 'charge') { hanim = {name: SMOVE, keys: [[0, set], [300, K.set]], t0: now, hold: true, dx: [[0, x0], [300, 0]]}; return; }
+    hanim = {name: SMOVE, keys: [[0, set], [100, K.out], [220, K.out], [500, 0]], t0: now, dx: [[0, x0], [100, go], [240, go], [500, 0]]};
+    hsound(SMOVE);
   }
   function hRelease() {
     var now = performance.now();
@@ -346,9 +349,9 @@
       hanim = {name: 'block', keys: [[0, hcur.f], [260, K.set], [380, 0]], t0: now};
       return;
     }
-    var S2 = HERO.strike.keys, go = hreach(release.lane);
-    hanim = {name: 'strike', keys: [[0, hcur.f], [100, S2.out], [260, S2.out], [540, 0]], t0: now, dx: [[0, 0], [100, go], [280, go], [540, 0]]};
-    hsound('strike');
+    var S2 = HERO[SMOVE].keys, go = hreach(release.lane);
+    hanim = {name: SMOVE, keys: [[0, hcur.f], [100, S2.out], [260, S2.out], [540, 0]], t0: now, dx: [[0, 0], [100, go], [280, go], [540, 0]]};
+    hsound(SMOVE);
   }
   function hStruck() {                                            // a blow got through
     var sp = HERO.struck;
