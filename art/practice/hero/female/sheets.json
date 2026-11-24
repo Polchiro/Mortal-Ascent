@@ -1,0 +1,82 @@
+{
+ "aspect": 0.6073,
+ "sheets": {
+  "stance": {
+   "src": "/art/practice/hero/female/stance.webp",
+   "frames": 94,
+   "cols": 21,
+   "rows": 5,
+   "fps": 12,
+   "box": [
+    -0.2605,
+    -0.0218,
+    1.3413,
+    1.0382
+   ],
+   "loop": true
+  },
+  "strike": {
+   "src": "/art/practice/hero/female/strike.webp",
+   "frames": 30,
+   "cols": 20,
+   "rows": 2,
+   "fps": 24,
+   "box": [
+    -0.1467,
+    -0.0273,
+    1.4251,
+    1.04
+   ],
+   "hand": [
+    1.2545,
+    0.24
+   ],
+   "keys": {
+    "set": 12,
+    "out": 25
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/strike.mp3"
+   }
+  },
+  "block": {
+   "src": "/art/practice/hero/female/block.webp",
+   "frames": 75,
+   "cols": 18,
+   "rows": 5,
+   "fps": 24,
+   "box": [
+    -0.3473,
+    0.0291,
+    1.5778,
+    0.9945
+   ],
+   "keys": {
+    "set": 7,
+    "up": 37
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/block.mp3"
+   }
+  },
+  "struck": {
+   "src": "/art/practice/hero/female/struck.webp",
+   "frames": 87,
+   "cols": 13,
+   "rows": 7,
+   "fps": 24,
+   "box": [
+    -0.4192,
+    0.0055,
+    2.1796,
+    1.0109
+   ],
+   "keys": {
+    "hit": 20
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/struck.mp3"
+   }
+  }
+ }
+}

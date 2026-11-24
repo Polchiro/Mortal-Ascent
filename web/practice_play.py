@@ -168,6 +168,23 @@ def instructor_sheets():
     return _sheets[0]
 
 
+_heroes = {}
+
+
+def hero_sheets(gender):
+    """Your character's unarmed movements for the drill (art/practice/hero/<gender>/: stance, strike, block, struck
+    + sheets.json, cut from SHOAIB's Flow videos by scripts/make_practice_hero.py), or None: then the sword fighter's
+    movements stand in, as before."""
+    if gender not in _heroes:
+        try:
+            with open(os.path.join(ROOT, "art", "practice", "hero", gender, "sheets.json")) as fh:
+                data = json.load(fh)
+            _heroes[gender] = data if {"stance", "strike", "block", "struck"} <= set(data["sheets"]) else None
+        except (OSError, ValueError, KeyError):
+            _heroes[gender] = None
+    return _heroes[gender]
+
+
 def windows(tier, conditions, drill):
     t = dict(TIERS[tier])
     scale = RAIN if "heavy_rain" in conditions else 1.0
@@ -524,7 +541,7 @@ class Hall:
                 if d.event else None,
                 "me": {"name": d.player["name"], "gender": gender, "face": looks.face(look),
                        "poses": {p: looks.fighter(look, p) for p in looks.POSES}, "isheet": looks.idle_sheet(look),
-                       "sheets": sheets},
+                       "sheets": sheets, "hero": hero_sheets(gender)},
                 "instructor": {"name": NAME, "title": TITLE, "line": LINES["begin"][dr["mode"]],
                                "portrait": ART + "/portrait.jpg", "sheets": instructor_sheets()},
                 "hall": {"picture": HALL_PICTURE, "sound": HALL_SOUND},

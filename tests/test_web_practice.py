@@ -299,6 +299,19 @@ def test_her_movements_and_the_hall_are_there():
         assert os.path.exists(os.path.join(ROOT, "art", "practice", pic)), pic
 
 
+def test_her_unarmed_movements_are_there_and_his_fall_back():
+    her = pp.hero_sheets("female")
+    assert her and set(her["sheets"]) == {"stance", "strike", "block", "struck"}
+    for name, sp in her["sheets"].items():
+        assert os.path.exists(os.path.join(ROOT, sp["src"].lstrip("/"))) and sp["frames"] <= sp["cols"] * sp["rows"]
+        if name != "stance":
+            assert os.path.exists(os.path.join(ROOT, sp["sound"]["src"].lstrip("/")))
+        assert all(0 <= k < sp["frames"] for k in sp.get("keys", {}).values())
+    assert her["sheets"]["stance"]["loop"] and her["sheets"]["strike"]["hand"]
+    if not os.path.exists(os.path.join(ROOT, "art", "practice", "hero", "male", "sheets.json")):
+        assert pp.hero_sheets("male") is None                    # no unarmed art yet: the sword fighter stands in
+
+
 # ── the pages ────────────────────────────────────────────────────────────────
 
 pytest.importorskip("fastapi")
