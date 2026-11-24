@@ -41,6 +41,9 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return "Finish your duel first."
         if spar and getattr(spar, "busy", None) and spar.busy(uid):
             return "Finish your spar first."
+        train = getattr(app.state, "train", None)
+        if train and train.busy(uid):
+            return "Finish your meditation first."
         return None
 
     @app.post("/practice/start")

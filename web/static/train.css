@@ -1,0 +1,93 @@
+/* Train: Meridian Circulation (train.html, train.js; docs/training.md "Train on the website"). PROTOTYPE: the scene is
+   the Practice hall, dimmed, with one canvas over it where the seated body and its meridians are drawn in code. It
+   borrows Practice's pieces (practice.css): the Leave button, the chips, the banner, the intro card and the scroll. */
+main.train{width:100%;box-sizing:border-box;margin:0 auto;padding:6px 10px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+body.trainbg footer.privacy{display:none}
+.tscene{position:relative;width:100%;height:calc(100vh - 20px);min-height:380px;overflow:hidden;border-radius:14px;border:1px solid var(--line);
+  background:linear-gradient(rgba(6,8,18,.62),rgba(4,4,10,.86)),var(--chamber) center/cover;box-shadow:0 18px 40px rgba(0,0,0,.55);isolation:isolate}
+.tscene::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,rgba(120,235,190,.07),rgba(0,0,0,0) 60%);pointer-events:none}
+.train[data-phase=ready] .tscene::after{content:"";position:absolute;inset:0;background:rgba(4,4,10,.35);pointer-events:none;z-index:1}
+.tbg{position:absolute;z-index:0;max-width:none;object-fit:cover;pointer-events:none}
+.tshade{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(4,6,14,.25),rgba(2,3,8,.7));transition:opacity 1.2s}
+.train[data-phase=flow] .tshade,.train[data-phase=settle] .tshade{background:radial-gradient(ellipse at 50% 55%,rgba(4,6,14,.5),rgba(2,3,8,.82))}
+/* you: bright before and after; while the Qi flows you fade to a dim figure so the map reads over your robes */
+.tchar{position:absolute;left:0;top:0;z-index:1;pointer-events:none;transition:filter 1.4s,opacity 1.4s}
+.train[data-phase=flow] .tchar{filter:brightness(.42) saturate(.55);opacity:.9}
+.train[data-phase=settle] .tchar{filter:brightness(.7) saturate(.8)}
+.tmap{position:absolute;left:0;top:0;z-index:2;touch-action:none;cursor:pointer}
+.trival{position:absolute;right:2%;bottom:0;height:46%;z-index:3;pointer-events:none;opacity:0;transform:translateX(30%);transition:opacity .6s,transform .6s;
+  filter:drop-shadow(0 0 18px rgba(154,92,255,.7))}
+.trival.on{opacity:1;transform:none}
+.tbadge{background:#000}
+
+/* the HUD: tier and conditions on the left, the next pulses in the middle, cycle and score on the right */
+.thud{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;align-items:flex-start;gap:12px;padding:10px 14px;
+  background:linear-gradient(rgba(6,6,12,.75),rgba(6,6,12,0));pointer-events:none}
+.ttier{min-width:0;flex:1}
+.ttier b{display:block;color:var(--gold2);font:700 17px Cinzel,Georgia,serif;white-space:nowrap}
+.ttier small{display:block;color:var(--mist);font-size:12px}
+.tchips{position:static;margin-top:5px}
+.tpreview{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;background:rgba(8,10,20,.7);border:1px solid var(--line)}
+.tpreview small{color:var(--mist);font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.tpreview span{display:flex;gap:8px;min-width:84px}
+.tpreview i{width:20px;height:20px;border-radius:50%;display:block}
+.tpreview i.gd{background:radial-gradient(#fffbe8,#ffd66b 45%,#c98a1a);box-shadow:0 0 10px rgba(255,214,107,.8)}
+.tpreview i.dk{background:radial-gradient(#3c1460,#9a5cff 60%,#4a1f80);box-shadow:0 0 10px rgba(154,92,255,.7)}
+.tpreview i.hid{background:radial-gradient(#666,#222);box-shadow:none}
+.tpreview i:first-child{transform:scale(1.2)}
+.thud .ptally{flex:1;text-align:right}
+.thud .pleave{pointer-events:auto}
+
+/* Breath: a jade gauge down the left edge */
+.tbreath{position:absolute;left:16px;top:28%;bottom:18%;width:16px;z-index:6;border-radius:99px;border:1px solid rgba(120,235,190,.6);background:rgba(4,20,16,.6);
+  display:flex;align-items:flex-end;overflow:visible}
+.tbreath div{width:100%;border-radius:99px;background:linear-gradient(#bdfbe3,#3fbf8f);transition:height .1s linear}
+.tbreath small{position:absolute;left:-4px;bottom:-22px;color:#bdfbe3;font-size:11px;letter-spacing:1px}
+.tbreath.on{box-shadow:0 0 14px rgba(120,235,190,.8)}
+
+/* hints and the opening line: a quiet line of text under the HUD (Train has no teacher to say them) */
+.thint{position:absolute;left:50%;top:12%;transform:translateX(-50%);z-index:7;margin:0;max-width:min(560px,86%);padding:6px 16px;
+  border-radius:99px;background:rgba(6,14,12,.72);border:1px solid rgba(120,235,190,.45);color:#d9fff0;font:italic 15px/1.35 Georgia,serif;
+  text-align:center;pointer-events:none;opacity:0}
+.thint.go{animation:thint 5.5s ease-out forwards}
+@keyframes thint{0%{opacity:0}6%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.train[data-phase=result] .thint{display:none}
+
+/* the celebration: a great session (85%+) rings out from the Dantian */
+.tcheer{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);z-index:8;margin:0;pointer-events:none;text-align:center;
+  font:800 40px Cinzel,Georgia,serif;color:#FFE7A8;text-shadow:0 0 18px rgba(255,200,90,.9),0 3px 8px #000;opacity:0}
+.tcheer.sad{color:#cdbfe6;text-shadow:0 0 16px rgba(120,90,170,.8),0 3px 8px #000}
+.tcheer small{display:block;font:italic 16px Georgia,serif;color:#f5dca6;margin-top:4px}
+.tcheer.go{animation:tcheer 2.6s ease-out forwards}
+@keyframes tcheer{0%{opacity:0;transform:translateX(-50%) scale(.7)}18%{opacity:1;transform:translateX(-50%) scale(1.06)}30%{transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0}}
+
+/* banners and the cards (practice.css's, shown or hidden by this page's phases) */
+.tscene .pbanner{top:18%}.tscene .pcall{top:26%;font-size:22px}
+.pbanner.go{animation:pcall 3s ease-out forwards}.pcall.go{animation:pcall 1.6s ease-out forwards}
+.pcall.miss{color:#ff9d8a}
+.train:not([data-phase=ready]) .pintro{display:none}
+.pintro b.gold{color:#ffd66b}.pintro b.dark{color:#c39bff}
+.train .presult .rcounts li span{color:#6a4a30}
+
+/* phones: the Breathe button under the scene */
+.tpads{display:none;width:100%}
+.tbreathe{max-width:none;width:100%}
+.tbreathe.on{background:rgba(120,235,190,.35)}
+@media (max-width:900px){
+  main.train{padding:4px 2px 10px}
+  .tscene{height:auto;aspect-ratio:3/4;max-height:calc(100vh - 100px)}
+  .tpads{display:flex}
+  .tbreathe{padding:20px 4px}
+  .thud{flex-wrap:wrap;padding:6px 8px;gap:6px}.ttier b{font-size:13px}.tpreview{order:3;margin:0 auto}
+  .thud .ptally{flex:none}.thud .ptally b{font-size:18px}
+  .ttier b{display:none}.ttier small{font-size:13px;color:var(--gold2)}.tchips li{font-size:10.5px;padding:2px 7px}
+  .tbreath{left:8px;width:12px}.trival{height:30%}
+  .thint{font-size:12.5px;top:14%}.tcheer{font-size:26px}
+  .pintro,.presult{position:fixed;z-index:60}
+  .tscene{isolation:auto}
+}
+
+/* the training yard's Train card: a drawn Dantian (Train has no teacher to picture) */
+.tportrait{flex:none;width:112px;height:112px;border-radius:50%;border:2px solid var(--gold);box-shadow:0 6px 16px rgba(0,0,0,.5);
+  background:radial-gradient(circle,#fffbe8 0 8%,#ffd66b 20%,rgba(255,170,40,.35) 42%,rgba(10,30,24,.95) 62%),#0a1e18}

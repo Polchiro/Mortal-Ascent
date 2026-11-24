@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Train · Mortal Ascent{% endblock %}
+{% block body_class %}trainbg{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('practice.css') }}">
+<link rel="stylesheet" href="{{ asset('train.css') }}">
+<style>body.trainbg{background:linear-gradient(rgba(10,10,20,.55),rgba(6,6,12,.92)),url({{ s.chamber.picture }}) center/cover fixed}</style>
+{# Train: Meridian Circulation (web/train_play.py, docs/training.md "Train on the website"). The map and every pulse
+   come from the server; train.js plays them with the same rules (train_sim.js) and only records what you do. The
+   server replays it and scores it. No top bar: the meditation has the whole window; Leave in the corner walks away. #}
+<main class="train" id="train" data-phase="ready" aria-label="Train">
+  <section class="tscene{% if s.night %} night{% endif %}" id="tscene" style="--chamber: url({{ s.chamber.picture }})">
+    {# the place (the chamber's video loops; the Hermit's peak is a still), then you, then the map over you #}
+    {% if s.chamber.video %}<video class="tbg" id="tbg" src="{{ s.chamber.video }}" poster="{{ s.chamber.picture }}" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video>
+    {% elif s.chamber.seat %}<img class="tbg" id="tbg" src="{{ s.chamber.picture }}" alt="">{% endif %}
+    <div class="tshade" aria-hidden="true"></div>
+    <canvas class="tchar" id="tchar" aria-hidden="true"></canvas>
+    <canvas class="tmap" id="tmap" aria-label="Your meridians"></canvas>
+    {% if s.rival %}<img class="trival" id="trival" src="{{ s.rival }}" alt="The rival disciple">{% endif %}
+
+    <header class="thud">
+      <div class="ttier">
+        <b>Meridian Circulation</b>
+        <small>Tier {{ s.tier }}{% if s.plays != s.tier %} (prototype: plays tier {{ s.plays }}){% endif %}</small>
+        {% if s.conditions or s.event %}
+        <ul class="pchips tchips">
+          {% for c in s.conditions %}<li title="{{ c.text }}">{{ c.name }}</li>{% endfor %}
+          {% if s.event %}<li class="ev" title="{{ s.event.text }}">{{ s.event.name }}</li>{% endif %}
+        </ul>
+        {% endif %}
+      </div>
+      <div class="tpreview" title="The next pulses{% if s.drunk %} (Drunken Master: not always true){% endif %}">
+        <small>Next</small><span id="tnext"></span>
+      </div>
+      <div class="ptally"><b id="tscore">–</b><small id="tcycle">Cycle 1 / 3</small></div>
+      <form class="pleave" id="tleave" method="post" action="/train/yield">
+        <button type="submit" title="Leave the meditation"><img src="/art/icons/actions/flee.webp" alt="" width="26" height="26"><span>Leave</span></button></form>
+    </header>
+
+    <div class="tbreath" id="tbreath" title="Breath: hold Space to slow the Qi"><div id="tbreathfill"></div><small>Breath</small></div>
+
+    <p class="thint" id="tsay" aria-live="polite"></p>
+    <p class="tcheer" id="tcheer" aria-live="polite"></p>
+
+    <p class="pbanner" id="tbanner"></p>
+    <p class="pcall" id="tcall" aria-live="polite"></p>
+
+    <!-- before: what this session is -->
+    <div class="pintro" id="tintro">
+      <p class="kicker">AZURE CLOUD TOWN · THE QUIET CHAMBER</p>
+      <h2>Meridian Circulation</h2>
+      <ul>
+        <li><b class="gold">Gold Qi</b> must reach the <b>Dantian</b> (the golden orb). <b class="dark">Dark Qi</b> must leave
+          through an <b>exit</b> (the white flowers).</li>
+        <li><b>Junctions</b> (jade rings, numbered): click one, or press its number, to switch where it sends the next pulse.</li>
+        <li><b>Gates</b> (red seals): click one, or press Shift + its number, to close it and hold Qi back. Held 4 s, or with 3
+          waiting, it bursts and the Qi is lost.</li>
+        <li><b>Breathe</b>: hold Space (or the Breathe button) to slow all Qi to 40%, while your Breath lasts.</li>
+        <li>Three cycles. Score: 60% gold delivered, 25% dark expelled, 15% Stability left. At 0 Stability: Qi deviation.</li>
+        {% for c in s.conditions %}<li><b>{{ c.name }}</b>: {{ c.text }}.</li>{% endfor %}
+        {% if s.event %}<li class="ev">{{ s.event.text }}</li>{% endif %}
+      </ul>
+      <div class="pbtns">
+        <button class="btn btn-gold" id="tbegin" type="button">Begin meditation</button>
+        <form method="post" action="/train/yield"><button class="hbtn ghost small" type="submit">Walk away</button></form>
+      </div>
+      <p class="sub">Your rest has already begun: walking away earns nothing.</p>
+    </div>
+
+    <!-- after: the scroll -->
+    <div class="presult" id="tresult" hidden>
+      <p class="kicker" id="rkick"></p>
+      <p class="rscore" id="rscore"></p>
+      <p class="rline" id="rline"></p>
+      <ul class="rcounts" id="rcounts"></ul>
+      <div class="rbar"><div id="rbar"></div></div>
+      <p class="rexp" id="rexp"></p>
+      <ul class="snotes" id="rnotes"></ul>
+      <div class="pbtns"><form method="post" action="/train/done"><button class="btn btn-gold" type="submit">Back to the training yard</button></form>
+        <a class="hbtn ghost small" href="/town?near=master">Back to town</a></div>
+    </div>
+  </section>
+
+  <div class="tpads"><button class="ppad tbreathe" id="tbreathe" type="button"><b>Breathe</b><small>hold</small></button></div>
+</main>
+<script type="application/json" id="tstate">{{ s | tojson }}</script>
+<script src="{{ asset('fight_sound.js') }}" defer></script>
+<script src="{{ asset('spar_music.js') }}" defer></script>
+<script src="{{ asset('train_sim.js') }}" defer></script>
+<script src="{{ asset('train.js') }}" defer></script>
+{% endblock %}

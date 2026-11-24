@@ -1,0 +1,124 @@
+{
+ "fit": {
+  "k": 10.614,
+  "x0": 437.3,
+  "y0": 97.54,
+  "points": {
+   "crown": [
+    50.0,
+    4.0
+   ],
+   "throat": [
+    50.0,
+    26.14
+   ],
+   "heart": [
+    50.0,
+    37.92
+   ],
+   "dantian": [
+    50.0,
+    61.0
+   ],
+   "l_shoulder": [
+    37.94,
+    30.38
+   ],
+   "r_shoulder": [
+    62.44,
+    30.38
+   ],
+   "l_elbow": [
+    28.99,
+    51.11
+   ],
+   "r_elbow": [
+    71.39,
+    51.11
+   ],
+   "l_palm": [
+    21.45,
+    64.3
+   ],
+   "r_palm": [
+    79.4,
+    63.83
+   ],
+   "l_hip": [
+    41.71,
+    63.36
+   ],
+   "r_hip": [
+    58.67,
+    63.36
+   ],
+   "l_sole": [
+    34.17,
+    78.43
+   ],
+   "r_sole": [
+    66.2,
+    78.43
+   ]
+  }
+ },
+ "ends": {
+  "surge": {
+   "src": "/art/train/hero/female/surge.mp4",
+   "sound": "/art/train/hero/female/surge.mp3",
+   "w": 896,
+   "h": 504,
+   "fps": 24,
+   "ms": 7625,
+   "box": [
+    0.0,
+    0.0,
+    1920.0,
+    1080.0
+   ]
+  },
+  "deviation": {
+   "src": "/art/train/hero/female/deviation.mp4",
+   "sound": "/art/train/hero/female/deviation.mp3",
+   "w": 896,
+   "h": 504,
+   "fps": 24,
+   "ms": 7625,
+   "box": [
+    0.0,
+    0.0,
+    1920.0,
+    1080.0
+   ]
+  },
+  "scatter": {
+   "src": "/art/train/hero/female/scatter.mp4",
+   "sound": "/art/train/hero/female/scatter.mp3",
+   "w": 896,
+   "h": 504,
+   "fps": 24,
+   "ms": 7625,
+   "box": [
+    0.0,
+    0.0,
+    1920.0,
+    1080.0
+   ]
+  }
+ },
+ "loop": {
+  "src": "/art/train/hero/female/loop.webp",
+  "frames": 34,
+  "cols": 7,
+  "rows": 5,
+  "fps": 10,
+  "fw": 534,
+  "fh": 422,
+  "box": [
+   327.0,
+   60.0,
+   1293.0,
+   1020.0
+  ]
+ }
+}

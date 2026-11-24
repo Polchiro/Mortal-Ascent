@@ -209,6 +209,8 @@
     merchant:   {f: 330, notes: [0, 5, 3, 7], pace: 0.12, wave: 'triangle', end: 1.08,               // lively, with coins
                  extra: function (t) { [3100, 3700, 4200].forEach(function (f, i) { tone(f, t + i * 0.05, 0.2, 0.06, 'sine'); }); }},
     elder:      {f: 196, notes: [0, -2, 0], pace: 0.28, wave: 'triangle', end: 0.95},                // slow and low
+    keeper:     {f: 294, notes: [0, 4, 0], pace: 0.3, wave: 'sine', end: 1,                          // the Quiet Pavilion: calm, a small bell
+                 extra: function (t) { tone(1175, t, 1.6, 0.07, 'sine'); tone(1762, t, 1.1, 0.03, 'sine'); }},
     master:     {f: 220, notes: [0, 5], pace: 0.18, wave: 'triangle', end: 0.9},                     // two words, no more
     arena:      {f: 262, notes: [0, 3, 5], pace: 0.14, wave: 'triangle', end: 1.04,                  // with a far gong
                  extra: function (t) { tone(196, t, 1.8, 0.12, 'triangle', 0, 190); tone(392, t, 1.2, 0.06, 'sine'); tone(588, t, 0.8, 0.03, 'sine'); }},

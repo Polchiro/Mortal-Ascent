@@ -178,6 +178,11 @@ NPCS = [
      "src": "/art/portraits/town/elder.webp", "h": 128,
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
      "go": [["Show my cultivation", "/profile"], ["Check my bag", "/inventory"]]},
+    {"key": "keeper", "name": "Sister Jing", "title": "Meditation", "x": 11.4, "y": 10.7,    # by the pond: Train
+     "src": "/art/portraits/town/keeper.webp", "h": 128,
+     "line": "The pond is still tonight. Sit in the Quiet Pavilion and look inward: guide the gold to your Dantian, "
+             "and let the turbid Qi go.",
+     "go": [["Sit and meditate", "/town/visit/keeper"]]},      # opens Train (web/train_routes.py)
     {"key": "master", "name": "Martial Master", "title": "Training", "x": 24.0, "y": 12.2,
      "src": "/art/spar/master/town.webp", "h": 128,          # the Master of the spar (scripts/make_master_sheets.py)
      "line": "So you want to test your techniques? Step into the yard. I'll match your strength blow for blow; show me you can read a fight.",
