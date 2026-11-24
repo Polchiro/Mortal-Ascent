@@ -25,6 +25,11 @@
       <li><b>Guard</b> beats Strike · <b>Break</b> beats Guard · <b>Strike</b> beats Break.</li>
       <li>Mastery EXP comes <b>only from well-timed techniques</b>: your attack technique right after you Guard his
         Strike, or your defense technique against his Strike.</li>
+      <li>At your realm he shows a <b>tell</b> on about {{ (v.read.tells * 100) | round | int }}% of exchanges, his rhythm is
+        {{ v.read.rhythm[0] }} to {{ v.read.rhythm[1] }} moves long, and he breaks it about {{ (v.read.breaks * 100) | round | int }}% of the time.
+        {% if v.read.feints %}About <b>{{ (v.read.feints * 100) | round | int }}% of his tells are feints</b>: they show the wrong move, with a small
+        sign of the real one at the end of the words ("...yet his rear fist is clenched tight" is a Strike, "...yet his
+        elbows stay tucked in" a Guard, "...yet his front heel lifts off the ground" a Break).{% else %}He grows harder to read as your realm rises.{% endif %}</li>
       <li><b>+{{ v.per_use }}</b> EXP each time, and <b>+{{ v.win }}</b> more for each of those techniques if you win.</li>
     </ul>
     <div class="arow">

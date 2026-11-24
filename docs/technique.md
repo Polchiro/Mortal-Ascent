@@ -286,10 +286,28 @@ Only the web's own (none changes what a spar gives):
 
 | | Discord | Website |
 |---|---|---|
+| How hard he is to read | the same for everyone | **grows with your realm** (below) |
 | Time per exchange | 15 s | **20 s** (the round trip, as in the Arena) |
 | Buttons | shuffle every exchange | **stay put** (keys 1-4); the timer and three timeouts = forfeit still end an idle spar |
 | Walking away | three timeouts | three timeouts, or the **Yield** button (the same forfeit: nothing earned, the rest stays) |
 | A dodge or deflection technique | - | its sidestep / deflect movement plays only when his blow really was stopped; otherwise the plain Guard |
+
+**Reading him gets harder with your realm (website only; SHOAIB, Nov 24).** His stats never change (your own realm
+and layer, times a trial's strength); what changes is how readable he is (`web/spar_play.READS`, `YardSpar`):
+
+| Your realm | He shows a tell | His rhythm | He breaks it | Feints (share of his tells) |
+|---|---|---|---|---|
+| Mortal to Martial Warrior | 50% | 3-4 moves | 15% | none |
+| Martial Expert to Grandmaster | 40% | 3-5 | 20% | 10% |
+| Martial Lord to Martial Emperor | 35% | 4-5 | 25% | 20% |
+| Martial Ancestor, Martial Saint | 30% | 4-6 | 30% | 30% |
+
+The first row is Discord's `/spar` exactly (the same object, roll for roll), and Discord uses it at every realm. A
+**feint** is a tell that describes the wrong move and ends with a small sign of the real one, as Read the Master's
+deceptive tells do (`bot/trainer.HIDDEN_SIGNS`: "...yet his rear fist is clenched tight" a Strike, "...yet his elbows
+stay tucked in" a Guard, "...yet his front heel lifts off the ground" a Break). On a feint his pose is the move he
+pretends; only the words give the real one away. Trials use the same table, with their strength on top. Rewards are
+unchanged. The yard's page says how he reads at your realm.
 
 **The Master's movements** (`art/spar/master/`, `web/spar_master.py`; cut from SHOAIB's videos by
 `scripts/make_master_sheets.py`, which says what he does in each): the **stance** he breathes in, **Strike** (a palm),

@@ -309,6 +309,70 @@ def test_a_spar_counts_for_the_quests(setup):
     assert seen == ["spar", "spar_win"]
 
 
+def at_realm(conn, realm):
+    db.update_player(conn, A, realm=realm, layer=3)
+
+
+def test_reading_him_gets_harder_with_your_realm():
+    rows = [spar_play.read_of(r) for r in rules.REALM_ORDER]
+    assert [r["band"] for r in rows] == [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3]
+    first = spar_play.READS[0]                                    # the gentlest is the bot's own spar
+    assert (first["tells"], first["rhythm"], first["breaks"], first["feints"]) == (
+        sparring.TELL_CHANCE, (3, 4), sparring.PATTERN_BREAK_CHANCE, 0.0)
+    for a, b in zip(spar_play.READS, spar_play.READS[1:]):        # each step: fewer tells, more breaks, more feints
+        assert a["tells"] > b["tells"] and a["breaks"] < b["breaks"] and a["feints"] < b["feints"]
+        assert a["rhythm"][1] <= b["rhythm"][1]
+
+
+def test_a_high_realm_master_feints_and_keeps_his_real_move_hidden(setup):
+    conn, clock, hall = setup
+    at_realm(conn, "Martial Saint")
+    hall.start(conn, A)
+    sp = hall.spars[A].spar
+    assert sp.read["band"] == 3 and 4 <= len(sp.pattern) <= 6
+    p = db.get_player(conn, A)
+    assert hall.state(conn, A)["master"]["max_hp"] == round(rules.base_stats(p["realm"], p["layer"])[0])   # his stats: unchanged
+    tells = feints = turns = 0
+    rng = random.Random(3)
+    for _ in range(400):
+        sp.hp, sp.m_hp, sp.turn = sp.max_hp, sp.m_max, 1          # keep one spar going to count his habits
+        sp._next()
+        turns += 1
+        s = hall.state(conn, A)
+        assert "feint" not in json.dumps({k: v for k, v in s.items() if k != "history"})
+        if sp.tell:
+            tells += 1
+            assert s["has_tell"]
+            if sp.feint:
+                feints += 1
+                assert sp.feint != sp.master and s["tell_pose"] == sp.feint          # the pose lies with the words
+                assert s["tell"].endswith(spar_play.HIDDEN_SIGNS[sp.master])         # the sign of the real move
+            else:
+                assert s["tell_pose"] == sp.master and "yet" not in s["tell"]
+        else:
+            assert s["tell_pose"] is None
+    assert 0.22 < tells / turns < 0.38 and 0.18 < feints / tells < 0.42
+
+
+def test_a_low_realm_spar_never_feints(setup):
+    conn, clock, hall = setup
+    at_realm(conn, "Martial Warrior")
+    hall.start(conn, A)
+    sp = hall.spars[A].spar
+    for _ in range(200):
+        sp.turn = 1
+        sp._next()
+        assert sp.feint is None and (sp.tell is None or "yet" not in sp.tell)
+
+
+def test_the_yard_says_how_he_reads_at_your_realm(setup):
+    conn, clock, hall = setup
+    assert hall.hall(conn, A)["read"]["band"] == 0
+    at_realm(conn, "Martial Lord")
+    r = hall.hall(conn, A)["read"]
+    assert (r["tells"], r["rhythm"], r["breaks"], r["feints"]) == (0.35, (4, 5), 0.25, 0.20)
+
+
 def test_the_masters_movements_are_there():
     from web import spar_master
     data = spar_master.sheets()
