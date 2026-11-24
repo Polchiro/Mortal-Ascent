@@ -312,7 +312,8 @@ unchanged. The yard's page says how he reads at your realm.
 **The Master's movements** (`art/spar/master/`, `web/spar_master.py`; cut from SHOAIB's videos by
 `scripts/make_master_sheets.py`, which says what he does in each): the **stance** he breathes in, **Strike** (a palm),
 **Guard** (forearms raised; a blow lands on them in sparks), **Break** (gold Qi gathered, then slammed), his **hit**
-(staggered by your blow) and his **bow**
+(staggered by your blow), his **kneel** (when you win he drops onto one knee, at the video's own pace with its sound,
+and the result appears while he kneels; when he wins or it is a draw of time he bows instead) and his **bow**
 (when the spar begins, and before the result). `spar.js` plays them frame by frame at the videos' pace up to the moment
 the exchange is decided, then brings him back to his stance faster than the video does; your own move waits for his,
 so both land together. Each has the video's own **sound**, timed to that moment.

@@ -389,7 +389,7 @@ def test_the_yard_says_how_he_reads_at_your_realm(setup):
 def test_the_masters_movements_are_there():
     from web import spar_master
     data = spar_master.sheets()
-    assert data and {"stance", "strike", "guard", "break", "bow", "hit"} <= set(data["sheets"])
+    assert data and {"stance", "strike", "guard", "break", "bow", "hit", "kneel"} <= set(data["sheets"])
     for name, sh in data["sheets"].items():
         assert len(sh["at"]) == sh["frames"] <= sh["cols"] * sh["rows"] and sh["at"] == sorted(sh["at"]), name
         assert os.path.exists(os.path.join(ROOT, sh["src"].lstrip("/"))), name
@@ -401,6 +401,8 @@ def test_the_masters_movements_are_there():
     assert 0 < hit["hit"] < hit["at"][-1] and os.path.exists(os.path.join(ROOT, hit["sound"]["src"].lstrip("/")))
     assert data["sheets"]["stance"]["loop"] > data["sheets"]["stance"]["at"][-1]
     assert spar_master.still() == "/art/spar/master/still.webp"
+    kneel = data["sheets"]["kneel"]["sound"]                     # the knee he takes when you win, with its sound
+    assert kneel["from"] >= 0 and os.path.exists(os.path.join(ROOT, kneel["src"].lstrip("/")))
     bow = data["sheets"]["bow"]["sound"]                         # the bow's own sound, started where the video's does
     assert bow["from"] >= 0 and os.path.exists(os.path.join(ROOT, bow["src"].lstrip("/")))
     for pic in ("yard.mp4", "yard.wav", "yard.jpg", "header.jpg", "seal.webp", "ripple.webp", "shield.webp", "dust.webp", "emblem.webp",
