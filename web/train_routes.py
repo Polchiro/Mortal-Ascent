@@ -86,6 +86,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/training#train")
         money = with_conn(purse_of, uid)
         return no_store(page(request, "train.html", s=state, user=user,
+                             from_keeper=request.session.get("train_from") == "keeper",
                              avatar=oauth.avatar_url(uid, user.get("avatar")), **money))
 
     @app.get("/train/state")

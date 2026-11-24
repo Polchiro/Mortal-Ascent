@@ -187,6 +187,17 @@
     else if (how === 'knot') { flash(at, 'bad'); fs('block'); again($('tcall'), e[3] ? 'Stuck in the knot' : 'Gold lost in the knot', 'miss'); }
     else if (how === 'gate_burst') { flash(nodeAt(e[2]), 'bad'); shake = 10; fs('boom'); again($('tcall'), 'The gate bursts!', 'miss'); }
     else if (how === 'deviation') { shake = 22; fs('stun'); again($('tbanner'), 'Qi deviation!', 'warn'); }
+    else if (how === 'resonance') {                              // ten clean in a row: the Breath is full again
+      var dn = cyc().nodes.dantian;
+      again($('tcall'), 'Qi Resonance! ' + e[2] + ' in a row: Breath restored', 'perfect');
+      fs('heal'); fs('cast', null, 120); glow = 1.4;
+      if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 26, life: 1200, t: performance.now()});
+      var bb2 = $('tbreath'); bb2.classList.remove('full'); void bb2.offsetWidth; bb2.classList.add('full');
+    }
+    else if (how === 'boon') {
+      var B = S.boon_text[e[2]];
+      again($('tbanner'), B.name + ': ' + B.text); fs('heal');
+    }
     else if (how === 'cycle_done' && e[2] === 'cycle') {
       glow = 1.6; fs('cast');
       var dn = cyc().nodes.dantian; if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 34, life: 1500, t: performance.now()});
@@ -352,7 +363,9 @@
     cx.globalAlpha = alpha; cx.lineCap = 'round'; cx.lineJoin = 'round';
     curve(c, ch.pts);
     cx.strokeStyle = hurt ? 'rgba(255,110,90,.16)' : JADE + '0.13)'; cx.lineWidth = u * 2.8; cx.stroke();
-    cx.strokeStyle = hurt ? 'rgba(255,140,120,.8)' : JADE + '0.7)'; cx.lineWidth = Math.max(1.4, u * 0.42); cx.stroke();
+    var lift = Math.min(1, (st.harmony % PLAN.harmony) / PLAN.harmony);         // Harmony brightens the channels
+    cx.strokeStyle = hurt ? 'rgba(255,140,120,.8)' : 'rgba(' + Math.round(120 + 100 * lift) + ',235,' + Math.round(190 - 40 * lift) + ',' + (0.7 + 0.25 * lift) + ')';
+    cx.lineWidth = Math.max(1.4, u * (0.42 + 0.18 * lift)); cx.stroke();
     if (!reduced) {                                                    // the flow
       cx.setLineDash([u * 1.2, u * 4.5]); cx.lineDashOffset = -now / 60;
       cx.strokeStyle = hurt ? 'rgba(255,190,170,.75)' : 'rgba(225,255,240,.75)'; cx.lineWidth = Math.max(1.6, u * 0.5); cx.stroke();
@@ -409,7 +422,7 @@
       var g = st.gates[id], open = !g || g.open;
       var waiting = st.pulses.filter(function (p) { return p.wait === id && p.done == null; });
       var oldest = waiting.length ? Math.min.apply(null, waiting.map(function (p) { return p.waited; })) : null;
-      var strain = waiting.length ? Math.max(waiting.length / PLAN.gate.most, (st.tick - oldest) / PLAN.gate.hold) : 0;
+      var strain = waiting.length ? Math.max(waiting.length / st.gate_most, (st.tick - oldest) / st.gate_hold) : 0;
       var w = r * 0.62, h = r * 0.9, wob = open ? 0 : 0.06 * Math.sin(now / 80) * strain;
       cx.translate(x, y); cx.rotate(wob);
       if (fxok('seal')) {                                          // the jade seal: whole when shut, a ghost when open
@@ -501,7 +514,7 @@
       if (p.wait) { var n = c.nodes[p.wait]; x = X(n.x); y = Y(n.y); a = null; }
       else {
         var ab = p.edge.split('>'), A = c.nodes[ab[0]], B = c.nodes[ab[1]], L = c.lens[p.edge];
-        var sp = PLAN.speed * (PLAN.injured.indexOf(p.edge) >= 0 ? 0.6 : 1) * (st.breathing ? 0.4 : 1);
+        var sp = PLAN.speed * (st.slow ? 0.85 : 1) * (PLAN.injured.indexOf(p.edge) >= 0 ? 0.6 : 1) * (st.breathing ? 0.4 : 1);
         f = Math.max(0, Math.min(1, (p.pos + sp * frac) / L));
         x = X(A.x + (B.x - A.x) * f); y = Y(A.y + (B.y - A.y) * f); a = A; b = B;
       }
@@ -591,7 +604,11 @@
     if (nextEl.innerHTML !== html) nextEl.innerHTML = html;
     $('tcycle').textContent = c.kind === 'rival' ? 'Rival round' : 'Cycle ' + Math.min(3, st.cycle + 1) + ' / 3';
     $('tscore').textContent = running && st.gold + st.dark ? Math.round(100 * soFar()) + '%' : '–';
-    $('tbreathfill').style.height = (100 * st.breath / PLAN.breath.max) + '%';
+    $('tbreathfill').style.height = (100 * st.breath / st.breath_max) + '%';
+    var hm = $('tharm');
+    hm.textContent = running && st.harmony ? 'Harmony ' + st.harmony : '';
+    hm.classList.toggle('hot', st.harmony >= PLAN.harmony - 3 && st.harmony % PLAN.harmony >= PLAN.harmony - 3);
+    boonCard();
     $('tbreath').classList.toggle('on', st.breathing);
   }
 
@@ -599,6 +616,32 @@
   function soFar() {
     var g = st.gold ? st.gold_in / st.gold : 1, stab = st.deviation ? 0 : st.stability / 100;
     return st.dark ? 0.6 * g + 0.25 * st.dark_out / st.dark + 0.15 * stab : 0.85 * g + 0.15 * stab;
+  }
+
+  /* ── open a meridian: the blessing card while one is being chosen ── */
+  var boonFor = null;
+  function boonCard() {
+    var card = $('tboon');
+    if (!running || st.choosing == null) { if (!card.hidden) card.hidden = true; boonFor = null; return; }
+    if (boonFor !== st.choosing) {
+      boonFor = st.choosing;
+      var box = $('tboons'); box.innerHTML = '';
+      PLAN.boons[st.choosing].forEach(function (k, i) {
+        var B = S.boon_text[k], b = document.createElement('button');
+        b.type = 'button'; b.innerHTML = '<b></b><small></small><i></i>';
+        b.children[0].textContent = B.name; b.children[1].textContent = B.text; b.children[2].textContent = 'Press ' + (i + 1);
+        b.addEventListener('click', function () { choose(i); });
+        box.appendChild(b);
+      });
+      card.hidden = false; fs('cast');
+    }
+    var left = Math.max(0, st.choose_until - st.tick) / PLAN.choose;
+    $('tboonclock').style.width = (100 * left) + '%';
+  }
+  function choose(i) {
+    if (st.choosing == null || choose.sent === st.choosing) return;
+    choose.sent = st.choosing;
+    act('o', PLAN.boons[st.choosing][i]);
   }
 
   /* ── input: the map, the keys, the Breathe button ─────────────────── */
@@ -625,6 +668,7 @@
     var m = /^(?:Digit|Numpad)([1-8])$/.exec(e.code || '');
     if (!m || e.repeat) return;
     var i = +m[1] - 1;
+    if (st.choosing != null) { if (i < 2) { e.preventDefault(); choose(i); } return; }
     if (e.shiftKey) { if (number.gs[i]) { e.preventDefault(); gate(number.gs[i]); } }
     else if (number.js[i]) { e.preventDefault(); turn(number.js[i]); }
   });
@@ -678,6 +722,8 @@
     counts.push(['Stability', r.stability]);
     if (r.dark_in) counts.push(['Dark in the Dantian', r.dark_in]);
     if (r.bursts) counts.push(['Gates burst', r.bursts]);
+    if (r.best_harmony) counts.push(['Best Harmony', r.best_harmony]);
+    if (r.boon_names && r.boon_names.length) counts.push(['Blessings', r.boon_names.join(', ')]);
     var ul = $('rcounts'); ul.innerHTML = '';
     counts.forEach(function (c) { var li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = c[0]; li.lastChild.textContent = c[1]; ul.appendChild(li); });
     $('rexp').textContent = '+' + r.gained.toLocaleString() + ' Qi · ' + r.bar.qi.toLocaleString() + ' / ' + r.bar.need.toLocaleString() + ' (' + r.bar.where + ')';

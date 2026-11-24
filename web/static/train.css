@@ -70,6 +70,28 @@ body.trainbg footer.privacy{display:none}
 .pintro b.gold{color:#ffd66b}.pintro b.dark{color:#c39bff}
 .train .presult .rcounts li span{color:#6a4a30}
 
+/* Harmony under the cycle count; it brightens as it grows */
+.tharm{display:block;color:#bdfbe3;font-size:12px;letter-spacing:.5px;min-height:15px;transition:color .3s,text-shadow .3s}
+.tharm.hot{color:#FFE7A8;text-shadow:0 0 8px rgba(255,214,107,.8)}
+.tbreath.full{animation:tfull .9s ease-out}
+@keyframes tfull{0%{box-shadow:0 0 0 rgba(255,214,107,0)}30%{box-shadow:0 0 26px rgba(255,214,107,.95)}100%{box-shadow:0 0 0 rgba(255,214,107,0)}}
+
+/* open a meridian: two blessings to choose from between cycles */
+.tboon{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;width:min(620px,90%);padding:16px 20px 14px;border-radius:14px;
+  background:rgba(8,16,14,.9);border:1px solid rgba(120,235,190,.6);box-shadow:0 14px 40px rgba(0,0,0,.6);text-align:center;animation:tboonin .35s ease-out}
+@keyframes tboonin{from{opacity:0;transform:translate(-50%,-46%)}}
+.tboon h2{margin:4px 0 12px;color:var(--gold2);font:700 19px Cinzel,Georgia,serif}
+.tboon .kicker{color:#7debc0}
+.tboons{display:flex;gap:12px}
+.tboons button{flex:1;padding:12px 10px;border-radius:12px;border:1px solid rgba(120,235,190,.5);background:rgba(16,40,32,.85);color:var(--cream);cursor:pointer;
+  display:flex;flex-direction:column;gap:4px;align-items:center;font:inherit}
+.tboons button:hover{background:rgba(40,90,70,.9);border-color:#bdfbe3}
+.tboons b{font:700 16px Cinzel,Georgia,serif;color:#FFE7A8}
+.tboons small{font-size:13px;color:#d9fff0;line-height:1.35}
+.tboons i{font-style:normal;font-size:11px;color:var(--mist)}
+.tboonclock{height:4px;margin-top:12px;border-radius:99px;background:rgba(120,235,190,.15);overflow:hidden}
+.tboonclock div{height:100%;width:100%;background:#7debc0}
+
 /* phones: the Breathe button under the scene */
 .tpads{display:none;width:100%}
 .tbreathe{max-width:none;width:100%}
@@ -85,6 +107,7 @@ body.trainbg footer.privacy{display:none}
   .tbreath{left:8px;width:12px}.trival{height:30%}
   .thint{font-size:12.5px;top:14%}.tcheer{font-size:26px}
   .pintro,.presult{position:fixed;z-index:60}
+  .tboon{position:fixed;z-index:60}.tboons{flex-direction:column}
   .tscene{isolation:auto}
 }
 

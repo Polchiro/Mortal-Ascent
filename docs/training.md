@@ -223,6 +223,22 @@ tier 2's network for now; the reward formula is the same at every tier.
 - **Breath**: hold Space (the Breathe button on a phone) to slow all Qi to **40%**. A full Breath bar lasts 4 s and
   refills in 5 s once you let go.
 - The strip at the top shows the next 3 pulses' colours.
+- **Harmony** (SHOAIB, Nov 25: "do your best recommendations"): every pulse handled cleanly in a row (gold into the
+  Dantian, dark out an exit) adds 1, shown under the cycle count; any other end (gold lost, dark in, a burst) sets it
+  back to 0. The channels glow brighter as it builds. Every **10** in a row is a **Qi Resonance**: your Breath bar is
+  full again, with a chime and a small bloom. Harmony never changes the score or the pay; only the three cycles count.
+- **Open a meridian** (same day): when cycles 1 and 2 end, the session waits while you take one of two blessings (press
+  1 or 2, or click) for the rest of the session. After **10 s** the first is taken for you. The four blessings, two
+  offered each time, drawn from the session's seed:
+
+  | Blessing | What it does |
+  |---|---|
+  | Deep Breath | the Breath bar holds 50% more (6 s instead of 4), and fills now |
+  | Steady Flow | all Qi flows 15% slower |
+  | Mending | +25 Stability now (never above 100) |
+  | Strong Seals | gates burst only with 5 waiting, or after 6 s (instead of 3 and 4 s) |
+
+  The scroll lists the blessings you took and your best Harmony.
 
 ### The networks (tiers 1-2)
 | Tier | Realms | Sources | Junctions | Gates | Pulses a cycle | New idea |

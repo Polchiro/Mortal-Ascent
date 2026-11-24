@@ -60,7 +60,13 @@ CLOSE_SHARE, CLOSE_GAP = 0.25, 16                     # after the first cycle, 1
 RIVAL_PULSES, RIVAL_WINS, RIVAL_GAP = 6, 4, 34       # the Rival Disciple's round (approved: expel 4 of 6)
 NIGHT_SHOW = 0.4                                     # Night Training: colours show for the last 40% of a trip
 DRUNK_LIE = 0.25                                     # Drunken Master: the preview is wrong 1 time in 4
-MAX_SECONDS = 240
+HARMONY = 10                                         # every 10 clean pulses in a row: a Qi Resonance (Breath full)
+CHOOSE = 10000 // TICK                               # a blessing must be taken within 10 s (else the first is)
+BOON_TEXT = {"breath": ("Deep Breath", "Your Breath lasts 50% longer, and fills now."),
+             "steady": ("Steady Flow", "All Qi flows 15% slower."),
+             "mend": ("Mending", "Regain 25 Stability now."),
+             "seal": ("Strong Seals", "Gates burst only with 5 waiting, or after 6 seconds.")}
+MAX_SECONDS = 260
 CONDITIONS = ["heavy_rain", "night_training", "drunken_master", "old_injury"]
 CONDITION_TEXT = {"heavy_rain": "Qi flows 25% faster",
                   "night_training": "a pulse shows its colour only near the end of its trip; the preview is dark",
@@ -282,7 +288,9 @@ def make_plan(tier, conditions, event, rng):
             close = c > 0 and not rival and rng.random() < CLOSE_SHARE
             at += CLOSE_GAP if close else gap + rng.randrange(-6, 7)
         cycles.append({"kind": "rival" if rival else "cycle", "nodes": nodes, "lens": lens, "pulses": pulses})
+    boons = [rng.sample(sim.BOONS, 2) for _ in range(CYCLES - 1)]          # the two to choose from, after cycles 1, 2
     plan = {"tick": TICK, "speed": RAIN_SPEED if "heavy_rain" in conditions else SPEED,
+            "harmony": HARMONY, "choose": CHOOSE, "boons": boons,
             "breath": dict(BREATH, drain=BREATH["drain"] * (2 if "old_injury" in conditions else 1)),
             "gate": dict(GATE), "pause": PAUSE, "max_ticks": (MAX_SECONDS * 1000 - SETTLE) // TICK,
             "injured": injured, "tier": play, "cycles": cycles}
@@ -471,7 +479,10 @@ class Chamber:
             verdict = "deviation" if st["deviation"] else \
                 "great" if score >= 0.85 else "good" if score >= 0.7 else "poor" if score >= 0.5 else "bad"
             need = players.qi_needed(p["realm"], p["layer"])
-            s.result = {"score": score, **parts, "gained": round(qi, 1), "notes": notes, "rival": rival,
+            if st["resonances"]:
+                notes.append(f"Harmony: {st['best_harmony']} clean pulses in a row at best, "
+                             f"{st['resonances']} Qi Resonance{'' if st['resonances'] == 1 else 's'}.")
+            s.result = {"score": score, **parts, "boon_names": [BOON_TEXT[b][0] for b in st["boons"]], "gained": round(qi, 1), "notes": notes, "rival": rival,
                         "rival_out": st["rival_out"], "verdict": verdict, "line": LINES[verdict],
                         "approve": score >= 0.7 and not st["deviation"],
                         "bar": {"qi": round(p["qi"], 1), "need": need,
@@ -507,6 +518,7 @@ class Chamber:
                 "tier": s.tier, "plays": s.plan["tier"], "plan": s.plan, "settle": SETTLE,
                 "night": NIGHT_SHOW if "night_training" in s.conditions else None,
                 "drunk": "drunken_master" in s.conditions, "totals": {"gold": gold, "dark": dark},
+                "boon_text": {k: {"name": n, "text": t} for k, (n, t) in BOON_TEXT.items()},
                 "conditions": [{"key": c, "name": plain(trainer.CONDITION_NAMES[c]), "text": CONDITION_TEXT[c]}
                                for c in s.conditions],
                 "event": {"key": s.event, "name": s.event.replace("_", " ").title(), "text": EVENT_TEXT[s.event]}
@@ -549,10 +561,10 @@ def clean_actions(actions, plan):
             t, what, which = int(row[0]), str(row[1]), str(row[2])
         except (TypeError, ValueError, IndexError):
             return None
-        if what not in ("j", "g", "b", "B") or t < last or not 0 <= t <= MAX_SECONDS * 1000:
+        if what not in ("j", "g", "b", "B", "o") or t < last or not 0 <= t <= MAX_SECONDS * 1000:
             return None
-        if what in ("j", "g") and which not in ids:
+        if (what in ("j", "g") and which not in ids) or (what == "o" and which not in sim.BOONS):
             return None
         last = t
-        out.append([t, what, which if what in ("j", "g") else ""])
+        out.append([t, what, which if what in ("j", "g", "o") else ""])
     return out
