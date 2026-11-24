@@ -101,8 +101,8 @@ EFFECT_TEXT = {
     "combo": "Your technique chains: some targets come in quick runs.",
     "heavy": "Your technique is heavy: hold on a charge target and release as its ring closes.",
     "pierce": "Your technique pierces: its targets are small.",
-    "counter": "Your technique counters: after some deflections, strike back with Space.",
-    "recover": "Your technique restores: breathe with Space when the ring of breath fills.",
+    "counter": "Your technique counters: after some deflections, strike back with your Counter key (Space).",
+    "recover": "Your technique restores: breathe with your Breathe key (Space) when the ring of breath fills.",
     "unbreakable": "Your technique is unbreakable: the blows are heavier, the braces longer.",
 }
 LINES = {"begin": {"strike": "Strike only when the ring closes. Not before, not after. Begin!",

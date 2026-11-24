@@ -415,7 +415,12 @@ hall's air from her "watching" video looped under the music (`art/practice/hall.
 bright major five-note tune, a soft drum keeping time and the flute more often. The training objects, effects, drill
 badges, the result's scroll and her portrait are SHOAIB's Gemini pictures, cut by `scripts/make_practice_art.py`.
 
-On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
+**Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
+set for striking drills and one for defending (click a move, press a key; a key already used swaps the two; the number
+keys, and the arrows when defending, still work unless given to another move), and **guides** on or off: the key
+written on every target and a faint mark where each lane's targets appear.
+
+On a wide screen the hall fills the whole window under the top bar. On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
 a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,
 `web/templates/practice.html`, `web/static/practice.js`, `practice.css`. Tests: `tests/test_web_practice.py`.
 
