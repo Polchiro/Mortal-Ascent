@@ -338,6 +338,18 @@ the old hall at night. Effects: the gold **seal** for perfect timing, a **ripple
 **shield** of Qi when his Guard stops your blow, **dust** at the feet on heavy blows, a brush-stroke **banner** behind
 the result's title and the **lotus emblem** behind a breakthrough. The yard's page has his painting as its header.
 
+**The yard alive:** SHOAIB's video of the yard plays behind an ordinary spar (`art/spar/yard.mp4`, made seamless by
+`scripts/make_background_loop.py`: petals falling, mist, the lanterns; `yard.jpg` is its first frame, so the still and
+the video are one picture). On a wide screen it is behind the whole page; on a narrow one inside the scene, where the
+still is drawn too. Its own sound (a soft wind and chimes) loops under the fight (`art/spar/yard.wav`, made by
+`scripts/make_spar_art.py ambience=...`: looped with no seam and raised until plainly heard; it follows Sound, not
+Music). With the video playing, the petals made in code and the foreground lantern are left out (the video has its
+own). Not with reduced motion or when the browser saves data: the still shows, with the code-made petals.
+
+**His sounds are loud on purpose:** every Master clip is raised to full level when it is cut, and played above the
+music. His bow has its own sound too (cloth, the fist into the palm, his feet), kept in step with the bow at the speed
+it is played.
+
 **Music** (`web/static/spar_music.js`): made in the browser like the map's tune, no recording: a slow drum, a low
 string and a plucked five-note tune with a flute now and then; a trial is a little faster and lower. It follows the
 map's settings (Sound, volume, Music On / Off) and stops when the spar ends.

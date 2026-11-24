@@ -2,15 +2,17 @@
    (sound.js): no recording. A duel's mood: a slow drum, a low string under it, and a plucked five-note tune made up
    as it goes, with a bamboo flute now and then. A mastery trial is the same a little faster, lower and heavier.
 
-   spar.js calls window.SparMusic.start('spar' | 'trial') and .stop(). It shares the map's settings (the gear there:
+   spar.js calls window.SparMusic.start('spar' | 'trial') and .stop(), and .ambience(url) for the place's own sound
+   (the yard video's wind and chimes, art/spar/yard.wav), which loops under the tune and follows Sound, not Music. It shares the map's settings (the gear there:
    Sound On / Off, the volume, Music On / Off; localStorage ma.sound, ma.vol, ma.music), so someone who turned music
    off hears none here. Browsers allow sound only after a click or a key press, so the first one wakes it. It goes
    quiet while the tab is hidden. Only how the page sounds: nothing here touches the game. */
 (function () {
   'use strict';
-  var on = true, vol = 0.6, ctx = null, bus = null, kind = null, timer = null, nextAt = 0, step = 0, note = 2, rest = 0, nbuf = null;
+  var on = true, tune = true, vol = 0.6, ctx = null, bus = null, kind = null, timer = null, nextAt = 0, step = 0, note = 2, rest = 0, nbuf = null;
+  var airUrl = null, airBuf = null, airSrc = null, airBus = null;
   try {
-    on = localStorage.getItem('ma.sound') !== 'off' && localStorage.getItem('ma.music') !== 'off';
+    on = localStorage.getItem('ma.sound') !== 'off'; tune = localStorage.getItem('ma.music') !== 'off';
     var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) vol = v0 / 100;
   } catch (e) {}
   var MOODS = {
@@ -81,14 +83,30 @@
       nextAt = t + m.beat; step++;
     }
   }
+  function air() {                                       // the place's own sound, looping under everything
+    if (!airUrl || airSrc || !ac()) return;
+    if (!airBus) { airBus = ctx.createGain(); airBus.gain.value = 0; airBus.connect(ctx.destination); }
+    var play = function () {
+      if (airSrc || !airBuf) return;
+      airSrc = ctx.createBufferSource(); airSrc.buffer = airBuf; airSrc.loop = true; airSrc.connect(airBus); airSrc.start();
+      airBus.gain.setTargetAtTime(Math.min(1, vol * 1.5), ctx.currentTime, 1.2);
+    };
+    if (airBuf) { play(); return; }
+    var url = airUrl; airUrl = null;                     // one fetch
+    fetch(url).then(function (r) { return r.arrayBuffer(); })
+      .then(function (b) { return new Promise(function (ok, no) { ctx.decodeAudioData(b, ok, no); }); })
+      .then(function (buf) { airBuf = buf; airUrl = url; play(); }).catch(function () {});
+  }
   function begin() {
-    if (!kind || !ac()) return;
+    air();
+    if (!kind || !tune || !ac()) return;
     bus.gain.cancelScheduledValues(ctx.currentTime);
-    bus.gain.setTargetAtTime(vol * 0.9, ctx.currentTime, 0.8);
+    bus.gain.setTargetAtTime(vol * 0.7, ctx.currentTime, 0.8);
     if (!timer) { nextAt = ctx.currentTime + 0.3; timer = setInterval(tick, 80); }
   }
   window.SparMusic = {
     start: function (k) { kind = MOODS[k] ? k : 'spar'; begin(); },
+    ambience: function (url) { if (on) { airUrl = url; begin(); } },
     stop: function () {
       kind = null;
       if (timer) { clearInterval(timer); timer = null; }
@@ -99,6 +117,6 @@
   ['pointerdown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, begin, {passive: true}); });
   document.addEventListener('visibilitychange', function () {
     if (!ctx) return;
-    if (document.hidden) ctx.suspend(); else if (kind) ctx.resume();
+    if (document.hidden) ctx.suspend(); else if (kind || airSrc) ctx.resume();
   });
 })();

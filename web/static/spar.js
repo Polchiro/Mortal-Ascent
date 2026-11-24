@@ -39,6 +39,7 @@
     var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) soundVol = v0 / 100;
   } catch (e0) {}
   if (MS) Object.keys(MS).forEach(function (k) { new Image().src = MS[k].src; });
+  function LOUD() { return Math.min(1, soundVol * 1.6); }        // his sounds are meant to be heard over the music
   function mshow(name, f) {
     var sp = MS[name], el = msheets[name];
     f = Math.max(0, Math.min(sp.frames - 1, f));
@@ -71,12 +72,17 @@
   function mplay(name, speed, done) {                            // one movement through (his bow), then back to standing
     if (!MS || !MS[name]) { if (done) done(); return; }
     mMode = 'play'; mPlay = {name: name, speed: speed, t0: performance.now(), done: done};
+    var snd = MS[name].sound;                                    // its own sound, kept in step at this speed
+    if (snd && soundOn) {
+      var a = new Audio(snd.src); a.volume = LOUD(); a.playbackRate = speed;
+      setTimeout(function () { a.play().catch(function () {}); }, (snd.from || 0) / speed);
+    }
   }
   function msound(move, HIT) {                                   // the video's own sound, its blow on the moment HIT
     var snd = MS && MS[move] && MS[move].sound;
     if (!snd || !soundOn) return false;
     var a = new Audio(snd.src), start = HIT - snd.lead;
-    a.volume = Math.min(1, soundVol * 1.1);
+    a.volume = LOUD();
     if (start < 0) { try { a.currentTime = -start / 1000; } catch (e1) {} }
     setTimeout(function () { a.play().catch(function () {}); }, Math.max(0, start));
     return a;
@@ -103,10 +109,37 @@
     return 450 + Math.max(0, sp.at[sp.frames - 1] - sp.hit - 450) / 2.4;
   }
 
-  /* petals on the wind (an ordinary spar is out in the yard) */
+  /* the yard alive: SHOAIB's video of it (petals falling, mist, the lanterns), behind the whole page on a wide screen
+     and inside the scene on a narrow one (where the yard is drawn on the scene). Its own sound loops under the fight.
+     Not with reduced motion or when the browser saves data: then the still shows, with petals made here. */
+  var live = S.yard_video && !(navigator.connection && navigator.connection.saveData) &&
+    !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  (function () {
+    if (!live) return;
+    var film = document.createElement('video'), narrow = window.matchMedia ? matchMedia('(max-width: 900px)') : null;
+    film.muted = true; film.loop = true; film.autoplay = true; film.playsInline = true; film.preload = 'auto';
+    film.setAttribute('muted', ''); film.setAttribute('playsinline', ''); film.setAttribute('aria-hidden', 'true');
+    film.addEventListener('playing', function () { film.classList.add('on'); });
+    film.addEventListener('error', function () { film.remove(); });
+    function place() {
+      if (narrow && narrow.matches) { film.className = 'sloop' + (film.classList.contains('on') ? ' on' : ''); scene.insertBefore(film, scene.firstChild); }
+      else {
+        film.className = 'bgloop' + (film.classList.contains('on') ? ' on' : ''); main.insertBefore(film, main.firstChild);
+        if (!main.querySelector(':scope > .bgshade')) { var sh = document.createElement('div'); sh.className = 'bgshade'; main.insertBefore(sh, film.nextSibling); }
+        main.classList.add('bglive');
+      }
+      var p = film.play(); if (p && p.catch) p.catch(function () {});
+    }
+    film.addEventListener('playing', function () { main.classList.add('yardlive'); });   // the video has lanterns of its own
+    film.src = S.yard_video; place();
+    if (narrow && narrow.addEventListener) narrow.addEventListener('change', place);
+    if (S.yard_sound && window.SparMusic) window.SparMusic.ambience(S.yard_sound);
+  })();
+
+  /* petals on the wind, when the video isn't there to bring its own */
   (function () {
     var box = $('spetals');
-    if (!box || S.trial) return;
+    if (!box || S.trial || live) return;
     for (var i = 0; i < 16; i++) {
       var p = document.createElement('i'), sz = 7 + Math.random() * 7;
       p.style.left = (20 + Math.random() * 100) + '%'; p.style.width = sz + 'px'; p.style.height = sz * 0.7 + 'px';
@@ -251,7 +284,7 @@
     if (revealing) return;
     revealing = !wasOver;
     var reveal = function () { revealing = false; $('sresult').hidden = false; if (!wasOver) { wasOver = true; fs(won ? 'victory' : 'defeat'); } };
-    if (wasOver || r.outcome === 'forfeit') reveal(); else { mMode = 'idle'; mplay('bow', 3.2, reveal); setTimeout(reveal, 3600); }
+    if (wasOver || r.outcome === 'forfeit') reveal(); else { mMode = 'idle'; mplay('bow', 2.4, reveal); setTimeout(reveal, 4600); }
     $('ititle').textContent = won ? 'Well fought' : 'The master bows';
     $('itext').textContent = 'The master rests for ' + r.again + ' before he spars again.';
     body.classList.remove('breathe'); body.classList.toggle('down', won);
@@ -555,6 +588,6 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden && !acting && !sending) fetchState(); });
   draw(S);
   requestAnimationFrame(mloop);
-  if (!S.over && !S.last) mplay('bow', 2.6);
+  if (!S.over && !S.last) mplay('bow', 2.0);
   if (!S.over && window.SparMusic) window.SparMusic.start(S.trial ? 'trial' : 'spar');
 })();

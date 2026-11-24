@@ -24,7 +24,9 @@ Every sheet is a grid of equal cells. `box` says where the cell sits on his stan
 his standing figure), so every move stands on the same feet. `hit`: the ms at which the blow lands (his palm
 arriving, the blow on his guard, the slam). `tell`: the frame he holds while you choose, when he gives a tell.
 
-Sounds: the videos' own, cut round the moment (art/spar/master/<move>.mp3; `lead`: ms from the clip's start to the hit).
+Sounds: the videos' own, cut round the moment (art/spar/master/<move>.mp3; `lead`: ms from the clip's start to the
+hit) and made as loud as they go without clipping (the videos are quiet; LOUD: the peak they are raised to). The bow
+has its whole sound (cloth, the fist into the palm, his feet): `from` is the ms into the movement where it starts.
 
     python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4 hit=hit.mp4
 
@@ -48,6 +50,7 @@ MARK = (1105, 560, 1215, 670)             # Gemini's sparkle
 BASE = (415, 15, 875, 715)                # the box round his standing figure in the videos (x0, y0, x1, y1)
 GLOW_REACH = 190                          # how far past his body light is kept, video px (it fades out over FEATHER)
 FEATHER = 70
+LOUD = -1.0                               # dB: the peak every sound is raised to
 TOWN_FRAME = 40                           # of the bow video: he stands upright, at ease
 
 
@@ -69,7 +72,8 @@ MOVES = {
     "hit": {"frames": [9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28, 31, 35, 39, 43, 47, 51, 55, 59,
                        63, 67, 71, 75, 79, 83, 87, 91, 95],
             "hit": 12, "sound": (0.35, 2.05, 0.55)},
-    "bow": {"frames": every(1, 69, 4) + [75, 90] + every(105, 145, 4) + [152] + every(159, 215, 4) + [225]},
+    "bow": {"frames": every(1, 69, 4) + [75, 90] + every(105, 145, 4) + [152] + every(159, 215, 4) + [225],
+            "sound": (0.45, 8.80, 0.45)},
 }
 
 
@@ -151,10 +155,19 @@ def build(name, video, spec):
         out["tell"] = spec["frames"].index(spec["tell"])
     if "sound" in spec:
         a, b, hit = spec["sound"]
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(a), "-to", str(b), "-i", video, "-vn", "-ac", "1",
-                        "-af", f"afade=t=in:d=0.03,afade=t=out:st={b - a - 0.25}:d=0.25", "-b:a", "96k",
-                        os.path.join(OUT, f"{name}.mp3")], check=True)
+        cut_ = ["ffmpeg", "-hide_banner", "-y", "-ss", str(a), "-to", str(b), "-i", video, "-vn", "-ac", "1"]
+        fades = f"afade=t=in:d=0.03,afade=t=out:st={b - a - 0.25}:d=0.25"
+        if "hit" not in spec:                                   # no single blow: lift its quiet parts (cloth, feet) too
+            fades += ",dynaudnorm=f=200:g=9:m=12"
+        heard = subprocess.run(cut_ + ["-af", fades + ",volumedetect", "-f", "null", "-"], capture_output=True, text=True).stderr
+        peak = float(heard.split("max_volume:")[1].split("dB")[0])
+        gain = min(40.0, LOUD - peak)
+        subprocess.run(cut_ + ["-v", "error", "-af", f"{fades},volume={gain:.1f}dB", "-b:a", "96k",
+                               os.path.join(OUT, f"{name}.mp3")], check=True)
         out["sound"] = {"src": f"/art/spar/master/{name}.mp3", "lead": round((hit - a) * 1000)}
+        if "hit" not in spec:
+            out["sound"] = {"src": out["sound"]["src"], "from": round((a - (first - 1) / FPS) * 1000)}
+        print(f"  sound: peak {peak:.1f} dB, raised {gain:.1f} dB")
     print(name, f"{count} frames, cell {cw}x{ch}, sheet {sheet.size}")
     return out
 
