@@ -1,0 +1,195 @@
+/* Practice with Senior Sister Xue (practice.html, practice.js; docs/technique.md "Practice on the website").
+   The scene is the bright wooden training hall (art/practice/hall.jpg), 16:9 on a wide screen and 4:3 on a phone;
+   you stand on the left, what you strike in the middle, she watches on the right. Everything in it is placed in %
+   of the scene, so it scales as one picture. The pads under it are the moves for a finger. */
+main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;padding:10px 12px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.pscene{position:relative;width:min(100%,calc((100vh - 170px) * 16 / 9));aspect-ratio:16/9;overflow:hidden;border-radius:14px;
+  border:1px solid var(--line);background:var(--hall) center/cover;box-shadow:0 18px 40px rgba(0,0,0,.55);isolation:isolate}
+.pscene::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,236,200,.06),rgba(30,18,8,.18) 70%,rgba(20,12,6,.35));z-index:0;pointer-events:none}
+.pscene.night::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 40% 60%,rgba(10,14,30,.25),rgba(6,8,20,.72));z-index:4;pointer-events:none}
+
+/* dust drifting in the sunbeams */
+.pmotes{position:absolute;inset:0;z-index:1;pointer-events:none}
+.pmotes i{position:absolute;border-radius:50%;background:rgba(255,240,205,.85);box-shadow:0 0 6px rgba(255,230,180,.8);opacity:0;animation:pmote linear infinite}
+@keyframes pmote{0%{opacity:0;transform:translate(0,0)}15%{opacity:.8}85%{opacity:.6}100%{opacity:0;transform:translate(60px,-90px)}}
+.prain{display:none}
+.pscene.rain .prain{display:block;position:absolute;inset:0;z-index:4;pointer-events:none;opacity:.35;
+  background:repeating-linear-gradient(105deg,rgba(200,220,255,.0) 0 14px,rgba(200,220,255,.5) 14px 15px);background-size:200% 200%;animation:prain .5s linear infinite}
+@keyframes prain{to{background-position:-60px 140px}}
+
+/* the HUD */
+.phud{position:absolute;left:0;right:0;top:0;z-index:6;display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:linear-gradient(rgba(10,8,6,.7),rgba(10,8,6,0));pointer-events:none}
+.ptech{display:flex;align-items:center;gap:8px;min-width:0}
+.ptech img{border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.4)}
+.ptech b{display:block;color:var(--gold2);font:700 16px Cinzel,Georgia,serif;white-space:nowrap}
+.ptech small{display:block;color:var(--mist);font-size:12px;white-space:nowrap}
+.pclock{flex:1;position:relative;height:10px;border-radius:99px;background:rgba(0,0,0,.45);border:1px solid var(--line);max-width:420px;margin:0 auto}
+.pclock div{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#c98a3a,#F5DCA6)}
+.pclock span{position:absolute;left:50%;top:13px;transform:translateX(-50%);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold2)}
+.ptally{text-align:right}
+.ptally b{display:block;color:#FFE7A8;font:800 24px Cinzel,Georgia,serif;line-height:1}
+.ptally small{color:var(--mist);font-size:12px}
+.pchips{position:absolute;left:14px;top:64px;z-index:6;display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none;pointer-events:none}
+.pchips li{padding:3px 10px;border-radius:99px;background:rgba(20,14,30,.72);border:1px solid rgba(160,190,255,.5);color:#cfe0ff;font-size:12px}
+.pchips li.ev{border-color:var(--gold);color:var(--gold2)}
+
+/* Senior Sister Xue: the box round her standing figure; each movement's sheet sits on it by its own `box` */
+.pteacher{position:absolute;right:4%;bottom:5%;height:68%;aspect-ratio:.3947;z-index:2}
+.practice[data-mode=defend] .pteacher{right:1.5%;height:60%;bottom:12%}
+.pteacher::before{content:"";position:absolute;left:4%;width:92%;bottom:-1.5%;height:5%;border-radius:50%;background:radial-gradient(rgba(40,20,8,.55),rgba(40,20,8,0) 70%)}
+.ptsheet{position:absolute;background-repeat:no-repeat;visibility:hidden;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
+.ptsheet.on{visibility:visible}
+.ptstill{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
+.psay{position:absolute;right:30%;top:-2%;width:max-content;max-width:min(330px,40vw);margin:0;padding:7px 13px;border-radius:12px 12px 2px 12px;
+  background:rgba(255,248,236,.95);color:#4a2318;font:600 14px/1.35 Georgia,serif;box-shadow:0 6px 16px rgba(0,0,0,.35);opacity:0;z-index:7}
+.psay.go{animation:psay 5.5s ease-out forwards}
+@keyframes psay{0%{opacity:0;transform:translateY(6px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+.practice[data-phase=result] .psay.go{animation:psay 60s ease-out forwards}
+.practice[data-phase=result] .psay{top:-10%}
+
+/* you */
+.practice .pscene .fighter.pme{left:-8%;bottom:1%;width:66%;z-index:3}
+.practice[data-mode=defend] .pscene .fighter.pme{left:2%}
+.pme .ssheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}
+.pme[data-pose=sheet] .ssheet.on{visibility:visible}
+.pme.charging .poses{filter:drop-shadow(0 0 14px rgba(255,170,60,.95))}
+.pme.hurt .poses{animation:phurt .4s ease-out}
+@keyframes phurt{0%{filter:none}20%{filter:sepia(1) saturate(5) hue-rotate(-30deg) brightness(.9);transform:translateX(-10px)}100%{filter:none}}
+
+/* striking: the dummy (by your mastery stage) or the kicking post, and its targets */
+.ptarget{position:absolute;left:46%;bottom:5%;height:62%;z-index:2;transform-origin:50% 100%}
+.ptarget.t-straw{aspect-ratio:291/481}.ptarget.t-dummy{aspect-ratio:520/417;height:52%;left:41%}.ptarget.t-iron{aspect-ratio:354/517}
+.ptarget.t-stone{aspect-ratio:260/479}.ptarget.t-jade{aspect-ratio:244/467}.ptarget.t-post{aspect-ratio:281/443;height:56%}
+.ptarget .pobj{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 10px 10px rgba(40,20,8,.45))}
+.ptarget .pbroken{position:absolute;left:-50%;bottom:0;width:200%;height:auto;visibility:hidden}
+.ptarget.broken .pobj,.ptarget.broken .pspot{visibility:hidden}
+.ptarget.broken .pbroken{visibility:visible;animation:pbreak .5s ease-out}
+@keyframes pbreak{0%{transform:scale(1.08) rotate(-3deg)}100%{transform:none}}
+.ptarget.shook{animation:pshake .22s ease-out}
+@keyframes pshake{0%,100%{transform:none}30%{transform:rotate(2.5deg) translateX(4px)}65%{transform:rotate(-1.2deg)}}
+.pspot{position:absolute;width:20%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:2}
+.ptarget.t-dummy .pspot{width:13%}
+.pspot.small{width:13%}.ptarget.t-dummy .pspot.small{width:9%}
+.pspot .plq{position:absolute;left:0;top:-14%;width:100%;height:auto;filter:drop-shadow(0 0 8px rgba(255,220,120,.9));animation:pin .18s ease-out}
+@keyframes pin{from{transform:scale(.3);opacity:0}}
+.pspot .ring,.pmark .ring,.pspace .ring{position:absolute;left:50%;top:50%;width:100%;aspect-ratio:1;border-radius:50%;border:3px solid #FFE7A8;
+  box-shadow:0 0 10px rgba(255,220,140,.9),inset 0 0 8px rgba(255,220,140,.6);transform:translate(-50%,-50%) scale(3)}
+.pspot b,.pmark b,.pspace b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:800 13px Cinzel,Georgia,serif;text-shadow:0 1px 3px #000,0 0 6px #000;white-space:nowrap}
+.pspot.pair .ring{border-color:#9fe8ff;box-shadow:0 0 10px rgba(120,220,255,.9)}
+.pspot.k-charge .ring,.pspot.finish .ring{border-color:#ffb25a;border-width:4px;box-shadow:0 0 14px rgba(255,150,40,.95)}
+.pspot .flame{position:absolute;left:50%;bottom:30%;width:90%;transform:translateX(-50%);opacity:.85;mix-blend-mode:screen}
+.pspot.held .flame{animation:pflame .4s ease-in-out infinite alternate}
+@keyframes pflame{to{transform:translateX(-50%) scale(1.35);opacity:1}}
+.pspot.k-feint .plq,.pblow.k-feint img{filter:grayscale(1) brightness(.4) sepia(1) hue-rotate(-40deg) saturate(3)}
+.pspot.k-feint .ring{border-color:#ff5a4a;box-shadow:0 0 10px rgba(255,60,40,.9)}
+.pspot.rival .ring{border-color:#d58bff;box-shadow:0 0 12px rgba(190,100,255,.95)}
+.pspot.hit .plq{animation:phit .26s ease-out forwards}.pspot.hit .ring{display:none}
+@keyframes phit{to{transform:scale(1.6);opacity:0}}
+.pspot.missed,.pspot.gone{animation:pfade .38s ease-out forwards}.pspot.bad{animation:pfade .38s ease-out forwards;filter:hue-rotate(-30deg)}
+@keyframes pfade{to{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
+
+/* defending: what comes at you, and where it lands on you */
+.pblows{position:absolute;inset:0;z-index:5;pointer-events:none}
+.pblow{position:absolute;left:0;top:0;will-change:transform}
+.pblow img{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(40,20,8,.5))}
+.pblow.finish img{filter:drop-shadow(0 0 14px rgba(255,150,40,.95))}
+.pblow.rival img{filter:drop-shadow(0 0 12px rgba(190,100,255,.95))}
+.pblow.back{transition:transform .26s ease-out,opacity .26s;opacity:0}
+.pblow.missed{opacity:.4;transition:opacity .35s}
+.pblow.gone{opacity:0;transition:opacity .3s}
+.pmarks{position:absolute;inset:0;pointer-events:none}
+.pmark{position:absolute;width:9%;aspect-ratio:1;transform:translate(-50%,-50%)}
+.pmark .ring{border-color:#9fe8ff;box-shadow:0 0 10px rgba(120,220,255,.9)}
+.pmark.k-brace .ring{border-color:#FFE7A8}
+.pmark.k-feint .ring{border-color:#ff5a4a}
+.pspace{position:absolute;width:5.5%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:5}
+.pspace img{position:absolute;left:50%;top:50%;width:170%;transform:translate(-50%,-55%);opacity:.9}
+.pspace.counter img{mix-blend-mode:screen}
+.pspace b{top:118%}
+
+/* the moment */
+.pfx{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:6;animation:pfx ease-out forwards;mix-blend-mode:screen}
+.pfx.soft{mix-blend-mode:normal}
+@keyframes pfx{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+.ppop{position:absolute;margin:0;transform:translate(-50%,-140%);z-index:7;pointer-events:none;font:800 18px Cinzel,Georgia,serif;color:#fff;
+  text-shadow:0 2px 4px #000,0 0 10px rgba(0,0,0,.8);animation:ppop .9s ease-out forwards;white-space:nowrap}
+.ppop.perfect{color:#FFE7A8;font-size:21px}.ppop.good{color:#bdf3d7}.ppop.miss{color:#ff9d8a}.ppop.stray{color:#ccc;font-size:26px}
+@keyframes ppop{0%{opacity:0;transform:translate(-50%,-90%) scale(.8)}15%{opacity:1;transform:translate(-50%,-140%) scale(1.08)}100%{opacity:0;transform:translate(-50%,-210%)}}
+.pcall,.pbanner,.pcount{position:absolute;left:50%;transform:translateX(-50%);margin:0;z-index:8;pointer-events:none;text-align:center;opacity:0}
+.pcall{top:22%;font:800 26px Cinzel,Georgia,serif;color:#FFE7A8;text-shadow:0 2px 6px #000}
+.pbanner{top:15%;padding:7px 18px;border-radius:99px;background:rgba(20,12,6,.78);border:1px solid var(--line);color:var(--gold2);font:600 15px Georgia,serif;max-width:86%}
+.pbanner.warn{border-color:#ffb25a;color:#ffd9a0}
+.pcount{top:30%;font:800 84px Cinzel,Georgia,serif;color:#fff;text-shadow:0 4px 14px rgba(0,0,0,.8)}
+.pcount.perfect{color:#FFE7A8}
+.pcall.go{animation:pcall 1.3s ease-out forwards}.pbanner.go{animation:pcall 3s ease-out forwards}.pcount.go{animation:pcount .9s ease-out forwards}
+.practice[data-phase=wait] .pbanner.go{animation:none;opacity:1}
+@keyframes pcall{0%{opacity:0;transform:translate(-50%,8px)}10%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+@keyframes pcount{0%{opacity:0;transform:translateX(-50%) scale(1.6)}25%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(.9)}}
+
+/* before: the drill card. after: the scroll */
+.pintro,.presult{position:absolute;z-index:9;overflow:auto}
+.pintro{left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,86%);max-height:90%;padding:18px 22px;border-radius:14px;
+  background:rgba(16,11,8,.88);border:1px solid var(--line);box-shadow:0 14px 40px rgba(0,0,0,.6)}
+.practice:not([data-phase=ready]) .pintro{display:none}
+.pintro h2{margin:4px 0 8px;color:var(--gold2);font:700 22px Cinzel,Georgia,serif}
+.pintro ul{margin:0 0 8px;padding-left:18px;color:var(--cream);font-size:14px;line-height:1.5}
+.pintro li.ev{color:var(--gold2)}
+.pkeys{margin:0 0 12px;color:var(--mist);font-size:13px}
+.pbtns{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin-top:6px}
+.pbtns form{margin:0}
+.pintro .sub{margin:10px 0 0;text-align:center;font-size:12px}
+.presult{left:50%;top:50%;transform:translate(-50%,-50%);width:min(700px,90%);max-height:94%;padding:5.5% 9% 4%;text-align:center;
+  background:url(/art/practice/scroll.webp) center/100% 100% no-repeat;color:#3c2414;animation:pscroll .7s ease-out;filter:drop-shadow(0 14px 24px rgba(0,0,0,.6))}
+@keyframes pscroll{from{clip-path:inset(0 46% 0 46%);opacity:.6}to{clip-path:inset(0 0 0 0);opacity:1}}
+.presult .kicker{color:#8a2b20}
+.rscore{margin:0;font:800 44px Cinzel,Georgia,serif;color:#6b1f14;line-height:1.1}
+.rline{margin:2px 0 8px;font:italic 15px Georgia,serif;color:#4a2a18}
+.rcounts{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;margin:0 0 8px;padding:0;list-style:none;font-size:13px}
+.rcounts li span{color:#6a4a30;margin-right:5px}.rcounts li b{color:#3c2414}
+.rbar{height:10px;max-width:360px;margin:0 auto;border-radius:99px;background:rgba(60,36,20,.2);border:1px solid rgba(60,36,20,.35);overflow:hidden}
+.rbar div{height:100%;width:0;background:linear-gradient(90deg,#b8742f,#e8b45a);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.rexp{margin:6px 0 4px;font:700 15px Georgia,serif;color:#5a2c12}
+.presult .snotes{list-style:none;padding:0;margin:0 auto 6px;color:#4a2a18;font-size:13px}
+.presult .hbtn.ghost{color:#5a2c12;border-color:rgba(90,44,18,.5)}
+
+/* the pads */
+.ppads{display:flex;gap:8px;justify-content:center;width:min(100%,760px)}
+.ppad{flex:1;max-width:180px;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(16,11,8,.82);color:var(--cream);
+  cursor:pointer;touch-action:none;display:flex;flex-direction:column;align-items:center;gap:2px}
+.ppad b{font:700 14px Cinzel,Georgia,serif;color:var(--gold2)}.ppad small{font-size:11px;color:var(--mist)}
+.ppad.on{background:rgba(232,194,122,.35);transform:scale(.97)}
+.ppad.space{flex:1.3}
+.practice[data-phase=ready] .ppads,.practice[data-phase=result] .ppads{opacity:.45}
+
+/* the training yard's Practice card */
+.pcard{display:flex;gap:16px;align-items:flex-start}
+.pportrait{flex:none;border-radius:50%;border:2px solid var(--gold);object-fit:cover;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.pbody{flex:1;min-width:0}
+.pbtn{display:inline-flex;align-items:center;gap:6px}
+.pbtn img{border-radius:50%}
+
+@media (max-width:900px){
+  main.practice{padding:6px 4px 12px;gap:8px}
+  .pscene{aspect-ratio:4/3;width:100%;border-radius:10px}
+  .practice .pscene .fighter.pme{width:84%;left:-22%}
+  .practice[data-mode=defend] .pscene .fighter.pme{left:-12%}
+  .ptarget{left:44%;height:56%}.ptarget.t-dummy{left:38%;height:46%}
+  .pteacher{height:62%;right:1%}
+  .phud{padding:6px 8px;gap:8px}.ptech img{width:34px;height:34px}.ptech b{font-size:13px}.ptech small{display:none}
+  .ptally b{font-size:18px}.pchips{top:46px;left:8px}.pchips li{font-size:10.5px;padding:2px 7px}
+  .psay{font-size:12px;max-width:52vw;right:20%}
+  .practice[data-phase=result] .psay{display:none}
+  .pcount{font-size:56px}.pcall{font-size:20px}.pbanner{font-size:13px}
+  .ppop{font-size:14px}.ppop.perfect{font-size:16px}
+  /* the cards are bigger than the scene on a phone: they sit over the whole screen */
+  .pscene{isolation:auto}
+  .pintro,.presult{position:fixed;z-index:60}
+  .pintro{box-shadow:0 0 0 100vmax rgba(6,4,2,.55)}
+  .pintro{padding:14px 16px;width:92vw;max-height:84vh}.pintro h2{font-size:18px}.pintro ul{font-size:13px}
+  .presult{width:98vw;max-height:88vh;padding:9% 9% 6%}.rscore{font-size:32px}
+  .ppad{padding:22px 4px}
+  .pcard{flex-direction:column;align-items:center;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){.pmotes,.prain{display:none!important}}

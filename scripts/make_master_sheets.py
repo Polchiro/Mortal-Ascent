@@ -32,6 +32,7 @@ Sounds: the videos' own, cut round the moment (art/spar/master/<move>.mp3; `lead
 hit) and made as loud as they go without clipping (the videos are quiet; LOUD: the peak they are raised to). The bow
 has its whole sound (cloth, the fist into the palm, his feet): `from` is the ms into the movement where it starts.
 
+    python -m scripts.make_master_sheets --instructor watch=watch.mp4 begin=begin.mp4 approve=approve.mp4 disapprove=disapprove.mp4
     python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4 hit=hit.mp4 kneel=kneel.mp4
 
 Needs ffmpeg, numpy, Pillow and scipy.
@@ -48,6 +49,7 @@ from scipy import ndimage as ndi
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "art", "spar", "master")
+URL = "/art/spar/master"
 FPS = 24
 SCALE = 0.5                               # sheet px per video px: he is ~670 px tall in the videos
 MARK = (1105, 560, 1215, 670)             # Gemini's sparkle
@@ -154,7 +156,7 @@ def build(name, video, spec):
     sheet.save(os.path.join(OUT, f"{name}.webp"), quality=86, method=6)
     bx, by, bw, bh = BASE[0], BASE[1], BASE[2] - BASE[0], BASE[3] - BASE[1]
     first = spec["frames"][0]
-    out = {"src": f"/art/spar/master/{name}.webp", "frames": count, "cols": cols, "rows": rows,
+    out = {"src": f"{URL}/{name}.webp", "frames": count, "cols": cols, "rows": rows,
            "box": [round((x0 - bx) / bw, 4), round((y0 - by) / bh, 4), round((x1 - x0) / bw, 4), round((y1 - y0) / bh, 4)],
            "at": [round((n - first) * 1000 / FPS) for n in spec["frames"]]}
     if spec.get("loop"):
@@ -174,7 +176,7 @@ def build(name, video, spec):
         gain = min(40.0, LOUD - peak)
         subprocess.run(cut_ + ["-v", "error", "-af", f"{fades},volume={gain:.1f}dB", "-b:a", "96k",
                                os.path.join(OUT, f"{name}.mp3")], check=True)
-        out["sound"] = {"src": f"/art/spar/master/{name}.mp3", "lead": round((hit - a) * 1000)}
+        out["sound"] = {"src": f"{URL}/{name}.mp3", "lead": round((hit - a) * 1000)}
         if "hit" not in spec:
             out["sound"] = {"src": out["sound"]["src"], "from": round((a - (first - 1) / FPS) * 1000)}
         print(f"  sound: peak {peak:.1f} dB, raised {gain:.1f} dB")
@@ -182,7 +184,34 @@ def build(name, video, spec):
     return out
 
 
+# Practice's drill instructor, Senior Sister Xue (SHOAIB's Nov 24 videos, the same grey backdrop; docs/technique.md
+# "Practice"): she stands with a hand on her hip and a finger raised, and every video starts and ends so.
+# - watch: hands on her hips, she watches, tilts her head and nods, and raises her finger again (the loop);
+# - begin: she raises her arm and chops it down (the order to begin), with a whoosh;
+# - approve: she smiles and claps twice; - disapprove: hands on hips, she shakes her head and sighs.
+# Their sounds are the whole clip, raised to full level.
+INSTRUCTOR = {
+    "out": os.path.join(ROOT, "art", "practice", "instructor"), "url": "/art/practice/instructor",
+    "base": (505, 30, 775, 714),
+    "moves": {
+        "watch": {"frames": every(1, 237, 6), "loop": True},
+        "begin": {"frames": every(1, 236, 3), "sound": (0.0, 9.9, 0.0)},
+        "approve": {"frames": every(1, 236, 3), "sound": (0.0, 9.9, 0.0)},
+        "disapprove": {"frames": every(1, 236, 3), "sound": (0.0, 9.9, 0.0)},
+    },
+}
+
+
+def use(who):
+    """Point the builder at another character (only the instructor so far)."""
+    global OUT, URL, BASE, MOVES
+    OUT, URL, BASE, MOVES = who["out"], who["url"], who["base"], who["moves"]
+
+
 def main(args):
+    if args and args[0] == "--instructor":
+        use(INSTRUCTOR)
+        args = args[1:]
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, "sheets.json")
     data = json.load(open(path)) if os.path.exists(path) else {"sheets": {}}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Practice · Mortal Ascent{% endblock %}
+{% block body_class %}practicebg{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('practice.css') }}">
+<style>body.practicebg{background:linear-gradient(rgba(20,14,8,.35),rgba(10,8,6,.85)),url({{ s.hall.picture }}) center/cover fixed}</style>
+{% with page="town" %}{% include "_topbar.html" %}{% endwith %}
+
+{# Practice with Senior Sister Xue (web/practice_play.py, docs/technique.md "Practice on the website"): a real-time drill
+   played by practice.js from the pattern the server made. The page only times the presses; the server grades them. #}
+{% set D = s.drill %}
+<main class="practice" id="practice" data-mode="{{ D.mode }}" data-motion="{{ D.motion }}" data-phase="ready"
+  aria-label="Practice">
+  <section class="pscene{% if s.night %} night{% endif %}{% if s.conditions | selectattr('key', 'equalto', 'heavy_rain') | list %} rain{% endif %}"
+    id="pscene" style="--hall: url({{ s.hall.picture }})">
+    <div class="pmotes" id="pmotes" aria-hidden="true"></div>
+    <div class="prain" aria-hidden="true"></div>
+
+    <!-- the HUD -->
+    <header class="phud">
+      <div class="ptech">
+        <img src="{{ s.technique.icon }}" alt="" width="46" height="46">
+        <div><b>{{ s.technique.name }}</b><small>{{ D.name }} · {{ s.technique.stage }}</small></div>
+      </div>
+      <div class="pclock"><div id="pclock"></div><span id="pphase">Form</span></div>
+      <div class="ptally"><b id="pscore">–</b><small>Streak <span id="pstreak">0</span></small></div>
+    </header>
+    {% if s.conditions or s.event %}
+    <ul class="pchips">
+      {% for c in s.conditions %}<li title="{{ c.text }}">{{ c.name }}</li>{% endfor %}
+      {% if s.event %}<li class="ev" title="{{ s.event.text }}">{{ s.event.name }}</li>{% endif %}
+    </ul>
+    {% endif %}
+
+    <!-- Senior Sister Xue -->
+    {% set I = s.instructor %}{% set IS = I.sheets %}
+    <div class="pteacher{% if IS %} sheeted{% endif %}" id="pteacher" aria-hidden="true"{% if IS %} style="aspect-ratio: {{ IS.aspect }}"{% endif %}>
+      {% if IS %}{% for name, S in IS.sheets.items() %}
+      <div class="ptsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+      {%- endfor %}{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
+      <p class="psay" id="psay"></p>
+    </div>
+
+    <!-- what you strike, or what comes at you -->
+    {% if D.mode == "strike" %}
+    <div class="ptarget t-{{ D.target }}" id="ptarget" data-lanes="{{ D.lanes }}">
+      <img class="pobj" src="{{ D.picture }}" alt="">
+      <img class="pbroken" src="/art/practice/broken.webp" alt="">
+    </div>
+    {% else %}
+    <div class="pblows" id="pblows" aria-hidden="true"></div>
+    {% endif %}
+
+    <!-- you -->
+    <div class="fighter pme{% if s.me.isheet %} stanced{% endif %}" id="fme" data-pose="idle" aria-hidden="true">
+      <div class="poses">{% for p, src in s.me.poses.items() %}{% if not (p == "idle" and s.me.isheet) %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
+        {%- if s.me.isheet %}{% with isheet = s.me.isheet %}{% include "_stance.html" %}{% endwith %}{% endif %}
+        {%- for name, S in s.me.sheets.items() %}
+        <div class="sheetfx ssheet" data-name="{{ name }}"
+          style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; --shift: {{ (S.shift or 0) | round(4) }}{% if S.box %}; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%{% endif %}"></div>
+        {%- endfor %}</div>
+      {% if D.mode == "defend" %}<div class="pmarks" id="pmarks"></div>{% endif %}
+    </div>
+
+    <p class="pcall" id="pcall" aria-live="polite"></p>
+    <p class="pbanner" id="pbanner"></p>
+    <p class="pcount" id="pcount"></p>
+
+    <!-- before: what this drill is -->
+    <div class="pintro" id="pintro">
+      <p class="kicker">{{ I.title | upper }} · {{ I.name | upper }}</p>
+      <h2>{{ D.name }}: {{ s.technique.name }}</h2>
+      <ul>{% for tip in D.tips %}<li>{{ tip }}</li>{% endfor %}
+        {% if D.mode == "strike" %}<li>Dark targets are <b>feints</b>: leave them alone. A press at nothing costs points.</li>
+        {% else %}<li>A dark blow is a <b>feint</b>: it pulls back. Don't move for it.</li>{% endif %}
+        {% for c in s.conditions %}<li><b>{{ c.name }}</b>: {{ c.text }}.</li>{% endfor %}
+        {% if s.event %}<li class="ev">{{ s.event.text }}</li>{% endif %}
+      </ul>
+      <p class="pkeys" id="pkeys"></p>
+      <div class="pbtns">
+        <button class="btn btn-gold" id="pbegin" type="button">Begin the drill</button>
+        <form method="post" action="/practice/yield"><button class="hbtn ghost small" type="submit">Walk away</button></form>
+      </div>
+      <p class="sub">Your rest has already begun: walking away earns nothing.</p>
+    </div>
+
+    <!-- after: her verdict on the scroll -->
+    <div class="presult" id="presult" hidden>
+      <p class="kicker" id="rkick"></p>
+      <p class="rscore" id="rscore"></p>
+      <p class="rline" id="rline"></p>
+      <ul class="rcounts" id="rcounts"></ul>
+      <div class="rbar"><div id="rbar"></div></div>
+      <p class="rexp" id="rexp"></p>
+      <ul class="snotes" id="rnotes"></ul>
+      <div class="pbtns"><form method="post" action="/practice/done"><button class="btn btn-gold" type="submit">Back to the training yard</button></form>
+        <a class="hbtn ghost small" href="/town?near=master">Back to town</a></div>
+    </div>
+  </section>
+
+  <!-- touch: one pad per lane -->
+  <div class="ppads" id="ppads" aria-label="Your moves"></div>
+</main>
+<script type="application/json" id="pstate">{{ s | tojson }}</script>
+<script src="{{ asset('fight_sound.js') }}" defer></script>
+<script src="{{ asset('spar_music.js') }}" defer></script>
+<script src="{{ asset('practice.js') }}" defer></script>
+{% endblock %}
