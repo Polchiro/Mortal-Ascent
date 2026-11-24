@@ -44,14 +44,14 @@ body.wildsbg.sparbg{background-position:50% 100%}
 /* ── the fight: the Master. .smaster is the box round his standing figure; each movement's sheet sits on it by
    its own `box` (web/spar_master.py). He is painted facing right, so .smflip turns him to face you. ── */
 .smaster{position:absolute;right:21%;bottom:6.5%;width:5.9%;aspect-ratio:184/507;z-index:1}
-.smaster.sheeted{width:11.5%}
+.smaster.sheeted{width:min(10.6%,18.3vh)}                 /* about as tall as your cultivator, whose box is min(44%, 76vh) wide */
 .smbody{position:absolute;inset:0;transform-origin:50% 100%;will-change:transform}
 .smflip{position:absolute;inset:0;transform:scaleX(-1)}
 .smstill{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,.6))}
 .smaster.sheeted .smstill{visibility:hidden}
 .smsheet{position:absolute;background-repeat:no-repeat;visibility:hidden;filter:drop-shadow(0 6px 8px rgba(0,0,0,.45))}
 .smsheet.on{visibility:visible}
-.smaster::before{content:"";position:absolute;left:8%;width:84%;bottom:-1.5%;height:6%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,rgba(0,0,0,0) 72%)}
+.smaster::before{content:"";position:absolute;left:14%;width:72%;bottom:-1.5%;height:6%;border-radius:50%;background:radial-gradient(rgba(0,0,0,.6),rgba(0,0,0,.25) 50%,rgba(0,0,0,0) 72%)}
 .smbody.breathe .smstill{animation:smbreathe 3.6s ease-in-out infinite}
 @keyframes smbreathe{50%{transform:scaleY(1.012) translateY(-.3%)}}
 .smbody.hit .smflip{animation:smhit .42s ease-out}
@@ -167,13 +167,13 @@ body.wildsbg.sparbg{background-position:50% 100%}
 @media (max-width:900px){
   .sparfight .bbar{position:relative}.sparfight .techmenu{position:static}
   .sparfight .techpop{left:50%;right:auto;transform:translateX(-50%)}
-  .smaster.sheeted{width:17%;right:10%}.sfront.left{width:38%}.sfront.right{width:22%}
+  .smaster.sheeted{width:16.5%;right:10%}.sfront{display:none}
   .sbeads{gap:3px;padding:4px 8px}.sbeads li{width:17px;height:17px;border-width:1.5px}.sbeads li img{width:13px;height:13px}
   .stell{font-size:12.5px;max-width:46vw;right:-40%}
 }
 @media (max-width:560px){
   .sword{top:33%}.sperfect{top:44%}
-  .smaster.sheeted{width:30%;right:2%}.sfront{display:none}
+  .smaster.sheeted{width:30%;right:2%}
   .sbeads{gap:2px;padding:3px 6px}.sbeads li{width:14px;height:14px}.sbeads li img{width:10px;height:10px}
   .stell{right:0;max-width:60vw;font-size:12px;padding:6px 10px}
 }
