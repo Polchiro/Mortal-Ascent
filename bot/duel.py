@@ -261,6 +261,7 @@ class Duel:
         def_tech = dt is not None
         eff = tech_effect(dt) if def_tech else None
         share, note = 1.0, ""
+        sure = battle.sure_hit(att.tech_as(a_choice, "attack"))       # a Heaven attack technique always lands
         if mine == "strike":
             if theirs == "strike":
                 share, note = pvp.CLASH_DAMAGE, "blows clash"
@@ -270,7 +271,9 @@ class Duel:
                     share = 1 + att.fx["strike_vs_break_damage"]
                     note += f" (Fang +{att.fx['strike_vs_break_damage']:.0%})"
             else:                                       # Guard beats Strike
-                if dfn.guard_weak > 0:
+                if sure:                                                        # but not a Heaven attack technique
+                    note = "a Heaven technique: no guard can stop it!"
+                elif dfn.guard_weak > 0:
                     share, note = dfn.guard_weak, "slips through the weakened guard"
                 elif att.kit.can_pierce_guard():
                     note = "Heaven-Splitting: no guard can stop it!"
@@ -314,7 +317,7 @@ class Duel:
                     share, note = 1 - held, f"the guard still holds {held:.0%}"
                 notes.append(("stagger", dfn, 0))
         dodge = dfn.fx.get("dodge_chance")
-        if dodge and self.rng.random() < dodge:                                 # Feather artifact
+        if dodge and not sure and self.rng.random() < dodge:                    # Feather artifact
             return 0, 0, ("shield", f"{att.name} — {label}: {dfn.name} sidesteps it (Feather)")
         mult, more_pierce, more_hits, lines = att.kit.attack_mods(
             mine, self.turn, duel=True, target_staggered=dfn.staggered, target_hp_frac=dfn.hp_frac,

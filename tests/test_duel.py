@@ -476,3 +476,21 @@ def test_a_deflection_turns_a_break_aside_in_a_duel_and_costs_more():
             assert b.hp < b.max_hp and b.staggered
     assert 0.72 * n <= turned <= 0.88 * n
     assert a.qi_cost("attack_tech") == battle.TECHNIQUE_QI_COST[a.atk_t["grade"]]   # other techniques: no extra
+
+
+def test_a_heaven_attack_technique_always_lands_in_a_duel():
+    """Nov 25: no Guard, defence technique or Feather stops a Heaven attack technique; a lower grade is still blocked."""
+    for grade, lands in (("Heaven", True), ("Mortal", False)):
+        name = "Heaven-Rending Palm" if grade == "Heaven" else "Iron Fist"
+        for theirs in ("guard", "defense_tech"):
+            d = make(techs1=[tech(name, "attack", grade, tid=1), TECHS[1]])
+            a, b = d.sides
+            a.bqi = a.max_bqi = 500
+            play(d, "attack_tech", theirs)
+            assert (b.hp < b.max_hp) == lands, (grade, theirs)
+    d = make(techs1=[tech("Heaven-Rending Palm", "attack", "Heaven", tid=1), TECHS[1]])
+    a, b = d.sides
+    a.bqi = a.max_bqi = 500
+    b.fx["dodge_chance"] = 1.0                                       # a Feather that would dodge everything
+    play(d, "attack_tech", "break")
+    assert b.hp < b.max_hp

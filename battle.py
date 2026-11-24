@@ -62,6 +62,14 @@ DEFLECT_BREAK_CHANCE = 0.80
 DEFLECT_QI_EXTRA = 15
 
 
+def sure_hit(tech):
+    """A Heaven attack technique always lands (Nov 25, SHOAIB: an ultimate that misses would be absurd): it cannot
+    miss a Hidden enemy or be dodged (Swift beasts, the Feather artifact), and no Guard or defence technique stops
+    it; the caster is not Stunned by a Guard. A clash with the enemy's own Strike still halves it (it lands). In
+    beast fights and duels alike (bot/fight.py, bot/duel.py)."""
+    return bool(tech) and tech.get("type") == "attack" and tech.get("grade") == "Heaven"
+
+
 def technique_qi(tech, effect):
     """Battle Qi a technique costs, before statuses: its grade's, plus the deflections' extra."""
     return TECHNIQUE_QI_COST.get(tech["grade"], 30) + (DEFLECT_QI_EXTRA if effect and effect[0] == "counter" else 0)
