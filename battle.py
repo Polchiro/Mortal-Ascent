@@ -52,7 +52,7 @@ SIGNATURE_MULT = 1.2
 BATTLE_QI_START = 100         # every fight starts full (+ the player's Spirit points, stats.SPIRIT_BATTLE_QI)
 BATTLE_QI_PER_TURN = 10       # back at the end of every turn
 BATTLE_QI_GOOD_GUARD = 25     # back when a Guard fully blocks a normal Strike
-TECHNIQUE_QI_COST = {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 50}
+TECHNIQUE_QI_COST = {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 70}   # Heaven: an ultimate (was 50)
 CHILLED_QI_COST = 10          # techniques cost this much more while Chilled
 # Deflection techniques (the Counter ones: Parrying Arm, Crane Wing Deflection, Moon Mirror Palm, Thousand Hands
 # Deflection, Void Mirror Stance), Nov 24: used against a Break they turn it aside DEFLECT_BREAK_CHANCE of the time

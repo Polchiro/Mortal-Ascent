@@ -32,7 +32,7 @@ ATTACK_TECHNIQUE = {
     "Yellow": (1.35, 0.04),
     "Mystic": (1.50, 0.06),
     "Earth":  (1.70, 0.09),
-    "Heaven": (2.00, 0.12),
+    "Heaven": (3.00, 0.12),   # an ultimate (Nov 25, SHOAIB): was 2.00
 }
 
 DEFENSE_TECHNIQUE = {
@@ -41,7 +41,7 @@ DEFENSE_TECHNIQUE = {
     "Yellow": (0.25, 0.04),
     "Mystic": (0.30, 0.06),
     "Earth":  (0.40, 0.09),
-    "Heaven": (0.50, 0.12),
+    "Heaven": (0.65, 0.12),   # was 0.50
 }
 
 MAX_DAMAGE_BLOCKED = 0.80
@@ -142,11 +142,12 @@ TECHNIQUES = {
     "golden_bell_cover":         _t("Golden Bell Cover", "defense", "Earth", "Body", ("unbreakable", None)),
     "ancient_turtle_shell_art":  _t("Ancient Turtle Shell Art", "defense", "Earth", "Body", ("recover", 0.08)),
     "thousand_hands_deflection": _t("Thousand Hands Deflection", "defense", "Earth", "Palm", ("counter", 0.30)),
-    # Heaven
-    "heaven_rending_palm":         _t("Heaven-Rending Palm", "attack", "Heaven", "Palm", ("pierce", 0.40)),
+    # Heaven: ultimates since Nov 25 (SHOAIB): their effects about half again stronger (pierce 0.40 -> 0.60, counter
+    # 0.40 -> 0.60, recover 0.12 -> 0.20; Meteor keeps heavy 1.5, which multiplies the 3.00: 4.5x a Strike, was 3x), for 70 Battle Qi (battle.TECHNIQUE_QI_COST)
+    "heaven_rending_palm":         _t("Heaven-Rending Palm", "attack", "Heaven", "Palm", ("pierce", 0.60)),
     "nine_dragons_ascending_fist": _t("Nine Dragons Ascending Fist", "attack", "Heaven", "Fist", ("stagger", 1.0)),
     "meteor_falling_kick":         _t("Meteor-Falling Kick", "attack", "Heaven", "Leg", ("heavy", 1.5)),
-    "void_mirror_stance":          _t("Void Mirror Stance", "defense", "Heaven", "Palm", ("counter", 0.40)),
-    "immortal_lotus_body":         _t("Immortal Lotus Body", "defense", "Heaven", "Body", ("recover", 0.12)),
+    "void_mirror_stance":          _t("Void Mirror Stance", "defense", "Heaven", "Palm", ("counter", 0.60)),
+    "immortal_lotus_body":         _t("Immortal Lotus Body", "defense", "Heaven", "Body", ("recover", 0.20)),
     "cloud_walking_shadow":        _t("Cloud-Walking Shadow", "defense", "Heaven", "Body", ("evade", 0.40)),
 }
