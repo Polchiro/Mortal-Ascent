@@ -213,6 +213,8 @@ Three ways, all requiring the player's attention (no AFK).
 
 ### 1. /practice <technique> — Training challenges
 
+(On the website Practice is a real-time drill instead: "Practice on the website" below. The pay is the same.)
+
 - Each session rolls a random challenge from the shared pool in **challenges.md**
 - Difficulty tier = the technique's mastery stage
 - Base EXP: 40 mastery EXP × score
@@ -358,6 +360,64 @@ map's settings (Sound, volume, Music On / Off) and stops when the spar ends.
 A spar lives in the web server's memory, like a duel: a restart ends it unsaved (its rest stays, as when the bot
 restarts mid-spar). The website doesn't know about a spar under way on Discord, but the shared rest stops a second
 one from starting.
+
+## Practice on the website: Senior Sister Xue's drills
+
+**WEBSITE ONLY (SHOAIB, Nov 24).** Discord's `/practice` keeps its four challenges (challenges.md). On the website,
+Practice is a different game from Spar: a **real-time reaction drill** of one technique, about half a minute long,
+with its own teacher, **Senior Sister Xue, the Drill Instructor** (a placeholder name, easy to change: `NAME` in
+`web/practice_play.py`), in a bright wooden training hall. It is chosen in the training yard (`/training`, the
+**Practice** button beside each technique whose bar isn't full); the drill is `/practice`.
+
+**The drill is chosen by the technique** (`drill_of`; its movement from `web/technique_fx.py`, its effect from the
+bot's technique table):
+
+| Kind | What you do |
+|---|---|
+| **Striking** (all 15 attack techniques) | Targets light up on the training dummy (the **kicking post** for kicks); hit each in its lane (D F J K, or 1-4) as its ring closes. **Palms** strike targets in pairs; **finger** and **pierce** techniques get small targets and tighter timing; **combo** techniques get quick chains; **heavy** techniques get **charges**: hold the key, release as the ring closes. |
+| **Defending** (all 15 defence techniques) | Blows come **high** (a sandbag, W / ↑), **middle** (a staff, D / →) or **low** (a log, S / ↓); meet each in its lane as it lands. **Stances** (brace) press and **hold** through the blow; **deflections** and **steps** time a tap. **Counter** techniques strike back with Space after some deflections; **recover** techniques **breathe** with Space between blows. |
+
+Every drill begins with **Form** (the first quarter, 40% slower), then **Flow**, and ends with a **finishing blow** (a
+charge into the dummy's heart, or one heavy blow). **Feints** (dark targets, a blow that pulls back) must be left
+alone; a press at nothing costs a fifth of a target, so mashing never pays.
+
+**The stage sets the pace** (tier = mastery stage + 1, `TIERS`): each stage faster and longer, doubles from stage 3,
+feints from stage 4; the last stage (Return to Simplicity) is calmer, with fewer, slower beats that each want
+near-perfect timing. The dummy changes with the stage: straw, wood, iron, stone, jade.
+
+**Conditions and events** are rolled from the bot's own tables and mean here what they mean there: Heavy Rain makes
+every window 25% narrower, Night Training shows a target only at the last moment, Drunken Master adds feints, Old
+Injury makes charges and braces count half. The Wandering Hermit (the hardest drill, two conditions, EXP ×5) and
+Epiphany (EXP +50%) as on Discord; a **Rival Disciple** steps in after the drill with three quick targets: meet two
+and the EXP doubles.
+
+**The score:** a perfect is worth 1, a good 0.6, a feint left alone 1, a press at nothing −0.2; 85% of the score is
+that accuracy, 15% the longest unbroken run. **What it pays is the bot's own** (`bot/trainer.finish_practice`): 40
+mastery EXP × score, +15% per condition, the event, the daily rates (5 full, 5 half, then 10%), a score under 50%
+earns 10%, Insightful gear, the Insight Ink chance, the quest count. **The 30-minute rest starts when the drill is set
+up**, as on Discord, so walking away earns nothing and the rest stays. A full bar can't be practised: its trial with
+the Martial Master comes first.
+
+**The server referees** (`web/practice_play.Hall`): it makes the pattern, keeps the time the drill began
+(`/practice/go`), and when the page sends what was pressed and when (`/practice/submit`), it checks the drill took
+its full length and grades every target itself. The page's own clock times the presses, so a slow connection costs
+nothing. One thing at a time: a drill and a spar never run together.
+
+**Her movements** are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
+--instructor`): she raises her hand and cuts the air to begin (the drill starts on the cut, with a 3-2-1), watches with
+a hand on her hip while you work, and **claps** for a score of 70% or more or puts both hands on her hips and shakes
+her head below it. Each video's own sound is raised to full level when cut and played loud over the music. A great
+score on the wooden dummy breaks it (`broken.webp`).
+
+**The hall:** SHOAIB's painting (`art/practice/hall.jpg`) with dust drifting in the sunbeams (made in code), and the
+hall's air from her "watching" video looped under the music (`art/practice/hall.wav`, made by
+`scripts/make_practice_art.py ambience=...`; it follows Sound). The **music** is `spar_music.js`'s `practice` mood: a
+bright major five-note tune, a soft drum keeping time and the flute more often. The training objects, effects, drill
+badges, the result's scroll and her portrait are SHOAIB's Gemini pictures, cut by `scripts/make_practice_art.py`.
+
+On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
+a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,
+`web/templates/practice.html`, `web/static/practice.js`, `practice.css`. Tests: `tests/test_web_practice.py`.
 
 ## How players get techniques
 

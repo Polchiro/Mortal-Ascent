@@ -2,7 +2,8 @@
 The training yard's routes (docs/technique.md "On the website"): /training (the Martial Master's yard) and /spar
 (the fight). Every POST only asks web/spar_play.Hall; it decides.
 
-  GET  /training          the yard: your techniques' mastery, Spar, and a trial for each full bar
+  GET  /training          the yard: your techniques' mastery, Spar, a trial for each full bar, and Practice
+                          (Senior Sister Xue's drills: web/practice_routes.py)
   POST /training/spar     technique=<id> (optional: that technique's mastery trial)   begin
   GET  /spar              the fight page       GET /spar/state   the fight as JSON
   POST /spar/pick         move=..., turn=n     play a move (answers JSON: an error, and the new state)
@@ -44,14 +45,17 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if not user:
             return go("/")
         uid = user["id"]
-        got = with_conn(lambda c: (hall.hall(c, uid), purse(c, uid)))
+        drills = getattr(app.state, "practice", None)            # Practice (web/practice_routes.py) shares the yard
+        got = with_conn(lambda c: (hall.hall(c, uid), purse(c, uid), drills.hall(c, uid) if drills else None))
         avatar = oauth.avatar_url(uid, user.get("avatar"))
         if got[0] is None:
             return page(request, "no_character.html", user=user, avatar=avatar)
-        view, money = got
+        view, money, practice = got
         if view["in_spar"]:
             return go("/spar")
-        return no_store(page(request, "training.html", v=view, user=user, avatar=avatar,
+        if practice and practice["busy"]:
+            return go("/practice")
+        return no_store(page(request, "training.html", v=view, pv=practice, user=user, avatar=avatar,
                              notice=request.session.pop("training_notice", None), **money))
 
     @app.post("/training/spar")
@@ -60,8 +64,11 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if not user:
             return go("/")
         form = await form_of(request)
+        drills = getattr(app.state, "practice", None)
         if in_duel(user["id"]):
             why = "Finish your duel first."
+        elif drills and drills.busy(user["id"]):
+            why = "Finish your practice first."
         else:
             why = await run_in_threadpool(with_conn, hall.start, user["id"], num(form.get("technique")))
         if why:

@@ -84,10 +84,10 @@ def paint_out(path):
     return cv2.cvtColor(cv2.inpaint(im, m, 7, cv2.INPAINT_TELEA), cv2.COLOR_BGR2RGB)
 
 
-def ambience(video, loop=1.5, rate=24000, level=0.11):
+def ambience(video, loop=1.5, rate=24000, level=0.11, name="yard.wav", out=None, lowpass=None):
     import subprocess
     import wave
-    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-vn", "-ac", "1", "-ar", str(rate), "-af", "highpass=f=70",
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-vn", "-ac", "1", "-ar", str(rate), "-af", "highpass=f=70" + (f",lowpass=f={lowpass}" if lowpass else ""),
                           "-f", "s16le", "-"], capture_output=True, check=True).stdout
     x = np.frombuffer(raw, np.int16).astype(np.float32) / 32768
     n = int(loop * rate)
@@ -96,12 +96,12 @@ def ambience(video, loop=1.5, rate=24000, level=0.11):
     y = np.concatenate([head, x[n:-n]])
     y *= level / max(1e-6, float(np.sqrt((y ** 2).mean())))            # how loud it is on the whole
     y = np.tanh(y * 1.2) / 1.2                                          # and no peak clips
-    with wave.open(os.path.join(OUT, "yard.wav"), "wb") as w:
+    with wave.open(os.path.join(out or OUT, name), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
         w.setframerate(rate)
         w.writeframes((np.clip(y, -1, 1) * 32767).astype(np.int16).tobytes())
-    print("yard.wav", f"{len(y) / rate:.1f} s")
+    print(name, f"{len(y) / rate:.1f} s")
 
 
 def main(args):

@@ -2,7 +2,7 @@
    (sound.js): no recording. A duel's mood: a slow drum, a low string under it, and a plucked five-note tune made up
    as it goes, with a bamboo flute now and then. A mastery trial is the same a little faster, lower and heavier.
 
-   spar.js calls window.SparMusic.start('spar' | 'trial') and .stop(), and .ambience(url) for the place's own sound
+   spar.js calls window.SparMusic.start('spar' | 'trial') (practice.js: 'practice') and .stop(), and .ambience(url) for the place's own sound
    (the yard video's wind and chimes, art/spar/yard.wav), which loops under the tune and follows Sound, not Music. It shares the map's settings (the gear there:
    Sound On / Off, the volume, Music On / Off; localStorage ma.sound, ma.vol, ma.music), so someone who turned music
    off hears none here. Browsers allow sound only after a click or a key press, so the first one wakes it. It goes
@@ -17,7 +17,10 @@
   } catch (e) {}
   var MOODS = {
     spar:  {root: 146.83, scale: [0, 3, 5, 7, 10], beat: 0.36, drum: [1, 0, 0, 0.5, 1, 0, 0.6, 0], v: 1},
-    trial: {root: 130.81, scale: [0, 3, 5, 7, 10], beat: 0.31, drum: [1, 0, 0.5, 0.5, 1, 0, 0.7, 0.4], v: 1.1}
+    trial: {root: 130.81, scale: [0, 3, 5, 7, 10], beat: 0.31, drum: [1, 0, 0.5, 0.5, 1, 0, 0.7, 0.4], v: 1.1},
+    /* Practice (practice.js): a bright, steady drill hall. A major five-note tune, a soft drum keeping time like a
+       teacher's count, and the flute more often */
+    practice: {root: 196.0, scale: [0, 2, 4, 7, 9], beat: 0.4, drum: [0.8, 0, 0, 0, 0.5, 0, 0, 0], v: 0.8, flute: 0.9}
   };
   function ac() {
     if (!on) return null;
@@ -79,7 +82,7 @@
         pluck(hz(m, note), t, 0.075, 0.25);
         if (Math.random() < 0.12) rest = 4 + Math.floor(Math.random() * 6);  // a breath between phrases
       }
-      if (i === 0 && bar % 4 === 2 && Math.random() < 0.7) flute(hz(m, 5 + Math.floor(Math.random() * 3)), t, m.beat * 6, 0.035);
+      if (i === 0 && bar % (m.flute ? 2 : 4) === (m.flute ? 1 : 2) && Math.random() < (m.flute || 0.7)) flute(hz(m, 5 + Math.floor(Math.random() * 3)), t, m.beat * 6, 0.035);
       nextAt = t + m.beat; step++;
     }
   }

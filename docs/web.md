@@ -7,9 +7,10 @@ website, and later the other way round.
 **Built:** Discord login, the player's real profile page, the inventory, the **forge**, **alchemy**, **gathering**
 and **exploring (hunting alone or in parties of up to 4, docs/hunting.md) with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
-Also built: **sparring with the Martial Master and mastery trials** (`/training`, `/spar`: "The training yard" below).
+Also built: **sparring with the Martial Master and mastery trials** (`/training`, `/spar`: "The training yard" below),
+and **Practice** with Senior Sister Xue (`/practice`, a real-time drill of one technique).
 
-**Next:** using items (Open, Take) from the inventory, Practice and Train in the training yard.
+**Next:** using items (Open, Take) from the inventory, and Train in the training yard.
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -321,6 +322,12 @@ Master** in town (no menu tab). The rules, the rewards and the page are in docs/
 Code: `web/spar_play.py` (the referee), `web/spar_routes.py`, `web/templates/training.html`, `spar.html`,
 `web/static/spar.js`, `spar.css`, `spar_music.js`, `web/spar_master.py` (the Master's movements, `art/spar/`).
 Tests: `tests/test_web_spar.py`.
+
+**Practice** (`/practice`, from the yard's Practice buttons): a half-minute real-time drill of one technique with
+Senior Sister Xue (striking targets for attack techniques, meeting blows for defence techniques), graded by the server
+and paid with the bot's own practice rewards. docs/technique.md, "Practice on the website". Code:
+`web/practice_play.py` (pattern, grading, the pay), `web/practice_routes.py`, `web/templates/practice.html`,
+`web/static/practice.js`, `practice.css`; art `art/practice/`. Tests: `tests/test_web_practice.py`.
 
 ## Rankings
 

@@ -16,7 +16,8 @@ Pages:
   /world      the World Map, only to look at (web/world.py)
   /rankings   the Stone Stele's rankings: realm, Lotus Coins, Moon Pearls, duels won (web/rankings.py)
   /arena      duels: challenge a cultivator or find a match, then /duel (web/duel_routes.py)
-  /training   the Martial Master's yard: sparring and mastery trials, then /spar (web/spar_routes.py)
+  /training   the Martial Master's yard: sparring and mastery trials, then /spar (web/spar_routes.py); and
+              practice drills with Senior Sister Xue, then /practice (web/practice_routes.py)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -40,7 +41,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, rankings, spar_routes, town
+from . import (alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, practice_routes,
+               rankings, spar_routes, town)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -121,7 +123,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar"):            # only the art the pages use
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice"):            # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
@@ -633,6 +635,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     duel_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # The Martial Master's training yard: sparring and mastery trials (web/spar_routes.py, web/spar_play.py)
     spar_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # Practice with Senior Sister Xue: a real-time drill of one technique (web/practice_routes.py, web/practice_play.py)
+    practice_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):
