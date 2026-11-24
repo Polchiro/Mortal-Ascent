@@ -77,6 +77,15 @@
         {% if s.event %}<li class="ev">{{ s.event.text }}</li>{% endif %}
       </ul>
       <p class="pkeys" id="pkeys"></p>
+      <details class="pset" id="pset">
+        <summary>Settings: your keys and guides</summary>
+        <p class="sub">Click a move, then press the key you want for it. Kept on this device.</p>
+        <div class="pkeyrow" id="pkeyrow"></div>
+        <div class="psetrow">
+          <label><input type="checkbox" id="pguides"> Show guides (the key on each target, and where targets appear)</label>
+          <button class="hbtn ghost small" id="pkeyreset" type="button">Reset keys</button>
+        </div>
+      </details>
       <div class="pbtns">
         <button class="btn btn-gold" id="pbegin" type="button">Begin the drill</button>
         <form method="post" action="/practice/yield"><button class="hbtn ghost small" type="submit">Walk away</button></form>

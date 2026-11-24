@@ -156,6 +156,29 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
 .presult .snotes{list-style:none;padding:0;margin:0 auto 6px;color:#4a2a18;font-size:13px}
 .presult .hbtn.ghost{color:#5a2c12;border-color:rgba(90,44,18,.5)}
 
+/* guides (Settings): a faint mark where each lane's target appears, and the key written on each target */
+.pguide{position:absolute;width:20%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed rgba(255,231,168,.5);
+  background:rgba(20,12,6,.28);z-index:1;pointer-events:none}
+.ptarget.t-dummy .pguide{width:13%}.pmarks .pguide{width:6.5%}
+.pguide b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.9);font:800 13px Cinzel,Georgia,serif;text-shadow:0 1px 3px #000}
+.pspot .pk{position:absolute;left:50%;top:104%;transform:translateX(-50%);padding:1px 7px;border-radius:7px;background:rgba(10,8,6,.78);
+  border:1px solid var(--line);color:#fff;font:800 13px Cinzel,Georgia,serif;font-style:normal;white-space:nowrap}
+.practice.noguide .pguide,.practice.noguide .pk,.practice.noguide .pmark b{display:none}
+.practice:not([data-phase=ready]):not([data-phase=count]):not([data-phase=drill]) .pguide{display:none}
+.ptarget.broken .pguide{display:none}
+
+/* Settings on the drill card */
+.pset{margin:0 0 12px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25)}
+.pset summary{cursor:pointer;color:var(--gold2);font-weight:700;font-size:14px}
+.pset .sub{margin:8px 0;text-align:left;font-size:12.5px}
+.pkeyrow{display:flex;gap:8px}
+.pkeybtn{flex:1;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:rgba(16,11,8,.8);color:var(--cream);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px}
+.pkeybtn small{font-size:11px;color:var(--mist)}.pkeybtn b{font:800 16px Cinzel,Georgia,serif;color:var(--gold2)}
+.pkeybtn.on{background:rgba(232,194,122,.3);border-color:var(--gold)}.pkeybtn.on b{font-size:12px}
+.psetrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin-top:10px;color:var(--cream);font-size:13px}
+.psetrow label{display:flex;gap:6px;align-items:center;cursor:pointer}
+
 /* the pads */
 .ppads{display:flex;gap:8px;justify-content:center;width:min(100%,760px)}
 .ppad{flex:1;max-width:180px;padding:10px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(16,11,8,.82);color:var(--cream);
@@ -172,6 +195,13 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
 .pbtn{display:inline-flex;align-items:center;gap:6px}
 .pbtn img{border-radius:50%}
 
+/* a wide screen: the hall fills the window (under the top bar, over the pads); you keep your size by its height */
+@media (min-width:901px){
+  main.practice{max-width:none;padding:6px 10px 8px;gap:6px}
+  .pscene{width:100%;aspect-ratio:auto;height:calc(100vh - 150px);min-height:380px}
+  .practice .pscene .fighter.pme{width:min(66%,calc((100vh - 150px) * 1.17))}
+  .ppad{padding:7px 6px}
+}
 @media (max-width:900px){
   main.practice{padding:6px 4px 12px;gap:8px}
   .pscene{aspect-ratio:4/3;width:100%;border-radius:10px}
