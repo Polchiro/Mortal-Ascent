@@ -17,6 +17,17 @@ main.yard .yardhead{position:relative;min-height:250px;display:flex;align-items:
 .ybar.full div{background:linear-gradient(90deg,#C9973F,#FFE7A8);box-shadow:0 0 10px rgba(255,220,140,.8)}
 .yard .ytrial{border-color:#FFE7A8;background:linear-gradient(180deg,#FFE7A8,#C9973F);color:#2A1A04}
 
+/* ── standing on the ground: the picture is pinned to the bottom of the page so its paving is always under the
+   fighters, both stand on the open paving in the middle (not on the steps at the left), and each has a contact
+   shadow where the feet meet the stone ── */
+body.wildsbg.sparbg{background-position:50% 100%}
+@media (min-width:901px){
+  .sparfight .bscene .fighter.me{left:15%}
+  .sparfight .smaster{right:24%}
+}
+.sparfight .fighter::before{left:34%;width:22%;bottom:1.5%;height:7%;background:radial-gradient(rgba(0,0,0,.78),rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 72%)}
+.smaster::before{background:radial-gradient(rgba(0,0,0,.8),rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 72%)!important;left:-45%!important;width:190%!important;height:8%!important;bottom:-3%!important}
+
 /* ── the fight: you ─────────────────────────────────────────────────── */
 .sparfight .fighter .ssheet{left:calc(20.3125% + 46.875% * var(--shift, 0))}
 .sparfight .fighter[data-pose=sheet] .ssheet.on{visibility:visible}
