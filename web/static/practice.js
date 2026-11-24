@@ -527,6 +527,18 @@
     setTimeout(show, 2600);
   }
 
+  /* Leave (the corner): walking away from a drill earns nothing and the rest stays, so it asks once; after the
+     result it is simply the way back to the training yard */
+  (function () {
+    var form = $('pleave'), label = form.querySelector('span'), sure = false, k = null;
+    form.addEventListener('submit', function (e) {
+      if (main.dataset.phase === 'result') { form.action = '/practice/done'; return; }
+      if (sure) return;
+      e.preventDefault(); sure = true; label.textContent = 'Leave? No EXP'; form.classList.add('sure');
+      clearTimeout(k); k = setTimeout(function () { sure = false; label.textContent = 'Leave'; form.classList.remove('sure'); }, 3500);
+    });
+  })();
+
   /* ── what the page opens on ────────────────────────────────────── */
   if (S.result) { $('pintro').hidden = true; result(S.result, false); }
   else if (S.begun) {                                            // reloaded in the middle: the drill's clock is lost

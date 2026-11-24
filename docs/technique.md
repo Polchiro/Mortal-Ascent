@@ -420,7 +420,7 @@ set for striking drills and one for defending (click a move, press a key; a key 
 keys, and the arrows when defending, still work unless given to another move), and **guides** on or off: the key
 written on every target and a faint mark where each lane's targets appear.
 
-On a wide screen the hall fills the whole window under the top bar. On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
+The drill page has no top bar or tabs: the hall fills the whole window, and a **Leave** button in the corner walks away (it asks once: nothing is earned and the rest stays; after the result it goes back to the yard). On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
 a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,
 `web/templates/practice.html`, `web/static/practice.js`, `practice.css`. Tests: `tests/test_web_practice.py`.
 

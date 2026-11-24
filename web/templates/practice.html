@@ -4,7 +4,7 @@
 {% block body %}
 <link rel="stylesheet" href="{{ asset('practice.css') }}">
 <style>body.practicebg{background:linear-gradient(rgba(20,14,8,.35),rgba(10,8,6,.85)),url({{ s.hall.picture }}) center/cover fixed}</style>
-{% with page="town" %}{% include "_topbar.html" %}{% endwith %}
+{# No top bar here: the drill has the whole window (SHOAIB, Nov 24). The Leave button in the corner walks away. #}
 
 {# Practice with Senior Sister Xue (web/practice_play.py, docs/technique.md "Practice on the website"): a real-time drill
    played by practice.js from the pattern the server made. The page only times the presses; the server grades them. #}
@@ -24,6 +24,8 @@
       </div>
       <div class="pclock"><div id="pclock"></div><span id="pphase">Form</span></div>
       <div class="ptally"><b id="pscore">–</b><small>Streak <span id="pstreak">0</span></small></div>
+      <form class="pleave" id="pleave" method="post" action="/practice/yield">
+        <button type="submit" id="pleavebtn" title="Leave the drill"><img src="/art/icons/actions/flee.webp" alt="" width="26" height="26"><span>Leave</span></button></form>
     </header>
     {% if s.conditions or s.event %}
     <ul class="pchips">
