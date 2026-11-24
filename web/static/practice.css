@@ -71,7 +71,7 @@ body.practicebg footer.privacy{display:none}
 /* unarmed (art/practice/hero/): the sword fighter keeps the box (hidden), her own movements stand on its figure's spot */
 .pme.unarmed .poses{visibility:hidden}
 .pme.unarmed .poses *{visibility:hidden!important}
-.phero{position:absolute;left:38.1%;top:19.5%;height:74.2%;pointer-events:none;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
+.phero{position:absolute;left:38.1%;top:19.5%;height:74.2%;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
 .hsheet{position:absolute;background-repeat:no-repeat;visibility:hidden}
 .hsheet.on,.hsheet.fade{visibility:visible}
 .hsheet.fade{animation:pblend .18s ease-out forwards;z-index:1}

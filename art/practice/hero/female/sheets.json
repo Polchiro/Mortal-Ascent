@@ -125,6 +125,27 @@
    "sound": {
     "src": "/art/practice/hero/female/finger.mp3"
    }
+  },
+  "jump": {
+   "src": "/art/practice/hero/female/jump.webp",
+   "frames": 69,
+   "cols": 24,
+   "rows": 3,
+   "fps": 24,
+   "box": [
+    -0.0269,
+    -0.1509,
+    1.1796,
+    1.1655
+   ],
+   "keys": {
+    "set": 2,
+    "apex": 41,
+    "land": 64
+   },
+   "sound": {
+    "src": "/art/practice/hero/female/jump.mp3"
+   }
   }
  }
 }
