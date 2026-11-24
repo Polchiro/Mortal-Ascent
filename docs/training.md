@@ -57,6 +57,7 @@ Final Qi Rate = Base Rate × (1 + Talent + Technique + Blessing) × Pill multipl
 - Reward = **4 hours of your Final Qi Rate × challenge score**
 - Challenge conditions add +15% each to that session
 - Cooldown: 60 minutes
+- On the website Train is a different game with the same pay: "Train on the website" below
 
 ### 2. Passive Qi
 - Qi gathers on its own at your Final Qi Rate, for as long as you are away, with **no limit**
@@ -168,3 +169,80 @@ Assumes Genius talent, a decent technique, 8 /train sessions a day for active pl
 
 Time per realm grows as you climb (active + pills): the first five realms take about a
 week in total, Martial King about 9 days, Martial Saint about a month.
+
+## Train on the website: Meridian Circulation
+
+**WEBSITE ONLY (SHOAIB, Nov 25).** Discord's `/train` keeps its challenges (challenges.md). On the website Train is a
+**two-minute meditation**: your character sits facing you, the body turns into a glowing map of meridians, and pulses
+of Qi flow along them. **Gold Qi** must reach the **Dantian**; **dark turbid Qi** must leave through an **exit** (a palm
+or a sole). You never strike: you steer. The full design: the Claude Doc "Train redesign: Meridian Circulation".
+
+**No teacher (SHOAIB, Nov 25).** Train has no master or guide: you sit alone in the quiet chamber. Hints and the
+opening line show as a quiet line of text under the top bar. A good session celebrates itself: at 70% or more gold rings
+bloom out of the Dantian with a chime ("Well guided"); at 85% or more the full bloom ("Meridians clear!"). With the art,
+your character's Qi surge video and the golden bloom picture join it.
+
+**Status: prototype (PR 1).** Tiers 1 and 2, drawn in code over the Practice hall, no new art yet. A player whose realm
+gives tier 3-5 (or a Wandering Hermit) plays tier 2's network for now; the reward formula is the same at every tier.
+
+### How it plays
+- **Three cycles** of about 35 seconds, after a 3-second settle-in where the map glows in and nothing moves. A session
+  with a Rival Disciple has a fourth, short round.
+- **Junctions** (jade rings, numbered top to bottom): click one, or press its number, to switch which way it sends Qi.
+  A pulse reads the junction the moment it arrives. Junctions start each session pointing a random way.
+- **Gates** (red seals): click one, or press Shift + its number, to close it; pulses wait in front of it. A pulse waiting
+  **4 s**, or **3** pulses waiting, bursts the gate: the waiting Qi is lost. Opening it lets the waiting pulses through
+  one after another.
+- **Breath**: hold Space (the Breathe button on a phone) to slow all Qi to **40%**. A full Breath bar lasts 4 s and
+  refills in 5 s once you let go.
+- The strip at the top shows the next 3 pulses' colours.
+
+### The networks (tiers 1-2)
+| Tier | Realms | Sources | Junctions | Gates | Pulses a cycle | New idea |
+|---|---|---|---|---|---|---|
+| 1 | Mortal, Apprentice, Warrior | Crown | 2 | 1 | 10 | Steering; no dark Qi in cycle 1 |
+| 2 | Expert, Master | Crown + one palm | 3, then 4 | 2 | 12 | Two flows at once; a knot from cycle 2 |
+
+**The look (SHOAIB, Nov 25: "A, the acupuncture chart").** The channels curve with the seated body like a
+medical scroll: thin jade lines through small acupoint dots, a slow flowing dash showing which way Qi goes, and the
+chart's names beside the main points (Baihui at the crown, Tiantu at the throat, Tanzhong at the heart, the Dantian,
+Laogong at the palms, Yongquan at the soles). Junctions are jade rings with an arrow; gates are red paper talisman
+seals (bright when shut). The points sit at the figure's own acupoints (`BODY` and `ROUTES` in web/train_play.py), so
+when the painted meditation picture arrives they are fitted to it. Gates only go on channels long enough to tap clear
+of the junctions and the Dantian on a phone: the crown, the arms, and at tier 2 the palm's channel.
+
+Between cycles the map shifts: a gate moves to another line (tier 1's first gate is always on the crown, the only
+line gold uses in cycle 1); at tier 2 a **knot** blocks one of the two lines into the
+Dantian from cycle 2 (and moves in cycle 3), so gold must be sent round it. A session may be mirrored left to right.
+After the first cycle, 1 pulse in 4 follows close behind the one before (flip fast, close a gate, or breathe).
+Dark Qi is 30% of the pulses (tier 1: from cycle 2).
+
+### Score and Stability
+- **Score = 60% gold delivered + 25% dark expelled + 15% Stability left** (each a share of all the pulses of the
+  three cycles). With no dark Qi at all, gold counts 85%.
+- **Stability** starts at 100: −10 per gold pulse lost (out an exit or into a knot), −15 per dark pulse into the
+  Dantian, −10 per gate burst (its lost pulses cost nothing more), +2 per pulse delivered cleanly. At 0: **Qi
+  deviation**, the session ends and every pulse not delivered counts as lost. It never costs Qi you already have.
+
+### Pay, rest, conditions, events
+- Paid by the bot's own `trainer.finish`: **4 hours of your Qi rate × score**, +15% per condition, × the event, 10% under
+  50%, breakthroughs, Spirit Dew, the quest count. The bot's challenge memory (`last_challenge`) is left alone.
+- The **60-minute rest** (shared with Discord's /train) starts when you press Train, as Discord's claim_session does.
+  Walking away earns nothing.
+- Tier, conditions and event are rolled from the bot's tables. In Meridian Circulation: **Heavy Rain** Qi flows 25%
+  faster; **Night Training** a pulse shows its colour only for the last 40% of its trip and the preview is dark;
+  **Drunken Master** the preview is wrong 1 time in 4 (the pulse itself never lies); **Old Injury** one limb's meridian
+  is slow (60% speed) and Breath drains twice as fast (its leak comes with PR 2).
+- **Wandering Hermit** ×5 with two conditions; **Epiphany** +50%; **Rival Disciple**: after cycle 3 the rival pushes 6
+  dark pulses in; expel 4 for ×2. The rival's round doesn't change the score or Stability.
+
+### The referee
+The server makes the whole session from a seed (`web/train_play.make_plan`), keeps the time it began, and when the page
+sends what you did (`[ms, "j" | "g" | "b" | "B", which]`) replays it through `web/train_sim.py` and scores it itself.
+The page runs the same rules (`web/static/train_sim.js`, a line-for-line copy, whole numbers only, 50 ms ticks) so what
+you see is what the server will count; tests run both copies on the same sessions. The server also checks the session
+ran its full length and that the actions are in order, known and not too many.
+
+Code: `web/train_play.py` (the session, the pay), `web/train_sim.py` + `web/static/train_sim.js` (the rules),
+`web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`. Tests: `tests/test_web_train.py`.
+

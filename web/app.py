@@ -17,7 +17,8 @@ Pages:
   /rankings   the Stone Stele's rankings: realm, Lotus Coins, Moon Pearls, duels won (web/rankings.py)
   /arena      duels: challenge a cultivator or find a match, then /duel (web/duel_routes.py)
   /training   the Martial Master's yard: sparring and mastery trials, then /spar (web/spar_routes.py); and
-              practice drills with Senior Sister Xue, then /practice (web/practice_routes.py)
+              practice drills with Senior Sister Xue, then /practice (web/practice_routes.py); and Train, a
+              meditation steering Qi through the meridians, then /train (web/train_routes.py)
   /logout     forget the login (POST)
   /api/me     the same profile as JSON, for the pages that come next
 
@@ -42,7 +43,7 @@ from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
 from . import (alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, practice_routes,
-               rankings, spar_routes, town)
+               rankings, spar_routes, town, train_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -637,6 +638,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     spar_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # Practice with Senior Sister Xue: a real-time drill of one technique (web/practice_routes.py, web/practice_play.py)
     practice_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # Train: Meridian Circulation, a meditation of Qi pulses (web/train_routes.py, web/train_play.py, train_sim.py)
+    train_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

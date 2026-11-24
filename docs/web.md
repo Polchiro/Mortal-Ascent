@@ -8,9 +8,10 @@ website, and later the other way round.
 and **exploring (hunting alone or in parties of up to 4, docs/hunting.md) with turn-based fights** (all fully playable, saved to the same character), logout, and `/api/me` (the profile as JSON for the next pages).
 
 Also built: **sparring with the Martial Master and mastery trials** (`/training`, `/spar`: "The training yard" below),
-and **Practice** with Senior Sister Xue (`/practice`, a real-time drill of one technique).
+**Practice** with Senior Sister Xue (`/practice`, a real-time drill of one technique), and **Train** (`/train`,
+Meridian Circulation: a meditation steering Qi through the meridians; a prototype of tiers 1-2 so far).
 
-**Next:** using items (Open, Take) from the inventory, and Train in the training yard.
+**Next:** using items (Open, Take) from the inventory, and the rest of Train (tiers 3-5, then its art).
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
 so players can't cheat by editing the page.
 
@@ -328,6 +329,13 @@ Senior Sister Xue (striking targets for attack techniques, meeting blows for def
 and paid with the bot's own practice rewards. docs/technique.md, "Practice on the website". Code:
 `web/practice_play.py` (pattern, grading, the pay), `web/practice_routes.py`, `web/templates/practice.html`,
 `web/static/practice.js`, `practice.css`; art `art/practice/`. Tests: `tests/test_web_practice.py`.
+
+**Train** (`/train`, from the yard's Train card): Meridian Circulation, a two-minute meditation. Pulses of Qi flow
+along the meridians of your seated body; turn junctions, close gates and hold your breath so gold reaches the Dantian
+and dark Qi leaves by a palm or sole. Paid with the bot's own /train reward and its 60-minute rest. docs/training.md,
+"Train on the website". Code: `web/train_play.py`, `web/train_sim.py` and its copy `web/static/train_sim.js`,
+`web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`; the meditation music is a mood
+in `spar_music.js`. Prototype: drawn in code over the Practice hall. Tests: `tests/test_web_train.py`.
 
 ## Rankings
 
