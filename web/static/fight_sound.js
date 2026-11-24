@@ -281,6 +281,7 @@
     if (voice) { if (narrow !== null) tries.push(name + ':' + narrow + '#' + voice); tries.push(name + '#' + voice); }
     if (narrow !== null) tries.push(name + ':' + narrow);
     tries.push(name);
+    if (opts && opts.exact) tries = tries.filter(function (k) { return k.indexOf(name + ':' + narrow) === 0; });   // this very sound or none
     for (var i = 0; i < tries.length; i++) if (takes[tries[i]]) return tries[i];
     return null;
   }
@@ -314,7 +315,8 @@
     play: function (name, arg, delay, opts) {
       if (!S[name] || !on || !ac(false) || ctx.state !== 'running') return;
       var at = ctx.currentTime + (delay || 0) / 1000;
-      try { if (recorded(name, arg, at, opts)) return; } catch (e) {}
+      try { if (recorded(name, arg, at, opts)) return true; } catch (e) {}
+      if (opts && opts.exact) return false;                   // only its own recording: nothing made in its place
       K = LEVEL[name] || 1;
       try { S[name](at, arg); } catch (e) {}
       K = 1;

@@ -157,9 +157,7 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # crossed up into guard, settled in a wide stance at `release` and held to the end, where the
                  # beast's blow is taken. `hand` is the crossed forearms; `body` the braced figure (middle, top of the
                  # head, feet, width), as shares of the fighter's box: the effects are placed and sized around it.
-                 "brace": {"male": {"src": "/art/portraits/fight/hero_male_brace.webp", "frames": 33, "cols": 8, "rows": 5,
-                                    "jab": 5, "release": 16, "back": 32, "pace": 1.5, "shift": 0, "hand": [0.49, 0.29],
-                                    "body": [0.462, 0.094, 0.902, 0.239]},
+                 "brace": {"male": {"src": "/art/portraits/fight/hero_male_brace.webp", "frames": 28, "cols": 8, "rows": 4, "box": [0.3213, 0.1288, 0.418, 0.8247], "jab": 4, "release": 9, "back": 18, "hand": [0.682, 0.563], "shift": 0, "body": [0.533, 0.202, 0.941, 0.398], "pace": 1.5},
                            # hers (scripts/make_heroine_set.py, from her stance): she sinks into a wide, low stance,
                            # her left forearm raised (settled at `release`), holds, and rises into her stance again
                            "female": {"src": "/art/portraits/fight/hero_female_brace.webp", "frames": 28, "cols": 8, "rows": 4, "jab": 5, "release": 10, "back": 18, "pace": 1.5, "shift": 0, "hand": [0.604, 0.519], "body": [0.481, 0.259, 0.93, 0.31], "box": [0.3096, 0.1825, 0.334, 0.7603]}},
@@ -171,10 +169,7 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # His is his own, from SHOAIB's video of him (scripts/make_hero_deflect.py): on guard, he reaches back
                  # (`jab`), sweeps a blue Qi arc round in front of him to turn the blow (`release`, `hand`), carries it
                  # down and across (`sweep`, `tip`) and settles on guard again (`back` on). The arc is painted in.
-                 "deflect": {"male": {"src": "/art/portraits/fight/hero_male_deflect.webp", "frames": 32, "cols": 8, "rows": 4,
-                                      "jab": 6, "release": 13, "sweep": 17, "back": 20, "pace": 1.5, "shift": 2 / 320,
-                                      "hand": [0.663, 0.479], "tip": [0.338, 0.690],
-                                      "body": [0.454, 0.059, 0.918, 0.264]},
+                 "deflect": {"male": {"src": "/art/portraits/fight/hero_male_deflect.webp", "frames": 40, "cols": 8, "rows": 5, "box": [0.2959, 0.0823, 0.4941, 0.8623], "jab": 5, "release": 11, "sweep": 25, "back": 29, "hand": [0.754, 0.304], "shift": 0, "body": [0.492, 0.148, 0.936, 0.26], "tip": [0.384, 0.609], "pace": 1.5},
                              "female": {"src": "/art/portraits/fight/hero_female_deflect.webp", "frames": 43, "cols": 8, "rows": 6, "jab": 5, "release": 10, "sweep": 24, "back": 27, "pace": 1.5, "shift": 0, "hand": [0.696, 0.411], "tip": [0.297, 0.469], "body": [0.481, 0.195, 0.934, 0.211], "box": [0.2832, 0.1503, 0.5234, 0.7943]}},
                  # "sidestep": hers from SHOAIB's video of her (scripts/make_heroine_set.py, from her stance), what Drifting
                  # Mist Steps and Cloud-Walking Shadow play when they slip the beast's Break (fight.js `sidestepped`):
@@ -185,9 +180,7 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
                  # His, from SHOAIB's video of him (scripts/make_hero_sidestep.py): from standing he launches (`jab`)
                  # into a low dash in swirls of blue Qi (`release`), then rises out of it (`back` on: his launch played
                  # back, as the video holds the dash to its end). He dashes in place: no ground given.
-                 "sidestep": {"male": {"src": "/art/portraits/fight/hero_male_sidestep.webp", "frames": 24, "cols": 8, "rows": 3,
-                                       "jab": 5, "release": 8, "back": 17, "fps": 10, "shift": 0, "give": 0,
-                                       "hand": [0.637, 0.360], "body": [0.453, 0.059, 0.915, 0.248]},
+                 "sidestep": {"male": {"src": "/art/portraits/fight/hero_male_sidestep.webp", "frames": 40, "cols": 8, "rows": 5, "box": [0.2012, 0.1413, 0.5312, 0.8283], "jab": 3, "release": 11, "back": 20, "hand": [0.703, 0.68], "shift": 0, "body": [0.492, 0.152, 0.932, 0.267], "fps": 10, "give": 0.06},
                               "female": {"src": "/art/portraits/fight/hero_female_sidestep.webp", "frames": 36, "cols": 8, "rows": 5, "jab": 3, "release": 11, "back": 19, "fps": 10, "shift": 0, "give": 0.06, "hand": [0.64, 0.621], "body": [0.472, 0.195, 0.934, 0.211], "box": [0.1914, 0.1843, 0.5039, 0.873]}}}
 
 
