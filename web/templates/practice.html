@@ -54,7 +54,13 @@
     {% endif %}
 
     <!-- you -->
-    <div class="fighter pme{% if s.me.isheet %} stanced{% endif %}" id="fme" data-pose="idle" aria-hidden="true">
+    {% set H = s.me.hero %}
+    <div class="fighter pme{% if s.me.isheet %} stanced{% endif %}{% if H %} unarmed{% endif %}" id="fme" data-pose="idle" aria-hidden="true">
+      {% if H %}{# unarmed (art/practice/hero/): her own movements for the drill, over the spot the sword fighter stands #}
+      <div class="phero" style="aspect-ratio: {{ H.aspect }}">{% for name, S in H.sheets.items() %}
+        <div class="hsheet{% if name == 'stance' %} on{% endif %}" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+      {%- endfor %}</div>
+      {% endif %}
       <div class="poses">{% for p, src in s.me.poses.items() %}{% if not (p == "idle" and s.me.isheet) %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
         {%- if s.me.isheet %}{% with isheet = s.me.isheet %}{% include "_stance.html" %}{% endwith %}{% endif %}
         {%- for name, S in s.me.sheets.items() %}

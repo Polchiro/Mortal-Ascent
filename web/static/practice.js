@@ -217,9 +217,10 @@
     fme.dataset.pose = 'sheet';
   }
   var cur = 0, blendK = null;                                   // the frame shown now
-  function hero(x) { poses.style.transform = x ? 'translateX(' + x.toFixed(1) + 'px)' : ''; }
+  function hero(x) { (heroEl || poses).style.transform = x ? 'translateX(' + x.toFixed(1) + 'px)' : ''; }
   /* back to the stance: the movement's last frame fades out over the stance for a moment, instead of a jump */
   function stand() {
+    if (HERO) { hanim = null; hero(0); return; }
     anim = null; hero(0); fme.dataset.pose = 'idle'; fme.classList.add('blend');
     clearTimeout(blendK);
     blendK = setTimeout(function () { fme.classList.remove('blend'); Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); }, 180);
@@ -247,6 +248,7 @@
   /* one movement: 'strike' (out and back), 'hold' (out, held until let go), 'charge' (drawn back, held). A new one
      starts from the frame shown now, so quick blows flow into each other instead of snapping back to the start */
   function act(kind, lane) {
+    if (HERO) return hAct(kind, lane);
     if (!MOVE) {                                                // no movement of its own: the two still poses
       fme.dataset.pose = kind === 'charge' ? 'windup' : 'strike';
       if (kind === 'strike') { clearTimeout(act.k); act.k = setTimeout(function () { fme.dataset.pose = 'idle'; }, 260); }
@@ -263,18 +265,107 @@
     }
   }
   function release() {                                          // let go of a charge or a brace
+    if (HERO) return hRelease();
     if (!MOVE) { fme.dataset.pose = 'strike'; clearTimeout(act.k); act.k = setTimeout(function () { fme.dataset.pose = 'idle'; }, 260); return; }
     var F = frames(), go = reach(release.lane);
     anim = {keys: [[0, cur], [90, F.out], [240, F.out], [480, F.back], [700, F.n]], t0: performance.now(),
             dx: [[0, 0], [90, go], [260, go], [560, 0]]};
   }
   function animate(now) {
+    if (HERO) return hAnimate(now);
     if (anim) {
       var t = now - anim.t0, last = anim.keys[anim.keys.length - 1][0];
       show(MOVE, keyed(anim.keys, Math.min(t, last)));
       if (anim.dx) { anim.x = keyed(anim.dx, Math.min(t, anim.dx[anim.dx.length - 1][0])); hero(anim.x); }
       if (!anim.hold && t > last + 30) stand();
     }
+  }
+
+  /* ── unarmed: your own movements for the drill (art/practice/hero/<gender>/, scripts/make_practice_hero.py) ──
+     stance loops between blows; strike: out to the fist's full reach and back (the video played in reverse);
+     block: the arms come up and cross, held while a brace is held (the blow is absorbed), then down; struck: when a
+     blow gets through. Each movement's own sound is loud; a new movement cuts in at once. */
+  var HERO = S.me.hero ? S.me.hero.sheets : null, hsheets = {}, hanim = null, hcur = {name: 'stance', f: 0}, hT0 = performance.now();
+  var heroEl = fme.querySelector('.phero');
+  if (HERO) {
+    fme.querySelectorAll('.hsheet').forEach(function (el) { hsheets[el.dataset.name] = el; });
+    Object.keys(HERO).forEach(function (k) {
+      new Image().src = HERO[k].src;
+      if (HERO[k].sound) { var a = new Audio(); a.preload = 'auto'; a.src = HERO[k].sound.src; }
+    });
+  }
+  function hshow(name, f) {
+    var sp = HERO[name], el = hsheets[name];
+    f = Math.max(0, Math.min(sp.frames - 1, Math.round(f)));
+    el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
+      (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
+    if (hcur.name !== name) {                                    // from one movement to another: the old fades out
+      var old = hsheets[hcur.name];
+      old.classList.remove('on'); old.classList.add('fade');
+      setTimeout(function () { old.classList.remove('fade'); }, 190);
+      el.classList.remove('fade'); el.classList.add('on');
+    }
+    hcur = {name: name, f: f};
+  }
+  function hsound(name) {
+    var snd = HERO[name].sound;
+    if (!snd || !soundOn) return;
+    var a = new Audio(snd.src); a.volume = LOUD();
+    var p = a.play(); if (p && p.catch) p.catch(function () {});
+  }
+  function hreach(lane) {
+    var sp = HERO.strike;
+    if (!STRIKE || lane == null || !target || !sp.hand || !SPOTS[lane]) return 0;
+    var h = heroEl.getBoundingClientRect(), r = target.getBoundingClientRect();
+    var dx = r.left + r.width * SPOTS[lane][0] - (h.left + h.width * sp.hand[0]);
+    return Math.max(0, Math.min(scene.clientWidth * 0.25, dx - r.width * 0.05));
+  }
+  function hfrom(name, k) { return hcur.name === name && hanim ? hcur.f : HERO[name].keys[k]; }
+  function hAct(kind, lane) {
+    var K, now = performance.now(), x0 = hanim ? (hanim.x || 0) : 0;
+    var block = !STRIKE && lane < 3, counter = !STRIKE && lane === 3;
+    if (counter && D.effect !== 'counter') return;               // a breath: she stays in her stance
+    if (block) {
+      K = HERO.block.keys;
+      var end = HERO.block.frames - 1, from = hfrom('block', 'set');
+      if (kind === 'hold') hanim = {name: 'block', keys: [[0, from], [120, K.up], [1100, end]], t0: now, hold: true};
+      else hanim = {name: 'block', keys: [[0, from], [110, K.up], [260, K.up + 8], [470, K.set], [600, 0]], t0: now};
+      hsound('block');
+      return;
+    }
+    K = HERO.strike.keys;
+    var go = hreach(lane), set = hfrom('strike', 'set');
+    if (kind === 'charge') { hanim = {name: 'strike', keys: [[0, set], [300, K.set]], t0: now, hold: true, dx: [[0, x0], [300, 0]]}; return; }
+    hanim = {name: 'strike', keys: [[0, set], [100, K.out], [220, K.out], [500, 0]], t0: now, dx: [[0, x0], [100, go], [240, go], [500, 0]]};
+    hsound('strike');
+  }
+  function hRelease() {
+    var now = performance.now();
+    if (hcur.name === 'block') {
+      var K = HERO.block.keys;
+      hanim = {name: 'block', keys: [[0, hcur.f], [260, K.set], [380, 0]], t0: now};
+      return;
+    }
+    var S2 = HERO.strike.keys, go = hreach(release.lane);
+    hanim = {name: 'strike', keys: [[0, hcur.f], [100, S2.out], [260, S2.out], [540, 0]], t0: now, dx: [[0, 0], [100, go], [280, go], [540, 0]]};
+    hsound('strike');
+  }
+  function hStruck() {                                            // a blow got through
+    var sp = HERO.struck;
+    hanim = {name: 'struck', keys: [[0, 0], [sp.frames / sp.fps * 1000 / 1.5, sp.frames - 1]], t0: performance.now()};
+    hsound('struck');
+  }
+  function hAnimate(now) {
+    if (!HERO) return;
+    if (hanim) {
+      var t = now - hanim.t0, last = hanim.keys[hanim.keys.length - 1][0];
+      hshow(hanim.name, keyed(hanim.keys, Math.min(t, last)));
+      if (hanim.dx) { hanim.x = keyed(hanim.dx, Math.min(t, hanim.dx[hanim.dx.length - 1][0])); hero(hanim.x); }
+      if (!hanim.hold && t > last + 30) { hanim = null; hero(0); hT0 = now; }
+      return;
+    }
+    var st = HERO.stance;
+    hshow('stance', Math.floor((now - hT0) * st.fps / 1000) % st.frames);
   }
 
   /* ── effects ───────────────────────────────────────────────────── */
@@ -386,7 +477,10 @@
     } else {
       pop(where, 'Miss', 'miss');
       if (el) el.classList.add('missed');
-      if (!STRIKE && p.lane < 3) { fme.classList.remove('hurt'); void fme.offsetWidth; fme.classList.add('hurt'); fs('hurt'); }
+      if (!STRIKE && p.lane < 3) {
+        if (HERO) hStruck();
+        else { fme.classList.remove('hurt'); void fme.offsetWidth; fme.classList.add('hurt'); fs('hurt'); }
+      }
     }
     if (el) setTimeout(function () { el.remove(); if (el.mark) el.mark.remove(); }, good ? 260 : 380);
     if (el && el.classList.contains('pblow') && good) el.classList.add('back');
