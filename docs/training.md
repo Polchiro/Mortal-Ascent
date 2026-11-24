@@ -209,7 +209,7 @@ tier 2's network for now; the reward formula is the same at every tier.
   real palms. Only the drawing moves: the rules go by each line's length.
 - **Effects** (`fx/`): the golden Dantian orb (turning slowly), the jade gate seal (whole when shut, a ghost when
   open), the exit lotus, the blockage knot, the golden bloom, the Qi deviation crack, the scattered Qi; the upper
-  Dantian's blue orb waits for tier 5. `rival.webp` steps in for the Rival Disciple's round; `badge.webp` is Train's
+  Dantian's blue orb waits for tier 5. **The Rival Disciple** (`rival.mp4`, `rival.mp3`, `rival.json`): as the third cycle ends he steps in at the right, laughs, and blasts dark Qi across at you just as his round begins, his own sound at full level; then he stands with arms folded until the end (`rival.webp` is the still he falls back to); `badge.webp` is Train's
   picture in the training yard. Without any of these the page draws its plain code version.
 
 ### How it plays

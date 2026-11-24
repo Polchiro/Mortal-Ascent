@@ -53,6 +53,7 @@
     charC.width = canvas.width; charC.height = canvas.height;
     charC.style.width = W + 'px'; charC.style.height = H + 'px';
     charDrawn = null;
+    if (typeof rivC !== 'undefined' && rivC && rivOn) { rivC.width = canvas.width; rivC.height = canvas.height; rivC.style.width = W + 'px'; rivC.style.height = H + 'px'; rivSeen = -1; }
     /* the place: its cushion goes under you, at your size; then it is grown until it covers the scene */
     var bg = $('tbg'), seat = S.chamber.seat;
     if (bg && seat) {
@@ -202,6 +203,7 @@
     else if (how === 'cycle_done' && e[2] === 'cycle') {
       glow = 1.6; fs('cast');
       var dn = cyc().nodes.dantian; if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 34, life: 1500, t: performance.now()});
+      if (PLAN.cycles[e[3] + 1] && PLAN.cycles[e[3] + 1].kind === 'rival') rivalIn();   // he steps in, laughing
       again($('tbanner'), e[3] + 1 < 3 ? 'Cycle ' + (e[3] + 1) + ' complete. The Dantian compresses…' : 'Third cycle complete.');
     }
   }
@@ -222,7 +224,7 @@
     var c = cyc();
     if (c.kind === 'rival') {
       again($('tbanner'), 'The rival disciple pushes dark Qi into your meridians! Expel it.', 'warn'); fs('roar');
-      if ($('trival')) $('trival').classList.add('on');
+      rivalIn();
     }
     else if (st.cycle === 1 && S.hints.length) say(S.hints[1]);
     else if (st.cycle === 1 && PLAN.tier >= 2) say('A knot blocks a line. Send the gold round it.');
@@ -256,16 +258,17 @@
     }
     return true;
   }
-  function endFrame() {                                        // the ending's frame now, with its mask, as a picture
-    var e = endNow, sp = e.spec, w = sp.w, h = sp.h;
-    if (!endBuf) endBuf = {};
+  function endFrame() { if (!endBuf) endBuf = {}; return unmask(endBuf, endNow.v, endNow.spec.w, endNow.spec.h); }
+  /* a stacked-alpha video's frame now (picture on top, its mask below) as a see-through picture */
+  function unmask(buf, v, w, h) {
+    var endBuf = buf;
     if (!endBuf.raw || endBuf.raw.width !== w || endBuf.raw.height !== h * 2) {
       endBuf.raw = document.createElement('canvas'); endBuf.raw.width = w; endBuf.raw.height = h * 2;
       endBuf.rc = endBuf.raw.getContext('2d', {willReadFrequently: true});
       endBuf.out = document.createElement('canvas'); endBuf.out.width = w; endBuf.out.height = h;
       endBuf.oc = endBuf.out.getContext('2d');
     }
-    endBuf.rc.drawImage(e.v, 0, 0, w, h * 2);
+    endBuf.rc.drawImage(v, 0, 0, w, h * 2);
     var px = endBuf.rc.getImageData(0, 0, w, h * 2), d = px.data, n = w * h * 4, i, a;
     for (i = 0; i < n; i += 4) {
       a = d[i + n];
@@ -303,6 +306,40 @@
       cc.drawImage(loopImg, (f % L.cols) * L.fw, Math.floor(f / L.cols) * L.fh, L.fw, L.fh, r[0], r[1], r[2], r[3]);
       cc.globalAlpha = 1;
     }
+  }
+
+  /* ── the Rival Disciple's attack (art/train/rival.mp4 and its sound): he steps in at the right as the third cycle
+     ends, laughs, and blasts dark Qi across at you just as his round begins; then he stands, arms folded, and
+     watches until the end. He is drawn at a fixed size by his body in the first frame (`body`), whatever his blast
+     does. Without the video, his picture slides in instead. ── */
+  var RIV = S.rival && S.rival.attack, rivC = $('trivalc'), rivX = rivC ? rivC.getContext('2d') : null;
+  var rivV = null, rivBuf = {}, rivSeen = -1, rivOn = false;
+  if (RIV) {
+    rivV = document.createElement('video');
+    rivV.muted = true; rivV.playsInline = true; rivV.setAttribute('playsinline', ''); rivV.preload = 'auto'; rivV.src = RIV.src;
+  }
+  function rivalIn() {
+    if (rivOn) return;
+    rivOn = true;
+    if (!RIV) { if ($('trival')) $('trival').classList.add('on'); return; }
+    rivC.width = canvas.width; rivC.height = canvas.height; rivC.style.width = W + 'px'; rivC.style.height = H + 'px';
+    rivC.classList.add('on');
+    try { rivV.currentTime = 0; } catch (e) {}
+    var p = rivV.play(); if (p && p.catch) p.catch(function () {});
+    if (soundOn) { var a = new Audio(RIV.sound); a.volume = LOUD(); var q = a.play(); if (q && q.catch) q.catch(function () {}); }
+  }
+  function rivalOut() {
+    if (!rivOn) return;
+    if (rivC) rivC.classList.remove('on');
+    if ($('trival')) $('trival').classList.remove('on');
+  }
+  function drawRival() {
+    if (!rivOn || !RIV || rivV.readyState < 2 || rivV.currentTime === rivSeen) return;
+    rivSeen = rivV.currentTime;
+    var b = RIV.body, bx = RIV.box, k = H * (W < 700 ? 0.34 : 0.5) / b[3];
+    var right = W * (W < 700 ? 1.02 : 0.99), x0 = right - (b[0] + b[2] - bx[0]) * k, y0 = H - (b[1] + b[3] - bx[1]) * k;
+    rivX.setTransform(DPR, 0, 0, DPR, 0, 0); rivX.clearRect(0, 0, W, H);
+    try { rivX.drawImage(unmask(rivBuf, rivV, RIV.w, RIV.h), x0, y0, bx[2] * k, bx[3] * k); } catch (e) {}
   }
 
   /* ── drawing ──────────────────────────────────────────────────────── */
@@ -597,6 +634,7 @@
     cx.translate(sx, sy);
     var mapIn = main.dataset.phase === 'ready' ? 0.35 : running ? Math.min(1, (now - t0) / S.settle) : 1;
     if (running) tips(now);
+    drawRival();
     if (HERO) drawChar(now); else body(0.55 + 0.45 * mapIn);
     mapIn *= mapDim;
     var c = st.pause_until != null ? upcoming() : cyc();
@@ -715,7 +753,7 @@
     if (ended) return;
     ended = true; breathe(false); running = false;
     main.dataset.phase = 'wait';
-    if ($('trival')) $('trival').classList.remove('on');
+    rivalOut();
     ending();
     var send = function (tries) {
       fetch('/train/submit', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({actions: actions})})

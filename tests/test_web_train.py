@@ -531,6 +531,12 @@ def test_the_art_is_there_and_fits():
     assert tp.scene_art("wandering_hermit")["picture"].endswith("hermit.jpg")
     assert tp.scene_art("wandering_hermit")["video"] is None
     assert all(tp.fx_art().values())
+    rival = tp.rival_art()                                                 # his picture, and his attack with its sound
+    assert rival["picture"] and rival["attack"]["ms"] > 5000
+    for key in ("src", "sound"):
+        assert os.path.exists(os.path.join(ROOT, rival["attack"][key].lstrip("/")))
+    bx, by, bw, bh = rival["attack"]["body"]
+    assert 0 < bw < 1920 and 0 < bh <= 1080                                # his body, not the whole frame
     for gender in ("female", "male"):
         art = tp.hero_art(gender)
         loop = art["loop"]

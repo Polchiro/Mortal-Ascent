@@ -16,7 +16,8 @@
     <div class="tshade" aria-hidden="true"></div>
     <canvas class="tchar" id="tchar" aria-hidden="true"></canvas>
     <canvas class="tmap" id="tmap" aria-label="Your meridians"></canvas>
-    {% if s.rival %}<img class="trival" id="trival" src="{{ s.rival }}" alt="The rival disciple">{% endif %}
+    {% if s.rival %}{% if s.rival.attack %}<canvas class="trivalc" id="trivalc" aria-label="The rival disciple"></canvas>
+    {% else %}<img class="trival" id="trival" src="{{ s.rival.picture }}" alt="The rival disciple">{% endif %}{% endif %}
 
     <header class="thud">
       <div class="ttier">

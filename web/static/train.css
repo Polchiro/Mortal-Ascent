@@ -19,6 +19,9 @@ body.trainbg footer.privacy{display:none}
 .trival{position:absolute;right:2%;bottom:0;height:46%;z-index:3;pointer-events:none;opacity:0;transform:translateX(30%);transition:opacity .6s,transform .6s;
   filter:drop-shadow(0 0 18px rgba(154,92,255,.7))}
 .trival.on{opacity:1;transform:none}
+/* his attack (art/train/rival.mp4): drawn over the scene, standing at the right; his blast flies across to you */
+.trivalc{position:absolute;left:0;top:0;z-index:3;pointer-events:none;opacity:0;transition:opacity .5s}
+.trivalc.on{opacity:1}
 .tbadge{background:#000}
 
 /* the HUD: tier and conditions on the left, the next pulses in the middle, cycle and score on the right */

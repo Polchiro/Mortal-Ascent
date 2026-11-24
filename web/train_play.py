@@ -393,6 +393,23 @@ def scene_art(event=None):
             "sound": _there(ART + "/chamber.wav"), "seat": {"x": x, "y": y, "w": w}}
 
 
+def rival_art():
+    """The Rival Disciple: his picture, and his attack (art/train/rival.json: a video of him blasting dark Qi, with its
+    sound), or None."""
+    picture = _there(ART + "/rival.webp")
+    if not picture:
+        return None
+    attack = None
+    try:
+        with open(os.path.join(ROOT, "art", "train", "rival.json")) as fh:
+            attack = json.load(fh)
+        if not (_there(attack["src"]) and _there(attack["sound"])):
+            attack = None
+    except (OSError, ValueError, KeyError):
+        attack = None
+    return {"picture": picture, "attack": attack}
+
+
 def fx_art():
     return {name: _there(f"{ART}/fx/{name}.webp") for name in FX}
 
@@ -582,7 +599,7 @@ class Chamber:
                 "me": {"name": s.player["name"], "gender": looks.gender_of(look), "face": looks.face(look)},
                 "begin": LINES["begin"],
                 "chamber": scene_art(s.event), "hero": hero_art(looks.gender_of(look)), "fx": fx_art(),
-                "rival": _there(ART + "/rival.webp"),
+                "rival": rival_art(),
                 "body": {n: [x, y] for n, (x, y, _) in BODY.items()},
                 "begun": s.go_at is not None, "result": s.result,
             }
