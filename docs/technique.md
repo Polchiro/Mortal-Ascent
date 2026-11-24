@@ -293,7 +293,8 @@ Only the web's own (none changes what a spar gives):
 
 **The Master's movements** (`art/spar/master/`, `web/spar_master.py`; cut from SHOAIB's videos by
 `scripts/make_master_sheets.py`, which says what he does in each): the **stance** he breathes in, **Strike** (a palm),
-**Guard** (forearms raised; a blow lands on them in sparks), **Break** (gold Qi gathered, then slammed) and his **bow**
+**Guard** (forearms raised; a blow lands on them in sparks), **Break** (gold Qi gathered, then slammed), his **hit**
+(staggered by your blow) and his **bow**
 (when the spar begins, and before the result). `spar.js` plays them frame by frame at the videos' pace up to the moment
 the exchange is decided, then brings him back to his stance faster than the video does; your own move waits for his,
 so both land together. Each has the video's own **sound**, timed to that moment.
@@ -303,7 +304,11 @@ so both land together. Each has the video's own **sound**, timed to that moment.
   do (each tell names one move), and on the other exchanges he only breathes.
 - **Only what happened is shown:** a Guard nothing lands on is raised and lowered, without the sparks; a Break you
   struck first never lets its Qi go.
-- He has no "hit" movement yet: he is knocked back and flashes in code. Without his sheets he is a still picture.
+- **When your blow lands** he plays his own **stagger** (thrown a step back, an arm flung out, then back to his
+  stance) with the video's sound, from the moment it lands, whatever he was doing. Without his sheets he is a still
+  picture, knocked back in code.
+- **On a phone** the two panels sit side by side and slim, the four buttons are one small row, and the branch and
+  lantern are left out, so the fighters have the room.
 
 **The yard** (`art/spar/`, prepared by `scripts/make_spar_art.py`): an ordinary spar's background is the training
 yard seen from the side (`yard.jpg`, pinned to the bottom of the page so its paving is under the fighters' feet), with

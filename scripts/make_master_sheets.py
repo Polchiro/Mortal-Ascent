@@ -10,7 +10,9 @@ facing right, each starting in his fighting stance:
   and he slides back, steadies and lowers his arms (4.3-6.2 s);
 - break: he plants his feet and gathers gold Qi round his arm and feet (1.2-2.7 s: his Break tell), slams a palm in a
   burst of light (2.9 s), holds the low lunge and rises (5.4-7.5 s);
-- bow: he stands, presses fist into palm, bows his head and returns to his stance.
+- bow: he stands, presses fist into palm, bows his head and returns to his stance;
+- hit: a blow lands on his chest (0.5 s), he is thrown a step back with an arm flung out, catches himself and comes
+  back to his stance (by 4 s). The sheet starts just before the blow.
 
 No cut-out model is needed: the backdrop is flat grey, so the man is everything darker than it (filled in), and
 light (Qi, sparks: brighter than the backdrop) is kept as light, with its colour taken back out of the grey. Gemini's
@@ -23,7 +25,7 @@ arriving, the blow on his guard, the slam). `tell`: the frame he holds while you
 
 Sounds: the videos' own, cut round the moment (art/spar/master/<move>.mp3; `lead`: ms from the clip's start to the hit).
 
-    python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4
+    python -m scripts.make_master_sheets stance=stance.mp4 strike=strike.mp4 guard=guard.mp4 break=break.mp4 bow=bow.mp4 hit=hit.mp4
 
 Needs ffmpeg, numpy, Pillow and scipy.
 """
@@ -62,6 +64,9 @@ MOVES = {
     "break": {"frames": every(1, 25, 4) + every(30, 62, 4) + every(65, 74, 1) + [76, 78, 80, 83, 86, 90, 95, 100, 106,
                          112, 118] + every(129, 165, 4) + [170, 176, 182],
               "hit": 69, "tell": 46, "sound": (1.25, 5.60, 2.90)},
+    "hit": {"frames": [9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 26, 28, 31, 35, 39, 43, 47, 51, 55, 59,
+                       63, 67, 71, 75, 79, 83, 87, 91, 95],
+            "hit": 12, "sound": (0.35, 2.05, 0.55)},
     "bow": {"frames": every(1, 69, 4) + [75, 90] + every(105, 145, 4) + [152] + every(159, 215, 4) + [225]},
 }
 

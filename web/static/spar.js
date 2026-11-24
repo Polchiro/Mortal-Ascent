@@ -4,7 +4,7 @@
    Your cultivator plays the same frame-by-frame movements as in a beast fight (looks.py: the stance, Strike, Break,
    Guard, and the techniques' fist / palm / kick / finger / brace / deflect / sidestep), stepped by this file's own
    small player, so nothing in fight.js is touched. The Martial Master plays his own (web/spar_master.py: the stance
-   he breathes in, Strike, Guard, Break and his bow, each with the video's own sound), holds his tell's pose while you
+   he breathes in, Strike, Guard, Break, his stagger when he is hit and his bow, each with the video's own sound), holds his tell's pose while you
    choose when he gives one, and steps to you and is knocked back in code. Without his sheets he is a still picture. */
 (function () {
   var main = document.getElementById('spar');
@@ -362,7 +362,7 @@
     var move = e.master.move, close = e.me.base !== 'guard';     // you came to him: he only needs a short step
     var gap = Math.max(0, G.mr.left - (G.fr.left + G.fr.width * 0.6));
     var step = close ? G.W * 0.03 : Math.max(G.W * 0.03, gap - G.W * 0.012);
-    var lost = e.master.lost > 0, knock = G.W * (lost ? 0.022 + 0.03 * Math.min(1, e.master.lost / (S.master.max_hp * 0.3)) : 0);
+    var lost = e.master.lost > 0, knock = (MS && MS.hit ? 0.35 : 1) * G.W * (lost ? 0.022 + 0.03 * Math.min(1, e.master.lost / (S.master.max_hp * 0.3)) : 0);
     return function (t) {
       var x = 0, y = 0, rot = 0, sq = 1, h = t - HIT;
       if (move === 'strike') {
@@ -389,7 +389,7 @@
     var chest = at(mr, 0.42, 0.36), mine = at(fr, 0.46, 0.5);
     if (m.lost > 0) {
       var big = m.lost >= S.master.max_hp * 0.2;
-      pop(fthem, '−' + m.lost.toLocaleString(), 'hit'); fx('sspark', chest, 450); fs('hit', big ? 'big' : '');
+      pop(fthem, '−' + m.lost.toLocaleString(), 'hit'); fx('sspark', chest, 450); if (!plan.hitSound) fs('hit', big ? 'big' : '');
       body.classList.remove('hit'); void body.offsetWidth; body.classList.add('hit');
       if (!me.tech && me.base === 'strike') pic('/art/fx/slash.webp', chest, 22, 420, [{opacity: 0, transform: 'translate(-70%,-50%) scale(.6)'},
         {opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.3}, {opacity: 0, transform: 'translate(-40%,-50%) scale(1.1)'}]);
@@ -437,13 +437,15 @@
     var plan = mine(e, G), mv = e.master.move;
     var held = S.tell_pose === mv;                              // he is already in this move's first pose
     var soft = mv === 'guard' && e.me.base === 'guard';
-    var cut = mv === 'break' && e.outcome === 'win';            // your Strike lands first: his Break never comes         // nothing lands on his guard
+    var cut = mv === 'break' && e.outcome === 'win';            // your Strike lands first: his Break never comes
+    var struck = !!(MS && MS.hit && e.master.lost > 0);        // your blow lands: his own stagger, from the moment it does         // nothing lands on his guard
     var D = MS ? Math.max(0, LEAD[mv] - plan.hit) : 0;          // you wait for him: both blows meet at HIT
-    var HIT = plan.hit + D, END = Math.max(plan.end + D, HIT + (MS ? (cut ? 900 : mlength(mv, soft)) : 950)) + 120;
+    var HIT = plan.hit + D, END = Math.max(plan.end + D, HIT + (MS ? (struck ? 500 + Math.max(0, MS.hit.at[MS.hit.frames - 1] - 500) / 2.4 : cut ? 900 : mlength(mv, soft)) : 950)) + 120;
     var him = his(e, G, HIT), start = null, fired = false;
     var cues = (plan.cues || []).map(function (c) { return [c[0] + D, c[1], c[2]]; });
     body.classList.remove('breathe');
-    if (MS) { mMode = 'act'; mPlay = null; plan.hisSound = !soft && msound(mv, HIT);
+    if (MS) { mMode = 'act'; mPlay = null; plan.hisSound = !soft && !(struck && mv === 'guard') && msound(mv, HIT);
+      plan.hitSound = struck && msound('hit', HIT);
       if (cut && plan.hisSound) setTimeout(function () { plan.hisSound.pause(); }, HIT + 40); }
     again($('sayme'), e.me.label + (e.timed_out ? ' (too slow)' : ''));
     again($('saythem'), e.master.label);
@@ -473,7 +475,12 @@
       while (cues.length && t >= cues[0][0]) { var c = cues.shift(); fs(c[1], c[2]); }
       plan.render(Math.max(0, Math.min(t - D, plan.end)));
       if (t - D >= plan.end) stand();
-      if (MS) { if (cut && t > HIT + 520) mshow('stance', 0); else mshow(mv, mframe(mv, mtime(mv, t, HIT, soft, held, cut))); }
+      if (MS) {
+        var x = t - HIT;
+        if (struck && x >= -MS.hit.hit) mshow('hit', mframe('hit', MS.hit.hit + (x < 500 ? x : 500 + (x - 500) * 2.4)));
+        else if (cut && x > 520) mshow('stance', 0);
+        else mshow(mv, mframe(mv, mtime(mv, t, HIT, soft, held, cut)));
+      }
       var m = him(t);
       body.style.transform = 'translate(' + m[0] + 'px,' + m[1] + 'px) rotate(' + m[2] + 'deg) scaleY(' + m[3] + ')';
       if (t >= HIT && !fired) { fired = true; impact(e, next, plan, G); }

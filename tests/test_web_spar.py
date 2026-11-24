@@ -312,7 +312,7 @@ def test_a_spar_counts_for_the_quests(setup):
 def test_the_masters_movements_are_there():
     from web import spar_master
     data = spar_master.sheets()
-    assert data and {"stance", "strike", "guard", "break", "bow"} <= set(data["sheets"])
+    assert data and {"stance", "strike", "guard", "break", "bow", "hit"} <= set(data["sheets"])
     for name, sh in data["sheets"].items():
         assert len(sh["at"]) == sh["frames"] <= sh["cols"] * sh["rows"] and sh["at"] == sorted(sh["at"]), name
         assert os.path.exists(os.path.join(ROOT, sh["src"].lstrip("/"))), name
@@ -320,6 +320,8 @@ def test_the_masters_movements_are_there():
         sh = data["sheets"][move]
         assert 0 < sh["at"][sh["tell"]] < sh["hit"] < sh["at"][-1]
         assert os.path.exists(os.path.join(ROOT, sh["sound"]["src"].lstrip("/"))) and sh["sound"]["lead"] > 0
+    hit = data["sheets"]["hit"]
+    assert 0 < hit["hit"] < hit["at"][-1] and os.path.exists(os.path.join(ROOT, hit["sound"]["src"].lstrip("/")))
     assert data["sheets"]["stance"]["loop"] > data["sheets"]["stance"]["at"][-1]
     assert spar_master.still() == "/art/spar/master/still.webp"
     for pic in ("yard.jpg", "header.jpg", "seal.webp", "ripple.webp", "shield.webp", "dust.webp", "emblem.webp",

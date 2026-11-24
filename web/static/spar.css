@@ -160,4 +160,30 @@ body.wildsbg.sparbg{background-position:50% 100%}
   .sbeads{gap:2px;padding:3px 6px}.sbeads li{width:14px;height:14px}.sbeads li img{width:10px;height:10px}
   .stell{right:0;max-width:60vw;font-size:12px;padding:6px 10px}
 }
+/* ── a phone: both panels side by side and slim, four small buttons in a row, so the fight itself gets the room ── */
+@media (max-width:560px){
+  .battle.sparfight{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"me enemy" "scene scene" "bar bar" "side hist" "info info";gap:6px;padding:6px}
+  .sparfight>.bme{gap:6px;padding:5px 8px 5px 5px;border-radius:26px 10px 10px 26px;align-items:center}
+  .sparfight .bface{width:34px;height:34px}
+  .sparfight .bname{font-size:13px;line-height:1.1}.sparfight .bme .brealm{display:none}
+  .sparfight .brow{gap:4px;font-size:10.5px}.sparfight .brow img,.sparfight .brow .bl{display:none}
+  .sparfight .bhp{height:9px}.sparfight .brow b{font-size:10.5px}
+  .sparfight #stimed{font-size:9.5px;line-height:1.2;margin:1px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sparfight>.benemy{padding:5px 8px}
+  .sparfight .ename{font-size:13px;line-height:1.1}.sparfight .etags{display:none}
+  .sparfight .ehp{height:13px;margin-top:3px}.sparfight .ehp span{font-size:10px}
+  .sparfight .bwarn{margin-top:3px;padding-top:2px;border-top:none}
+  .sparfight .bwarn .whead{font-size:10.5px}.sparfight .whint{display:none}
+  .battle.sparfight>.bscene{height:clamp(250px,84vw,54vh)}
+  .sparfight .bbar{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .sparfight .bbar .actbtn{padding:4px 2px 5px}
+  .sparfight .bbar .actbtn img{max-width:34px}
+  .sparfight .alab{font-size:11px}.sparfight .ast{font-size:9.5px}.sparfight .ano{display:none}
+  .sparfight .bside,.sparfight .bhist{justify-self:stretch}.sparfight .bside{justify-content:flex-start}.sparfight .bhist{justify-self:end}
+  .sparfight .bside{align-items:center}.sparfight .sidebtn{padding:3px 9px 3px 3px;font-size:11.5px;align-self:center}.sparfight .sidebtn img{width:24px;height:24px}
+  .sparfight .histbtn{padding:4px 9px 4px 6px;font-size:11.5px}
+  .sparfight .binfo{padding:8px 10px}.sparfight .binfo .ititle{font-size:13px}.sparfight .binfo .itext{font-size:11.5px;line-height:1.35}
+  .sparfight .turnchip{font-size:10px;padding:2px 8px}
+  .sparfight .dtoast{top:10%;font-size:12px;padding:5px 12px;max-width:80%}
+}
 @media (prefers-reduced-motion:reduce){.smbody.breathe .smstill,.sbeads li.now,.sfront,.semblem{animation:none}.spetals{display:none}}
