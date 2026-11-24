@@ -308,7 +308,10 @@ so both land together. Each has the video's own **sound**, timed to that moment.
   stance) with the video's sound, from the moment it lands, whatever he was doing. Without his sheets he is a still
   picture, knocked back in code.
 - **On a phone** the two panels sit side by side and slim, the four buttons are one small row, and the branch and
-  lantern are left out, so the fighters have the room.
+  lantern are left out, so the fighters have the room. There (and in any narrow window) the yard is drawn on the scene itself,
+  its paving along the scene's bottom, so their feet are on the ground whatever the screen's shape.
+- **In town** the Martial Master you walk up to is the same man (`art/spar/master/town.webp`: him standing at ease, a
+  frame of the bow video; `web/town.py`).
 
 **The yard** (`art/spar/`, prepared by `scripts/make_spar_art.py`): an ordinary spar's background is the training
 yard seen from the side (`yard.jpg`, pinned to the bottom of the page so its paving is under the fighters' feet), with

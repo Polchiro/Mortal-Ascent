@@ -179,7 +179,7 @@ NPCS = [
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
      "go": [["Show my cultivation", "/profile"], ["Check my bag", "/inventory"]]},
     {"key": "master", "name": "Martial Master", "title": "Training", "x": 24.0, "y": 12.2,
-     "src": "/art/portraits/town/master.webp", "h": 128,
+     "src": "/art/spar/master/town.webp", "h": 128,          # the Master of the spar (scripts/make_master_sheets.py)
      "line": "So you want to test your techniques? Step into the yard. I'll match your strength blow for blow; show me you can read a fight.",
      "go": [["Enter the training yard", "/training"]]},
     {"key": "arena", "name": "Arena Keeper", "title": "Duels", "x": 25.4, "y": 22.4,

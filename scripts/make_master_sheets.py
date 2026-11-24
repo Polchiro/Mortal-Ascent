@@ -10,7 +10,8 @@ facing right, each starting in his fighting stance:
   and he slides back, steadies and lowers his arms (4.3-6.2 s);
 - break: he plants his feet and gathers gold Qi round his arm and feet (1.2-2.7 s: his Break tell), slams a palm in a
   burst of light (2.9 s), holds the low lunge and rises (5.4-7.5 s);
-- bow: he stands, presses fist into palm, bows his head and returns to his stance;
+- bow: he stands, presses fist into palm, bows his head and returns to his stance (its frame of him standing at ease
+  is also saved as town.webp: the Martial Master you walk up to in Azure Cloud Town);
 - hit: a blow lands on his chest (0.5 s), he is thrown a step back with an arm flung out, catches himself and comes
   back to his stance (by 4 s). The sheet starts just before the blow.
 
@@ -47,6 +48,7 @@ MARK = (1105, 560, 1215, 670)             # Gemini's sparkle
 BASE = (415, 15, 875, 715)                # the box round his standing figure in the videos (x0, y0, x1, y1)
 GLOW_REACH = 190                          # how far past his body light is kept, video px (it fades out over FEATHER)
 FEATHER = 70
+TOWN_FRAME = 40                           # of the bow video: he stands upright, at ease
 
 
 def every(a, b, step):
@@ -109,6 +111,14 @@ def build(name, video, spec):
     with tempfile.TemporaryDirectory() as tmp:
         frames_of(video, tmp)
         cuts = []
+        if name == "bow":                                       # standing at ease, arms down: the town's Martial Master
+            im = np.asarray(Image.open(os.path.join(tmp, f"{TOWN_FRAME:03d}.png")).convert("RGB")).astype(np.float32)
+            rgba, body = cut(im)
+            rgba[..., 3] *= ndi.binary_dilation(body, iterations=2)          # the man only
+            ys, xs = np.where(rgba[..., 3] > 8)
+            Image.fromarray(rgba[ys.min() - 2:ys.max() + 3, xs.min() - 2:xs.max() + 3].astype(np.uint8), "RGBA") \
+                .resize((round((xs.max() - xs.min() + 5) * 0.76), round((ys.max() - ys.min() + 5) * 0.76)), Image.LANCZOS) \
+                .save(os.path.join(OUT, "town.webp"), quality=90)
         for n in spec["frames"]:
             im = np.asarray(Image.open(os.path.join(tmp, f"{n:03d}.png")).convert("RGB")).astype(np.float32)
             cuts.append(cut(im)[0])

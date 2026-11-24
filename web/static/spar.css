@@ -147,6 +147,12 @@ body.wildsbg.sparbg{background-position:50% 100%}
 .sparfight.trial .benemy{border-color:rgba(255,215,119,.6)}
 .sparfight.trial .ename{color:#FFE7A8}
 
+/* a phone or a narrow window: the panels stack round the scene, so the page's picture no longer lines up with the
+   fighters. The yard is drawn on the scene itself, its paving along the scene's bottom, under their feet. */
+@media (max-width:900px){
+  .battle.sparfight>.bscene{background:linear-gradient(rgba(8,10,16,0),rgba(8,10,16,.22)),var(--arena) 50% 100%/cover no-repeat;border-radius:12px;overflow:hidden}
+  .sparfight .bscene .fighter.me{bottom:3%}.sparfight .smaster{bottom:7%}
+}
 @media (max-width:900px){
   .sparfight .bbar{position:relative}.sparfight .techmenu{position:static}
   .sparfight .techpop{left:50%;right:auto;transform:translateX(-50%)}
