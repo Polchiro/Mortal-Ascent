@@ -403,7 +403,7 @@ the Martial Master comes first.
 its full length and grades every target itself. The page's own clock times the presses, so a slow connection costs
 nothing. One thing at a time: a drill and a spar never run together.
 
-**Her movements** are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
+**Her movements** (she is painted facing right, so the page mirrors her to face you) are cut from SHOAIB's videos (`art/practice/instructor/`, `scripts/make_master_sheets.py
 --instructor`): she raises her hand and cuts the air to begin (the drill starts on the cut, with a 3-2-1), watches with
 a hand on her hip while you work, and **claps** for a score of 70% or more or puts both hands on her hips and shakes
 her head below it. Each video's own sound is raised to full level when cut and played loud over the music. A great
@@ -415,7 +415,12 @@ hall's air from her "watching" video looped under the music (`art/practice/hall.
 bright major five-note tune, a soft drum keeping time and the flute more often. The training objects, effects, drill
 badges, the result's scroll and her portrait are SHOAIB's Gemini pictures, cut by `scripts/make_practice_art.py`.
 
-On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
+**Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
+set for striking drills and one for defending (click a move, press a key; a key already used swaps the two; the number
+keys, and the arrows when defending, still work unless given to another move), and **guides** on or off: the key
+written on every target and a faint mark where each lane's targets appear.
+
+The drill page has no top bar or tabs: the hall fills the whole window, and a **Leave** button in the corner walks away (it asks once: nothing is earned and the rest stays; after the result it goes back to the yard). On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
 a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,
 `web/templates/practice.html`, `web/static/practice.js`, `practice.css`. Tests: `tests/test_web_practice.py`.
 

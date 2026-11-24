@@ -4,7 +4,7 @@
 {% block body %}
 <link rel="stylesheet" href="{{ asset('practice.css') }}">
 <style>body.practicebg{background:linear-gradient(rgba(20,14,8,.35),rgba(10,8,6,.85)),url({{ s.hall.picture }}) center/cover fixed}</style>
-{% with page="town" %}{% include "_topbar.html" %}{% endwith %}
+{# No top bar here: the drill has the whole window (SHOAIB, Nov 24). The Leave button in the corner walks away. #}
 
 {# Practice with Senior Sister Xue (web/practice_play.py, docs/technique.md "Practice on the website"): a real-time drill
    played by practice.js from the pattern the server made. The page only times the presses; the server grades them. #}
@@ -24,6 +24,8 @@
       </div>
       <div class="pclock"><div id="pclock"></div><span id="pphase">Form</span></div>
       <div class="ptally"><b id="pscore">–</b><small>Streak <span id="pstreak">0</span></small></div>
+      <form class="pleave" id="pleave" method="post" action="/practice/yield">
+        <button type="submit" id="pleavebtn" title="Leave the drill"><img src="/art/icons/actions/flee.webp" alt="" width="26" height="26"><span>Leave</span></button></form>
     </header>
     {% if s.conditions or s.event %}
     <ul class="pchips">
@@ -35,9 +37,9 @@
     <!-- Senior Sister Xue -->
     {% set I = s.instructor %}{% set IS = I.sheets %}
     <div class="pteacher{% if IS %} sheeted{% endif %}" id="pteacher" aria-hidden="true"{% if IS %} style="aspect-ratio: {{ IS.aspect }}"{% endif %}>
-      {% if IS %}{% for name, S in IS.sheets.items() %}
+      {% if IS %}<div class="ptflip">{% for name, S in IS.sheets.items() %}
       <div class="ptsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
-      {%- endfor %}{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
+      {%- endfor %}</div>{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
       <p class="psay" id="psay"></p>
     </div>
 
@@ -77,6 +79,15 @@
         {% if s.event %}<li class="ev">{{ s.event.text }}</li>{% endif %}
       </ul>
       <p class="pkeys" id="pkeys"></p>
+      <details class="pset" id="pset">
+        <summary>Settings: your keys and guides</summary>
+        <p class="sub">Click a move, then press the key you want for it. Kept on this device.</p>
+        <div class="pkeyrow" id="pkeyrow"></div>
+        <div class="psetrow">
+          <label><input type="checkbox" id="pguides"> Show guides (the key on each target, and where targets appear)</label>
+          <button class="hbtn ghost small" id="pkeyreset" type="button">Reset keys</button>
+        </div>
+      </details>
       <div class="pbtns">
         <button class="btn btn-gold" id="pbegin" type="button">Begin the drill</button>
         <form method="post" action="/practice/yield"><button class="hbtn ghost small" type="submit">Walk away</button></form>

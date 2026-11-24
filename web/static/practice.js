@@ -33,16 +33,30 @@
 
   /* ── the lanes: which key, what it's called, where it lands ─────── */
   var LANES = STRIKE ? D.lanes : 4;
-  var KEYS = STRIKE
-    ? [['1', 'd'], ['2', 'f'], ['3', 'j'], ['4', 'k']].slice(0, LANES)
-    : [['1', 'w', 'arrowup'], ['2', 'd', 'arrowright'], ['3', 's', 'arrowdown'], ['4', ' ']];
+  /* Your own keys (the drill card's Settings): one per lane, kept in this browser for each kind of drill. The number
+     keys (and the arrows when defending) work as well, unless you gave one of them to another lane. Guides: the key
+     written on each target and a faint mark where targets appear; they can be turned off. */
+  var DEFAULT = STRIKE ? ['d', 'f', 'j', 'k'] : ['w', 'd', 's', ' '];
+  var ALT = STRIKE ? [['1'], ['2'], ['3'], ['4']] : [['1', 'arrowup'], ['2', 'arrowright'], ['3', 'arrowdown'], ['4']];
+  var STORE = 'ma.practice.keys.' + D.mode, keys = DEFAULT.slice(), guides = true, LANE_OF = {}, capturing = null;
+  function usable(k) { return typeof k === 'string' && (k.length === 1 || k.indexOf('arrow') === 0); }
+  try {
+    var saved = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (Array.isArray(saved) && saved.length === 4 && saved.every(usable) &&
+        saved.every(function (k, i) { return saved.indexOf(k) === i; })) keys = saved;
+    guides = localStorage.getItem('ma.practice.guides') !== 'off';
+  } catch (e2) {}
+  function keyName(k) {
+    return k === ' ' ? 'Space' : {arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→'}[k] || k.toUpperCase();
+  }
   var LABEL = STRIKE
     ? (D.target === 'post' ? ['High', 'Middle', 'Low'] : ['Head', 'Upper arm', 'Lower arm', 'Leg'])
     : ['High', 'Middle', 'Low', D.effect === 'counter' ? 'Counter' : D.effect === 'recover' ? 'Breathe' : 'Space'];
-  var KEYNAME = STRIKE ? ['D', 'F', 'J', 'K'] : ['W ↑', 'D →', 'S ↓', 'Space'];
   /* where each lane's target sits on the picture (fractions of its box), measured on SHOAIB's pictures */
   var SPOTS = D.target === 'post' ? [[0.5, 0.2], [0.5, 0.42], [0.5, 0.64]]
     : [[0.6, 0.1], [0.36, 0.29], [0.36, 0.46], [0.4, 0.7]];
+  if (STRIKE) setTimeout(function () { gmarks.forEach(function (g, i) { g.style.left = SPOTS[i][0] * 100 + '%'; g.style.top = SPOTS[i][1] * 100 + '%'; }); bind(); }, 0);
+  else setTimeout(bind, 0);
   var MARKS = [[0.5, 0.27], [0.5, 0.47], [0.5, 0.82]];          // high, middle, low on your body (fractions of the fighter box)
   var BLOW = [{img: '/art/practice/sandbag.webp', w: 0.09, cls: 'bag'}, {img: '/art/practice/staff.webp', w: 0.42, cls: 'staff'},
               {img: '/art/practice/log.webp', w: 0.3, cls: 'log'}];
@@ -54,16 +68,66 @@
       var b = document.createElement('button');
       b.type = 'button'; b.className = 'ppad' + (!STRIKE && i === 3 ? ' space' : ''); b.dataset.lane = i;
       b.innerHTML = '<b></b><small></small>';
-      b.querySelector('b').textContent = LABEL[i]; b.querySelector('small').textContent = KEYNAME[i];
+      b.querySelector('b').textContent = LABEL[i];
       (function (lane) {
         b.addEventListener('pointerdown', function (e) { e.preventDefault(); down(lane); });
         ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { b.addEventListener(ev, function () { up(lane); }); });
       })(i);
       pads.appendChild(b);
-      out.push(KEYNAME[i] + ' (or ' + (i + 1) + ') ' + LABEL[i].toLowerCase());
     }
-    $('pkeys').textContent = 'Keys: ' + out.join(' · ') + '. On a phone, the pads below.';
   })();
+  /* the faint marks where targets appear, and the Settings: a key for each lane, guides on or off */
+  var gmarks = [];
+  (function () {
+    var box = STRIKE ? $('ptarget') : $('pmarks'), at = STRIKE ? null : [[0.5, 0.27], [0.5, 0.47], [0.5, 0.82]];
+    for (var i = 0; i < (STRIKE ? LANES : 3); i++) {
+      var g = document.createElement('div'); g.className = 'pguide'; g.innerHTML = '<b></b>'; g.dataset.lane = i;
+      box.appendChild(g); gmarks.push(g);
+      if (at) { g.style.left = at[i][0] * 100 + '%'; g.style.top = at[i][1] * 100 + '%'; }
+    }
+    var row = $('pkeyrow');
+    for (var j = 0; j < LANES; j++) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'pkeybtn'; b.dataset.lane = j; b.innerHTML = '<small></small><b></b>';
+      b.querySelector('small').textContent = LABEL[j];
+      (function (lane) { b.addEventListener('click', function () { capturing = capturing === lane ? null : lane; bind(); }); })(j);
+      row.appendChild(b);
+    }
+    $('pguides').checked = guides;
+    $('pguides').addEventListener('change', function () {
+      guides = this.checked;
+      try { localStorage.setItem('ma.practice.guides', guides ? 'on' : 'off'); } catch (e3) {}
+      bind();
+    });
+    $('pkeyreset').addEventListener('click', function () { keys = DEFAULT.slice(); capturing = null; save(); bind(); });
+  })();
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(keys)); } catch (e4) {} }
+  function bind() {                                              // the keys as they stand now, everywhere they are shown
+    LANE_OF = {};
+    var i;
+    for (i = 0; i < LANES; i++) LANE_OF[keys[i]] = i;
+    ALT.forEach(function (ks, lane) { if (lane < LANES) ks.forEach(function (k) { if (LANE_OF[k] == null) LANE_OF[k] = lane; }); });
+    var out = [];
+    for (i = 0; i < LANES; i++) {
+      var name = keyName(keys[i]);
+      main.querySelector('.ppad[data-lane="' + i + '"] small').textContent = name;
+      var kb = main.querySelector('.pkeybtn[data-lane="' + i + '"]');
+      kb.querySelector('b').textContent = capturing === i ? 'Press a key…' : name; kb.classList.toggle('on', capturing === i);
+      if (gmarks[i]) gmarks[i].querySelector('b').textContent = name;
+      out.push(name + ' ' + LABEL[i].toLowerCase());
+    }
+    $('pkeys').textContent = 'Keys: ' + out.join(' · ') + '. Change them in Settings. On a phone, the pads below.';
+    main.classList.toggle('noguide', !guides);
+  }
+  function capture(e) {                                          // Settings is waiting for a key for one lane
+    var k = (e.key || '').toLowerCase();
+    e.preventDefault();
+    if (k === 'escape') { capturing = null; bind(); return; }
+    if (!usable(k)) return;
+    var other = keys.indexOf(k);
+    if (other >= 0 && other !== capturing) keys[other] = keys[capturing];      // taken: the two lanes swap keys
+    keys[capturing] = k; capturing = null; save(); bind();
+  }
 
   /* ── preload: the art the drill shows ─────────────────────────── */
   ['/art/practice/plaque.webp', '/art/practice/sparks.webp', '/art/practice/splinters.webp', '/art/practice/flame.webp',
@@ -225,7 +289,8 @@
     if (p.lane === 3 && !STRIKE) {                               // Space: a counter or a breath, at your feet
       el = document.createElement('div');
       el.className = 'pspace ' + (p.breath ? 'breath' : 'counter');
-      el.innerHTML = '<img src="/art/practice/' + (p.breath ? 'breath' : 'flame') + '.webp" alt=""><i class="ring"></i><b>' + (p.breath ? 'Breathe' : 'Counter') + '</b>';
+      el.innerHTML = '<img src="/art/practice/' + (p.breath ? 'breath' : 'flame') + '.webp" alt=""><i class="ring"></i><b></b>';
+      el.querySelector('b').textContent = (p.breath ? 'Breathe' : 'Counter') + ' · ' + keyName(keys[3]);
       var q = pt(fme, 0.3, 0.55);
       el.style.left = q[0] + 'px'; el.style.top = q[1] + 'px';
       scene.appendChild(el);
@@ -235,7 +300,9 @@
       el.style.left = SPOTS[p.lane][0] * 100 + '%'; el.style.top = SPOTS[p.lane][1] * 100 + '%';
       el.innerHTML = (p.kind === 'charge' ? '<img class="flame" src="/art/practice/flame.webp" alt="">' : '') +
         '<img class="plq" src="/art/practice/plaque.webp" alt=""><i class="ring"></i>' +
-        (p.chain ? '<b>' + p.chain + '</b>' : p.kind === 'charge' ? '<b>Hold</b>' : p.kind === 'feint' ? '<b>✕</b>' : '');
+        (p.chain ? '<b>' + p.chain + '</b>' : p.kind === 'charge' ? '<b>Hold</b>' : p.kind === 'feint' ? '<b>✕</b>' : '') +
+        (p.kind === 'feint' ? '' : '<em class="pk"></em>');
+      if (p.kind !== 'feint') el.querySelector('.pk').textContent = keyName(keys[p.lane]);
       target.appendChild(el);
     } else {                                                     // a blow coming at you, and its ring on your body
       var B = BLOW[p.lane];
@@ -245,7 +312,8 @@
       el.style.width = B.w * 100 + '%';
       blows.appendChild(el);
       var m = document.createElement('div');
-      m.className = 'pmark k-' + p.kind; m.innerHTML = '<i class="ring"></i><b>' + KEYNAME[p.lane].split(' ')[0] + '</b>';
+      m.className = 'pmark k-' + p.kind; m.innerHTML = '<i class="ring"></i><b></b>';
+      m.querySelector('b').textContent = p.kind === 'feint' ? '✕' : keyName(keys[p.lane]);
       m.style.left = MARKS[p.lane][0] * 100 + '%'; m.style.top = MARKS[p.lane][1] * 100 + '%';
       marks.appendChild(m);
       el.mark = m;
@@ -365,9 +433,8 @@
   requestAnimationFrame(frame);
 
   /* keys: each lane's own, held down and let go */
-  var LANE_OF = {};
-  KEYS.forEach(function (ks, lane) { ks.forEach(function (k) { LANE_OF[k] = lane; }); });
   document.addEventListener('keydown', function (e) {
+    if (capturing != null) { capture(e); return; }
     var k = (e.key || '').toLowerCase(), lane = LANE_OF[k];
     if (lane == null || e.ctrlKey || e.metaKey || e.altKey) return;
     if (running || k === ' ' || k.indexOf('arrow') === 0) e.preventDefault();
@@ -382,7 +449,7 @@
   /* ── begin: she raises her hand and cuts the air; the drill starts on the cut ── */
   var BEGIN_AT = 4000;                                          // ms into her "begin" when her hand comes down
   function begin() {
-    $('pbegin').disabled = true;
+    $('pbegin').disabled = true; capturing = null;
     main.dataset.phase = 'count';
     if (window.SparMusic) { window.SparMusic.start('practice'); if (S.hall.sound) window.SparMusic.ambience(S.hall.sound); }
     tplay('begin');
@@ -459,6 +526,18 @@
     }, 700);
     setTimeout(show, 2600);
   }
+
+  /* Leave (the corner): walking away from a drill earns nothing and the rest stays, so it asks once; after the
+     result it is simply the way back to the training yard */
+  (function () {
+    var form = $('pleave'), label = form.querySelector('span'), sure = false, k = null;
+    form.addEventListener('submit', function (e) {
+      if (main.dataset.phase === 'result') { form.action = '/practice/done'; return; }
+      if (sure) return;
+      e.preventDefault(); sure = true; label.textContent = 'Leave? No EXP'; form.classList.add('sure');
+      clearTimeout(k); k = setTimeout(function () { sure = false; label.textContent = 'Leave'; form.classList.remove('sure'); }, 3500);
+    });
+  })();
 
   /* ── what the page opens on ────────────────────────────────────── */
   if (S.result) { $('pintro').hidden = true; result(S.result, false); }
