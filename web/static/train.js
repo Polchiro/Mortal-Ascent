@@ -53,6 +53,7 @@
     charC.width = canvas.width; charC.height = canvas.height;
     charC.style.width = W + 'px'; charC.style.height = H + 'px';
     charDrawn = null;
+    if (typeof rivC !== 'undefined' && rivC && rivOn) { rivC.width = canvas.width; rivC.height = canvas.height; rivC.style.width = W + 'px'; rivC.style.height = H + 'px'; rivSeen = -1; }
     /* the place: its cushion goes under you, at your size; then it is grown until it covers the scene */
     var bg = $('tbg'), seat = S.chamber.seat;
     if (bg && seat) {
@@ -165,6 +166,7 @@
         trav[p.id] = (trav[p.id] || 0) + (b.edge === p.edge ? p.pos - b.pos : (c.lens[b.edge] || 0) - b.pos + Math.max(0, p.pos));
       });
       st.events.forEach(onEvent);
+      seenTips();
     }
     if (breathing && !st.breathing && st.breath === 0) { breathing = false; $('tbreathe').classList.remove('on'); act('B'); }
   }
@@ -187,17 +189,42 @@
     else if (how === 'knot') { flash(at, 'bad'); fs('block'); again($('tcall'), e[3] ? 'Stuck in the knot' : 'Gold lost in the knot', 'miss'); }
     else if (how === 'gate_burst') { flash(nodeAt(e[2]), 'bad'); shake = 10; fs('boom'); again($('tcall'), 'The gate bursts!', 'miss'); }
     else if (how === 'deviation') { shake = 22; fs('stun'); again($('tbanner'), 'Qi deviation!', 'warn'); }
+    else if (how === 'resonance') {                              // ten clean in a row: the Breath is full again
+      var dn = cyc().nodes.dantian;
+      again($('tcall'), 'Qi Resonance! ' + e[2] + ' in a row: Breath restored', 'perfect');
+      fs('heal'); fs('cast', null, 120); glow = 1.4;
+      if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 26, life: 1200, t: performance.now()});
+      var bb2 = $('tbreath'); bb2.classList.remove('full'); void bb2.offsetWidth; bb2.classList.add('full');
+    }
+    else if (how === 'boon') {
+      var B = S.boon_text[e[2]];
+      again($('tbanner'), B.name + ': ' + B.text); fs('heal');
+    }
     else if (how === 'cycle_done' && e[2] === 'cycle') {
       glow = 1.6; fs('cast');
       var dn = cyc().nodes.dantian; if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 34, life: 1500, t: performance.now()});
+      if (PLAN.cycles[e[3] + 1] && PLAN.cycles[e[3] + 1].kind === 'rival') rivalIn();   // he steps in, laughing
       again($('tbanner'), e[3] + 1 < 3 ? 'Cycle ' + (e[3] + 1) + ' complete. The Dantian compresses…' : 'Third cycle complete.');
     }
+  }
+  function seenTips() {                                         // what has just appeared for the first time
+    var c = cyc();
+    if (st.pulses.some(function (p) { return p.dark && p.done == null; }))
+      tip('dark', 'Dark Qi! Turn the junctions so it leaves by a white lotus (a palm or a sole), never into the Dantian.');
+    if (Object.keys(c.nodes).some(function (id) { return c.nodes[id].type === 'knot'; }))
+      tip('knot', 'A knot blocks a channel: Qi that reaches it is lost. Send the gold round it.');
+    Object.keys(st.gates).forEach(function (g) {
+      if (!st.gates[g].open && st.pulses.some(function (p) { return p.wait === g && p.done == null; }))
+        tip('gate', 'Held at the gate. Open it again (Shift + its number) before the red ring fills, or it bursts.');
+    });
+    if (st.choosing != null) tip('boon', 'Open a meridian: pick a blessing (1 or 2). It lasts the rest of the session.');
+    if (st.harmony >= 3) tip('harmony', 'Harmony ' + st.harmony + ': keep it clean. Every ' + PLAN.harmony + ' in a row refills your Breath.');
   }
   function onCycle() {
     var c = cyc();
     if (c.kind === 'rival') {
       again($('tbanner'), 'The rival disciple pushes dark Qi into your meridians! Expel it.', 'warn'); fs('roar');
-      if ($('trival')) $('trival').classList.add('on');
+      rivalIn();
     }
     else if (st.cycle === 1 && S.hints.length) say(S.hints[1]);
     else if (st.cycle === 1 && PLAN.tier >= 2) say('A knot blocks a line. Send the gold round it.');
@@ -231,16 +258,17 @@
     }
     return true;
   }
-  function endFrame() {                                        // the ending's frame now, with its mask, as a picture
-    var e = endNow, sp = e.spec, w = sp.w, h = sp.h;
-    if (!endBuf) endBuf = {};
+  function endFrame() { if (!endBuf) endBuf = {}; return unmask(endBuf, endNow.v, endNow.spec.w, endNow.spec.h); }
+  /* a stacked-alpha video's frame now (picture on top, its mask below) as a see-through picture */
+  function unmask(buf, v, w, h) {
+    var endBuf = buf;
     if (!endBuf.raw || endBuf.raw.width !== w || endBuf.raw.height !== h * 2) {
       endBuf.raw = document.createElement('canvas'); endBuf.raw.width = w; endBuf.raw.height = h * 2;
       endBuf.rc = endBuf.raw.getContext('2d', {willReadFrequently: true});
       endBuf.out = document.createElement('canvas'); endBuf.out.width = w; endBuf.out.height = h;
       endBuf.oc = endBuf.out.getContext('2d');
     }
-    endBuf.rc.drawImage(e.v, 0, 0, w, h * 2);
+    endBuf.rc.drawImage(v, 0, 0, w, h * 2);
     var px = endBuf.rc.getImageData(0, 0, w, h * 2), d = px.data, n = w * h * 4, i, a;
     for (i = 0; i < n; i += 4) {
       a = d[i + n];
@@ -278,6 +306,40 @@
       cc.drawImage(loopImg, (f % L.cols) * L.fw, Math.floor(f / L.cols) * L.fh, L.fw, L.fh, r[0], r[1], r[2], r[3]);
       cc.globalAlpha = 1;
     }
+  }
+
+  /* ── the Rival Disciple's attack (art/train/rival.mp4 and its sound): he steps in at the right as the third cycle
+     ends, laughs, and blasts dark Qi across at you just as his round begins; then he stands, arms folded, and
+     watches until the end. He is drawn at a fixed size by his body in the first frame (`body`), whatever his blast
+     does. Without the video, his picture slides in instead. ── */
+  var RIV = S.rival && S.rival.attack, rivC = $('trivalc'), rivX = rivC ? rivC.getContext('2d') : null;
+  var rivV = null, rivBuf = {}, rivSeen = -1, rivOn = false;
+  if (RIV) {
+    rivV = document.createElement('video');
+    rivV.muted = true; rivV.playsInline = true; rivV.setAttribute('playsinline', ''); rivV.preload = 'auto'; rivV.src = RIV.src;
+  }
+  function rivalIn() {
+    if (rivOn) return;
+    rivOn = true;
+    if (!RIV) { if ($('trival')) $('trival').classList.add('on'); return; }
+    rivC.width = canvas.width; rivC.height = canvas.height; rivC.style.width = W + 'px'; rivC.style.height = H + 'px';
+    rivC.classList.add('on');
+    try { rivV.currentTime = 0; } catch (e) {}
+    var p = rivV.play(); if (p && p.catch) p.catch(function () {});
+    if (soundOn) { var a = new Audio(RIV.sound); a.volume = LOUD(); var q = a.play(); if (q && q.catch) q.catch(function () {}); }
+  }
+  function rivalOut() {
+    if (!rivOn) return;
+    if (rivC) rivC.classList.remove('on');
+    if ($('trival')) $('trival').classList.remove('on');
+  }
+  function drawRival() {
+    if (!rivOn || !RIV || rivV.readyState < 2 || rivV.currentTime === rivSeen) return;
+    rivSeen = rivV.currentTime;
+    var b = RIV.body, bx = RIV.box, k = H * (W < 700 ? 0.34 : 0.5) / b[3];
+    var right = W * (W < 700 ? 1.02 : 0.99), x0 = right - (b[0] + b[2] - bx[0]) * k, y0 = H - (b[1] + b[3] - bx[1]) * k;
+    rivX.setTransform(DPR, 0, 0, DPR, 0, 0); rivX.clearRect(0, 0, W, H);
+    try { rivX.drawImage(unmask(rivBuf, rivV, RIV.w, RIV.h), x0, y0, bx[2] * k, bx[3] * k); } catch (e) {}
   }
 
   /* ── drawing ──────────────────────────────────────────────────────── */
@@ -352,7 +414,9 @@
     cx.globalAlpha = alpha; cx.lineCap = 'round'; cx.lineJoin = 'round';
     curve(c, ch.pts);
     cx.strokeStyle = hurt ? 'rgba(255,110,90,.16)' : JADE + '0.13)'; cx.lineWidth = u * 2.8; cx.stroke();
-    cx.strokeStyle = hurt ? 'rgba(255,140,120,.8)' : JADE + '0.7)'; cx.lineWidth = Math.max(1.4, u * 0.42); cx.stroke();
+    var lift = Math.min(1, (st.harmony % PLAN.harmony) / PLAN.harmony);         // Harmony brightens the channels
+    cx.strokeStyle = hurt ? 'rgba(255,140,120,.8)' : 'rgba(' + Math.round(120 + 100 * lift) + ',235,' + Math.round(190 - 40 * lift) + ',' + (0.7 + 0.25 * lift) + ')';
+    cx.lineWidth = Math.max(1.4, u * (0.42 + 0.18 * lift)); cx.stroke();
     if (!reduced) {                                                    // the flow
       cx.setLineDash([u * 1.2, u * 4.5]); cx.lineDashOffset = -now / 60;
       cx.strokeStyle = hurt ? 'rgba(255,190,170,.75)' : 'rgba(225,255,240,.75)'; cx.lineWidth = Math.max(1.6, u * 0.5); cx.stroke();
@@ -409,7 +473,7 @@
       var g = st.gates[id], open = !g || g.open;
       var waiting = st.pulses.filter(function (p) { return p.wait === id && p.done == null; });
       var oldest = waiting.length ? Math.min.apply(null, waiting.map(function (p) { return p.waited; })) : null;
-      var strain = waiting.length ? Math.max(waiting.length / PLAN.gate.most, (st.tick - oldest) / PLAN.gate.hold) : 0;
+      var strain = waiting.length ? Math.max(waiting.length / st.gate_most, (st.tick - oldest) / st.gate_hold) : 0;
       var w = r * 0.62, h = r * 0.9, wob = open ? 0 : 0.06 * Math.sin(now / 80) * strain;
       cx.translate(x, y); cx.rotate(wob);
       if (fxok('seal')) {                                          // the jade seal: whole when shut, a ghost when open
@@ -501,7 +565,7 @@
       if (p.wait) { var n = c.nodes[p.wait]; x = X(n.x); y = Y(n.y); a = null; }
       else {
         var ab = p.edge.split('>'), A = c.nodes[ab[0]], B = c.nodes[ab[1]], L = c.lens[p.edge];
-        var sp = PLAN.speed * (PLAN.injured.indexOf(p.edge) >= 0 ? 0.6 : 1) * (st.breathing ? 0.4 : 1);
+        var sp = PLAN.speed * (st.slow ? 0.85 : 1) * (PLAN.injured.indexOf(p.edge) >= 0 ? 0.6 : 1) * (st.breathing ? 0.4 : 1);
         f = Math.max(0, Math.min(1, (p.pos + sp * frac) / L));
         x = X(A.x + (B.x - A.x) * f); y = Y(A.y + (B.y - A.y) * f); a = A; b = B;
       }
@@ -551,7 +615,13 @@
   function draw(now) {
     var elapsed = running ? now - t0 - S.settle : -1, frac = 0;
     if (running && elapsed >= 0) {
-      if (!settled) { settled = true; main.dataset.phase = 'flow'; if (S.hints.length) say(S.hints[0]); }
+      if (!settled) {
+        settled = true; main.dataset.phase = 'flow';
+        /* this session's conditions and event, every time (they change from session to session) */
+        S.conditions.forEach(function (c) { tipQ.push(c.name + ': ' + c.text + '.'); });
+        if (S.event) tipQ.push(S.event.text);
+        if (S.hints.length) tipQ.unshift(S.hints[0]);
+      }
       advance(elapsed);
       frac = st.over ? 0 : Math.max(0, Math.min(1, (elapsed - st.tick * TICK) / TICK));
       if (S.hints.length && st.cycle === 0 && elapsed > 12000 && !draw.hint3) { draw.hint3 = true; say(S.hints[2]); }
@@ -563,6 +633,8 @@
     if (shake > 0 && !reduced) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.88; if (shake < 0.5) shake = 0; }
     cx.translate(sx, sy);
     var mapIn = main.dataset.phase === 'ready' ? 0.35 : running ? Math.min(1, (now - t0) / S.settle) : 1;
+    if (running) tips(now);
+    drawRival();
     if (HERO) drawChar(now); else body(0.55 + 0.45 * mapIn);
     mapIn *= mapDim;
     var c = st.pause_until != null ? upcoming() : cyc();
@@ -591,7 +663,11 @@
     if (nextEl.innerHTML !== html) nextEl.innerHTML = html;
     $('tcycle').textContent = c.kind === 'rival' ? 'Rival round' : 'Cycle ' + Math.min(3, st.cycle + 1) + ' / 3';
     $('tscore').textContent = running && st.gold + st.dark ? Math.round(100 * soFar()) + '%' : '–';
-    $('tbreathfill').style.height = (100 * st.breath / PLAN.breath.max) + '%';
+    $('tbreathfill').style.height = (100 * st.breath / st.breath_max) + '%';
+    var hm = $('tharm');
+    hm.textContent = running && st.harmony ? 'Harmony ' + st.harmony : '';
+    hm.classList.toggle('hot', st.harmony >= PLAN.harmony - 3 && st.harmony % PLAN.harmony >= PLAN.harmony - 3);
+    boonCard();
     $('tbreath').classList.toggle('on', st.breathing);
   }
 
@@ -599,6 +675,32 @@
   function soFar() {
     var g = st.gold ? st.gold_in / st.gold : 1, stab = st.deviation ? 0 : st.stability / 100;
     return st.dark ? 0.6 * g + 0.25 * st.dark_out / st.dark + 0.15 * stab : 0.85 * g + 0.15 * stab;
+  }
+
+  /* ── open a meridian: the blessing card while one is being chosen ── */
+  var boonFor = null;
+  function boonCard() {
+    var card = $('tboon');
+    if (!running || st.choosing == null) { if (!card.hidden) card.hidden = true; boonFor = null; return; }
+    if (boonFor !== st.choosing) {
+      boonFor = st.choosing;
+      var box = $('tboons'); box.innerHTML = '';
+      PLAN.boons[st.choosing].forEach(function (k, i) {
+        var B = S.boon_text[k], b = document.createElement('button');
+        b.type = 'button'; b.innerHTML = '<b></b><small></small><i></i>';
+        b.children[0].textContent = B.name; b.children[1].textContent = B.text; b.children[2].textContent = 'Press ' + (i + 1);
+        b.addEventListener('click', function () { choose(i); });
+        box.appendChild(b);
+      });
+      card.hidden = false; fs('cast');
+    }
+    var left = Math.max(0, st.choose_until - st.tick) / PLAN.choose;
+    $('tboonclock').style.width = (100 * left) + '%';
+  }
+  function choose(i) {
+    if (st.choosing == null || choose.sent === st.choosing) return;
+    choose.sent = st.choosing;
+    act('o', PLAN.boons[st.choosing][i]);
   }
 
   /* ── input: the map, the keys, the Breathe button ─────────────────── */
@@ -625,6 +727,7 @@
     var m = /^(?:Digit|Numpad)([1-8])$/.exec(e.code || '');
     if (!m || e.repeat) return;
     var i = +m[1] - 1;
+    if (st.choosing != null) { if (i < 2) { e.preventDefault(); choose(i); } return; }
     if (e.shiftKey) { if (number.gs[i]) { e.preventDefault(); gate(number.gs[i]); } }
     else if (number.js[i]) { e.preventDefault(); turn(number.js[i]); }
   });
@@ -650,7 +753,7 @@
     if (ended) return;
     ended = true; breathe(false); running = false;
     main.dataset.phase = 'wait';
-    if ($('trival')) $('trival').classList.remove('on');
+    rivalOut();
     ending();
     var send = function (tries) {
       fetch('/train/submit', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({actions: actions})})
@@ -678,6 +781,8 @@
     counts.push(['Stability', r.stability]);
     if (r.dark_in) counts.push(['Dark in the Dantian', r.dark_in]);
     if (r.bursts) counts.push(['Gates burst', r.bursts]);
+    if (r.best_harmony) counts.push(['Best Harmony', r.best_harmony]);
+    if (r.boon_names && r.boon_names.length) counts.push(['Blessings', r.boon_names.join(', ')]);
     var ul = $('rcounts'); ul.innerHTML = '';
     counts.forEach(function (c) { var li = document.createElement('li'); li.innerHTML = '<span></span><b></b>'; li.firstChild.textContent = c[0]; li.lastChild.textContent = c[1]; ul.appendChild(li); });
     $('rexp').textContent = '+' + r.gained.toLocaleString() + ' Qi · ' + r.bar.qi.toLocaleString() + ' / ' + r.bar.need.toLocaleString() + ' (' + r.bar.where + ')';
@@ -741,6 +846,57 @@
     var el = $('tcheer'); el.innerHTML = '<span></span><small></small>';
     el.firstChild.textContent = title; el.lastChild.textContent = line;
     el.className = 'tcheer'; void el.offsetWidth; el.className = 'tcheer go';
+  }
+
+  /* ── How to play: the guide. It opens by itself the first time; then from the start card or the ? button. It
+     never pauses the meditation (the Qi keeps flowing), so the first time it shows before you begin. ── */
+  var GUIDE_SEEN = 'ma.train.guide.seen', pages = [], page = 0;
+  (function () {
+    var box = $('tguide'), nav = $('tgnav');
+    box.querySelectorAll('.tgbody section').forEach(function (sec) { pages.push(sec.dataset.p); });
+    function go(i) {
+      page = Math.max(0, Math.min(pages.length - 1, i));
+      box.querySelectorAll('.tgbody section').forEach(function (sec, j) { sec.classList.toggle('on', j === page); });
+      nav.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.p === pages[page]); });
+      $('tgpage').textContent = (page + 1) + ' / ' + pages.length;
+      $('tgprev').style.visibility = page ? 'visible' : 'hidden';
+      $('tgnext').textContent = page < pages.length - 1 ? 'Next →' : 'Done';
+      box.querySelector('.tgbody').scrollTop = 0;
+      var on = nav.querySelector('button.on'); if (on && on.scrollIntoView && window.innerWidth < 900) on.scrollIntoView({block: 'nearest', inline: 'center'});
+    }
+    window.trainGuide = function (open, at) {
+      if (!open) { box.hidden = true; return; }
+      $('tglive').hidden = !running;
+      box.hidden = false; go(at == null ? page : pages.indexOf(at) >= 0 ? pages.indexOf(at) : at);
+      try { localStorage.setItem(GUIDE_SEEN, '1'); } catch (e) {}
+    };
+    nav.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () { go(pages.indexOf(b.dataset.p)); }); });
+    $('tgprev').addEventListener('click', function () { go(page - 1); });
+    $('tgnext').addEventListener('click', function () { if (page < pages.length - 1) go(page + 1); else trainGuide(false); });
+    $('tgclose').addEventListener('click', function () { trainGuide(false); });
+    $('tguidebtn').addEventListener('click', function () { trainGuide(true, 0); });
+    $('tqbtn').addEventListener('click', function () { trainGuide(box.hidden, running ? 'controls' : null); });
+    document.addEventListener('keydown', function (e) {
+      if (box.hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); trainGuide(false); }
+      else if (e.key === 'ArrowRight') go(page + 1);
+      else if (e.key === 'ArrowLeft') go(page - 1);
+    }, true);
+    var seen = false;
+    try { seen = localStorage.getItem(GUIDE_SEEN) === '1'; } catch (e) {}
+    if (!seen && !S.result && !S.begun) trainGuide(true, 0);
+  })();
+
+  /* first-time tips: the moment something new appears, one line says what to do (each once per browser) */
+  var tipQ = [], tipT = 0;
+  function tip(key, text) {
+    var k = 'ma.train.tip.' + key;
+    try { if (localStorage.getItem(k) === '1') return; localStorage.setItem(k, '1'); } catch (e) {}
+    tipQ.push(text);
+  }
+  function tips(now) {
+    if (!tipQ.length || now < tipT) return;
+    say(tipQ.shift()); tipT = now + 5200;
   }
 
   /* Leave: walking away earns nothing and the rest stays, so it asks once; after the result it goes back */

@@ -7,6 +7,7 @@ Train's art (docs/training.md "Train on the website"), cut from SHOAIB's Flow pi
   python -m scripts.make_train_art fx dantian=<picture> dantian_upper=... seal=... lotus=... knot=... bloom=...
                                       crack=... scatter=... badge=... rival=... hermit=...
   python -m scripts.make_train_art keeper <picture>        (the Quiet Pavilion's keeper, for the town)
+  python -m scripts.make_train_art rival <video>           (the Rival Disciple's attack, from his picture P4)
 
 hero: the videos are Veo 3.1 Fast, 1920x1080, the character seated in lotus pose facing the viewer on plain grey.
   loop      the meditation loop. Only its calm part is kept (LOOP: the robe opens for a moment in his video, and
@@ -88,8 +89,16 @@ def ends_of(video, a, b):
 
 def clean(im):
     im = im.copy()
+    bg = cutter.backdrop(im)
     x0, y0, x1, y1 = SPARKLE
-    im[y0:y1, x0:x1] = cutter.backdrop(im)
+    im[y0:y1, x0:x1] = bg
+    for edge in (np.s_[:8], np.s_[-8:]):                       # thin black bars some videos carry along an edge
+        rows = im[edge]
+        dark = rows.mean(axis=(1, 2)) < 50
+        rows[dark] = bg
+        cols = im[:, edge]
+        darkc = cols.mean(axis=(0, 2)) < 50
+        cols[:, darkc] = bg
     return im
 
 
@@ -305,6 +314,45 @@ def keeper(path):
     print("keeper", im.size)
 
 
+def rival(video):
+    """The Rival Disciple's attack: him and his dark energy as a stacked-alpha video (like the endings), its sound at
+    full level, and rival.json: where his body is in the first frame (`body`), so the page can stand him at the side
+    of the scene at a fixed size whatever the energy does, and the box every frame is cut to (`box`), both in
+    1920x1080 px."""
+    up = 1920 / W
+    frames = ends_of(video, 0.0, 7.6)
+    # his blast runs off the video's left edge (and smoke off its top): fade those edges out, so it thins away in the
+    # scene instead of stopping in a straight line. His body is cut by the bottom edge, which stands on the scene's
+    ramp_x = np.clip(np.arange(W) / (W * 0.2), 0, 1) ** 1.5
+    ramp_y = np.clip(np.arange(H) / (H * 0.1), 0, 1)
+    fade = (ramp_y[:, None] * ramp_x[None, :])
+    for f in frames:
+        f[..., 3] = (f[..., 3] * fade).astype(np.uint8)
+    first = frames[0][..., 3]
+    ys, xs = np.nonzero(first > 200)
+    body = (int(xs.min()), int(ys.min()), int(xs.max() + 1), int(ys.max() + 1))
+    x0, y0, x1, y1 = union_box(frames)
+    fw, fh = round((x1 - x0) * END_SCALE) // 2 * 2, round((y1 - y0) * END_SCALE) // 2 * 2
+    with tempfile.TemporaryDirectory() as tmp:
+        for i, f in enumerate(frames):
+            rgba = Image.fromarray(f, "RGBA").crop((x0, y0, x1, y1)).resize((fw, fh), Image.LANCZOS)
+            arr = np.asarray(rgba).astype(np.float32)
+            both = Image.new("RGB", (fw, fh * 2))
+            both.paste(Image.fromarray((arr[..., :3] * arr[..., 3:] / 255).astype(np.uint8), "RGB"), (0, 0))
+            both.paste(Image.merge("RGB", [rgba.getchannel("A")] * 3), (0, fh))
+            both.save(os.path.join(tmp, f"{i:04d}.png"))
+        run("-framerate", str(END_FPS), "-i", os.path.join(tmp, "%04d.png"), "-c:v", "libx264", "-crf", "24",
+            "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", os.path.join(OUT, "rival.mp4"))
+    sound(video, 0.0, 7.6, os.path.join(OUT, "rival.mp3"), fade=0.6)
+    data = {"src": f"{URL}/rival.mp4", "sound": f"{URL}/rival.mp3", "w": fw, "h": fh, "fps": END_FPS,
+            "ms": round(len(frames) / END_FPS * 1000),
+            "box": [round(float(v) * up, 1) for v in (x0, y0, x1 - x0, y1 - y0)],
+            "body": [round(float(v) * up, 1) for v in (body[0], body[1], body[2] - body[0], body[3] - body[1])]}
+    with open(os.path.join(OUT, "rival.json"), "w") as fh_:
+        json.dump(data, fh_, indent=1)
+    print("rival", data)
+
+
 def main(args):
     if len(args) >= 2 and args[0] == "hero" and args[1] in POINTS:
         videos = dict(a.split("=", 1) for a in args[2:])
@@ -317,6 +365,8 @@ def main(args):
         fx(dict(a.split("=", 1) for a in args[1:]))
     elif len(args) == 2 and args[0] == "keeper":
         keeper(args[1])
+    elif len(args) == 2 and args[0] == "rival":
+        rival(args[1])
     else:
         sys.exit(__doc__)
 

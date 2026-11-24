@@ -74,10 +74,19 @@ def _way(nodes, lens, start, goal):
     return 1e18
 
 
-def careful(plan):
+def careful(plan, boon=0, wait=0):
+    """`boon`: which of the two blessings to take (0 or 1), `wait` ticks after it is offered."""
     st, acts = sim.start(plan), []
     while not st["over"]:
         k = st["tick"]
+        if st["choosing"] is not None and k < st["choose_until"] - plan["choose"] + wait:
+            sim.step(plan, st)
+            continue
+        if st["choosing"] is not None:
+            a = [k * sim.TICK, "o", plan["boons"][st["choosing"]][boon]]
+            acts.append(a)
+            sim.step(plan, st, [a])
+            continue
         nxt = st["pause_until"] is not None and k >= st["pause_until"]
         c = plan["cycles"][st["cycle"] + (1 if nxt else 0)]
         want = {}
@@ -138,7 +147,7 @@ def test_a_session_lasts_about_two_minutes_and_rival_adds_a_round():
             plan = tp.make_plan(tier, [], None, random.Random(seed))
             st, _ = careful(plan)
             seconds = (tp.SETTLE + (st["end_tick"] + 1) * sim.TICK) / 1000
-            assert 75 <= seconds <= 120, seconds
+            assert 75 <= seconds <= 125, seconds
             rival = tp.make_plan(tier, [], "rival_disciple", random.Random(seed))
             assert [c["kind"] for c in rival["cycles"]] == ["cycle"] * 3 + ["rival"]
             assert all(q["dark"] for q in rival["cycles"][3]["pulses"]) and len(rival["cycles"][3]["pulses"]) == 6
@@ -181,7 +190,7 @@ def test_stability_and_qi_deviation():
     st = sim.run(plan, [])
     gone = st["lost"] + st["dark_in"]
     assert st["deviation"] and st["stability"] == 0 and gone > 0
-    assert st["end_tick"] < sim.run(plan, careful(plan)[1])["end_tick"]           # it ends early
+    assert st["gold"] + st["dark"] < sum(sim.totals(plan))                         # it ends early: pulses never sent
 
 
 def _junction_before(plan, gate):
@@ -241,6 +250,79 @@ def test_the_rival_round_counts_apart():
     assert st["dark"] == dark and st["gold"] == gold                         # the rival's pulses aren't in the score
 
 
+# ── Harmony and the blessings ────────────────────────────────────────────────────────────────────────────────────
+
+def test_harmony_builds_and_resonance_fills_the_breath():
+    plan = tp.make_plan(1, [], None, random.Random(6))
+    st, acts = careful(plan)
+    clean = st["gold_in"] + st["dark_out"]
+    assert st["best_harmony"] == clean and st["resonances"] == clean // tp.HARMONY   # never broken
+    # breathe the bar empty, then let ten clean pulses in a row fill it at once
+    st = sim.start(plan)
+    seen = []
+    for a in sorted(acts):
+        while st["tick"] < a[0] // sim.TICK:
+            sim.step(plan, st)
+            seen += [e for e in st["events"] if e[1] == "resonance"]
+        sim.step(plan, st, [a])
+    assert seen and seen[0][2] == tp.HARMONY
+    idle = sim.run(plan, [])
+    assert idle["best_harmony"] < tp.HARMONY and idle["resonances"] == 0          # junctions the wrong way: broken
+    assert sim.score(plan, st)[0] == sim.score(plan, dict(st, best_harmony=0, resonances=0))[0]   # it never scores
+
+
+def test_open_a_meridian_between_cycles():
+    for seed in range(12):
+        plan = tp.make_plan(1 + seed % 2, [], None, random.Random(seed))
+        assert len(plan["boons"]) == 2 and all(len(set(b)) == 2 and set(b) <= set(sim.BOONS) for b in plan["boons"])
+        st, acts = careful(plan, seed % 2)
+        assert st["boons"] == [plan["boons"][0][seed % 2], plan["boons"][1][seed % 2]]
+        assert sum(1 for a in acts if a[1] == "o") == 2
+        # no choice made: exactly 10 s after the cycle ends, the first is taken
+        rest = sorted(a for a in acts if a[1] != "o")             # the same play, the choice left to the clock
+        st, done, took, i = sim.start(plan), None, None, 0
+        while not st["over"] and took is None:
+            mine = []
+            while i < len(rest) and rest[i][0] // sim.TICK <= st["tick"]:
+                mine.append(rest[i])
+                i += 1
+            sim.step(plan, st, mine)
+            for e in st["events"]:
+                if e[1] == "cycle_done" and done is None:
+                    done = e[0]
+                if e[1] == "boon":
+                    took = (e[0], e[2])
+        assert took == (done + 1 + tp.CHOOSE, plan["boons"][0][0])
+        # a blessing that isn't offered, or sent when nothing is being chosen, does nothing
+        wrong = [b for b in sim.BOONS if b not in plan["boons"][0]][0]
+        assert sim.run(plan, [[0, "o", plan["boons"][0][0]]] + [a for a in acts if a[1] != "o"])["boons"][0] == \
+            plan["boons"][0][0]
+        st = sim.start(plan)
+        sim.step(plan, st, [[0, "o", wrong]])
+        assert st["boons"] == []
+
+
+def test_what_each_blessing_does():
+    plan = tp.make_plan(1, [], None, random.Random(2))
+    def blessed(boon):
+        st = sim.start(plan)
+        st.update(stability=60, choosing=0, choose_until=999)
+        plan["boons"][0] = [boon, [b for b in sim.BOONS if b != boon][0]]
+        sim.step(plan, st, [[0, "o", boon]])
+        return st
+    st = blessed("breath")
+    assert st["breath_max"] == plan["breath"]["max"] * 3 // 2 == st["breath"]
+    assert blessed("mend")["stability"] == 85
+    st = blessed("seal")
+    assert (st["gate_most"], st["gate_hold"]) == (5, 6000 // sim.TICK)
+    st = blessed("steady")
+    assert st["slow"] and st["pause_until"] is not None
+    st["pause_until"], st["cycle"] = None, 0
+    sim._enter_cycle(plan, st, st["tick"])
+    p = {"edge": "x>y"}
+    assert sim._speed(plan, st, p) == plan["speed"] * 17 // 20
+
+
 # ── the page's copy of the rules ─────────────────────────────────────────────────────────────────────────────────
 
 @pytest.mark.skipif(not shutil.which("node"), reason="node is not installed")
@@ -252,11 +334,13 @@ def test_the_page_and_the_server_agree(tmp_path):
         acts, t = [], 0
         for _ in range(r.randint(0, 250)):
             t += r.randint(0, 900)
-            w = r.choice("jjjgbB")
-            acts.append([t, w, r.choice(ids) if w in "jg" else ""])
-        cases += [{"plan": plan, "actions": acts}, {"plan": plan, "actions": careful(plan)[1]}]
+            w = r.choice("jjjgbBo")
+            acts.append([t, w, r.choice(ids) if w in "jg" else r.choice(sim.BOONS) if w == "o" else ""])
+        cases += [{"plan": plan, "actions": acts}, {"plan": plan, "actions": careful(plan)[1]},
+                  {"plan": plan, "actions": careful(plan, 1)[1]}]
     keys = ["gold", "gold_in", "dark", "dark_out", "dark_in", "lost", "bursts", "stability", "deviation", "end_tick",
-            "rival_out", "breath", "tick"]
+            "rival_out", "breath", "tick", "harmony", "best_harmony", "resonances", "boons", "breath_max", "slow",
+            "gate_most", "gate_hold"]
     script = tmp_path / "run.js"
     script.write_text("const sim = require(%s); let d = ''; process.stdin.on('data', x => d += x).on('end', () => "
                       "process.stdout.write(JSON.stringify(JSON.parse(d).map(c => { const st = sim.run(c.plan, c.actions);"
@@ -432,7 +516,7 @@ def test_sister_jing_seats_you(client):
     assert town.walkable(jing["x"], jing["y"]) and jing["go"][0][1] == "/town/visit/keeper"
     assert os.path.exists(os.path.join(ROOT, jing["src"].lstrip("/")))
     assert client.get("/town/visit/keeper").headers["location"] == "/train"
-    assert client.app.state.train.busy(UID)
+    assert client.app.state.train.busy(UID) and "Back to Sister Jing" in client.get("/train").text
     assert client.get("/town/visit/keeper").headers["location"] == "/train"       # already seated
     assert client.post("/train/yield").headers["location"] == "/town?near=keeper"  # back to her, not the yard
     assert client.get("/town/visit/keeper").headers["location"] == "/town?near=keeper"   # resting now
@@ -447,6 +531,12 @@ def test_the_art_is_there_and_fits():
     assert tp.scene_art("wandering_hermit")["picture"].endswith("hermit.jpg")
     assert tp.scene_art("wandering_hermit")["video"] is None
     assert all(tp.fx_art().values())
+    rival = tp.rival_art()                                                 # his picture, and his attack with its sound
+    assert rival["picture"] and rival["attack"]["ms"] > 5000
+    for key in ("src", "sound"):
+        assert os.path.exists(os.path.join(ROOT, rival["attack"][key].lstrip("/")))
+    bx, by, bw, bh = rival["attack"]["body"]
+    assert 0 < bw < 1920 and 0 < bh <= 1080                                # his body, not the whole frame
     for gender in ("female", "male"):
         art = tp.hero_art(gender)
         loop = art["loop"]
@@ -461,6 +551,26 @@ def test_the_art_is_there_and_fits():
         assert pts["l_palm"][0] < 50 < pts["r_palm"][0] and abs(pts["dantian"][0] - 50) < 1
         for name, (x, y) in pts.items():                                  # the map is only nudged onto the body
             assert abs(x - tp.BODY[name][0]) < 12 and abs(y - tp.BODY[name][1]) < 13, name
+
+
+def test_the_guide_explains_everything_with_the_games_own_numbers(client):
+    g = tp.guide(2)
+    assert [t["n"] for t in g["tiers"]] == [1, 2, 3, 4, 5] and [t["built"] for t in g["tiers"]] == [True, True, False, False, False]
+    assert [t["conds"] for t in g["tiers"]] == ["none", "0-1", "1", "1-2", "2"]          # the bot's own table
+    assert {e["name"] for e in g["events"]} == {"Wandering Hermit", "Epiphany", "Rival Disciple"}
+    assert [e["chance"] for e in g["events"]] == [round(challenges.EVENTS[k]["chance"] * 100)
+                                                  for k in ("wandering_hermit", "epiphany", "rival_disciple")]
+    assert len(g["conditions"]) == 4 and len(g["boons"]) == 4 and g["harmony"] == tp.HARMONY
+    assert g["gate"] == {"most": 3, "hold": 4} and g["breath"] == {"secs": 4.0, "refill": 5.0}
+    assert g["hours"] == training.TRAIN_REWARD_HOURS and g["rest"] == training.TRAIN_COOLDOWN_MINUTES
+    assert client.get("/town/visit/keeper").headers["location"] == "/train"
+    page = client.get("/train").text
+    assert 'id="tguide"' in page and 'id="tguidebtn"' in page and 'id="tqbtn"' in page
+    for part in ("The goal", "Controls", "Reading the map", "Score and Stability", "Harmony and blessings",
+                 "How it ends", "Tiers", "Conditions", "Events", "Reward and rest", "Tips",
+                 "Wandering Hermit", "Epiphany", "Rival Disciple", "Heavy Rain", "Night Training", "Drunken Master",
+                 "Old Injury", "Deep Breath", "Strong Seals", "Qi deviation", "Tier 1 (yours)"):
+        assert part in page, part
 
 
 def test_the_train_pages_need_a_login(tmp_path):

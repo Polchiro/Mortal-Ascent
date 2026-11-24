@@ -15,7 +15,19 @@ The plan (made by web/train_play.make_plan from a seed) is plain JSON:
 Node types: source, path, junction (two ways out, `out[0]` first), gate, knot (a blockage: Qi stops there and is
 lost), exit (a palm or sole), dantian.
 
-Actions: [t ms, what, which]: "j" turn junction `which`, "g" open / close gate `which`, "b" start breathing, "B" stop.
+Actions: [t ms, what, which]: "j" turn junction `which`, "g" open / close gate `which`, "b" start breathing, "B" stop,
+"o" take blessing `which` (only while one is being chosen).
+
+Harmony (SHOAIB, Nov 25): every pulse handled cleanly in a row (gold into the Dantian, dark out an exit) adds 1; any
+other end breaks it. Every `plan["harmony"]` in a row is a Qi Resonance: your Breath is full again. It never changes the
+score. Only the three scored cycles count (not the rival's round).
+
+Open a meridian (SHOAIB, Nov 25): after cycles 1 and 2 the session waits while you take one of two blessings
+(`plan["boons"]`, one pair a gap) for the rest of the session; after `plan["choose"]` ticks the first is taken for you:
+  breath  Deep Breath: the Breath bar holds 50% more (and fills now)
+  steady  Steady Flow: all Qi flows 15% slower
+  mend    Mending: +25 Stability now
+  seal    Strong Seals: gates burst only with 5 waiting or after 6 s
 """
 
 TICK = 50
@@ -23,6 +35,8 @@ TICK = 50
 # Stability (approved, docs/training.md): -10 a gold pulse lost, -15 a dark pulse into the Dantian, -10 a gate burst,
 # +2 a pulse delivered cleanly (gold in, dark out); Qi deviation at 0
 STABILITY = {"start": 100, "gold_lost": -10, "dark_in": -15, "burst": -10, "clean": 2}
+BOONS = ["breath", "steady", "mend", "seal"]
+MEND, SEAL_MOST, SEAL_HOLD_MS = 25, 5, 6000
 
 
 def edge(a, b):
@@ -34,7 +48,10 @@ def new_state(plan):
             "pulses": [], "junctions": {}, "gates": {}, "breath": plan["breath"]["max"], "breathing": False,
             "stability": STABILITY["start"], "deviation": False, "over": False, "end_tick": None,
             "gold": 0, "gold_in": 0, "dark": 0, "dark_out": 0, "lost": 0, "dark_in": 0, "bursts": 0,
-            "rival_dark": 0, "rival_out": 0, "spawned": 0, "events": []}
+            "rival_dark": 0, "rival_out": 0, "spawned": 0, "events": [],
+            "harmony": 0, "best_harmony": 0, "resonances": 0, "choosing": None, "choose_until": None, "boons": [],
+            "breath_max": plan["breath"]["max"], "slow": False, "gate_most": plan["gate"]["most"],
+            "gate_hold": plan["gate"]["hold"]}
 
 
 def cycle_of(plan, st):
@@ -64,10 +81,41 @@ def _scored(plan, st):
     return cycle_of(plan, st)["kind"] == "cycle"
 
 
+def _harmony(plan, st, clean):
+    if not clean:
+        st["harmony"] = 0
+        return
+    st["harmony"] += 1
+    st["best_harmony"] = max(st["best_harmony"], st["harmony"])
+    if st["harmony"] % plan["harmony"] == 0:                   # a Qi Resonance: the Breath is full again
+        st["breath"] = st["breath_max"]
+        st["resonances"] += 1
+        st["events"].append([st["tick"], "resonance", st["harmony"], 0])
+
+
+def _bless(plan, st, boon):
+    """Take a blessing; the next cycle begins after a short pause."""
+    st["boons"].append(boon)
+    st["choosing"], st["choose_until"] = None, None
+    if boon == "breath":
+        st["breath_max"] = plan["breath"]["max"] * 3 // 2
+        st["breath"] = st["breath_max"]
+    elif boon == "steady":
+        st["slow"] = True
+    elif boon == "mend":
+        st["stability"] = min(STABILITY["start"], st["stability"] + MEND)
+    elif boon == "seal":
+        st["gate_most"], st["gate_hold"] = SEAL_MOST, SEAL_HOLD_MS // TICK
+    st["pause_until"] = st["tick"] + 1 + plan["pause"] // 2
+    st["events"].append([st["tick"], "boon", boon, 0])
+
+
 def _resolve(plan, st, p, how):
     """A pulse's trip ends: delivered, expelled, lost (knot, wrong exit, burst) or into the Dantian."""
     p["done"] = how
     scored = _scored(plan, st)
+    if scored:
+        _harmony(plan, st, (how == "out") if p["dark"] else (how == "in"))
     if p["dark"]:
         if how == "out":
             if scored:
@@ -106,6 +154,8 @@ def apply(plan, st, action):
             st["breathing"] = True
     elif what == "B":
         st["breathing"] = False
+    elif what == "o" and st["choosing"] is not None and which in plan["boons"][st["choosing"]]:
+        _bless(plan, st, which)
 
 
 def _open_gate(plan, st, gid):
@@ -119,6 +169,8 @@ def _open_gate(plan, st, gid):
 
 def _speed(plan, st, p):
     s = plan["speed"]
+    if st["slow"]:
+        s = s * 17 // 20
     if p["edge"] in plan["injured"]:
         s = s * 3 // 5
     if st["breathing"]:
@@ -160,15 +212,17 @@ def step(plan, st, actions=()):
         _enter_cycle(plan, st, k)
     for a in actions:
         apply(plan, st, a)
+    if st["choosing"] is not None and k >= st["choose_until"]:  # no choice made: the first blessing is taken
+        _bless(plan, st, plan["boons"][st["choosing"]][0])
     b = plan["breath"]
     if st["breathing"]:
         st["breath"] = max(0, st["breath"] - b["drain"])
         if st["breath"] == 0:
             st["breathing"] = False
     else:
-        st["breath"] = min(b["max"], st["breath"] + b["refill"])
+        st["breath"] = min(st["breath_max"], st["breath"] + b["refill"])
     cyc = cycle_of(plan, st)
-    if st["pause_until"] is None:
+    if st["pause_until"] is None and st["choosing"] is None:
         while st["spawned"] < len(cyc["pulses"]) and cyc["pulses"][st["spawned"]]["at"] + st["cycle_start"] <= k:
             q = cyc["pulses"][st["spawned"]]
             src = cyc["nodes"][q["src"]]
@@ -186,13 +240,12 @@ def step(plan, st, actions=()):
         while p["done"] is None and p["wait"] is None and p["pos"] >= cyc["lens"][p["edge"]]:
             p["pos"] -= cyc["lens"][p["edge"]]
             _arrive(plan, st, p, p["edge"].split(">")[1])
-    g = plan["gate"]
     for gid in sorted(st["gates"]):
         gate = st["gates"][gid]
         if gate["open"]:
             continue
         waiting = [p for p in st["pulses"] if p["wait"] == gid and p["done"] is None]
-        if waiting and (len(waiting) >= g["most"] or k - min(p["waited"] for p in waiting) >= g["hold"]):
+        if waiting and (len(waiting) >= st["gate_most"] or k - min(p["waited"] for p in waiting) >= st["gate_hold"]):
             for p in waiting:
                 _resolve(plan, st, p, "burst")
             st["bursts"] += 1 if _scored(plan, st) else 0
@@ -203,11 +256,14 @@ def step(plan, st, actions=()):
     if st["deviation"] and _scored(plan, st):
         st["over"], st["end_tick"] = True, k
         st["events"].append([k, "deviation", "", 0])
-    elif st["pause_until"] is None and st["spawned"] == len(cyc["pulses"]) and \
+    elif st["pause_until"] is None and st["choosing"] is None and st["spawned"] == len(cyc["pulses"]) and \
             all(p["done"] is not None for p in st["pulses"]):
         st["events"].append([k, "cycle_done", cyc["kind"], st["cycle"]])
         if st["cycle"] + 1 < len(plan["cycles"]):
-            st["pause_until"] = k + 1 + plan["pause"]
+            if plan["cycles"][st["cycle"] + 1]["kind"] == "cycle" and st["cycle"] < len(plan.get("boons", [])):
+                st["choosing"], st["choose_until"] = st["cycle"], k + 1 + plan["choose"]   # open a meridian
+            else:
+                st["pause_until"] = k + 1 + plan["pause"]
         else:
             st["over"], st["end_tick"] = True, k
     if not st["over"] and k + 1 >= plan["max_ticks"]:
@@ -264,4 +320,6 @@ def score(plan, st):
     return round(max(0.0, min(1.0, s)), 4), {"gold": gold, "gold_in": st["gold_in"], "dark": dark,
                                              "dark_out": st["dark_out"], "dark_in": st["dark_in"], "lost": st["lost"],
                                              "bursts": st["bursts"], "stability": stab, "deviation": st["deviation"],
+                                             "best_harmony": st["best_harmony"], "resonances": st["resonances"],
+                                             "boons": list(st["boons"]),
                                              "gold_part": round(g, 4), "dark_part": None if d is None else round(d, 4)}

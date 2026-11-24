@@ -209,7 +209,7 @@ tier 2's network for now; the reward formula is the same at every tier.
   real palms. Only the drawing moves: the rules go by each line's length.
 - **Effects** (`fx/`): the golden Dantian orb (turning slowly), the jade gate seal (whole when shut, a ghost when
   open), the exit lotus, the blockage knot, the golden bloom, the Qi deviation crack, the scattered Qi; the upper
-  Dantian's blue orb waits for tier 5. `rival.webp` steps in for the Rival Disciple's round; `badge.webp` is Train's
+  Dantian's blue orb waits for tier 5. **The Rival Disciple** (`rival.mp4`, `rival.mp3`, `rival.json`): as the third cycle ends he steps in at the right, laughs, and blasts dark Qi across at you just as his round begins, his own sound at full level; then he stands with arms folded until the end (`rival.webp` is the still he falls back to); `badge.webp` is Train's
   picture in the training yard. Without any of these the page draws its plain code version.
 
 ### How it plays
@@ -223,6 +223,35 @@ tier 2's network for now; the reward formula is the same at every tier.
 - **Breath**: hold Space (the Breathe button on a phone) to slow all Qi to **40%**. A full Breath bar lasts 4 s and
   refills in 5 s once you let go.
 - The strip at the top shows the next 3 pulses' colours.
+- **Harmony** (SHOAIB, Nov 25: "do your best recommendations"): every pulse handled cleanly in a row (gold into the
+  Dantian, dark out an exit) adds 1, shown under the cycle count; any other end (gold lost, dark in, a burst) sets it
+  back to 0. The channels glow brighter as it builds. Every **10** in a row is a **Qi Resonance**: your Breath bar is
+  full again, with a chime and a small bloom. Harmony never changes the score or the pay; only the three cycles count.
+- **Open a meridian** (same day): when cycles 1 and 2 end, the session waits while you take one of two blessings (press
+  1 or 2, or click) for the rest of the session. After **10 s** the first is taken for you. The four blessings, two
+  offered each time, drawn from the session's seed:
+
+  | Blessing | What it does |
+  |---|---|
+  | Deep Breath | the Breath bar holds 50% more (6 s instead of 4), and fills now |
+  | Steady Flow | all Qi flows 15% slower |
+  | Mending | +25 Stability now (never above 100) |
+  | Strong Seals | gates burst only with 5 waiting, or after 6 s (instead of 3 and 4 s) |
+
+  The scroll lists the blessings you took and your best Harmony.
+
+### How to play: the guide in the game
+Train has a full guide (SHOAIB, Nov 25: "Train is very confusing"). It opens by itself the first time someone plays
+(`localStorage ma.train.guide.seen`), and after that from **How to play** on the start card or the **?** button in the
+top bar during play. It never pauses the meditation: opened during play it says so, and starts on Controls. Its
+eleven pages: the goal, controls, reading the map, score and Stability, Harmony and blessings, how it ends, tiers
+(yours marked), conditions, events, reward and rest, tips. Every number in it comes from the game itself
+(`web/train_play.guide`: the rules, the bot's tables in challenges.py and training.py), so it can't go out of date.
+
+**First-time tips**: the moment something new appears, one quiet line says what to do, once per browser: the first
+dark pulse, the first knot, the first pulse held at a gate, the first blessing card, and Harmony reaching 3. And at
+the start of **every** session, the same line reminds you of that session's conditions and event (they change each
+time), one after another.
 
 ### The networks (tiers 1-2)
 | Tier | Realms | Sources | Junctions | Gates | Pulses a cycle | New idea |

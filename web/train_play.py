@@ -28,6 +28,7 @@ from dataclasses import dataclass
 
 import challenges
 import looks
+import training
 
 from bot import db, trainer
 from bot import player as players
@@ -60,7 +61,13 @@ CLOSE_SHARE, CLOSE_GAP = 0.25, 16                     # after the first cycle, 1
 RIVAL_PULSES, RIVAL_WINS, RIVAL_GAP = 6, 4, 34       # the Rival Disciple's round (approved: expel 4 of 6)
 NIGHT_SHOW = 0.4                                     # Night Training: colours show for the last 40% of a trip
 DRUNK_LIE = 0.25                                     # Drunken Master: the preview is wrong 1 time in 4
-MAX_SECONDS = 240
+HARMONY = 10                                         # every 10 clean pulses in a row: a Qi Resonance (Breath full)
+CHOOSE = 10000 // TICK                               # a blessing must be taken within 10 s (else the first is)
+BOON_TEXT = {"breath": ("Deep Breath", "Your Breath lasts 50% longer, and fills now."),
+             "steady": ("Steady Flow", "All Qi flows 15% slower."),
+             "mend": ("Mending", "Regain 25 Stability now."),
+             "seal": ("Strong Seals", "Gates burst only with 5 waiting, or after 6 seconds.")}
+MAX_SECONDS = 260
 CONDITIONS = ["heavy_rain", "night_training", "drunken_master", "old_injury"]
 CONDITION_TEXT = {"heavy_rain": "Qi flows 25% faster",
                   "night_training": "a pulse shows its colour only near the end of its trip; the preview is dark",
@@ -70,6 +77,59 @@ EVENT_TEXT = {"wandering_hermit": "A Wandering Hermit watches: the hardest netwo
               "epiphany": "Epiphany! Everything flows today: Qi +50%.",
               "rival_disciple": "A rival disciple waits. After the third cycle they push 6 dark pulses into you: "
                                 f"expel {RIVAL_WINS} for Qi ×2."}
+# The guide (train.html "How to play"): every number in it comes from here, the bot's tables or the rules, so it
+# can't drift from the game. What each tier adds (tiers 3-5 are described as they are designed; they play tier 2's
+# network until they are built, BUILT_TIERS).
+TIER_GUIDE = {1: ("Mortal, Apprentice, Warrior", "One flow from the crown, 2 junctions, 1 gate, 10 pulses a cycle. "
+                  "Learn to steer. The first cycle is all gold; dark Qi joins from the second."),
+              2: ("Expert, Master", "A second flow starts from a palm: 3-4 junctions, 2 gates, 12 pulses a cycle. From "
+                  "the second cycle a knot blocks one line into the Dantian, so send the gold round it."),
+              3: ("Grandmaster, Lord", "Both palms flow: 5 junctions, 14 pulses. Cracked lines leak, and one stretch "
+                  "reverses its flow every 8 seconds."),
+              4: ("King, Emperor", "Crown, palms and a sole: 6 junctions, 3 gates with limited uses, 15 pulses. Two "
+                  "pulses that meet merge into a surge that needs a clear path."),
+              5: ("Ancestor, Saint", "All five points, 7-8 junctions, 16 pulses. Blue spirit Qi must rise to the brow "
+                  "(the upper Dantian) while gold sinks to the belly.")}
+CONDITION_GUIDE = {"heavy_rain": "Qi flows 25% faster. Set junctions earlier than you think.",
+                   "night_training": "Pulses are grey until the last 40% of their trip, and the Next strip is dark. "
+                                     "Watch each pulse, not the strip.",
+                   "drunken_master": "The Next strip is wrong 1 time in 4. The pulse itself always shows its true "
+                                     "colour: trust the pulse.",
+                   "old_injury": "One limb's channel is injured (red dashes): Qi crawls through it at 60% speed, and "
+                                 "your Breath runs out twice as fast."}
+EVENT_GUIDE = {"wandering_hermit": "The session moves to a mountain peak: the hardest network with two conditions. "
+                                   "Qi ×5.",
+               "epiphany": "Everything you gather today sticks: +50% Qi. Nothing changes in how you play.",
+               "rival_disciple": f"After the third cycle a rival pushes {RIVAL_PULSES} dark pulses into you. Expel "
+                                 f"{RIVAL_WINS} or more for Qi ×2. It doesn't change your score."}
+
+
+def guide(tier):
+    """Everything the "How to play" guide shows, from the game's own numbers."""
+    ev = challenges.EVENTS
+    lo_hi = {t: challenges.CONDITIONS_PER_TIER[t] for t in TIER_GUIDE}
+    stab = sim.STABILITY
+    return {
+        "tier": tier, "built": BUILT_TIERS,
+        "tiers": [{"n": t, "realms": r, "text": x, "built": t <= BUILT_TIERS,
+                   "conds": "none" if lo_hi[t] == (0, 0) else f"{lo_hi[t][0]}-{lo_hi[t][1]}" if lo_hi[t][0] != lo_hi[t][1]
+                   else str(lo_hi[t][0])} for t, (r, x) in TIER_GUIDE.items()],
+        "conditions": [{"name": plain(trainer.CONDITION_NAMES[c]), "text": CONDITION_GUIDE[c]} for c in CONDITIONS],
+        "condition_bonus": round(challenges.CONDITION_EXP_BONUS * 100),
+        "events": [{"name": k.replace("_", " ").title(), "chance": round(ev[k]["chance"] * 100), "text": EVENT_GUIDE[k]}
+                   for k in ("wandering_hermit", "epiphany", "rival_disciple")],
+        "boons": [{"name": n, "text": t} for n, t in BOON_TEXT.values()],
+        "harmony": HARMONY, "choose": CHOOSE * TICK // 1000,
+        "stability": {"gold_lost": -stab["gold_lost"], "dark_in": -stab["dark_in"], "burst": -stab["burst"],
+                      "clean": stab["clean"]},
+        "gate": {"most": GATE["most"], "hold": GATE["hold"] * TICK // 1000},
+        "breath": {"secs": BREATH["max"] // BREATH["drain"] * TICK / 1000,
+                   "refill": BREATH["max"] // BREATH["refill"] * TICK / 1000},
+        "hours": training.TRAIN_REWARD_HOURS, "rest": training.TRAIN_COOLDOWN_MINUTES,
+        "low": round(challenges.LOW_SCORE_THRESHOLD * 100), "low_rate": round(challenges.LOW_SCORE_EXP_RATE * 100),
+    }
+
+
 HINTS = ["Turn the junction so the gold goes down to the Dantian.",
          "Dark Qi out through a palm!",
          "Hold Space (or Breathe) to slow everything down."]
@@ -282,7 +342,9 @@ def make_plan(tier, conditions, event, rng):
             close = c > 0 and not rival and rng.random() < CLOSE_SHARE
             at += CLOSE_GAP if close else gap + rng.randrange(-6, 7)
         cycles.append({"kind": "rival" if rival else "cycle", "nodes": nodes, "lens": lens, "pulses": pulses})
+    boons = [rng.sample(sim.BOONS, 2) for _ in range(CYCLES - 1)]          # the two to choose from, after cycles 1, 2
     plan = {"tick": TICK, "speed": RAIN_SPEED if "heavy_rain" in conditions else SPEED,
+            "harmony": HARMONY, "choose": CHOOSE, "boons": boons,
             "breath": dict(BREATH, drain=BREATH["drain"] * (2 if "old_injury" in conditions else 1)),
             "gate": dict(GATE), "pause": PAUSE, "max_ticks": (MAX_SECONDS * 1000 - SETTLE) // TICK,
             "injured": injured, "tier": play, "cycles": cycles}
@@ -329,6 +391,23 @@ def scene_art(event=None):
     x, y, w = SEATS[place]
     return {"picture": picture, "video": _there(ART + "/chamber.mp4") if place == "chamber" else None,
             "sound": _there(ART + "/chamber.wav"), "seat": {"x": x, "y": y, "w": w}}
+
+
+def rival_art():
+    """The Rival Disciple: his picture, and his attack (art/train/rival.json: a video of him blasting dark Qi, with its
+    sound), or None."""
+    picture = _there(ART + "/rival.webp")
+    if not picture:
+        return None
+    attack = None
+    try:
+        with open(os.path.join(ROOT, "art", "train", "rival.json")) as fh:
+            attack = json.load(fh)
+        if not (_there(attack["src"]) and _there(attack["sound"])):
+            attack = None
+    except (OSError, ValueError, KeyError):
+        attack = None
+    return {"picture": picture, "attack": attack}
 
 
 def fx_art():
@@ -471,7 +550,10 @@ class Chamber:
             verdict = "deviation" if st["deviation"] else \
                 "great" if score >= 0.85 else "good" if score >= 0.7 else "poor" if score >= 0.5 else "bad"
             need = players.qi_needed(p["realm"], p["layer"])
-            s.result = {"score": score, **parts, "gained": round(qi, 1), "notes": notes, "rival": rival,
+            if st["resonances"]:
+                notes.append(f"Harmony: {st['best_harmony']} clean pulses in a row at best, "
+                             f"{st['resonances']} Qi Resonance{'' if st['resonances'] == 1 else 's'}.")
+            s.result = {"score": score, **parts, "boon_names": [BOON_TEXT[b][0] for b in st["boons"]], "gained": round(qi, 1), "notes": notes, "rival": rival,
                         "rival_out": st["rival_out"], "verdict": verdict, "line": LINES[verdict],
                         "approve": score >= 0.7 and not st["deviation"],
                         "bar": {"qi": round(p["qi"], 1), "need": need,
@@ -507,15 +589,17 @@ class Chamber:
                 "tier": s.tier, "plays": s.plan["tier"], "plan": s.plan, "settle": SETTLE,
                 "night": NIGHT_SHOW if "night_training" in s.conditions else None,
                 "drunk": "drunken_master" in s.conditions, "totals": {"gold": gold, "dark": dark},
+                "boon_text": {k: {"name": n, "text": t} for k, (n, t) in BOON_TEXT.items()},
                 "conditions": [{"key": c, "name": plain(trainer.CONDITION_NAMES[c]), "text": CONDITION_TEXT[c]}
                                for c in s.conditions],
                 "event": {"key": s.event, "name": s.event.replace("_", " ").title(), "text": EVENT_TEXT[s.event]}
                 if s.event else None,
                 "hints": HINTS if s.plan["tier"] == 1 else [],
+                "guide": guide(s.tier),
                 "me": {"name": s.player["name"], "gender": looks.gender_of(look), "face": looks.face(look)},
                 "begin": LINES["begin"],
                 "chamber": scene_art(s.event), "hero": hero_art(looks.gender_of(look)), "fx": fx_art(),
-                "rival": _there(ART + "/rival.webp"),
+                "rival": rival_art(),
                 "body": {n: [x, y] for n, (x, y, _) in BODY.items()},
                 "begun": s.go_at is not None, "result": s.result,
             }
@@ -549,10 +633,10 @@ def clean_actions(actions, plan):
             t, what, which = int(row[0]), str(row[1]), str(row[2])
         except (TypeError, ValueError, IndexError):
             return None
-        if what not in ("j", "g", "b", "B") or t < last or not 0 <= t <= MAX_SECONDS * 1000:
+        if what not in ("j", "g", "b", "B", "o") or t < last or not 0 <= t <= MAX_SECONDS * 1000:
             return None
-        if what in ("j", "g") and which not in ids:
+        if (what in ("j", "g") and which not in ids) or (what == "o" and which not in sim.BOONS):
             return None
         last = t
-        out.append([t, what, which if what in ("j", "g") else ""])
+        out.append([t, what, which if what in ("j", "g", "o") else ""])
     return out
