@@ -1375,7 +1375,8 @@
           {transform: 'translate(' + -a * 0.6 + 'px,' + a * 0.3 + 'px)'}, {transform: 'none'}], {duration: 320 + 50 * k});
       }
       function lands() {                                              // the blow lands: number, knock, flash, shake by grade
-        if (ev.hit) { drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); }
+        if (CUT) { if (ev.hit) drop('enemy'); written(ev.hit ? '−' + ev.dmg : 'Missed'); }   // over the explosion, where it can be read
+        else if (ev.hit) { drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); }
         else pop(beastBox, 'word', 'Missed');
         var b = at(br, 0.3, 0.45);
         burst('tspark', b[0], b[1], tc);
@@ -1561,14 +1562,14 @@
 
       /* The cutscene's dressing: black bars close in from top and bottom, the technique's name is written large across
          the scene, the camera closes on the cultivator; a Skip button jumps to the explosion (the damage still lands). */
-      var cam = null;
-      function zoom(p, k, ms) {
-        if (!scene.animate) return;
-        if (cam) cam.cancel();
-        scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
-        cam = scene.animate([{transform: 'scale(1)'}, {transform: 'scale(' + k + ')'}], {duration: ms, easing: 'ease-out', fill: 'forwards'});
+      function written(text) {                                       // the cutscene's damage: large, above every effect
+        var p = at(br, 0.42, 0.2), n = document.createElement('b');
+        n.className = 'tbig'; n.textContent = text;
+        n.style.left = Math.min(86, p[0]) + '%'; n.style.top = Math.max(24, p[1]) + '%';
+        scene.appendChild(n); made.push(n);
+        fs(ev.hit ? 'hit' : 'miss', ev.hit ? 'big' : '');
+        setTimeout(function () { n.remove(); }, 2000);
       }
-      function unzoom() { if (cam) { cam.cancel(); cam = null; scene.style.transformOrigin = ''; } }
       function cutscene() {
         var el = function (tag, cls, text) { var n = document.createElement(tag); n.className = cls; if (text) n.textContent = text; scene.appendChild(n); made.push(n); return n; };
         main.classList.add('cutscene');                             // the small name plate and the turn's lines wait for the blow
@@ -1585,11 +1586,10 @@
           var now = self.now || 0, to = LAND - 2 * FMS;
           if (now >= to) return;
           skipBy = to - now; self.end -= skipBy;                    // the turn ends that much sooner
-          did.rise = false; unzoom();
+          did.rise = false;
           made.forEach(function (n) { if (/tfinale|tdragon|tcard/.test(n.className)) n.remove(); });
           skip.remove();
         });
-        zoom(at(fr, 0.5, 0.45), 1.12, INTRO + 400);
       }
       return (self = {end: end, render: function (t) {
         if (t < 0) return;
@@ -1627,23 +1627,22 @@
           punches.forEach(function (_, i) { loose(i, t); });
           if (t >= FIN && once('rise')) {                             // all nine burst from the ground under the beast and coil up
             var life = DS.finale.frames * FMS, g = at(br, 0.42, 0.97);
-            var fw = Math.min(70, g[1] / 100 * scene.clientHeight * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
+            var fw = Math.min(105, g[1] / 100 * scene.clientHeight * 16 / 9 / W * 100);   // as tall as the scene above the ground allows
             var f0 = skipBy ? DS.finale.boom - 2 : 0;                 // skipped: straight to the explosion
             var n = strip(X.art[0], DS.finale, 'tfinale', [g[0], g[1]], fw / BIG, life + 60, life, f0);
-            if (CUT && !skipBy) zoom(at(br, 0.45, 0.6), 1.1, LAND - FIN);   // the camera closes on the beast as they rise
             n.style.transform = 'translate(-50%,-99%)';
             n.animate([{opacity: 1}, {opacity: 1, offset: 0.88}, {opacity: 0}], {duration: life, fill: 'forwards'});
             if (!skipBy && !fs('gather', 'dragons', 0, {exact: true})) fs('gather');
           }
           if (t >= LAND && once('finale')) {                          // they explode in golden light: the blow lands
-            unzoom(); main.classList.remove('cutscene');
+            main.classList.remove('cutscene');
             made.forEach(function (n) { if (/tskip/.test(n.className)) n.remove(); });
             fx('bflash', 50, 50, 450);
             if (!fs('boom', 'dragons', 0, {exact: true})) fs('boom');
             lands();
           }
         } else PLAY[X.play](t - R);
-      }, clear: function () { unzoom(); main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); }});
+      }, clear: function () { main.classList.remove('cutscene'); made.forEach(function (n) { n.remove(); }); }});
     }
 
     /* A Body defense technique that braces (web/technique_fx.py "brace"), played inside the beast's attack: the fighter

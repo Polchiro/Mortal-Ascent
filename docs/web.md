@@ -441,8 +441,10 @@ a lair is fought with `bot/hunt.py`.
      explosion (`boom:dragons`). Presentation only.
      **A cutscene (Nov 24).** Nine Dragons now plays as one (`cutscene` in `fight.js`, `CUT`), about 6.6 s: black
      bars close in (`.tcine`), "Heaven Technique" and its name are written large across the scene (`.tcard`, 1.1 s)
-     while the camera closes on the cultivator, the four punches come 1.4 times slower, and the finale plays at
-     60 ms a frame with the camera closing on the beast. The small name plate and the turn's lines stay hidden
+     , the four punches come 1.4 times slower, and the finale plays at 60 ms a frame. (The camera zoom it first
+     had was removed the same day: scaling the scene pushed it over the panels around it, worst on phones.) The
+     damage is written large above the explosion (`written`, `.tbig`), where the fire cannot cover it; on a narrow
+     scene the finale is drawn up to the scene's full width. The small name plate and the turn's lines stay hidden
      until the blow lands (`.battle.cutscene`). A **Skip** button (`.tskip`) jumps to the explosion: the damage
      lands as always and the turn ends sooner. The other Heaven techniques get theirs as their videos arrive.
    - `kick`, shared by both genders: its timing and effects are defined once, and each look plays it with its own
