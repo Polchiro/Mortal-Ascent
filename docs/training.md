@@ -177,13 +177,40 @@ week in total, Martial King about 9 days, Martial Saint about a month.
 of Qi flow along them. **Gold Qi** must reach the **Dantian**; **dark turbid Qi** must leave through an **exit** (a palm
 or a sole). You never strike: you steer. The full design: the Claude Doc "Train redesign: Meridian Circulation".
 
-**No teacher (SHOAIB, Nov 25).** Train has no master or guide: you sit alone in the quiet chamber. Hints and the
-opening line show as a quiet line of text under the top bar. A good session celebrates itself: at 70% or more gold rings
-bloom out of the Dantian with a chime ("Well guided"); at 85% or more the full bloom ("Meridians clear!"). With the art,
-your character's Qi surge video and the golden bloom picture join it.
+**No teacher in the meditation (SHOAIB, Nov 25).** You sit alone. Hints and the opening line show as a quiet line of
+text under the top bar, and your own character answers at the end (below). **Sister Jing**, keeper of the Quiet
+Pavilion, stands by the pond in Azure Cloud Town: "Sit and meditate" seats you (`/town/visit/keeper`, the same as the
+training yard's Train button; leaving returns you to her).
 
-**Status: prototype (PR 1).** Tiers 1 and 2, drawn in code over the Practice hall, no new art yet. A player whose realm
-gives tier 3-5 (or a Wandering Hermit) plays tier 2's network for now; the reward formula is the same at every tier.
+**How a session ends** (worked out on the page from its own count, which the server's matches):
+
+| Score | It is called | What plays |
+|---|---|---|
+| 85% or more | Meridians clear! | your Qi surge video and its sound, the golden bloom over the Dantian |
+| 70-84% | Well guided | the same surge, a smaller bloom |
+| 50-69% | The Qi drifts | the map dims, a low note (no video) |
+| under 50% | The Qi scatters | your Qi scatters video and its sound, grey mist rising |
+| Stability 0 | Qi deviation | your Qi deviation video and its sound, the crack; the session ends early |
+
+**Status.** Tiers 1 and 2 are built, with their art. A player whose realm gives tier 3-5 (or a Wandering Hermit) plays
+tier 2's network for now; the reward formula is the same at every tier.
+
+**The art** (`art/train/`, cut from SHOAIB's Flow pictures and videos by `scripts/make_train_art.py`):
+- **The chamber**: `chamber.mp4` loops behind everything (its last second cross-fades into its first) and its sound,
+  `chamber.wav`, is the room's ambience under the meditation music (a mood in `spar_music.js`). The page places the
+  picture so its cushion is under you, at your size. A Wandering Hermit moves the session to `hermit.jpg`.
+- **You** (`hero/<gender>/`): `loop.webp`, the calm part of the meditation video as a sprite sheet played forwards then
+  backwards (so it never jumps; his robe opens for a moment early in his video, which is left out). While the Qi flows
+  you fade to a dim figure so the map reads over your robes. The three endings are small videos with the picture on
+  top and its see-through mask underneath (`surge.mp4`, `deviation.mp4`, `scatter.mp4`: their light and smoke reach far
+  past the body), each with its own sound at full level (`.mp3`).
+- **The map on your body**: `sheets.json` `fit` holds where each acupoint is on each character's picture
+  (`POINTS` in the script); the page nudges the map's points onto them, so the channels run from her real crown to her
+  real palms. Only the drawing moves: the rules go by each line's length.
+- **Effects** (`fx/`): the golden Dantian orb (turning slowly), the jade gate seal (whole when shut, a ghost when
+  open), the exit lotus, the blockage knot, the golden bloom, the Qi deviation crack, the scattered Qi; the upper
+  Dantian's blue orb waits for tier 5. `rival.webp` steps in for the Rival Disciple's round; `badge.webp` is Train's
+  picture in the training yard. Without any of these the page draws its plain code version.
 
 ### How it plays
 - **Three cycles** of about 35 seconds, after a 3-second settle-in where the map glows in and nothing moves. A session
@@ -244,5 +271,6 @@ you see is what the server will count; tests run both copies on the same session
 ran its full length and that the actions are in order, known and not too many.
 
 Code: `web/train_play.py` (the session, the pay), `web/train_sim.py` + `web/static/train_sim.js` (the rules),
-`web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`. Tests: `tests/test_web_train.py`.
+`web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`; art `art/train/`,
+`scripts/make_train_art.py`. Tests: `tests/test_web_train.py`.
 

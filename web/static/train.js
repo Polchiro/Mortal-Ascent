@@ -18,7 +18,25 @@
   if (window.FightSound) window.FightSound.voice = S.me.gender;
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var canvas = $('tmap'), cx = canvas.getContext('2d'), scene = $('tscene');
+  var charC = $('tchar'), cc = charC.getContext('2d');
   var W = 0, H = 0, DPR = 1, BOX = {x: 0, y: 0, s: 1};
+  var soundOn = true, soundVol = 0.6;
+  try {
+    soundOn = localStorage.getItem('ma.sound') !== 'off';
+    var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) soundVol = v0 / 100;
+  } catch (e0) {}
+  function LOUD() { return Math.min(1, soundVol * 1.7); }        // the endings' own sounds are meant to be heard
+  /* the art (scripts/make_train_art.py): you meditating, the effects' pictures; without it, drawn in code */
+  var HERO = S.hero, FIT = HERO ? HERO.fit : null, FXI = {};
+  Object.keys(S.fx || {}).forEach(function (k) { if (S.fx[k]) { FXI[k] = new Image(); FXI[k].src = S.fx[k]; } });
+  function fxok(k) { return FXI[k] && FXI[k].complete && FXI[k].naturalWidth > 0; }
+  function fxdraw(k, x, y, w, alpha, rot) {                    // an effect's picture, `w` wide, its middle at x, y
+    var im = FXI[k], h = w * im.naturalHeight / im.naturalWidth;
+    cx.save(); cx.translate(x, y); if (rot) cx.rotate(rot);
+    cx.globalAlpha *= alpha == null ? 1 : alpha;
+    cx.drawImage(im, -w / 2, -h / 2, w, h); cx.restore();
+  }
+  var SEAT_Y = 84, SEAT_W = 46;                                  // the cushion under you, in body units
 
   function again(el, text, cls) { el.textContent = text; el.className = el.className.replace(/ (go|perfect|good|miss|warn)\b/g, ''); void el.offsetWidth; el.className += ' go' + (cls ? ' ' + cls : ''); }
   function say(text) { again($('tsay'), text); }
@@ -32,7 +50,20 @@
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     var s = Math.min(W * (W < 700 ? 0.96 : 0.7), H * 0.86);
     BOX = {x: (W - s) / 2, y: H * 0.11 + (H * 0.86 - s) / 2, s: s};
+    charC.width = canvas.width; charC.height = canvas.height;
+    charC.style.width = W + 'px'; charC.style.height = H + 'px';
+    charDrawn = null;
+    /* the place: its cushion goes under you, at your size; then it is grown until it covers the scene */
+    var bg = $('tbg'), seat = S.chamber.seat;
+    if (bg && seat) {
+      var u = s / 100, px = BOX.x + s / 2, py = BOX.y + SEAT_Y * u, w = SEAT_W * u / seat.w, h = w * 9 / 16;
+      var grow = Math.max(1, px / (seat.x * w), (W - px) / ((1 - seat.x) * w), py / (seat.y * h), (H - py) / ((1 - seat.y) * h));
+      w *= grow; h *= grow;
+      bg.style.width = w + 'px'; bg.style.height = h + 'px';
+      bg.style.left = (px - seat.x * w) + 'px'; bg.style.top = (py - seat.y * h) + 'px';
+    }
   }
+  var charDrawn = null;
   window.addEventListener('resize', resize);
   resize();
   function X(x) { return BOX.x + BOX.s * x / 100; }
@@ -41,7 +72,25 @@
 
   /* ── the session ──────────────────────────────────────────────────── */
   var st = SIM.start(PLAN), actions = [], queue = [], t0 = null, running = false, ended = false, settled = false;
+  var mapDim = 1, endAt = 0;
   var flashes = [], shake = 0, glow = 0, trav = {}, lastPos = {}, numbers = {}, gateNumbers = {};
+  /* the map's points are laid on your own body: each of the figure's acupoints (HERO.fit.points, measured on the
+     picture) pulls the map's points near it to where it really is. Only where things are drawn: the rules go by
+     each line's length, which the server set. */
+  if (FIT) {
+    var ANCH = Object.keys(S.body).filter(function (n) { return FIT.points[n]; })
+      .map(function (n) { return [S.body[n][0], S.body[n][1], FIT.points[n][0] - S.body[n][0], FIT.points[n][1] - S.body[n][1]]; });
+    PLAN.cycles.forEach(function (c) {
+      Object.keys(c.nodes).forEach(function (id) {
+        var n = c.nodes[id], sw = 0, dx = 0, dy = 0;
+        ANCH.forEach(function (a) {
+          var d2 = (n.x - a[0]) * (n.x - a[0]) + (n.y - a[1]) * (n.y - a[1]), w = 1 / (d2 * d2 + 0.5);
+          sw += w; dx += w * a[2]; dy += w * a[3];
+        });
+        n.x += dx / sw; n.y += dy / sw;
+      });
+    });
+  }
   function cyc() { return PLAN.cycles[Math.min(st.cycle, PLAN.cycles.length - 1)]; }
   function upcoming() { return st.pause_until != null && st.cycle + 1 < PLAN.cycles.length ? PLAN.cycles[st.cycle + 1] : cyc(); }
   function number() {                                          // junctions 1..n and gates 1..n, top to bottom, left to right
@@ -140,14 +189,95 @@
     else if (how === 'deviation') { shake = 22; fs('stun'); again($('tbanner'), 'Qi deviation!', 'warn'); }
     else if (how === 'cycle_done' && e[2] === 'cycle') {
       glow = 1.6; fs('cast');
+      var dn = cyc().nodes.dantian; if (dn) flashes.push({pic: 'bloom', x: X(dn.x), y: Y(dn.y), size: 34, life: 1500, t: performance.now()});
       again($('tbanner'), e[3] + 1 < 3 ? 'Cycle ' + (e[3] + 1) + ' complete. The Dantian compresses…' : 'Third cycle complete.');
     }
   }
   function onCycle() {
     var c = cyc();
-    if (c.kind === 'rival') { again($('tbanner'), 'The rival disciple pushes dark Qi into your meridians! Expel it.', 'warn'); fs('roar'); }
+    if (c.kind === 'rival') {
+      again($('tbanner'), 'The rival disciple pushes dark Qi into your meridians! Expel it.', 'warn'); fs('roar');
+      if ($('trival')) $('trival').classList.add('on');
+    }
     else if (st.cycle === 1 && S.hints.length) say(S.hints[1]);
     else if (st.cycle === 1 && PLAN.tier >= 2) say('A knot blocks a line. Send the gold round it.');
+  }
+
+  /* ── you: the meditation loop, and the three endings ───────────────
+     The loop is a sprite sheet played forwards then backwards (it never jumps). An ending (surge, deviation,
+     scatter) is a small video whose top half is the picture and bottom half its mask (white = solid): each frame
+     is put together here and drawn over the chamber, its own sound with it; then the loop again. */
+  var loopImg = null, ENDS = {}, endNow = null, endBuf = null;
+  if (HERO) {
+    loopImg = new Image(); loopImg.src = HERO.loop.src;
+    Object.keys(HERO.ends || {}).forEach(function (k) {
+      var v = document.createElement('video');
+      v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.src = HERO.ends[k].src;
+      ENDS[k] = v;
+    });
+  }
+  function onBody(box) {                                       // a box in the video's px, on the screen
+    var k = U() / FIT.k;
+    return [BOX.x + (box[0] - FIT.x0) * k, BOX.y + (box[1] - FIT.y0) * k, box[2] * k, box[3] * k];
+  }
+  function playEnd(name) {
+    var v = ENDS[name]; if (!v) return false;
+    try { v.currentTime = 0; } catch (e) {}
+    var p = v.play(); if (p && p.catch) p.catch(function () {});
+    endNow = {name: name, v: v, spec: HERO.ends[name], t0: performance.now(), seen: -1, ready: false};
+    if (soundOn && endNow.spec.sound) {
+      var a = new Audio(endNow.spec.sound); a.volume = LOUD();
+      var q = a.play(); if (q && q.catch) q.catch(function () {});
+    }
+    return true;
+  }
+  function endFrame() {                                        // the ending's frame now, with its mask, as a picture
+    var e = endNow, sp = e.spec, w = sp.w, h = sp.h;
+    if (!endBuf) endBuf = {};
+    if (!endBuf.raw || endBuf.raw.width !== w || endBuf.raw.height !== h * 2) {
+      endBuf.raw = document.createElement('canvas'); endBuf.raw.width = w; endBuf.raw.height = h * 2;
+      endBuf.rc = endBuf.raw.getContext('2d', {willReadFrequently: true});
+      endBuf.out = document.createElement('canvas'); endBuf.out.width = w; endBuf.out.height = h;
+      endBuf.oc = endBuf.out.getContext('2d');
+    }
+    endBuf.rc.drawImage(e.v, 0, 0, w, h * 2);
+    var px = endBuf.rc.getImageData(0, 0, w, h * 2), d = px.data, n = w * h * 4, i, a;
+    for (i = 0; i < n; i += 4) {
+      a = d[i + n];
+      if (a > 3) { d[i] = Math.min(255, d[i] * 255 / a); d[i + 1] = Math.min(255, d[i + 1] * 255 / a); d[i + 2] = Math.min(255, d[i + 2] * 255 / a); d[i + 3] = a; }
+      else d[i + 3] = 0;
+    }
+    endBuf.oc.putImageData(px, 0, 0, 0, 0, w, h);
+    endBuf.oc.clearRect(0, 0, w, 3); endBuf.oc.clearRect(0, h - 3, w, 3);     // where picture and mask meet, they bleed
+    endBuf.oc.clearRect(0, 0, 3, h); endBuf.oc.clearRect(w - 3, 0, 3, h);
+    return endBuf.out;
+  }
+  function drawChar(now) {
+    if (!HERO || !loopImg.complete || !loopImg.naturalWidth) return;
+    var L = HERO.loop, n = L.frames, span = Math.max(1, 2 * n - 2), i = Math.floor(now * L.fps / 1000) % span, f = i < n ? i : span - i;
+    var key = 'L' + f, pic = null, blend = 0;
+    if (endNow) {
+      var e = endNow;
+      if (e.v.ended || now - e.t0 > e.spec.ms + 1500) endNow = null;
+      else if (e.v.readyState >= 2 && e.v.currentTime > 0) {
+        if (!e.ready) { e.ready = true; e.t1 = now; }
+        blend = Math.max(0, 1 - (now - e.t1) / 350);             // the loop fades out over the ending's first moment
+        key = 'E' + e.name + e.v.currentTime + (blend ? 'b' + f : '');
+        pic = e;
+      }
+    }
+    if (key === charDrawn) return;
+    charDrawn = key;
+    cc.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cc.clearRect(0, 0, W, H);
+    var r;
+    if (pic) { r = onBody(pic.spec.box); try { cc.drawImage(endFrame(), r[0], r[1], r[2], r[3]); } catch (err) { endNow = null; } }
+    if (!pic || blend) {
+      r = onBody(L.box);
+      cc.globalAlpha = pic ? blend : 1;
+      cc.drawImage(loopImg, (f % L.cols) * L.fw, Math.floor(f / L.cols) * L.fh, L.fw, L.fh, r[0], r[1], r[2], r[3]);
+      cc.globalAlpha = 1;
+    }
   }
 
   /* ── drawing ──────────────────────────────────────────────────────── */
@@ -282,12 +412,18 @@
       var strain = waiting.length ? Math.max(waiting.length / PLAN.gate.most, (st.tick - oldest) / PLAN.gate.hold) : 0;
       var w = r * 0.62, h = r * 0.9, wob = open ? 0 : 0.06 * Math.sin(now / 80) * strain;
       cx.translate(x, y); cx.rotate(wob);
+      if (fxok('seal')) {                                          // the jade seal: whole when shut, a ghost when open
+        w = r * 0.7; h = r * 1.05;
+        fxdraw('seal', 0, r * 0.06, r * 1.35, open ? 0.3 : 1);
+        if (!open) { cx.strokeStyle = 'rgba(255,217,168,.9)'; cx.lineWidth = Math.max(1.5, u * 0.3); cx.beginPath(); cx.arc(0, r * 0.18, r * 0.78, 0, Math.PI * 2); cx.stroke(); }
+      } else {
       cx.fillStyle = open ? 'rgba(120,30,24,.35)' : '#b3261e';
       cx.strokeStyle = open ? 'rgba(255,200,160,.45)' : '#ffd9a8'; cx.lineWidth = Math.max(1.5, u * 0.35);
       cx.fillRect(-w, -h, w * 2, h * 2); cx.strokeRect(-w, -h, w * 2, h * 2);
       cx.strokeStyle = open ? 'rgba(255,220,190,.5)' : '#2a0806'; cx.lineWidth = Math.max(1.2, u * 0.3);   // the rune
       cx.beginPath(); cx.moveTo(-w * 0.5, -h * 0.6); cx.lineTo(w * 0.5, -h * 0.6); cx.moveTo(0, -h * 0.75); cx.lineTo(0, h * 0.6);
       cx.moveTo(-w * 0.45, -h * 0.1); cx.quadraticCurveTo(0, h * 0.15, w * 0.45, -h * 0.1); cx.moveTo(-w * 0.5, h * 0.45); cx.lineTo(w * 0.5, h * 0.45); cx.stroke();
+      }
       cx.rotate(-wob);
       cx.fillStyle = 'rgba(10,6,6,.8)'; cx.fillRect(w + 3, -r * 0.28, r * 0.95, r * 0.56);    // its key, beside it
       cx.fillStyle = open ? 'rgba(255,220,190,.8)' : '#fff1d6'; cx.font = '700 ' + Math.round(r * 0.42) + 'px Cinzel, Georgia, serif';
@@ -296,6 +432,10 @@
         cx.strokeStyle = 'rgba(255,90,60,.95)'; cx.lineWidth = Math.max(2, u * 0.55);
         cx.beginPath(); cx.arc(0, 0, h * 1.25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, strain)); cx.stroke();
       }
+    } else if (n.type === 'exit' && fxok('lotus')) {
+      fxdraw('lotus', x, y - r * 0.1, r * 1.9);
+    } else if (n.type === 'knot' && fxok('knot')) {
+      fxdraw('knot', x, y, r * 2.1, 1, now / 1800);
     } else if (n.type === 'exit') {
       cx.translate(x, y);
       for (var i = 0; i < 5; i++) {
@@ -325,6 +465,8 @@
   }
   function dantian(x, y, r, now) {
     var u = U(), R = Math.max(13, u * 4.2) * (1 + 0.15 * glow);
+    if (fxok('dantian')) fxdraw('dantian', x, y, R * 4.6, 1, now / 2400);              // the golden orb, turning slowly
+    else {
     var g = cx.createRadialGradient(x, y, 0, x, y, R * 2.2);
     g.addColorStop(0, 'rgba(255,240,180,' + (0.95) + ')'); g.addColorStop(0.35, 'rgba(255,196,80,.85)');
     g.addColorStop(1, 'rgba(255,170,40,0)');
@@ -334,6 +476,7 @@
     cx.beginPath(); cx.arc(0, 0, R * 0.62, 0, Math.PI * 2); cx.stroke();
     cx.beginPath(); cx.arc(0, -R * 0.31, R * 0.31, -Math.PI / 2, Math.PI / 2); cx.arc(0, R * 0.31, R * 0.31, -Math.PI / 2, Math.PI / 2, true); cx.stroke();
     cx.restore();
+    }
     cx.lineWidth = Math.max(3, u * 0.8);                                             // the cycle filling
     cx.strokeStyle = 'rgba(255,214,107,.25)'; cx.beginPath(); cx.arc(x, y, R * 1.35, 0, Math.PI * 2); cx.stroke();
     cx.strokeStyle = GOLD; cx.beginPath(); cx.arc(x, y, R * 1.35, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * cycleGold()); cx.stroke();
@@ -383,8 +526,14 @@
     });
   }
   function effects(now) {
-    flashes = flashes.filter(function (f) { return now - f.t < (f.kind === 'bloom' ? 1500 : 700); });
+    flashes = flashes.filter(function (f) { return now - f.t < (f.life || (f.kind === 'bloom' ? 1500 : 700)); });
     flashes.forEach(function (f) {
+      if (f.pic) {                                                 // a painted effect: it opens out and fades
+        if (now < f.t || !fxok(f.pic)) return;
+        var q = (now - f.t) / f.life, sz = U() * f.size * (0.55 + 0.45 * Math.min(1, q * 3)) * (1 + 0.12 * q);
+        fxdraw(f.pic, f.x, f.y - (f.rise || 0) * U() * q, sz, Math.min(1, q * 6) * Math.min(1, (1 - q) * 2.2));
+        return;
+      }
       if (f.kind === 'bloom') {                                    // a ring of gold opening out of the Dantian
         var b = (now - f.t) / 1500, R = U() * (6 + b * 48);
         cx.strokeStyle = 'rgba(255,214,107,' + (0.85 * (1 - b)) + ')'; cx.lineWidth = Math.max(2, U() * 1.2 * (1 - b) + 1);
@@ -414,14 +563,15 @@
     if (shake > 0 && !reduced) { sx = (Math.random() - 0.5) * shake; sy = (Math.random() - 0.5) * shake; shake *= 0.88; if (shake < 0.5) shake = 0; }
     cx.translate(sx, sy);
     var mapIn = main.dataset.phase === 'ready' ? 0.35 : running ? Math.min(1, (now - t0) / S.settle) : 1;
-    body(0.55 + 0.45 * mapIn);
+    if (HERO) drawChar(now); else body(0.55 + 0.45 * mapIn);
+    mapIn *= mapDim;
     var c = st.pause_until != null ? upcoming() : cyc();
     if (st.pause_until != null) { var k = (st.pause_until - st.tick) / PLAN.pause; mapIn *= 0.35 + 0.65 * Math.abs(k * 2 - 1); }
     chans(c).forEach(function (ch) { line(c, ch, mapIn, now); });
     acupoints(c, mapIn);
     labels(c, mapIn);
     Object.keys(c.nodes).forEach(function (id) { if (c.nodes[id].type !== 'path') node(c, id, mapIn, now); });
-    if (c === cyc()) pulses(frac, now);
+    if (c === cyc() && !ended) pulses(frac, now);
     effects(now);
     glow *= 0.96;
     hud();
@@ -485,7 +635,8 @@
   function begin() {
     $('tbegin').disabled = true;
     main.dataset.phase = 'settle';
-    if (window.SparMusic) window.SparMusic.start('meditation');
+    if (window.SparMusic) { window.SparMusic.start('meditation'); if (S.chamber.sound) window.SparMusic.ambience(S.chamber.sound); }
+    var bgv = $('tbg'); if (bgv && bgv.play) { var bp = bgv.play(); if (bp && bp.catch) bp.catch(function () {}); }
     say(S.begin);
     fetch('/train/go', {method: 'POST'}).then(function (r) { return r.json(); }).then(function (j) {
       if (j.error || j.gone) again($('tbanner'), j.error || 'The meditation is over.', 'warn');
@@ -499,6 +650,8 @@
     if (ended) return;
     ended = true; breathe(false); running = false;
     main.dataset.phase = 'wait';
+    if ($('trival')) $('trival').classList.remove('on');
+    ending();
     var send = function (tries) {
       fetch('/train/submit', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({actions: actions})})
         .then(function (r) { return r.json(); })
@@ -516,7 +669,7 @@
     main.dataset.phase = 'result';
     if (window.SparMusic && fresh) window.SparMusic.stop();
     $('tbanner').textContent = ''; $('tbanner').className = 'pbanner';
-    $('rkick').textContent = {great: 'CLEAR AS SPRING WATER', good: 'WELL GUIDED', poor: 'RESTLESS', bad: 'TURBID',
+    $('rkick').textContent = {great: 'MERIDIANS CLEAR', good: 'WELL GUIDED', poor: 'THE QI DRIFTS', bad: 'THE QI SCATTERS',
                               deviation: 'QI DEVIATION'}[r.verdict];
     $('rscore').textContent = Math.round(r.score * 100) + '%';
     $('rline').textContent = '"' + r.line + '"';
@@ -536,9 +689,47 @@
     fill.style.width = Math.min(100, 100 * r.bar.before / cap) + '%';
     var show = function () { $('tresult').hidden = false; setTimeout(function () { fill.style.width = Math.min(100, 100 * r.bar.qi / cap) + '%'; }, 400); };
     if (!fresh) { show(); return; }
-    if (r.verdict === 'great') cheer('Meridians clear!', 'Clear as spring water');
-    else if (r.approve) cheer('Well guided', 'The Qi listened to you');
-    setTimeout(show, r.approve ? 2600 : 1400);
+    setTimeout(show, Math.max(400, endAt - performance.now()));       // after the ending has played
+  }
+
+  /* How the session ends, from this page's own count (the server's will agree): your character answers, with the
+     ending's video and its sound when the art is there.
+       85%+  Meridians clear: the Qi surge, the golden bloom, a chime        70%+  Well guided: the same, smaller
+       50%+  The Qi drifts: the map dims, a low note                         under 50%  The Qi scatters: grey mist
+       Stability 0  Qi deviation: dark Qi tears loose, the crack */
+  function ending() {
+    var score = SIM.score(PLAN, st), d = cyc().nodes.dantian || PLAN.cycles[0].nodes.dantian, at = [X(d.x), Y(d.y)];
+    var t = performance.now(), wait = 1400;
+    function pic(name, size, life, delay, rise) { flashes.push({pic: name, x: at[0], y: at[1], size: size, life: life, t: t + (delay || 0), rise: rise}); }
+    function words(title, line, sad, delay) {
+      setTimeout(function () {
+        var el = $('tcheer'); el.innerHTML = '<span></span><small></small>';
+        el.firstChild.textContent = title; el.lastChild.textContent = line;
+        el.className = 'tcheer' + (sad ? ' sad' : ''); void el.offsetWidth; el.className += ' go';
+      }, delay || 0);
+    }
+    if (st.deviation) {
+      var dv = playEnd('deviation');
+      pic('crack', 62, 2600, 0); mapDim = 0.35;
+      words('Qi deviation!', 'The Qi tears loose', true, 300);
+      wait = dv ? 5600 : 2400;
+    } else if (score >= 0.7) {
+      var big = score >= 0.85, sv = playEnd('surge'), peak = sv ? 3300 : 0;
+      setTimeout(function () { cheer(big ? 'Meridians clear!' : 'Well guided', big ? 'Clear as spring water' : 'The Qi listened to you'); }, peak);
+      pic('bloom', big ? 60 : 40, 2800, peak);
+      wait = sv ? 6600 : 2600;
+    } else if (score >= 0.5) {
+      mapDim = 0.4; fs('defeat');
+      words('The Qi drifts', 'You chased it instead of guiding it', true, 200);
+      wait = 2600;
+    } else {
+      var sc = playEnd('scatter');
+      mapDim = 0.3; pic('scatter', 70, 3200, sc ? 2300 : 200, 10);
+      if (!sc) fs('defeat');
+      words('The Qi scatters', 'Breathe first, then steer', true, sc ? 2200 : 300);
+      wait = sc ? 5800 : 2600;
+    }
+    endAt = t + wait;
   }
 
   /* the celebration (no teacher: the meditation itself answers). Gold rings bloom out of the Dantian, the body

@@ -124,7 +124,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice"):            # only the art the pages use
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train"):            # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML

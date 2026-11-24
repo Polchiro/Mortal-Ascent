@@ -9,7 +9,7 @@ and **exploring (hunting alone or in parties of up to 4, docs/hunting.md) with t
 
 Also built: **sparring with the Martial Master and mastery trials** (`/training`, `/spar`: "The training yard" below),
 **Practice** with Senior Sister Xue (`/practice`, a real-time drill of one technique), and **Train** (`/train`,
-Meridian Circulation: a meditation steering Qi through the meridians; a prototype of tiers 1-2 so far).
+Meridian Circulation: a meditation steering Qi through the meridians; tiers 1-2 so far, with their art).
 
 **Next:** using items (Open, Take) from the inventory, and the rest of Train (tiers 3-5, then its art).
 Every action's result is decided **on the server** with the bot's own rules; the browser only shows it,
@@ -335,7 +335,9 @@ along the meridians of your seated body; turn junctions, close gates and hold yo
 and dark Qi leaves by a palm or sole. Paid with the bot's own /train reward and its 60-minute rest. docs/training.md,
 "Train on the website". Code: `web/train_play.py`, `web/train_sim.py` and its copy `web/static/train_sim.js`,
 `web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`; the meditation music is a mood
-in `spar_music.js`. Prototype: drawn in code over the Practice hall. Tests: `tests/test_web_train.py`.
+in `spar_music.js`. Reached from the yard's Train card or from Sister Jing by the pond in town. Art: `art/train/`
+(the chamber's looping video and ambience, your meditation loop and three endings, the effects), cut by
+`scripts/make_train_art.py`. Tests: `tests/test_web_train.py`.
 
 ## Rankings
 

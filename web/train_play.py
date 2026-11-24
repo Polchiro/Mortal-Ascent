@@ -19,6 +19,8 @@ PROTOTYPE (PR 1): tiers 1 and 2 only; a higher tier plays tier 2's network for n
 The map is drawn in code over the Practice hall. Train has no teacher (SHOAIB, Nov 25): your own character is the
 whole scene, and a good session ends in a celebration of its own.
 """
+import json
+import os
 import random
 import threading
 import time
@@ -33,8 +35,12 @@ from bot import player as players
 from . import train_sim as sim
 from .practice_play import plain
 
-ART = "/art/practice"
-CHAMBER_PICTURE = ART + "/hall.jpg"          # until the meditation chamber (S1) is painted
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ART = "/art/train"                           # cut from SHOAIB's pictures and videos by scripts/make_train_art.py
+FX = ["dantian", "dantian_upper", "seal", "lotus", "knot", "bloom", "crack", "scatter"]
+# where the cushion is in each background picture: its middle (fractions of the picture) and its width. The page
+# seats your character there
+SEATS = {"chamber": (0.549, 0.634, 0.156), "hermit": (0.502, 0.722, 0.14)}
 BUILT_TIERS = 2                              # PROTOTYPE: tiers 3-5 come in PR 2
 
 TICK = sim.TICK
@@ -71,8 +77,8 @@ HINTS = ["Turn the junction so the gold goes down to the Dantian.",
 LINES = {"begin": "Close your eyes. Follow the light inward. Gold to the centre, darkness out.",
          "great": "Your meridians are clear as spring water. Well done.",
          "good": "The Qi listened to you, mostly. Again, more calmly.",
-         "poor": "You chased the Qi instead of guiding it.",
-         "bad": "Turbid and restless. Breathe first, then steer.",
+         "poor": "The Qi drifts. You chased it instead of guiding it.",
+         "bad": "The Qi scatters. Breathe first, then steer.",
          "deviation": "Qi deviation! Stop. Breathe. We start again another day."}
 
 # ── the body's map: an acupuncture chart over the seated figure (a 100 × 100 box round it, facing you) ──────────
@@ -292,6 +298,43 @@ def make_plan(tier, conditions, event, rng):
     return plan
 
 
+def _there(url):
+    return url if os.path.exists(os.path.join(ROOT, url.lstrip("/"))) else None
+
+
+_heroes = {}
+
+
+def hero_art(gender):
+    """Your character meditating (art/train/hero/<gender>/sheets.json): the loop's sprite sheet, the three endings'
+    videos with their sounds, and `fit`, where the body's acupoints are. None until the art is cut: then the page
+    draws a plain seated figure."""
+    if gender not in _heroes:
+        try:
+            with open(os.path.join(ROOT, "art", "train", "hero", gender, "sheets.json")) as fh:
+                data = json.load(fh)
+            _heroes[gender] = data if data.get("loop") and data.get("fit") else None
+        except (OSError, ValueError):
+            _heroes[gender] = None
+    return _heroes[gender]
+
+
+def scene_art(event=None):
+    """The place: the meditation chamber (a looping video, its sound the room's own), or the Hermit's peak when a
+    Wandering Hermit watches; the Practice hall stands in if neither is there."""
+    place = "hermit" if event == "wandering_hermit" and _there(ART + "/hermit.jpg") else "chamber"
+    picture = _there(f"{ART}/{place}.jpg")
+    if not picture:
+        return {"picture": "/art/practice/hall.jpg", "video": None, "sound": None, "seat": None}
+    x, y, w = SEATS[place]
+    return {"picture": picture, "video": _there(ART + "/chamber.mp4") if place == "chamber" else None,
+            "sound": _there(ART + "/chamber.wav"), "seat": {"x": x, "y": y, "w": w}}
+
+
+def fx_art():
+    return {name: _there(f"{ART}/fx/{name}.webp") for name in FX}
+
+
 def roll(player, rng):
     """The session's tier (by realm), conditions and event, from the bot's tables (bot/trainer.roll_session's rolls)."""
     tier = challenges.REALM_TIER[player["realm"]]
@@ -471,7 +514,9 @@ class Chamber:
                 "hints": HINTS if s.plan["tier"] == 1 else [],
                 "me": {"name": s.player["name"], "gender": looks.gender_of(look), "face": looks.face(look)},
                 "begin": LINES["begin"],
-                "chamber": {"picture": CHAMBER_PICTURE},
+                "chamber": scene_art(s.event), "hero": hero_art(looks.gender_of(look)), "fx": fx_art(),
+                "rival": _there(ART + "/rival.webp"),
+                "body": {n: [x, y] for n, (x, y, _) in BODY.items()},
                 "begun": s.go_at is not None, "result": s.result,
             }
 
@@ -486,7 +531,7 @@ class Chamber:
             wait = db.cooldown_left(conn, uid, "train", now)
             tier = challenges.REALM_TIER[p["realm"]]
             return {"wait": players.fmt_duration(wait) if wait else None, "busy": self.busy(uid), "tier": tier,
-                    "rest": players.fmt_duration(trainer.cooldown_seconds(p, now)),
+                    "rest": players.fmt_duration(trainer.cooldown_seconds(p, now)), "badge": _there(ART + "/badge.webp"),
                     "prototype": tier > BUILT_TIERS}
 
 

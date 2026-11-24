@@ -8,6 +8,7 @@ training yard (/training). Every POST only asks web/train_play.Chamber; it decid
   POST /train/submit   JSON {"actions": [[t ms, what, which], ...]}   replay, score and pay it (answers the result)
   POST /train/yield                                  walk away (nothing earned, the rest stays)
   POST /train/done                                   leave the result
+  GET  /town/visit/keeper                            Sister Jing in town seats you (the same as /train/start)
 """
 from fastapi import Request
 from fastapi.concurrency import run_in_threadpool
@@ -57,6 +58,23 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             return go("/training#train")
         return go("/train")
 
+    @app.get("/town/visit/keeper")
+    async def town_visit_keeper(request: Request):
+        """Sister Jing of the Quiet Pavilion (web/town.py NPCS) seats you: the meditation is set up, as the yard's
+        Train button does. Resting, or busy elsewhere: back to her, with why."""
+        user = current_user(request)
+        if not user:
+            return go("/")
+        uid = user["id"]
+        if chamber.busy(uid):
+            return go("/train")
+        why = elsewhere(uid) or await run_in_threadpool(with_conn, chamber.start, uid)
+        if why:
+            request.session["town_notice"] = why
+            return go("/town?near=keeper")
+        request.session["train_from"] = "keeper"
+        return go("/train")
+
     @app.get("/train", response_class=HTMLResponse)
     def train_page(request: Request):
         user = current_user(request)
@@ -97,18 +115,22 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         result, why = await run_in_threadpool(with_conn, chamber.submit, user["id"], actions)
         return no_store(JSONResponse({"error": why, "result": result}))
 
+    def back(request):
+        """Where you came from: Sister Jing by the pond, or the training yard."""
+        return go("/town?near=keeper" if request.session.pop("train_from", None) == "keeper" else "/training#train")
+
     @app.post("/train/yield")
     def train_yield(request: Request):
         user = current_user(request)
         if user:
             chamber.give_up(user["id"])
-        return go("/training#train")
+        return back(request)
 
     @app.post("/train/done")
     def train_done(request: Request):
         user = current_user(request)
         if user:
             chamber.done(user["id"])
-        return go("/training#train")
+        return back(request)
 
     return chamber

@@ -73,10 +73,12 @@
   {% if tv %}
   {# Train: Meridian Circulation (web/train_play.Chamber.hall). No teacher: a drawn Dantian is its picture. #}
   <section class="card pcard traincard" id="train">
-    <div class="tportrait" aria-hidden="true"></div>
+    {% if tv.badge %}<img class="pportrait tbadge" src="{{ tv.badge }}" alt="" width="112" height="112">
+    {% else %}<div class="tportrait" aria-hidden="true"></div>{% endif %}
     <div class="pbody">
       <h2>Train: Meridian Circulation</h2>
-      <p class="sub">Sit alone in the quiet chamber and look inward. Guide the Qi; don't chase it.</p>
+      <p class="sub">Sit alone in the quiet chamber and look inward. Guide the Qi; don't chase it. (Sister Jing, by
+        the pond in town, will seat you too.)</p>
       <ul class="yardrules">
         <li>A <b>two-minute meditation</b>: pulses of Qi flow along your meridians. Turn the <b>junctions</b> so <b>gold</b>
           reaches your Dantian and <b>dark</b> Qi leaves through a palm or sole; close <b>gates</b> to hold Qi back; hold your

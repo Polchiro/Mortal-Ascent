@@ -10,7 +10,13 @@
    server replays it and scores it. No top bar: the meditation has the whole window; Leave in the corner walks away. #}
 <main class="train" id="train" data-phase="ready" aria-label="Train">
   <section class="tscene{% if s.night %} night{% endif %}" id="tscene" style="--chamber: url({{ s.chamber.picture }})">
+    {# the place (the chamber's video loops; the Hermit's peak is a still), then you, then the map over you #}
+    {% if s.chamber.video %}<video class="tbg" id="tbg" src="{{ s.chamber.video }}" poster="{{ s.chamber.picture }}" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video>
+    {% elif s.chamber.seat %}<img class="tbg" id="tbg" src="{{ s.chamber.picture }}" alt="">{% endif %}
+    <div class="tshade" aria-hidden="true"></div>
+    <canvas class="tchar" id="tchar" aria-hidden="true"></canvas>
     <canvas class="tmap" id="tmap" aria-label="Your meridians"></canvas>
+    {% if s.rival %}<img class="trival" id="trival" src="{{ s.rival }}" alt="The rival disciple">{% endif %}
 
     <header class="thud">
       <div class="ttier">

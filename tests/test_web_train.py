@@ -426,6 +426,43 @@ def test_one_thing_at_a_time(client):
     assert client.get("/train").headers["location"] == "/training#train"
 
 
+def test_sister_jing_seats_you(client):
+    from web import town
+    jing = next(n for n in town.NPCS if n["key"] == "keeper")
+    assert town.walkable(jing["x"], jing["y"]) and jing["go"][0][1] == "/town/visit/keeper"
+    assert os.path.exists(os.path.join(ROOT, jing["src"].lstrip("/")))
+    assert client.get("/town/visit/keeper").headers["location"] == "/train"
+    assert client.app.state.train.busy(UID)
+    assert client.get("/town/visit/keeper").headers["location"] == "/train"       # already seated
+    assert client.post("/train/yield").headers["location"] == "/town?near=keeper"  # back to her, not the yard
+    assert client.get("/town/visit/keeper").headers["location"] == "/town?near=keeper"   # resting now
+    assert "rest" in client.get("/town?near=keeper").text
+
+
+def test_the_art_is_there_and_fits():
+    """What scripts/make_train_art.py cut: the chamber, the effects, and each character's loop, endings and fit."""
+    scene = tp.scene_art()
+    for key in ("picture", "video", "sound"):
+        assert scene[key] and os.path.exists(os.path.join(ROOT, scene[key].lstrip("/")))
+    assert tp.scene_art("wandering_hermit")["picture"].endswith("hermit.jpg")
+    assert tp.scene_art("wandering_hermit")["video"] is None
+    assert all(tp.fx_art().values())
+    for gender in ("female", "male"):
+        art = tp.hero_art(gender)
+        loop = art["loop"]
+        assert loop["frames"] <= loop["cols"] * loop["rows"] and os.path.exists(os.path.join(ROOT, loop["src"].lstrip("/")))
+        assert set(art["ends"]) == {"surge", "deviation", "scatter"}
+        for end in art["ends"].values():
+            assert os.path.exists(os.path.join(ROOT, end["src"].lstrip("/")))
+            assert os.path.exists(os.path.join(ROOT, end["sound"].lstrip("/")))
+        pts = art["fit"]["points"]
+        assert set(pts) == set(tp.BODY)                                   # every acupoint of the map is on the body
+        assert pts["crown"][1] < pts["throat"][1] < pts["heart"][1] < pts["dantian"][1]
+        assert pts["l_palm"][0] < 50 < pts["r_palm"][0] and abs(pts["dantian"][0] - 50) < 1
+        for name, (x, y) in pts.items():                                  # the map is only nudged onto the body
+            assert abs(x - tp.BODY[name][0]) < 12 and abs(y - tp.BODY[name][1]) < 13, name
+
+
 def test_the_train_pages_need_a_login(tmp_path):
     settings = web_app.Settings(client_id="cid", client_secret="secret", db_path=str(tmp_path / "x.db"), session_secret="t")
     cl = TestClient(web_app.create_app(settings), base_url="http://localhost:8000", follow_redirects=False)
