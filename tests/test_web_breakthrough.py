@@ -75,6 +75,15 @@ def test_a_phase_gate_has_no_pill_and_no_injury(conn):
     assert a["chance"] == f"{training.PHASE_BOTTLENECK_SUCCESS['Martial Warrior']:.0%}"
 
 
+def test_an_injury_closes_the_realm_gate_until_healed(conn):
+    at_gate(conn, A)
+    db.update_player(conn, A, injured_until=time.time() + 3 * 3600)
+    a = bp.assess(conn, A)
+    assert not a["ready"] and "still injured" in a["why"] and a["injured"]
+    at_gate(conn, A, layer=3)                                  # a phase bottleneck stays open
+    assert bp.assess(conn, A)["ready"]
+
+
 def test_what_is_missing_closes_the_gate(conn):
     at_gate(conn, A, realm="Martial Expert")              # Martial Master needs a technique at Entering the Hall
     a = bp.Gates().view(conn, A)
@@ -149,9 +158,10 @@ def test_one_attempt_per_press(conn):
     again, why = g.attempt(conn, A, a["token"])                                    # a double click, a reload
     assert why is None and again == first
     assert db.get_player(conn, A)["failed_breakthroughs"] == 1
-    old = a["token"]
+    assert "token" not in g.view(conn, A)                    # the failure injured: no new try until healed
+    db.update_player(conn, A, injured_until=0)
     a2 = g.view(conn, A)
-    assert a2["token"] != old
+    assert a2["token"] != a["token"]
 
 
 def test_the_gate_is_checked_again_inside_the_write(conn):

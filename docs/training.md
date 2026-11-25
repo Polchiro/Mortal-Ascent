@@ -145,8 +145,9 @@ Breakthrough pills and artifacts (e.g. Heaven's Favor) add to realm gates only, 
 - When your bar becomes full at a gate, the bot mentions you once in the channel you last used it in
   ("your Qi is full: use /breakthrough!"). Turn this off with **/settings qi_pings:off**
 - Failed phase breakthrough: lose 20% of the bar; the Qi waiting behind the gate is kept
-- Failed realm breakthrough: lose 20% of the bar + 6-hour injury (no exploring or fighting); the Qi
-  waiting behind the gate is kept
+- Failed realm breakthrough: lose 20% of the bar + 6-hour injury (no exploring or fighting, and **no new realm
+  breakthrough until it heals**: a Mending pill heals faster); the Qi waiting behind the gate is kept. Phase
+  bottlenecks can still be tried while injured
 - Breakthrough Pills: +5% / +7% / +10% / +12% / +15% success (Mortal → Heaven, see alchemy.md)
 - **On the website** the **Break through** seal under the player plate (and on the Profile) opens the same attempt,
   with a ceremony for each kind of gate; the rules and chance are these (docs/web.md "Breakthrough")
