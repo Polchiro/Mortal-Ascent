@@ -7,6 +7,7 @@ Pages:
   /callback   Discord sends the player back here; we log them in
   /profile    their character, read from the bot's own database
   /inventory  their bag: every tab, item and its details; Equip / Unequip for weapons, armor and artifacts
+  /techniques every learned technique and the three sockets; Equip / Unequip (web/techniques_routes.py)
   /forge      the blacksmith forge: choose, then play the five stages (bot/forging.py decides everything)
   /alchemy    the alchemy cauldron (/craft): choose a pill, then refine it (bot/crafting.py decides everything)
   /explore    hunting: Solo Hunt, Create a Team, Find a Team; the lobby, locations and team fights (web/hunt_routes.py)
@@ -44,7 +45,7 @@ from bot import db, points
 from . import discord_oauth as oauth
 from . import (admin_routes, alchemy_play, breakthrough_routes, chest_routes, dantian_routes, drawn, duel_routes,
                explore_play, forge_play, gather_play, hunt_routes, practice_routes, rankings, spar_routes, town,
-               train_routes)
+               train_routes, techniques_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -663,6 +664,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     dantian_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # The Treasure Shelf: opening chests (web/chest_routes.py, web/chest_play.py)
     chest_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # Techniques: see them and choose what is equipped (web/techniques_routes.py, web/techniques_play.py)
+    techniques_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

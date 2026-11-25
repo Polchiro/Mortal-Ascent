@@ -2446,3 +2446,57 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .adchests .k-common{--k:rgb(196,190,178)}.adchests .k-uncommon{--k:rgb(96,196,112)}.adchests .k-rare{--k:rgb(82,150,236)}
 .adchests .k-epic{--k:rgb(170,102,236)}.adchests .k-legendary{--k:rgb(246,160,52)}.adchests .k-mythic{--k:rgb(240,64,72)}
 .adlink{font-size:13px;color:#E8C27A}
+/* Techniques (web/templates/techniques.html, web/techniques_play.py) */
+.sublink{margin-left:10px;font:600 12px Inter,sans-serif;letter-spacing:0;text-transform:none;color:var(--jade);text-decoration:none}
+.sublink:hover{text-decoration:underline}
+.techpage{flex:1;width:100%;max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+.techhead h1{margin:2px 0 4px;font:800 30px Cinzel,Georgia,serif;color:var(--gold2)}
+.techhead .sub{margin:0;color:var(--mist)}
+.technote{margin:16px 0 0;padding:10px 14px;border-radius:10px;font-size:14px}
+.technote.ok{background:rgba(111,217,176,.1);border:1px solid rgba(111,217,176,.45)}
+.technote.bad{background:rgba(208,88,76,.12);border:1px solid rgba(208,88,76,.5)}
+.techsockets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:18px}
+.tsock{display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:14px;background:rgba(9,16,36,.7);
+  border:1px solid rgba(232,194,122,.25)}
+.tsock.full{border-color:color-mix(in srgb,var(--rc) 60%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--rc) 18%,transparent) inset}
+.tsock div{display:flex;flex-direction:column;min-width:0}
+.tsock b{font:700 16px Cinzel,Georgia,serif;color:var(--cream)}
+.tsock .sub{margin:0;font-size:12.5px;color:var(--mist)}
+.tsock .pow{font-size:12.5px;color:var(--jade)}
+.tsock img{flex:none;width:64px;height:64px;border-radius:50%;clip-path:circle(46% at 50% 54%);box-shadow:0 0 0 2px var(--rc)}
+.tsock .ring{flex:none;display:grid;place-items:center;width:58px;height:58px;border-radius:50%;border:2px dashed rgba(201,164,92,.4);font-size:20px}
+.tsock.locked{opacity:.55}
+.tsock.t-attack .kicker{color:#E8A66A}.tsock.t-defense .kicker{color:#9CC4EE}.tsock.t-flex .kicker{color:var(--jade)}
+.techrule{margin:10px 2px 0;font-size:12.5px;color:var(--mist)}
+.techcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:22px}
+.tqcard{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:14px;background:rgba(9,16,36,.72);
+  border:1px solid color-mix(in srgb,var(--rc) 35%,transparent)}
+.tqcard.on{border-color:color-mix(in srgb,var(--rc) 75%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 30%,transparent),0 0 22px color-mix(in srgb,var(--rc) 14%,transparent)}
+.tqtop{display:flex;gap:12px;align-items:center}
+.tqtop img{flex:none;width:60px;height:60px;border-radius:50%;clip-path:circle(46% at 50% 54%);box-shadow:0 0 0 2px var(--rc)}
+.tqname{display:flex;flex-direction:column;min-width:0;flex:1}
+.tqname b{font:700 17px Cinzel,Georgia,serif;color:var(--cream)}
+.tqgrade{font-size:12.5px;color:var(--rc)}
+.tqeq{align-self:flex-start;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.5px;color:#0b1530;background:var(--jade)}
+.tqmastery{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:12.5px}
+.tqmastery .sub{margin:0;color:var(--mist)}
+.tqbar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}
+.tqbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2))}
+.tqfacts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0}
+.tqfacts div{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.04)}
+.tqfacts dt{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--mist)}
+.tqfacts dd{margin:0;font-size:13px;font-weight:600;color:var(--cream)}
+.tqeffect{margin:0;font-size:13px;color:#D9D1BF}
+.tqact{display:flex;align-items:center;gap:10px;margin-top:auto;flex-wrap:wrap}
+.tqact form{margin:0}
+.tqact .sub{margin:0;font-size:12px;color:var(--mist)}
+.tbtn{padding:8px 18px;border-radius:10px;font:700 14px Inter,sans-serif;cursor:pointer;color:var(--cream);
+  background:rgba(255,255,255,.06);border:1px solid rgba(232,194,122,.45)}
+.tbtn:hover{background:rgba(255,255,255,.12)}
+.tbtn.primary{background:var(--gold);color:#14223F;border-color:var(--gold)}
+.tbtn.primary:hover{filter:brightness(1.08)}
+@media (max-width:760px){
+  .techsockets{grid-template-columns:1fr}
+  .techcards{grid-template-columns:1fr}
+  .techhead h1{font-size:24px}
+}

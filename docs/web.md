@@ -120,6 +120,19 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 - **Chests** open on the website: a chest's **Open** in the Inspect panel, or the **Treasure Shelf** (see "Opening a
   chest" below). Using pills and manuals stays in Discord for now.
 
+## Techniques
+
+`/techniques` (the top bar's **Techniques**, or "Change techniques ›" on the Profile): Discord's `/techniques` on one
+page (`web/techniques_play.py`, `web/techniques_routes.py`). At the top, the three sockets: **Attack**, **Defense** and
+**Flex** (locked until Martial Warrior). Below, a card for every technique you have learned: grade, kind and school,
+its mastery stage and EXP bar, power, passive, cooldown and special effect.
+
+- **Equip** uses the bot's own `db.equip_technique`: it fills a free socket, or takes the place of the oldest equipped
+  technique of the same kind. The card says which before you press ("Replaces Iron Fist" / "Goes into a free slot").
+- **Unequip** (`db.unequip_technique`) only shows when another technique of the same kind stays equipped: one attack
+  and one defense are always on.
+- Nothing can be swapped during a fight on the website (a duel, a spar, a drill or a beast fight), like Discord.
+
 ## Opening a chest
 
 Chests open with the bot's own functions: `loot.begin_chest` rolls one (with Fate Weaver) and `loot.claim_chest`
