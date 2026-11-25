@@ -114,6 +114,33 @@ SECRET_FINDS = ["stone_tablet", "blessed_land", "wandering_hermit"]
 SECRET_CHANCE = 0.3                   # a new find appears at one of the map's secret spots this often
 
 
+# Where each herb likes to sprout (docs/world.md "Herbs"): only the spot follows this, never which herb grows.
+#   open   in the open grass            shade  on the forest's floor
+#   path   by a road or path (roots in trodden, stony ground)      glade  in a clearing among the trees
+HABITAT = {
+    "Spirit Grass": "open", "Dew Leaf": "open", "Sun Ginseng": "open", "Blood Flower": "open",
+    "Golden Ginseng": "open", "Phoenix Flower": "open",
+    "Red Berry": "shade", "Silver Moss": "shade", "Moon Mushroom": "shade", "Snow Lily": "shade",
+    "Iron Root": "path", "Stone Root": "path", "Thunder Root": "path", "Mountain Root": "path", "Chaos Root": "path",
+    "Heart Lotus": "glade", "Jade Lily": "glade", "Heaven Lotus": "glade", "Immortal Peach": "glade",
+    "Star Dew": "glade",
+}
+
+
+def suits(place, likes, x, y):
+    if place not in land.LANDS:
+        return True
+    tex = land.ground_at(place, x, y)
+    if likes == "path":
+        return land.path_dist(place, x, y) < 2.2
+    if likes == "open":
+        return tex == "grass"
+    if likes == "shade":
+        return tex == "forest"
+    base = land.LANDS[place]["base"]                    # a glade: a patch of the other ground, away from the paths
+    return tex in ("grass", "forest") and tex != base and land.path_dist(place, x, y) > 1.0
+
+
 def find_odds(kinds):
     w = {k: explore_rules.ENCOUNTERS[k]["chance"] for k in kinds}
     total = sum(w.values())
@@ -396,11 +423,11 @@ class World:
 
     # ── what grows and roams there ──────────────────────────────────
 
-    def _spot(self, w, place, near_ok, apart, gap_you=0.0):
+    def _spot(self, w, place, near_ok, apart, gap_you=0.0, tries=120):
         """A random walkable spot: `near_ok(x, y)` (inside a herb area ...), with room round it, away from the
         entrances, `apart` from the given spots, `gap_you` from you."""
         n = size(place)
-        for _ in range(120):
+        for _ in range(tries):
             x, y = 1 + w.rng.random() * (n - 2), 1 + w.rng.random() * (n - 2)
             if not near_ok(x, y):
                 continue
@@ -421,12 +448,16 @@ class World:
         def ok(x, y):                             # anywhere off the paths (and not under the town wall)
             return land.off_path(place, x, y) and (place != "crossroads" or x > crossroads.WALL_X + 2.5)
         apart = [((h["x"], h["y"]), HERB_ROOM) for h in w.herbs.get(place, [])]
-        at = self._spot(w, place, ok, apart)
-        if at is None:
-            return None
         p = db.get_player(conn, uid)
         grade = loot.herb_tier(p["realm"], w.rng)
         type_ = loot.pick(alchemy.REGION_HERB_TYPES[cfg["region"]], w.rng)
+        # which herb it is was rolled above, as always; only WHERE it sprouts follows its habitat: on ground that
+        # suits it if there is room, else anywhere a herb may grow (so the odds never depend on the land)
+        likes = HABITAT.get(alchemy.HERBS[grade][type_][0])
+        at = (likes and self._spot(w, place, lambda x, y: ok(x, y) and suits(place, likes, x, y), apart, tries=60)) \
+            or self._spot(w, place, ok, apart)
+        if at is None:
+            return None
         return {"id": self._id(w), "x": at[0], "y": at[1], "grade": grade, "type": type_, "ready": ready}
 
     def _beast(self, w, place, tier):

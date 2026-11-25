@@ -71,6 +71,7 @@ class Gathering:
         self.gathered = []              # herbs gathered this session
         self.reactions = []             # seconds per herb pick, for the review flag
         self.over = False
+        self.found = []                 # forging materials found beside the last herb gathered
         self.announce = None            # a rare find to announce in the channel (set by answer, read by the view)
         if p["spirit_check_in"] is None:          # first gather ever (0 = a check is waiting, even after a restart)
             db.update_player(conn, user_id, spirit_check_in=self.rng.randint(*alchemy.SPIRIT_CHECK_EVERY))
@@ -162,6 +163,7 @@ class Gathering:
                 if alchemy.is_announced(tier):
                     self.announce = r.herb
                 extra = materials.roll_gather(p["realm"], self.rng, materials.prospector(p))
+                self.found = extra                 # for the website's result (the text below says it for Discord)
                 if extra:
                     loot.store(self.conn, self.user_id, extra)
                     text += " Nearby you also find " + ", ".join(materials.lines(extra)) + "."

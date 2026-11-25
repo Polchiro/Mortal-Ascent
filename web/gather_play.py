@@ -107,6 +107,7 @@ class Gathers:
 
     def _answer(self, s, key, elapsed):
         r = s.g.round
+        s.g.found = []
         s.result = s.g.answer(key, elapsed, now=self.clock())
         s.last = (r, key)
         s.g.announce = None                # the website has no channel to announce a rare find in
@@ -204,6 +205,7 @@ def play_view(conn, s, now):
             "rarity": alchemy.HERB_RARITY[herb["grade"]][0], "old": shown.old,
             "picture": gather_art.choice(herb["name"]) if not r else item_picture(herb),   # the painting: once picked
             "age": d["age"] if shown.old or not r else None,          # a normal herb's age is only known once picked
+            "rings": sorted(alchemy.HERB_AGES).index(d["age"]) + 1 if shown.old or not r else None,   # 1-5: 10 ... 1000 years
             "desc": alchemy.HERBS[herb["grade"]][d["type"]][1]}
         picked = s.last[1] if (s.last and not r) else None
         out["choices"] = [{
@@ -223,6 +225,8 @@ def play_view(conn, s, now):
         out["prompt"] = lines(r.prompt)
         out["seconds"] = r.seconds
         out["left"] = round(max(0.0, s.shown_at + r.seconds - now), 1)
+    if not r and s.last and getattr(g, "found", None):       # a spring or a shard of jade found beside the herb
+        out["bonus"] = [{"name": i["name"], "picture": item_picture(i), "kind": i["data"]["kind"]} for i in g.found]
     if g.over:
         out["summary"] = out["status"]["session"]
     return out

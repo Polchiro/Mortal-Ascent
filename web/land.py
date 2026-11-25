@@ -170,6 +170,26 @@ def off_path(key, x, y, room=0.3):
     return True
 
 
+def ground_at(key, x, y):
+    """The ground under (x, y): the last patch that covers it ("grass", "forest", "dirt", "stone"), else the land's base."""
+    spec = LANDS[key]
+    tex = spec["base"]
+    for cx, cy, r, t in spec.get("patches", ()):
+        if (x - cx) ** 2 + (y - cy) ** 2 <= r * r:
+            tex = t
+    return tex
+
+
+def path_dist(key, x, y):
+    """How far (x, y) is from the edge of the nearest path (tiles; 0 on it)."""
+    best = 1e9
+    for (ax, ay), (bx, by), w in segments(key):
+        dx, dy = bx - ax, by - ay
+        t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / ((dx * dx + dy * dy) or 1)))
+        best = min(best, math.dist((x, y), (ax + t * dx, ay + t * dy)) - w / 2)
+    return max(0.0, best)
+
+
 _GROUND = {}
 
 
