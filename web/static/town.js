@@ -372,7 +372,37 @@
     var st = document.getElementById('heroStatus');
     if (st) { st.textContent = h.status || ''; st.hidden = !h.status; }
     box.classList.toggle('t-hurt', h.tone === 'hurt'); box.classList.toggle('t-rest', h.tone === 'rest');
+    gate(h.qi);
   }
+  /* the Qi line under HP, and the Break through button when it is full at a gate (web/breakthrough_play.plate):
+     gold and breathing, a ring round the face, and the first time at each gate a short banner */
+  function gate(q) {
+    var bar = document.getElementById('heroQi'), btn = document.getElementById('heroBreak'), box = document.getElementById('hero');
+    if (!q || !bar || !btn) return;
+    bar.firstElementChild.style.width = q.pct + '%'; bar.setAttribute('aria-valuenow', q.pct);
+    var t = document.getElementById('heroQiText'); if (t) t.textContent = 'Qi ' + q.qi + ' / ' + q.need;
+    bar.classList.toggle('full', !!q.full); bar.classList.toggle('blocked', !!(q.full && !q.ready));
+    box.classList.toggle('t-gate', !!q.ready);
+    btn.hidden = !q.full;
+    btn.className = 'mplate mbreak' + (q.look ? ' k-' + q.look : '') + (q.full && !q.ready ? ' locked' : '');
+    document.getElementById('heroBreakTitle').textContent = q.ready ? 'Break through' : 'Gate sealed';
+    document.getElementById('heroBreakSub').textContent = q.ready ? q.label : (q.why || '');
+    if (q.ready) told();
+  }
+  function told() {                                               // once per gate (the realm and layer on the plate)
+    var name = document.getElementById('heroRealm'), key = 'ma.bt.told.' + (name ? name.textContent : '');
+    try {
+      if (localStorage.getItem(key) === '1') return;
+      localStorage.setItem(key, '1');
+    } catch (e) { return; }
+    var toast = document.getElementById('heroToast');
+    if (!toast) return;
+    toast.textContent = 'Your Qi presses against a gate'; toast.classList.remove('go'); void toast.offsetWidth; toast.classList.add('go');
+  }
+  (function () {                                                  // the page as it came
+    var btn = document.getElementById('heroBreak');
+    if (btn && !btn.hidden && !btn.classList.contains('locked')) { document.getElementById('hero').classList.add('t-gate'); told(); }
+  })();
 
   /* the trip tracker (outside town only): encounters met of 5, what you carry, and what to do next */
   function trip(v) {

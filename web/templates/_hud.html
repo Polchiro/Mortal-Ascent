@@ -1,5 +1,6 @@
 {# The map screen's frame (docs/web.md "The map screen"), shared by town.html and place.html: who you are at the top
-   left (face, name, realm and layer, HP, injured or resting), the place's name, which shows big for a moment as you
+   left (face, name, realm and layer, HP, Qi, injured or resting; the Break through button under it when the Qi is
+   full at a gate: web/breakthrough_play.plate), the place's name, which shows big for a moment as you
    come in and then stays as a small line, and the controls, which fade once you know them (the "?" brings them back).
    web/static/town.js keeps the frame fresh from /world/state ("hero") and swaps the place's name between lands. #}
 <div class="mhud">
@@ -10,9 +11,20 @@
       <b class="mname" id="heroName">{{ hero.name }}</b>
       <span class="mrealm" id="heroRealm">{{ hero.realm }} · {{ hero.layer }}</span>
       <div class="mhpbar" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ hero.pct }}" id="heroBar"><div style="width:{{ hero.pct }}%"></div><span id="heroHp">HP {{ hero.hp }} / {{ hero.max_hp }}</span></div>
+      {% set q = hero.qi %}
+      {% if q %}<div class="mqibar{% if q.full %} full{% endif %}{% if q.full and not q.ready %} blocked{% endif %}" role="meter" aria-label="Internal Qi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ q.pct }}" id="heroQi" title="Internal Qi {{ q.qi }} / {{ q.need }}"><div style="width:{{ q.pct }}%"></div><span id="heroQiText">Qi {{ q.qi }} / {{ q.need }}</span></div>{% endif %}
       <span class="mstatus" id="heroStatus"{% if not hero.status %} hidden{% endif %}>{{ hero.status or "" }}</span>
     </div>
   </section>
+  {# the gate: shown when the Qi is full at a phase bottleneck or realm gate; its colour says which kind #}
+  {% set here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
+  <a class="mplate mbreak{% if q and q.look %} k-{{ q.look }}{% endif %}{% if q and q.full and not q.ready %} locked{% endif %}" id="heroBreak"
+     href="/breakthrough?from={{ here | urlencode }}"{% if not (q and q.full) %} hidden{% endif %}>
+    <span class="mbseal" aria-hidden="true"></span>
+    <span class="mbtext"><b id="heroBreakTitle">{% if q and q.full and not q.ready %}Gate sealed{% else %}Break through{% endif %}</b>
+      <small id="heroBreakSub">{% if q and q.ready %}{{ q.label }}{% elif q and q.why %}{{ q.why }}{% endif %}</small></span>
+  </a>
+  <p class="mtoast" id="heroToast" aria-live="polite"></p>
   {% endif %}
   <p class="mplace" id="placeLine">{{ title }}</p>
   {% if walking %}<div class="mplate mkeys" id="keys"><b>W</b><b>A</b><b>S</b><b>D</b> to walk · <b>E</b> to {{ keys_e }} · <b>R</b> run / walk · <b>M</b> map</div>{% endif %}

@@ -650,8 +650,9 @@ class World:
 
 def hero_view(conn, uid, p, trip=None, now=None):
     """Who you are and how you are, for the frame at the top left of every map: name, realm and layer, the round
-    face, HP and why the wilds keep away from you. Only reads the game's own numbers (player.final_stats, the injury
-    and the explore rest); out on a trip the HP is the trip's, which a fight wears down."""
+    face, HP, your Qi (with the Break through button when it is full at a gate) and why the wilds keep away from you.
+    Only reads the game's own numbers (player.final_stats, the injury, the explore rest, the Qi the bot would bank:
+    web/breakthrough_play.plate); out on a trip the HP is the trip's, which a fight wears down."""
     import looks
     from bot import player as rules
     now = time.time() if now is None else now
@@ -669,9 +670,12 @@ def hero_view(conn, uid, p, trip=None, now=None):
         status, tone = f"Resting · {rules.fmt_duration(rest)}", "rest"
     else:
         status, tone = None, None
+    from . import breakthrough_play as gates
+    me, techs = gates.now_player(conn, uid, now)          # the Qi line and the Break through button (docs/web.md)
     return {"name": p["name"], "realm": p["realm"], "layer": f"{rules.ordinal(p['layer'])} Layer",
             "face": looks.face(looks.of_player(p)), "hp": f"{max(0, int(hp)):,}", "max_hp": f"{int(max_hp):,}",
-            "pct": max(0, min(100, round(hp / max(1, max_hp) * 100))), "status": status, "tone": tone}
+            "pct": max(0, min(100, round(hp / max(1, max_hp) * 100))), "status": status, "tone": tone,
+            "qi": gates.plate(me, techs, now) if me else None}
 
 
 def _who(conn, uid):
