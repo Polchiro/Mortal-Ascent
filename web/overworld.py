@@ -675,7 +675,17 @@ def hero_view(conn, uid, p, trip=None, now=None):
     return {"name": p["name"], "realm": p["realm"], "layer": f"{rules.ordinal(p['layer'])} Layer",
             "face": looks.face(looks.of_player(p)), "hp": f"{max(0, int(hp)):,}", "max_hp": f"{int(max_hp):,}",
             "pct": max(0, min(100, round(hp / max(1, max_hp) * 100))), "status": status, "tone": tone,
-            "qi": gates.plate(me, techs, now) if me else None}
+            "qi": gates.plate(me, techs, now) if me else None, "tox": tox_of(p, now)}
+
+
+def tox_of(p, now):
+    """The gourd beside the Qi line: pill toxicity and its zone (web/dantian_play.ZONES), or None when clean."""
+    from bot import player as rules
+    n = rules.current_toxicity(p, now)
+    if not n:
+        return None
+    return {"n": n, "zone": "quarter" if n >= 6 else "half" if n >= 4 else "mild",
+            "mult": f"{rules.pill_effect_mult(n):.0%}"}
 
 
 def _who(conn, uid):

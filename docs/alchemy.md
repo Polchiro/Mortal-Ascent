@@ -291,6 +291,9 @@ Below your realm's grade: half the Qi.
 - Pills add toxicity based on their patterns (below)
 - Toxicity 4–5: pill effects ×0.5 · Toxicity 6+: pill effects ×0.25
 - Toxicity drops by **1 every 8 hours** — about 3 pills a day are safe
+- On the website, the **Dantian** (the Qi bar on the player plate opens it) shows your toxicity, when the next point
+  fades, and every pill's effect on you before you eat it; a gourd beside the Qi bar shows it on every map (docs/web.md
+  "The Dantian")
 
 ---
 
