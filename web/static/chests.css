@@ -60,13 +60,15 @@ body.chbg .privacy{display:none}
 @keyframes chtremor{20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
 .chdark{position:absolute;inset:0;z-index:2;background:radial-gradient(ellipse at 50% 58%,rgba(0,0,0,0) 18%,rgba(0,0,0,.86) 70%);opacity:0;transition:opacity 1.2s}
 .chdark.on{opacity:1}
-.chaltar{position:absolute;z-index:3;left:50%;top:66.5%;width:34%;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;user-select:none}
+.chaltar{position:absolute;z-index:3;left:50%;top:70.5%;width:34%;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;user-select:none}
 .chaura{position:absolute;left:-30%;right:-30%;top:-40%;bottom:-20%;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,var(--rc) 0%,transparent 60%);
   opacity:.55;filter:blur(8px);animation:cglow 2.6s ease-in-out infinite;pointer-events:none}
 /* the chest: its closed and open pictures on one square canvas (scripts/make_chest_art.py lines them up), the base
    at 86% of the height, so the box hangs that much below the altar's top */
 .chbox{position:relative;margin-bottom:-14%}
-.chbox img{display:block;width:100%;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
+.chbox::before{content:"";position:absolute;left:12%;right:12%;bottom:11%;height:7%;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,0,0,.7),transparent 70%);pointer-events:none}   /* its shadow on the altar */
+.chbox img{position:relative;display:block;width:100%;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
 .chbox .chopened{position:absolute;inset:0;opacity:0}
 .chbox.in{animation:chin .7s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes chin{0%{opacity:0;transform:translateY(-14%) scale(.92)}100%{opacity:1;transform:none}}
@@ -105,7 +107,7 @@ body.chbg .privacy{display:none}
 .chvname{margin:0;font:800 20px Cinzel,serif;color:var(--rc);text-shadow:0 0 14px rgba(0,0,0,.9),0 2px 6px #000}
 .chskip{padding:8px 16px;border-radius:999px;border:1px solid rgba(232,194,122,.4);background:rgba(10,8,6,.6);color:#F2EBDD;font:600 14px Inter,sans-serif;cursor:pointer}
 .chskip[hidden]{display:none}
-.chhint{position:absolute;z-index:6;left:50%;top:66%;transform:translateX(-50%);margin:0;font:700 17px Cinzel,serif;color:var(--g2);text-shadow:0 2px 10px #000;
+.chhint{position:absolute;z-index:6;left:50%;top:75.5%;transform:translateX(-50%);margin:0;font:700 17px Cinzel,serif;color:var(--g2);text-shadow:0 2px 10px #000;
   opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
 .chhint.on{opacity:1;animation:chhint 2s ease-in-out infinite}
 @keyframes chhint{50%{opacity:.6}}
@@ -188,8 +190,8 @@ body.chbg .privacy{display:none}
   .chpanel{top:auto;left:0;width:auto;height:46%;border-left:0;border-top:1px solid rgba(232,194,122,.3);padding:16px}
   .chpanel h1{font-size:20px}
   .chpicked img{width:64px}
-  .chaltar{top:65.5%}
-  .chhint{top:70%;font-size:15px}
+  .chaltar{top:70.5%}
+  .chhint{top:76%;font-size:15px}
   .chcards{top:67%;gap:8px}
   .ccard{width:100px;height:134px}
   .chcards.many .ccard{width:84px;height:112px}
