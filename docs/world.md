@@ -114,6 +114,17 @@ players are shown running when they move faster than midway between the two spee
 - **The clock is fair.** The kneel plays before the round is asked for, and the four paintings come **inside** the
   round (web/gather_art.py `choice`, as data: addresses), so the page has every picture before the timer matters.
   (They used to be fetched one by one after the server's clock had started.) No address names a plant.
+- **Where each herb sprouts** (`overworld.HABITAT`): which herb grows is rolled as always; only its **spot** follows
+  its habitat. Grasses, ginsengs and flowers stand in open grass; berries, mushrooms and moss on the forest's floor;
+  roots by a road or path; lotuses, lilies, the peach and Star Dew in clearings among the trees. With no room on
+  ground that suits it, a herb sprouts anywhere herbs may, so the odds never depend on the land.
+- **Old herbs sink.** A 100-year+ herb trembles and sinks into the earth on the map as its (shorter) time runs out;
+  lost, it goes under in a puff of dust. Any other lost herb wilts grey. This only draws the server's timer.
+- **What you see when you get one:** the result shows the herb's **age as rings** (1 to 5: 10 to 1000 years), and
+  anything found beside it as a chip with its picture: a spring wells up from the ground for Spring Water, jade glints
+  in the turned soil for a Jade Shard (the same 8% and 3% as ever, `bot/gathering.py` `found`).
+- **The Wandering Spirit** stands on the map beside the herb you knelt at, pale in its mist; the close-up holds the
+  signs to press. Same check, same rules.
 - **Quick gather** (Settings → Gathering → Quick, kept on the device): no kneeling, camera or pulling; the plants
   open at once. Reduced motion does the same.
 - **Which herb:** its **grade** follows your realm as always (`alchemy.herb_grade_odds`), so rare herbs are exactly as
@@ -369,7 +380,7 @@ Code: `web/world.py`, `web/templates/world.html`, `web/static/world.js`. The pic
 - **Objects, in rounds:** SHOAIB makes a batch (trees first), they are placed by hand, he looks, we adjust. Trees and
   rocks will block the way and hide you as the town's buildings do (the drawing and collision code is already there).
 - **The painted Moon Forest clearing** back as a landmark inside the forest, if still wanted.
-- **Herb habitats:** each kind of herb sprouting on ground that suits it (ponds and a mossy rock are cut and ready
-  in art/env/), and the rarer results' effects (the Spring Water and Jade Shard bonuses, an old herb sinking).
+- **Ponds and mossy rocks** on the lands (cut and ready in art/env/), for lotuses and moss to sprout at, placed with
+  the trees and rocks.
 - **The other five hunting grounds** as lands of their own (`REGION_HERB_TYPES` is ready), then `/explore`'s
   remaining encounters.

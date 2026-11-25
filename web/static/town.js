@@ -761,7 +761,7 @@
   var gOpen = false, gp = document.getElementById('gpanel'), gBody = document.getElementById('gBody'), gView = null, gTimer = null;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function htmlLine(tag, cls, html) { var e = el(tag, cls); e.innerHTML = html; return e; }   // the server's own lines
-  var gHerb = null, fx = [];
+  var gHerb = null, fx = [], gSink = null, spirit = null;
   function sfx(kind, v) { snd('sample', kind, v); }
   function gather(h) {
     if (gOpen || pose) return;
@@ -784,7 +784,8 @@
     setTimeout(ask, 520);
   }
   function showRound(g) {
-    gView = g; clearInterval(gTimer);
+    gView = g; clearInterval(gTimer); if (!g.spirit) spirit = null;
+    gSink = g.mode === 'round' && g.target && g.target.old ? {end: performance.now() + g.left * 1000, secs: g.seconds} : null;
     document.getElementById('gKicker').textContent = (g.place || 'the wilds').toUpperCase();
     gBody.textContent = ''; gp.classList.toggle('done', g.mode !== 'round');
     if (g.mode === 'round' && pose && pose.loop) sfx('rustle', 0.35);
@@ -795,6 +796,11 @@
       var ts = el('span'); ts.appendChild(el('span', 'sub', 'You are looking for'));
       var tn = el('b', null, (t.age ? t.age + '-year ' : '') + t.name); tn.style.color = t.color; ts.appendChild(tn);
       ts.appendChild(el('span', 'sub', t.grade + ' · ' + t.rarity + ' · ' + t.emoji + ' ' + t.type + ' herb'));
+      if (t.rings) {                                      // its age as rings: 1 (10 years) to 5 (1000)
+        var rg = el('span', 'rings'); rg.title = t.age + ' years old';
+        for (var ri = 0; ri < 5; ri++) rg.appendChild(el('i', ri < t.rings ? 'on' : ''));
+        rg.appendChild(el('em', null, t.age + ' years')); ts.appendChild(rg);
+      }
       tb.appendChild(ts); gBody.appendChild(tb);
       var grid = el('div', 'plants' + (g.wide ? ' wide' : ''));
       (g.choices || []).forEach(function (c) {
@@ -809,7 +815,8 @@
       gBody.appendChild(grid);
     }
     if (g.spirit) {
-      var art = el('img', 'stageart'); art.src = g.spirit.art; art.alt = ''; art.width = 150; art.height = 150; gBody.appendChild(art);
+      spirit = g.mode === 'round' ? {pic: plain(g.spirit.art), t: 0} : null;      // it stands on the map, by the herb
+      if (CALM || QUICK || !gHerb) { var art = el('img', 'stageart'); art.src = g.spirit.art; art.alt = ''; art.width = 150; art.height = 150; gBody.appendChild(art); }
       if (g.spirit.signs && g.spirit.signs.length) {
         var row = el('div', 'choices');
         g.spirit.signs.forEach(function (s) {
@@ -839,10 +846,21 @@
       var got = /✅ You gather|✨/.test((g.result || []).join(' '));
       snd(got ? 'picked' : 'missed');
       if (got) pulled(g);
+      else if (gHerb && g.target) { gHerb.gone = {t: 0, sunk: !!g.target.old}; fx.push({kind: 'ghost', h: gHerb, x: gHerb.x, y: gHerb.y, t: 0.55}); }   // lost: it wilts, or sinks away (drawn a moment longer)
+      if (g.bonus && g.bonus.length) {                  // a spring or a shard of jade beside it
+        var br = el('div', 'mgot');
+        g.bonus.forEach(function (bn, bi) {
+          var c = el('span', 'mchip'); if (bn.picture) { var bim = el('img'); bim.src = bn.picture; bim.alt = ''; bim.width = 30; bim.height = 30; c.appendChild(bim); }
+          c.appendChild(el('b', null, bn.name)); br.appendChild(c);
+          fx.push({kind: bn.kind === 'liquid' ? 'spring' : 'glint', x: hero.x + 0.5 + bi * 0.4, y: hero.y + 0.3, t: -0.5 - bi * 0.2});
+        });
+        gBody.appendChild(br); setTimeout(function () { snd('glint'); }, 600);
+      }
       var row2 = el('div', 'choices'), ok = el('button', 'btn btn-jade', 'Walk on'); ok.type = 'button';
       ok.addEventListener('click', closeGather); row2.appendChild(ok); gBody.appendChild(row2); ok.focus();
     }
   }
+  if (window.__spy) window.__show = function (g) { showRound(g); };   // the headless-browser checks stage a result
   function pick(key) {
     if (!gView || gView.mode !== 'round') return;
     clearInterval(gTimer);
@@ -867,7 +885,7 @@
     else rise();
   }
   function closeGather() {
-    clearInterval(gTimer); gOpen = false; gView = null; gHerb = null; gp.hidden = true; cv.focus();
+    clearInterval(gTimer); gOpen = false; gView = null; gHerb = null; gSink = null; spirit = null; gp.hidden = true; cv.focus();
     if (pose && pose.a === ACTS.kneel) {                 // stand back up, then you can walk
       var a = pose.a; pose.loop = null; sfx('rise', 0.5);
       posePlay('kneel', Math.max(pose.f, a.marks.rise - 4), a.frames - 1, 2.2, function () { pose = null; hero.still = 0; });
@@ -1164,16 +1182,57 @@
     }
     ctx.restore();
     if (img && h.foot) {
-      var k = T / h.ph, sway = CALM ? 0 : Math.sin(h.t * 1.3 + h.id) * 0.012;
-      shadow(x, y - 2, h.pw * k * 0.36, h.pw * k * 0.11, .32);
-      ctx.save(); ctx.translate(x, y); ctx.transform(1, 0, sway, 1, 0, 0);      // rooted: it sways from its foot
+      var k = T / h.ph, sway = CALM ? 0 : Math.sin(h.t * 1.3 + h.id) * 0.012, sink = 0, fade = 1, shake = 0;
+      if (h === gHerb && gSink) {                       // an old herb sinks into the earth as its time runs out
+        var lf = Math.max(0, (gSink.end - performance.now()) / 1000) / gSink.secs;
+        sink = (1 - lf) * 0.55; shake = CALM ? 0 : Math.sin(h.t * 46) * (0.6 + (1 - lf) * 1.6);
+      }
+      if (h.gone) { h.gone.t += 1 / 60; var gt = Math.min(1, h.gone.t / 0.8);
+        if (h.gone.sunk) sink = Math.max(sink, 0.55 + gt * 0.45); else fade = 1 - gt; }
+      shadow(x, y - 2, h.pw * k * 0.36, h.pw * k * 0.11, .32 * fade);
+      ctx.save(); ctx.translate(x + shake, y); ctx.globalAlpha *= fade;
+      if (sink) { ctx.beginPath(); ctx.rect(-h.pw * k, -h.ph * k * 1.2, h.pw * k * 2, h.ph * k * 1.2); ctx.clip(); ctx.translate(0, T * sink); }
+      if (h.gone && !h.gone.sunk) ctx.filter = 'grayscale(' + Math.min(1, h.gone.t / 0.5) + ')';
+      ctx.transform(1, 0, sway, 1, 0, 0);               // rooted: it sways from its foot
       ctx.drawImage(img, -h.foot[0] * k, -h.foot[1] * k, h.pw * k, h.ph * k); ctx.restore();
+      if (sink && !CALM) { ctx.fillStyle = 'rgba(96,78,58,' + (0.5 * sink) + ')';                 // dust where it goes under
+        for (var di = 0; di < 5; di++) { ctx.beginPath(); ctx.arc(x + Math.sin(h.t * 3 + di * 1.9) * T * 0.3, y - 3 - ((h.t * 22 + di * 9) % 16), 2.2, 0, Math.PI * 2); ctx.fill(); } }
     } else if (img) { shadow(x, y, 13, 4, .3); ctx.drawImage(img, x - T / 2, y - T + 4, T, T); }
     if (h.kind && (close || Math.hypot(hero.x - h.x, hero.y - h.y) < 4)) {
       ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 11px Inter, sans-serif';
       ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(h.kind, x + 1, y - T - 7);
       ctx.fillStyle = close ? '#FFFFFF' : h.color; ctx.fillText(h.kind, x, y - T - 8); ctx.restore();
     }
+  }
+  /* beside a gathered herb: a spring wells up (rings spreading on the ground, drops leaping), or jade glints in the
+     turned soil */
+  function drawBonus(f, x, y) {
+    var tt = Math.min(1, f.t / 1.2);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    if (f.kind === 'spring') {
+      for (var r = 0; r < 3; r++) { var rt = (tt * 1.4 - r * 0.22); if (rt <= 0 || rt >= 1) continue;
+        ctx.strokeStyle = 'rgba(150,215,255,' + (0.7 * (1 - rt)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 6 + rt * 26, 3 + rt * 12, 0, 0, Math.PI * 2); ctx.stroke(); }
+      for (var d = 0; d < 7; d++) { var a = d * 0.9, dt = Math.min(1, f.t / 0.7);
+        ctx.fillStyle = 'rgba(190,232,255,' + (1 - dt) + ')'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 14 * dt, y - 6 - Math.abs(Math.sin(a * 1.7)) * 34 * dt + 46 * dt * dt, 2, 0, Math.PI * 2); ctx.fill(); }
+    } else {
+      var g = Math.sin(Math.PI * tt); ctx.translate(x, y - 6); ctx.rotate(f.t * 1.5); ctx.fillStyle = 'rgba(143,227,176,' + g + ')';
+      for (var q = 0; q < 4; q++) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(2, 0); ctx.lineTo(0, -12 - 8 * g); ctx.lineTo(-2, 0); ctx.closePath(); ctx.fill(); }
+    }
+    ctx.restore();
+  }
+  /* the Wandering Spirit: it drifts out of the mist beside the herb you knelt at, pale and bobbing (the same check,
+     the same rules: the panel holds the signs to press) */
+  function drawSpirit(x, y) {
+    var img = ready(spirit.pic); spirit.t += 1 / 60;
+    var a = Math.min(1, spirit.t / 0.8), bob = Math.sin(spirit.t * 1.8) * 5, hgt = 150 * ZOOM / 1.2;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var g = ctx.createRadialGradient(x, y - hgt * 0.5, 4, x, y - hgt * 0.5, hgt * 0.8);
+    g.addColorStop(0, 'rgba(170,210,255,' + (0.35 * a) + ')'); g.addColorStop(1, 'rgba(170,210,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - hgt, y - hgt * 1.4, hgt * 2, hgt * 1.8);
+    for (var i = 0; i < 4; i++) { var m = (spirit.t * 0.25 + i / 4) % 1; ctx.fillStyle = 'rgba(190,215,240,' + (0.16 * a * Math.sin(Math.PI * m)) + ')';
+      ctx.beginPath(); ctx.ellipse(x + Math.sin(i * 2.3 + spirit.t) * 30, y - 6 - m * 26, 38 - m * 10, 10, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+    if (img) { ctx.save(); ctx.globalAlpha *= 0.92 * a; var w = hgt * img.width / img.height; ctx.drawImage(img, x - w / 2, y - hgt - 8 + bob + (1 - a) * 18, w, hgt); ctx.restore(); }
   }
   /* what rises from a pulled herb: its painting out of your hands, clods of soil falling back */
   function drawFx(f, x, y) {
@@ -1423,7 +1482,8 @@
       movers.push({x: o.x, y: o.y, h: 175, f: function () { at(p.x, p.y, function () { drawOther(o, 0, 0); }); }});
     });
     layered(movers).forEach(function (f) { f(); });
-    fx.forEach(function (f) { if (f.t < 0) return; var p = toScreen(f.x, f.y); at(p.x, p.y, function () { (f.kind === 'chips' ? drawChips : drawFx)(f, 0, 0); }); });
+    fx.forEach(function (f) { if (f.t < 0) return; var p = toScreen(f.x, f.y); at(p.x, p.y, function () { if (f.kind === 'ghost') { drawHerb(f.h, 0, 0); return; } (f.kind === 'chips' ? drawChips : f.kind === 'spring' || f.kind === 'glint' ? drawBonus : drawFx)(f, 0, 0); }); });
+    if (spirit && gHerb) { var sp = toScreen(gHerb.x + 0.9, gHerb.y - 0.9); at(sp.x, sp.y, function () { drawSpirit(0, 0); }); }
     Object.keys(OTHERS).forEach(function (k) {
       var o = OTHERS[k], p = toScreen(o.x, o.y);
       at(p.x, p.y, function () { otherLabel(o, 0, 0); });

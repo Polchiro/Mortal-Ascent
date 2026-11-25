@@ -1560,6 +1560,12 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .wfade.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.wfade{transition:none}}
 @media (max-width:760px){.gpanel{padding:12px}.gpanel .plantcard img{max-height:100px}}
+.rings{display:flex;align-items:center;gap:4px;margin-top:3px}
+.rings i{width:11px;height:11px;border-radius:50%;border:2px solid rgba(232,194,122,.35)}
+.rings i.on{border-color:var(--gold2);box-shadow:0 0 6px rgba(232,194,122,.7);background:rgba(232,194,122,.25)}
+.rings em{margin-left:6px;font:600 12px Inter,Arial,sans-serif;font-style:normal;color:#B9C2D6}
+.gpanel .mgot{margin-top:2px}
+.gpanel.done .look{display:none}.gpanel.done .plantcard img{max-height:84px}.gpanel.done .pline.big2{font-size:16px}
 /* mining (docs/world.md "The Ironvein Quarry"): a small card low on the screen; the map stays in sight */
 .mcard{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:6;width:min(430px,94vw);padding:12px 16px 14px;
   display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:linear-gradient(180deg,rgba(26,20,14,.94),rgba(12,10,8,.97))}

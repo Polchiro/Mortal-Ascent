@@ -250,3 +250,46 @@ def test_many_herbs_in_a_row(client, db_path):
         pick(client, s.g.round.answer, s.turn)
         got += 1
     assert herbs(db_path) == got and player(db_path)["herb_streak"] == got and got >= 8
+
+
+# ── habitats, the bonus beside a herb, age rings ──────────────────────
+
+def test_a_herbs_habitat_moves_only_where_it_sprouts(client, db_path):
+    """Which herb grows is rolled as before (grade from the realm, type from the region); its habitat only picks
+    the spot. Over many sprouts the types keep the region's shares, and most stand on ground that suits them."""
+    import collections
+    import random
+    from web import land, overworld
+    world = client.world
+    w = world.walker(UID)
+    w.rng = random.Random(11)
+    conn = db.connect(db_path)
+    types, suited, n = collections.Counter(), 0, 0
+    for place in ("crossroads", "forest_edge"):
+        w.herbs[place] = []
+        for _ in range(700):
+            h = world._herb(w, conn, UID, place, 0)
+            types[(place, h["type"])] += 1
+            name = alchemy.HERBS[h["grade"]][h["type"]][0]
+            suited += overworld.suits(place, overworld.HABITAT[name], h["x"], h["y"])
+            n += 1
+            assert land.off_path(place, h["x"], h["y"]) and overworld.walkable(place, h["x"], h["y"])
+    conn.close()
+    for place, region in (("crossroads", "crossroads"), ("forest_edge", "moon_forest")):
+        for t, share in alchemy.REGION_HERB_TYPES[region].items():
+            assert abs(types[(place, t)] / 700 - share) < 0.06, (place, t)
+    assert suited / n > 0.8
+    assert set(overworld.HABITAT) == {name for g in alchemy.HERBS.values() for name, _ in g.values()}
+
+
+def test_the_result_shows_what_was_found_beside_the_herb_and_its_age(client, monkeypatch):
+    from bot import materials
+    monkeypatch.setattr(materials, "roll_gather", lambda realm, rng, bonus=0.0: [materials.material("liquid:1")])
+    s, g, h = kneel(client)
+    assert "bonus" not in g and g["target"]["rings"] is None                  # nothing told before the pick
+    out = pick(client, s.g.round.answer, s.turn)
+    assert [b["name"] for b in out["bonus"]] == ["Spring Water"] and out["bonus"][0]["kind"] == "liquid"
+    assert out["target"]["rings"] == sorted(alchemy.HERB_AGES).index(out["target"]["age"]) + 1
+    s2, g2, _ = kneel(client)
+    wrong = next(k for k, _, _ in s2.g.round.options if k != s2.g.round.answer)
+    assert "bonus" not in pick(client, wrong, s2.turn)
