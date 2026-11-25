@@ -5,6 +5,7 @@
     <a href="/profile"{% if page == "profile" %} class="on" aria-current="page"{% endif %}>Profile</a>
     <a href="/inventory"{% if page == "inventory" %} class="on" aria-current="page"{% endif %}>Inventory</a>
     <a href="/explore"{% if page == "explore" %} class="on" aria-current="page"{% endif %}>Explore</a>
+    {% if user and is_admin(user.id) %}<a href="/admin"{% if page == "admin" %} class="on" aria-current="page"{% endif %}>Admin</a>{% endif %}
   </nav>
   <div class="purse">
     {% include "_purse.html" %}

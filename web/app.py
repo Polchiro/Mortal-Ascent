@@ -42,8 +42,9 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import (alchemy_play, breakthrough_routes, chest_routes, dantian_routes, drawn, duel_routes, explore_play,
-               forge_play, gather_play, hunt_routes, practice_routes, rankings, spar_routes, town, train_routes)
+from . import (admin_routes, alchemy_play, breakthrough_routes, chest_routes, dantian_routes, drawn, duel_routes,
+               explore_play, forge_play, gather_play, hunt_routes, practice_routes, rankings, spar_routes, town,
+               train_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -129,6 +130,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
             app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
+    from .admin_panel import is_admin as admin_ok
+    templates.env.globals["is_admin"] = admin_ok             # the Admin tab, for ADMIN_IDS only
     templates.env.globals["asset"] = asset                     # /static/<file>?v=<its content>: never a stale copy
 
     def conn():
@@ -643,6 +646,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     train_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # Breakthrough: the plate's Break through button opens the gate (web/breakthrough_routes.py, breakthrough_play.py)
     breakthrough_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # The admin panel: Discord's /admin on one page, for ADMIN_IDS (web/admin_routes.py, web/admin_panel.py)
+    admin_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # The Dantian: the Qi ledger, toxicity and eating pills (web/dantian_routes.py, web/dantian_play.py)
     dantian_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # The Treasure Shelf: opening chests (web/chest_routes.py, web/chest_play.py)
