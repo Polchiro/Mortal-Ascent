@@ -125,7 +125,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
     for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train", "breakthrough", "chest"):            # only the art the pages use
-        app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
+        if os.path.isdir(os.path.join(ROOT, "art", folder)):         # a folder whose art hasn't arrived yet: skipped
+            app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
     templates.env.globals["asset"] = asset                     # /static/<file>?v=<its content>: never a stale copy
