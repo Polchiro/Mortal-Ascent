@@ -2326,3 +2326,6 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   .mbtext b{font-size:12.5px}.mbtext small{font-size:10px}.mtoast{font-size:15px;top:40%}}
 /* the Break through seal beside the profile's Qi bar (the map plate's own, _hud.html) */
 .pbreak{width:100%;margin-top:12px;border-radius:8px}
+/* the bag: a chest's Open and the Treasure Shelf (web/chest_play.py) */
+.chestacts{display:flex;gap:10px;flex-wrap:wrap}
+.chestacts .btn{text-decoration:none}

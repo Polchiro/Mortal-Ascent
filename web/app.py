@@ -42,8 +42,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import (alchemy_play, breakthrough_routes, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes,
-               practice_routes, rankings, spar_routes, town, train_routes)
+from . import (alchemy_play, breakthrough_routes, chest_routes, drawn, duel_routes, explore_play, forge_play, gather_play,
+               hunt_routes, practice_routes, rankings, spar_routes, town, train_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -643,6 +643,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     train_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # Breakthrough: the plate's Break through button opens the gate (web/breakthrough_routes.py, breakthrough_play.py)
     breakthrough_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # The Treasure Shelf: opening chests (web/chest_routes.py, web/chest_play.py)
+    chest_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):
