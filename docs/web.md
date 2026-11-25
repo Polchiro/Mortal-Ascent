@@ -217,6 +217,10 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   (`breakthrough_play.plate`). Jade while it fills; gold and breathing when it is full at a gate, a gold ring turning
   round the face, and the **Break through** seal under the frame (see "Breakthrough" below). The first time at each
   gate a short banner says "Your Qi presses against a gate" (`localStorage` `ma.bt.told.<realm · layer>`).
+  The Qi line opens the **Dantian** (see "The Dantian" below). Beside it a **gourd** shows your pill toxicity when you
+  have any (`overworld.tox_of`): jade up to 3, amber at 4 and 5 (pills at half strength), red from 6 (a quarter). If
+  you switched on "Tell me in this browser" on the Dantian, a notification says "Your Qi presses against a gate"
+  once per gate while a map page is open in a background tab (`ma.notify.qi`).
 - **The place's name** shows big in the middle of the screen for about three seconds when you arrive or walk into
   the next land, then stays only as a small line under the frame.
 - **The trip tracker** (top right, under the purse; only outside town): five diamonds for the trip's encounters,
@@ -234,6 +238,45 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   joystick is there instead).
 
 The frame, tracker, dock and hint change nothing in the game; the tasks are the one part that pays (docs/world.md).
+
+## The Dantian
+
+`/dantian` (from the Qi line on the player plate, the Profile's Qi bar, or the gourd): your Internal Qi laid open over
+the **inner sea** (SHOAIB's video, looping, with its sound). The glowing orb in the water is your Dantian. Round it:
+a ring that fills with your Qi bar (gold when it presses against a gate), Qi drifting in as fast as you gather it, and
+dark wisps for pill toxicity. Under it, your Qi counting up at your rate, a second at a time, and when the bar will be
+full. Nothing here is new: it is the bot's own rules read out (`web/dantian_play.py`, `web/dantian_routes.py`,
+`web/templates/dantian.html`, `web/static/dantian.js` and `.css`).
+
+**Where your Qi comes from** (left): the Final Qi Rate as `player.qi_rate` works it out, line by line, in its order:
+realm base, talent, technique (the best one), artifacts (a Qi artifact and Qi passives such as Qi Flow), Heavenly
+Blessing, then × Qi pill and × Blessed Land, each with its time left; what you don't have is greyed with where it
+comes from. Then the sum written out (`10 × (1 + 0.1 + 0.05 + 0.02) × 1.27 = 14.92 Qi/h`), per hour, minute and
+second; the gate ahead (with the Break through seal when it is ready); and the realm's layers with its gates marked.
+
+**Pill toxicity** (right): the gourd, how much, a meter with the three zones (0 to 3 full strength, 4 and 5 half,
+6 and over a quarter), when the next point fades and when you will be clean, Dao Heart's cap and a faster-fading
+artifact when you have them (`player.current_toxicity`, `pill_effect_mult`, `toxicity_decay_hours`).
+
+**Your pills**, each with what it would do to you now, worked out exactly as `crafting.use_pill` will: a Qi pill's
+Qi Rate before and after and for how long, a Qi Burst's Qi, a Mending pill's injury before and after, a Cleansing
+pill's toxicity, the toxicity a pill adds, and why it would be weaker (below your realm's grade, your toxicity). One
+that can't be eaten says why (a Qi pill already working, not injured, a Breakthrough pill waits for the gate). **Eat**
+shows the card; **Swallow it** eats it with the bot's own `loot.use_item` (passive Qi is banked first, as the bot does
+before every command; one pill per press: a nonce). The pill dissolves into the orb (SHOAIB's absorb video and its
+sound, tinted: blue for Qi, gold for Burst, green for Mending, pale violet for Cleansing, red for the Heaven-Defying
+Pill), and as the light sinks in, the numbers change; the Heaven-Defying Pill shows "TALENT RISES · Gifted →
+Genius".
+
+**When your Qi is full**: the Discord ping (the same switch as `/settings qi_pings`) and "Tell me in this browser"
+(see "The map screen").
+
+**The Profile** gets the way in under its Qi bar (with your toxicity), and **Your passives**: every passive on your
+worn weapon, armour and artifacts by what it helps (Combat, Cultivation, Fortune, Crafting), its rarity colour, which
+piece gives it, and the totals ("Attack +3% from 1 passive"); a passive worn twice is marked "Not counted".
+
+**The art** (`scripts/make_dantian_art.py`): the inner sea (a still, a loop, its sound), the absorb (light on black)
+and its sound into `art/dantian/`, and the toxicity gourd as `art/icons/attr/toxicity.webp`.
 
 ## Breakthrough
 

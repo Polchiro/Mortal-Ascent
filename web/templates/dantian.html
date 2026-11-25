@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Your Dantian · Mortal Ascent{% endblock %}
+{% block body_class %}dtbg{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('dantian.css') }}">
+{# The Dantian (web/dantian_play.py, docs/web.md "The Dantian"): your Internal Qi laid open over the inner sea. The
+   glowing orb in the water is your Dantian: the ring round it fills with your bar, Qi drifts into it as fast as you
+   gather, and toxicity clouds it. The ledger is the bot's own Qi Rate sum, line by line. Pills are eaten with the
+   bot's own rules. #}
+{% set v = s.v %}
+<main class="dt" id="dt" aria-label="Your Dantian">
+  <section class="dtscene" id="dtscene">
+    <div class="dtstage" id="dtstage">
+      <video class="dtbgv" id="dtbgv" muted loop playsinline autoplay preload="auto" aria-hidden="true"{% if s.art.sea_video %} src="{{ s.art.sea_video }}"{% endif %}{% if s.art.sea %} poster="{{ s.art.sea }}"{% endif %}></video>
+    </div>
+    <canvas class="dtfx" id="dtfx" aria-hidden="true"></canvas>
+    <canvas class="dtabsorb" id="dtabsorb" aria-hidden="true"></canvas>
+    <header class="dthud">
+      <a class="dtback" href="{{ s.back }}"><span aria-hidden="true">‹</span> Back</a>
+      <div class="dtwho"><p class="kicker">YOUR DANTIAN</p><b>{{ v.name }}</b><small>{{ v.realm }} · {{ v.layer }} Layer · {{ v.phase }}</small></div>
+    </header>
+    <div class="dtcore" id="dtcore" aria-live="polite">
+      <p class="dtqi"><b id="dtqin">{{ '%.2f' % v.qi }}</b><span> / {{ '{:,}'.format(v.need) }} Qi</span></p>
+      <p class="dtrate"><span id="dtps">+{{ v.per_sec }}</span> Qi each second</p>
+      <p class="dteta" id="dteta"></p>
+    </div>
+    <p class="dtsay" id="dtsay" aria-live="polite"></p>
+    <div class="dttitle" id="dttitle" hidden><p class="kicker" id="dttk"></p><h1 id="dtth"></h1><p id="dtts"></p></div>
+  </section>
+
+  <!-- where your Qi comes from -->
+  <aside class="dtpanel dtledger" aria-labelledby="dtlh">
+    <p class="kicker">WHERE YOUR QI COMES FROM</p>
+    <h2 id="dtlh"><span id="dtrate">{{ v.rate_text }}</span> <small>Qi / hour</small></h2>
+    <p class="dtunits"><span id="dtpm">{{ v.per_min }}</span> a minute · <span id="dtps2">{{ v.per_sec }}</span> a second</p>
+    <ul class="dtrows" id="dtrows"></ul>
+    <p class="dtformula" id="dtformula" title="The Final Qi Rate, as the game works it out"></p>
+    <div class="dtgate" id="dtgate"></div>
+    <div class="dtlayers" id="dtlayers" aria-label="Your realm's layers"></div>
+  </aside>
+
+  <!-- toxicity and pills -->
+  <aside class="dtpanel dtside" aria-label="Toxicity and pills">
+    <section class="dttox" id="dttox" aria-labelledby="dttoxh">
+      <div class="dttoxhead">
+        {% if s.art.gourd %}<img src="{{ s.art.gourd }}" alt="" width="46" height="46">{% endif %}
+        <div><p class="kicker">PILL TOXICITY</p><h2 id="dttoxh"><span id="dttoxn">0</span><small id="dttoxz"></small></h2></div>
+      </div>
+      <div class="dtmeter" id="dtmeter" aria-hidden="true"><i class="z1"></i><i class="z2"></i><i class="z3"></i><b id="dtmark"></b></div>
+      <div class="dtscale" aria-hidden="true"><span>0</span><span>4 · half</span><span>6+ · quarter</span></div>
+      <p class="dttoxt" id="dttoxt"></p>
+    </section>
+    <section class="dtpills" aria-labelledby="dtph">
+      <p class="kicker" id="dtph">YOUR PILLS</p>
+      <div id="dtpills"></div>
+    </section>
+    <section class="dtalerts" aria-labelledby="dtah">
+      <p class="kicker" id="dtah">WHEN YOUR QI IS FULL</p>
+      <label><input type="checkbox" id="dtping"{% if v.pings %} checked{% endif %}> Ping me in Discord (where I last used the bot)</label>
+      <label><input type="checkbox" id="dtnotify"> Tell me in this browser, while the game is open</label>
+      <p class="sub" id="dtnotifywhy"></p>
+    </section>
+  </aside>
+
+  <!-- a pill, before you eat it -->
+  <div class="dtmodal" id="dtmodal" hidden role="dialog" aria-modal="true" aria-labelledby="dtmh">
+    <div class="dtpillcard" id="dtpillcard">
+      <img id="dtmimg" alt="" width="96" height="96">
+      <p class="kicker" id="dtmk"></p>
+      <h2 id="dtmh"></h2>
+      <ul class="dtmlines" id="dtmlines"></ul>
+      <ul class="dtmwarn" id="dtmwarn"></ul>
+      <div class="dtmacts">
+        <button class="dtbtn" id="dtmno" type="button">Not now</button>
+        <button class="dtbtn main" id="dtmyes" type="button">Swallow it</button>
+      </div>
+    </div>
+  </div>
+</main>
+<script type="application/json" id="dtstate">{{ s | tojson }}</script>
+<script src="{{ asset('fight_sound.js') }}" defer></script>
+<script src="{{ asset('dantian.js') }}" defer></script>
+{% endblock %}

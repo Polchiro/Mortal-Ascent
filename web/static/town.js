@@ -376,7 +376,7 @@
     var st = document.getElementById('heroStatus');
     if (st) { st.textContent = h.status || ''; st.hidden = !h.status; }
     box.classList.toggle('t-hurt', h.tone === 'hurt'); box.classList.toggle('t-rest', h.tone === 'rest');
-    gate(h.qi);
+    gate(h.qi); toxGourd(h.tox);
   }
   /* the Qi line under HP, and the Break through button when it is full at a gate (web/breakthrough_play.plate):
      gold and breathing, a ring round the face, and the first time at each gate a short banner */
@@ -391,7 +391,26 @@
     btn.className = 'mplate mbreak' + (q.look ? ' k-' + q.look : '') + (q.full && !q.ready ? ' locked' : '');
     document.getElementById('heroBreakTitle').textContent = q.ready ? 'Break through' : 'Gate sealed';
     document.getElementById('heroBreakSub').textContent = q.ready ? q.label : (q.why || '');
-    if (q.ready) told();
+    if (q.ready) { told(); notify(q); }
+  }
+  /* the toxicity gourd beside the Qi line (overworld.tox_of) */
+  function toxGourd(t) {
+    var el = document.getElementById('heroTox');
+    if (!el) return;
+    el.hidden = !t;
+    if (!t) return;
+    el.className = 'mtox z-' + t.zone; el.title = 'Pill toxicity ' + t.n + ': pills at ' + t.mult;
+    document.getElementById('heroToxN').textContent = t.n;
+  }
+  /* "Tell me in this browser" (the Dantian's switch): a notification once per gate, when this tab is in the background */
+  function notify(q) {
+    try {
+      if (localStorage.getItem('ma.notify.qi') !== '1' || !('Notification' in window) || Notification.permission !== 'granted') return;
+      var name = document.getElementById('heroRealm'), key = 'ma.notify.sent.' + (name ? name.textContent : '');
+      if (localStorage.getItem(key) === '1' || !document.hidden) return;
+      localStorage.setItem(key, '1');
+      new Notification('Your Qi presses against a gate', {body: 'Break through · ' + (q.label || ''), tag: 'ma-qi'});
+    } catch (e) {}
   }
   function told() {                                               // once per gate (the realm and layer on the plate)
     var name = document.getElementById('heroRealm'), key = 'ma.bt.told.' + (name ? name.textContent : '');

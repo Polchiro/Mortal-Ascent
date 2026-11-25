@@ -42,8 +42,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import (alchemy_play, breakthrough_routes, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes,
-               practice_routes, rankings, spar_routes, town, train_routes)
+from . import (alchemy_play, breakthrough_routes, dantian_routes, drawn, duel_routes, explore_play, forge_play,
+               gather_play, hunt_routes, practice_routes, rankings, spar_routes, town, train_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -124,8 +124,9 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train", "breakthrough", "chest"):            # only the art the pages use
-        app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train", "breakthrough", "chest", "dantian"):            # only the art the pages use
+        if os.path.isdir(os.path.join(ROOT, "art", folder)):         # a folder whose art hasn't arrived yet: skipped
+            app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
     templates.env.globals["asset"] = asset                     # /static/<file>?v=<its content>: never a stale copy
@@ -642,6 +643,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     train_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # Breakthrough: the plate's Break through button opens the gate (web/breakthrough_routes.py, breakthrough_play.py)
     breakthrough_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # The Dantian: the Qi ledger, toxicity and eating pills (web/dantian_routes.py, web/dantian_play.py)
+    dantian_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

@@ -5,6 +5,7 @@ All numbers come from bot/sheet/data.profile_data, the same function the bot's /
 so the website and Discord always agree. This module only turns them into text and picture links.
 """
 import os
+import time
 
 import looks
 import stats
@@ -172,7 +173,60 @@ def profile_view(conn, user_id, username=None):
         "attributes": attribute_rows(attrs, qi),
         "qi_tone": qi["status_tone"],
         "gate": gate_of(conn, user_id),
+        "passives": passives_view(conn, user_id),
+        "tox": toxicity_of(conn, user_id),
     }
+
+
+PASSIVE_GROUPS = ("Combat", "Cultivation", "Fortune", "Crafting")
+CULTIVATION = {"qi_rate", "mastery_exp", "pill_effect", "toxicity_decay_faster", "breakthrough_chance",
+               "practice_mastery_exp", "max_toxicity"}
+FORTUNE = {"lotus_coins", "extra_chest_roll", "jade_chest_chance", "rare_encounters", "misleading_clue_less",
+           "beast_core_chance", "uses_per_week"}
+STAT_NAMES = {"attack": "Attack", "hp": "HP", "defense": "Defense"}
+
+
+def passives_view(conn, user_id):
+    """Every passive on your worn weapon, armour and artifacts, by what it helps (bot/passives.py). A passive on two
+    worn items counts once (forge.NO_DUPLICATE_PASSIVES): the second is marked so."""
+    import forge
+    from bot import passives
+    weapon, armor, artifacts = sheet.worn(conn, user_id)
+    groups = {g: [] for g in PASSIVE_GROUPS}
+    seen, stats = {}, {}
+    for it in [x for x in (weapon, armor, *artifacts) if x]:
+        kind = passives.gear_kind(it)
+        if not kind:
+            continue
+        for key in passives.slots(it):
+            if not key:
+                continue
+            spec = forge.PASSIVES[kind][key]
+            fx = set(spec["fx"])
+            group = ("Combat" if kind != "artifact" else "Cultivation" if fx & CULTIVATION else
+                     "Fortune" if fx & FORTUNE else "Crafting")
+            first = seen.get(key)
+            groups[group].append({"name": spec["name"], "rarity": spec["rarity"], "text": spec["text"],
+                                  "color": "rgb({}, {}, {})".format(*forge.RARITY_COLORS[spec["rarity"]]),
+                                  "item": it["name"], "counted": first is None, "first": first})
+            if first is None:
+                seen[key] = it["name"]
+                if kind != "artifact":
+                    for stat, v in spec["fx"].items():
+                        if stat in STAT_NAMES:
+                            got = stats.setdefault(stat, [0.0, 0])
+                            got[0] += v
+                            got[1] += 1
+    totals = [f"{STAT_NAMES[k]} +{v[0]:.0%} from {v[1]} passive{'s' if v[1] > 1 else ''}" for k, v in stats.items()]
+    out = [{"group": g, "rows": rows} for g, rows in groups.items() if rows]
+    return {"groups": out, "totals": totals, "count": sum(len(g["rows"]) for g in out)}
+
+
+def toxicity_of(conn, user_id):
+    """Pill toxicity for the gourd beside the Qi bar (web/dantian_play.toxicity), or None when clean."""
+    from .dantian_play import toxicity
+    t = toxicity(db.get_player(conn, user_id), time.time())
+    return t if t["n"] else None
 
 
 def gate_of(conn, user_id):

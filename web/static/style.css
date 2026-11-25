@@ -2326,3 +2326,28 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   .mbtext b{font-size:12.5px}.mbtext small{font-size:10px}.mtoast{font-size:15px;top:40%}}
 /* the Break through seal beside the profile's Qi bar (the map plate's own, _hud.html) */
 .pbreak{width:100%;margin-top:12px;border-radius:8px}
+/* the profile: your passives by what they help, and the way into the Dantian (web/profile.py passives_view) */
+.ptotals{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 10px}
+.ptotals span{padding:3px 10px;border-radius:999px;background:rgba(111,217,176,.1);border:1px solid rgba(111,217,176,.35);font-size:12px;color:#CFF5E6}
+.xpassives{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.pgroup{display:flex;flex-direction:column;gap:6px}
+.prow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:8px 10px;border-radius:8px;border-left:3px solid var(--rc);background:rgba(255,255,255,.03)}
+.prow b{font-size:13px;color:var(--rc)}
+.prow .prar{font-size:10.5px;color:var(--rc);opacity:.8;letter-spacing:.5px;text-transform:uppercase}
+.prow .ptext{grid-column:1 / -1;font-size:12.5px;color:#E9E4D6}
+.prow .pfrom{grid-column:1 / -1;font-size:11px;color:#9A907C}
+.prow.off{opacity:.55}
+.prow.off .pfrom{color:#E9A39A}
+.pdantian{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;color:var(--jade,#6FD9B0);text-decoration:none}
+.pdantian:hover{text-decoration:underline}
+/* the Qi line is a link to the Dantian; the toxicity gourd beside it (overworld.tox_of) */
+.mqirow{display:flex;align-items:center;gap:6px;margin-top:4px}
+.mqirow .mqibar{flex:1;margin-top:0;display:block;text-decoration:none}
+.mqirow .mqibar:hover{filter:brightness(1.2)}
+.mtox{display:flex;align-items:center;gap:2px;padding:0 6px 0 2px;height:18px;border-radius:999px;text-decoration:none;
+  background:rgba(79,199,185,.15);border:1px solid rgba(79,199,185,.5)}
+.mtox[hidden]{display:none}
+.mtox b{font:800 11px Inter,sans-serif;color:#CFF8F0}
+.mtox img{width:16px;height:16px}
+.mtox.z-half{background:rgba(200,154,58,.2);border-color:rgba(240,196,106,.7)}.mtox.z-half b{color:#F7DFA6}
+.mtox.z-quarter{background:rgba(184,68,58,.25);border-color:rgba(255,155,144,.75)}.mtox.z-quarter b{color:#FFD0C9}

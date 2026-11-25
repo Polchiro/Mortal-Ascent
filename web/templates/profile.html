@@ -75,6 +75,7 @@
         <div class="row"><span><img src="/art/icons/attr/qi.webp" alt="" width="22" height="22"> Internal Qi</span><b>{{ p.qi }} / {{ p.qi_cap }}</b></div>
         <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100" style="--qi: {{ p.qi_pct }}%"><div class="{% if not p.qi_pct %}none{% endif %}" style="width: {{ p.qi_pct }}%"></div></div>
         <div class="row sub"><span>+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</span><span class="tone-{{ p.qi_tone }}">{{ p.qi_status }}</span></div>
+        <a class="pdantian" href="/dantian?from=/profile"><img src="/art/icons/attr/qi.webp" alt="" width="20" height="20"> Open your Dantian: where your Qi comes from{% if p.tox %} · <img src="/art/icons/attr/toxicity.webp" alt="" width="18" height="18"> Toxicity {{ p.tox.n }}{% endif %}</a>
         {% if p.gate %}{# the same seal as under the map plate (_hud.html) #}
         <a class="mplate mbreak pbreak{% if p.gate.look %} k-{{ p.gate.look }}{% endif %}{% if not p.gate.ready %} locked{% endif %}" href="/breakthrough?from=/profile">
           <span class="mbseal" aria-hidden="true"></span>
@@ -212,6 +213,28 @@
         </div>
         {% endfor %}
       </div>
+
+      {# every passive your gear gives, by what it helps (web/profile.py passives_view) #}
+      <h3 class="subh" id="passives">Your passives{% if p.passives.count %} <span class="sub">{{ p.passives.count }}</span>{% endif %}</h3>
+      {% if p.passives.count %}
+      {% if p.passives.totals %}<p class="ptotals">{% for t in p.passives.totals %}<span>{{ t }}</span>{% endfor %}</p>{% endif %}
+      <div class="xpassives">
+        {% for g in p.passives.groups %}
+        <div class="pgroup">
+          <span class="kicker">{{ g.group | upper }}</span>
+          {% for r in g.rows %}
+          <div class="prow{% if not r.counted %} off{% endif %}" style="--rc: {{ r.color }}">
+            <b>{{ r.name }}</b><span class="prar">{{ r.rarity }}</span>
+            <span class="ptext">{{ r.text }}</span>
+            <span class="pfrom">{% if r.counted %}{{ r.item }}{% else %}Not counted: already on your {{ r.first }}{% endif %}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="sub">No passives yet. Gear forged at the Forge carries them: one slot on Ordinary to Spirit gear, two on Treasure and Divine.</p>
+      {% endif %}
 
       <h3 class="subh" id="techniques">Techniques</h3>
       <div class="xtech">
