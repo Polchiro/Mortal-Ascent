@@ -89,7 +89,7 @@
     <div class="btcost">
       <p class="kicker">IF IT FAILS</p>
       <p>You lose <b>{{ a.lose }} Qi</b> ({{ a.lose_pct }} of your bar).{% if a.waiting %} The <b>{{ a.waiting }} Qi</b> waiting behind the gate is safe and refills it.{% endif %}</p>
-      {% if a.injury %}<p class="warn">And your meridians are injured for <b>{{ a.injury }}</b>: no exploring or sparring.</p>{% endif %}
+      {% if a.injury %}<p class="warn">And your meridians are injured for <b>{{ a.injury }}</b>: no exploring, sparring or trying again until you heal.</p>{% endif %}
       {% if a.pill %}<p class="sub">A pill you use is used up either way.</p>{% endif %}
     </div>
     {% endif %}

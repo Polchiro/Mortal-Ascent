@@ -182,6 +182,23 @@ def test_failed_realm_breakthrough_injures():
     assert ok is False and p["injured_until"] == 6 * 3600
 
 
+def test_an_injured_player_cannot_try_the_realm_gate_again_until_healed():
+    p = {"realm": "Martial Apprentice", "layer": 10, "qi": 40, "breakthroughs": 0, "failed_breakthroughs": 0}
+    rules.attempt_breakthrough(p, rng=AlwaysFail(), now=0)
+    p["qi"] = 40
+    ok, msg = rules.attempt_breakthrough(p, rng=AlwaysFail(), now=3600)
+    assert ok is None and "still injured" in msg and "5h" in msg and p["failed_breakthroughs"] == 1
+    ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail(), now=6 * 3600 + 1)    # healed: the gate opens again
+    assert ok is False and p["failed_breakthroughs"] == 2
+
+
+def test_an_injury_does_not_stop_a_phase_bottleneck():
+    p = {"realm": "Martial Apprentice", "layer": 3, "qi": 16, "breakthroughs": 0, "failed_breakthroughs": 0,
+         "injured_until": 10 ** 9}
+    ok, _ = rules.attempt_breakthrough(p, rng=AlwaysFail(), now=0)
+    assert ok is False and p["failed_breakthroughs"] == 1
+
+
 def test_martial_master_needs_mastery():
     p = {"realm": "Martial Expert", "layer": 10, "qi": 0, "breakthroughs": 0, "failed_breakthroughs": 0}
     techs = [{"grade": "Mortal", "mastery_exp": 0}]

@@ -28,7 +28,7 @@ def card_data(name, before, after, kind, target, success, chance, pill=None, dew
         lost = before["qi"] * training.BREAKTHROUGH_FAIL_QI_LOSS
         facts.append(("flame", f"−{lost:,.0f} Qi", "lost to the backlash" if kind == "realm" else "scattered"))
         if kind == "realm":
-            facts.append(("heart", f"{training.INJURY_HOURS}h injury", "no explore or spar"))
+            facts.append(("heart", f"{training.INJURY_HOURS}h injury", "no explore, spar or retry"))
         facts.append(("star", f"{rules.breakthrough_chance(after) or chance:.0%}", "chance next time"))
     if pill:
         facts.append(("emblem:pill:breakthrough:" + (pill.get("grade") or "Mortal"), pill["name"].replace(" Pill", ""),

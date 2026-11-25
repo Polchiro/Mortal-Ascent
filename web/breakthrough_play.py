@@ -121,6 +121,10 @@ def assess(conn, uid, now=None):
             a["missing"] = str(rich(missing))
             a["why"] = "Something else is needed first."
             return a
+        if hurt:                    # a failed realm breakthrough must heal before the next try (bot/player.py)
+            a["why"] = (f"Your meridians are still injured from the last attempt. You can try again in "
+                        f"{rules.fmt_duration(hurt)}. A Mending pill heals faster.")
+            return a
     base = rules.breakthrough_chance(p) or 0
     a["base"] = f"{base:.0%}"
     pill = crafting.best_breakthrough_pill(conn, uid, p) if rules.pill_helps(p) else None

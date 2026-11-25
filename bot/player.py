@@ -316,6 +316,10 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
         missing = realm_requirement_missing(player, techniques, target)
         if missing:
             return None, f"🔒 To reach **{target}** you also need {missing}."
+        hurt = injured_for(player, now)
+        if hurt:                    # a failed realm breakthrough must heal before the next try
+            return None, (f"🩹 Your meridians are still injured from the last attempt. You can try for **{target}** "
+                          f"again in **{fmt_duration(hurt)}** (a Mending pill heals faster).")
     chance = breakthrough_chance(player, bonus)
     if rng.random() < chance:
         carry = player["qi"] - need + overflow(player)
@@ -346,7 +350,7 @@ def attempt_breakthrough(player, techniques=(), rng=random, now=None, bonus=0.0)
     if kind == "realm":
         player["injured_until"] = now + training.INJURY_HOURS * 3600
         return False, (f"💥 **Breakthrough failed!** Your meridians recoil. You lose {lost:,.1f} Qi and are injured "
-                       f"for {training.INJURY_HOURS} hours (no exploring or sparring).{kept}")
+                       f"for {training.INJURY_HOURS} hours (no exploring, sparring or realm breakthrough).{kept}")
     return False, f"💢 **The bottleneck holds.** You lose {lost:,.1f} Qi. Gather it again and retry.{kept}"
 
 
