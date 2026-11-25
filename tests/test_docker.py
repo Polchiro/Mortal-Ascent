@@ -30,3 +30,9 @@ def test_the_box_keeps_the_database_outside_and_runs_as_an_ordinary_user():
     assert "MORTAL_DB_PATH=/data/mortal_ascent.db" in text and 'VOLUME ["/data"]' in text
     assert "USER game" in text and "/healthz" in text
     assert "COPY .env" not in text
+
+
+def test_compose_opens_the_same_port_the_website_listens_on():
+    with open(os.path.join(ROOT, "docker-compose.yml")) as f:
+        text = f.read()
+    assert '"127.0.0.1:${WEB_PORT:-8000}:${WEB_PORT:-8000}"' in text      # e.g. WEB_PORT=8765 in .env
