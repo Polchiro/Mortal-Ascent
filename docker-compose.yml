@@ -12,7 +12,9 @@ services:
     environment:
       WEB_HOST: 0.0.0.0
     ports:
-      - "127.0.0.1:8000:8000"     # only this computer can open it; a host's HTTPS proxy goes in front when online
+      # the same port as WEB_PORT in your .env (8000 if it isn't set); only this computer can open it.
+      # A host's HTTPS goes in front of it when the game is online.
+      - "127.0.0.1:${WEB_PORT:-8000}:${WEB_PORT:-8000}"
     volumes:
       - ./data:/data
     restart: unless-stopped

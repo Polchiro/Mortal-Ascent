@@ -19,7 +19,7 @@ still works exactly as before; Docker is optional and mostly for hosting the gam
 - **The database is outside the box**, in the `data/` folder (`/data` inside). Rebuilding or replacing the
   box never loses players. `data/` is git-ignored.
 - **Runs as an ordinary user** (`game`), not the all-powerful root user.
-- **Only your own computer can open the website** (`127.0.0.1:8000`). When the game is hosted online, the
+- **Only your own computer can open the website** (`127.0.0.1`, on the port in `WEB_PORT`, default 8000). When the game is hosted online, the
   host's HTTPS goes in front of it.
 - **Health check:** Docker opens `/healthz` every 30 seconds and marks the box unhealthy if the site
   stops answering or the database won't open. `/healthz` shows nothing about players.
@@ -37,7 +37,7 @@ still works exactly as before; Docker is optional and mostly for hosting the gam
 docker compose up -d --build
 ```
 
-Open http://localhost:8000. The first build downloads Python and the packages and takes a few minutes;
+Open http://localhost:8000 (or the port in `WEB_PORT` in your `.env`, e.g. 8765). The first build downloads Python and the packages and takes a few minutes;
 later builds reuse them.
 
 ## Everyday
