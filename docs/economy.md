@@ -45,8 +45,8 @@ Buy Moon Pearls with real money. Bigger packages give more bonus pearls.
 | 🌙 Jade Box | $10 | 1,080 | +8% |
 | 🌙 Lotus Casket | $20 | 2,240 | +12% |
 | 🌙 Moon Treasury | $50 | 5,800 | +16% |
-| 🌙 Heavenly Vault | $100 | 12,000 | +20% |
 
+- The $100 Heavenly Vault (12,000, +20%) is left out at launch; it can be added later (docs/payments.md)
 - **First purchase:** double pearls on the first package a player ever buys
 - Each package has a buy button; pearls are added automatically
 - A receipt is sent to the player by DM
@@ -139,4 +139,5 @@ Prices: set later when balancing.
 
 - Take payments only through Discord's own app monetization or a proper
   payment provider — never by hand
+- The website purchase system, its safety rules and pearl debt after refunds: docs/payments.md
 - Check Discord's developer rules on paid features before launch
