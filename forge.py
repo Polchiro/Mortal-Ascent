@@ -340,6 +340,20 @@ BEAST_DROPS = {
                    "essence": {"heart": 0.02, "crystal": 0.20}},            # checked Heart first, then Crystal
 }
 
+# ⛏️ The Ironvein Quarry (website, docs/world.md; SHOAIB approved Nov 25 2026). A seam's kind is rolled when it opens
+# (SEAM_KINDS: its share of seams), and what it holds when you start on it. Everything is of your realm's tier.
+#   iron   1-2 weapon metal; maybe a fuel, maybe a Metal Shard
+#   coal   1 fuel; maybe a second
+#   jade   1 artifact jade (elsewhere only chests give it)
+# The "maybe" chances are raised by the Prospector passive, as every other source's.
+SEAM_KINDS = {"iron": 0.60, "coal": 0.30, "jade": 0.10}
+SEAMS = {
+    "iron": {"name": "Iron seam", "strikes": 3, "metal": (1, 2), "fuel_chance": 0.10, "metal_shard_chance": 0.02},
+    "coal": {"name": "Coal seam", "strikes": 3, "fuel": 1, "second_fuel_chance": 0.05},
+    "jade": {"name": "Jade seam", "strikes": 5, "jade": 1},
+}
+SEAMS_PER_DAY = 24                  # seams a player may open a day (UTC), counted in daily_counts "world:seams"
+
 # /gather: springs give quench liquid of your herb tier; Jade Shards
 GATHER_SPRING_CHANCE = 0.08         # DEFAULT, per correct pick
 GATHER_JADE_SHARD_CHANCE = 0.03     # DEFAULT, per correct pick

@@ -25,7 +25,7 @@ def _player(realm):
 
 def test_every_hunting_ground_and_the_town_are_on_the_scroll():
     keys = [m["key"] for m in world.markers(_player("Mortal"))]
-    assert keys == ["town"] + [loc["key"] for loc in hunting.LOCATIONS]
+    assert keys == ["town", "ironvein_quarry"] + [loc["key"] for loc in hunting.LOCATIONS]
     for key, (x, y) in world.AT.items():
         assert 0.05 < x < 0.95 and 0.05 < y < 0.95, key                     # inside the painted paper
     spots = list(world.AT.values())

@@ -228,6 +228,11 @@ crafting.TIMER_GRACE_SECONDS`), late or missing pages play the timed-out move, o
 that aren't on offer are ignored. One craft at a time per player, kept in the website's memory.
 A nine-pattern pill is announced only when it is crafted in Discord (the website has no channel to post in).
 
+## Mining
+
+The Ironvein Quarry, a safe land off the Crossroads: walk up to a seam, strike it with the pick, and it breaks open on
+what the server decided when you began (docs/world.md "The Ironvein Quarry"; `web/quarry.py`, `web/mine_play.py`).
+
 ## Gathering
 
 There is no Gather page any more. Herbs grow on the Crossroads and in the Moon Forest, each its own painting rooted

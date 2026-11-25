@@ -218,6 +218,7 @@ In chests, the tier is rolled like a weapon's tier in that chest.
 | 🐾 Normal beast | 30% a binding · 30% an armor material · 8% Shard of the beast's element |
 | ⚔️ Elite beast | 60% 1–2 bindings · 60% 1–2 armor materials · 5% Crystal of the beast's element |
 | 👑 Beast King | 2–3 bindings · 2–3 armor materials · 20% Crystal, 2% Heart of the beast's element |
+| ⛏️ Ironvein Quarry (website only, docs/world.md; 24 seams a day) | Iron seam: 1–2 weapon metal · 10% a fuel · 2% a Metal Shard. Coal seam: 1 fuel (5% two). Jade seam: 1 artifact jade |
 | 🌿 /gather | 8% per herb: a spring's quench liquid · 3% per herb: a Jade Shard |
 | 📦 Chests | Artifact jades (15/25/35/42/50/75% for Common/Uncommon/Rare/Epic/Legendary/Mythic) · Fortune Coins · Seal Stones (0/1/3/5/8/20%) |
 | ⚗️ /craft | Cauldron Ash: 1 Shard (1–3 patterns), 2 Shards (4–6), 1 Crystal (7–8), 1 Heart (9) |

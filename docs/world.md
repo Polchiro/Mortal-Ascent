@@ -14,6 +14,7 @@ round (`bot/gathering.py`), the hunting ground's beasts and odds (`hunting.py`),
 ```
  Azure Cloud Town ═gate═► THE CROSSROADS ═road═► FOREST EDGE ═path═► DEEP WOODS ═path═► SHRINE GROVE
    safe: no herbs,          60 x 60 tiles          70 x 70             70 x 70             70 x 70
+                              ╚═road═► THE IRONVEIN QUARRY (40 x 40, safe: seams to mine)
    your trip is              herbs                  └────────── Moon Forest: herbs, beasts, finds ──────────┘
    banked here               (no beasts)                        (one trip of 5 encounters across all three)
                                 └── the other five roads: closed, "not open yet"
@@ -171,6 +172,45 @@ players are shown running when they move faster than midway between the two spee
 - A look without a walking sheet can read the town's list and use Discord's `/gather` and `/explore`.
 - Your herbs, beasts and finds are kept in the website's memory: a restart rolls them again (a trip under way ends
   as a hunt does). Where you stand is saved (above).
+
+## The Ironvein Quarry (`/wild/ironvein_quarry`)
+
+A small safe land where forging materials are mined (SHOAIB approved the rules Nov 25 2026). **Website only:**
+Discord's `/explore` keeps its Ore Vein encounter, and no Discord command changed.
+
+Code: `web/quarry.py` (what stands on the land, the seams' spots, the keeper), `web/mine_play.py` (the referee),
+the numbers in `forge.py` (`SEAM_KINDS`, `SEAMS`, `SEAMS_PER_DAY`) and `bot/materials.roll_seam`; on the page
+`town.js` (`mine`, `strike`, `drawSeam`). Tests: `tests/test_web_mine.py`.
+
+- **Getting there:** a new road leaves the town-gate road on the Crossroads and runs south to the land's edge
+  (`road_quarry`); walk off its end, as for the Moon Forest. About a minute from the gate. The World Map has its marker.
+- **The place:** 40 x 40 tiles of bare earth with a worked stone floor, rock walls round it, the keeper's hut by the
+  way in and **Old Shen** leaning on his pick (talk to him: how it works, how many seams you have left today). No
+  beasts, no herbs. Its own wind-over-stone sound and a slow tune.
+- **Seams:** 8 at a time, each player's own, at the foot of the walls (`quarry.SPOTS`): **iron** (60% of seams),
+  **coal** (30%), **jade** (10%). One that is dug opens again at another spot 2 to 4 minutes later.
+- **Mining:** walk up (1.9 tiles) and press **E**. A small card says what it holds (*It holds Black Iron*). Strike
+  with **E**, **Space** or the **Strike** button; hold to keep swinging. Iron and coal take 3 blows, jade 5. The hero
+  swings the pick (SHOAIB's video, its own sound on each blow), chips fly, cracks spread, and on the last blow it
+  breaks open: the materials pop out, with your pouch's new count. **Esc** steps back; a dig left half done waits 10
+  minutes with its cracks. *Quick* in Settings: no swing animation, the blows land by themselves.
+- **What a seam gives**, all at your realm's tier (as Beast Cores and every other material):
+
+| Seam | Always | Sometimes |
+|---|---|---|
+| Iron | 1-2 weapon metal (Iron Ore ... Heavenly Gold) | 10% a fuel · 2% a Metal Shard |
+| Coal | 1 fuel (Charcoal ... Sunflame Stone) | 5% a second |
+| Jade | 1 artifact jade (Green ... Primordial Jade) | |
+
+  The Prospector passive raises the "sometimes" chances, as everywhere. Materials go to the pouch (no bag slots).
+- **24 seams a day** (`forge.SEAMS_PER_DAY`, new at midnight UTC, counted in `daily_counts` as `world:seams`). The
+  count shows at the top left. After that the seams are dull: *The rock needs rest.*
+- **The server referees**, as for Train and Practice. Starting on a seam makes the plan from a seed: its blows and
+  **exactly what it holds, decided then**. The page notes each blow that lands (its own clock) and sends them when
+  the seam breaks; the server checks there were enough, at least 0.42 s apart, that the dig took that long by its own
+  clock, that you stand by the seam and that it wasn't dug before, then pays the plan. The blows change nothing about
+  what you get. No tool to buy.
+- **Not yet:** other players don't see you swinging; Blacksmith Tie doesn't mention the quarry; no daily task for it.
 
 ## Gathering art
 

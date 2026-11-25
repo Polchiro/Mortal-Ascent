@@ -25,7 +25,7 @@ from web import land
 
 CHUNK = 1024
 F = 1.0                               # output px per world px (a tile is 128 x 64 world px)
-V = 1                                 # bump to make browsers fetch repainted chunks
+V = 2                                 # bump to make browsers fetch repainted chunks
 SEED = 23
 
 

@@ -38,7 +38,7 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import gather_art, crossroads, hunt_map, land, town, world_tasks
+from . import crossroads, gather_art, hunt_map, land, mine_play, quarry, town, world_tasks
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -61,6 +61,10 @@ for _key, _loc in WILD.items():
                     "beasts": {"count": 5},
                     "finds": {"count": 1, "secret": land.LANDS[_key].get("secret", [])}}
 
+# The Ironvein Quarry (web/quarry.py, web/mine_play.py): safe, no herbs or beasts; seams to mine
+PLACES[quarry.KEY] = {"title": quarry.NAME, "kicker": "MORTAL ASCENT · THE QUARRY", "url": f"/wild/{quarry.KEY}",
+                      "land": True, "safe": True, "mine": True}
+
 # The entrances: walk into one and you come out of its partner. Each stands on an edge of its place (`side`: which
 # way is out), `half` wide to either side, and takes you once you are within `depth` of it. You come out as far to
 # the side of the partner as you went in, still walking the same way.
@@ -80,6 +84,7 @@ ENTRANCES = {
     ("crossroads", "town_gate"): {"at": (crossroads.GATE["x"], crossroads.GATE["y"]), "side": "x0", "half": 0.9,
                                   "depth": 0.75, "to": "town", "arrive": "gate_out"},
     **_join(("crossroads", "road_moon_forest"), ("forest_edge", "north")),
+    **_join(("crossroads", "road_quarry"), (quarry.KEY, "north")),
     **_join(("forest_edge", "south"), ("deep_woods", "north")),
     **_join(("deep_woods", "east"), ("shrine_grove", "west")),
 }
@@ -128,6 +133,8 @@ def walkable(place, x, y):
         return town.walkable(x, y)
     if place == "crossroads":
         return crossroads.walkable(x, y)
+    if place == quarry.KEY:
+        return quarry.walkable(x, y)
     return land.walkable(place, x, y)
 
 
@@ -213,6 +220,7 @@ class World:
         self.hunts, self.gathers = hunts, gathers
         self.clock = clock
         self.rng_factory = rng_factory
+        self.mines = mine_play.Mines(clock, (lambda uid: rng_factory()) if rng_factory else None)
         self.lock = threading.RLock()
         self._w = {}
         self.with_conn = None                     # runs fn(conn, ...) on a fresh connection (the website sets it)
@@ -538,6 +546,7 @@ class World:
                     "hero": hero_view(conn, uid, p, trip, self.hunts.clock()) if p else None,
                     "tasks": world_tasks.board(conn, uid, self.clock()),
                     "wary": bool(quiet), "quiet": _quiet_line(quiet),
+                    "mine": self.mines.view(conn, uid) if PLACES[place].get("mine") else None,
                     "wander": hunt_map.WANDER, "notice": hunt_map.NOTICE, "reach": HERB_REACH,
                     "beastReach": hunt_map.REACH}
 
@@ -778,6 +787,9 @@ def page_data(conn, world, uid, place, sheet, p, blocked, near=None):
         data["hero"] = {"x": hero[0], "y": hero[1]}
     else:
         data = wild_data(sheet, place, hero)
+        if place == quarry.KEY:                      # the quarry's walls, hut and keeper stand on its land
+            data.update(pieces=quarry.pieces(), blocked=[list(c) for c in quarry.blocked()], tone=quarry.TONE,
+                        npcs=quarry.npcs(world.mines.left_today(conn, uid)), reach=1.9, atmos=False)
     walk_exits(place, data)
     info = PLACES[place]
     import looks

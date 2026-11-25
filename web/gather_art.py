@@ -19,6 +19,7 @@ from functools import lru_cache
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERBS = os.path.join(ROOT, "art", "herbs")
 GATHER = os.path.join(ROOT, "art", "gather")
+SWING_SIDE = {"female": 1, "male": -1}
 CHOICE_PX = 256                       # a choice card's picture, on its long side
 # how tall each grade's plant stands on the map (px at the walkers' size): rarer herbs are bigger
 MAP_HEIGHT = {"Mortal": 66, "Yellow": 74, "Mystic": 84, "Earth": 98, "Heaven": 118}
@@ -68,7 +69,10 @@ def _sheets():
 
 def acts(gender):
     """This hero's kneel and swing sheets for the page: {"kneel": {...}, "swing": {...}} (what is cut)."""
-    return {move: s for move in ("kneel", "swing") if (s := _sheets().get(f"{gender}_{move}"))}
+    out = {move: dict(s) for move in ("kneel", "swing") if (s := _sheets().get(f"{gender}_{move}"))}
+    if "swing" in out:                 # the pick comes down to her right, to his left (as each was filmed)
+        out["swing"]["side"] = SWING_SIDE.get(gender, 1)
+    return out
 
 
 @lru_cache(maxsize=1)

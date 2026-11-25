@@ -37,6 +37,11 @@
   <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
   <p class="tline">{{ m.text }}</p>
   <p class="wstate open">The roads to every hunting ground start at the Crossroads, just outside its gate.</p>
+  {% elif m.kind == "quarry" %}
+  <p class="kicker">MINING · SAFE</p>
+  <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>
+  <p class="tline">{{ m.text }}</p>
+  <p class="wstate open">Walk out of the town gate and take the first road south off the Crossroads.</p>
   {% else %}
   <p class="kicker">HUNTING GROUND · {{ m.realms | upper }}</p>
   <h2 id="w-{{ m.key }}-h">{{ m.name }}</h2>

@@ -11,6 +11,7 @@ The open world's pages (web/overworld.py, docs/world.md):
   /world/gather/pick  your choice; /world/gather/away walks away from it
   /world/engage       a beast and you meet: the fight (/hunt)
   /world/discover     look at what glints: one of /explore's finds
+  /world/mine         start on a seam in the Ironvein Quarry (web/mine_play.py); /world/mine/done: the blows struck
   /gather             the old gathering page: herbs grow in the world now
 
 Every POST asks web/overworld.py, which asks the game's own engines; the page only shows what it answers.
@@ -21,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from bot import db
 
-from . import crossroads, gather_play, land, overworld, town
+from . import crossroads, gather_play, land, mine_play, overworld, town
 from . import discord_oauth as oauth
 from .forge_play import rich
 from .profile import number
@@ -124,7 +125,7 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if user and world.walker(user["id"]) is None:         # the website restarted: back where you last stood
             with_conn(world.restore, user["id"])
         w = world.walker(user["id"]) if user else None
-        if user and (w is None or w.place != key or key not in overworld.WILD):   # you walk here, down the road
+        if user and (w is None or w.place != key or not overworld.PLACES.get(key, {}).get("land")):   # you walk here, down the road
             return go(overworld.url(w.place) if w else "/town")
         return place_page(request, key)
 
@@ -232,6 +233,33 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             lines, why = world.discover(c, uid, place, num(fid), x, y)
             return {"lines": lines, "error": rich(why) if why else None, "world": world.state(c, uid, place)}
         return await post_json(request, look, "place", "id", "x", "y")
+
+    # ── mining in the Ironvein Quarry (web/mine_play.py) ──────────────
+
+    def _at(uid, x, y):
+        """Where you stand in the quarry, by the world's own check (a spot you could have walked to), or None."""
+        with world.lock:
+            return world._at(world.walker(uid), mine_play.PLACE, x, y)
+
+    @app.post("/world/mine")
+    async def world_mine(request: Request):
+        def start(c, uid, sid, x, y):
+            at = _at(uid, x, y)
+            if at is None:
+                return {"error": "Walk closer to the seam."}
+            dig, why = world.mines.start(c, uid, num(sid), *at)
+            return {"dig": dig, "error": why}
+        return await post_json(request, start, "id", "x", "y")
+
+    @app.post("/world/mine/done")
+    async def world_mine_done(request: Request):
+        def done(c, uid, sid, blows, x, y):
+            at = _at(uid, x, y)
+            if at is None:
+                return {"error": "Walk closer to the seam."}
+            got, why = world.mines.finish(c, uid, num(sid), [b for b in (blows or "").split(",") if b], *at)
+            return {"got": got, "error": why, "world": world.state(c, uid, mine_play.PLACE)}
+        return await post_json(request, done, "id", "blows", "x", "y")
 
     # ── the old gathering page ───────────────────────────────────────
 
