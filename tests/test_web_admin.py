@@ -89,3 +89,31 @@ def test_cooldowns_and_a_bad_token(setup):
     assert "All cooldowns are off" in page and "Off for everyone" in page
     r = cl.post("/admin/do", data={"action": "reset", "token": "wrong"})
     assert "out of date" in cl.get(r.headers["location"]).text
+
+
+def test_the_buttons_answer_in_place_without_a_reload(setup):
+    """Nov 26 (SHOAIB): pressing a button (giving a chest, say) no longer reloads the page. The page sends it in the
+    background (X-Admin-Fetch: 1) and gets the answer and the fresh numbers back as JSON; without script the old
+    post-and-come-back still works (the tests above)."""
+    path, mp = setup
+    cl = client_for(path, ADMIN, mp)
+    page = cl.get(f"/admin?who={OTHER}").text
+    token = re.search(r'name="token" value="([^"]+)"', page).group(1)
+    r = cl.post("/admin/do", data={"action": "chest", "tier": "rare", "amount": "3", "who": str(OTHER), "token": token},
+                headers={"X-Admin-Fetch": "1"})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/json")
+    d = r.json()
+    assert d["ok"] and any("Rare Chest" in line for line in d["lines"])
+    assert d["target"]["name"] == "Lin Yue" and d["target"]["slots"].startswith("1 /")       # the card's numbers
+    assert "pearls" in d and "coins" in d and d["cooldowns"]                          # the purse and cooldown line
+    c = db.connect(path)
+    assert [(i["key"], i["qty"]) for i in db.get_items(c, OTHER, "chests")] == [("rare", 3)]
+    r = cl.post("/admin/do", data={"action": "give", "coins": "700", "who": str(ADMIN), "token": token},
+                headers={"X-Admin-Fetch": "1"})
+    assert r.json()["coins"] == f"{rules.STARTING_LOTUS_COINS + 700:,}"               # the purse up top follows
+    bad = cl.post("/admin/do", data={"action": "reset", "token": "wrong"}, headers={"X-Admin-Fetch": "1"})
+    assert bad.status_code == 200 and not bad.json()["ok"] and "out of date" in bad.json()["lines"][0]
+    assert "session" not in bad.headers.get("location", "")
+    page = cl.get("/admin").text
+    assert "X-Admin-Fetch" in page and 'id="adtoast"' in page and "fetch(f.getAttribute('action')" in page and "e.preventDefault()" in page
+    assert "admin_done" not in page and "addone ok" not in page                      # nothing was left for a reload
