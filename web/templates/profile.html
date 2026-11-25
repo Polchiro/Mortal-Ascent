@@ -75,6 +75,11 @@
         <div class="row"><span><img src="/art/icons/attr/qi.webp" alt="" width="22" height="22"> Internal Qi</span><b>{{ p.qi }} / {{ p.qi_cap }}</b></div>
         <div class="bar" role="progressbar" aria-label="Internal Qi" aria-valuenow="{{ p.qi_pct }}" aria-valuemin="0" aria-valuemax="100" style="--qi: {{ p.qi_pct }}%"><div class="{% if not p.qi_pct %}none{% endif %}" style="width: {{ p.qi_pct }}%"></div></div>
         <div class="row sub"><span>+{{ p.qi_rate }} Qi / hour{% if p.qi_eta %} · {{ p.qi_eta }}{% endif %}</span><span class="tone-{{ p.qi_tone }}">{{ p.qi_status }}</span></div>
+        {% if p.gate %}{# the same seal as under the map plate (_hud.html) #}
+        <a class="mplate mbreak pbreak{% if p.gate.look %} k-{{ p.gate.look }}{% endif %}{% if not p.gate.ready %} locked{% endif %}" href="/breakthrough?from=/profile">
+          <span class="mbseal" aria-hidden="true"></span>
+          <span class="mbtext"><b>{% if p.gate.ready %}Break through{% else %}Gate sealed{% endif %}</b><small>{{ p.gate.label if p.gate.ready else p.gate.why }}</small></span>
+        </a>{% endif %}
       </div>
       <div class="nextbt">
         <span class="kicker">NEXT</span>

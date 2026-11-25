@@ -191,8 +191,13 @@ MOTION_SHEETS = {"fist": {"male": {"src": "/art/portraits/fight/hero_male_fist.w
 # `run` (hers, from SHOAIB's five running videos, scripts/make_heroine_walk.py --run): the same rows and cells, played
 # at full speed in place of the walk (huntmap.js, town.js), `stride` screen px to one full stride (a longer step than
 # the walk's 96), `stand` the frame each row starts from. The speed she moves at is the same: only the picture changes.
+# his (Nov 25): the new male, from SHOAIB's fifteen videos (scripts/make_hero_map.py), 16 pictures a stride or breath
+# (hers have 8) so he moves smoother; `voice`: his own footsteps (art/fx/sounds/steps.json "walk#male", "run#male")
 WALK_SHEETS = {"male": {"src": "/art/portraits/map/hero_male_walk.webp", "cell": 256, "feet": [128, 232],
-                        "rows": 8, "cols": 8, "stand": [5, 2, 2, 3, 1, 3, 2, 2]},
+                        "rows": 8, "cols": 16, "stand": [6, 2, 10, 11, 2, 11, 10, 2], "voice": "male",
+                        "idle": {"src": "/art/portraits/map/hero_male_idle.webp", "cols": 16, "loop": 3.42},
+                        "run": {"src": "/art/portraits/map/hero_male_run.webp", "stride": 140, "cols": 16,
+                                "stand": [13, 1, 14, 10, 3, 10, 14, 1]}},
                "female": {"src": "/art/portraits/map/hero_female_walk.webp", "cell": 256, "feet": [128, 232],
                           "rows": 8, "cols": 8, "stand": [6, 3, 6, 2, 7, 2, 6, 3],
                           "idle": {"src": "/art/portraits/map/hero_female_idle.webp", "cols": 8, "loop": 3.33},

@@ -62,7 +62,11 @@
   var sheet = new Image(); sheet.src = SH.src;
   var IDLE = SH.idle, idle = null;
   var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): when running; a walk
-  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
+  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }
+  /* how many pictures one stride (or breath) has: 8 for hers, 16 for the new male's (Nov 25, smoother; looks
+     WALK_SHEETS `cols`); the phase runs from 0 to that, a foot coming down at 0 and at half */
+  function nFrames(sh, running) { return (running && sh.run && sh.run.cols) || sh.cols || 8; }
+  if (window.MASound) MASound.voice = SH.voice || '';             // his own footsteps for him (web/static/sound.js)      // (Shift, or the joystick pushed gently) keeps the walk
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
   // this place (load() sets them; a new place swaps them all)
@@ -372,7 +376,37 @@
     var st = document.getElementById('heroStatus');
     if (st) { st.textContent = h.status || ''; st.hidden = !h.status; }
     box.classList.toggle('t-hurt', h.tone === 'hurt'); box.classList.toggle('t-rest', h.tone === 'rest');
+    gate(h.qi);
   }
+  /* the Qi line under HP, and the Break through button when it is full at a gate (web/breakthrough_play.plate):
+     gold and breathing, a ring round the face, and the first time at each gate a short banner */
+  function gate(q) {
+    var bar = document.getElementById('heroQi'), btn = document.getElementById('heroBreak'), box = document.getElementById('hero');
+    if (!q || !bar || !btn) return;
+    bar.firstElementChild.style.width = q.pct + '%'; bar.setAttribute('aria-valuenow', q.pct);
+    var t = document.getElementById('heroQiText'); if (t) t.textContent = 'Qi ' + q.qi + ' / ' + q.need;
+    bar.classList.toggle('full', !!q.full); bar.classList.toggle('blocked', !!(q.full && !q.ready));
+    box.classList.toggle('t-gate', !!q.ready);
+    btn.hidden = !q.full;
+    btn.className = 'mplate mbreak' + (q.look ? ' k-' + q.look : '') + (q.full && !q.ready ? ' locked' : '');
+    document.getElementById('heroBreakTitle').textContent = q.ready ? 'Break through' : 'Gate sealed';
+    document.getElementById('heroBreakSub').textContent = q.ready ? q.label : (q.why || '');
+    if (q.ready) told();
+  }
+  function told() {                                               // once per gate (the realm and layer on the plate)
+    var name = document.getElementById('heroRealm'), key = 'ma.bt.told.' + (name ? name.textContent : '');
+    try {
+      if (localStorage.getItem(key) === '1') return;
+      localStorage.setItem(key, '1');
+    } catch (e) { return; }
+    var toast = document.getElementById('heroToast');
+    if (!toast) return;
+    toast.textContent = 'Your Qi presses against a gate'; toast.classList.remove('go'); void toast.offsetWidth; toast.classList.add('go');
+  }
+  (function () {                                                  // the page as it came
+    var btn = document.getElementById('heroBreak');
+    if (btn && !btn.hidden && !btn.classList.contains('locked')) { document.getElementById('hero').classList.add('t-gate'); told(); }
+  })();
 
   /* the trip tracker (outside town only): encounters met of 5, what you carry, and what to do next */
   function trip(v) {
@@ -442,7 +476,7 @@
       o.running = !!sh.run && px / dt > SPEED * (1 + RUN_K) / 2;   // they run as you do: faster than a walk
       if (!o.moving) o.phase = (o.running ? sh.run.stand : sh.stand)[o.dir];
       o.moving = true;
-      o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
+      var nf = nFrames(sh, o.running); o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * nf) % nf; o.frame = Math.floor(o.phase);
     });
   }
   function drawOther(o, x, y) {
@@ -771,8 +805,9 @@
       hero.running = fast && !!HRUN && m > RUN_AT;              // (no run sheet yet: he goes faster on his walk)
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
-      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * 8) % 8;
-      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {
+      var NF = nFrames(SH, hero.running);
+      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * NF) % NF;
+      if ((before < NF / 2 && hero.phase >= NF / 2) || hero.phase < before) {
         if (ATMOS) puff(hero.x, hero.y, 0.45);
         snd('step', PLACE === 'town' ? 'stone' : 'earth', hero.running ? 'run' : 'walk');
       }

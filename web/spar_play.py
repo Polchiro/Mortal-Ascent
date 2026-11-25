@@ -422,6 +422,10 @@ class Hall:
                 "beads": [{"turn": t["turn"], "his": t["master"]["move"], "outcome": t["outcome"], "timed": t["timed"]}
                           for t in s.turns],
                 "last": s.turns[-1] if s.turns else None,
+                # How to play (spar.html): his tells as the bot words them, and the sign that betrays a feint
+                "guide": {"tells": {st: [plain(t) for t in TELLS[st][:2]] for st in STANCES},
+                          "signs": {st: plain(HIDDEN_SIGNS[st]) for st in STANCES},
+                          "lies": bool(getattr(sp, "read", {}).get("feints"))},   # at this realm (never which exchange)
                 "history": [{"turn": t["turn"], "lines": [t["line"]]} for t in s.turns],
                 "over": s.over, "result": s.result}
             return out

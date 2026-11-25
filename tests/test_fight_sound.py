@@ -73,7 +73,8 @@ def test_the_recorded_footsteps_are_listed_and_the_maps_ask_for_them_by_gait():
     """Her running footsteps, cut from the running videos (scripts/make_step_sound.py, docs/world.md "Sound")."""
     from scripts import make_step_sound as mss
     listed = json.load(open(mss.LIST))
-    assert set(listed) <= set(mss.GAITS) and len(listed["run"]) == mss.TAKES
+    assert {k.split("#")[0] for k in listed} <= set(mss.GAITS) and len(listed["run"]) == mss.TAKES
+    assert len(listed["walk#male"]) == len(listed["run#male"]) == mss.TAKES      # the new male's own (Nov 25)
     for names in listed.values():
         for name in names:
             path = os.path.join(mss.OUT, name)
@@ -82,6 +83,8 @@ def test_the_recorded_footsteps_are_listed_and_the_maps_ask_for_them_by_gait():
     town = open(os.path.join(ROOT, "web", "static", "town.js")).read()
     assert "steps.json" in sound and "function recordedStep" in sound
     assert "snd('step', PLACE === 'town' ? 'stone' : 'earth', hero.running ? 'run' : 'walk')" in town
+    assert "gait + '#' + window.MASound.voice" in sound and "MASound.voice = SH.voice" in town   # his own steps for him
+    assert looks.WALK_SHEETS["male"]["voice"] == "male" and "voice" not in looks.WALK_SHEETS["female"]
 
 
 @needs_ffmpeg

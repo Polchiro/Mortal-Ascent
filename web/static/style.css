@@ -2259,6 +2259,46 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .mhero.t-rest .mstatus{background:rgba(94,147,201,.18);border:1px solid rgba(140,190,240,.5);color:#CFE3F7}
 .mhero.t-hurt .mface{border-color:#C0574C}
 @keyframes mlow{50%{opacity:.6}}
+/* the Qi line under HP: jade with a slow shimmer; full at a gate it turns gold and breathes (grey when sealed) */
+.mqibar{position:relative;height:12px;margin-top:4px;border-radius:3px;background:rgba(255,255,255,.07);border:1px solid rgba(111,217,176,.28);overflow:hidden}
+.mqibar div{height:100%;background:linear-gradient(90deg,#1E7F78,#4FC7B9,#1E7F78);background-size:200% 100%;animation:mqiflow 4s linear infinite;transition:width .6s ease}
+.mqibar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 9.5px Inter,sans-serif;color:#E6FFF7;text-shadow:0 1px 2px #000}
+.mqibar.full{border-color:rgba(245,220,166,.6);box-shadow:0 0 10px rgba(245,220,166,.35)}
+.mqibar.full div{background:linear-gradient(90deg,#B08A3E,#F5DCA6,#B08A3E);background-size:200% 100%;animation:mqiflow 2.4s linear infinite,mqibreathe 2.4s ease-in-out infinite}
+.mqibar.blocked{border-color:rgba(160,160,170,.4);box-shadow:none}
+.mqibar.blocked div{background:linear-gradient(90deg,#55565E,#8A8B94);animation:none}
+@keyframes mqiflow{to{background-position:-200% 0}}
+@keyframes mqibreathe{50%{filter:brightness(1.4)}}
+/* ready: a gold rune ring turns slowly round the face */
+.mhero.t-gate .mface{position:relative;border-color:#F5DCA6;box-shadow:0 0 0 3px rgba(12,12,15,.85),0 0 18px rgba(245,220,166,.65);overflow:visible}
+.mhero.t-gate .mface::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:1.5px dashed rgba(245,220,166,.85);animation:mring 14s linear infinite;pointer-events:none}
+.mhero.t-gate .mface img{border-radius:50%}
+@keyframes mring{to{transform:rotate(360deg)}}
+/* the Break through seal under the plate: jade blue for a phase gate, dawn gold for the first realms, storm
+   violet with a lightning mark from Martial Master on; grey with a lock when something else is needed */
+.mbreak{display:flex;align-items:center;gap:10px;width:300px;box-sizing:border-box;margin-top:6px;padding:8px 12px;text-decoration:none;pointer-events:auto;
+  --bk:#F5DCA6;--bk2:rgba(245,220,166,.18);border-color:var(--bk)!important;background:linear-gradient(90deg,var(--bk2),rgba(12,12,15,.86) 70%)!important;
+  animation:mbreak 2.4s ease-in-out infinite}
+.mbreak[hidden]{display:none}
+.mbreak.k-inner{--bk:#8CC8FF;--bk2:rgba(140,200,255,.18)}
+.mbreak.k-storm{--bk:#B7A1FF;--bk2:rgba(183,161,255,.2)}
+.mbreak.locked{--bk:#8A8B94;--bk2:rgba(138,139,148,.12);animation:none}
+.mbseal{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--bk);box-shadow:0 0 12px var(--bk2),inset 0 0 8px var(--bk2);position:relative}
+.mbseal::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--bk);opacity:.85}
+.mbreak.k-storm .mbseal::after{inset:5px 9px;border-radius:0;clip-path:polygon(55% 0,15% 55%,45% 55%,30% 100%,85% 40%,55% 40%)}
+.mbreak.locked .mbseal::after{inset:8px 9px 6px;border-radius:2px}
+.mbreak.locked .mbseal::before{content:"";position:absolute;left:9px;right:9px;top:3px;height:9px;border:2px solid var(--bk);border-bottom:0;border-radius:6px 6px 0 0}
+.mbtext{display:flex;flex-direction:column;min-width:0}
+.mbtext b{font:800 14px Cinzel,Georgia,serif;color:var(--bk);letter-spacing:.5px}
+.mbtext small{font:600 11px Inter,sans-serif;color:#E9E4D6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbreak:hover{filter:brightness(1.15)}
+@keyframes mbreak{50%{box-shadow:0 0 16px var(--bk2)}}
+.mtoast{position:fixed;left:50%;top:36%;transform:translateX(-50%);margin:0;padding:10px 22px;font:700 18px Cinzel,Georgia,serif;color:#F5DCA6;
+  background:linear-gradient(90deg,transparent,rgba(12,12,15,.85) 20%,rgba(12,12,15,.85) 80%,transparent);letter-spacing:1px;opacity:0;pointer-events:none;
+  text-shadow:0 0 14px rgba(245,220,166,.55);white-space:nowrap}
+.mtoast.go{animation:mtoast 3.6s ease forwards}
+@keyframes mtoast{0%{opacity:0;transform:translate(-50%,10px)}12%,78%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.mqibar div,.mbreak,.mhero.t-gate .mface::after{animation:none}}
 .mplace{margin:-2px 0 0 4px;font:700 12.5px Cinzel,Georgia,serif;letter-spacing:.8px;color:var(--ag2);text-shadow:0 1px 3px #000}
 .mkeys{transition:opacity .8s ease}
 .mkeys.gone{opacity:0;visibility:hidden;transition:opacity .8s ease,visibility 0s .8s}
@@ -2281,7 +2321,11 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 @media (max-width:640px){
   .mhero{width:auto;gap:8px;padding:6px 10px 6px 6px}.mface{width:44px;height:44px}.mname{font-size:14px}.mrealm{font-size:11px}
   .mhpbar{height:13px}.mbanner{top:22vh}.mbanner h1{font-size:24px}
-  .mprompt{bottom:78px}.mdock{right:10px;bottom:12px;gap:4px}.dbtn{width:52px;padding:6px 0 4px}.dbtn svg{width:20px;height:20px}.dbtn span{font-size:8.5px;letter-spacing:0}}
+  .mprompt{bottom:78px}.mdock{right:10px;bottom:12px;gap:4px}.dbtn{width:52px;padding:6px 0 4px}.dbtn svg{width:20px;height:20px}.dbtn span{font-size:8.5px;letter-spacing:0}
+  .mqibar{height:11px}.mbreak{width:auto;gap:8px;padding:5px 10px 5px 6px}.mbseal{width:24px;height:24px}.mbseal::after{inset:5px}
+  .mbtext b{font-size:12.5px}.mbtext small{font-size:10px}.mtoast{font-size:15px;top:40%}}
+/* the Break through seal beside the profile's Qi bar (the map plate's own, _hud.html) */
+.pbreak{width:100%;margin-top:12px;border-radius:8px}
 /* the bag: a chest's Open and the Treasure Shelf (web/chest_play.py) */
 .chestacts{display:flex;gap:10px;flex-wrap:wrap}
 .chestacts .btn{text-decoration:none}

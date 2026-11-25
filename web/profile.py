@@ -171,4 +171,13 @@ def profile_view(conn, user_id, username=None):
         "track": realm_track(d["realm"], d["layer"], d["max_layer"]),
         "attributes": attribute_rows(attrs, qi),
         "qi_tone": qi["status_tone"],
+        "gate": gate_of(conn, user_id),
     }
+
+
+def gate_of(conn, user_id):
+    """The Break through button beside the Qi bar (web/breakthrough_play.plate), or None when the bar isn't full."""
+    from .breakthrough_play import now_player, plate
+    me, techs = now_player(conn, user_id)
+    g = plate(me, techs) if me else None
+    return g if g and g["full"] else None

@@ -38,13 +38,16 @@
      written on each target and a faint mark where targets appear; they can be turned off. */
   var DEFAULT = STRIKE ? ['d', 'f', 'j', 'k'] : ['w', 'd', 's', ' '];
   var ALT = STRIKE ? [['1'], ['2'], ['3'], ['4']] : [['1', 'arrowup'], ['2', 'arrowright'], ['3', 'arrowdown'], ['4']];
-  var STORE = 'ma.practice.keys.' + D.mode, keys = DEFAULT.slice(), guides = true, LANE_OF = {}, capturing = null;
+  /* Guides (Settings): 'full' (the key on each target, faint marks where targets appear, a "Now!" glow at the perfect
+     moment, and a note the first time each new kind of target appears), 'light' (the keys only) or 'off' */
+  var STORE = 'ma.practice.keys.' + D.mode, keys = DEFAULT.slice(), guide = 'full', LANE_OF = {}, capturing = null;
   function usable(k) { return typeof k === 'string' && (k.length === 1 || k.indexOf('arrow') === 0); }
   try {
     var saved = JSON.parse(localStorage.getItem(STORE) || 'null');
     if (Array.isArray(saved) && saved.length === 4 && saved.every(usable) &&
         saved.every(function (k, i) { return saved.indexOf(k) === i; })) keys = saved;
-    guides = localStorage.getItem('ma.practice.guides') !== 'off';
+    var g0 = localStorage.getItem('ma.practice.guide');
+    guide = g0 === 'light' || g0 === 'off' || g0 === 'full' ? g0 : localStorage.getItem('ma.practice.guides') === 'off' ? 'off' : 'full';
   } catch (e2) {}
   function keyName(k) {
     return k === ' ' ? 'Space' : {arrowup: '↑', arrowdown: '↓', arrowleft: '←', arrowright: '→'}[k] || k.toUpperCase();
@@ -93,11 +96,14 @@
       (function (lane) { b.addEventListener('click', function () { capturing = capturing === lane ? null : lane; bind(); }); })(j);
       row.appendChild(b);
     }
-    $('pguides').checked = guides;
-    $('pguides').addEventListener('change', function () {
-      guides = this.checked;
-      try { localStorage.setItem('ma.practice.guides', guides ? 'on' : 'off'); } catch (e3) {}
-      bind();
+    main.querySelectorAll('input[name=pguide]').forEach(function (r) {
+      r.checked = r.value === guide;
+      r.addEventListener('change', function () {
+        if (!this.checked) return;
+        guide = this.value;
+        try { localStorage.setItem('ma.practice.guide', guide); } catch (e3) {}
+        bind();
+      });
     });
     $('pkeyreset').addEventListener('click', function () { keys = DEFAULT.slice(); capturing = null; save(); bind(); });
   })();
@@ -117,7 +123,8 @@
       out.push(name + ' ' + LABEL[i].toLowerCase());
     }
     $('pkeys').textContent = 'Keys: ' + out.join(' · ') + '. Change them in Settings. On a phone, the pads below.';
-    main.classList.toggle('noguide', !guides);
+    ['full', 'light', 'off'].forEach(function (g) { main.classList.toggle('g-' + g, guide === g); });
+    main.querySelectorAll('.hk').forEach(function (el) { el.textContent = keyName(keys[+el.dataset.lane]); });
   }
   function capture(e) {                                          // Settings is waiting for a key for one lane
     var k = (e.key || '').toLowerCase();
@@ -488,11 +495,34 @@
       el.mark = m;
     }
     els[p.i] = el;
+    if (guide === 'full') note(p);
     if (p.rival && !spawn.rival) { spawn.rival = true; again($('pbanner'), 'The rival disciple steps in! Beat three targets.', 'warn'); fs('cast'); }
     if (p.finish) again($('pbanner'), STRIKE ? 'Finishing blow: hold, and release on the mark!' : 'The heavy blow!', 'warn');
   }
+  /* Full guides: a short note the first time each new kind of target appears in this drill */
+  var noted = {};
+  function note(p) {
+    var k = p.kind === 'feint' ? 'feint' : p.counter ? 'counter' : p.breath ? 'breath' : p.chain ? 'chain' :
+      p.pair ? 'pair' : p.kind === 'charge' && !p.finish ? 'charge' : p.kind === 'brace' ? 'brace' : p.small ? 'small' : null;
+    if (!k || noted[k] || p.rival || p.finish) return;
+    noted[k] = true;
+    var sp = keyName(keys[3]), text = {
+      feint: STRIKE ? 'A dark target is a feint: leave it alone.' : 'A dark blow is a feint: it pulls back. Don\'t move for it.',
+      counter: 'Counter! Press ' + sp + ' as the ring at your feet closes.',
+      breath: 'Breathe: press ' + sp + ' as the ring of breath fills.',
+      chain: 'A chain: hit the numbers in order, quickly.',
+      pair: 'Two targets at once: press both keys together.',
+      charge: 'A charge: hold the key while it burns, let go as the ring closes.',
+      brace: 'Hold the key through the blow until it has passed.',
+      small: 'Small targets: the timing is tighter.'}[k];
+    again($('pbanner'), text);
+  }
   function place(p, t) {                                         // where a prompt is drawn at t
     var el = els[p.i]; if (!el) return;
+    if (guide === 'full' && p.kind !== 'feint') {                // the "Now!" glow: inside the perfect window
+      var now = Math.abs(t - p.at) <= W.perfect;
+      (el.mark || el).classList.toggle('now', now);
+    }
     var x = (t - (p.at - lead(p))) / lead(p), ring = el.querySelector('.ring') || (el.mark && el.mark.querySelector('.ring'));
     var sc = 1 + 2.2 * Math.max(0, 1 - x);
     if (ring) ring.style.transform = 'translate(-50%,-50%) scale(' + sc.toFixed(3) + ')';

@@ -213,3 +213,23 @@ main.sparfight>.bgshade{background:linear-gradient(180deg,rgba(8,10,16,.12),rgba
   .sparfight .dtoast{top:10%;font-size:12px;padding:5px 12px;max-width:80%}
 }
 @media (prefers-reduced-motion:reduce){.smbody.breathe .smstill,.sbeads li.now,.sfront,.semblem{animation:none}.spetals{display:none}}
+
+/* How to play (spar.html, G) and the explanation after each exchange */
+.sparfight .sexplain{margin:4px 0 2px;color:#bdf3d7;font-size:12.5px;line-height:1.4}
+.sparfight .sexplain:empty{display:none}
+.howbtn{display:inline-block;margin:4px 0 0;padding:1px 9px;border-radius:99px;border:1px solid var(--line);background:rgba(16,11,8,.7);color:var(--gold2);
+  font:700 11.5px Georgia,serif;cursor:pointer}
+.howbtn:hover{border-color:#FFE7A8}
+.showto{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(6,4,2,.62);padding:12px}
+.showto[hidden]{display:none}
+.showpanel{width:min(640px,100%);max-height:88vh;overflow:auto;padding:14px 18px 18px;border-radius:14px;border:1px solid var(--line);
+  background:rgba(16,11,8,.96);box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.showpanel header{display:flex;justify-content:space-between;align-items:center}
+.showbody h3{margin:12px 0 6px;color:var(--gold2);font:700 16px Cinzel,Georgia,serif}
+.showbody p,.showbody li{color:var(--cream);font-size:13.5px;line-height:1.5}
+.showbody p{margin:0 0 6px}.showbody ul{margin:0;padding-left:18px}
+.showbody i{color:#e9d7b5}
+.showbody .tri{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+.showbody .tri p{margin:0;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(0,0,0,.3)}
+.showbody .sfeint{color:#ffd9a0}
+.sexpl{display:flex;gap:8px;align-items:center;color:var(--cream);font-size:13.5px;cursor:pointer}

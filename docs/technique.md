@@ -368,6 +368,13 @@ A spar lives in the web server's memory, like a duel: a restart ends it unsaved 
 restarts mid-spar). The website doesn't know about a spar under way on Discord, but the shared rest stops a second
 one from starting.
 
+**How to play, in Spar** (SHOAIB, Nov 25): a "How to play" button in the info box (or G) opens a guide: the Strike /
+Guard / Break triangle, his tells as the bot words them (two per move) and the answer to each, at realms where he
+lies the small sign that betrays the real move, his rhythm, and when techniques earn mastery EXP. Its
+**Explanations** setting (on by default, kept in the browser) adds a line after each exchange: what beat what, what
+would have won, what his tell meant (or that it lied), and whether a technique was well timed. It never tells you a
+move before you choose: nothing about the exchange being played is sent before you answer, as before.
+
 ## Practice on the website: Senior Sister Xue's drills
 
 **WEBSITE ONLY (SHOAIB, Nov 24).** Discord's `/practice` keeps its four challenges (challenges.md). On the website,
@@ -435,10 +442,13 @@ hall's air from her "watching" video looped under the music (`art/practice/hall.
 bright major five-note tune, a soft drum keeping time and the flute more often. The training objects, effects, drill
 badges, the result's scroll and her portrait are SHOAIB's Gemini pictures, cut by `scripts/make_practice_art.py`.
 
-**Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
+**How to play** (on the drill's opening card): a short illustrated guide to both kinds of drill (its own kind first)
+and the rules every drill shares (`web/templates/_practice_howto.html`). **Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
 set for striking drills and one for defending (click a move, press a key; a key already used swaps the two; the number
-keys, and the arrows when defending, still work unless given to another move), and **guides** on or off: the key
-written on every target and a faint mark where each lane's targets appear.
+keys, and the arrows when defending, still work unless given to another move), and **guides** at three levels: **Full** (the
+key on every target, a faint mark where each lane's targets appear, a gold "Now!" glow on the ring inside the perfect
+window, and a one-line note the first time each new kind of target appears: pairs, chains, charges, holds, feints,
+small targets, counters, breaths), **Light** (the keys only) or **Off**.
 
 The drill page has no top bar or tabs: the hall fills the whole window, and a **Leave** button in the corner walks away (it asks once: nothing is earned and the rest stays; after the result it goes back to the yard). On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
 a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,

@@ -1,0 +1,32 @@
+{
+ "ends": {
+  "inner": {
+   "src": "/art/breakthrough/hero/female/inner.mp4",
+   "sound": "/art/breakthrough/hero/female/inner.mp3",
+   "w": 896,
+   "h": 504,
+   "fps": 24,
+   "ms": 7625,
+   "box": [
+    0.0,
+    0.0,
+    1920.0,
+    1080.0
+   ]
+  },
+  "ascend": {
+   "src": "/art/breakthrough/hero/female/ascend.mp4",
+   "sound": "/art/breakthrough/hero/female/ascend.mp3",
+   "w": 896,
+   "h": 504,
+   "fps": 24,
+   "ms": 7625,
+   "box": [
+    0.0,
+    0.0,
+    1920.0,
+    1080.0
+   ]
+  }
+ }
+}

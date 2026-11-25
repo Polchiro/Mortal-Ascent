@@ -453,6 +453,8 @@ def test_the_training_page_and_a_spar_through_the_routes(client):
     assert "hero_male_strike_sheet" in page.text                             # your own frame-by-frame movements
     s = client.get("/spar/state").json()
     assert s["turn"] == 1
+    assert 'id="showto"' in page.text and 'id="sexplaincheck"' in page.text  # How to play, and the explanations
+    assert all(s["guide"]["tells"][st] for st in ("strike", "guard", "break")) and s["guide"]["lies"] is False
     out = client.post("/spar/pick", data={"move": "guard", "turn": 1}).json()
     assert out["error"] is None and out["state"]["turn"] == 2 and out["state"]["last"]["me"]["move"] == "guard"
     assert client.post("/spar/pick", data={"move": "nonsense", "turn": 2}).json()["error"]
