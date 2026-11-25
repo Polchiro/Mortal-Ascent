@@ -31,6 +31,7 @@ from .profile import number
 IDLE_SECONDS = gathering.IDLE_TIMEOUT          # like the bot's panel: the trip ends after 2 idle minutes
 SPIRIT_ART = "/art/scenes/gather_wandering_spirit.png"
 DUSK_LINE = "🌙 Dusk falls and you head home."
+TAKEN_LINE = "🌫️ Someone pulled it free just before you. The light fades from your hands; nothing is lost."
 _draw_lock = threading.Lock()                  # the card fonts are not safe to use from several threads at once
 
 
@@ -76,7 +77,7 @@ class Gathers:
         s = self._s.get(uid)
         return s if s and not s.g.over else None
 
-    def start(self, conn, uid, herb=None, rng=None):
+    def start(self, conn, uid, herb=None, rng=None, spirit=True):
         """A round for this herb (grade, type, place), in the player's running gathering or a new one. A round
         already on screen is returned as it is. Returns (session, None) or (None, reason)."""
         self.catch_up(conn, uid)
@@ -94,11 +95,11 @@ class Gathers:
                 s = Session(gathering.Gathering(conn, uid, rng, now=self.clock()))
                 self._s[uid] = s
             s.g.conn = conn
-            self._new_round(s, herb)
+            self._new_round(s, herb, spirit)
             return s, None
 
-    def _new_round(self, s, herb=None):
-        r = s.g.next_round(herb)
+    def _new_round(self, s, herb=None, spirit=True):
+        r = s.g.next_round(herb, spirit)
         if r.kind == "herb":
             s.place = r.place
         s.result, s.last = None, None
@@ -132,15 +133,34 @@ class Gathers:
                 s.turn += 1
         return s
 
-    def pick(self, conn, uid, key, turn):
-        """The player's choice. Ignored if it is for an old page or not one of the choices."""
+    def pick(self, conn, uid, key, turn, claim=None):
+        """The player's choice. Ignored if it is for an old page or not one of the choices.
+        `claim` (a shared herb, web/herb_events.py): called when the pick is right and in time, before anything is
+        given; False means someone else pulled it free first, and the round is called off at no cost."""
         s = self.catch_up(conn, uid)
         if not s or s.g.over or s.g.round is None or turn != s.turn:
             return s
         with self._lock:
-            if key not in {k for k, _, _ in s.g.round.options}:
+            r = s.g.round
+            if key not in {k for k, _, _ in r.options}:
                 return s
-            self._answer(s, key, self.clock() - s.shown_at)
+            elapsed = self.clock() - s.shown_at
+            if claim and r.kind == "herb" and key == r.answer and elapsed <= r.seconds + gathering.TIMER_GRACE_SECONDS \
+                    and not claim():
+                self.call_off(uid, TAKEN_LINE)
+                return s
+            self._answer(s, key, elapsed)
+        return s
+
+    def call_off(self, uid, line):
+        """End the round on screen with nothing won or lost (no streak change, no miss counted)."""
+        s = self._s.get(uid)
+        if not s or s.g.round is None:
+            return s
+        r, s.g.round = s.g.round, None
+        s.result, s.last = line, (r, None)
+        s.touched = self.clock()
+        s.turn += 1
         return s
 
     def stop(self, conn, uid, turn):

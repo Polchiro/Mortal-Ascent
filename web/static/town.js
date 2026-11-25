@@ -405,6 +405,7 @@
       h.t = old ? old.t : Math.random() * 6; h.pic = plain(h.picture); return h;
     });
     FINDS = (v.finds || []).map(function (f) { f.t = Math.random() * 6; return f; });
+    eventNews(v.event || null);
     MINE = v.mine || null;
     SEAMS = (MINE ? MINE.seams : []).map(function (s) {
       var old = SEAMS.find(function (o) { return o.id === s.id; });
@@ -707,6 +708,7 @@
     SPOTS.forEach(function (n) { consider({kind: n.exit ? 'exit' : 'npc', o: n}, Math.hypot(hero.x - n.x, hero.y - n.y), REACH); });
     HERBS.forEach(function (h) { consider({kind: 'herb', o: h}, Math.hypot(hero.x - h.x, hero.y - h.y), (WORLD.reach || 1.6) * 0.9); });
     FINDS.forEach(function (f) { consider({kind: 'find', o: f}, Math.hypot(hero.x - f.x, hero.y - f.y), (WORLD.reach || 1.6) * 0.9); });
+    if (EVENT && EVENT.live && EVENT.here && !EVENT.tried && !EVENT.capped) consider({kind: 'event', o: EVENT}, Math.hypot(hero.x - EVENT.x, hero.y - EVENT.y), (EVENT.reach || 2) * 0.95);
     SEAMS.forEach(function (s) { consider({kind: 'seam', o: s}, Math.hypot(hero.x - s.x, hero.y - s.y), (MINE.reach || 1.9) * 0.95); });
     if (!WORLD.wary) BEASTS.forEach(function (b) { consider({kind: 'beast', o: b}, Math.hypot(hero.x - b.x, hero.y - b.y), 1.35); });
     return best;
@@ -714,6 +716,7 @@
   function promptText(n) {
     var o = n.o;
     if (n.kind === 'herb') return 'Kneel at the ' + (o.kind || 'herb');
+    if (n.kind === 'event') return 'Kneel at the spirit herb';
     if (n.kind === 'seam') return o.spent ? 'The rock needs rest: new seams tomorrow' : 'Mine the ' + o.name;
     if (n.kind === 'find') return o.secret ? 'Something stirs here: look' : 'Something glints: look';
     if (n.kind === 'beast') return 'Fight the ' + (o.tier === 'normal' ? '' : o.tierName + ' ') + o.name;
@@ -724,6 +727,7 @@
     if (n.kind === 'herb') gather(n.o);
     else if (n.kind === 'find') discover(n.o);
     else if (n.kind === 'seam') mine(n.o);
+    else if (n.kind === 'event') gather(n.o, true);
     else if (n.kind === 'beast') engage(n.o);
     else openTalk(n.o);
   }
@@ -762,13 +766,60 @@
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function htmlLine(tag, cls, html) { var e = el(tag, cls); e.innerHTML = html; return e; }   // the server's own lines
   var gHerb = null, fx = [], gSink = null, spirit = null;
+  /* A heavenly phenomenon (web/herb_events.py): a shared spirit herb somewhere in the Moon Forest. Everyone is told a
+     light has risen (a banner and a bell, wherever they are); where it stands shows only on its own land: a pillar of
+     light (SHOAIB's video, added as light) over a bud of light. Kneel and the ordinary round opens; the first right
+     answer the server handles pulls it free. */
+  var EVENT = null, evSeen = {}, evBar = document.getElementById('evBar'), evVid = null;
+  function eventNews(e) {
+    var was = EVENT; EVENT = e;
+    if (e && was && was.id === e.id && was.live === e.live) e.t = was.t; else if (e) e.t = 0;      // t: since it rose, or since it began to fade
+    if (!evBar) return;
+    if (!e) { evBar.hidden = true; return; }
+    var key = e.id + (e.live ? ':live' : ':gone');
+    if (!evSeen[key]) {
+      evSeen[key] = 1;
+      if (e.live && !evSeen[e.id + ':told']) { evSeen[e.id + ':told'] = 1; snd('task'); say('A strange light rises over the ' + e.region + '. An extraordinary spirit herb has appeared.'); }
+      else if (!e.live && evSeen[e.id + ':told']) say(e.mine ? 'You pulled the spirit herb free. The light over the ' + e.region + ' fades.' : 'The light over the ' + e.region + ' fades.');
+    }
+    evBar.hidden = !e.live;
+    if (e.live) {
+      var m = Math.max(1, Math.ceil(e.left / 60));
+      evBar.textContent = '✦ A light over the ' + e.region + ' · ' + m + ' min' + (e.mine || e.capped ? ' · you have claimed one today' : e.tried ? ' · you have knelt at it' : e.here ? ' · it is in this part of the forest' : e.inForest ? ' · in another part of the forest' : '');
+    }
+    if (e.here && !evVid && !CALM) {
+      evVid = document.createElement('video'); evVid.muted = true; evVid.loop = true; evVid.playsInline = true; evVid.src = '/art/gather/pillar.mp4';
+      evVid.play().catch(function () {});
+    }
+    if (e.here && e.live && !evSeen[e.id + ':near']) { evSeen[e.id + ':near'] = 1; sfx('pillar', 0.5); }
+  }
+  function drawEvent(e, x, y) {
+    e.t = (e.t || 0) + 1 / 60;
+    var fade = e.live ? Math.min(1, e.t / 1.5) : Math.max(0, 1 - e.t / 8), b = (Math.sin(e.t * 2) + 1) / 2;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= fade;
+    var w = 250 * ZOOM / 1.2, h = w * 1.8;
+    if (evVid && evVid.readyState >= 2) ctx.drawImage(evVid, x - w / 2, y - h * 0.955, w, h);
+    else { var pg = ctx.createLinearGradient(0, y - h, 0, y); pg.addColorStop(0, 'rgba(255,236,190,0)'); pg.addColorStop(1, 'rgba(255,240,205,.7)'); ctx.fillStyle = pg; ctx.fillRect(x - 12, y - h, 24, h); }
+    var beam = ctx.createLinearGradient(0, y - 1500, 0, y - h * 0.9);            // the light carries on up, seen from far off
+    beam.addColorStop(0, 'rgba(255,236,190,0)'); beam.addColorStop(1, 'rgba(255,236,190,.5)');
+    ctx.fillStyle = beam; ctx.fillRect(x - 7 - 2 * b, y - 1500, 14 + 4 * b, 1500 - h * 0.9);
+    var g = ctx.createRadialGradient(x, y - 22, 2, x, y - 22, 46 + 8 * b);         // the bud of light itself
+    g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(.35, 'rgba(255,226,160,.55)'); g.addColorStop(1, 'rgba(200,150,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(x - 60, y - 82, 120, 120);
+    for (var i = 0; i < 6; i++) {                                                 // petals of light, turning
+      var a = e.t * 0.5 + i * Math.PI / 3; ctx.save(); ctx.translate(x, y - 22); ctx.rotate(a);
+      ctx.fillStyle = 'rgba(255,240,210,.5)'; ctx.beginPath(); ctx.ellipse(0, -16, 5, 14, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    ctx.restore();
+    if (e.live && isNear(e)) { ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 12px Inter, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText('A spirit herb', x + 1, y - 73); ctx.fillStyle = '#FFF2C8'; ctx.fillText('A spirit herb', x, y - 74); ctx.restore(); }
+  }
   function sfx(kind, v) { snd('sample', kind, v); }
-  function gather(h) {
+  function gather(h, shared) {
     if (gOpen || pose) return;
     gOpen = true; gHerb = h; keys = {}; resetStick(); prompt.classList.remove('on');
     face(h.x, h.y);
     function ask() {
-      post('/world/gather', {place: PLACE, id: h.id, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (g) {
+      post(shared ? '/world/event/gather' : '/world/gather', {place: PLACE, id: h.id, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (g) {
         if (g.error || !g.mode) { closeGather(); say(g.error || 'The herb is gone.', true); poll(); return; }
         gp.hidden = false; showRound(g);
       }).catch(closeGather);
@@ -846,7 +897,7 @@
       var got = /✅ You gather|✨/.test((g.result || []).join(' '));
       snd(got ? 'picked' : 'missed');
       if (got) pulled(g);
-      else if (gHerb && g.target) { gHerb.gone = {t: 0, sunk: !!g.target.old}; fx.push({kind: 'ghost', h: gHerb, x: gHerb.x, y: gHerb.y, t: 0.55}); }   // lost: it wilts, or sinks away (drawn a moment longer)
+      else if (gHerb && gHerb.pic && g.target) { gHerb.gone = {t: 0, sunk: !!g.target.old}; fx.push({kind: 'ghost', h: gHerb, x: gHerb.x, y: gHerb.y, t: 0.55}); }   // lost: it wilts, or sinks away (drawn a moment longer)
       if (g.bonus && g.bonus.length) {                  // a spring or a shard of jade beside it
         var br = el('div', 'mgot');
         g.bonus.forEach(function (bn, bi) {
@@ -1483,6 +1534,7 @@
     });
     layered(movers).forEach(function (f) { f(); });
     fx.forEach(function (f) { if (f.t < 0) return; var p = toScreen(f.x, f.y); at(p.x, p.y, function () { if (f.kind === 'ghost') { drawHerb(f.h, 0, 0); return; } (f.kind === 'chips' ? drawChips : f.kind === 'spring' || f.kind === 'glint' ? drawBonus : drawFx)(f, 0, 0); }); });
+    if (EVENT && EVENT.here && (EVENT.live || (EVENT.t || 0) < 8)) { var ep = toScreen(EVENT.x, EVENT.y); at(ep.x, ep.y, function () { drawEvent(EVENT, 0, 0); }); }
     if (spirit && gHerb) { var sp = toScreen(gHerb.x + 0.9, gHerb.y - 0.9); at(sp.x, sp.y, function () { drawSpirit(0, 0); }); }
     Object.keys(OTHERS).forEach(function (k) {
       var o = OTHERS[k], p = toScreen(o.x, o.y);

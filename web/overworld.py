@@ -38,7 +38,7 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import crossroads, gather_art, hunt_map, land, mine_play, quarry, town, world_tasks
+from . import crossroads, gather_art, herb_events, hunt_map, land, mine_play, quarry, town, world_tasks
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -248,6 +248,7 @@ class World:
         self.clock = clock
         self.rng_factory = rng_factory
         self.mines = mine_play.Mines(clock, (lambda uid: rng_factory()) if rng_factory else None)
+        self.events = herb_events.Events(clock, rng_factory() if rng_factory else None)
         self.lock = threading.RLock()
         self._w = {}
         self.with_conn = None                     # runs fn(conn, ...) on a fresh connection (the website sets it)
@@ -525,13 +526,15 @@ class World:
         """A herb whose round was answered (or ran out) while the page was away is gone: it regrows elsewhere."""
         if w.gathering is None:
             return
+        self._event_round(w, conn, uid)
         s = self.gathers.catch_up(conn, uid)
         if s is None or s.g.round is None:
             place, hid = w.gathering
             w.gathering = None
             last = s.last[0] if s and s.last else None
             if last is not None and last.kind == "herb":
-                self._picked(w, conn, uid, place, hid)
+                if place != "event":                      # the shared herb isn't one of your own: nothing regrows
+                    self._picked(w, conn, uid, place, hid)
                 if s.g.gathered and s.g.gathered[-1] is last.herb:     # picked, not a wrong plant or too slow
                     world_tasks.record(conn, uid, "herbs", self.clock())
 
@@ -578,6 +581,7 @@ class World:
                     "tasks": world_tasks.board(conn, uid, self.clock()),
                     "wary": bool(quiet), "quiet": _quiet_line(quiet),
                     "mine": self.mines.view(conn, uid) if PLACES[place].get("mine") else None,
+                    "event": self.events.view(conn, uid, place),
                     "wander": hunt_map.WANDER, "notice": hunt_map.NOTICE, "reach": HERB_REACH,
                     "beastReach": hunt_map.REACH}
 
@@ -602,11 +606,46 @@ class World:
             w.gathering = (place, hid) if s.g.round is not None and s.g.round.kind == "herb" else None
             return s, None
 
+    def gather_event(self, conn, uid, place, x, y):
+        """Kneel at the shared spirit herb (web/herb_events.py): your own round for it. (session, None) or (None, why)."""
+        with self.lock:
+            w = self._w.get(uid)
+            if self._at(w, place, x, y) is None:
+                return None, "Walk closer to the light."
+            self._settle(w, conn, uid)
+            if self.gathers.active(uid) and self.gathers.active(uid).g.round is not None:
+                return None, "Finish the herb in front of you first."
+            p = db.get_player(conn, uid)
+            if p is None:
+                return None, "No character yet."
+            got, why = self.events.kneel(conn, uid, place, w.x, w.y, p["realm"], w.rng)
+            if why:
+                return None, why
+            eid, herb = got
+            s, why = self.gathers.start(conn, uid, herb=herb, spirit=False)
+            if s is None:
+                return None, why
+            w.gathering = ("event", eid)
+            return s, None
+
+    def _event_round(self, w, conn, uid):
+        """The event id whose round this player has open, after calling it off if someone else has taken the herb."""
+        if w is None or not w.gathering or w.gathering[0] != "event":
+            return None
+        eid = w.gathering[1]
+        if self.events.taken(conn, eid, uid):
+            self.gathers.call_off(uid, gather_play_taken())
+        return eid
+
     def pick(self, conn, uid, key, turn):
         """Your choice in the gathering round. A herb round answered: that herb is gone and regrows elsewhere."""
         with self.lock:
             w = self._w.get(uid)
-            s = self.gathers.pick(conn, uid, key, turn)
+            eid = self._event_round(w, conn, uid)
+            if eid is not None:
+                s = self.gathers.pick(conn, uid, key, turn, claim=lambda: self.events.claim(conn, uid, eid))
+            else:
+                s = self.gathers.pick(conn, uid, key, turn)
             if w is not None:
                 self._settle(w, conn, uid)
             return s
@@ -615,6 +654,7 @@ class World:
         """Close the gathering panel mid-round: that herb counts as missed (and is gone)."""
         with self.lock:
             w = self._w.get(uid)
+            self._event_round(w, conn, uid)
             s = self.gathers.stop(conn, uid, turn)
             if w is not None:
                 self._settle(w, conn, uid)
@@ -734,6 +774,11 @@ def _who(conn, uid):
         return None
     look = looks.of_player(p)
     return {"name": p["name"], "realm": f"{p['realm']} · {rules.ordinal(p['layer'])}", "look": looks.gender_of(look)}
+
+
+def gather_play_taken():
+    from .gather_play import TAKEN_LINE
+    return TAKEN_LINE
 
 
 def _quiet_line(why):

@@ -9,6 +9,7 @@ The open world's pages (web/overworld.py, docs/world.md):
   /world/state        what is out there now (herbs regrown, beasts, finds, the trip)
   /world/gather       kneel at a herb: a round of the gathering game (web/gather_play.py)
   /world/gather/pick  your choice; /world/gather/away walks away from it
+  /world/event/gather kneel at the shared spirit herb of a heavenly phenomenon (web/herb_events.py)
   /world/engage       a beast and you meet: the fight (/hunt)
   /world/discover     look at what glints: one of /explore's finds
   /world/mine         start on a seam in the Ironvein Quarry (web/mine_play.py); /world/mine/done: the blows struck
@@ -207,6 +208,13 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             s, why = world.gather(c, uid, place, num(hid), x, y)
             return gather_out(c, uid, s, why)
         return await post_json(request, start, "place", "id", "x", "y")
+
+    @app.post("/world/event/gather")
+    async def world_event_gather(request: Request):
+        def start(c, uid, place, x, y):
+            s, why = world.gather_event(c, uid, place, x, y)
+            return gather_out(c, uid, s, why)
+        return await post_json(request, start, "place", "x", "y")
 
     @app.post("/world/gather/pick")
     async def world_gather_pick(request: Request):

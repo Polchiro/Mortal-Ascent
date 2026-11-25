@@ -66,6 +66,21 @@ CREATE TABLE IF NOT EXISTS daily_counts (
     PRIMARY KEY (user_id, name, day)
 );
 
+CREATE TABLE IF NOT EXISTS world_events (  -- shared rare herb events on the website (web/herb_events.py)
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    day         TEXT    NOT NULL,   -- UTC date, YYYY-MM-DD
+    n           INTEGER NOT NULL,   -- which of the day's events (0, 1 ...)
+    place       TEXT    NOT NULL,   -- the land it appears on
+    x           REAL    NOT NULL,
+    y           REAL    NOT NULL,
+    type        TEXT    NOT NULL,   -- the herb's type (qi, healing ...); its grade is the claimant's own roll
+    starts      REAL    NOT NULL,
+    ends        REAL    NOT NULL,
+    claimed_by  INTEGER,            -- the player who pulled it free (NULL: nobody yet)
+    claimed_at  REAL,
+    UNIQUE (day, n)
+);
+
 CREATE TABLE IF NOT EXISTS handled_messages (
     message_id  INTEGER PRIMARY KEY,   -- an "m" command message that a copy of the bot answered
     at          REAL    NOT NULL
