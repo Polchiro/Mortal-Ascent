@@ -7,6 +7,14 @@
   "step_run_5.mp3",
   "step_run_6.mp3"
  ],
+ "run#male": [
+  "step_run_male_1.mp3",
+  "step_run_male_2.mp3",
+  "step_run_male_3.mp3",
+  "step_run_male_4.mp3",
+  "step_run_male_5.mp3",
+  "step_run_male_6.mp3"
+ ],
  "walk": [
   "step_walk_1.mp3",
   "step_walk_2.mp3",
@@ -14,5 +22,13 @@
   "step_walk_4.mp3",
   "step_walk_5.mp3",
   "step_walk_6.mp3"
+ ],
+ "walk#male": [
+  "step_walk_male_1.mp3",
+  "step_walk_male_2.mp3",
+  "step_walk_male_3.mp3",
+  "step_walk_male_4.mp3",
+  "step_walk_male_5.mp3",
+  "step_walk_male_6.mp3"
  ]
 }
