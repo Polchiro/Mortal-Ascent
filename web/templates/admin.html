@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Admin · Mortal Ascent{% endblock %}
+{% block body %}
+{# The admin panel (web/admin_panel.py, docs/web.md "Admin panel"): Discord's /admin tools on one page, for
+   ADMIN_IDS only. Every form posts one action to /admin/do and comes back here with what happened. #}
+{% include "_topbar.html" %}
+{% set t = s.target %}
+{% set c = s.choices %}
+{% macro form(action) %}<form method="post" action="/admin/do" class="adform" id="{{ action }}">
+  <input type="hidden" name="action" value="{{ action }}"><input type="hidden" name="token" value="{{ s.token }}">
+  <input type="hidden" name="who" value="{{ s.who }}">{{ caller() }}</form>{% endmacro %}
+<main class="adm">
+  <header class="adhead">
+    <div>
+      <p class="kicker">TESTING TOOLS</p>
+      <h1>Admin panel</h1>
+      <p class="sub">The same tools as <code>/admin</code> on Discord. Only the IDs in <code>ADMIN_IDS</code> see this page.</p>
+    </div>
+    <form method="get" action="/admin" class="adwho">
+      <label for="adwho">Working on</label>
+      <select id="adwho" name="who" onchange="this.form.submit()">
+        {% for p in s.players %}<option value="{{ p.id }}"{% if p.id == s.who %} selected{% endif %}>{{ p.label }}{% if p.id == s.me %} (you){% endif %}</option>{% endfor %}
+      </select>
+      <noscript><button class="btn" type="submit">Go</button></noscript>
+    </form>
+  </header>
+
+  {% if s.done %}
+  <div class="addone {{ 'ok' if s.done.ok else 'bad' }}" role="status">
+    {% for l in s.done.lines %}<p>{{ l | safe }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if t %}
+  <section class="adcard adme">
+    <b>{{ t.name }}</b><span>{{ t.realm }} · {{ t.layer }} Layer</span><span>Qi {{ t.qi }}</span>
+    <span>{{ t.coins }} coins · {{ t.pearls }} pearls</span><span>Bag {{ t.slots }}</span>
+    {% if t.injured %}<span class="warn">Injured {{ t.injured }}</span>{% endif %}
+  </section>
+  {% else %}
+  <p class="addone bad">That player has not used /start yet.</p>
+  {% endif %}
+
+  <div class="adgrid">
+    <section class="adcard adchest">
+      <h2>Give chests</h2>
+      <p class="sub">To test opening on the Treasure Shelf.</p>
+      {% call form("chest") %}
+      <div class="adchests">
+        {% for k, name in c.chests %}<button class="chip k-{{ k }}" type="submit" name="tier" value="{{ k }}">{{ name }}</button>{% endfor %}
+      </div>
+      <label>How many <input type="number" name="amount" value="5" min="1" max="999"></label>
+      {% endcall %}
+      <a class="adlink" href="/chests?from=/admin">Open the Treasure Shelf ›</a>
+    </section>
+
+    <section class="adcard">
+      <h2>Give coins, pearls, Qi</h2>
+      {% call form("give") %}
+      <label>Lotus Coins <input type="number" name="coins" min="0" max="10000000" placeholder="0"></label>
+      <label>Moon Pearls <input type="number" name="pearls" min="0" max="1000000" placeholder="0"></label>
+      <label>Qi <small>(levels up like normal Qi)</small> <input type="number" name="qi" min="0" max="100000000" placeholder="0"></label>
+      <button class="btn btn-gold" type="submit">Give</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Reset</h2>
+      <p class="sub">Every cooldown and daily limit, and the injury.</p>
+      {% call form("reset") %}<button class="btn btn-gold" type="submit">Reset this player</button>{% endcall %}
+    </section>
+
+    <section class="adcard adwide">
+      <h2>Give an item</h2>
+      <p class="sub">Any item in the game: weapons, armor, artifacts, materials, Beast Cores, herbs, pills, manuals, chests.</p>
+      {% call form("item") %}
+      <label>Item <input type="text" name="item" list="aditems" data-search="item" placeholder="Start typing: jade, sword, qi pill..." autocomplete="off" required></label>
+      <datalist id="aditems"></datalist>
+      <div class="adrow">
+        <label>How many <input type="number" name="amount" value="1" min="1" max="100000"></label>
+        <label>Quality <small>(gear)</small> <select name="quality"><option value="">Random</option>{% for q in c.qualities %}<option value="{{ q }}">{{ q | title }}</option>{% endfor %}</select></label>
+        <label>Age <small>(herbs)</small> <select name="age"><option value="">10-year</option>{% for a in c.ages %}<option value="{{ a }}">{{ a }}-year</option>{% endfor %}</select></label>
+        <label>Patterns <small>(pills)</small> <input type="number" name="patterns" min="1" max="9" placeholder="5"></label>
+      </div>
+      <button class="btn btn-gold" type="submit">Give</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Cooldowns for everyone</h2>
+      <p class="sub">Now: {{ s.cooldowns }}</p>
+      {% call form("cooldowns") %}
+      <div class="adrow">
+        <label>Hours <input type="number" name="hours" min="0" max="168" placeholder="1"></label>
+        <label>Minutes <input type="number" name="minutes" min="0" max="1416" placeholder="0"></label>
+      </div>
+      <div class="adrow">
+        <button class="btn btn-gold" type="submit" name="how" value="off">Turn off</button>
+        <button class="btn" type="submit" name="how" value="on">Turn back on</button>
+      </div>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Realm</h2>
+      {% call form("realm") %}
+      <div class="adrow">
+        <label>Realm <select name="realm">{% for r in c.realms %}<option{% if t and r == t.realm %} selected{% endif %}>{{ r }}</option>{% endfor %}</select></label>
+        <label>Layer <input type="number" name="layer" value="1" min="1" max="10"></label>
+      </div>
+      <p class="sub">The Qi bar starts empty.</p>
+      <button class="btn btn-gold" type="submit">Set</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Techniques</h2>
+      {% call form("technique") %}
+      <label>Teach <input type="text" name="technique" list="adtechs" data-search="technique" placeholder="A name, or all" autocomplete="off" required></label>
+      <datalist id="adtechs"></datalist>
+      <button class="btn btn-gold" type="submit">Teach</button>
+      {% endcall %}
+      {% call form("mastery") %}
+      <div class="adrow">
+        <label>Mastery of <select name="technique"><option value="all">All techniques</option>{% if t %}{% for x in t.techniques %}<option value="{{ x.id }}">{{ x.name }} · {{ x.stage }}</option>{% endfor %}{% endif %}</select></label>
+        <label>Stage <select name="stage">{% for i, n in c.stages %}<option value="{{ i }}">{{ n }}</option>{% endfor %}</select></label>
+      </div>
+      <label class="adcheck"><input type="checkbox" name="full_bar"> Fill the bar (the trial to the next stage is ready)</label>
+      <button class="btn btn-gold" type="submit">Set mastery</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Crafts</h2>
+      {% call form("alchemy") %}
+      <div class="adrow"><label>Alchemist rank <select name="rank">{% for r, n in c.ranks %}<option value="{{ r }}">{{ n }}</option>{% endfor %}</select></label>
+      <button class="btn btn-gold" type="submit">Set</button></div>
+      {% endcall %}
+      {% call form("blacksmith") %}
+      <div class="adrow"><label>Blacksmith rank <select name="rank">{% for r, n in c.smith_ranks %}<option value="{{ r }}">{{ n }}</option>{% endfor %}</select></label>
+      <button class="btn btn-gold" type="submit">Set</button></div>
+      {% endcall %}
+      {% call form("foraging") %}
+      <div class="adrow">
+        <label>Herbal Insight <input type="number" name="insight" min="0" max="100000"></label>
+        <label>Herbs gathered <input type="number" name="herbs" min="0" max="10000000"></label>
+      </div>
+      <button class="btn btn-gold" type="submit">Set foraging</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Test fight</h2>
+      <p class="sub">Any beast, waiting in your Explore. No rewards, no injury, no cooldown.</p>
+      {% call form("fight") %}
+      <label>Beast <input type="text" name="beast" list="adbeasts" data-search="beast" placeholder="Start typing a beast" autocomplete="off" required></label>
+      <datalist id="adbeasts"></datalist>
+      <div class="adrow">
+        <label>As tier <select name="tier"><option value="">Its own</option>{% for k, n in c.tiers %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select></label>
+      </div>
+      <label class="adcheck"><input type="checkbox" name="home_realm"> Its own realm's strength (not scaled to you)</label>
+      <button class="btn btn-gold" type="submit">Queue the fight</button>
+      {% endcall %}
+    </section>
+
+    <section class="adcard">
+      <h2>Duel stats</h2>
+      {% call form("duelstats") %}<button class="btn" type="submit">Show</button>{% endcall %}
+    </section>
+  </div>
+</main>
+<script>
+/* the pick lists: as you type, the matching items, techniques or beasts (GET /admin/search) */
+document.querySelectorAll('input[data-search]').forEach(function (inp) {
+  var list = document.getElementById(inp.getAttribute('list')), timer = null;
+  function fill() {
+    fetch('/admin/search?kind=' + inp.dataset.search + '&q=' + encodeURIComponent(inp.value), {credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        list.innerHTML = '';
+        rows.forEach(function (r) { var o = document.createElement('option'); o.value = r.id; o.label = r.label; o.textContent = r.label; list.appendChild(o); });
+      });
+  }
+  inp.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(fill, 180); });
+  inp.addEventListener('focus', fill, {once: true});
+});
+</script>
+{% endblock %}

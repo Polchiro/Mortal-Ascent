@@ -306,6 +306,31 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
 
 The frame, tracker, dock and hint change nothing in the game; the tasks are the one part that pays (docs/world.md).
 
+## Admin panel
+
+`/admin` on the website: Discord's `/admin` testing tools on one page (`web/admin_panel.py`, `web/admin_routes.py`,
+`web/templates/admin.html`). Only the Discord user IDs in **`ADMIN_IDS`** (`.env`, the same list as Discord's
+`/admin`) see it: they get an **Admin** tab in the top bar; everyone else gets "Not Found". (Discord also lets the
+bot's owner in by asking Discord who owns the app; the website can't ask that, so put your own ID in `ADMIN_IDS`.)
+
+Pick the player to work on at the top (default: you). Each tool calls the same helper in `bot/admin.py` as the
+Discord command, so it does exactly the same:
+
+| Tool | Discord |
+|---|---|
+| **Give chests**: one press per tier (Common … Mythic), with how many; a link to the Treasure Shelf | `/admin item chest:<tier>` |
+| **Give coins, pearls, Qi** (Qi levels up like normal Qi) | `/admin give` |
+| **Reset**: every cooldown and daily limit, and the injury | `/admin reset` |
+| **Give an item**: any item, picked as you type, with quality, herb age, pill patterns | `/admin item` |
+| **Cooldowns for everyone**: off for hours and minutes, back on | `/admin cooldowns` |
+| **Realm** and layer (the Qi bar starts empty) | `/admin set_realm` |
+| **Techniques**: teach one or all; set mastery (and fill the bar) | `/admin give_technique`, `set_mastery` |
+| **Crafts**: alchemist and blacksmith rank, Herbal Insight and herbs gathered | `/admin set_alchemy`, `set_blacksmith`, `set_foraging` |
+| **Test fight**: any beast, waiting in your Explore (no rewards, no injury, no cooldown) | `/admin web_fight` |
+| **Duel stats** | `/admin duelstats` |
+
+Every form carries a token from your session, and what happened shows at the top of the panel.
+
 ## The Dantian
 
 `/dantian` (from the Qi line on the player plate, the Profile's Qi bar, or the gourd): your Internal Qi laid open over
