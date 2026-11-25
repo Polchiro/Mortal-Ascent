@@ -56,7 +56,7 @@ HERB_ICON = {"qi": "misc:herb_qi", "healing": "misc:herb_healing", "purity": "mi
 RARITY_COLOR = {"Rare": (120, 190, 255), "Very Rare": (200, 140, 255), "Legendary": (255, 205, 90)}
 
 OUTCOME = {"gathered": ("Gathered", GREEN_OK, "check"), "full": ("Bag full", (236, 196, 90), "check"),
-           "poison": ("Poisoned", RED_BAD, "skull"), "wrong": ("Wrong plant", (236, 150, 70), "cross"),
+           "wrong": ("Wrong plant", (236, 150, 70), "cross"),
            "slow": ("Too slow", (190, 180, 160), "hourglass"), "passed": ("Passed", GREEN_OK, "check"),
            "failed": ("Wrong sign", RED_BAD, "cross")}
 
@@ -332,10 +332,10 @@ def careful_panel(img, data):
     box = CAREFUL
     _glass(img, box)
     x0, y0, x1, y1 = box
-    T.icon(img, "skull", (x0 + 36, y0 + 46), 32, RED_BAD)
+    T.icon(img, "cross", (x0 + 36, y0 + 46), 32, (236, 150, 70))
     d = ImageDraw.Draw(img)
     f = font("Inter.ttf", 28, "Bold")
-    T.text(d, (x0 + 66, y0 + 46), "Poison", f, (255, 150, 130), "lm")
+    T.text(d, (x0 + 66, y0 + 46), "Careful", f, (255, 200, 150), "lm")
     f2 = font("Inter.ttf", 26, "Medium")
     for i, line in enumerate(T.wrap(d, data["decoy_note"], f2, x1 - x0 - 50, lines=2)):
         T.text(d, (x0 + 26, y0 + 86 + i * 32), line, f2, SOFT, "lm")

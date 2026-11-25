@@ -13,8 +13,6 @@ def outcome(text):
     """The kind of result from the text Gathering.answer returned."""
     if text.startswith(("✅ You find", "✅ You gather", "✨")):
         return "full" if "bag is full" in text else "gathered"
-    if text.startswith("☠"):
-        return "poison"
     if text.startswith("⏳"):
         return "slow"
     if text.startswith("👻"):
@@ -45,7 +43,7 @@ def _common(g, player):
     mult, nxt = streak_bonus(player["herb_streak"])
     return {"session": rows, "gathered": len(g.gathered), "best": best, "hp": g.hp, "max_hp": g.max_hp,
             "streak": player["herb_streak"], "streak_mult": mult, "streak_next": nxt,
-            "decoy_note": f"−{alchemy.DECOY_HP_LOSS:.0%} HP, streak resets"}
+            "decoy_note": "A miss loses the herb and your streak"}
 
 
 def field_data(g, player, r, result_text=None, picked=None):

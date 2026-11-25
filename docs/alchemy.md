@@ -32,7 +32,7 @@ Every herb grade can be found at every realm. What you find is rolled by rarity,
 | Martial Ancestor | 2.7 | 42.4% | 21.4% | 13.5% | 11.5% | 11.3% |
 | Martial Saint | 3.0 | 36.6% | 20.6% | 14.4% | 13.6% | 14.8% |
 
-**Why rare herbs can't be farmed.** Rarer grades are harder to pick (Heaven gives 6 seconds instead of 10, with look-alikes), a miss loses the herb, the Wandering Spirit check and the review flags still apply, and pills need an alchemist rank: a Mortal holding a Heaven herb can't refine it until 9th Grade. The NPC merchant never buys herbs.
+**Why rare herbs can't be farmed.** Rarer grades are harder to pick (Heaven gives 6 seconds instead of 10), a miss loses the herb, the Wandering Spirit check and the review flags still apply, and pills need an alchemist rank: a Mortal holding a Heaven herb can't refine it until 9th Grade. The NPC merchant never buys herbs.
 
 **Rare finds.** Mystic (Rare), Earth (Very Rare) and Heaven (Legendary) herbs get a special line when they appear and when you gather them, and the gather card is framed in the rarity's colour. Earth and Heaven finds are also announced in the channel (`ANNOUNCE_FROM_GRADE`).
 
@@ -57,8 +57,13 @@ Every herb grade can be found at every realm. What you find is rolled by rarity,
 
 ### All herbs
 
-Each tier has 4 real herbs and 2 poisonous decoys. A decoy looks almost
-like a real herb with **one detail wrong** — players must read carefully.
+Each tier has 4 real herbs. A round shows all four of a tier; you pick the one the bot named by reading its
+description.
+
+> **No more poisonous look-alikes (Nov 25 2026, SHOAIB).** Each tier used to have 2 decoys (Ghost Grass, Bitter
+> Nettle, Fool's Ginseng, Snake Moss, Shadow Mushroom, Weeping Lily, Grave Ginseng, Fire Thorn, Demon Lotus, Void
+> Fruit) that cost 5% HP when picked. They are gone from `/gather` and the website alike: a wrong pick just loses
+> the herb and resets the streak, nothing costs HP, and old herbs show 4 choices instead of 6.
 
 **凡 Mortal**
 | Herb | Type | Description |
@@ -67,8 +72,6 @@ like a real herb with **one detail wrong** — players must read carefully.
 | Red Berry | ❤️ Healing | Small red berries with a sweet smell |
 | Dew Leaf | 💧 Purity | Broad leaf always holding a drop of dew |
 | Iron Root | 🏔️ Breakthrough | Dark root, heavy as metal |
-| ☠️ Ghost Grass | Decoy | Like Spirit Grass, but the blades are grey at the tips |
-| ☠️ Bitter Nettle | Decoy | Red berries hidden under stinging leaves |
 
 **黄 Yellow**
 | Herb | Type | Description |
@@ -77,8 +80,6 @@ like a real herb with **one detail wrong** — players must read carefully.
 | Blood Flower | ❤️ Healing | Deep red petals with dark veins |
 | Silver Moss | 💧 Purity | Moss that glows faintly on north-facing stones |
 | Stone Root | 🏔️ Breakthrough | Grey root that grows through solid rock |
-| ☠️ Fool's Ginseng | Decoy | Golden root, but cold to the touch |
-| ☠️ Snake Moss | Decoy | Glowing moss on south-facing stones |
 
 **玄 Mystic**
 | Herb | Type | Description |
@@ -87,8 +88,6 @@ like a real herb with **one detail wrong** — players must read carefully.
 | Heart Lotus | ❤️ Healing | Pink lotus with a heart-shaped center |
 | Jade Lily | 💧 Purity | Green-white lily, cool as jade |
 | Thunder Root | 🏔️ Breakthrough | Black root found where lightning struck |
-| ☠️ Shadow Mushroom | Decoy | Pale blue cap, but open in daylight |
-| ☠️ Weeping Lily | Decoy | Green-white lily dripping dark sap |
 
 **地 Earth**
 | Herb | Type | Description |
@@ -97,8 +96,6 @@ like a real herb with **one detail wrong** — players must read carefully.
 | Phoenix Flower | ❤️ Healing | Orange petals warm like embers |
 | Snow Lily | 💧 Purity | White lily that blooms only in snow |
 | Mountain Root | 🏔️ Breakthrough | Massive root deep beneath mountain cliffs |
-| ☠️ Grave Ginseng | Decoy | Person-shaped root, but grows near bones |
-| ☠️ Fire Thorn | Decoy | Orange petals hiding burning thorns |
 
 **天 Heaven**
 | Herb | Type | Description |
@@ -107,8 +104,6 @@ like a real herb with **one detail wrong** — players must read carefully.
 | Immortal Peach | ❤️ Healing | Glowing peach that smells of spring |
 | Star Dew | 💧 Purity | Dewdrops that shine like stars, even by day |
 | Chaos Root | 🏔️ Breakthrough | Root that seems to shift colours as you look |
-| ☠️ Demon Lotus | Decoy | Nine-leaf lotus, but blood-red underneath |
-| ☠️ Void Fruit | Decoy | Glowing fruit that casts no shadow |
 
 ### Herb age
 
@@ -139,10 +134,10 @@ Every herb has an age. Older herbs are rarer and make crafting easier.
 1. `/gather` opens **one gathering message** that updates in place
 2. The bot names the herb you are looking for and its description:
    > 🌿 *You search the misty slope for **Silver Moss**. It glows faintly and grows only on north-facing stones...*
-3. **4 numbered choices** appear — one real herb, the rest decoys and other plants
+3. **4 numbered choices** appear — the tier's four herbs, one of them the herb named
 4. Pick before time runs out:
    - ✅ **Correct:** you get the herb (age is rolled)
-   - ☠️ **Decoy:** poisoned — lose 5% HP (never below 1), nothing gathered
+   - ❌ **Another plant:** nothing gathered, the streak resets
    - ⏳ **Too slow:** nothing gathered
 5. Press **🌿 Gather Again** to continue in the same message. **Stop** ends gathering; pressing it during a round
    counts that round as missed (like a timeout).
@@ -152,13 +147,12 @@ The message is one image card, edited every round (cards/herbfield.py, data in b
 
 - **Top:** the place being searched, the *You are looking for* plate (herb icon, name, tier, type, what it is used
   for, the description), a countdown ring and the Herbal Insight streak with its bonus
-- **Choice cards (4, or 6 for old herbs):** a number, a small drawn plant and a short **look** text. Every herb and
-  decoy has its own look in `alchemy.LOOKS`: what you *see*, worded differently from the description, so a pick
-  means reading the description, not matching the same words. A decoy's picture and look differ from its herb in
-  the same one detail as its description (grey tips, a south-facing stone, cold instead of warm, near bones ...).
-- **This session** (herbs gathered with ages, best find) and **Careful** (what a decoy costs, your HP)
+- **Choice cards (4):** a number, a small drawn plant and a short **look** text. Every herb
+  has its own look in `alchemy.LOOKS`: what you *see*, worded differently from the description, so a pick
+  means reading the description, not matching the same words.
+- **This session** (herbs gathered with ages, best find) and **Careful** (what a wrong pick costs, your HP)
 - After a pick the same card rings the real herb in green and a wrong pick in red
-- Buttons **1–4** (or **1–6**) with drawn number icons, and **Stop**. The Wandering Spirit check has its own small card.
+- Buttons **1–4** with drawn number icons, and **Stop**. The Wandering Spirit check has its own small card.
 
 | Herb tier | Time to pick |
 |---|---|
@@ -168,13 +162,13 @@ The message is one image card, edited every round (cards/herbfield.py, data in b
 | Earth | 7s |
 | Heaven | 6s |
 
-At higher tiers, descriptions are subtler and decoys are closer to the real herb.
+At higher tiers there is less time to read.
 
 ### Old herbs fight back
 When the roll gives a **100-year or older** herb, the pick gets harder:
 > ✨ *A **500-year Moon Mushroom!** It senses you and begins to sink into the earth...*
 
-- **6 choices** instead of 4
+- **4 choices**, as any round (6 while there were look-alikes)
 - **3 seconds less** to choose (minimum 4s)
 - Fail and the herb **escapes**
 

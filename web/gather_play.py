@@ -3,7 +3,7 @@ Gathering herbs on the website: a herb you walk up to out in the world (web/over
 
 The game itself is the bot's: bot/gathering.py (Gathering: next_round, answer, the Wandering Spirit, the streak,
 the review flags) and every number in alchemy.py. This module only keeps each player's gathering in memory (one
-Gathering per player, so poison and the review clock last across the herbs of a walk) and turns a round into the
+Gathering per player, so the review clock lasts across the herbs of a walk) and turns a round into the
 data the map's gathering panel shows. The herb itself is the one that grew where you knelt: its grade and type were
 rolled when it sprouted (web/overworld.py, with the gatherer's own grade odds), and the round is played for it.
 
