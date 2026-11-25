@@ -134,6 +134,20 @@ def test_the_art_is_there():
         assert os.path.exists(os.path.join(ROOT, "art", "chest", f)), f
 
 
+def test_every_chest_has_a_closed_and_an_open_picture():
+    from web import inventory
+    for tier in loot.CHEST_ORDER:
+        assert cp.open_picture(tier).startswith(f"/art/chest/{tier}_open.webp")
+        ch = loot.chest(tier)
+        assert inventory.item_picture({"category": ch["category"], "key": ch["key"]}).startswith(f"/art/chest/{tier}.webp")
+
+
+def test_the_shelf_and_the_vault_know_the_open_picture(conn):
+    give(conn, A, "epic", 1)
+    by = {t["key"]: t for t in cp.shelf(conn, A)["tiers"]}
+    assert by["epic"]["open"].startswith("/art/chest/epic_open.webp")
+
+
 # ── the pages ────────────────────────────────────────────────────────────────
 
 pytest.importorskip("fastapi")

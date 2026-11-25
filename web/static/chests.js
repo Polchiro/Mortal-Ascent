@@ -46,7 +46,7 @@
       st.style.width = 1920 * k + 'px'; st.style.height = 1080 * k + 'px';
       st.style.left = (W - 1920 * k) / 2 + 'px'; st.style.top = (H - 1080 * k) / 2 + 'px';
       st.style.setProperty('--k', k);
-      if (d[1]) $('chaltar').style.width = Math.min(0.28 * 1920 * k, W * 0.72) + 'px';   // a phone: still within the screen
+      if (d[1]) $('chaltar').style.width = Math.min(0.34 * 1920 * k, W * 0.8) + 'px';   // a phone: still within the screen
     });
     var c = $('chfx'), r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr);
@@ -140,7 +140,8 @@
     main.style.setProperty('--rc', t.color);
     $('chvault').className = 'chvault tier-' + t.key;
     $('chvname').textContent = n > 1 ? t.name + ' ×' + n : t.name;
-    $('chchest').src = t.picture; $('chchest').className = 'chchest in';
+    $('chchest').src = t.picture; $('chopened').src = t.open || t.picture;
+    $('chbox').className = 'chbox in';
     $('chcards').innerHTML = ''; $('chcards').className = 'chcards'; $('chsum').hidden = true; $('chspot').hidden = true; $('chcoins').hidden = true;
     $('chskip').hidden = true; $('chdark').className = 'chdark';
     if (ART.vault_video) {
@@ -178,7 +179,7 @@
     var box = $('chseals'), s = box.querySelector('.cseal:not(.gone)');
     if (s) { s.classList.add('gone'); if (ART.crack) s.style.backgroundImage = 'url(' + ART.crack + ')'; }
     left -= 1; fs('block'); fs('stun', null, 40);
-    $('chchest').classList.remove('jolt'); void $('chchest').offsetWidth; $('chchest').classList.add('jolt');
+    $('chbox').classList.remove('jolt'); void $('chbox').offsetWidth; $('chbox').classList.add('jolt');
     if (left <= 0) { stopHold(); $('chhint').classList.remove('on'); if (R) burst(); else $('chhint').textContent = ''; }
   }
   function startHold(e) {
@@ -204,11 +205,13 @@
     $('chhint').classList.remove('on'); $('chskip').hidden = false;
     var big = T.key === 'mythic' || T.key === 'legendary';
     if (T.key === 'mythic') $('chdark').className = 'chdark on';
-    $('chchest').className = 'chchest shake' + (T.key === 'mythic' ? ' float' : '');
+    $('chbox').className = 'chbox shake' + (T.key === 'mythic' ? ' float' : '');
     var wait = quick ? 0 : (big ? 1300 : 800);
     later(function () {
       flash(big ? 0.7 : 0.5);
-      $('chchest').className = 'chchest spent';
+      $('chbox').className = 'chbox open' + (T.key === 'mythic' ? ' floated' : '');      // the lid snaps open
+      fs('block'); sparks(big ? 90 : 50);
+      later(function () { $('chbox').classList.add('rest'); }, 1600);
       if (burstV && !quick) { try { burstV.currentTime = 0; } catch (e) {} var p = burstV.play(); if (p && p.catch) p.catch(function () {}); }
       audio(ART.burst_sound, soundVol * 0.9); fs('boom');
       later(cards, quick ? 200 : 900);
@@ -230,9 +233,30 @@
     tc.globalCompositeOperation = 'multiply'; tc.fillStyle = 'rgb(' + c.map(function (x) { return Math.min(255, Math.round(x * 0.6 + 110)); }) + ')'; tc.fillRect(0, 0, 640, 360);
     fx.globalCompositeOperation = 'lighter'; fx.globalAlpha = alpha; fx.drawImage(tintC, x, y, w, h); fx.globalAlpha = 1; fx.globalCompositeOperation = 'source-over';
   }
-  function frame() {
+  /* sparks thrown up out of the open chest, in its colour, falling back as they fade */
+  var motes = [];
+  function sparks(n) {
+    if (reduced) n = Math.round(n / 4);
+    var r = $('chbox').getBoundingClientRect(), dpr = fxc.width / Math.max(1, fxc.getBoundingClientRect().width);
+    var x = (r.left + r.width / 2) * dpr, y = (r.top + r.height * 0.42) * dpr, w = r.width * 0.32 * dpr, t = performance.now();
+    for (var i = 0; i < n; i++) motes.push({x: x + (Math.random() - 0.5) * w, y: y, vx: (Math.random() - 0.5) * 5 * dpr,
+      vy: -(4 + Math.random() * 9) * dpr, t: t, life: 900 + Math.random() * 900, s: (1.5 + Math.random() * 2.5) * dpr});
+  }
+  function frame(now) {
     fx.setTransform(1, 0, 0, 1, 0, 0); fx.clearRect(0, 0, fxc.width, fxc.height);
     if (burstV && !burstV.paused && !burstV.ended && burstV.readyState >= 2) drawVideo(burstV, 1);
+    if (motes.length) {
+      var c = rgb(T && T.color);
+      fx.globalCompositeOperation = 'lighter';
+      motes = motes.filter(function (m) {
+        var k = (now - m.t) / m.life; if (k >= 1) return false;
+        m.x += m.vx; m.y += m.vy; m.vy += 0.22 * (fxc.width / 1440); m.vx *= 0.985;
+        fx.fillStyle = 'rgba(' + c.map(function (v) { return Math.min(255, v + 90); }) + ',' + (1 - k) + ')';
+        fx.beginPath(); fx.arc(m.x, m.y, m.s * (1 - k * 0.5), 0, 7); fx.fill();
+        return true;
+      });
+      fx.globalCompositeOperation = 'source-over';
+    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

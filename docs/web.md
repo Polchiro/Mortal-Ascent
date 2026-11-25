@@ -103,7 +103,8 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 
 - `?tab=<key>` picks a tab (an unknown one shows Weapons); `?item=<id>` picks an item. Only the
   logged-in player's own items can be picked.
-- Pictures: each item's painting (`cards/art_icons.py`); chests use `art/chests/<rarity>.png` and
+- Pictures: each item's painting (`cards/art_icons.py`); chests use the website's painted chests
+  (`art/chest/<rarity>.webp`, falling back to the bot's `art/chests/<rarity>.png`) and
   manuals their technique's icon. Items with no painted file (the 39 essences) are drawn by the bot's own
   card code and served from `/art/drawn/<kind>.png` (`web/drawn.py`, drawn once and kept in memory), so they
   look exactly like the Discord cards.
@@ -152,7 +153,10 @@ you knew before opening it, never with what is inside:
 
 The server opens the chest the moment you touch it (so the result is ready, and a second press can't open a second
 one: each opening carries a nonce, and the same nonce answers the same result). The chest shakes, light leaks out, and
-it **bursts** (SHOAIB's burst video and its sound, tinted to the chest's colour). The **Lotus Coins** pour out with a
+it **opens**: the lid snaps up with a little bounce (the closed picture swapped for the open one, drawn on the same
+canvas so the body doesn't move), rays of the chest's colour turn out of it, sparks of that colour fly up and fall
+back, and SHOAIB's **burst** video plays with its sound, tinted to the chest's colour. The chest then **stays open**
+on the altar, its light breathing softly, while the rewards come out. The **Lotus Coins** pour out with a
 counting number, then every reward lands as the **same jade slip**, and they turn over one by one, **worst first**.
 Each card's front shows its rarity: plain for Common, a coloured frame and band for Uncommon and Rare, turning rays
 for Epic, Legendary and Mythical, a glow and a tremor for Mythical; each turn's note rises with the rarity.
@@ -169,7 +173,13 @@ them**.
 
 **The art** (cut with `scripts/make_breakthrough_art.py`, into `art/chest/`): the shelf, the vault (a still, a loop
 and its room tone), the burst and the treasure moment's ring (light on black, added onto the scene), the jade slip,
-and the lid burst. The six chests are `art/chests/`, the seals Train's.
+and the lid burst. The seals are Train's.
+
+**The chests** (SHOAIB's paintings, closed and open, one pair per tier) are cut with `scripts/make_chest_art.py` into
+`art/chest/<tier>.webp` and `<tier>_open.webp`: the grey backdrop is modelled from the border and removed, Gemini's
+sparkle painted over, the floor shadow made see-through black, and the open picture scaled and moved until its base
+matches the closed one's, on a shared 720×720 canvas (the base at 86% of the height). The page uses them on the shelf,
+in the vault and in the bag; Discord keeps the bot's own `art/chests/`.
 
 ## The forge
 

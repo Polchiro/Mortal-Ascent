@@ -12,10 +12,10 @@ body.chbg .privacy{display:none}
 .chshelf{position:absolute;inset:0 400px 0 0;background:radial-gradient(ellipse at 50% 50%,#2a1a12,#0b0807 70%)}
 .ch[data-view=vault] .chshelf,.ch[data-view=vault] .chpanel{visibility:hidden}
 .chslots{position:absolute;inset:0}
-.cslot{position:absolute;width:15.5%;transform:translate(-50%,-100%);padding:0;border:0;background:none;cursor:pointer;color:inherit;
+.cslot{position:absolute;width:17.5%;transform:translate(-50%,-100%);padding:0;border:0;background:none;cursor:pointer;color:inherit;
   display:flex;flex-direction:column;align-items:center}
-.cslot img{position:relative;z-index:1;width:100%;display:block;filter:drop-shadow(0 calc(10px * var(--k,1)) calc(14px * var(--k,1)) rgba(0,0,0,.7));transition:transform .25s ease}
-.cslot .cglow{position:absolute;left:-12%;right:-12%;top:-10%;bottom:-6%;border-radius:50%;
+.cslot img{position:relative;z-index:1;width:100%;display:block;margin-bottom:-13.5%;filter:drop-shadow(0 calc(10px * var(--k,1)) calc(14px * var(--k,1)) rgba(0,0,0,.7));transition:transform .25s ease}
+.cslot .cglow{position:absolute;left:-8%;right:-8%;top:18%;bottom:-6%;border-radius:50%;
   background:radial-gradient(ellipse at 50% 60%,var(--rc) 0%,transparent 62%);opacity:.38;filter:blur(6px);animation:cglow 3.2s ease-in-out infinite}
 @keyframes cglow{50%{opacity:.6;transform:scale(1.05)}}
 .cslot:hover img,.cslot.on img{transform:translateY(-4%) scale(1.04)}
@@ -23,7 +23,7 @@ body.chbg .privacy{display:none}
 .cslot.none{cursor:default}
 .cslot.none img{opacity:.1;filter:grayscale(1) brightness(.4)}
 .cslot.none .cglow{display:none}
-.cqty{position:absolute;z-index:2;right:2%;top:2%;min-width:28px;padding:2px 8px;border-radius:999px;background:rgba(10,8,6,.85);border:1px solid var(--rc);
+.cqty{position:absolute;z-index:2;right:4%;top:40%;min-width:28px;padding:2px 8px;border-radius:999px;background:rgba(10,8,6,.85);border:1px solid var(--rc);
   font:800 clamp(11px,1.2vw,15px) Inter,sans-serif;color:#FFF3D6}
 .cqty:empty{display:none}
 .cname{position:absolute;z-index:2;top:100%;margin-top:4px;font:700 clamp(10px,1vw,13px) Cinzel,serif;color:#F5DCA6;text-shadow:0 1px 4px #000;white-space:nowrap}
@@ -60,19 +60,38 @@ body.chbg .privacy{display:none}
 @keyframes chtremor{20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
 .chdark{position:absolute;inset:0;z-index:2;background:radial-gradient(ellipse at 50% 58%,rgba(0,0,0,0) 18%,rgba(0,0,0,.86) 70%);opacity:0;transition:opacity 1.2s}
 .chdark.on{opacity:1}
-.chaltar{position:absolute;z-index:3;left:50%;top:66.5%;width:28%;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;user-select:none}
+.chaltar{position:absolute;z-index:3;left:50%;top:66.5%;width:34%;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;user-select:none}
 .chaura{position:absolute;left:-30%;right:-30%;top:-40%;bottom:-20%;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,var(--rc) 0%,transparent 60%);
   opacity:.55;filter:blur(8px);animation:cglow 2.6s ease-in-out infinite;pointer-events:none}
-.chchest{position:relative;width:100%;display:block;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
-.chchest.in{animation:chin .7s cubic-bezier(.2,.9,.3,1.2)}
+/* the chest: its closed and open pictures on one square canvas (scripts/make_chest_art.py lines them up), the base
+   at 86% of the height, so the box hangs that much below the altar's top */
+.chbox{position:relative;margin-bottom:-14%}
+.chbox img{display:block;width:100%;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
+.chbox .chopened{position:absolute;inset:0;opacity:0}
+.chbox.in{animation:chin .7s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes chin{0%{opacity:0;transform:translateY(-14%) scale(.92)}100%{opacity:1;transform:none}}
-.chchest.jolt{animation:chjolt .3s ease-out}
+.chbox.jolt{animation:chjolt .3s ease-out}
 @keyframes chjolt{30%{transform:translate(-1.5%,0) rotate(-1.2deg)}60%{transform:translate(1.5%,0) rotate(1deg)}}
-.chchest.shake{animation:chshake .12s linear infinite;filter:drop-shadow(0 0 30px var(--rc)) brightness(1.25)}
-.chchest.shake.float{animation:chshake .12s linear infinite,chfloat 1.3s ease-out forwards}
+.chbox.shake{animation:chshake .12s linear infinite}
+.chbox.shake img{filter:drop-shadow(0 0 30px var(--rc)) brightness(1.25)}
+.chbox.shake.float,.chbox.floated{animation:chshake .12s linear infinite,chfloat 1.3s ease-out forwards}
+.chbox.floated{animation:chfloat 0s forwards}
 @keyframes chshake{25%{transform:translate(-1%,.4%) rotate(-.8deg)}75%{transform:translate(1%,-.4%) rotate(.8deg)}}
 @keyframes chfloat{to{margin-top:-12%}}
-.chchest.spent{opacity:.28;filter:brightness(1.5) blur(1px);transition:opacity 1.2s,filter 1.2s}
+/* the lid snaps open: the open picture pops in with a bounce, light rays turn out of it */
+.chbox.open .chchest{opacity:0;transition:opacity .09s}
+.chbox.open .chopened{opacity:1;animation:chpop .55s cubic-bezier(.2,1.6,.4,1);filter:drop-shadow(0 0 26px var(--rc)) drop-shadow(0 18px 22px rgba(0,0,0,.75))}
+@keyframes chpop{0%{transform:translateY(3%) scale(.96,1.04);opacity:.4}45%{transform:translateY(-4%) scale(1.04,.97);opacity:1}100%{transform:none}}
+.chrays{position:absolute;left:50%;top:44%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 8deg,var(--rc) 12deg,transparent 18deg 40deg,var(--rc) 46deg,transparent 52deg 80deg,var(--rc) 86deg,transparent 92deg 128deg,
+    var(--rc) 134deg,transparent 140deg 170deg,var(--rc) 176deg,transparent 182deg 215deg,var(--rc) 221deg,transparent 227deg 258deg,var(--rc) 264deg,transparent 270deg 300deg,var(--rc) 306deg,transparent 312deg 360deg);
+  -webkit-mask:radial-gradient(circle,#000 8%,transparent 62%);mask:radial-gradient(circle,#000 8%,transparent 62%);mix-blend-mode:screen}
+.chbox.open .chrays{animation:chrays 1.6s cubic-bezier(.2,.8,.3,1) forwards,chspin 14s linear infinite}
+@keyframes chrays{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:.95}100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}}
+@keyframes chspin{to{rotate:360deg}}
+/* after: the chest stays open, its light breathing softly */
+.chbox.rest .chopened{animation:chbreathe 2.6s ease-in-out infinite}
+@keyframes chbreathe{50%{filter:drop-shadow(0 0 40px var(--rc)) drop-shadow(0 18px 22px rgba(0,0,0,.75)) brightness(1.08)}}
 .chseals{position:absolute;inset:0;pointer-events:none}
 .cseal{position:absolute;top:52%;left:calc(50% + (var(--i) - (var(--n) - 1) / 2) * 26%);width:26%;aspect-ratio:1;transform:translate(-50%,-50%);
   background:center/contain no-repeat;filter:drop-shadow(0 0 12px var(--rc));animation:cseal 2s ease-in-out infinite}
@@ -169,9 +188,9 @@ body.chbg .privacy{display:none}
   .chpanel{top:auto;left:0;width:auto;height:46%;border-left:0;border-top:1px solid rgba(232,194,122,.3);padding:16px}
   .chpanel h1{font-size:20px}
   .chpicked img{width:64px}
-  .chaltar{top:52%}
-  .chhint{top:57%;font-size:15px}
-  .chcards{top:58%;gap:8px}
+  .chaltar{top:65.5%}
+  .chhint{top:70%;font-size:15px}
+  .chcards{top:67%;gap:8px}
   .ccard{width:100px;height:134px}
   .chcards.many .ccard{width:84px;height:112px}
   .chcards.lots{top:22%}
@@ -184,5 +203,5 @@ body.chbg .privacy{display:none}
   .chspotcard .ccard{width:200px;height:266px}
   .chspot.big .chspotcard .ccard{width:220px;height:294px}
 }
-@media (prefers-reduced-motion:reduce){.cslot .cglow,.chaura,.cseal,.r-epic .cfront::after,.r-legendary .cfront::after,.r-mythical .cfront::after{animation:none}}
+@media (prefers-reduced-motion:reduce){.cslot .cglow,.chaura,.cseal,.r-epic .cfront::after,.r-legendary .cfront::after,.r-mythical .cfront::after,.chbox.rest .chopened,.chbox.open .chrays{animation:none}}
 @media (max-width:760px){.cname{display:none}.cqty{min-width:0;padding:1px 5px;font-size:10px}}

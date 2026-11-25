@@ -36,6 +36,14 @@ SPOTLIGHT = ("Epic", "Legendary", "Mythical")              # rewards that rise t
 MOMENT = ("Legendary", "Mythical")                         # ...and fill the screen
 
 
+def open_picture(tier):
+    """The same chest with its lid thrown open (art/chest/<tier>_open.webp), or None."""
+    import os
+    from .inventory import ART_ROOT, fresh
+    url = f"/art/chest/{tier}_open.webp"
+    return fresh(url) if os.path.exists(os.path.join(ART_ROOT, url[5:])) else None
+
+
 def css(rgb):
     return "rgb({}, {}, {})".format(*rgb)
 
@@ -76,6 +84,7 @@ def shelf(conn, uid):
         need = max_new_slots(p, tier)
         tiers.append({"key": tier, "name": loot.CHEST_NAMES[tier], "qty": it["qty"] if it else 0,
                       "item": it["id"] if it else None, "picture": item_picture({"category": "chests", "key": tier}),
+                      "open": open_picture(tier),
                       "rarity": rarity, "color": css(forge.RARITY_COLORS[rarity]), "seals": SEALS[tier],
                       "need": need, "fits": free // need if need else 99})
     waiting = db.unclaimed_chests(conn, uid)
@@ -200,7 +209,7 @@ class Chests:
         all_items = [r for c in chests for r in c["rewards"]]
         return {"tier": tier, "name": loot.CHEST_NAMES.get(tier, chests[0]["name"]), "rarity": rarity,
                 "color": css(forge.RARITY_COLORS[rarity]), "seals": SEALS.get(tier, 0),
-                "picture": item_picture({"category": "chests", "key": tier}),
+                "picture": item_picture({"category": "chests", "key": tier}), "open": open_picture(tier),
                 "opened": len(chests), "asked": asked, "chests": chests, "coins": coins,
                 "summary": grouped(chests), "best": max((r["rank"] for r in all_items), default=-1),
                 "left": left, "room": room(conn, uid),

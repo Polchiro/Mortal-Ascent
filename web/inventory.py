@@ -27,9 +27,11 @@ NOTE_COLOR = {"jade": "#7FE3BD", "red": "#FF9B90", "gold": "#F5DCA6"}
 
 def item_picture(item):
     """The painted picture of a bag item, or None (the page then shows the category's emblem)."""
-    if item["category"] == "chests":
-        path = os.path.join(ART_ROOT, "chests", f"{item['key']}.png")
-        return fresh(f"/art/chests/{item['key']}.png") if os.path.exists(path) else None
+    if item["category"] == "chests":                 # the website's painted chests (art/chest), else the bot's
+        for url in (f"/art/chest/{item['key']}.webp", f"/art/chests/{item['key']}.png"):
+            if os.path.exists(os.path.join(ART_ROOT, url[5:])):
+                return fresh(url)
+        return None
     if item["category"] == "manuals":
         return art_url(f"tech:{item['key']}") or drawn.url(items.item_icon(item))
     kind = items.item_icon(item)
