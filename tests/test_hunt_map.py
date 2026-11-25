@@ -178,11 +178,20 @@ def test_a_charge_can_start_the_fight_only_within_its_reach():
 def test_the_walk_sheets_meet_the_spec():
     from PIL import Image
     from scripts import make_heroine_walk
-    for gender, path in (("male", make_hero_walk.OUT), ("female", make_heroine_walk.OUT)):
-        assert make_hero_walk.check(Image.open(path)) == [], gender
+    import os
+    from scripts import make_hero_map
+    his = {g: os.path.join(make_hero_map.OUT, f"hero_male_{g}.webp") for g in ("walk", "idle", "run")}
+    for gender, path, cols in (("male", his["walk"], 16), ("female", make_heroine_walk.OUT, 8)):
+        assert make_hero_walk.check(Image.open(path), cols=cols) == [], gender
         s = looks.WALK_SHEETS[gender]
         assert s["src"] == "/art/portraits/map/" + path.rsplit("/", 1)[1]
-        assert (s["cell"], s["rows"], s["cols"], s["feet"]) == (256, 8, 8, [128, 232]) and len(s["stand"]) == 8
+        assert (s["cell"], s["rows"], s["cols"], s["feet"]) == (256, 8, cols, [128, 232]) and len(s["stand"]) == 8
+        assert all(0 <= f < cols for f in s["stand"])
+    m = looks.WALK_SHEETS["male"]                              # the new male's (Nov 25): idle and run too, 16 a cycle
+    for key in ("idle", "run"):
+        assert make_hero_walk.check(Image.open(his[key]), cols=16) == [], key
+        assert m[key]["src"] == f"/art/portraits/map/hero_male_{key}.webp" and m[key]["cols"] == 16
+    assert m["idle"]["loop"] > 1 and m["run"]["stride"] > 96 and all(0 <= f < 16 for f in m["run"]["stand"])
     from scripts import make_heroine_idle
     idle = looks.WALK_SHEETS["female"]["idle"]
     assert make_hero_walk.check(Image.open(make_heroine_idle.OUT)) == []
@@ -191,12 +200,11 @@ def test_the_walk_sheets_meet_the_spec():
     assert make_hero_walk.check(Image.open(make_heroine_walk.RUN_OUT)) == []
     assert run["src"] == "/art/portraits/map/hero_female_run.webp" and len(run["stand"]) == 8
     assert all(0 <= f < 8 for f in run["stand"]) and run["stride"] > 96      # a longer step than the walk's
-    assert "run" not in looks.WALK_SHEETS["male"]             # his is not made yet: he walks at every speed
-    import os
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     for name in ("huntmap.js", "town.js"):                    # both maps play it, and neither changes how fast she moves
         js = open(os.path.join(root, "web", "static", name)).read()
         assert "HRUN = SH.run" in js and "hero.running ? HRUN.stride : STRIDE" in js and "var SPEED = 150" in js
+        assert "function nFrames(sh, running)" in js and "* 8) % 8" not in js        # as many pictures as the sheet has
 
 
 def test_running_is_the_players_choice_and_a_little_faster():

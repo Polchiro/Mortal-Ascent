@@ -310,7 +310,11 @@
   var IDLE = SH.idle, idle = null;
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
   var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): at full speed; a stroll
-  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
+  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }
+  /* how many pictures one stride (or breath) has: 8 for hers, 16 for the new male's (Nov 25, smoother; looks
+     WALK_SHEETS `cols`); the phase runs from 0 to that, a foot coming down at 0 and at half */
+  function nFrames(sh, running) { return (running && sh.run && sh.run.cols) || sh.cols || 8; }
+  if (window.MASound) MASound.voice = SH.voice || '';             // his own footsteps for him (web/static/sound.js)      // (Shift, or the joystick pushed gently) keeps the walk
   var cam = {x: 0, y: 0}, last = 0, acc = 0, STEP = 1 / 60;
   function update(dt) {
     if (engaging) return;
@@ -326,10 +330,11 @@
       hero.running = !!HRUN && m > RUN_AT;
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
-      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM) * 8) % 8;
-      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {                           // a foot comes down
+      var NF = nFrames(SH, hero.running);
+      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM) * NF) % NF;
+      if ((before < NF / 2 && hero.phase >= NF / 2) || hero.phase < before) {                           // a foot comes down
         puff(hero.x, hero.y, 0.45);
-        if (window.MASound) try { MASound.step('earth', 'walk'); } catch (e) {}               // web/static/sound.js
+        if (window.MASound) try { MASound.step('earth', hero.running ? 'run' : 'walk'); } catch (e) {}               // web/static/sound.js
       }
       hero.frame = Math.floor(hero.phase);
       report(false);

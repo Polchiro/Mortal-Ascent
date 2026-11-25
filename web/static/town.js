@@ -62,7 +62,11 @@
   var sheet = new Image(); sheet.src = SH.src;
   var IDLE = SH.idle, idle = null;
   var HRUN = SH.run, runPic = null, RUN_AT = 0.75;                // her run (looks WALK_SHEETS `run`): when running; a walk
-  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }      // (Shift, or the joystick pushed gently) keeps the walk
+  if (HRUN) { runPic = new Image(); runPic.src = HRUN.src; }
+  /* how many pictures one stride (or breath) has: 8 for hers, 16 for the new male's (Nov 25, smoother; looks
+     WALK_SHEETS `cols`); the phase runs from 0 to that, a foot coming down at 0 and at half */
+  function nFrames(sh, running) { return (running && sh.run && sh.run.cols) || sh.cols || 8; }
+  if (window.MASound) MASound.voice = SH.voice || '';             // his own footsteps for him (web/static/sound.js)      // (Shift, or the joystick pushed gently) keeps the walk
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
   // this place (load() sets them; a new place swaps them all)
@@ -442,7 +446,7 @@
       o.running = !!sh.run && px / dt > SPEED * (1 + RUN_K) / 2;   // they run as you do: faster than a walk
       if (!o.moving) o.phase = (o.running ? sh.run.stand : sh.stand)[o.dir];
       o.moving = true;
-      o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * 8) % 8; o.frame = Math.floor(o.phase);
+      var nf = nFrames(sh, o.running); o.phase = (o.phase + px / ((o.running ? sh.run.stride : STRIDE) * ZOOM) * nf) % nf; o.frame = Math.floor(o.phase);
     });
   }
   function drawOther(o, x, y) {
@@ -771,8 +775,9 @@
       hero.running = fast && !!HRUN && m > RUN_AT;              // (no run sheet yet: he goes faster on his walk)
       if (!was) hero.phase = (hero.running ? HRUN.stand : STAND)[hero.dir];
       var before = hero.phase;
-      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * 8) % 8;
-      if ((before < 4 && hero.phase >= 4) || hero.phase < before) {
+      var NF = nFrames(SH, hero.running);
+      hero.phase = (hero.phase + sp * dt / ((hero.running ? HRUN.stride : STRIDE) * ZOOM / K) * NF) % NF;
+      if ((before < NF / 2 && hero.phase >= NF / 2) || hero.phase < before) {
         if (ATMOS) puff(hero.x, hero.y, 0.45);
         snd('step', PLACE === 'town' ? 'stone' : 'earth', hero.running ? 'run' : 'walk');
       }

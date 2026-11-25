@@ -234,7 +234,9 @@ another. `python -m scripts.make_step_sound run front.mp4 ...` finds the footfal
 clean ones (from as many of the videos as it can), and writes them as `art/fx/sounds/step_run_1..6.mp3` (0.3 s each,
 about 4 KB), listed by gait in `art/fx/sounds/steps.json`. On every footfall (twice a stride, as before) `town.js`
 tells `sound.js` the ground and the gait (`step('stone' | 'earth', 'run' | 'walk')`), and it plays one of that
-gait's takes: never the same twice running, a little different in pitch and loudness each time, duller and softer
+gait's takes (his own first for the new male, Nov 25: `--voice male` cuts them from his walking and running videos
+into `step_walk_male_*` / `step_run_male_*`, listed as `walk#male` / `run#male`; the map sets `MASound.voice` from
+the sheet's `voice`; the hunting-ground map now plays running steps too): never the same twice running, a little different in pitch and loudness each time, duller and softer
 on earth than on the town's stone. Running steps are from her five running videos; walking steps
 (`step_walk_1..6.mp3`) from her front-right, right and back-right walking videos, the three with a quiet floor (her
 front walk hisses and her back walk's steps are faint). A gait with no takes of its own would borrow the other's,

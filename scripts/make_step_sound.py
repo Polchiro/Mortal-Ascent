@@ -3,6 +3,11 @@ maps (web/static/sound.js `step`, docs/world.md "Sound").
 
     python -m scripts.make_step_sound run front.mp4 front_right.mp4 right.mp4 back_right.mp4 back.mp4
     python -m scripts.make_step_sound walk walk_front.mp4 ...
+    python -m scripts.make_step_sound run --voice male run_front.mp4 ...
+
+`--voice male` keeps a cultivator's own footsteps apart (Nov 25: the new male's, from his walking and running videos):
+they are written to step_<gait>_male_<n>.mp3 and listed under "<gait>#male"; the map plays them for him and keeps
+the plain ones for her.
 
 In those videos she walks or runs in place, so the sound is one footfall after another (about two a second when she
 runs). The script finds the footfalls (the peaks of the loudness), leaves out the first SKIP seconds (she turns to
@@ -94,16 +99,16 @@ def write(cut, path):
     os.remove(tmp)
 
 
-def main(gait, videos):
+def main(gait, videos, voice=None):
     os.makedirs(OUT, exist_ok=True)
     listed = json.load(open(LIST)) if os.path.exists(LIST) else {}
     names = []
     for i, f in enumerate(takes(videos), 1):
-        name = f"step_{gait}_{i}.mp3"
+        name = f"step_{gait}_{voice + '_' if voice else ''}{i}.mp3"
         write(shape(f["cut"]), os.path.join(OUT, name))
         names.append(name)
         print(f"{name}: video {f['video'] + 1}, the footfall at {f['at']:.2f} s")
-    listed[gait] = names
+    listed[gait + ("#" + voice if voice else "")] = names
     with open(LIST, "w") as fh:
         json.dump(listed, fh, indent=1, sort_keys=True)
         fh.write("\n")
@@ -111,6 +116,12 @@ def main(gait, videos):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3 or sys.argv[1] not in GAITS:
+    args = sys.argv[1:]
+    voice = None
+    if "--voice" in args:
+        i = args.index("--voice")
+        voice = args[i + 1]
+        del args[i:i + 2]
+    if len(args) < 2 or args[0] not in GAITS:
         sys.exit(__doc__)
-    main(sys.argv[1], sys.argv[2:])
+    main(args[0], args[1:], voice)

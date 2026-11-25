@@ -165,7 +165,14 @@ same random numbers; `_battle` builds the same fight).
   moves at more than three quarters of full speed (so always on the keyboard), with a longer stride (`run.stride`,
   140 px against the walk's 96) so her feet keep pace with the ground; walking (or the joystick pushed
   gently) keeps the walk. Other players are drawn the same way. Since Nov 24 the player chooses running or walking
-  and running is a quarter faster (docs/world.md "Running"). The male has no run sheet yet: he goes faster on his walk. `scripts/make_heroine_idle.py` builds her idle the same way from five standing
+  and running is a quarter faster (docs/world.md "Running"). `scripts/make_heroine_idle.py` builds her idle the same way from five standing
   videos (`WALK_SHEETS["female"]["idle"]`; the map plays it while she stands still). As made, its "right" view is
   only a little more turned than front-right and its back views have long hair her walk lacks; remade videos from
   references cut out of her walk videos would fix both.
+- **The new male on the maps (Nov 25).** `scripts/make_hero_map.py` builds his idle, walk and run from SHOAIB's
+  fifteen videos of the new male (five views each, the same as hers), into `hero_male_idle.webp`,
+  `hero_male_walk.webp` and `hero_male_run.webp` (`WALK_SHEETS["male"]`; the old male's one-video walk is replaced).
+  His have **16 pictures a cycle** (hers 8), so his steps and breathing play smoother: a sheet says how many in
+  `cols` (and `run.cols`), and `town.js` / `huntmap.js` read it (`nFrames`; a foot comes down at the start and the
+  middle of a cycle). His run plays as hers does (`run.stride` 140). His run videos begin with a second of him
+  standing, skipped. `voice: "male"` gives him his own footsteps (docs/world.md "Sound").

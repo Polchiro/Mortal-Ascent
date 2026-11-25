@@ -225,7 +225,8 @@
      scripts/make_step_sound.py; steps.json lists them by gait). A footfall plays one of its gait's takes, never the
      same twice running, a little different in pitch and loudness each time; softer and duller on earth than on the
      town's stone. A gait with no takes of its own borrows the other's (a walk: the run's, quieter and lower), and
-     with none at all the step made in code is kept. */
+     with none at all the step made in code is kept. A cultivator's own takes ("walk#male", Nov 25: the new male's, from
+     his videos) come first when the map says whose feet these are (MASound.voice, set from looks WALK_SHEETS `voice`). */
   var STEP_BASE = '/art/fx/sounds/', stepTakes = {}, stepBufs = {}, lastTake = '';
   var STEP_LEVEL = {run: 0.5, walk: 0.34};
   function loadSteps() {                    // decoding needs the context: called once it is awake
@@ -243,13 +244,15 @@
     .then(function (j) { stepTakes = j || {}; if (ctx) loadSteps(); }).catch(function () {});
   function recordedStep(surface, gait, t) {
     if (ctx && !Object.keys(stepBufs).length) loadSteps();
-    var own = stepTakes[gait] && stepTakes[gait].length ? gait : gait === 'walk' ? 'run' : 'walk';
+    var mine = window.MASound.voice ? gait + '#' + window.MASound.voice : '';
+    var own = mine && stepTakes[mine] && stepTakes[mine].length ? mine
+      : stepTakes[gait] && stepTakes[gait].length ? gait : gait === 'walk' ? 'run' : 'walk';
     var ready = (stepTakes[own] || []).filter(function (f) { return stepBufs[f]; });
     if (!ready.length) return false;
     var pick = ready.filter(function (f) { return f !== lastTake; });
     var file = (pick.length ? pick : ready)[Math.floor(Math.random() * (pick.length || ready.length))];
     lastTake = file;
-    var src = ctx.createBufferSource(), g = ctx.createGain(), borrowed = own !== gait;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), borrowed = own.split('#')[0] !== gait;
     src.buffer = stepBufs[file];
     src.playbackRate.value = rnd(0.94, 1.06) * (borrowed && gait === 'walk' ? 0.9 : 1);
     g.gain.value = STEP_LEVEL[gait] * rnd(0.8, 1) * (surface === 'stone' ? 1 : 0.85);
@@ -306,6 +309,7 @@
   };
 
   window.MASound = {
+    voice: '',                              // whose footsteps: the map sets it ("male"), his own takes first
     place: function (k) { kind = k; if (ac()) setBed(k); },
     steps: function () {                    // which gaits have recorded footsteps ready, and how many (for checks)
       var o = {}; Object.keys(stepTakes).forEach(function (g) { o[g] = stepTakes[g].filter(function (f) { return stepBufs[f]; }).length; });

@@ -828,8 +828,8 @@ The Qi painted in his Strike and Break videos is kept where it is joined to him.
 **male** cultivator's attack" above) is no longer played. His brace, deflect and sidestep followed the
 same day from three more videos (same script: `brace=... deflect=... sidestep=...`), keyed and paced as hers: brace
 and deflect with `pace` 1.5, the sidestep at 10 frames a second (40 frames, 4 s) giving ground (`give`) as she does;
-Cloud-Walking Shadow and Drifting Mist Steps both play it. **Still the old male:** his walk on the maps, until
-SHOAIB's videos of the new male for it.
+Cloud-Walking Shadow and Drifting Mist Steps both play it. His walk on the maps followed on Nov 25 (docs/hunting.md
+"The new male on the maps"): the old male is gone everywhere.
 Presentation only.
 
 **Defences you can watch (Nov 24).** Two things. (1) When the beast struck no blow that turn (it Guarded), the
