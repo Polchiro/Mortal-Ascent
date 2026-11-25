@@ -213,8 +213,8 @@ their own herbs. Code: `web/herb_events.py` (the events and the claim), `World.g
   what it always does, and the herb stays for the others.
 - **One claim a day** per player (`WINS_PER_DAY`), so no one takes them all.
 - **A restart keeps the events** (they are in the database); who has knelt at which is kept in memory.
-- **Not yet:** nothing is posted to Discord; other lands' edges don't glow toward it (the bar's words do that job);
-  other players aren't drawn kneeling.
+- **Not yet:** nothing is posted to Discord; other lands' edges don't glow toward it (the bar's words do that job).
+  Others at the herb are drawn kneeling ("Other players").
 
 ## The Ironvein Quarry (`/wild/ironvein_quarry`)
 
