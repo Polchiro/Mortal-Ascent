@@ -213,6 +213,10 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   only reads the game's own rules: HP is `player.final_stats` (full when you are not out on a trip); on a trip it is
   the trip's HP, which fights wear down; injured and resting are the same checks as `/explore`. `/world/state` sends
   it as `hero`, so the frame changes without a reload. Clicking the face opens the Profile.
+- **The Qi line** under HP: your Internal Qi bar, counting the passive Qi gathered since the bot last banked it
+  (`breakthrough_play.plate`). Jade while it fills; gold and breathing when it is full at a gate, a gold ring turning
+  round the face, and the **Break through** seal under the frame (see "Breakthrough" below). The first time at each
+  gate a short banner says "Your Qi presses against a gate" (`localStorage` `ma.bt.told.<realm · layer>`).
 - **The place's name** shows big in the middle of the screen for about three seconds when you arrive or walk into
   the next land, then stays only as a small line under the frame.
 - **The trip tracker** (top right, under the purse; only outside town): five diamonds for the trip's encounters,
@@ -230,6 +234,62 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   joystick is there instead).
 
 The frame, tracker, dock and hint change nothing in the game; the tasks are the one part that pays (docs/world.md).
+
+## Breakthrough
+
+The bot's **/breakthrough** on the website, with the same rules, chance, pill and Heaven's dew: the server calls the
+bot's own `player.attempt_breakthrough` (`web/breakthrough_play.py`, `web/breakthrough_routes.py`,
+`web/templates/breakthrough.html`, `web/static/breakthrough.js` and `.css`). Nothing about the odds is new.
+
+**Where it is.** When your Qi bar is full at a phase bottleneck or a realm gate, a **Break through** seal appears
+under the player plate on every map screen, and beside the Qi bar on the Profile. Its colour says which kind of gate
+it is: jade blue for a phase gate, dawn gold for the first realms, storm violet with a lightning mark from Martial
+Master on. It shows the kind and the chance ("Realm · 46%"). If something else is needed (a technique's mastery, a
+Beast King), it shows a lock and what is missing: "Gate sealed · Needs a technique at Entering the Hall". Back on the
+breakthrough page returns you to the page you came from (`?from=`, this site's pages only).
+
+**The assessment** (a card at the right; a sheet at the bottom on a phone): where you are and where the gate leads,
+with both realms' lotus emblems; the chance, large, and what makes it up (the gate's own chance, an artifact, the
+pill); exactly what failing costs ("You lose 25.6 Qi (20% of your bar). The 218 Qi waiting behind the gate is safe
+and refills it. And your meridians are injured for 6 hours", realm gates only); and if you are still injured, how
+long (it doesn't stop you, as on Discord). The **best breakthrough pill** is used, as on Discord, unless you tick
+**Keep the pill**. A phase gate starts with one press; a realm gate with a **1-second hold**, so an injury can't come
+from a slip. The first gate (Mortal → Martial Apprentice) shows no cost: it cannot fail.
+
+**The ceremony.** The server rolls the moment you begin; the page only shows the result it already has. Until the
+result everything looks and sounds the same whatever is coming, so nothing gives it away early, and nothing in it
+asks anything of you. Three looks (the look only):
+
+| Gate | Where | What you see |
+|---|---|---|
+| Phase bottleneck | The meditation chamber (Train's) | Qi drifts into your Dantian, the world narrows, a heartbeat, quiet; then the **inner breakthrough** (a blue-white ring bursts out of you) |
+| Realm gate into Martial Apprentice, Warrior, Expert | **Heaven's Light**: the peak at dawn | The clouds open and a golden beam comes down on you; three pulses; then the **realm ascension** (you rise in gold, a halo forms) and heaven's golden pillar |
+| Realm gate into Martial Master and above | **Heavenly Tribulation**: the peak in the storm | Three lightning strikes, each stronger; then the realm ascension |
+
+A failure plays Train's **Qi deviation** instead, the screen shakes, and the Qi bar drops by what was lost, then
+refills from the Qi that waited. Then a **title card** (the new realm or phase with its emblem, "+2 more layers from
+the Qi that waited", or "The gate holds · −12.8 Qi · injured for 6h") and the **result scroll**: before and after,
+your chance, the pill used, Qi, the bot's own lines and Heaven's dew. **Try again** after a failure, **Back**.
+
+**Skip** (top right, during the ceremony) jumps to the result; **Quick ceremony** (a tick on the card, remembered:
+`ma.bt.quick`) shows only the result; a second try at the same gate leaves out the gathering
+(`ma.bt.tries.<realm:layer>`).
+
+**One attempt per press.** Each assessment hands out a token and the attempt needs the newest one. The same token
+twice (a double click, a reload while it is sent) gets the first attempt's result again, never a second attempt; an
+old page is told so and shown how things stand. The attempt is one write (`BEGIN IMMEDIATE`): it banks the passive
+Qi as the bot would, checks the gate is still the same, attempts, saves, and uses the pill, together.
+
+**Sound.** The videos' own sounds (the inner breakthrough, the ascension, the deviation, the dawn's wind and bell,
+the storm's thunder as the place's ambience; the chamber's room tone), and the fight sounds for the rest (gather,
+cast for the dawn's pulses, boom and stun for the strikes, victory and heal, defeat), a heartbeat made in the page
+for the compression, and the meditation music.
+
+**The art** (`scripts/make_breakthrough_art.py`, into `art/breakthrough/`): the storm peak (a still, a loop and its
+sound), the dawn peak (a still, its one 8-second play with the beam, the lit still, its sound), and per character
+the inner breakthrough and realm ascension, cut like Train's endings (a stacked-alpha video drawn over the scene,
+its sound beside it, `hero/<gender>/sheets.json`). You meditate with Train's loop; a failure is Train's deviation.
+Gemini's sparkle and Flow's mark are painted out (the tool also cut Train's chamber again without them).
 
 ## Fight sounds
 

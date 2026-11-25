@@ -148,6 +148,8 @@ Breakthrough pills and artifacts (e.g. Heaven's Favor) add to realm gates only, 
 - Failed realm breakthrough: lose 20% of the bar + 6-hour injury (no exploring or fighting); the Qi
   waiting behind the gate is kept
 - Breakthrough Pills: +5% / +7% / +10% / +12% / +15% success (Mortal → Heaven, see alchemy.md)
+- **On the website** the **Break through** seal under the player plate (and on the Profile) opens the same attempt,
+  with a ceremony for each kind of gate; the rules and chance are these (docs/web.md "Breakthrough")
 
 ### Realm requirements (besides Qi)
 

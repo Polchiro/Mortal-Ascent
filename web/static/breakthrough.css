@@ -1,0 +1,146 @@
+/* Breakthrough (web/templates/breakthrough.html, web/static/breakthrough.js). The whole window is the stage; the
+   Elder-less assessment card sits at the right (at the bottom on a phone), the ceremony takes everything, then the
+   title card and the result scroll. */
+body.btbg{background:#07080d;overflow:hidden}
+body.btbg .privacy{display:none}
+.bt{position:fixed;inset:0;color:#F2EBDD;font-family:Inter,system-ui,sans-serif;--g1:#E8C27A;--g2:#F5DCA6;--jade:#6FD9B0;--warn:#FF9B90}
+.bt.look-storm{--glow:196,170,255}.bt.look-dawn{--glow:255,214,140}.bt.look-inner{--glow:150,205,255}
+.btscene{position:absolute;inset:0;overflow:hidden;background:#07080d}
+.btbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.btstill{z-index:1;transition:opacity .8s ease}
+.btstill.off{opacity:0}
+.btshade{position:absolute;inset:0;z-index:2;background:radial-gradient(ellipse at 50% 60%,rgba(0,0,0,0) 40%,rgba(0,0,0,.55) 100%),
+  linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,0) 22%,rgba(0,0,0,0) 70%,rgba(0,0,0,.6))}
+.btchar,.btfx{position:absolute;inset:0;z-index:3;pointer-events:none}
+.btfx{z-index:4}
+.btflash{position:absolute;inset:0;z-index:5;opacity:0;pointer-events:none;mix-blend-mode:screen}
+.btscene.shake{animation:btshake .5s ease-out}
+@keyframes btshake{0%,100%{transform:none}20%{transform:translate(-8px,3px)}40%{transform:translate(7px,-4px)}60%{transform:translate(-5px,2px)}80%{transform:translate(3px,-1px)}}
+
+.bthud{position:absolute;left:0;right:0;top:0;z-index:8;display:flex;justify-content:space-between;padding:16px 20px;pointer-events:none}
+.btback,.btskip{pointer-events:auto;font:600 14px Inter,sans-serif;color:#F2EBDD;text-decoration:none;background:rgba(10,12,22,.6);
+  border:1px solid rgba(232,194,122,.35);border-radius:999px;padding:8px 16px;cursor:pointer;backdrop-filter:blur(6px)}
+.btback:hover,.btskip:hover{border-color:var(--g1);color:var(--g2)}
+.bt[data-phase=rite] .btback{display:none}
+.btskip{margin-left:auto}
+.btskip[hidden]{display:none}
+
+.btsay{position:absolute;left:50%;top:14%;z-index:7;transform:translateX(-50%);margin:0;font:600 18px Inter,sans-serif;color:var(--g2);
+  text-shadow:0 2px 12px #000;opacity:0;text-align:center;max-width:90vw}
+.btsay.go{animation:btsay 3.4s ease forwards}
+@keyframes btsay{0%{opacity:0;transform:translate(-50%,8px)}12%,75%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+/* the Qi bar along the bottom */
+.btqi{position:absolute;left:50%;bottom:26px;z-index:7;transform:translateX(-50%);width:min(520px,80vw);text-align:center}
+.btqibar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);border:1px solid rgba(232,194,122,.35);overflow:hidden}
+.btqibar div{height:100%;background:linear-gradient(90deg,#3E7FC8,#8CC8FF);transition:width .9s cubic-bezier(.3,.8,.3,1)}
+.btqi small{display:block;margin-top:6px;font:600 12px Inter,sans-serif;color:#C9D2E6;text-shadow:0 1px 3px #000}
+.btqi.press .btqibar div{background:linear-gradient(90deg,#C9A45C,#F5DCA6,#C9A45C);background-size:200% 100%;animation:btpress 1.6s ease-in-out infinite}
+.btqi.press .btqibar{box-shadow:0 0 18px rgba(245,220,166,.45)}
+@keyframes btpress{0%,100%{background-position:0 0;filter:brightness(1)}50%{background-position:100% 0;filter:brightness(1.35)}}
+.btqi.flood .btqibar div{transition:width .45s ease-in}
+.btqi.lost .btqibar div{background:linear-gradient(90deg,#8E2F28,#D0584C)}
+.btqi.lost small{color:var(--warn)}
+
+/* the assessment card */
+.btcard{position:absolute;z-index:9;right:28px;top:50%;transform:translateY(-50%);width:min(380px,calc(100vw - 40px));max-height:calc(100vh - 120px);overflow:auto;
+  padding:22px 22px 18px;box-sizing:border-box;background:linear-gradient(180deg,rgba(18,20,34,.92),rgba(10,11,20,.94));
+  border:1px solid rgba(232,194,122,.4);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.03);
+  transition:opacity .5s ease,transform .5s ease}
+.bt[data-phase=rite] .btcard,.bt[data-phase=result] .btcard{opacity:0;transform:translate(30px,-50%);pointer-events:none}
+.btcard .kicker,.btresult .kicker{margin:0 0 12px;font:700 11px Inter,sans-serif;letter-spacing:2.4px;color:var(--g1)}
+.look-storm .btcard .kicker{color:#C8B6FF}
+.btcard h2{margin:0 0 10px;font:700 20px Cinzel,serif;color:var(--g2)}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.btpath{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin:4px 0 14px;text-align:center}
+.btnode{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.btnode b{font:700 13.5px Cinzel,serif;color:#F2EBDD;line-height:1.2}
+.btnode.to b{color:var(--g2)}
+.btnode small{font-size:11.5px;color:#9AA4BD}
+.btarrow{font-size:22px;color:var(--g1);opacity:.8}
+.btlotus{width:62px;height:62px;color:#9CB4DA}
+.btnode.to .btlotus{color:var(--g1);filter:drop-shadow(0 0 10px rgba(var(--glow),.55))}
+.btlotus .core{fill:rgba(10,12,22,.85)}
+.btlotus .num{font:700 15px Cinzel,serif;fill:currentColor}
+.btchance{display:flex;align-items:baseline;gap:10px;padding:12px 0 8px;border-top:1px solid rgba(232,194,122,.18)}
+.btchance b{font:800 46px Cinzel,serif;line-height:1;color:var(--g2);text-shadow:0 0 22px rgba(var(--glow),.45)}
+.btchance span{font-size:13px;color:#B9C3D9}
+.btparts{list-style:none;margin:0 0 12px;padding:0;font-size:13px}
+.btparts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.07)}
+.btparts li span{display:flex;align-items:center;gap:8px;color:#C9D2E6}
+.btparts li b{font-weight:700}
+.btparts .jade{color:var(--jade)}
+.btparts .sub,.btcard .sub{color:#8A94AD;font-size:12px;border:0}
+.btkeep{border:0!important}
+.btkeep label{display:flex;align-items:center;gap:8px;color:#9AA4BD;font-size:12px;cursor:pointer}
+.btcost{padding:10px 12px;border-radius:10px;background:rgba(142,47,40,.12);border:1px solid rgba(208,88,76,.25);font-size:13px;line-height:1.5}
+.btcost .kicker{color:#E9A39A!important;margin-bottom:4px!important}
+.btcost p{margin:0 0 4px}
+.btcost .warn{color:var(--warn)}
+.btnote{margin:10px 0 0;font-size:12.5px}
+.btnote.warn{color:var(--warn)}
+.btbegin{position:relative;overflow:hidden;width:100%;margin-top:16px;padding:14px;border-radius:10px;border:1px solid var(--g1);cursor:pointer;
+  background:linear-gradient(180deg,#3A2E17,#211A0E);color:var(--g2);font:700 16px Cinzel,serif;letter-spacing:1px;touch-action:none;user-select:none}
+.btbegin:hover{box-shadow:0 0 22px rgba(232,194,122,.35)}
+.btbegin i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(232,194,122,.25),rgba(245,220,166,.55))}
+.btbegin span{position:relative}
+.look-storm .btbegin{border-color:#B7A1FF;background:linear-gradient(180deg,#2B2244,#17122A);color:#E6DEFF}
+.look-storm .btbegin i{background:linear-gradient(90deg,rgba(183,161,255,.25),rgba(230,222,255,.55))}
+.look-inner .btbegin{border-color:#8CC8FF;background:linear-gradient(180deg,#1A2A44,#0F1A2C);color:#DCEEFF}
+.look-inner .btbegin i{background:linear-gradient(90deg,rgba(140,200,255,.25),rgba(220,238,255,.55))}
+.btquick{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;font-size:12px;color:#8A94AD;cursor:pointer}
+.btwhy{margin:6px 0 10px;font-size:14px;line-height:1.5;color:#D9DFEC}
+.btmissing{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(232,194,122,.08);border:1px solid rgba(232,194,122,.25);font-size:13px;line-height:1.5}
+.btqiline{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;font-size:13px;color:#B9C3D9;margin-bottom:14px}
+.btqiline small{flex-basis:100%;color:var(--jade)}
+.btbtn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid rgba(232,194,122,.45);color:var(--g2);text-decoration:none;font:600 14px Inter,sans-serif}
+.btbtn:hover{border-color:var(--g1);background:rgba(232,194,122,.08)}
+.btbtn.main{background:linear-gradient(180deg,#3A2E17,#211A0E);border-color:var(--g1)}
+.btbtn[hidden]{display:none}
+
+/* the title card */
+.bttitle{position:absolute;z-index:7;left:50%;top:7%;transform:translateX(-50%);text-align:center;width:min(680px,94vw);opacity:0;padding:14px 0 18px;
+  background:radial-gradient(ellipse at center,rgba(8,8,14,.62) 0%,rgba(8,8,14,.38) 45%,rgba(8,8,14,0) 72%)}
+.bttitle.go{animation:bttitle 1.1s cubic-bezier(.2,.9,.2,1) forwards}
+@keyframes bttitle{0%{opacity:0;transform:translate(-50%,14px) scale(.94);letter-spacing:12px}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
+.bttitle .btlotus{width:86px;height:86px;color:var(--g1);filter:drop-shadow(0 0 18px rgba(var(--glow),.8))}
+.bttitle .kicker{margin:6px 0 2px;font:700 12px Inter,sans-serif;letter-spacing:4px;color:var(--g1)}
+.bttitle h1{margin:0;font:800 clamp(30px,5.4vw,58px) Cinzel,serif;color:#FFF3D6;text-transform:uppercase;letter-spacing:3px;
+  text-shadow:0 0 26px rgba(var(--glow),.85),0 3px 14px #000}
+.bttitle .btsub{margin:6px 0 0;font:600 15px Inter,sans-serif;color:#E8DDC8;text-shadow:0 2px 8px #000}
+.btlayers{margin:10px 0 0;font:700 14px Inter,sans-serif;color:var(--jade);text-shadow:0 2px 8px #000}
+.btlayers[hidden]{display:none}
+.bttitle.lose h1{color:#F1C9C2;font-size:clamp(26px,4.2vw,44px);text-transform:none;letter-spacing:1px;text-shadow:0 0 22px rgba(140,30,40,.8),0 3px 12px #000}
+.bttitle.lose .kicker{color:#E9A39A}
+.bttitle.lose .btsub{color:var(--warn)}
+
+/* the result scroll */
+.btresult{position:absolute;z-index:9;right:28px;top:50%;transform:translateY(-50%);width:min(380px,calc(100vw - 40px));max-height:calc(100vh - 120px);overflow:auto;
+  box-sizing:border-box;padding:22px;border-radius:14px;background:linear-gradient(180deg,rgba(28,24,16,.94),rgba(14,12,9,.95));
+  border:1px solid rgba(232,194,122,.45);box-shadow:0 18px 50px rgba(0,0,0,.6);animation:btin .6s ease}
+.btresult[hidden]{display:none}
+@keyframes btin{0%{opacity:0;transform:translate(24px,-50%)}100%{opacity:1;transform:translate(0,-50%)}}
+.btresult h2{margin:0 0 12px;font:800 22px Cinzel,serif;color:var(--g2)}
+.btrows div{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed rgba(232,194,122,.15);font-size:13px}
+.btrows span{color:#B9AE95}
+.btrows b{text-align:right}
+.btlines{margin:12px 0 0;padding:0 0 0 16px;font-size:12.5px;line-height:1.55;color:#D8D0BE}
+.btlines li{margin-bottom:4px}
+.btdew{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btchip{display:flex;align-items:center;gap:8px;padding:5px 10px 5px 5px;border-radius:999px;background:rgba(111,217,176,.1);border:1px solid rgba(111,217,176,.35);font-size:12px;color:#CFF5E6}
+.btchip img{border-radius:50%}
+.btacts{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
+/* a phone: the card and the scroll become a sheet at the bottom; the title sits higher */
+@media (max-width:760px){
+  .btcard,.btresult{left:10px;right:10px;width:auto;top:auto;bottom:10px;transform:none;max-height:58vh;padding:16px}
+  .bt[data-phase=rite] .btcard,.bt[data-phase=result] .btcard{transform:translateY(40px)}
+  @keyframes btin{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:none}}
+  .btchance b{font-size:38px}
+  .btlotus{width:50px;height:50px}
+  .bttitle{top:10%}
+  .bttitle .btlotus{width:62px;height:62px}
+  .btqi{bottom:auto;top:62px}
+  .bt[data-phase=assess] .btqi{display:none}
+}
+@media (prefers-reduced-motion:reduce){.btqi.press .btqibar div{animation:none}.btscene.shake{animation:none}}
