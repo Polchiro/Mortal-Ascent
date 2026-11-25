@@ -435,10 +435,13 @@ hall's air from her "watching" video looped under the music (`art/practice/hall.
 bright major five-note tune, a soft drum keeping time and the flute more often. The training objects, effects, drill
 badges, the result's scroll and her portrait are SHOAIB's Gemini pictures, cut by `scripts/make_practice_art.py`.
 
-**Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
+**How to play** (on the drill's opening card): a short illustrated guide to both kinds of drill (its own kind first)
+and the rules every drill shares (`web/templates/_practice_howto.html`). **Settings** (on the drill's opening card, kept in the browser): **your own key for each of the four moves**, one
 set for striking drills and one for defending (click a move, press a key; a key already used swaps the two; the number
-keys, and the arrows when defending, still work unless given to another move), and **guides** on or off: the key
-written on every target and a faint mark where each lane's targets appear.
+keys, and the arrows when defending, still work unless given to another move), and **guides** at three levels: **Full** (the
+key on every target, a faint mark where each lane's targets appear, a gold "Now!" glow on the ring inside the perfect
+window, and a one-line note the first time each new kind of target appears: pairs, chains, charges, holds, feints,
+small targets, counters, breaths), **Light** (the keys only) or **Off**.
 
 The drill page has no top bar or tabs: the hall fills the whole window, and a **Leave** button in the corner walks away (it asks once: nothing is earned and the rest stays; after the result it goes back to the yard). On a phone the scene is 4:3 and the moves are big pads under it. A drill lives in the web server's memory, like a spar:
 a restart ends it unpaid (its rest stays). Code: `web/practice_play.py`, `web/practice_routes.py`,

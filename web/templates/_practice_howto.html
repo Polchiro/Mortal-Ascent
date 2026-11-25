@@ -1,0 +1,50 @@
+{# Practice's "How to play" (practice.html's drill card): the two kinds of drill, with the pictures the drill uses.
+   The drill's own kind comes first. Keys are named as the Settings name them (practice.js fills .hk). #}
+{% set strike_first = D.mode == "strike" %}
+{% macro striking() %}
+<section class="howsec">
+  <h3>Striking drills <small>attack techniques</small></h3>
+  <div class="howrow"><img src="/art/practice/plaque.webp" alt="" width="64" height="64">
+    <p><b>Hit each target as its ring closes.</b> A gold target lights up on the dummy (the kicking post for kicks) with a
+      ring shrinking onto it. Press that target's key when the ring meets it: right on it is <b>Perfect</b>, a little
+      off is <b>Good</b>.</p></div>
+  <div class="howrow"><span class="howpic pair">× 2</span>
+    <p><b>Pairs</b> (palm techniques): two targets at once. Press both keys together.</p></div>
+  <div class="howrow"><span class="howpic chain">1 2 3</span>
+    <p><b>Chains</b> (combo techniques): numbered targets in quick order. Hit them 1, 2, 3.</p></div>
+  <div class="howrow"><img src="/art/practice/flame.webp" alt="" width="64" height="64">
+    <p><b>Charges</b> (heavy techniques, and every finishing blow): a burning target. <b>Hold</b> its key while it
+      burns, and <b>let go</b> as the ring closes.</p></div>
+  <div class="howrow"><span class="howpic small"></span>
+    <p><b>Small targets</b> (finger and piercing techniques): the same, with tighter timing.</p></div>
+</section>
+{% endmacro %}
+{% macro defending() %}
+<section class="howsec">
+  <h3>Defending drills <small>defense techniques</small></h3>
+  <div class="howrow howblows"><img src="/art/practice/sandbag.webp" alt="" width="40" height="64"><img src="/art/practice/staff.webp" alt="" width="96" height="24"><img src="/art/practice/log.webp" alt="" width="80" height="32">
+    <p><b>Meet each blow as it lands.</b> A sandbag swings high, a staff thrusts at the middle, a log sweeps low. A
+      ring on your body shows where it will land: press that height's key when the blow reaches it.</p></div>
+  <div class="howrow"><span class="howpic hold">Hold</span>
+    <p><b>Stances</b> (brace techniques): press, and <b>keep holding</b> until the blow has passed. Letting go early
+      costs you.</p></div>
+  <div class="howrow"><span class="howpic tap">Tap</span>
+    <p><b>Deflections and steps</b>: one well-timed tap. Your character sweeps the blow aside, or ducks and jumps it.</p></div>
+  <div class="howrow"><img src="/art/practice/flame.webp" alt="" width="64" height="64">
+    <p><b>Counters</b> (counter techniques): after some blows a ring appears at your feet. Press your <b>Space</b> move
+      to strike back.</p></div>
+  <div class="howrow"><img src="/art/practice/breath.webp" alt="" width="64" height="64">
+    <p><b>Breaths</b> (recovery techniques): between blows, press your <b>Space</b> move as the ring of breath fills.</p></div>
+</section>
+{% endmacro %}
+{% if strike_first %}{{ striking() }}{{ defending() }}{% else %}{{ defending() }}{{ striking() }}{% endif %}
+<section class="howsec">
+  <h3>In every drill</h3>
+  <ul>
+    <li><b>Feints</b>: a dark target or a dark blow is a trick. Leave it alone; striking it counts as a miss.</li>
+    <li><b>Pressing at nothing</b> costs a little, so don't mash: wait for the ring.</li>
+    <li>The drill starts slow (<b>Form</b>), speeds up (<b>Flow</b>) and ends with a <b>finishing blow</b>.</li>
+    <li>Your score is your accuracy, plus a little for your longest unbroken run. Above 70%, she approves.</li>
+    <li>Change your keys and how much help you see in <b>Settings</b>.</li>
+  </ul>
+</section>

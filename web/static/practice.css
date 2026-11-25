@@ -181,7 +181,11 @@ body.practicebg footer.privacy{display:none}
 .pguide b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,.9);font:800 13px Cinzel,Georgia,serif;text-shadow:0 1px 3px #000}
 .pspot .pk{position:absolute;left:50%;top:104%;transform:translateX(-50%);padding:1px 7px;border-radius:7px;background:rgba(10,8,6,.78);
   border:1px solid var(--line);color:#fff;font:800 13px Cinzel,Georgia,serif;font-style:normal;white-space:nowrap}
-.practice.noguide .pguide,.practice.noguide .pk,.practice.noguide .pmark b{display:none}
+.practice.g-light .pguide,.practice.g-off .pguide,.practice.g-off .pk,.practice.g-off .pmark b{display:none}
+/* Full guides: the ring glows gold and says "Now!" inside the perfect window */
+.pspot.now .ring,.pmark.now .ring,.pspace.now .ring{border-color:#fff7c2;box-shadow:0 0 18px 4px rgba(255,236,150,.95),inset 0 0 10px rgba(255,236,150,.8)}
+.pspot.now::after,.pmark.now::after{content:"Now!";position:absolute;left:50%;top:-34%;transform:translateX(-50%);color:#fff7c2;
+  font:800 13px Cinzel,Georgia,serif;text-shadow:0 1px 3px #000,0 0 8px rgba(255,220,120,.9);white-space:nowrap}
 .practice:not([data-phase=ready]):not([data-phase=count]):not([data-phase=drill]) .pguide{display:none}
 .ptarget.broken .pguide{display:none}
 
@@ -196,6 +200,26 @@ body.practicebg footer.privacy{display:none}
 .pkeybtn.on{background:rgba(232,194,122,.3);border-color:var(--gold)}.pkeybtn.on b{font-size:12px}
 .psetrow{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin-top:10px;color:var(--cream);font-size:13px}
 .psetrow label{display:flex;gap:6px;align-items:center;cursor:pointer}
+
+/* Settings: how much help */
+.pglevel{margin:10px 0 0;padding:6px 10px 8px;border:1px solid var(--line);border-radius:10px}
+.pglevel legend{padding:0 6px;color:var(--gold2);font-size:12.5px;font-weight:700}
+.pglevel label{display:grid;grid-template-columns:auto auto 1fr;gap:2px 6px;align-items:baseline;margin:4px 0;color:var(--cream);font-size:13px;cursor:pointer}
+.pglevel label small{grid-column:3;color:var(--mist);font-size:11.5px}
+/* How to play */
+.phow .howsec{margin:10px 0 0}
+.phow h3{margin:0 0 6px;color:var(--gold2);font:700 15px Cinzel,Georgia,serif}
+.phow h3 small{color:var(--mist);font:400 11.5px Georgia,serif;margin-left:6px}
+.howrow{display:flex;gap:10px;align-items:center;margin:6px 0}
+.howrow img{flex:none;object-fit:contain}
+.howrow p{margin:0;color:var(--cream);font-size:13px;line-height:1.45}
+.howblows{flex-wrap:wrap}.howblows p{flex-basis:100%}
+.howpic{flex:none;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:800 12px Cinzel,Georgia,serif;color:#fff;
+  border:3px solid #FFE7A8;box-shadow:0 0 10px rgba(255,220,140,.8);background:rgba(0,0,0,.3)}
+.howpic.pair{border-color:#9fe8ff;box-shadow:0 0 10px rgba(120,220,255,.9),18px 0 0 -6px rgba(159,232,255,.8)}
+.howpic.small{width:40px;height:40px;margin:0 12px}
+.howpic.hold,.howpic.tap{border-color:#9fe8ff}
+.phow ul{margin:0;padding-left:18px;color:var(--cream);font-size:13px;line-height:1.5}
 
 /* the pads */
 .ppads{display:flex;gap:8px;justify-content:center;width:min(100%,760px)}
