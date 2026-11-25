@@ -425,6 +425,11 @@ sound), the dawn peak (a still, its one 8-second play with the beam, the lit sti
 the inner breakthrough and realm ascension, cut like Train's endings (a stacked-alpha video drawn over the scene,
 its sound beside it, `hero/<gender>/sheets.json`). You meditate with Train's loop; a failure is Train's deviation.
 Gemini's sparkle and Flow's mark are painted out (the tool also cut Train's chamber again without them).
+The endings are then **tidied** (`make_breakthrough_art tidy art/breakthrough/hero/*/*.mp4`): everything outside the
+figure's first-frame shape (the lightning, the ring, the thrown sleeves) fades out before the video's edges instead of
+stopping on a straight line, which showed as a box round the figure (on a phone the video is smaller than the screen);
+in the inner breakthrough, the flat grey a moving sleeve leaves behind and the corner mark cut out of the ring are
+taken out too. On a tall phone the charging glow stays round the body instead of washing the whole screen.
 
 ## Fight sounds
 

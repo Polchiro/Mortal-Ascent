@@ -9,6 +9,7 @@ SHOAIB's Flow pictures and videos into art/breakthrough/ and art/chest/.
   python -m scripts.make_breakthrough_art chestfx burst=<video> glow=<video>
   python -m scripts.make_breakthrough_art pictures shelf=<picture> slip=<picture> lid=<picture>
   python -m scripts.make_breakthrough_art fixchamber <Train's chamber video>
+  python -m scripts.make_breakthrough_art tidy art/breakthrough/hero/*/*.mp4   (after hero: grey left by a moving sleeve, light fading before the edges)
 
 peaks: the storm (the Heavenly Tribulation) as a still, a loop that ends where it begins, and its wind and thunder,
   looped the same way; the dawn (Heaven's Light) as a still and as one 8-second play (the beam comes down at ~3 s),
@@ -316,6 +317,82 @@ def pictures(files):
         print(name, im.size)
 
 
+def tidy(path, edge=0.12, grey_patches=None):
+    """A finished ending (the stacked colour-over-mask mp4) tidied in place:
+      - the grey left behind where the robe was on the first frame (the figure's shape is solid body, but a sleeve that
+        moves away uncovers the flat backdrop grey) is taken out;
+      - everything outside the figure's first-frame shape (lightning, the ring, thrown sleeves) fades out before the
+        video's edges instead of stopping on a straight line: on a phone the frame is smaller than the screen."""
+    if grey_patches is None:                               # only the inner breakthrough's matte keeps the first shape solid
+        grey_patches = os.path.basename(path).startswith("inner")
+    w, h2 = [int(v) for v in subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                                               "stream=width,height", "-of", "csv=p=0", path],
+                                              capture_output=True, text=True, check=True).stdout.strip().split(",")]
+    h = h2 // 2
+    ys, xs = np.mgrid[0:h, 0:w]
+    ex = np.clip(np.minimum(xs, w - 1 - xs) / (w * edge), 0, 1)
+    ey = np.clip(np.minimum(ys, h - 1 - ys) / (h * edge), 0, 1)
+    fade = (ex * ex * (3 - 2 * ex)) * (ey * ey * (3 - 2 * ey))
+    body = None
+    tmp = path + ".tidy.mp4"
+    src = subprocess.Popen(["ffmpeg", "-v", "error", "-i", path, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                           stdout=subprocess.PIPE)
+    dst = subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{w}x{h2}",
+                            "-r", str(train.END_FPS), "-i", "-", "-c:v", "libx264", "-crf", "22", "-preset", "slow",
+                            "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", tmp], stdin=subprocess.PIPE)
+    n = w * h2 * 3
+    while True:
+        raw = src.stdout.read(n)
+        if len(raw) < n:
+            break
+        fr = np.frombuffer(raw, np.uint8).reshape(h2, w, 3).astype(np.float32)
+        col, m = fr[:h], fr[h:, :, 0] / 255
+        if body is None:                                   # the figure, before anything happens
+            body = ndi.binary_dilation(ndi.binary_fill_holes(m > 0.5), iterations=4)
+            soft_body = ndi.gaussian_filter(body.astype(np.float32), 3)
+        if grey_patches:                                   # Gemini's mark, cut out of the light in the corner: filled
+            cy, cx = int(h * 0.7), int(w * 0.8)
+            sub = m[cy:, cx:]
+            z = sub < 0.02                                 # the mark: a cut-out rectangle, exactly empty, square-cornered
+            lab, k = ndi.label(z)
+            hole = np.zeros_like(z)
+            for j, sl in enumerate(ndi.find_objects(lab), 1):
+                part = lab[sl] == j
+                hh, ww = part.shape
+                if 300 <= part.sum() <= 5000 and part.mean() > 0.85 and 0.5 < hh / ww < 2 \
+                        and sl[1].start > 0 and sl[1].stop < sub.shape[1] and sl[0].start > 0:
+                    hole[sl] |= part
+            if hole.any():
+                hole = ndi.binary_dilation(hole, iterations=3).astype(np.uint8)
+                c8 = np.ascontiguousarray(col[cy:, cx:]).astype(np.uint8)
+                col[cy:, cx:] = cv2.inpaint(c8, hole, 7, cv2.INPAINT_TELEA)
+                m[cy:, cx:] = cv2.inpaint((sub * 255).astype(np.uint8), hole, 7, cv2.INPAINT_TELEA) / 255
+        al = np.clip(m, 1e-3, 1)[..., None]
+        c = col / al                                       # the colour, not premultiplied
+        lum = c.mean(axis=2)
+        sat = c.max(axis=2) - c.min(axis=2)
+        mu = ndi.uniform_filter(lum, 7)
+        sd = np.sqrt(np.maximum(ndi.uniform_filter(lum * lum, 7) - mu * mu, 0))
+        grey = (np.abs(lum - 123) < 16) & (sat < 12) & (sd < 3) & (m > 0.3) & grey_patches
+        grey = ndi.binary_opening(grey, iterations=3)                # patches, not the robe's thin grey folds
+        lab, k = ndi.label(grey)
+        if k:
+            big = np.nonzero(ndi.sum(grey, lab, range(1, k + 1)) >= 250)[0] + 1
+            grey = np.isin(lab, big)
+        grey = grey | (ndi.binary_dilation(grey, iterations=5) & (sat < 22) & (np.abs(lum - 123) < 40))   # its rim
+        grey = ndi.gaussian_filter(ndi.binary_dilation(grey, iterations=1).astype(np.float32), 1.2)
+        keep = (1 - grey) * (soft_body + (1 - soft_body) * fade)
+        m2 = m * keep
+        fr[:h] = np.clip(c * m2[..., None], 0, 255)
+        fr[h:] = (m2 * 255)[..., None]
+        dst.stdin.write(fr.astype(np.uint8).tobytes())
+    dst.stdin.close()
+    dst.wait()
+    src.wait()
+    os.replace(tmp, path)
+    print("tidied", path)
+
+
 def kv(args):
     return dict(a.split("=", 1) for a in args)
 
@@ -334,6 +411,9 @@ def main(args):
         chestfx(**kv(rest))
     elif cmd == "fixchamber":
         fixchamber(rest[0])
+    elif cmd == "tidy":
+        for p in rest:
+            tidy(p)
     elif cmd == "pictures":
         pictures(kv(rest))
     else:
