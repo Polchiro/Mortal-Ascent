@@ -195,7 +195,8 @@
     if (glow > 0) {
       var narrow = tall() ? 0.55 : 1;                           // a phone: the glow stays round the body, not a wash
       var g2 = fx.createRadialGradient(d[0], d[1], 0, d[0], d[1], 220 * K * (1 + glow) * narrow);
-      g2.addColorStop(0, 'rgba(' + tint + ',' + Math.min(0.9, glow * 0.6) * (0.6 + 0.4 * narrow) + ')'); g2.addColorStop(1, 'rgba(' + tint + ',0)');
+      g2.addColorStop(0, 'rgba(' + tint + ',' + Math.min(0.42, glow * 0.3) * (0.6 + 0.4 * narrow) + ')');   // a halo: you stay solid
+      g2.addColorStop(0.55, 'rgba(' + tint + ',' + Math.min(0.16, glow * 0.12) + ')'); g2.addColorStop(1, 'rgba(' + tint + ',0)');
       fx.globalCompositeOperation = 'lighter'; fx.fillStyle = g2; fx.fillRect(0, 0, W, H); fx.globalCompositeOperation = 'source-over';
     }
     fx.globalCompositeOperation = 'lighter';

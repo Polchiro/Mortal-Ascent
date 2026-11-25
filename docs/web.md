@@ -429,7 +429,7 @@ The endings are then **tidied** (`make_breakthrough_art tidy art/breakthrough/he
 figure's first-frame shape (the lightning, the ring, the thrown sleeves) fades out before the video's edges instead of
 stopping on a straight line, which showed as a box round the figure (on a phone the video is smaller than the screen);
 in the inner breakthrough, the flat grey a moving sleeve leaves behind and the corner mark cut out of the ring are
-taken out too. On a tall phone the charging glow stays round the body instead of washing the whole screen.
+taken out too. The charging glow is a soft halo, so the figure stays solid (on a tall phone it stays round the body too).
 
 ## Fight sounds
 
