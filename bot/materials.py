@@ -80,6 +80,31 @@ def roll_ore_vein(realm, rng=random, bonus=0.0):
     return out
 
 
+def seam_gives(kind, realm):
+    """What a seam of this kind always holds at this realm: the material's name (its amount is rolled by roll_seam)."""
+    t = forge.tier_for_realm(realm)
+    key = {"iron": forge.material_key("base", t, gear="weapon"), "coal": forge.material_key("fuel", t),
+           "jade": forge.material_key("base", t, gear="artifact")}[kind]
+    return MATERIALS[key]["name"]
+
+
+def roll_seam(kind, realm, rng=random, bonus=0.0):
+    """⛏️ A seam in the Ironvein Quarry (the website; forge.SEAMS): iron gives weapon metal (maybe a fuel, maybe a
+    Metal Shard), coal a fuel (maybe two), jade an artifact jade, all of your tier."""
+    t, spec = forge.tier_for_realm(realm), forge.SEAMS[kind]
+    if kind == "iron":
+        out = [material(forge.material_key("base", t, gear="weapon"), _count(spec["metal"], rng))]
+        if rng.random() < _chance(spec["fuel_chance"], bonus):
+            out.append(material(forge.material_key("fuel", t)))
+        if rng.random() < _chance(spec["metal_shard_chance"], bonus):
+            out.append(material(forge.material_key("essence", family="metal", grade="shard")))
+        return out
+    if kind == "coal":
+        n = spec["fuel"] + (1 if rng.random() < _chance(spec["second_fuel_chance"], bonus) else 0)
+        return [material(forge.material_key("fuel", t), n)]
+    return [material(forge.material_key("base", t, gear="artifact"), spec["jade"])]
+
+
 def family_of_element(element):
     return next((f for f, s in forge.FAMILIES.items() if s["element"] == element), None)
 

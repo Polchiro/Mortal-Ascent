@@ -78,7 +78,8 @@
   var BED = {
     town:   {wind: 0.05, windHz: 380, every: {chime: [7, 16], murmur: [0, 0]}},
     meadow: {wind: 0.09, windHz: 520, every: {cricket: [0.6, 1.8], bird: [6, 15]}},
-    forest: {wind: 0.11, windHz: 420, every: {cricket: [0.15, 0.55], owl: [18, 40], creak: [12, 30]}}
+    forest: {wind: 0.11, windHz: 420, every: {cricket: [0.15, 0.55], owl: [18, 40], creak: [12, 30]}},
+    quarry: {wind: 0.1, windHz: 300, every: {pebble: [5, 13], hammer: [9, 22], bird: [14, 30]}}       // wind over stone, loose stones falling, a far-off hammer
   };
   function startWind() {
     if (wind) return;
@@ -110,7 +111,8 @@
   var MUSIC = {
     town:   {root: 293.66, scale: [0, 2, 4, 7, 9],  beat: 0.46, len: [6, 10], rest: [3, 6],  v: 0.050, flute: 0.25, low: 0.5},
     meadow: {root: 329.63, scale: [0, 2, 4, 7, 9],  beat: 0.52, len: [5, 8],  rest: [4, 8],  v: 0.045, flute: 0.4,  low: 0.5},
-    forest: {root: 220.00, scale: [0, 3, 5, 7, 10], beat: 0.72, len: [3, 6],  rest: [6, 12], v: 0.042, flute: 0.55, low: 0.5}
+    forest: {root: 220.00, scale: [0, 3, 5, 7, 10], beat: 0.72, len: [3, 6],  rest: [6, 12], v: 0.042, flute: 0.55, low: 0.5},
+    quarry: {root: 196.00, scale: [0, 2, 5, 7, 9],  beat: 0.66, len: [3, 5],  rest: [7, 13], v: 0.04,  flute: 0.3,  low: 0.7}
   };
   var tune = {kind: null, at: 0, left: 0, i: 2};
   function mout(node, pan) {
@@ -185,6 +187,8 @@
         tone(f, at, 2.2, 0.018, 'sine', pan); tone(f * 2.76, at, 0.9, 0.004, 'sine', pan);
       }
     },
+    pebble: function (t) { for (var i = 0; i < 3; i++) burst(t + i * rnd(0.08, 0.2), 0.05, 0.03, 'bandpass', rnd(1800, 3200), 6, rnd(-0.7, 0.7)); },   // loose stones
+    hammer: function (t) { var p = rnd(-0.6, 0.6); for (var i = 0; i < 3; i++) { tone(1650, t + i * 0.55, 0.25, 0.012, 'sine', p); burst(t + i * 0.55, 0.03, 0.02, 'highpass', 3500, 0.7, p); } },
     murmur: function () {}
   };
   setInterval(function () {               // the beds' little events, each at its own random pace

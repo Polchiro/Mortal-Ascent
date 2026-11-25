@@ -22,11 +22,17 @@ AT = {
     "thunderfall_valley": (0.825, 0.215),
     "ancient_battlefield": (0.800, 0.545),
     "celestial_forbidden_lands": (0.510, 0.190),
+    "ironvein_quarry": (0.150, 0.720),          # just south of the town, off the Crossroads
 }
 
 TOWN = {"key": "town", "name": "Azure Cloud Town", "kind": "town",
         "text": "Home: the forge, the alchemy hall, the arena and the townsfolk, behind safe walls.",
         "go": "/town"}
+
+
+QUARRY = {"key": "ironvein_quarry", "name": "Ironvein Quarry", "kind": "quarry",
+          "text": "A worked pit close to town: iron for blades, coal for the forge's fire, now and then jade. "
+                  "No beasts trouble it. Old Shen keeps the hut by the way in."}
 
 
 def place(key):
@@ -40,7 +46,7 @@ def markers(player, blocked=None):
     `blocked`: why this player can't set out at all right now (injured, resting: Hunts.blocked), or None.
     A ground is `open` (set out now), `waiting` (the realm is right, but injured or resting: `why`, and `short`:
     "Injured" or "Resting") or `locked` (the realm is too low: it needs `requirement`)."""
-    out = [{**TOWN, "at": AT["town"], "state": "home"}]
+    out = [{**TOWN, "at": AT["town"], "state": "home"}, {**QUARRY, "at": AT["ironvein_quarry"], "state": "open"}]
     short = ("Injured" if blocked.startswith("injured") else "Resting") if blocked else None
     for loc in hunting.LOCATIONS:
         why = hunting.eligible(player, loc)

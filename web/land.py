@@ -48,10 +48,23 @@ LANDS = {
             (ROAD_W, [(30, 30), (38, 23), (47, 13), (54.8, 5.2), (62, -2)]),                  # Crimson Gorge
             (ROAD_W, [(30, 30), (40, 31.5), (49, 27.5), (56.6, 29.0), (64, 29.5)]),           # the Ancient Battlefield
             (ROAD_W, [(30, 30), (33, 39), (41.5, 47), (40.0, 56.6), (40.0, 64)]),             # Moon Forest
+            (ROAD_W, [(21, 33.5), (19.5, 41), (16.5, 49), (16.0, 56.6), (16.0, 64)]),         # the Ironvein Quarry
         ],
         "patches": [(30, 30, 3.4, "stone"), (30, 30, 5.2, "dirt"),
                     (44, 44, 9, "forest"), (52, 50, 8, "forest"), (33, 53, 6, "forest")],   # the forest's edge creeps in
-        "gates": {"road_moon_forest": {"at": (40.0, 56.6), "side": "y1"}},
+        "gates": {"road_moon_forest": {"at": (40.0, 56.6), "side": "y1"},
+                  "road_quarry": {"at": (16.0, 56.6), "side": "y1"}},
+    },
+    # The Ironvein Quarry (docs/world.md): a worked pit off the Crossroads, close to town. Bare earth and broken
+    # stone under a late-afternoon light; rock walls stand round it (web/quarry.py), seams glint in them.
+    "ironvein_quarry": {
+        "size": 40, "edge": 2.6, "base": "dirt", "rim": "forest", "tint": (0.92, 0.80, 0.68), "start": (16.0, 6.0),
+        "paths": [
+            (ROAD_W, [(16.0, -4), (16.0, 3.4), (17.5, 10), (20, 16), (20, 22)]),
+        ],
+        "patches": [(16, 2, 9, "grass"), (5, 6, 6, "grass"), (31, 5, 6, "grass"), (20, 23, 5.0, "stone"),
+                    (6, 30, 5, "grass"), (35, 33, 4.5, "grass")],
+        "gates": {"north": {"at": (16.0, 3.4), "side": "y0"}},
     },
     # Moon Forest, in three parts. Forest Edge: the meadow gives way to the trees' floor; the path winds south.
     "forest_edge": {

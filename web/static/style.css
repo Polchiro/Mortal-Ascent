@@ -1560,6 +1560,23 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .wfade.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.wfade{transition:none}}
 @media (max-width:760px){.gpanel{padding:12px}.gpanel .plantcard img{max-height:100px}}
+/* mining (docs/world.md "The Ironvein Quarry"): a small card low on the screen; the map stays in sight */
+.mcard{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:6;width:min(430px,94vw);padding:12px 16px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:linear-gradient(180deg,rgba(26,20,14,.94),rgba(12,10,8,.97))}
+.mcard[hidden],.seamsnow[hidden]{display:none}
+.mcard #mBody{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.mcard .kicker,.mcard .pline,.mcard .mhint{margin:0}.mcard .pline{font-size:16px}
+.mpips{display:flex;gap:8px}.mpips i{width:26px;height:8px;border-radius:999px;background:#2a221a;box-shadow:inset 0 0 0 1px rgba(232,194,122,.3)}
+.mpips i.on{background:linear-gradient(90deg,#E8C27A,#FFE9B0);box-shadow:0 0 10px rgba(232,194,122,.6)}
+.mstrike{min-width:190px;min-height:52px;font-size:20px;touch-action:none;user-select:none;-webkit-user-select:none}
+.mgot{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.mchip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:12px;border:1px solid rgba(232,194,122,.4);background:rgba(9,16,36,.6);animation:mpop .35s ease-out}
+.mchip b{font:700 15px Cinzel,Georgia,serif;color:var(--gold2)}
+@keyframes mpop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.seamsnow{position:fixed;left:20px;top:150px;z-index:4;margin:0;padding:5px 10px;border-radius:10px;background:rgba(12,10,8,.72);
+  border:1px solid rgba(232,194,122,.25);font:600 12px Inter,Arial,sans-serif;color:#E6DFCF}
+@media (max-width:760px){.mcard{bottom:0;width:100vw;border-radius:18px 18px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom))}.seamsnow{left:10px;top:118px}}
+@media (prefers-reduced-motion:reduce){.mchip{animation:none}}
 /* gathering close-up (docs/world.md "Herbs"): low on the screen, so you stay in sight kneeling above it; a bottom sheet on a phone */
 .gpanel{top:auto;bottom:14px;transform:translateX(-50%);width:min(820px,96vw);max-height:62vh;padding:14px 18px 16px;gap:8px;
   background:linear-gradient(180deg,rgba(14,22,40,.93),rgba(8,13,26,.97));animation:gup .22s ease-out}

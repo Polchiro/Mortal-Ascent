@@ -82,7 +82,7 @@
 
   // this place (load() sets them; a new place swaps them all)
   var PLACE, SIZE, AREA, BLOCKED, REACH, NPCS, PIECES, INSET, EXITS, SPOTS, K = 1, Z = 1, painted, GROUND, TONE, LIGHTS, ATMOS, TRIGGER;
-  var HERBS = [], FINDS = [], BEASTS = [], WORLD = {}, IMGS = {};
+  var HERBS = [], FINDS = [], BEASTS = [], SEAMS = [], MINE = null, WORLD = {}, IMGS = {};
   var SHEETS = cfg.sheets || {}, OTHERS = {};   // the other players walking here (/world/others), by tag
 
   function toScreen(x, y) { return {x: (x - y) * TW / 2, y: (x + y) * TH / 2}; }
@@ -207,7 +207,11 @@
       if (p.f >= p.loop[1]) { p.f = p.loop[1]; p.dir = -1; } else if (p.f <= p.loop[0]) { p.f = p.loop[0]; p.dir = 1; }
       return;
     }
-    if (p.f < p.to) { p.f = Math.min(p.to, p.f + p.rate * dt); return; }
+    if (p.f < p.to) {
+      p.f = Math.min(p.to, p.f + p.rate * dt);
+      if (p.onMark && p.f >= p.mark) { var m = p.onMark; p.onMark = null; m(); }
+      return;
+    }
     var then = p.then; p.then = null;
     if (then) then();
   }
@@ -236,7 +240,7 @@
     if (c.acts) { ACTS = c.acts; Object.keys(ACTS).forEach(function (k) { if (!ACTS[k].img) { ACTS[k].img = new Image(); ACTS[k].img.src = ACTS[k].src; } }); }
     if (c.sfx) snd('samples', c.sfx);
     OTHERS = {};
-    snd('place', c.place === 'town' ? 'town' : c.place === 'crossroads' ? 'meadow' : 'forest');
+    snd('place', c.place === 'town' ? 'town' : c.place === 'crossroads' ? 'meadow' : c.place === 'ironvein_quarry' ? 'quarry' : 'forest');
     PLACE = c.place; SIZE = c.size; AREA = c.area; BLOCKED = c.blocked || []; REACH = c.reach; NPCS = c.npcs || [];
     PIECES = c.pieces || []; INSET = c.inset || 0; EXITS = c.exits || []; K = c.scale || 1; TONE = c.tone || null;
     LIGHTS = c.lights || []; ATMOS = !!c.atmos; TRIGGER = c.trigger || 0.75; Z = c.zoom || 1;
@@ -276,7 +280,7 @@
       armed[e.key] = d > 2.6;                      // just came out of it: it waits until you have walked away
       if (!stood && !swapped && d < 3.2) { face(hero.x + (hero.x - e.x), hero.y + (hero.y - e.y)); stood = true; }
     });
-    BEASTS = []; HERBS = []; FINDS = [];
+    BEASTS = []; HERBS = []; FINDS = []; SEAMS = []; MINE = null;
     world(c.world || {});
     var t = document.getElementById('placeTitle'), k = document.getElementById('placeKicker');
     if (t && c.title) t.textContent = c.title;
@@ -298,10 +302,11 @@
   var KEYMAP = {KeyW: 'u', ArrowUp: 'u', KeyS: 'd', ArrowDown: 'd', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r'};
   var stick = document.getElementById('stick'), knob = document.getElementById('knob');
   function resetStick() { stickV = {x: 0, y: 0}; knob.style.transform = ''; }
-  function busy() { return dlgOpen || gOpen || fOpen || through || engaging || !!pose; }
+  function busy() { return dlgOpen || gOpen || mOpen || fOpen || through || engaging || !!pose; }
   window.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT') return;
     if (gOpen) { gatherKey(e); return; }
+    if (mOpen) { mineKey(e); return; }
     if (fOpen) { if (e.key === 'Escape' || e.key === 'Enter') { closeFind(); e.preventDefault(); } return; }
     if (dlgOpen) { if (e.key === 'Escape') { closeTalk(); e.preventDefault(); } return; }
     if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
@@ -311,7 +316,7 @@
     if (e.code === 'KeyG') debug = !debug;
     if (e.code === 'KeyM') location.href = '/world';             // the World Map (Back or M brings you back here)
   });
-  window.addEventListener('keyup', function (e) { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.swap = false; });
+  window.addEventListener('keyup', function (e) { if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') mHold = false; if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; if (e.key === 'Shift') keys.swap = false; });
   window.addEventListener('blur', function () { keys = {}; resetStick(); });
   if (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window) {
     stick.classList.add('on'); var kk = document.getElementById('keys'); if (kk) kk.style.display = 'none';
@@ -400,6 +405,12 @@
       h.t = old ? old.t : Math.random() * 6; h.pic = plain(h.picture); return h;
     });
     FINDS = (v.finds || []).map(function (f) { f.t = Math.random() * 6; return f; });
+    MINE = v.mine || null;
+    SEAMS = (MINE ? MINE.seams : []).map(function (s) {
+      var old = SEAMS.find(function (o) { return o.id === s.id; });
+      s.t = old ? old.t : Math.random() * 6; s.hits = old ? old.hits : (s.cracked ? 1 : 0); s.pic = toned(s.src, false); return s;
+    });
+    seamCount();
     var keep = {};
     BEASTS.forEach(function (b) { keep[b.id] = b; });
     BEASTS = (v.beasts || []).map(function (b) {
@@ -696,12 +707,14 @@
     SPOTS.forEach(function (n) { consider({kind: n.exit ? 'exit' : 'npc', o: n}, Math.hypot(hero.x - n.x, hero.y - n.y), REACH); });
     HERBS.forEach(function (h) { consider({kind: 'herb', o: h}, Math.hypot(hero.x - h.x, hero.y - h.y), (WORLD.reach || 1.6) * 0.9); });
     FINDS.forEach(function (f) { consider({kind: 'find', o: f}, Math.hypot(hero.x - f.x, hero.y - f.y), (WORLD.reach || 1.6) * 0.9); });
+    SEAMS.forEach(function (s) { consider({kind: 'seam', o: s}, Math.hypot(hero.x - s.x, hero.y - s.y), (MINE.reach || 1.9) * 0.95); });
     if (!WORLD.wary) BEASTS.forEach(function (b) { consider({kind: 'beast', o: b}, Math.hypot(hero.x - b.x, hero.y - b.y), 1.35); });
     return best;
   }
   function promptText(n) {
     var o = n.o;
     if (n.kind === 'herb') return 'Kneel at the ' + (o.kind || 'herb');
+    if (n.kind === 'seam') return o.spent ? 'The rock needs rest: new seams tomorrow' : 'Mine the ' + o.name;
     if (n.kind === 'find') return o.secret ? 'Something stirs here: look' : 'Something glints: look';
     if (n.kind === 'beast') return 'Fight the ' + (o.tier === 'normal' ? '' : o.tierName + ' ') + o.name;
     if (o.kind === 'road') return (o.state === 'open' ? 'The road to ' : '') + o.name;
@@ -710,6 +723,7 @@
   function act(n) {
     if (n.kind === 'herb') gather(n.o);
     else if (n.kind === 'find') discover(n.o);
+    else if (n.kind === 'seam') mine(n.o);
     else if (n.kind === 'beast') engage(n.o);
     else openTalk(n.o);
   }
@@ -867,6 +881,128 @@
     }
   }
 
+  /* mining a seam in the Ironvein Quarry (web/mine_play.py decides everything: what the seam holds was fixed when
+     you started on it; the blows are the digging). E, Space, a tap on the seam's card or the Strike button swings;
+     held, you keep swinging. Each blow that lands is noted (ms since the start) and sent when the seam breaks. */
+  var mOpen = false, mHold = false, mDig = null, mSeam = null, mBlows = [], mT0 = 0, mBusy = false, mLast = 0;
+  var mc = document.getElementById('mcard'), mBody = document.getElementById('mBody');
+  function seamCount() {
+    var n = document.getElementById('seamsNow');
+    if (n) { n.hidden = !MINE; if (MINE) n.textContent = 'Seams today ' + (MINE.day - MINE.left) + ' / ' + MINE.day; }
+  }
+  function mine(s) {
+    if (mOpen || pose) return;
+    if (s.spent) { say('The rock needs rest. You have opened today\'s seams: new ones at midnight UTC.'); return; }
+    mOpen = true; mSeam = s; mDig = null; mBlows = []; mBusy = false; mHold = false; keys = {}; resetStick(); prompt.classList.remove('on');
+    face(s.x, s.y);
+    post('/world/mine', {id: s.id, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
+      if (v.error || !v.dig) { closeMine(); say(v.error || 'That seam is worked out.', true); poll(); return; }
+      mDig = v.dig; mT0 = performance.now(); mc.hidden = false; mineCard();
+      var a = poseReady('swing');
+      if (a) posePlay('swing', a.marks.raise, a.marks.raise, 1, null, swingFlip(a));       // the pick raised, ready
+      strike();
+    }).catch(closeMine);
+  }
+  function swingFlip(a) { var left = toScreen(mSeam.x, mSeam.y).x < toScreen(hero.x, hero.y).x; return left !== (a.side === -1); }
+  function mineCard(got) {
+    document.getElementById('mKicker').textContent = mDig.name.toUpperCase();
+    mBody.textContent = '';
+    if (!got) {
+      mBody.appendChild(el('p', 'pline', 'It holds ' + mDig.gives + '.'));
+      var pips = el('div', 'mpips');
+      for (var i = 0; i < mDig.strikes; i++) pips.appendChild(el('i', i < mBlows.length ? 'on' : ''));
+      mBody.appendChild(pips);
+      var b = el('button', 'btn btn-gold mstrike', 'Strike'); b.type = 'button';
+      b.addEventListener('pointerdown', function (e) { e.preventDefault(); mHold = true; strike(); });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (n) { b.addEventListener(n, function () { mHold = false; }); });
+      mBody.appendChild(b);
+      mBody.appendChild(el('p', 'mhint', 'E or Space to strike; hold to keep swinging. Esc to step back.'));
+      return;
+    }
+    var row = el('div', 'mgot');
+    got.got.forEach(function (g) {
+      var c = el('span', 'mchip'); if (g.picture) { var im = el('img'); im.src = g.picture; im.alt = ''; im.width = 34; im.height = 34; c.appendChild(im); }
+      c.appendChild(el('b', null, g.name + (g.qty > 1 ? ' ×' + g.qty : ''))); row.appendChild(c);
+    });
+    mBody.appendChild(row);
+    mBody.appendChild(el('p', 'mhint', 'Pouch: ' + got.pouch.join(' · ') + '   ·   Seams today ' + (got.day - got.left) + ' / ' + got.day));
+    var ok = el('button', 'btn btn-jade', 'Walk on'); ok.type = 'button'; ok.addEventListener('click', closeMine); mBody.appendChild(ok); ok.focus();
+  }
+  function landed() {
+    if (!mDig) return;
+    mBlows.push(Math.round(performance.now() - mT0)); mSeam.hits = mBlows.length;
+    sfx('pick', 0.7); fx.push({kind: 'chips', x: mSeam.x, y: mSeam.y, t: 0, color: mSeam.color, big: mBlows.length >= mDig.strikes});
+    if (mBlows.length < mDig.strikes) mineCard();
+  }
+  function strike() {
+    if (!mOpen || !mDig || mBusy || mBlows.length >= mDig.strikes) return;
+    var now = performance.now(); if (now - mLast < (mDig.gap || 420) + 40) return;
+    mLast = now; mBusy = true;
+    var a = poseReady('swing');
+    function after() {
+      mBusy = false;
+      if (mBlows.length >= mDig.strikes) { broke(); return; }
+      if (mHold) strike();
+    }
+    if (!a) { landed(); setTimeout(after, (mDig.gap || 420) + 60); return; }
+    posePlay('swing', a.marks.raise, a.frames - 1, 1.15, after, swingFlip(a));
+    pose.mark = a.marks.hit; pose.onMark = landed;
+  }
+  function broke() {
+    post('/world/mine/done', {id: mSeam.id, blows: mBlows.join(','), x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
+      if (v.world) world(v.world);
+      if (v.error || !v.got) { closeMine(); say(v.error || 'The seam is worked out.', true); return; }
+      snd('picked'); mineCard(v.got);
+      v.got.got.forEach(function (g, i) { var im = new Image(); if (g.picture) im.src = g.picture; fx.push({kind: 'herb', img: im, x: hero.x + (i - (v.got.got.length - 1) / 2) * 0.5, y: hero.y, t: -i * 0.15, color: mSeam.color}); });
+    }).catch(closeMine);
+  }
+  function closeMine() { mOpen = false; mHold = false; mDig = null; mc.hidden = true; if (pose && pose.a === ACTS.swing) pose = null; hero.still = 0; cv.focus(); }
+  function mineKey(e) {
+    if (e.key === 'Escape') { closeMine(); e.preventDefault(); return; }
+    if (e.code === 'KeyE' || e.code === 'Space' || e.code === 'Enter') {
+      e.preventDefault();
+      if (mDig && mBlows.length >= mDig.strikes) { if (!mBusy && mBody.querySelector('.btn-jade')) closeMine(); return; }
+      mHold = true; strike();
+    }
+  }
+  /* a seam: its rock at the foot of the wall, glinting; cracks spread with each blow; dull when today's are spent */
+  function drawSeam(s, x, y) {
+    var img = ready(s.pic), close = isNear(s), T = s.tall * ZOOM / 1.2;
+    if (!img) return;
+    var w = T * img.width / img.height, sh = (mSeam === s && mOpen && fx.some(function (f) { return f.kind === 'chips' && f.t < 0.12; })) ? 2 : 0;
+    shadow(x, y - 2, w * 0.42, w * 0.12, .4);
+    ctx.save(); if (s.spent) ctx.globalAlpha *= 0.55;
+    ctx.drawImage(img, x - w / 2 + (sh ? Math.sin(glowT * 90) * sh : 0), y - T, w, T);
+    if (s.hits) {                                        // cracks, deeper with each blow
+      ctx.strokeStyle = 'rgba(20,14,10,.75)'; ctx.lineWidth = 1.6; ctx.beginPath();
+      for (var i = 0; i < s.hits * 2; i++) { var a = i * 2.1 + s.id, cx = x + Math.cos(a) * w * 0.12, cy = y - T * 0.45 + Math.sin(a) * T * 0.1;
+        ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a * 1.7) * w * 0.14, cy + Math.sin(a * 1.3) * T * 0.16); ctx.lineTo(cx + Math.cos(a * 1.7) * w * 0.2 + 4, cy + Math.sin(a * 1.3) * T * 0.3); }
+      ctx.stroke();
+    }
+    ctx.restore();
+    if (!s.spent && !CALM) {                             // a glint that comes and goes
+      var g = Math.max(0, Math.sin(s.t * 1.7 + s.id * 2)); g = g * g * g;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(x + Math.sin(s.id * 3) * w * 0.15, y - T * 0.55); ctx.rotate(s.t * 0.5);
+      ctx.fillStyle = hexA(s.color, 0.85 * g);
+      for (var k = 0; k < 4; k++) { ctx.rotate(Math.PI / 2); ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(1.6, 0); ctx.lineTo(0, -9 - 7 * g); ctx.lineTo(-1.6, 0); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+    if (close) { ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 11px Inter, sans-serif'; ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(s.name, x + 1, y - T - 7); ctx.fillStyle = '#fff'; ctx.fillText(s.name, x, y - T - 8); ctx.restore(); }
+  }
+  /* chips and sparks off a blow (more when the seam breaks) */
+  function drawChips(f, x, y) {
+    var n = f.big ? 22 : 10, tt = Math.min(1, f.t / 0.6);
+    ctx.save();
+    for (var i = 0; i < n; i++) {
+      var a = i * 2.4 + 0.3, sp = 30 + (i % 5) * 14, px = x + Math.cos(a) * sp * tt, py = y - 44 - Math.abs(Math.sin(a * 1.3)) * sp * 1.2 * tt + 110 * tt * tt;
+      ctx.fillStyle = i % 3 ? 'rgba(96,84,72,' + (1 - tt) + ')' : hexA(f.color, 1 - tt);
+      ctx.beginPath(); ctx.arc(px, py, 2.8 - (i % 3) * 0.7, 0, Math.PI * 2); ctx.fill();
+    }
+    if (f.t < 0.14) { ctx.globalCompositeOperation = 'lighter'; var g = ctx.createRadialGradient(x, y - 48, 0, x, y - 48, 38);
+      g.addColorStop(0, 'rgba(255,236,190,' + (0.9 * (1 - f.t / 0.14)) + ')'); g.addColorStop(1, 'rgba(255,200,120,0)'); ctx.fillStyle = g; ctx.fillRect(x - 40, y - 88, 80, 80); }
+    ctx.restore();
+  }
+
   /* something glints: look (one of /explore's finds; the server decides) */
   var fOpen = false, fp = document.getElementById('fpanel'), fBody = document.getElementById('fBody');
   document.getElementById('fClose').addEventListener('click', closeFind);
@@ -890,7 +1026,7 @@
   var last = 0, acc = 0, STEP = 1 / 60, debug = false, hiddenHero = false, glowT = 0, gz = 1;
   function update(dt) {
     NPCS.forEach(function (n) { n.t += dt; }); glowT += dt; bt += dt;
-    HERBS.forEach(function (h) { h.t += dt; }); FINDS.forEach(function (f) { f.t += dt; });
+    HERBS.forEach(function (h) { h.t += dt; }); FINDS.forEach(function (f) { f.t += dt; }); SEAMS.forEach(function (s) { s.t += dt; });
     poseStep(dt);
     fx.forEach(function (f) { f.t += dt; }); fx = fx.filter(function (f) { return f.t < 1.5; });
     var v = pose ? {x: 0, y: 0} : inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
@@ -1274,6 +1410,10 @@
       var p = toScreen(n.x, n.y);
       movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
     });
+    SEAMS.forEach(function (s) {
+      var p = toScreen(s.x, s.y);
+      movers.push({x: s.x, y: s.y, h: s.tall, f: function () { at(p.x, p.y, function () { drawSeam(s, 0, 0); }); }});
+    });
     BEASTS.forEach(function (b) {
       var p = toScreen(b.x, b.y);
       movers.push({x: b.x, y: b.y, h: b.w, f: function () { at(p.x, p.y, function () { drawBeast(b, 0, 0); }); }});
@@ -1283,7 +1423,7 @@
       movers.push({x: o.x, y: o.y, h: 175, f: function () { at(p.x, p.y, function () { drawOther(o, 0, 0); }); }});
     });
     layered(movers).forEach(function (f) { f(); });
-    fx.forEach(function (f) { var p = toScreen(f.x, f.y); at(p.x, p.y, function () { drawFx(f, 0, 0); }); });
+    fx.forEach(function (f) { if (f.t < 0) return; var p = toScreen(f.x, f.y); at(p.x, p.y, function () { (f.kind === 'chips' ? drawChips : drawFx)(f, 0, 0); }); });
     Object.keys(OTHERS).forEach(function (k) {
       var o = OTHERS[k], p = toScreen(o.x, o.y);
       at(p.x, p.y, function () { otherLabel(o, 0, 0); });
