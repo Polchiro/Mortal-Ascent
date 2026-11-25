@@ -1,0 +1,30 @@
+# Runs the website and the Discord bot together from one image (docs/docker.md):
+#   docker compose up -d --build     start (or update after git pull)
+#   docker compose logs -f           watch what they print
+#   docker compose down              stop
+# Both read your .env and share the database in the data/ folder next to this file.
+services:
+  web:
+    build: .
+    image: mortal-ascent
+    command: ["python", "-m", "web"]
+    env_file: .env
+    environment:
+      WEB_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:8000:8000"     # only this computer can open it; a host's HTTPS proxy goes in front when online
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+
+  bot:
+    image: mortal-ascent
+    command: ["python", "-m", "bot"]
+    env_file: .env
+    volumes:
+      - ./data:/data
+    depends_on:
+      - web                        # so the image is built once, by the web service
+    restart: unless-stopped
+    healthcheck:
+      disable: true                # the bot has no web page to check

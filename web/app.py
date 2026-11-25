@@ -144,6 +144,17 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     def page(request, name, status=200, **ctx):
         return templates.TemplateResponse(request, name, ctx, status_code=status)
 
+    @app.get("/healthz")
+    def healthz():
+        """For Docker's health check (docs/docker.md): the site answers and the database opens. No redirect,
+        no login, nothing about players."""
+        c = conn()
+        try:
+            c.execute("SELECT 1").fetchone()
+        finally:
+            c.close()
+        return {"ok": True}
+
     @app.get("/", response_class=HTMLResponse)
     def home(request: Request):
         moved = other_address(request)

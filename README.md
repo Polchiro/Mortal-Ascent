@@ -25,3 +25,8 @@ python -m web                    # then open http://localhost:8000
 
 It needs `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` in `.env`, and `http://localhost:8000/callback`
 added under OAuth2 > Redirects in the Discord Developer Portal. Full steps: [docs/web.md](docs/web.md).
+
+### With Docker (optional)
+
+`docker compose up -d --build` runs the website and the bot together in a container, using your `.env`
+and keeping the database in `data/`. Not needed for playing locally. Full steps: [docs/docker.md](docs/docker.md).
