@@ -358,7 +358,7 @@ def test_a_drill_through_the_routes(client):
     page = client.get("/practice")
     assert page.status_code == 200 and "practice.js" in page.text and "Senior Sister Xue" in page.text
     assert 'id="pleave"' in page.text and 'href="/profile"' not in page.text         # no tabs: only Leave
-    assert 'id="pkeyrow"' in page.text and 'id="pguides"' in page.text              # Settings: your keys, guides
+    assert 'id="pkeyrow"' in page.text and 'id="pglevel"' in page.text and 'id="phow"' in page.text              # Settings: your keys, guides
     s = client.get("/practice/state").json()
     assert s["drill"]["mode"] == "strike" and s["prompts"] and not s["begun"]
     assert client.post("/practice/submit", json={"inputs": []}).json()["error"] == "The drill hasn't begun."

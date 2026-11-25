@@ -85,14 +85,21 @@
         {% if s.event %}<li class="ev">{{ s.event.text }}</li>{% endif %}
       </ul>
       <p class="pkeys" id="pkeys"></p>
+      <details class="pset phow" id="phow">
+        <summary>How to play</summary>
+        {% include "_practice_howto.html" %}
+      </details>
       <details class="pset" id="pset">
         <summary>Settings: your keys and guides</summary>
         <p class="sub">Click a move, then press the key you want for it. Kept on this device.</p>
         <div class="pkeyrow" id="pkeyrow"></div>
-        <div class="psetrow">
-          <label><input type="checkbox" id="pguides"> Show guides (the key on each target, and where targets appear)</label>
-          <button class="hbtn ghost small" id="pkeyreset" type="button">Reset keys</button>
-        </div>
+        <fieldset class="pglevel" id="pglevel">
+          <legend>Guides</legend>
+          <label><input type="radio" name="pguide" value="full"> <b>Full</b><small>The key on each target, where targets appear, a "Now!" glow at the perfect moment, and a short note the first time something new appears</small></label>
+          <label><input type="radio" name="pguide" value="light"> <b>Light</b><small>Only the key on each target</small></label>
+          <label><input type="radio" name="pguide" value="off"> <b>Off</b><small>Nothing but the targets</small></label>
+        </fieldset>
+        <div class="psetrow"><button class="hbtn ghost small" id="pkeyreset" type="button">Reset keys</button></div>
       </details>
       <div class="pbtns">
         <button class="btn btn-gold" id="pbegin" type="button">Begin the drill</button>
