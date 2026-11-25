@@ -2282,3 +2282,6 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   .mhero{width:auto;gap:8px;padding:6px 10px 6px 6px}.mface{width:44px;height:44px}.mname{font-size:14px}.mrealm{font-size:11px}
   .mhpbar{height:13px}.mbanner{top:22vh}.mbanner h1{font-size:24px}
   .mprompt{bottom:78px}.mdock{right:10px;bottom:12px;gap:4px}.dbtn{width:52px;padding:6px 0 4px}.dbtn svg{width:20px;height:20px}.dbtn span{font-size:8.5px;letter-spacing:0}}
+/* the bag: a chest's Open and the Treasure Shelf (web/chest_play.py) */
+.chestacts{display:flex;gap:10px;flex-wrap:wrap}
+.chestacts .btn{text-decoration:none}

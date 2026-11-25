@@ -42,8 +42,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from bot import appearance as appearance_rules
 from bot import db, points
 from . import discord_oauth as oauth
-from . import (alchemy_play, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes, practice_routes,
-               rankings, spar_routes, town, train_routes)
+from . import (alchemy_play, chest_routes, drawn, duel_routes, explore_play, forge_play, gather_play, hunt_routes,
+               practice_routes, rankings, spar_routes, town, train_routes)
 from . import world_routes
 from . import inventory as bag
 from .appearance import appearance_view
@@ -124,7 +124,7 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
         return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
     app.mount("/static", FreshStatic(directory=os.path.join(HERE, "static")), name="static")
-    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train"):            # only the art the pages use
+    for folder in ("icons", "scenes", "chests", "portraits", "beasts", "fx", "ui", "maps", "forge", "env", "spar", "practice", "train", "chest"):            # only the art the pages use
         app.mount(f"/art/{folder}", StaticFiles(directory=os.path.join(ROOT, "art", folder)), name=f"art-{folder}")
     templates = Jinja2Templates(directory=os.path.join(HERE, "templates"))
     templates.env.filters["rich"] = forge_play.rich          # the bot's **bold** lines as safe HTML
@@ -640,6 +640,8 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     practice_routes.add_routes(app, page, current_user, with_conn, form_of, num)
     # Train: Meridian Circulation, a meditation of Qi pulses (web/train_routes.py, web/train_play.py, train_sim.py)
     train_routes.add_routes(app, page, current_user, with_conn, form_of, num)
+    # The Treasure Shelf: opening chests (web/chest_routes.py, web/chest_play.py)
+    chest_routes.add_routes(app, page, current_user, with_conn, form_of, num)
 
     @app.post("/explore/begin")
     async def explore_begin(request: Request):

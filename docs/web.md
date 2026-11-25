@@ -114,7 +114,62 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
   its effects, Unequip, and a link to the bag for an empty slot. HP / Attack / Defense follow at once.
 - The website can't see a fight running in Discord. A fight reads the gear when it starts, so changing gear here
   during one counts from the next fight.
-- Using and opening items (pills, chests, manuals) stays in Discord for now.
+- **Chests** open on the website: a chest's **Open** in the Inspect panel, or the **Treasure Shelf** (see "Opening a
+  chest" below). Using pills and manuals stays in Discord for now.
+
+## Opening a chest
+
+Chests open with the bot's own functions: `loot.begin_chest` rolls one (with Fate Weaver) and `loot.claim_chest`
+grants it (the coins, the items, the daily quest), exactly as Discord's reveal does (`web/chest_play.py`,
+`web/chest_routes.py`, `web/templates/chests.html`, `web/static/chests.js` and `.css`). Nothing about what a chest
+can hold is new.
+
+**The Treasure Shelf** (`/chests`, from the bag's Chests tab): a lacquered shelf with your chests on it, the rarest at
+the top (Mythic and Legendary, then Epic and Rare, then Uncommon and Common). Each tier you have glows in its colour
+with a count; the ones you don't have are faint shadows. Pick one to see it beside the shelf: how many, how many
+seals, how many bag slots it could need, **Open** and **Open all**. Back returns to the bag (or wherever you came
+from: `?from=`, this site's pages only). A chest's **Open** in the bag goes straight into the vault.
+
+**Nothing is ever left behind** (the approved bag guard): a chest opens only when the bag has room for the most it
+could give that takes a slot, one for each kind of reward its tier can roll (a manual, a weapon, armour, an
+artifact, and the Heaven-Defying Pill from Legendary and Mythic chests; forging materials go to their pouch), twice
+over with an artifact that gives an extra roll. Otherwise it says how many slots it needs and how many you have.
+Discord keeps its own way (it shows what was left behind).
+
+**Open all** opens up to **20** of one kind at a time, or as many as there is room for, and says so ("Opened 2 of 25:
+there was room in the bag for that many").
+
+**The vault.** The chest is set on the altar in its tier's light. The ceremony grows with the chest's **tier**, which
+you knew before opening it, never with what is inside:
+
+| Chest | Seals to break (hold, or tap one at a time) |
+|---|---|
+| Common | none: tap it |
+| Uncommon, Rare | one |
+| Epic | two |
+| Legendary | three; the chest burns brighter |
+| Mythic | three; the room darkens and the chest rises |
+
+The server opens the chest the moment you touch it (so the result is ready, and a second press can't open a second
+one: each opening carries a nonce, and the same nonce answers the same result). The chest shakes, light leaks out, and
+it **bursts** (SHOAIB's burst video and its sound, tinted to the chest's colour). The **Lotus Coins** pour out with a
+counting number, then every reward lands as the **same jade slip**, and they turn over one by one, **worst first**.
+Each card's front shows its rarity: plain for Common, a coloured frame and band for Uncommon and Rare, turning rays
+for Epic, Legendary and Mythical, a glow and a tremor for Mythical; each turn's note rises with the rarity.
+
+**Epic and better** rise to the middle with the bot's flavour line ("Its aura is thick enough to taste."); a
+**Legendary or Mythical** reward fills the screen, a ring of light turning behind it (the treasure moment video and
+its sound, tinted to the reward's colour). A tap moves on. Then the **summary**: the coins and every reward, best
+first (Open all groups the same reward from several chests into one line), the bot's notes (Fate Weaver), **Open
+another** and **Back to the shelf**.
+
+**Skip** jumps to the summary; **Quick opening** (remembered: `ma.chest.quick`) leaves out the seals and the burst.
+Rewards still waiting from a reveal nobody finished (the bot restarted mid-reveal) show on the shelf with **Collect
+them**.
+
+**The art** (cut with `scripts/make_breakthrough_art.py`, which comes with Breakthrough, PR #260, into `art/chest/`): the shelf, the vault (a still, a loop
+and its room tone), the burst and the treasure moment's ring (light on black, added onto the scene), the jade slip,
+and the lid burst. The six chests are `art/chests/`, the seals Train's.
 
 ## The forge
 
