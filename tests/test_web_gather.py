@@ -1,6 +1,7 @@
 """Gathering on the website (docs/world.md "Herbs"): walk up to a herb out in the world and play its round. The
 round is the bot's own /gather engine (bot/gathering.py), refereed on the server (web/gather_play.py,
 web/overworld.py)."""
+import os
 import urllib.parse
 
 import pytest
@@ -12,6 +13,7 @@ import alchemy  # noqa: E402
 from bot import db, gathering  # noqa: E402
 from bot import player as rules  # noqa: E402
 from web import app as web_app  # noqa: E402
+from web import gather_art  # noqa: E402
 from web import discord_oauth as oauth  # noqa: E402
 
 UID = 779
@@ -90,10 +92,45 @@ def test_kneeling_shows_the_round_for_that_herb(client):
     s, g, h = kneel(client)
     rnd = s.g.round
     assert g["mode"] == "round" and rnd.kind == "herb"
-    assert rnd.herb["name"] == h["name"] == g["target"]["name"]               # the herb that grew there
+    assert rnd.herb["name"] == g["target"]["name"]                            # the herb that grew there
+    assert "name" not in h and h["kind"].endswith(" herb")                    # the map says how rare and what kind,
+    assert rnd.herb["name"].lower() not in h["kind"].lower()                  # not which plant: kneel to learn it
+    assert h["picture"].startswith("/art/herbs/") and h["foot"] and h["tall"] == gather_art.MAP_HEIGHT[h["grade"]]
     assert rnd.herb["grade"] == h["grade"] and rnd.herb["data"]["type"] == h["type"]
     assert len(g["choices"]) in (alchemy.GATHER_CHOICES, alchemy.OLD_HERB_CHOICES)
     assert "the meadow outside the town walls" in " ".join(g["prompt"])
+
+
+def test_the_choices_pictures_come_inside_the_round(client):
+    """The timer fix: every choice's painting is in the round itself (a data: address), so the page has them all
+    before the clock matters, and no address names a plant."""
+    s, g, _ = kneel(client)
+    assert all(c["picture"].startswith("data:image/webp;base64,") for c in g["choices"])
+    assert len({c["picture"] for c in g["choices"]}) == len(g["choices"])
+
+
+def test_every_herb_is_painted():
+    for grade in alchemy.HERBS.values():
+        for name, _ in grade.values():
+            art = gather_art.herb(name)
+            assert art and os.path.exists(os.path.join(gather_art.ROOT, art["src"].lstrip("/"))), name
+            assert 0 < art["foot"][0] < art["w"] and art["h"] * 0.6 < art["foot"][1] <= art["h"]
+            assert gather_art.choice(name)
+
+
+def test_the_heroes_kneel_and_swing_sheets():
+    from PIL import Image
+    for gender in ("male", "female"):
+        acts = gather_art.acts(gender)
+        assert set(acts) == {"kneel", "swing"}
+        for a in acts.values():
+            im = Image.open(os.path.join(gather_art.ROOT, a["src"].lstrip("/")))
+            rows = -(-a["frames"] // a["cols"])
+            assert im.size == (a["cell"][0] * a["cols"], a["cell"][1] * rows)
+            assert all(0 <= v < a["frames"] for v in a["marks"].values())
+        k = acts["kneel"]["marks"]
+        assert k["down"] < k["search"] < k["lift"] < k["rise"]
+    assert {"kneel", "rustle", "rise", "pick"} <= set(gather_art.sounds())
 
 
 def test_the_panel_never_tells_which_choice_is_real(client):

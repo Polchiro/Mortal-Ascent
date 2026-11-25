@@ -230,15 +230,16 @@ A nine-pattern pill is announced only when it is crafted in Discord (the website
 
 ## Gathering
 
-There is no Gather page any more. Herbs grow on the Crossroads and in the Moon Forest: walk up to one and press
-**E**, and one round of the bot's gathering game opens in a panel over the map (docs/world.md "Herbs"). The engine is
+There is no Gather page any more. Herbs grow on the Crossroads and in the Moon Forest, each its own painting rooted
+in the ground: walk up to one and press **E**, you kneel, and one round of the bot's gathering game opens in a
+close-up low on the screen (docs/world.md "Herbs", "Gathering art"). The engine is
 still `bot/gathering.py` (`Gathering`): it checks the pick, stores the herb and keeps the Herbal Insight streak, the
 Wandering Spirit check and the review flags. Discord's `/gather` plays the same round. (The poisonous look-alikes
 were removed from both on Nov 25 2026: the four choices are the grade's four herbs and nothing costs HP.)
 
 **The server referees** (`web/gather_play.py`, `web/overworld.py`). Which choice is real stays on the server until the
-pick: the panel has no plant names, and each choice's picture is asked for by its position
-(`/gather/plant/<turn>/o2.png`), only for the round now showing. The time for a pick is measured on the server, so a
+pick: the panel has no plant names, and each choice's painting comes inside the round itself (a data: address, so
+no address names a plant and nothing is fetched once the clock runs). The time for a pick is measured on the server, so a
 late right answer is still "too slow". You must be standing by the herb, and each herb can be tried once. Rare finds
 (Earth, Heaven) are announced only when gathered in Discord.
 

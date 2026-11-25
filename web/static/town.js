@@ -56,6 +56,17 @@
     showGait();
   })();
   var CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Quick gather (Settings): no kneeling, camera or pulling animations; the round opens at once. Kept on this device. */
+  var QUICK = false;
+  try { QUICK = localStorage.getItem('ma.quick') === 'on'; } catch (e) {}
+  (function () {
+    var bs = document.querySelectorAll('[data-quick]');
+    function mark() { Array.prototype.forEach.call(bs, function (o) { var on = (o.dataset.quick === 'on') === QUICK; o.classList.toggle('on', on); o.setAttribute('aria-pressed', on); }); }
+    Array.prototype.forEach.call(bs, function (o) {
+      o.addEventListener('click', function () { QUICK = o.dataset.quick === 'on'; try { localStorage.setItem('ma.quick', QUICK ? 'on' : 'off'); } catch (e) {} mark(); });
+    });
+    mark();
+  })();
 
   var cfg = JSON.parse(document.getElementById('mapdata').textContent);
   var SH = cfg.sheet, CELL = SH.cell, FEET_X = SH.feet[0], FEET_Y = SH.feet[1], STAND = SH.stand;
@@ -177,6 +188,41 @@
   function sectorRow(a) { var k = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8; return (k + 6) % 8; }
   function angDiff(a, b) { return Math.abs(((a - b) % 360 + 540) % 360 - 180); }
   var hero = {x: 0, y: 0, dir: 4, frame: STAND[4], phase: 0, moving: false, still: 0};
+  /* A move the hero plays in place of walking (web/gather_art.py: kneeling at a herb, swinging a pick): frames of one
+     sheet, facing right as filmed (`flip`: mirrored). `pose.f` runs to `pose.to` at `rate` frames a second, then
+     either swings back and forth between `loop`'s two frames (the hands searching the leaves) or calls `then`.
+     Two neighbouring frames are blended, so 12 pictures a second read smoothly. While a pose is on, you stand still. */
+  var ACTS = {}, pose = null;
+  function poseReady(kind) { var a = ACTS[kind]; return !CALM && !QUICK && a && a.img && a.img.complete && a.img.naturalWidth ? a : null; }
+  function posePlay(kind, from, to, rate, then, flip) {
+    var a = poseReady(kind); if (!a) { pose = null; if (then) then(); return false; }
+    pose = {a: a, f: from, to: to, rate: rate * a.fps, then: then, loop: null, dir: 1, flip: flip == null ? (pose ? pose.flip : false) : flip};
+    return true;
+  }
+  function poseStep(dt) {
+    if (!pose) return;
+    var p = pose;
+    if (p.loop) {
+      p.f += p.dir * p.rate * dt;
+      if (p.f >= p.loop[1]) { p.f = p.loop[1]; p.dir = -1; } else if (p.f <= p.loop[0]) { p.f = p.loop[0]; p.dir = 1; }
+      return;
+    }
+    if (p.f < p.to) { p.f = Math.min(p.to, p.f + p.rate * dt); return; }
+    var then = p.then; p.then = null;
+    if (then) then();
+  }
+  function drawPose(x, y) {
+    var p = pose, a = p.a, s = 0.5 * ZOOM, cw = a.cell[0], ch = a.cell[1];
+    var i = Math.max(0, Math.min(a.frames - 1, Math.floor(p.f))), j = Math.min(a.frames - 1, i + 1), k = p.f - i;
+    ctx.save(); ctx.translate(x, y); if (p.flip) ctx.scale(-1, 1);
+    var dx = -a.feet[0] * s, dy = -a.feet[1] * s;
+    ctx.drawImage(a.img, (i % a.cols) * cw, Math.floor(i / a.cols) * ch, cw, ch, dx, dy, cw * s, ch * s);
+    if (k > 0.02 && j !== i) {
+      ctx.globalAlpha *= k;
+      ctx.drawImage(a.img, (j % a.cols) * cw, Math.floor(j / a.cols) * ch, cw, ch, dx, dy, cw * s, ch * s);
+    }
+    ctx.restore();
+  }
   if (window.__spy) window.__hero = hero;       // the headless-browser checks follow him
   function face(tx, ty) {
     var a = toScreen(hero.x, hero.y), b = toScreen(tx, ty);
@@ -187,6 +233,8 @@
   function load(c, swapped) {
     cfg = c;
     if (c.sheets) SHEETS = c.sheets;
+    if (c.acts) { ACTS = c.acts; Object.keys(ACTS).forEach(function (k) { if (!ACTS[k].img) { ACTS[k].img = new Image(); ACTS[k].img.src = ACTS[k].src; } }); }
+    if (c.sfx) snd('samples', c.sfx);
     OTHERS = {};
     snd('place', c.place === 'town' ? 'town' : c.place === 'crossroads' ? 'meadow' : 'forest');
     PLACE = c.place; SIZE = c.size; AREA = c.area; BLOCKED = c.blocked || []; REACH = c.reach; NPCS = c.npcs || [];
@@ -250,7 +298,7 @@
   var KEYMAP = {KeyW: 'u', ArrowUp: 'u', KeyS: 'd', ArrowDown: 'd', KeyA: 'l', ArrowLeft: 'l', KeyD: 'r', ArrowRight: 'r'};
   var stick = document.getElementById('stick'), knob = document.getElementById('knob');
   function resetStick() { stickV = {x: 0, y: 0}; knob.style.transform = ''; }
-  function busy() { return dlgOpen || gOpen || fOpen || through || engaging; }
+  function busy() { return dlgOpen || gOpen || fOpen || through || engaging || !!pose; }
   window.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT') return;
     if (gOpen) { gatherKey(e); return; }
@@ -653,7 +701,7 @@
   }
   function promptText(n) {
     var o = n.o;
-    if (n.kind === 'herb') return 'Gather the ' + o.name;
+    if (n.kind === 'herb') return 'Kneel at the ' + (o.kind || 'herb');
     if (n.kind === 'find') return o.secret ? 'Something stirs here: look' : 'Something glints: look';
     if (n.kind === 'beast') return 'Fight the ' + (o.tier === 'normal' ? '' : o.tierName + ' ') + o.name;
     if (o.kind === 'road') return (o.state === 'open' ? 'The road to ' : '') + o.name;
@@ -699,21 +747,33 @@
   var gOpen = false, gp = document.getElementById('gpanel'), gBody = document.getElementById('gBody'), gView = null, gTimer = null;
   function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function htmlLine(tag, cls, html) { var e = el(tag, cls); e.innerHTML = html; return e; }   // the server's own lines
+  var gHerb = null, fx = [];
+  function sfx(kind, v) { snd('sample', kind, v); }
   function gather(h) {
-    if (gOpen) return;
-    gOpen = true; keys = {}; resetStick(); prompt.classList.remove('on'); snd('kneel');
+    if (gOpen || pose) return;
+    gOpen = true; gHerb = h; keys = {}; resetStick(); prompt.classList.remove('on');
     face(h.x, h.y);
-    gBody.textContent = ''; gBody.appendChild(el('p', 'pline', 'You kneel in the grass…'));
-    gp.hidden = false;
-    post('/world/gather', {place: PLACE, id: h.id, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (g) {
-      if (g.error || !g.mode) { closeGather(); say(g.error || 'The herb is gone.', true); poll(); return; }
-      showRound(g);
-    }).catch(closeGather);
+    function ask() {
+      post('/world/gather', {place: PLACE, id: h.id, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (g) {
+        if (g.error || !g.mode) { closeGather(); say(g.error || 'The herb is gone.', true); poll(); return; }
+        gp.hidden = false; showRound(g);
+      }).catch(closeGather);
+    }
+    // the kneel plays before the round is asked for, so none of the round's time goes on it; the round arrives as
+    // the knees touch the ground, and the hands then search the leaves for as long as it is open
+    var a = poseReady('kneel'), left = toScreen(h.x, h.y).x < toScreen(hero.x, hero.y).x;
+    if (!a) { snd('kneel'); ask(); return; }
+    sfx('kneel', 0.6);
+    posePlay('kneel', a.marks.down, a.marks.search, 2.1, function () {
+      if (pose) { pose.loop = [a.marks.search, a.marks.lift - 2]; pose.rate = a.fps * 0.55; }
+    }, left);
+    setTimeout(ask, 520);
   }
   function showRound(g) {
     gView = g; clearInterval(gTimer);
     document.getElementById('gKicker').textContent = (g.place || 'the wilds').toUpperCase();
-    gBody.textContent = '';
+    gBody.textContent = ''; gp.classList.toggle('done', g.mode !== 'round');
+    if (g.mode === 'round' && pose && pose.loop) sfx('rustle', 0.35);
     if (g.mode === 'round') (g.prompt || []).forEach(function (l, i, all) { gBody.appendChild(htmlLine('p', 'pline' + (i === all.length - 1 && g.target ? ' desc' : ''), l)); });
     if (g.target) {
       var t = g.target, tb = el('div', 'target'); tb.style.borderColor = t.color;
@@ -746,9 +806,11 @@
       }
     }
     if (g.mode === 'round') {
-      var tm = el('div', 'timer'), bar = el('div', 'tbar'), fill = el('div'), left = el('span', null, g.left + 's');
-      bar.appendChild(fill); tm.appendChild(bar); tm.appendChild(left); gBody.appendChild(tm);
-      var away = el('button', 'link', 'Walk away (this herb counts as missed)'); away.type = 'button';
+      // the timer: an incense stick burning down, across the top of the panel; Walk away sits in the corner, away
+      // from the plants (it was under them, easy to hit by mistake on a phone)
+      var tm = el('div', 'timer incense'), bar = el('div', 'tbar'), fill = el('div'), left = el('span', null, g.left + 's');
+      bar.appendChild(fill); tm.appendChild(bar); tm.appendChild(left); gBody.insertBefore(tm, gBody.firstChild);
+      var away = el('button', 'gaway', 'Walk away'); away.type = 'button'; away.title = 'Walk away: this herb counts as missed';
       away.addEventListener('click', walkAway); gBody.appendChild(away);
       var end = Date.now() + g.left * 1000;
       gTimer = setInterval(function () {
@@ -760,7 +822,9 @@
       var first = gBody.querySelector('.plantcard, .sign'); if (first) first.focus();
     } else {
       (g.result || []).forEach(function (l) { gBody.appendChild(htmlLine('p', 'pline big2', l)); });
-      snd(/✅|✨/.test((g.result || []).join(' ')) ? 'picked' : 'missed');
+      var got = /✅ You gather|✨/.test((g.result || []).join(' '));
+      snd(got ? 'picked' : 'missed');
+      if (got) pulled(g);
       var row2 = el('div', 'choices'), ok = el('button', 'btn btn-jade', 'Walk on'); ok.type = 'button';
       ok.addEventListener('click', closeGather); row2.appendChild(ok); gBody.appendChild(row2); ok.focus();
     }
@@ -778,7 +842,23 @@
     post('/world/gather/away', {turn: turn}).then(after).catch(closeGather);
   }
   function after(g) { if (g.world) world(g.world); if (g.mode) showRound(g); else closeGather(); }
-  function closeGather() { clearInterval(gTimer); gOpen = false; gView = null; gp.hidden = true; cv.focus(); }
+  /* pulled free: the hands close and lift (the kneel sheet's `lift`), the herb's painting rises out of them with a
+     few clods of soil, and drifts up as it goes into the bag */
+  function pulled(g) {
+    var pic = g.target && g.target.picture, im = null;
+    if (pic) { im = new Image(); im.src = pic; }
+    var a = pose && pose.a;
+    function rise() { fx.push({kind: 'herb', img: im, x: hero.x, y: hero.y, t: 0, color: g.target ? g.target.color : '#6FD9B0'}); }
+    if (a) { pose.loop = null; posePlay('kneel', a.marks.lift, a.marks.rise - 6, 1.5, null); setTimeout(rise, 420); }
+    else rise();
+  }
+  function closeGather() {
+    clearInterval(gTimer); gOpen = false; gView = null; gHerb = null; gp.hidden = true; cv.focus();
+    if (pose && pose.a === ACTS.kneel) {                 // stand back up, then you can walk
+      var a = pose.a; pose.loop = null; sfx('rise', 0.5);
+      posePlay('kneel', Math.max(pose.f, a.marks.rise - 4), a.frames - 1, 2.2, function () { pose = null; hero.still = 0; });
+    }
+  }
   function gatherKey(e) {
     if (e.key === 'Escape') { walkAway(); e.preventDefault(); return; }
     var n = parseInt(e.key, 10);
@@ -807,11 +887,13 @@
   function closeFind() { fOpen = false; fp.hidden = true; cv.focus(); }
 
   /* the loop: fixed 60 Hz steps, drawn every frame */
-  var last = 0, acc = 0, STEP = 1 / 60, debug = false, hiddenHero = false, glowT = 0;
+  var last = 0, acc = 0, STEP = 1 / 60, debug = false, hiddenHero = false, glowT = 0, gz = 1;
   function update(dt) {
     NPCS.forEach(function (n) { n.t += dt; }); glowT += dt; bt += dt;
     HERBS.forEach(function (h) { h.t += dt; }); FINDS.forEach(function (f) { f.t += dt; });
-    var v = inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
+    poseStep(dt);
+    fx.forEach(function (f) { f.t += dt; }); fx = fx.filter(function (f) { return f.t < 1.5; });
+    var v = pose ? {x: 0, y: 0} : inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
     hero.moving = m > 0.01;
     if (hero.moving) {
       var ang = Math.atan2(v.y, v.x), deg = (ang * 180 / Math.PI + 360) % 360;
@@ -872,6 +954,7 @@
   function drawHero(x, y) {
     var s = 0.5 * ZOOM;
     shadow(x, y, 26 * ZOOM, 9 * ZOOM, .42);
+    if (pose) { drawPose(x, y); return; }
     var dx = x - FEET_X * s, dy = y - FEET_Y * s, d = CELL * s;
     if (!hero.moving && idle && idle.complete && idle.naturalWidth) {
       var t = (hero.still / IDLE.loop * IDLE.cols) % IDLE.cols, a = Math.floor(t), b = (a + 1) % IDLE.cols;
@@ -915,20 +998,66 @@
     label(n, x, y - (n.prop ? 120 : 78), close);
   }
 
-  /* a herb: its picture small in the grass, glowing in its grade's colour (brighter, with motes, the rarer it is) */
+  /* a herb: its painting rooted in the ground (its foot on the spot it grew), bigger the rarer its grade, and told
+     apart from afar by more than colour: Mortal plain; Yellow a warm glow; Mystic a glow and rising motes; Earth a
+     ring rippling out over the ground too; Heaven a thin pillar of light. Close by, a label says how rare and what
+     kind (not which plant: kneel to learn that). */
   function drawHerb(h, x, y) {
     var close = isNear(h), b = CALM ? 0.5 : (Math.sin(h.t * 2.4) + 1) / 2, rare = h.rank, img = ready(h.pic);
+    var T = (h.tall || 46) * ZOOM / 1.2 + (close ? 4 : 0);
     ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    var R = 34 + rare * 10, g = ctx.createRadialGradient(x, y - 10, 2, x, y - 10, R * (1 + 0.15 * b));
-    g.addColorStop(0, hexA(h.color, 0.35 + 0.1 * b + (close ? 0.15 : 0))); g.addColorStop(1, hexA(h.color, 0));
-    ctx.fillStyle = g; ctx.fillRect(x - R * 1.3, y - 10 - R * 1.3, R * 2.6, R * 2.6);
-    if (rare >= 1 && !CALM) for (var i = 0; i < 2 + rare * 2; i++) {             // motes rising from a rarer herb
-      var t = (h.t * 0.4 + i / (2 + rare * 2)) % 1, a = i * 2.39, mx = x + Math.cos(a) * 14, my = y - 8 - t * (40 + rare * 12);
-      ctx.fillStyle = hexA(h.color, 0.8 * Math.sin(Math.PI * t)); ctx.beginPath(); ctx.arc(mx, my, 1.8, 0, Math.PI * 2); ctx.fill();
+    if (rare >= 3) {                                       // the ground ripples round an Earth or Heaven herb
+      var rp = CALM ? 0.5 : (h.t * 0.35) % 1;
+      ctx.strokeStyle = hexA(h.color, 0.55 * (1 - rp)); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(x, y, 20 + rp * 62, (20 + rp * 62) * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (rare >= 4) {                                       // Heaven: a pillar of light, seen from far off
+      var ph = 300, pw = 9 + 3 * b, pg = ctx.createLinearGradient(0, y - ph, 0, y);
+      pg.addColorStop(0, hexA(h.color, 0)); pg.addColorStop(0.5, hexA(h.color, 0.28)); pg.addColorStop(1, hexA('#FFF6DC', 0.6));
+      ctx.fillStyle = pg; ctx.fillRect(x - pw, y - ph, pw * 2, ph);
+      ctx.fillStyle = hexA('#FFFFFF', 0.35); ctx.fillRect(x - 2, y - ph * 0.8, 4, ph * 0.8);
+    }
+    if (rare >= 1) {
+      var R = T * (0.75 + rare * 0.16), g = ctx.createRadialGradient(x, y - T * 0.45, 2, x, y - T * 0.45, R * (1 + 0.12 * b));
+      g.addColorStop(0, hexA(h.color, 0.16 + 0.06 * rare + 0.08 * b + (close ? 0.1 : 0))); g.addColorStop(1, hexA(h.color, 0));
+      ctx.fillStyle = g; ctx.fillRect(x - R * 1.3, y - T * 0.45 - R * 1.3, R * 2.6, R * 2.6);
+    }
+    if (rare >= 2 && !CALM) for (var i = 0; i < 2 + rare * 2; i++) {             // motes rising from a rarer herb
+      var t = (h.t * 0.4 + i / (2 + rare * 2)) % 1, a = i * 2.39, mx = x + Math.cos(a) * T * 0.3, my = y - T * 0.3 - t * (T + rare * 12);
+      ctx.fillStyle = hexA(rare >= 4 ? '#FFF2C8' : h.color, 0.85 * Math.sin(Math.PI * t)); ctx.beginPath(); ctx.arc(mx, my, 1.8, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
-    shadow(x, y, 13, 4, .3);
-    if (img) { var s = 38 + (close ? 4 : 0); ctx.drawImage(img, x - s / 2, y - s + 4 + Math.sin(h.t * 1.3) * 1, s, s); }
+    if (img && h.foot) {
+      var k = T / h.ph, sway = CALM ? 0 : Math.sin(h.t * 1.3 + h.id) * 0.012;
+      shadow(x, y - 2, h.pw * k * 0.36, h.pw * k * 0.11, .32);
+      ctx.save(); ctx.translate(x, y); ctx.transform(1, 0, sway, 1, 0, 0);      // rooted: it sways from its foot
+      ctx.drawImage(img, -h.foot[0] * k, -h.foot[1] * k, h.pw * k, h.ph * k); ctx.restore();
+    } else if (img) { shadow(x, y, 13, 4, .3); ctx.drawImage(img, x - T / 2, y - T + 4, T, T); }
+    if (h.kind && (close || Math.hypot(hero.x - h.x, hero.y - h.y) < 4)) {
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = '600 11px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillText(h.kind, x + 1, y - T - 7);
+      ctx.fillStyle = close ? '#FFFFFF' : h.color; ctx.fillText(h.kind, x, y - T - 8); ctx.restore();
+    }
+  }
+  /* what rises from a pulled herb: its painting out of your hands, clods of soil falling back */
+  function drawFx(f, x, y) {
+    var t = f.t, up = 1 - Math.pow(1 - Math.min(1, t / 1.1), 2), al = t < 0.9 ? 1 : Math.max(0, 1 - (t - 0.9) / 0.5);
+    ctx.save();
+    for (var i = 0; i < 9; i++) {
+      var a = i * 0.7 + 0.4, vx = Math.cos(a) * 34, tt = Math.min(1, t / 0.7);
+      ctx.fillStyle = 'rgba(70,52,38,' + (1 - tt) + ')'; ctx.beginPath();
+      ctx.arc(x + vx * tt, y - 34 - Math.abs(Math.sin(a)) * 46 * tt + 90 * tt * tt, 2.6 - (i % 3) * 0.6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    var g = ctx.createRadialGradient(x, y - 60 - up * 70, 2, x, y - 60 - up * 70, 46);
+    g.addColorStop(0, hexA(f.color, 0.45 * al)); g.addColorStop(1, hexA(f.color, 0));
+    ctx.fillStyle = g; ctx.fillRect(x - 50, y - 110 - up * 70, 100, 100);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = al;
+    if (f.img && f.img.complete && f.img.naturalWidth) {
+      var w = 52, hh = w * f.img.naturalHeight / f.img.naturalWidth;
+      ctx.drawImage(f.img, x - w / 2, y - 44 - up * 70 - hh, w, hh);
+    }
+    ctx.restore();
   }
   /* a find: a glint of light that turns and breathes (a secret spot: violet) */
   function drawFind(f, x, y) {
@@ -1122,8 +1251,11 @@
   function draw() {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.fillStyle = '#0B0B0D'; ctx.fillRect(0, 0, W, H);
+    // kneeling at a herb: the camera eases in a little and lifts you clear of the panel at the bottom
+    var S0 = S, wantZ = (gOpen || (pose && pose.a === ACTS.kneel)) && !QUICK && !CALM ? (W < 760 ? 1.08 : 1.15) : 1;
+    gz += (wantZ - gz) * 0.07; S = S0 * gz;
     var hp = toScreen(hero.x, hero.y), vw = W / S, vh = H / S, half = SIZE * TW / 2, full = SIZE * TH;
-    var tx = hp.x, ty = hp.y - 50 / K;
+    var tx = hp.x, ty = hp.y - 50 / K + (gOpen ? vh * (W < 760 ? 0.24 : 0.17) : 0);
     tx = vw >= SIZE * TW ? 0 : Math.max(-half + vw / 2, Math.min(half - vw / 2, tx));       // stop at the painting's edges
     ty = vh >= full ? full / 2 : Math.max(vh / 2, Math.min(full - vh / 2, ty));
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12;
@@ -1151,6 +1283,7 @@
       movers.push({x: o.x, y: o.y, h: 175, f: function () { at(p.x, p.y, function () { drawOther(o, 0, 0); }); }});
     });
     layered(movers).forEach(function (f) { f(); });
+    fx.forEach(function (f) { var p = toScreen(f.x, f.y); at(p.x, p.y, function () { drawFx(f, 0, 0); }); });
     Object.keys(OTHERS).forEach(function (k) {
       var o = OTHERS[k], p = toScreen(o.x, o.y);
       at(p.x, p.y, function () { otherLabel(o, 0, 0); });
@@ -1166,6 +1299,7 @@
     var v = ctx.createRadialGradient(cx, cy, R * 0.12, cx, cy, R * 0.66);
     v.addColorStop(0, 'rgba(6,8,18,0)'); v.addColorStop(0.5, 'rgba(6,8,18,.45)'); v.addColorStop(1, 'rgba(4,5,12,.9)');
     ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+    S = S0;
   }
   function drawChunks(half, vw, vh) {                     // the land's ground near the camera, a chunk at a time
     var px = GROUND.px, c0 = Math.floor((cam.x - vw / 2 + half) / px), c1 = Math.floor((cam.x + vw / 2 + half) / px);

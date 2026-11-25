@@ -308,7 +308,30 @@
     }
   };
 
+  /* recorded sounds by kind (web/gather_art.py: kneeling, the hands in the leaves, rising, the pick's blows, cut
+     from SHOAIB's videos): one of a kind's takes each time, a little different in pitch */
+  var sampleMap = {}, sampleBufs = {};
+  function loadSample(url, then) {
+    var b = sampleBufs[url];
+    if (b && b !== 1) { if (then) then(b); return; }
+    if (b === 1) return;
+    sampleBufs[url] = 1;
+    fetch(url).then(function (r) { return r.arrayBuffer(); })
+      .then(function (d) { return new Promise(function (ok, no) { ctx.decodeAudioData(d, ok, no); }); })
+      .then(function (buf) { sampleBufs[url] = buf; if (then) then(buf); }).catch(function () { delete sampleBufs[url]; });
+  }
+  SFX.sample = function (kind, v) {
+    var list = sampleMap[kind] || [];
+    if (!list.length) return;
+    loadSample(list[Math.floor(Math.random() * list.length)], function (buf) {
+      var s = ctx.createBufferSource(), g = ctx.createGain();
+      s.buffer = buf; s.playbackRate.value = rnd(0.95, 1.05); g.gain.value = v || 0.5;
+      s.connect(g); out(g, rnd(-0.1, 0.1)); s.start();
+    });
+  };
+
   window.MASound = {
+    samples: function (m) { sampleMap = m || {}; if (ctx) Object.keys(sampleMap).forEach(function (k) { if (k !== 'pillar') sampleMap[k].forEach(function (u) { loadSample(u); }); }); },
     voice: '',                              // whose footsteps: the map sets it ("male"), his own takes first
     place: function (k) { kind = k; if (ac()) setBed(k); },
     steps: function () {                    // which gaits have recorded footsteps ready, and how many (for checks)

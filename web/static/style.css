@@ -1560,6 +1560,31 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .wfade.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.wfade{transition:none}}
 @media (max-width:760px){.gpanel{padding:12px}.gpanel .plantcard img{max-height:100px}}
+/* gathering close-up (docs/world.md "Herbs"): low on the screen, so you stay in sight kneeling above it; a bottom sheet on a phone */
+.gpanel{top:auto;bottom:14px;transform:translateX(-50%);width:min(820px,96vw);max-height:62vh;padding:14px 18px 16px;gap:8px;
+  background:linear-gradient(180deg,rgba(14,22,40,.93),rgba(8,13,26,.97));animation:gup .22s ease-out}
+@keyframes gup{from{opacity:0;transform:translate(-50%,24px)}to{opacity:1;transform:translate(-50%,0)}}
+.gpanel .kicker{margin:0}.gpanel:not(.done) .target{display:none}
+.gpanel .target{padding:6px 14px 6px 8px}.gpanel .target b{font-size:19px}.gpanel .target img{width:44px;height:44px}
+.gpanel .pline{font-size:15px}.gpanel .pline.desc{font-size:17px}
+.gpanel .plantcard{padding:8px;gap:4px;background:radial-gradient(120% 90% at 50% 100%,rgba(58,44,30,.55),rgba(9,16,36,.85) 70%)}
+.gpanel .plantcard img{max-height:118px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
+.gpanel .plantcard:hover:enabled img,.gpanel .plantcard:focus-visible img{transform:translateY(-3px);transition:transform .12s}
+.gpanel .plantcard .look{font-size:13.5px}
+.gpanel .timer.incense{width:100%;margin:0;order:-1}
+.gpanel .timer.incense .tbar{height:6px;background:#1a1410;box-shadow:inset 0 0 0 1px rgba(232,194,122,.25)}
+.gpanel .timer.incense .tbar div{position:relative;border-radius:999px}
+.gpanel .timer.incense .tbar div::after{content:"";position:absolute;right:-3px;top:-3px;width:12px;height:12px;border-radius:50%;
+  background:radial-gradient(circle,#FFE9B0 0,#FF9A3C 45%,rgba(255,120,40,0) 72%)}
+.gpanel .timer.incense span{min-width:44px;text-align:right;font:700 15px Cinzel,Georgia,serif;color:var(--gold2)}
+.gaway{position:absolute;top:6px;right:10px;padding:6px 10px;min-height:32px;border-radius:10px;border:1px solid rgba(232,194,122,.3);
+  background:rgba(9,16,36,.7);color:#B9C2D6;font:600 12px Inter,Arial,sans-serif;cursor:pointer}
+.gaway:hover,.gaway:focus-visible{color:#fff;border-color:var(--gold)}
+@media (max-width:760px){.gpanel{bottom:0;width:100vw;max-height:58vh;border-radius:18px 18px 0 0;padding:10px 10px calc(12px + env(safe-area-inset-bottom))}
+  .gpanel .plantcard img{max-height:84px}.gpanel .plantcard .look{font-size:12.5px;line-height:1.25}.gpanel .target{display:none}
+  .gpanel .pline{font-size:14px}.gpanel .kicker{display:none}.gpanel .timer.incense{padding-right:92px;min-height:32px}
+  .gpanel.done .look{display:none}.gpanel.done .plantcard img{max-height:64px}.gpanel.done .choices{order:-1}.gpanel.done .pline.big2{order:-2;font-size:15px}}
+@media (prefers-reduced-motion:reduce){.gpanel{animation:none}}
 /* a phone: the name plate leaves room for the World Map button, the trip's line sits under it, and the prompt sits
    beside the thumb stick instead of on it */
 @media (max-width:640px){.mtools{flex-direction:column;align-items:flex-end;gap:6px}.mtools .hbtn{order:-1}.mhud{right:136px}

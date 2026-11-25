@@ -36,7 +36,7 @@ def test_every_placed_piece_is_a_known_asset_on_the_ground():
 def test_one_picture_per_asset_however_often_it_is_placed():
     ps = env.pieces("moon_forest")
     assert len(ps) == len(env.PLACED["moon_forest"])
-    assert len({p["src"] for p in ps}) == len(env.ASSETS)                   # all ten used, each file once
+    assert len({p["src"] for p in ps}) == len({n for n, *_ in env.PLACED["moon_forest"]}) == 10   # each file once
 
 
 def test_the_server_and_the_page_block_the_same_rocks_and_logs():
