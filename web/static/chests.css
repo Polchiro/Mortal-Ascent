@@ -1,0 +1,188 @@
+/* The Treasure Shelf and the vault (web/templates/chests.html, web/static/chests.js). */
+body.chbg{background:#0b0807;overflow:hidden}
+body.chbg .privacy{display:none}
+.ch{position:fixed;inset:0;color:#F2EBDD;font-family:Inter,system-ui,sans-serif;--g1:#E8C27A;--g2:#F5DCA6;--rc:#E8C27A}
+.chstage{position:absolute;overflow:hidden}
+.chbgimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.chstill{z-index:1;transition:opacity .8s}
+.chstill.off{opacity:0}
+.kicker{margin:0 0 6px;font:700 11px Inter,sans-serif;letter-spacing:2.4px;color:var(--g1)}
+
+/* ── the shelf ── */
+.chshelf{position:absolute;inset:0 400px 0 0;background:radial-gradient(ellipse at 50% 50%,#2a1a12,#0b0807 70%)}
+.ch[data-view=vault] .chshelf,.ch[data-view=vault] .chpanel{visibility:hidden}
+.chslots{position:absolute;inset:0}
+.cslot{position:absolute;width:15.5%;transform:translate(-50%,-100%);padding:0;border:0;background:none;cursor:pointer;color:inherit;
+  display:flex;flex-direction:column;align-items:center}
+.cslot img{position:relative;z-index:1;width:100%;display:block;filter:drop-shadow(0 calc(10px * var(--k,1)) calc(14px * var(--k,1)) rgba(0,0,0,.7));transition:transform .25s ease}
+.cslot .cglow{position:absolute;left:-12%;right:-12%;top:-10%;bottom:-6%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 60%,var(--rc) 0%,transparent 62%);opacity:.38;filter:blur(6px);animation:cglow 3.2s ease-in-out infinite}
+@keyframes cglow{50%{opacity:.6;transform:scale(1.05)}}
+.cslot:hover img,.cslot.on img{transform:translateY(-4%) scale(1.04)}
+.cslot.on .cglow{opacity:.75}
+.cslot.none{cursor:default}
+.cslot.none img{opacity:.1;filter:grayscale(1) brightness(.4)}
+.cslot.none .cglow{display:none}
+.cqty{position:absolute;z-index:2;right:2%;top:2%;min-width:28px;padding:2px 8px;border-radius:999px;background:rgba(10,8,6,.85);border:1px solid var(--rc);
+  font:800 clamp(11px,1.2vw,15px) Inter,sans-serif;color:#FFF3D6}
+.cqty:empty{display:none}
+.cname{position:absolute;z-index:2;top:100%;margin-top:4px;font:700 clamp(10px,1vw,13px) Cinzel,serif;color:#F5DCA6;text-shadow:0 1px 4px #000;white-space:nowrap}
+
+.chpanel{position:absolute;top:0;right:0;bottom:0;width:400px;box-sizing:border-box;padding:28px 26px;overflow:auto;
+  background:linear-gradient(180deg,rgba(30,20,14,.96),rgba(14,10,8,.98));border-left:1px solid rgba(232,194,122,.3)}
+.chpanel h1{margin:0 0 4px;font:800 26px Cinzel,serif;color:var(--g2)}
+.chroom{margin:0 0 18px;font-size:12.5px;color:#B9AE95}
+.chpicked{display:flex;gap:14px;align-items:center;padding:12px;border-radius:12px;border:1px solid var(--rc);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--rc) 18%,transparent),rgba(0,0,0,.2))}
+.chpicked img{width:92px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.chpicked b{display:block;font:800 18px Cinzel,serif;color:#FFF3D6}
+.chpicked small{color:#C9BFA8;font-size:12.5px}
+.chcan{margin:12px 0;font-size:12.5px;line-height:1.5;color:#B9AE95}
+.chcan.warn{color:#FF9B90}
+.chempty{color:#B9AE95;font-size:14px;line-height:1.5}
+.chbtns{display:flex;gap:10px}
+.chbtn{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(232,194,122,.5);background:rgba(232,194,122,.06);color:var(--g2);
+  font:700 15px Cinzel,serif;cursor:pointer}
+.chbtn.main{background:linear-gradient(180deg,#3A2E17,#211A0E);border-color:var(--g1)}
+.chbtn:hover:not(:disabled){box-shadow:0 0 18px rgba(232,194,122,.3)}
+.chbtn:disabled{opacity:.4;cursor:not-allowed}
+.chwait{margin-top:18px;padding:12px;border-radius:10px;border:1px solid rgba(111,217,176,.4);background:rgba(111,217,176,.08);font-size:13px}
+.chwait p{margin:0 0 10px}
+.chwait[hidden]{display:none}
+.chquick{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:12.5px;color:#9A907C;cursor:pointer}
+.chsay{min-height:18px;margin:12px 0 0;font-size:13px;color:#FF9B90}
+.chback{display:inline-block;margin-top:12px;padding:8px 16px;border-radius:999px;border:1px solid rgba(232,194,122,.35);color:#F2EBDD;text-decoration:none;font-size:14px}
+
+/* ── the vault ── */
+.chvault{position:absolute;inset:0;overflow:hidden;background:#0b0807}
+.chvault[hidden]{display:none}
+.chvault.tremor{animation:chtremor .45s ease-out}
+@keyframes chtremor{20%{transform:translate(-6px,2px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+.chdark{position:absolute;inset:0;z-index:2;background:radial-gradient(ellipse at 50% 58%,rgba(0,0,0,0) 18%,rgba(0,0,0,.86) 70%);opacity:0;transition:opacity 1.2s}
+.chdark.on{opacity:1}
+.chaltar{position:absolute;z-index:3;left:50%;top:66.5%;width:28%;transform:translate(-50%,-100%);cursor:pointer;touch-action:none;user-select:none}
+.chaura{position:absolute;left:-30%;right:-30%;top:-40%;bottom:-20%;border-radius:50%;background:radial-gradient(ellipse at 50% 60%,var(--rc) 0%,transparent 60%);
+  opacity:.55;filter:blur(8px);animation:cglow 2.6s ease-in-out infinite;pointer-events:none}
+.chchest{position:relative;width:100%;display:block;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
+.chchest.in{animation:chin .7s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes chin{0%{opacity:0;transform:translateY(-14%) scale(.92)}100%{opacity:1;transform:none}}
+.chchest.jolt{animation:chjolt .3s ease-out}
+@keyframes chjolt{30%{transform:translate(-1.5%,0) rotate(-1.2deg)}60%{transform:translate(1.5%,0) rotate(1deg)}}
+.chchest.shake{animation:chshake .12s linear infinite;filter:drop-shadow(0 0 30px var(--rc)) brightness(1.25)}
+.chchest.shake.float{animation:chshake .12s linear infinite,chfloat 1.3s ease-out forwards}
+@keyframes chshake{25%{transform:translate(-1%,.4%) rotate(-.8deg)}75%{transform:translate(1%,-.4%) rotate(.8deg)}}
+@keyframes chfloat{to{margin-top:-12%}}
+.chchest.spent{opacity:.28;filter:brightness(1.5) blur(1px);transition:opacity 1.2s,filter 1.2s}
+.chseals{position:absolute;inset:0;pointer-events:none}
+.cseal{position:absolute;top:52%;left:calc(50% + (var(--i) - (var(--n) - 1) / 2) * 26%);width:26%;aspect-ratio:1;transform:translate(-50%,-50%);
+  background:center/contain no-repeat;filter:drop-shadow(0 0 12px var(--rc));animation:cseal 2s ease-in-out infinite}
+.cseal:not([style*=url]){border-radius:50%;border:3px solid var(--rc);background:radial-gradient(circle,rgba(255,240,200,.5),rgba(0,0,0,.5))}
+@keyframes cseal{50%{filter:drop-shadow(0 0 20px var(--rc)) brightness(1.2)}}
+.cseal.gone{animation:cgone .5s ease-in forwards}
+@keyframes cgone{40%{transform:translate(-50%,-50%) scale(1.15);opacity:1}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+.chfx{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;mix-blend-mode:screen}
+.chflash{position:absolute;inset:0;z-index:5;opacity:0;pointer-events:none;mix-blend-mode:screen}
+.chvhud{position:absolute;z-index:8;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:16px 20px}
+.chvname{margin:0;font:800 20px Cinzel,serif;color:var(--rc);text-shadow:0 0 14px rgba(0,0,0,.9),0 2px 6px #000}
+.chskip{padding:8px 16px;border-radius:999px;border:1px solid rgba(232,194,122,.4);background:rgba(10,8,6,.6);color:#F2EBDD;font:600 14px Inter,sans-serif;cursor:pointer}
+.chskip[hidden]{display:none}
+.chhint{position:absolute;z-index:6;left:50%;top:66%;transform:translateX(-50%);margin:0;font:700 17px Cinzel,serif;color:var(--g2);text-shadow:0 2px 10px #000;
+  opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+.chhint.on{opacity:1;animation:chhint 2s ease-in-out infinite}
+@keyframes chhint{50%{opacity:.6}}
+
+/* the coins and the cards */
+.chcoins{pointer-events:none;position:absolute;z-index:7;left:50%;top:14%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 18px;border-radius:999px;
+  background:rgba(10,8,6,.75);border:1px solid rgba(232,194,122,.5);box-shadow:0 0 24px rgba(232,194,122,.25)}
+.chcoins[hidden]{display:none}
+.chcoins.go{animation:chcoin .6s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes chcoin{0%{opacity:0;transform:translate(-50%,-30px) scale(.8)}100%{opacity:1;transform:translate(-50%,0)}}
+.chcoins b{font:800 24px Cinzel,serif;color:#FFE7A8}
+.chcoins span{font-size:13px;color:#C9BFA8}
+.chcards{pointer-events:none;position:absolute;z-index:7;left:50%;top:62%;transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;gap:14px;width:min(1100px,94vw);perspective:1200px}
+.chcards.many{top:56%}
+.chcards.lots{top:30%;gap:8px}
+.ccard{width:150px;height:200px;animation:ccin .5s cubic-bezier(.2,.9,.3,1.2) both;animation-delay:calc(var(--i,0) * 70ms)}
+.chcards.many .ccard{width:120px;height:160px}
+.chcards.lots .ccard{width:96px;height:128px}
+@keyframes ccin{0%{opacity:0;transform:translateY(-120px) scale(.6) rotate(-8deg)}100%{opacity:1;transform:none}}
+.cin{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,.7,.3,1)}
+.ccard.flip .cin{transform:rotateY(180deg)}
+.cback,.cfront{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:10px}
+.cback{background:#5E8A6E center/contain no-repeat;filter:drop-shadow(0 8px 12px rgba(0,0,0,.6))}
+.cfront{transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:12px 8px 8px;box-sizing:border-box;text-align:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--rc) 22%,#17110c),#100c08 75%);border:2px solid var(--rc);
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 10px 22px rgba(0,0,0,.6),inset 0 0 26px color-mix(in srgb,var(--rc) 25%,transparent);overflow:hidden}
+.cband{position:absolute;left:0;right:0;top:0;height:6px;background:var(--rc)}
+.cfront img{width:56%;max-height:48%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6))}
+.cfront b{font:700 12.5px Inter,sans-serif;line-height:1.2;color:#FFF3D6;max-height:3.6em;overflow:hidden}
+.cfront .ck{font-size:10px;letter-spacing:.6px;color:var(--rc);text-transform:uppercase}
+.cfront .cl{font-size:10px;color:#C9BFA8;line-height:1.25;max-height:2.5em;overflow:hidden}
+.cfront .cq{position:absolute;top:10px;right:8px;font:800 12px Inter,sans-serif;font-style:normal;color:#FFF3D6}
+.chcards.lots .cfront .cl,.chcards.lots .cfront .ck{display:none}
+.chcards.lots .cfront b{font-size:10.5px}
+.r-common .cfront{border-width:1px}
+.r-epic .cfront::after,.r-legendary .cfront::after,.r-mythical .cfront::after{content:"";position:absolute;inset:-50%;pointer-events:none;
+  background:conic-gradient(from 0deg,transparent 0 20deg,color-mix(in srgb,var(--rc) 35%,transparent) 30deg,transparent 40deg 110deg,color-mix(in srgb,var(--rc) 35%,transparent) 120deg,transparent 130deg 200deg,color-mix(in srgb,var(--rc) 35%,transparent) 210deg,transparent 220deg);
+  animation:crays 9s linear infinite;mix-blend-mode:screen;opacity:.5}
+.r-epic .cfront::after{opacity:.25}
+.r-mythical .cfront{box-shadow:0 0 22px var(--rc),0 10px 22px rgba(0,0,0,.6),inset 0 0 30px color-mix(in srgb,var(--rc) 40%,transparent)}
+@keyframes crays{to{transform:rotate(360deg)}}
+.ccard.flip.r-epic,.ccard.flip.r-legendary,.ccard.flip.r-mythical{filter:drop-shadow(0 0 14px var(--rc))}
+
+/* the spotlight */
+.chspot{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;cursor:pointer;
+  background:radial-gradient(ellipse at 50% 50%,rgba(10,8,6,.55),rgba(5,4,3,.9) 70%);animation:chspot .4s ease}
+.chspot[hidden]{display:none}
+@keyframes chspot{from{opacity:0}}
+.chspotglow{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}
+.chspotcard{position:relative;z-index:1}
+.chspotcard .ccard{width:230px;height:306px;animation:chrise .7s cubic-bezier(.2,.9,.3,1.2)}
+.chspot.big .chspotcard .ccard{width:270px;height:360px}
+@keyframes chrise{0%{transform:translateY(80px) scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.chspotcard .cfront b{font-size:17px}
+.chspotcard .cfront .ck,.chspotcard .cfront .cl{font-size:12px}
+.chflavor{position:relative;z-index:1;margin:0;max-width:min(520px,90vw);text-align:center;font:italic 600 17px Georgia,serif;color:#F5E6C8;text-shadow:0 2px 10px #000}
+.chtap{position:relative;z-index:1;margin:0;font-size:12px;color:#9A907C}
+
+/* the summary */
+.chsum{position:absolute;z-index:10;right:24px;top:50%;transform:translateY(-50%);width:min(400px,calc(100vw - 32px));max-height:calc(100vh - 100px);overflow:auto;box-sizing:border-box;padding:22px;
+  border-radius:14px;background:linear-gradient(180deg,rgba(30,22,14,.95),rgba(14,10,8,.97));border:1px solid rgba(232,194,122,.5);box-shadow:0 18px 50px rgba(0,0,0,.6);animation:chsum .5s ease}
+.chsum[hidden]{display:none}
+@keyframes chsum{from{opacity:0;transform:translate(24px,-50%)}}
+.chsum h2{margin:0 0 14px;font:800 22px Cinzel,serif;color:var(--g2)}
+.srow{display:grid;grid-template-columns:34px 1fr auto;grid-template-rows:auto auto;column-gap:10px;align-items:center;padding:7px 8px;border-radius:8px;border-left:3px solid var(--rc,#C9D2E6);margin-bottom:6px;background:rgba(255,255,255,.03)}
+.srow img,.srow .sdot{grid-row:1 / 3;width:34px;height:34px;object-fit:contain}
+.srow .sdot{border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFF1C2,#E8C27A 50%,#A9772E)}
+.srow.coin{--rc:#E8C27A}
+.srow b{font-size:13px;color:#FFF3D6}
+.srow small{grid-column:2;font-size:11px;color:var(--rc)}
+.srow i{grid-row:1 / 3;grid-column:3;font:800 13px Inter,sans-serif;font-style:normal;color:#FFF3D6}
+.srow.top{background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 20%,transparent),transparent);box-shadow:0 0 14px color-mix(in srgb,var(--rc) 25%,transparent)}
+.srow.lost{opacity:.55}
+.chnotes{margin:10px 0 0;padding-left:16px;font-size:12.5px;line-height:1.5;color:#D8D0BE}
+.chacts{display:flex;gap:10px;margin-top:16px}
+
+/* a phone: the shelf on top, the panel under it; the summary as a sheet */
+@media (max-width:760px){
+  .chshelf{inset:0 0 46% 0}
+  .chpanel{top:auto;left:0;width:auto;height:46%;border-left:0;border-top:1px solid rgba(232,194,122,.3);padding:16px}
+  .chpanel h1{font-size:20px}
+  .chpicked img{width:64px}
+  .chaltar{top:52%}
+  .chhint{top:57%;font-size:15px}
+  .chcards{top:58%;gap:8px}
+  .ccard{width:100px;height:134px}
+  .chcards.many .ccard{width:84px;height:112px}
+  .chcards.lots{top:22%}
+  .chcards.lots .ccard{width:68px;height:92px}
+  .chcards .cfront .cl,.chcards .cfront .ck{display:none}
+  .chcards .cfront b{font-size:10.5px}
+  .chcards .cfront img{width:50%}
+  .chsum{left:10px;right:10px;top:auto;bottom:10px;width:auto;transform:none;max-height:58vh;padding:16px}
+  @keyframes chsum{from{opacity:0;transform:translateY(24px)}}
+  .chspotcard .ccard{width:200px;height:266px}
+  .chspot.big .chspotcard .ccard{width:220px;height:294px}
+}
+@media (prefers-reduced-motion:reduce){.cslot .cglow,.chaura,.cseal,.r-epic .cfront::after,.r-legendary .cfront::after,.r-mythical .cfront::after{animation:none}}
+@media (max-width:760px){.cname{display:none}.cqty{min-width:0;padding:1px 5px;font-size:10px}}

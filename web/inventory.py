@@ -4,7 +4,8 @@ The inventory page's data. docs/web.md, "The inventory page".
 Same bag as the bot's /inventory: the tabs, items and Inspect details all come from bot/sheet
 (items.CATEGORIES, data.bag_items, items.details), so the website and Discord always agree.
 This module only adds picture links and the counts per tab. Gear (weapons, armor, artifacts) can be equipped
-and taken off here with the bot's own rules (loot.use_item, gear.equip_problem); the rest is viewing only for now.
+and taken off here with the bot's own rules (loot.use_item, gear.equip_problem); chests open on the Treasure Shelf
+(web/chest_play.py); the rest is viewing only for now.
 """
 import os
 
@@ -65,7 +66,7 @@ def inventory_view(conn, user_id, category="weapons", selected_id=None):
                    "kind": d["kind"], "lines": d["lines"], "effects": d["effects"],
                    "notes": [(text, NOTE_COLOR.get(tone, "#F5DCA6")) for text, tone in d["notes"]],
                    "picture": item_picture(chosen), "id": chosen["id"],
-                   "action": gear_action(chosen)}
+                   "action": gear_action(chosen), "chest": chosen["category"] == "chests"}
     tabs = [{"key": c.key, "label": c.label, "count": counts.get(c.key, 0), "active": c.key == category,
              "picture": tab_picture(c.key)} for c in items.CATEGORIES.values()]
     return {"name": p["name"], "coins": number(p["lotus_coins"]), "pearls": number(p["moon_pearls"]),

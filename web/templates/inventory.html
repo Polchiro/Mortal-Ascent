@@ -51,8 +51,13 @@
       <input type="hidden" name="item" value="{{ d.id }}">
       <button class="btn {{ "btn-gold" if d.action == "equip" else "btn-gold ghost" }}" type="submit">{{ "Equip" if d.action == "equip" else "Unequip" }}</button>
     </form>
+    {% elif d.chest %}
+    <div class="chestacts">
+      <a class="btn btn-gold" href="/chests?open={{ d.id }}&amp;from=%2Finventory%3Ftab%3Dchests">Open</a>
+      <a class="btn btn-gold ghost" href="/chests?from=%2Finventory%3Ftab%3Dchests">Treasure Shelf</a>
+    </div>
     {% else %}
-    <p class="soon small">Using and opening items comes next. For now, do it in Discord with /inventory.</p>
+    <p class="soon small">Using items comes next. For now, do it in Discord with /inventory.</p>
     {% endif %}
     {% else %}
     <p class="empty">Pick an item to see what it does.</p>

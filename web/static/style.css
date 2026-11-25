@@ -2351,3 +2351,6 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .mtox img{width:16px;height:16px}
 .mtox.z-half{background:rgba(200,154,58,.2);border-color:rgba(240,196,106,.7)}.mtox.z-half b{color:#F7DFA6}
 .mtox.z-quarter{background:rgba(184,68,58,.25);border-color:rgba(255,155,144,.75)}.mtox.z-quarter b{color:#FFD0C9}
+/* the bag: a chest's Open and the Treasure Shelf (web/chest_play.py) */
+.chestacts{display:flex;gap:10px;flex-wrap:wrap}
+.chestacts .btn{text-decoration:none}
