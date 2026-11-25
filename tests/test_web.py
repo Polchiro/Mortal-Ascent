@@ -197,7 +197,7 @@ def test_inventory_shows_the_bag_with_pictures_and_details(client, db_path):
     herbs = client.get("/inventory?tab=herbs")
     assert "Moon Mushroom" in herbs.text and "×3" in herbs.text and "Refine it with /craft" in herbs.text
     chests = client.get("/inventory?tab=chests")
-    assert "/art/chests/epic.png" in chests.text and "Epic Chest" in chests.text
+    assert "/art/chest/epic.webp" in chests.text and "Epic Chest" in chests.text
     assert client.get("/art/chests/epic.png").status_code == 200
 
 
