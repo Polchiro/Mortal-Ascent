@@ -97,10 +97,24 @@ players are shown running when they move faster than midway between the two spee
 - **Where:** glowing herbs (10 at a time on the Crossroads, 14 in each forest land), at random spots anywhere off
   the paths, never by an entrance. The lands are far bigger than before, so herbs are further apart. **Each player has
   their own herbs**: nobody can take yours.
-- **Picking one:** walk up (within 1.6 tiles) and press **E**. A panel opens over the map with **one round of the
-  gathering game**: the herb to find, the grade's four plants, the timer. Right pick → the herb goes in your bag;
-  wrong or too slow → it is lost, exactly as in `/gather` (the Herbal Insight streak, the
-  Wandering Spirit check and old herbs all work the same; it is the same `Gathering` object).
+- **On the map** each herb is its own painting (art/herbs/, one per herb), rooted where it grew: its foot on the
+  spot, a soft shadow, swaying a little from its base. Its grade shows from afar by more than colour: a Mortal herb
+  is plain and small; Yellow is bigger with a warm glow; Mystic glows and sheds rising motes; round an Earth herb a
+  ring ripples out over the ground; a Heaven herb stands under a thin pillar of light. Within 4 tiles a label says
+  how rare it is and what kind (*Uncommon qi herb*), **not which plant**: you learn that by kneeling.
+- **Picking one:** walk up (within 1.6 tiles) and press **E**. You **kneel** (the hero's own kneeling animation, cut
+  from SHOAIB's video, with its sound), the camera eases in, and a **close-up** opens low on the screen (a bottom
+  sheet on a phone) with **one round of the gathering game**: the herb to find and its description, the grade's four
+  plants as paintings with their looks, and the timer as an incense stick burning down. Pick with a click, a tap or
+  **1-4**; *Walk away* sits in the corner, away from the plants. Right pick → your hands lift, the herb rises out of
+  them with a few clods of soil and goes in your bag; wrong or too slow → it is lost, exactly as in `/gather` (the
+  Herbal Insight streak, the Wandering Spirit check and old herbs all work the same; it is the same `Gathering`
+  object). *Walk on* and you stand back up.
+- **The clock is fair.** The kneel plays before the round is asked for, and the four paintings come **inside** the
+  round (web/gather_art.py `choice`, as data: addresses), so the page has every picture before the timer matters.
+  (They used to be fetched one by one after the server's clock had started.) No address names a plant.
+- **Quick gather** (Settings → Gathering → Quick, kept on the device): no kneeling, camera or pulling; the plants
+  open at once. Reduced motion does the same.
 - **Which herb:** its **grade** follows your realm as always (`alchemy.herb_grade_odds`), so rare herbs are exactly as
   rare as in `/gather`. Its **type** follows the region (`alchemy.REGION_HERB_TYPES`):
 
@@ -157,6 +171,24 @@ players are shown running when they move faster than midway between the two spee
 - A look without a walking sheet can read the town's list and use Discord's `/gather` and `/explore`.
 - Your herbs, beasts and finds are kept in the website's memory: a restart rolls them again (a trip under way ends
   as a hunt does). Where you stand is saved (above).
+
+## Gathering art
+
+`python -m scripts.make_gather_art` cuts SHOAIB's pictures and videos (Nov 25 2026) into what the map uses
+(`web/gather_art.py` reads it):
+
+| What | Where | From |
+|---|---|---|
+| The 20 herbs, each rooted in its soil | `art/herbs/<herb>.webp`, `catalog.json` (size, foot) | five pictures of four plants (a grade each) and four single Heaven herbs |
+| Kneel, search, lift, rise (each hero) | `art/gather/hero_<gender>_kneel.webp` | an 8 s video on a flat backdrop, 12 pictures a second, blended on the page |
+| One swing of the pick (each hero) | `art/gather/hero_<gender>_swing.webp` | the same, 24 pictures a second (for the quarry) |
+| Sounds: kneeling, the hands in the leaves, rising, the pick's blows, the light pillar | `art/gather/sounds/*.mp3` | the videos' own sound |
+| The pick, the quarry keeper | `art/gather/pick.webp`, `keeper.webp` | one picture each |
+| Ponds, a mossy rock, the quarry's walls, seams and hut | `art/env/` (web/env.py `ASSETS`) | cut by `scripts/make_env_assets.py` |
+
+`art/gather/sheets.json` says how each sheet is laid out: its cell, the point between the feet, frames, pictures a
+second and **marks** (the frame where each part of the move begins). The hero in every frame is as tall as on the
+walking sheets, so the page draws a move in place of the walk with nothing to line up (`town.js` `pose`).
 
 ## Other players
 
@@ -297,6 +329,7 @@ Code: `web/world.py`, `web/templates/world.html`, `web/static/world.js`. The pic
 - **Objects, in rounds:** SHOAIB makes a batch (trees first), they are placed by hand, he looks, we adjust. Trees and
   rocks will block the way and hide you as the town's buildings do (the drawing and collision code is already there).
 - **The painted Moon Forest clearing** back as a landmark inside the forest, if still wanted.
-- **SHOAIB's picking animations** for kneeling at a herb.
+- **Herb habitats:** each kind of herb sprouting on ground that suits it (ponds and a mossy rock are cut and ready
+  in art/env/), and the rarer results' effects (the Spring Water and Jade Shard bonuses, an old herb sinking).
 - **The other five hunting grounds** as lands of their own (`REGION_HERB_TYPES` is ready), then `/explore`'s
   remaining encounters.

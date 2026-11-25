@@ -1,0 +1,78 @@
+{
+ "female_kneel": {
+  "src": "/art/gather/hero_female_kneel.webp",
+  "cell": [
+   176,
+   240
+  ],
+  "feet": [
+   88,
+   230
+  ],
+  "cols": 12,
+  "frames": 92,
+  "fps": 12,
+  "marks": {
+   "down": 0,
+   "search": 24,
+   "lift": 42,
+   "rise": 67
+  }
+ },
+ "female_swing": {
+  "src": "/art/gather/hero_female_swing.webp",
+  "cell": [
+   240,
+   240
+  ],
+  "feet": [
+   120,
+   232
+  ],
+  "cols": 12,
+  "frames": 45,
+  "fps": 24,
+  "marks": {
+   "raise": 0,
+   "hit": 31
+  }
+ },
+ "male_kneel": {
+  "src": "/art/gather/hero_male_kneel.webp",
+  "cell": [
+   208,
+   240
+  ],
+  "feet": [
+   104,
+   232
+  ],
+  "cols": 12,
+  "frames": 92,
+  "fps": 12,
+  "marks": {
+   "down": 0,
+   "search": 25,
+   "lift": 42,
+   "rise": 72
+  }
+ },
+ "male_swing": {
+  "src": "/art/gather/hero_male_swing.webp",
+  "cell": [
+   320,
+   240
+  ],
+  "feet": [
+   160,
+   232
+  ],
+  "cols": 12,
+  "frames": 27,
+  "fps": 24,
+  "marks": {
+   "raise": 0,
+   "hit": 22
+  }
+ }
+}

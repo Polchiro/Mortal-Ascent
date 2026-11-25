@@ -38,7 +38,7 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import crossroads, hunt_map, land, town, world_tasks
+from . import gather_art, crossroads, hunt_map, land, town, world_tasks
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -524,10 +524,7 @@ class World:
             now = self.clock()
             quiet = None if PLACES[place].get("safe") else self.blocked(conn, uid)   # in town: nothing to meet anyway
             trip = self.hunts.trip_view(conn, uid)
-            herbs = [{"id": h["id"], "x": h["x"], "y": h["y"], "grade": h["grade"], "type": h["type"],
-                      "name": alchemy.HERBS[h["grade"]][h["type"]][0], "color": _grade_color(h["grade"]),
-                      "picture": _herb_picture(h["grade"], h["type"]), "rank": alchemy.GRADES.index(h["grade"])}
-                     for h in w.herbs.get(place, []) if h["ready"] <= now]
+            herbs = [_herb_view(h) for h in w.herbs.get(place, []) if h["ready"] <= now]
             beasts = [{"id": b["id"], "name": b["name"], "tier": b["tier"],
                        "tierName": {"normal": "Normal", "elite": "Elite", "beast_king": "Beast King"}[b["tier"]],
                        "role": b["role"].title(), "x": b["x"], "y": b["y"],
@@ -716,6 +713,22 @@ def _grade_color(grade):
     return GRADE_COLOR[grade]
 
 
+def _herb_view(h):
+    """A herb growing on the map, for the page: where it stands, its grade's colour and size, its painting (the
+    plant rooted in its soil, web/gather_art.py) and a label that says how rare it is and what kind, not its name:
+    which plant it is you learn by kneeling at it."""
+    name = alchemy.HERBS[h["grade"]][h["type"]][0]
+    art = gather_art.herb(name)
+    out = {"id": h["id"], "x": h["x"], "y": h["y"], "grade": h["grade"], "type": h["type"],
+           "color": _grade_color(h["grade"]), "rank": alchemy.GRADES.index(h["grade"]),
+           "kind": f"{alchemy.HERB_RARITY[h['grade']][0]} {loot.TYPE_LABEL[h['type']].lower()} herb",
+           "picture": art["src"] if art else _herb_picture(h["grade"], h["type"]),
+           "tall": gather_art.MAP_HEIGHT[h["grade"]]}
+    if art:
+        out.update(pw=art["w"], ph=art["h"], foot=art["foot"])
+    return out
+
+
 def _herb_picture(grade, type_):
     from .alchemy_play import herb_picture
     return herb_picture(grade, type_)
@@ -769,6 +782,8 @@ def page_data(conn, world, uid, place, sheet, p, blocked, near=None):
     info = PLACES[place]
     import looks
     data.update({"place": place, "title": info["title"], "kicker": info["kicker"], "url": info["url"],
+                 "acts": gather_art.acts(looks.gender_of(looks.of_player(p))),      # kneeling at a herb, swinging a pick
+                 "sfx": gather_art.sounds(),
                  "sheets": looks.WALK_SHEETS,                 # how the other players walking here are drawn
                  "trigger": TRIGGER, "world": world.state(conn, uid, place)})
     return data

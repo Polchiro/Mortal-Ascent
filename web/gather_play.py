@@ -22,6 +22,7 @@ from cards import herbfield, plants
 
 from bot import db, gather_card, gathering, loot
 
+from . import gather_art
 from .alchemy_play import GRADE_COLOR, herb_picture
 from .forge_play import rich
 from .inventory import item_picture
@@ -200,12 +201,16 @@ def play_view(conn, s, now):
         out["target"] = {
             "name": herb["name"], "grade": herb["grade"], "color": GRADE_COLOR[herb["grade"]],
             "type": loot.TYPE_LABEL[d["type"]], "emoji": loot.TYPE_EMOJI[d["type"]],
-            "rarity": alchemy.HERB_RARITY[herb["grade"]][0], "old": shown.old, "picture": item_picture(herb),
+            "rarity": alchemy.HERB_RARITY[herb["grade"]][0], "old": shown.old,
+            "picture": gather_art.choice(herb["name"]) if not r else item_picture(herb),   # the painting: once picked
             "age": d["age"] if shown.old or not r else None,          # a normal herb's age is only known once picked
             "desc": alchemy.HERBS[herb["grade"]][d["type"]][1]}
         picked = s.last[1] if (s.last and not r) else None
         out["choices"] = [{
-            "key": k, "no": i + 1, "look": label, "picture": f"/gather/plant/{s.turn}/{k}.png",
+            # the painting, sent inside the round (no address to read the plant from, nothing to wait for once the
+            # clock runs); a plant not painted yet keeps its drawn picture
+            "key": k, "no": i + 1, "look": label,
+            "picture": gather_art.choice(shown.names[k]) or f"/gather/plant/{s.turn}/{k}.png",
             # only after the pick: which one was real, and the name of each plant
             "state": None if r else "right" if k == shown.answer else "wrong" if k == picked else "",
             "name": None if r else shown.names[k],

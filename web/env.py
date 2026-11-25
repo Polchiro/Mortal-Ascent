@@ -39,6 +39,17 @@ ASSETS = {
     # mushrooms
     "mushroom_01": {"region": "common", "cat": "mushrooms", "h": 40},
     "spirit_mushroom_01": {"region": "moon_forest", "cat": "mushrooms", "h": 44, "glow": "#5FC8FF", "lit": True},
+    # herb habitats (Nov 25 2026): still pools for lotuses and lilies, a mossy rock for moss
+    "pond_01": {"region": "common", "cat": "water", "w": 300, "block": 1.3, "flat": True},
+    "pond_02": {"region": "common", "cat": "water", "w": 270, "block": 1.2, "flat": True},
+    "mossy_rock_01": {"region": "common", "cat": "rocks", "h": 84, "block": 0.7},
+    # the Ironvein Quarry (docs/world.md "The Ironvein Quarry"): rock walls, the three seams, the keeper's hut
+    "cliff_01": {"region": "quarry", "cat": "rocks", "h": 330, "block": 1.7},
+    "cliff_02": {"region": "quarry", "cat": "rocks", "h": 270, "block": 1.7},
+    "seam_iron_01": {"region": "quarry", "cat": "seams", "h": 150, "block": 0.85},
+    "seam_coal_01": {"region": "quarry", "cat": "seams", "h": 120, "block": 0.85},
+    "seam_jade_01": {"region": "quarry", "cat": "seams", "h": 140, "block": 0.85},
+    "quarry_hut_01": {"region": "quarry", "cat": "buildings", "h": 300, "block": 1.9},
 }
 
 
