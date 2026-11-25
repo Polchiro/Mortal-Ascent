@@ -38,7 +38,7 @@ import hunting
 
 from bot import db, gear, loot
 
-from . import crossroads, gather_art, herb_events, hunt_map, land, mine_play, quarry, town, world_tasks
+from . import crossroads, gather_art, herb_events, hunt_map, land, mine_play, quarry, scenery, town, world_tasks
 
 # ── the places ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -96,6 +96,7 @@ OTHERS_MAX = 30                       # at most this many others drawn (the near
 OTHERS_EVERY = 0.9                    # a walking page is told who else is here at most this often (s), with its step
 SAVE_EVERY = 10                       # where you stand is saved at most this often while you walk (s)
 
+ACTS_SEEN = ("kneel", "swing")
 HERB_REACH = 1.6                      # how close (tiles) to kneel at a herb or look at a find
 HERB_REGROW = (45, 90)                # seconds before a picked herb grows again somewhere else: walking from herb
                                       # to herb is what paces gathering (about 4 a minute at most; the old Gather
@@ -159,10 +160,10 @@ def walkable(place, x, y):
     if place == "town":
         return town.walkable(x, y)
     if place == "crossroads":
-        return crossroads.walkable(x, y)
+        return crossroads.walkable(x, y) and scenery.walkable(place, x, y)
     if place == quarry.KEY:
         return quarry.walkable(x, y)
-    return land.walkable(place, x, y)
+    return land.walkable(place, x, y) and scenery.walkable(place, x, y)
 
 
 def size(place):
@@ -233,6 +234,7 @@ class Walker:
     beasts: dict = field(default_factory=dict)    # place → [beast], or missing: roll them afresh
     finds: dict = field(default_factory=dict)     # place → [find]
     gathering: tuple = None                   # (place, herb id) whose round is on screen
+    act: str = None                           # "kneel" or "swing" while the page says so (other players see it)
     ids: int = 0
     roll: tuple = None                        # ((trip, step), tier): the kind of beast this step of the trip offers
     who: dict = None                          # how other players see you: name, realm, look (enter() fills it)
@@ -342,11 +344,11 @@ class World:
                 if oid == uid or o.place != place or now - o.seen > OTHERS_FRESH or not o.who:
                     continue
                 out.append((math.dist((me.x, me.y), (o.x, o.y)),
-                            {"tag": o.tag, "x": round(o.x, 2), "y": round(o.y, 2), **o.who}))
+                            {"tag": o.tag, "x": round(o.x, 2), "y": round(o.y, 2), "act": o.act, **o.who}))
             out.sort(key=lambda d: d[0])
             return [d for _, d in out[:OTHERS_MAX]]
 
-    def report(self, conn, uid, place, x, y):
+    def report(self, conn, uid, place, x, y, act=None):
         """Where the page says you are. Answers where the server has you ({x, y}), or that you are elsewhere."""
         now = self.clock()
         with self.lock:
@@ -361,6 +363,7 @@ class World:
                         pos = (fx, fy, now)
                 except (TypeError, ValueError):
                     pass
+            w.act = act if act in ACTS_SEEN else None       # kneeling at a herb, swinging a pick: others see it
             if pos is not None:
                 w.x, w.y, w.t = pos
                 w.loose = False
@@ -454,7 +457,23 @@ class World:
         type_ = loot.pick(alchemy.REGION_HERB_TYPES[cfg["region"]], w.rng)
         # which herb it is was rolled above, as always; only WHERE it sprouts follows its habitat: on ground that
         # suits it if there is room, else anywhere a herb may grow (so the odds never depend on the land)
-        likes = HABITAT.get(alchemy.HERBS[grade][type_][0])
+        name = alchemy.HERBS[grade][type_][0]
+        likes = HABITAT.get(name)
+        here = [(h["x"], h["y"]) for h in w.herbs.get(place, [])]
+        if name in scenery.WATER_HERBS:                 # on a still pool, if one has none on it
+            free = [(px + scenery.ON_POOL[0], py + scenery.ON_POOL[1]) for px, py in scenery.pools(place)]
+            free = [s for s in free if all(math.dist(s, o) > 1.0 for o in here)]
+            if free:
+                x, y = w.rng.choice(free)
+                return {"id": self._id(w), "x": round(x, 2), "y": round(y, 2), "grade": grade, "type": type_,
+                        "ready": ready, "water": True}
+        if name in scenery.ROCK_HERBS and scenery.rocks(place):          # beside a mossy rock
+            rx, ry = w.rng.choice(scenery.rocks(place))
+            for _ in range(60):                       # try the ground right round it, not the whole land
+                a, r = w.rng.uniform(0, math.tau), w.rng.uniform(1.1, 2.3)
+                x, y = round(rx + r * math.cos(a), 2), round(ry + r * math.sin(a), 2)
+                if walkable(place, x, y) and ok(x, y) and all(math.dist((x, y), s) >= d for s, d in apart):
+                    return {"id": self._id(w), "x": x, "y": y, "grade": grade, "type": type_, "ready": ready}
         at = (likes and self._spot(w, place, lambda x, y: ok(x, y) and suits(place, likes, x, y), apart, tries=60)) \
             or self._spot(w, place, ok, apart)
         if at is None:
@@ -811,6 +830,8 @@ def _herb_view(h):
            "tall": gather_art.MAP_HEIGHT[h["grade"]]}
     if art:
         out.update(pw=art["w"], ph=art["h"], foot=art["foot"])
+    if h.get("water"):
+        out["water"] = True                      # it stands on a pool: drawn over it, and it needs no soil of its own
     return out
 
 
@@ -866,12 +887,17 @@ def page_data(conn, world, uid, place, sheet, p, blocked, near=None):
         if place == quarry.KEY:                      # the quarry's walls, hut and keeper stand on its land
             data.update(pieces=quarry.pieces(), blocked=[list(c) for c in quarry.blocked()], tone=quarry.TONE,
                         npcs=quarry.npcs(world.mines.left_today(conn, uid)), reach=1.9, atmos=False)
+    if scenery.PLACED.get(place):                    # still pools and mossy rocks: scenery you walk round
+        data["pieces"] = list(data.get("pieces") or []) + scenery.pieces(place)
+        data["blocked"] = list(data.get("blocked") or []) + [list(c) for c in scenery.blocked(place)]
+        data["tone"] = data.get("tone") or list(land.LANDS[place]["tint"])
     walk_exits(place, data)
     info = PLACES[place]
     import looks
     data.update({"place": place, "title": info["title"], "kicker": info["kicker"], "url": info["url"],
                  "acts": gather_art.acts(looks.gender_of(looks.of_player(p))),      # kneeling at a herb, swinging a pick
                  "sfx": gather_art.sounds(),
+                 "allActs": {g: gather_art.acts(g) for g in ("male", "female")},      # the other players' moves
                  "sheets": looks.WALK_SHEETS,                 # how the other players walking here are drawn
                  "trigger": TRIGGER, "world": world.state(conn, uid, place)})
     return data

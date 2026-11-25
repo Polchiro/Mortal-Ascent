@@ -70,8 +70,14 @@ def kneel(client, herb=None):
     st = client.post("/world/state", data={"place": "crossroads"}).json()
     h = herb or st["herbs"][0]
     w = client.world.walker(UID)
-    w.x, w.y = h["x"], h["y"]
-    g = client.post("/world/gather", data={"place": "crossroads", "id": h["id"], "x": h["x"], "y": h["y"]}).json()
+    x, y = h["x"], h["y"]
+    if h.get("water"):                                  # it floats on a pool: kneel on the bank
+        from web import overworld
+        x, y = min(((x + dx / 4, y + dy / 4) for dx in range(-6, 7) for dy in range(-6, 7)
+                    if overworld.walkable("crossroads", x + dx / 4, y + dy / 4)),
+                   key=lambda s: (s[0] - x) ** 2 + (s[1] - y) ** 2)
+    w.x, w.y = x, y
+    g = client.post("/world/gather", data={"place": "crossroads", "id": h["id"], "x": x, "y": y}).json()
     return client.gathers.get(UID), g, h
 
 
@@ -98,7 +104,7 @@ def test_kneeling_shows_the_round_for_that_herb(client):
     assert h["picture"].startswith("/art/herbs/") and h["foot"] and h["tall"] == gather_art.MAP_HEIGHT[h["grade"]]
     assert rnd.herb["grade"] == h["grade"] and rnd.herb["data"]["type"] == h["type"]
     assert len(g["choices"]) in (alchemy.GATHER_CHOICES, alchemy.OLD_HERB_CHOICES)
-    assert "the meadow outside the town walls" in " ".join(g["prompt"])
+    assert "-year " in " ".join(g["prompt"]) or "the meadow outside the town walls" in " ".join(g["prompt"])   # (an old herb has its own line)
 
 
 def test_the_choices_pictures_come_inside_the_round(client):
@@ -273,7 +279,8 @@ def test_a_herbs_habitat_moves_only_where_it_sprouts(client, db_path):
             name = alchemy.HERBS[h["grade"]][h["type"]][0]
             suited += overworld.suits(place, overworld.HABITAT[name], h["x"], h["y"])
             n += 1
-            assert land.off_path(place, h["x"], h["y"]) and overworld.walkable(place, h["x"], h["y"])
+            assert land.off_path(place, h["x"], h["y"])
+            assert h.get("water") or overworld.walkable(place, h["x"], h["y"])      # lotuses float on the pools
     conn.close()
     for place, region in (("crossroads", "crossroads"), ("forest_edge", "moon_forest")):
         for t, share in alchemy.REGION_HERB_TYPES[region].items():

@@ -164,7 +164,8 @@ NPCS = [
      "go": [["Look at the World Map", "/world"], ["Hunt with a team", "/explore"]]},
     {"key": "blacksmith", "name": "Blacksmith Tie", "title": "The forge", "x": 8.9, "y": 12.6,
      "src": "/art/portraits/town/blacksmith.webp", "h": 132,
-     "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging.",
+     "line": "Steel listens to fire and patience. Bring me ore and I'll make you something worth swinging. "
+             "Short of iron? The Ironvein Quarry lies south of the Crossroads: take the first road off the gate road.",
      "go": [["Enter the forge", "/town/visit/blacksmith"]]},     # the only way in (app.py: the forge is locked)
     {"key": "alchemist", "name": "Herbalist Lan", "title": "Pills and herbs", "x": 8.6, "y": 19.6,
      "src": "/art/portraits/town/alchemist.webp", "h": 122,

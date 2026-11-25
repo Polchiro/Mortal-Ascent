@@ -192,7 +192,7 @@
      sheet, facing right as filmed (`flip`: mirrored). `pose.f` runs to `pose.to` at `rate` frames a second, then
      either swings back and forth between `loop`'s two frames (the hands searching the leaves) or calls `then`.
      Two neighbouring frames are blended, so 12 pictures a second read smoothly. While a pose is on, you stand still. */
-  var ACTS = {}, pose = null;
+  var ACTS = {}, ALLACTS = {}, pose = null, lastAct = '';
   function poseReady(kind) { var a = ACTS[kind]; return !CALM && !QUICK && a && a.img && a.img.complete && a.img.naturalWidth ? a : null; }
   function posePlay(kind, from, to, rate, then, flip) {
     var a = poseReady(kind); if (!a) { pose = null; if (then) then(); return false; }
@@ -239,6 +239,7 @@
     if (c.sheets) SHEETS = c.sheets;
     if (c.acts) { ACTS = c.acts; Object.keys(ACTS).forEach(function (k) { if (!ACTS[k].img) { ACTS[k].img = new Image(); ACTS[k].img.src = ACTS[k].src; } }); }
     if (c.sfx) snd('samples', c.sfx);
+    if (c.allActs) ALLACTS = c.allActs;
     OTHERS = {};
     snd('place', c.place === 'town' ? 'town' : c.place === 'crossroads' ? 'meadow' : c.place === 'ironvein_quarry' ? 'quarry' : 'forest');
     PLACE = c.place; SIZE = c.size; AREA = c.area; BLOCKED = c.blocked || []; REACH = c.reach; NPCS = c.npcs || [];
@@ -353,7 +354,7 @@
     if (!force && now - sentAt < 400) return;
     sentAt = now;
     var at = PLACE;
-    post('/world/pos', {place: PLACE, x: hero.x.toFixed(3), y: hero.y.toFixed(3)}).then(function (v) {
+    post('/world/pos', {place: PLACE, x: hero.x.toFixed(3), y: hero.y.toFixed(3), act: pose ? (pose.a === ACTS.kneel ? 'kneel' : 'swing') : ''}).then(function (v) {
       if (v.gone) { location.replace('/'); return; }
       if (v.url && !through) { location.replace(v.url); return; }               // the server has you elsewhere
       if (at === PLACE && v.x != null && Math.hypot(v.x - hero.x, v.y - hero.y) > 1.2) { hero.x = v.x; hero.y = v.y; }
@@ -535,7 +536,7 @@
           var s0 = sheetFor(o.look).sh;
           m = OTHERS[o.tag] = {x: o.x, y: o.y, dir: 4, phase: 0, frame: s0.stand[4], moving: false};
         }
-        m.tx = o.x; m.ty = o.y; m.name = o.name; m.realm = o.realm; m.look = o.look;
+        m.tx = o.x; m.ty = o.y; m.name = o.name; m.realm = o.realm; m.look = o.look; m.act = o.act || null;
         if (Math.hypot(m.x - o.x, m.y - o.y) > 6) { m.x = o.x; m.y = o.y; }      // too far behind: just there
       });
       Object.keys(OTHERS).forEach(function (k) { if (!seen[k]) delete OTHERS[k]; });
@@ -561,6 +562,15 @@
   function drawOther(o, x, y) {
     var f = sheetFor(o.look), sh = f.sh, s = 0.5 * ZOOM, d = sh.cell * s;
     shadow(x, y, 26 * ZOOM, 9 * ZOOM, .36);
+    var a = o.act && !o.moving && ALLACTS[o.look] && ALLACTS[o.look][o.act];       // kneeling at a herb, swinging a pick
+    if (a) {
+      if (!a.img) { a.img = new Image(); a.img.src = a.src; }
+      if (a.img.complete && a.img.naturalWidth) {
+        var i = o.act === 'kneel' ? Math.min(a.frames - 1, a.marks.search + 3) : Math.floor(glowT * a.fps * 0.9) % a.frames;
+        ctx.drawImage(a.img, (i % a.cols) * a.cell[0], Math.floor(i / a.cols) * a.cell[1], a.cell[0], a.cell[1], x - a.feet[0] * s, y - a.feet[1] * s, a.cell[0] * s, a.cell[1] * s);
+        return;
+      }
+    }
     var pic = o.moving && o.running && f.run && f.run.complete && f.run.naturalWidth ? f.run : f.img;
     if (pic.complete && pic.naturalWidth)
       ctx.drawImage(pic, o.frame * sh.cell, o.dir * sh.cell, sh.cell, sh.cell, x - sh.feet[0] * s, y - sh.feet[1] * s, d, d);
@@ -1097,6 +1107,8 @@
     NPCS.forEach(function (n) { n.t += dt; }); glowT += dt; bt += dt;
     HERBS.forEach(function (h) { h.t += dt; }); FINDS.forEach(function (f) { f.t += dt; }); SEAMS.forEach(function (s) { s.t += dt; });
     poseStep(dt);
+    var actNow = pose ? (pose.a === ACTS.kneel ? 'kneel' : 'swing') : '';       // others see you kneel or swing: say so as it changes
+    if (actNow !== lastAct) { lastAct = actNow; report(true); }
     fx.forEach(function (f) { f.t += dt; }); fx = fx.filter(function (f) { return f.t < 1.5; });
     var v = pose ? {x: 0, y: 0} : inputVector(), m = Math.hypot(v.x, v.y), was = hero.moving;
     hero.moving = m > 0.01;
@@ -1513,12 +1525,16 @@
     drawPuffs();
     function at(x, y, f) { ctx.save(); ctx.translate(x, y); ctx.scale(1 / K, 1 / K); f(); ctx.restore(); }   // drawn at your size
     EXITS.forEach(function (e) { if (e.kind === 'path') drawExit(e); });   // a path out lies on the ground
-    HERBS.forEach(function (h) { var p = toScreen(h.x, h.y); at(p.x, p.y, function () { drawHerb(h, 0, 0); }); });
+    HERBS.forEach(function (h) { if (h.water) return; var p = toScreen(h.x, h.y); at(p.x, p.y, function () { drawHerb(h, 0, 0); }); });
     FINDS.forEach(function (f) { var p = toScreen(f.x, f.y); at(p.x, p.y, function () { drawFind(f, 0, 0); }); });
     var movers = [{hero: true, x: hero.x, y: hero.y, h: 175, f: function () { at(hp.x, hp.y, function () { drawHero(0, 0); }); }}];
     NPCS.forEach(function (n) {
       var p = toScreen(n.x, n.y);
       movers.push({x: n.x, y: n.y, h: (n.h || 100) + 50, f: function () { at(p.x, p.y, function () { drawNpc(n, 0, 0); }); }});
+    });
+    HERBS.forEach(function (h) {                         // a herb on a pool is drawn over the pool, in its turn
+      if (!h.water) return; var p = toScreen(h.x, h.y);
+      movers.push({x: h.x, y: h.y, h: h.tall, f: function () { at(p.x, p.y, function () { drawHerb(h, 0, 0); }); }});
     });
     SEAMS.forEach(function (s) {
       var p = toScreen(s.x, s.y);
