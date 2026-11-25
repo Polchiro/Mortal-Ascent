@@ -534,9 +534,50 @@
     if (!s || s.gone) { location.href = '/training'; return; }
     if (acting) return;
     var turn = s.last ? s.last.turn : 0;
-    if (turn > shownTurn) { shownTurn = turn; act(s, function () { draw(s); }); return; }
+    if (turn > shownTurn) {
+      var told = {text: S.tell, pose: S.tell_pose};               // the tell he showed before this exchange
+      shownTurn = turn; act(s, function () { draw(s); explain(s.last, told); }); return;
+    }
     draw(s);
   }
+
+  /* ── learning: after each exchange, what happened and what would have won (How to play, "Explanations") ── */
+  var BEATS = {strike: 'guard', guard: 'break', break: 'strike'}, explainOn = true;
+  try { explainOn = localStorage.getItem('ma.spar.explain') !== 'off'; } catch (e5) {}
+  function T(m) { return m.charAt(0).toUpperCase() + m.slice(1); }
+  function explain(t, told) {
+    var el = $('sexplain');
+    if (!el) return;
+    if (!explainOn || !t) { el.textContent = ''; return; }
+    var his = t.master.move, mine = t.me.base, out = [];
+    if (t.timed_out) out.push('Time ran out, so you raised your Guard.');
+    if (t.outcome === 'win') out.push('You read him: your ' + T(mine) + ' beats his ' + T(his) + '.');
+    else if (t.outcome === 'lose') out.push('His ' + T(his) + ' beat your ' + T(mine) + '. ' + T(BEATS[his]) + ' would have won.');
+    else out.push('You both chose ' + T(his) + ': a clash. ' + T(BEATS[his]) + ' would have won.');
+    if (told && told.pose) {
+      out.push(told.pose === his ? 'His tell meant ' + T(his) + '.'
+        : 'His tell was a feint: it showed ' + T(told.pose) + ', but the small sign in it gave away ' + T(his) + '.');
+    } else out.push('No tell this time: read his rhythm in the beads.');
+    if (t.me.tech) {
+      if (t.timed) out.push('Well timed: your technique earns mastery EXP.');
+      else out.push(t.me.type === 'attack' ? 'Attack techniques earn mastery right after you Guard his Strike.'
+        : 'Defense techniques earn mastery when he Strikes.');
+    }
+    el.textContent = out.join(' ');
+  }
+  (function () {
+    var box = $('showto'), check = $('sexplaincheck');
+    if (!box) return;
+    check.checked = explainOn;
+    check.addEventListener('change', function () {
+      explainOn = this.checked;
+      try { localStorage.setItem('ma.spar.explain', explainOn ? 'on' : 'off'); } catch (e6) {}
+      if (!explainOn) $('sexplain').textContent = '';
+    });
+    $('showbtn').addEventListener('click', function () { box.hidden = false; });
+    $('showclose').addEventListener('click', function () { box.hidden = true; });
+    box.addEventListener('click', function (e) { if (e.target === box) box.hidden = true; });
+  })();
   function fetchState() {
     return fetch('/spar/state', {cache: 'no-store'}).then(function (r) { return r.json(); }).then(apply).catch(function () {});
   }
@@ -575,7 +616,8 @@
     else if (k === '2') { var m = main.querySelector('details.techmenu:not(.off):not(.shut)'); if (m) m.open = !m.open; }
     else if (k === 'f') $('syield').click();
     else if (k === 'h') hist.open = !hist.open;
-    else if (k === 'escape') { hist.open = false; main.querySelectorAll('details.techmenu[open]').forEach(function (d) { d.open = false; }); }
+    else if (k === 'g') $('showto').hidden = !$('showto').hidden;
+    else if (k === 'escape') { hist.open = false; $('showto').hidden = true; main.querySelectorAll('details.techmenu[open]').forEach(function (d) { d.open = false; }); }
   });
 
   /* ── the exchange's countdown; when it runs out, the server has already played your Guard ── */

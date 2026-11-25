@@ -368,6 +368,13 @@ A spar lives in the web server's memory, like a duel: a restart ends it unsaved 
 restarts mid-spar). The website doesn't know about a spar under way on Discord, but the shared rest stops a second
 one from starting.
 
+**How to play, in Spar** (SHOAIB, Nov 25): a "How to play" button in the info box (or G) opens a guide: the Strike /
+Guard / Break triangle, his tells as the bot words them (two per move) and the answer to each, at realms where he
+lies the small sign that betrays the real move, his rhythm, and when techniques earn mastery EXP. Its
+**Explanations** setting (on by default, kept in the browser) adds a line after each exchange: what beat what, what
+would have won, what his tell meant (or that it lied), and whether a technique was well timed. It never tells you a
+move before you choose: nothing about the exchange being played is sent before you answer, as before.
+
 ## Practice on the website: Senior Sister Xue's drills
 
 **WEBSITE ONLY (SHOAIB, Nov 24).** Discord's `/practice` keeps its four challenges (challenges.md). On the website,
