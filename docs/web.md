@@ -228,6 +228,11 @@ crafting.TIMER_GRACE_SECONDS`), late or missing pages play the timed-out move, o
 that aren't on offer are ignored. One craft at a time per player, kept in the website's memory.
 A nine-pattern pill is announced only when it is crafted in Discord (the website has no channel to post in).
 
+## Rare herb events
+
+Twice a day a light rises over the Moon Forest: one spirit herb for everyone on the website to race to (docs/world.md
+"A heavenly phenomenon"; `web/herb_events.py`).
+
 ## Mining
 
 The Ironvein Quarry, a safe land off the Crossroads: walk up to a seam, strike it with the pick, and it breaks open on

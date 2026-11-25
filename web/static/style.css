@@ -1566,6 +1566,12 @@ body.town .mprompt b{display:inline-block;margin-left:6px;padding:0 6px;border:1
 .rings em{margin-left:6px;font:600 12px Inter,Arial,sans-serif;font-style:normal;color:#B9C2D6}
 .gpanel .mgot{margin-top:2px}
 .gpanel.done .look{display:none}.gpanel.done .plantcard img{max-height:84px}.gpanel.done .pline.big2{font-size:16px}
+/* a heavenly phenomenon (docs/world.md): the line that says a light has risen, while it stands */
+.evbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:4;margin:0;padding:6px 14px;border-radius:999px;white-space:nowrap;
+  background:linear-gradient(90deg,rgba(60,40,90,.85),rgba(90,70,30,.85));border:1px solid rgba(255,226,160,.55);
+  font:700 13px Cinzel,Georgia,serif;color:#FFF2C8;box-shadow:0 0 18px rgba(255,220,150,.35);max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+.evbar[hidden]{display:none}
+@media (max-width:760px){.evbar{top:auto;bottom:118px;font-size:11.5px;padding:5px 10px}}
 /* mining (docs/world.md "The Ironvein Quarry"): a small card low on the screen; the map stays in sight */
 .mcard{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:6;width:min(430px,94vw);padding:12px 16px 14px;
   display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:linear-gradient(180deg,rgba(26,20,14,.94),rgba(12,10,8,.97))}

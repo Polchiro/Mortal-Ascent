@@ -82,22 +82,27 @@ class Gathering:
 
     # ── rounds ───────────────────────────────────────────────────────
 
-    def next_round(self, herb=None):
+    def next_round(self, herb=None, spirit=True):
         """The next round. `herb`: (grade, type, place) of a herb already found growing (the website's open world
-        rolls it when it sprouts, with the same grade odds); None rolls one here, as /gather does."""
+        rolls it when it sprouts, with the same grade odds), or (grade, type, place, age) when its age is fixed too
+        (a shared rare herb event, web/herb_events.py); None rolls one here, as /gather does.
+        `spirit` False: the Wandering Spirit's check waits for the next ordinary herb (an event's race is not the
+        moment for it)."""
         p = self.player
-        if p["spirit_check_in"] <= 0:
+        if spirit and p["spirit_check_in"] <= 0:
             self.round = self._spirit_round()
         else:
             self.round = self._herb_round(p, herb)
         return self.round
 
     def _herb_round(self, p, herb=None):
+        fixed_age = None
         if herb:
-            tier, type_, where = herb
+            tier, type_, where = herb[:3]
+            fixed_age = herb[3] if len(herb) > 3 else None
         else:
             tier, type_, where = loot.herb_tier(p["realm"], self.rng), loot.roll_herb_type(self.rng), None
-        age = loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
+        age = fixed_age or loot.roll_age(self.rng, p["herb_streak"], gear.artifact_bonus(p, "old_herb_chance"))   # Gourd
         name, desc = alchemy.HERBS[tier][type_]
         old = age >= alchemy.OLD_HERB_FROM_AGE
         n = alchemy.OLD_HERB_CHOICES if old else alchemy.GATHER_CHOICES

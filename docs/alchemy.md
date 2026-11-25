@@ -60,6 +60,9 @@ Every herb grade can be found at every realm. What you find is rolled by rarity,
 Each tier has 4 real herbs. A round shows all four of a tier; you pick the one the bot named by reading its
 description.
 
+> **Shared rare herb events (website, Nov 25 2026):** twice a day one 500-year herb can be raced for in the Moon
+> Forest (docs/world.md "A heavenly phenomenon"). Ordinary gathering and its odds are unchanged.
+
 > **No more poisonous look-alikes (Nov 25 2026, SHOAIB).** Each tier used to have 2 decoys (Ghost Grass, Bitter
 > Nettle, Fool's Ginseng, Snake Moss, Shadow Mushroom, Weeping Lily, Grave Ginseng, Fire Thorn, Demon Lotus, Void
 > Fruit) that cost 5% HP when picked. They are gone from `/gather` and the website alike: a wrong pick just loses

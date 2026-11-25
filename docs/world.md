@@ -184,6 +184,32 @@ players are shown running when they move faster than midway between the two spee
 - Your herbs, beasts and finds are kept in the website's memory: a restart rolls them again (a trip under way ends
   as a hunt does). Where you stand is saved (above).
 
+## A heavenly phenomenon: shared rare herb events
+
+A trial (SHOAIB approved it Nov 25 2026). **Website only**; ordinary gathering is untouched and every player keeps
+their own herbs. Code: `web/herb_events.py` (the events and the claim), `World.gather_event` / `pick` in
+`web/overworld.py`, `Gathers.pick(claim=)` / `call_off` in `web/gather_play.py`, `eventNews` / `drawEvent` in
+`town.js`; table `world_events`. Tests: `tests/test_herb_events.py`. Switch it off with `MA_HERB_EVENTS=off`.
+
+- **Twice a day** (UTC), at random moments, a light rises somewhere in the **Moon Forest**: one spirit herb everyone
+  can see, at one of the three lands' far clearings (`PER_DAY`, the lands' `secret` spots). It stands **20 minutes**
+  (`MINUTES`) unless someone pulls it free.
+- **Everyone on the website is told**, wherever they are: a bell, the line *A strange light rises over the Moon
+  Forest*, and a small bar at the top with the minutes left. Not which land, not the spot, not the herb.
+- **Finding it:** on its own land a pillar of light stands over it (SHOAIB's video, added as light, with a beam
+  carrying on up so it shows from far off). The bar says whether it is in this part of the forest or another.
+- **Kneeling:** the ordinary round, your own four plants, the old-herb rules (it is **500 years old**: `AGE`). The
+  Wandering Spirit never interrupts it. Each player may kneel at each event once.
+- **The first right answer the server handles pulls it free.** It gives a 500-year herb of the event's type, at the
+  **grade the claimant's own realm rolls**, so it is worth having at every realm. The claim is one database update
+  that only succeeds while nobody has claimed it and it hasn't ended: two right answers at once cannot both win.
+- **Beaten to it?** Your round is called off at no cost: nothing lost, your streak kept. A wrong or slow pick costs
+  what it always does, and the herb stays for the others.
+- **One claim a day** per player (`WINS_PER_DAY`), so no one takes them all.
+- **A restart keeps the events** (they are in the database); who has knelt at which is kept in memory.
+- **Not yet:** nothing is posted to Discord; other lands' edges don't glow toward it (the bar's words do that job);
+  other players aren't drawn kneeling.
+
 ## The Ironvein Quarry (`/wild/ironvein_quarry`)
 
 A small safe land where forging materials are mined (SHOAIB approved the rules Nov 25 2026). **Website only:**
