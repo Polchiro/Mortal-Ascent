@@ -313,6 +313,10 @@ The frame, tracker, dock and hint change nothing in the game; the tasks are the 
 `/admin`) see it: they get an **Admin** tab in the top bar; everyone else gets "Not Found". (Discord also lets the
 bot's owner in by asking Discord who owns the app; the website can't ask that, so put your own ID in `ADMIN_IDS`.)
 
+**No reload (Nov 26).** The buttons are sent in the background: the page posts to `/admin/do` with
+`X-Admin-Fetch: 1` and gets JSON back (`ok`, `lines`, and the fresh `target` card, `coins`, `pearls`, `cooldowns`),
+shows the answer in a box at the bottom of the screen and updates the player card, the technique list, the purse and
+the cooldown line, so the page stays where it was. Without script the form posts and comes back as before.
 Pick the player to work on at the top (default: you). Each tool calls the same helper in `bot/admin.py` as the
 Discord command, so it does exactly the same:
 

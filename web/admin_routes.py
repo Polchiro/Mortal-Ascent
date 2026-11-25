@@ -60,7 +60,12 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         if not user:
             return not_found()
         form = await form_of(request)
+        # The page sends its buttons in the background (admin.html, `X-Admin-Fetch`) and shows the answer in place, so
+        # nothing reloads (Nov 26, SHOAIB); without script the form posts and comes back to the page as before.
+        quiet = request.headers.get("x-admin-fetch") == "1"
         if not form.get("token") or form.get("token") != request.session.get("admin_token"):
+            if quiet:
+                return JSONResponse({"ok": False, "lines": ["The page was out of date: reload it and try again."]})
             request.session["admin_done"] = {"ok": False, "lines": ["The page was out of date: try again."]}
             return RedirectResponse("/admin", status_code=303)
         try:
@@ -68,6 +73,12 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
         except ValueError:
             who = user["id"]
         ok, lines = await run_in_threadpool(with_conn, ap.act, user["id"], who, form)
+        if quiet:                                       # the answer, and the numbers it may have changed
+            def fresh(c):
+                me = db.get_player(c, user["id"])
+                return {"target": ap.target_view(c, who), "cooldowns": ap.cooldowns_status(c),
+                        "coins": number(me["lotus_coins"]) if me else "0", "pearls": number(me["moon_pearls"]) if me else "0"}
+            return JSONResponse({"ok": ok, "lines": lines[:40], **await run_in_threadpool(with_conn, fresh)})
         request.session["admin_done"] = {"ok": ok, "lines": lines[:40], "action": form.get("action")}
         section = form.get("action") or ""
         return RedirectResponse(f"/admin?who={who}#{section}", status_code=303)

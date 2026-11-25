@@ -2,7 +2,8 @@
 {% block title %}Admin · Mortal Ascent{% endblock %}
 {% block body %}
 {# The admin panel (web/admin_panel.py, docs/web.md "Admin panel"): Discord's /admin tools on one page, for
-   ADMIN_IDS only. Every form posts one action to /admin/do and comes back here with what happened. #}
+   ADMIN_IDS only. Every form sends one action to /admin/do; the script below sends it in the background and shows what
+   happened in place (no reload); without script the form posts and comes back here. #}
 {% include "_topbar.html" %}
 {% set t = s.target %}
 {% set c = s.choices %}
@@ -30,9 +31,10 @@
     {% for l in s.done.lines %}<p>{{ l | safe }}</p>{% endfor %}
   </div>
   {% endif %}
+  <div class="addone adtoast" id="adtoast" role="status" aria-live="polite" hidden></div>
 
   {% if t %}
-  <section class="adcard adme">
+  <section class="adcard adme" id="adme">
     <b>{{ t.name }}</b><span>{{ t.realm }} · {{ t.layer }} Layer</span><span>Qi {{ t.qi }}</span>
     <span>{{ t.coins }} coins · {{ t.pearls }} pearls</span><span>Bag {{ t.slots }}</span>
     {% if t.injured %}<span class="warn">Injured {{ t.injured }}</span>{% endif %}
@@ -88,7 +90,7 @@
 
     <section class="adcard">
       <h2>Cooldowns for everyone</h2>
-      <p class="sub">Now: {{ s.cooldowns }}</p>
+      <p class="sub">Now: <span data-cooldowns>{{ s.cooldowns }}</span></p>
       {% call form("cooldowns") %}
       <div class="adrow">
         <label>Hours <input type="number" name="hours" min="0" max="168" placeholder="1"></label>
@@ -122,7 +124,7 @@
       {% endcall %}
       {% call form("mastery") %}
       <div class="adrow">
-        <label>Mastery of <select name="technique"><option value="all">All techniques</option>{% if t %}{% for x in t.techniques %}<option value="{{ x.id }}">{{ x.name }} · {{ x.stage }}</option>{% endfor %}{% endif %}</select></label>
+        <label>Mastery of <select name="technique" id="admastery"><option value="all">All techniques</option>{% if t %}{% for x in t.techniques %}<option value="{{ x.id }}">{{ x.name }} · {{ x.stage }}</option>{% endfor %}{% endif %}</select></label>
         <label>Stage <select name="stage">{% for i, n in c.stages %}<option value="{{ i }}">{{ n }}</option>{% endfor %}</select></label>
       </div>
       <label class="adcheck"><input type="checkbox" name="full_bar"> Fill the bar (the trial to the next stage is ready)</label>
@@ -170,6 +172,53 @@
   </div>
 </main>
 <script>
+/* The buttons work in the background: the form is sent with fetch, the answer is shown in a box that stays by the
+   bottom of the screen, and the player's numbers (the card, the purse, the techniques list) are brought up to date.
+   Nothing reloads, so the page stays where you were (POST /admin/do with X-Admin-Fetch: 1 answers in JSON). */
+(function () {
+  var toast = document.getElementById('adtoast'), hide = null;
+  function esc(v) { var d = document.createElement('span'); d.textContent = v == null ? '' : v; return d.innerHTML; }
+  function show(ok, lines) {
+    toast.className = 'addone adtoast ' + (ok ? 'ok' : 'bad');
+    toast.innerHTML = '<button type="button" class="adx" aria-label="Close">×</button>' +
+      (lines || []).map(function (l) { return '<p>' + l + '</p>'; }).join('');   // the server's lines, as the page shows them
+    toast.hidden = false;
+    toast.querySelector('.adx').onclick = function () { toast.hidden = true; };
+    clearTimeout(hide); hide = setTimeout(function () { toast.hidden = true; }, ok ? 8000 : 15000);
+  }
+  function refresh(d) {
+    var t = d.target, card = document.getElementById('adme');
+    if (t && card) card.innerHTML = '<b>' + esc(t.name) + '</b><span>' + esc(t.realm) + ' · ' + esc(t.layer) + ' Layer</span>' +
+      '<span>Qi ' + esc(t.qi) + '</span><span>' + esc(t.coins) + ' coins · ' + esc(t.pearls) + ' pearls</span>' +
+      '<span>Bag ' + esc(t.slots) + '</span>' + (t.injured ? '<span class="warn">Injured ' + esc(t.injured) + '</span>' : '');
+    var sel = document.getElementById('admastery');
+    if (t && sel) {
+      var was = sel.value;
+      sel.innerHTML = '<option value="all">All techniques</option>' + t.techniques.map(function (x) {
+        return '<option value="' + esc(x.id) + '">' + esc(x.name) + ' · ' + esc(x.stage) + '</option>'; }).join('');
+      sel.value = was; if (sel.value !== was) sel.value = 'all';
+    }
+    document.querySelectorAll('.js-coins').forEach(function (n) { n.textContent = d.coins; });
+    document.querySelectorAll('.js-pearls').forEach(function (n) { n.textContent = d.pearls; });
+    document.querySelectorAll('[data-cooldowns]').forEach(function (n) { n.textContent = d.cooldowns; });
+  }
+  document.querySelectorAll('form.adform').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!window.fetch || !window.FormData || !window.URLSearchParams) return;                 // the old way: post and come back
+      e.preventDefault();
+      var data = new FormData(f), btn = e.submitter;
+      if (btn && btn.name) data.append(btn.name, btn.value);        // which chest, which way (on / off)
+      var busy = f.querySelectorAll('button');
+      busy.forEach(function (b) { b.disabled = true; });
+      fetch(f.getAttribute('action'), {method: 'POST', body: new URLSearchParams(data), credentials: 'same-origin',   // a plain form, as /admin/do reads it
+        headers: {'X-Admin-Fetch': '1'}})
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { show(d.ok, d.lines); if (d.target !== undefined) refresh(d); })
+        .catch(function () { show(false, ['That did not reach the server: check your connection and try again.']); })
+        .then(function () { busy.forEach(function (b) { b.disabled = false; }); });
+    });
+  });
+})();
 /* the pick lists: as you type, the matching items, techniques or beasts (GET /admin/search) */
 document.querySelectorAll('input[data-search]').forEach(function (inp) {
   var list = document.getElementById(inp.getAttribute('list')), timer = null;

@@ -2418,6 +2418,12 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .addone p{margin:2px 0}
 .addone.ok{background:rgba(111,217,176,.1);border:1px solid rgba(111,217,176,.4)}
 .addone.bad{background:rgba(208,88,76,.12);border:1px solid rgba(208,88,76,.45)}
+/* the answer to a button, shown in place without a reload (admin.html): kept in view at the bottom of the screen */
+.addone.adtoast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;width:min(560px,calc(100vw - 24px));
+  max-height:40vh;overflow:auto;margin:0;padding-right:34px;backdrop-filter:blur(6px);box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.addone.adtoast.ok{background:rgba(20,48,40,.94)}.addone.adtoast.bad{background:rgba(58,22,20,.94)}
+.addone.adtoast[hidden]{display:none}
+.adtoast .adx{position:absolute;top:6px;right:8px;border:0;background:none;color:#E8DFC9;font-size:20px;line-height:1;cursor:pointer}
 .adcard{padding:16px;border-radius:12px;background:linear-gradient(180deg,rgba(30,22,14,.9),rgba(16,12,9,.92));border:1px solid rgba(232,194,122,.25)}
 .adcard h2{margin:0 0 6px;font:800 17px Cinzel,serif;color:#F5DCA6}
 .adcard .sub{margin:0 0 10px;font-size:12.5px;color:#B9AE95}
