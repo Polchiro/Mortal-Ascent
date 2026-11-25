@@ -549,7 +549,7 @@ def herbs_overview():
     ages = " · ".join(f"{age}y {pct(a['chance'])}" for age, a in alchemy.HERB_AGES.items())
     tiles = [
         tile(ov("pick", "herb"), T.JADE, "Pick the right plant", [
-            "Find the herb the bot names", f"Look-alike: −{pct(alchemy.DECOY_HP_LOSS)} HP"], cjk=False),
+            "Find the herb the bot names", "Wrong plant: nothing gathered"], cjk=False),
         tile(ov("time", "hourglass"), T.GOLD, "Time to pick",
              [" · ".join(f"{t} {s}s" for t, s in alchemy.GATHER_SECONDS.items())], cjk=False),
         tile(ov("age", "star"), T.LOTUS, "Herb age", [ages, "Older: more patterns"], cjk=False),

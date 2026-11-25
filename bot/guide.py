@@ -205,8 +205,8 @@ CHAPTERS = [
         ("Gathering Herbs",
          "*The Old Master lifts the lid of a blackened cauldron.* \"A pill is only as good as its herbs.\"",
          [("/gather", "I name a herb and describe it; pick the matching plant before time runs out. Gather as long "
-                      "as you like. **Read carefully:** poisonous look-alikes differ in one detail and cost "
-                      f"{alchemy.DECOY_HP_LOSS:.0%} HP."),
+                      "as you like. **Read carefully:** a wrong pick loses the herb and resets your Herbal "
+                      "Insight streak."),
           ("Rarity", "Most herbs are Mortal grade. Yellow, Mystic, Earth and Heaven herbs are rarer and rarer; "
                      "higher realms find them more often. Earth and Heaven finds are announced to the channel."),
           ("Herb types", "🌀 Qi herbs → Qi pills · ❤️ Healing → Mending pills · 💧 Purity → every recipe · 🏔️ "

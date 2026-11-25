@@ -98,8 +98,8 @@ players are shown running when they move faster than midway between the two spee
   the paths, never by an entrance. The lands are far bigger than before, so herbs are further apart. **Each player has
   their own herbs**: nobody can take yours.
 - **Picking one:** walk up (within 1.6 tiles) and press **E**. A panel opens over the map with **one round of the
-  gathering game**: the herb to find, the look-alike plants, the timer. Right pick → the herb goes in your bag;
-  wrong or too slow → it is lost, exactly as in `/gather` (poisonous look-alikes, the Herbal Insight streak, the
+  gathering game**: the herb to find, the grade's four plants, the timer. Right pick → the herb goes in your bag;
+  wrong or too slow → it is lost, exactly as in `/gather` (the Herbal Insight streak, the
   Wandering Spirit check and old herbs all work the same; it is the same `Gathering` object).
 - **Which herb:** its **grade** follows your realm as always (`alchemy.herb_grade_odds`), so rare herbs are exactly as
   rare as in `/gather`. Its **type** follows the region (`alchemy.REGION_HERB_TYPES`):
@@ -204,7 +204,7 @@ Three tasks a day, the same all day and new at **midnight UTC**, picked for each
 
 | Task | Counts | Pays (Mortal; × realm) |
 |---|---|---|
-| Pick 5 herbs out in the world | a herb gathered (not a look-alike or a miss) | 🪷 120 |
+| Pick 5 herbs out in the world | a herb gathered (not a wrong plant or a miss) | 🪷 120 |
 | Defeat 2 beasts in the Moon Forest | a beast beaten out in the world | 🪷 150 |
 | Look into 2 glints in the grass | a find looked into | 🪷 120 |
 | Walk all the way to the Shrine Grove | coming into the Shrine Grove | 🪷 100 |

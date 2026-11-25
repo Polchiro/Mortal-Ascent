@@ -493,7 +493,7 @@ class World:
             last = s.last[0] if s and s.last else None
             if last is not None and last.kind == "herb":
                 self._picked(w, conn, uid, place, hid)
-                if s.g.gathered and s.g.gathered[-1] is last.herb:     # picked, not a look-alike or too slow
+                if s.g.gathered and s.g.gathered[-1] is last.herb:     # picked, not a wrong plant or too slow
                     world_tasks.record(conn, uid, "herbs", self.clock())
 
     def _picked(self, w, conn, uid, place, hid):

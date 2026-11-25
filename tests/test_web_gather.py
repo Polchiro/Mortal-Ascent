@@ -125,13 +125,13 @@ def test_a_right_pick_stores_the_herb_and_it_regrows_elsewhere(client, db_path):
     assert len(st["herbs"]) == 10 and h["id"] not in [x["id"] for x in st["herbs"]]
 
 
-def test_a_decoy_poisons_and_resets_the_streak(client, db_path):
+def test_a_wrong_plant_resets_the_streak_and_costs_no_hp(client, db_path):
     set_player(db_path, herb_streak=7)
     s, g, h = kneel(client)
     rnd = s.g.round
-    out = pick(client, next(iter(rnd.decoys)), s.turn)
-    assert herbs(db_path) == 0 and player(db_path)["herb_streak"] == 0 and s.g.hp < s.g.max_hp
-    assert any("look-alike" in x for x in out["result"])
+    out = pick(client, next(k for k, _, _ in rnd.options if k != rnd.answer), s.turn)
+    assert herbs(db_path) == 0 and player(db_path)["herb_streak"] == 0 and s.g.hp == s.g.max_hp
+    assert any("Not the herb" in x for x in out["result"])
     assert h["id"] not in [x["id"] for x in out["world"]["herbs"]]            # the herb is gone either way
 
 

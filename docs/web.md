@@ -233,7 +233,8 @@ A nine-pattern pill is announced only when it is crafted in Discord (the website
 There is no Gather page any more. Herbs grow on the Crossroads and in the Moon Forest: walk up to one and press
 **E**, and one round of the bot's gathering game opens in a panel over the map (docs/world.md "Herbs"). The engine is
 still `bot/gathering.py` (`Gathering`): it checks the pick, stores the herb and keeps the Herbal Insight streak, the
-Wandering Spirit check, the poison HP and the review flags. Discord's `/gather` is unchanged.
+Wandering Spirit check and the review flags. Discord's `/gather` plays the same round. (The poisonous look-alikes
+were removed from both on Nov 25 2026: the four choices are the grade's four herbs and nothing costs HP.)
 
 **The server referees** (`web/gather_play.py`, `web/overworld.py`). Which choice is real stays on the server until the
 pick: the panel has no plant names, and each choice's picture is asked for by its position

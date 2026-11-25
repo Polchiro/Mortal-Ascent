@@ -122,59 +122,38 @@ HERBS = {
     },
 }
 
-# tier → list of (name, description) poisonous look-alikes
-DECOYS = {
-    "Mortal": [("Ghost Grass", "Like Spirit Grass, but the blades are grey at the tips"),
-               ("Bitter Nettle", "Red berries hidden under stinging leaves")],
-    "Yellow": [("Fool's Ginseng", "Golden root, but cold to the touch"),
-               ("Snake Moss", "Glowing moss on south-facing stones")],
-    "Mystic": [("Shadow Mushroom", "Pale blue cap, but open in daylight"),
-               ("Weeping Lily", "Green-white lily dripping dark sap")],
-    "Earth":  [("Grave Ginseng", "Person-shaped root, but grows near bones"),
-               ("Fire Thorn", "Orange petals hiding burning thorns")],
-    "Heaven": [("Demon Lotus", "Nine-leaf lotus, but blood-red underneath"),
-               ("Void Fruit", "Glowing fruit that casts no shadow")],
-}
+# Poisonous look-alikes were removed (SHOAIB, Nov 25 2026): a round's choices are the grade's four real herbs.
+# The table stays (empty) so old code and data that ask for a grade's look-alikes find none.
+DECOYS = {g: [] for g in GRADES}
 
-# herb or decoy name → its "look": what you SEE when it grows in front of you (the /gather choice cards).
+# herb name → its "look": what you SEE when it grows in front of you (the /gather choice cards).
 # Written differently from the description on purpose, so finding the herb means reading, not matching words.
-# A decoy's look differs from its herb's look in the same one detail as its description.
 LOOKS = {
     # Mortal
     "Spirit Grass":    "Slender green blades swaying in still air",
     "Red Berry":       "A cluster of little red berries, sweetly scented",
     "Dew Leaf":        "A wide leaf cupping one round dewdrop",
     "Iron Root":       "A dull grey-black root, sunk deep and heavy",
-    "Ghost Grass":     "Slender green blades swaying, their tips gone grey",
-    "Bitter Nettle":   "Little red berries tucked under spiky leaves",
     # Yellow
     "Sun Ginseng":     "A golden root giving off warmth",
     "Blood Flower":    "A deep red bloom with dark lines on its petals",
     "Silver Moss":     "Faintly glowing moss on a stone facing north",
     "Stone Root":      "A grey root splitting a solid rock",
-    "Fool's Ginseng":  "A golden root with frost creeping over it",
-    "Snake Moss":      "Faintly glowing moss on a stone facing south",
     # Mystic
     "Moon Mushroom":   "A pale blue cap spread wide under the moon",
     "Heart Lotus":     "A pink lotus whose centre forms a heart",
     "Jade Lily":       "A green-white lily with a cool jade sheen",
     "Thunder Root":    "A black root in scorched, split earth",
-    "Shadow Mushroom": "A pale blue cap spread wide under the sun",
-    "Weeping Lily":    "A green-white lily with dark drops running down",
     # Earth
     "Golden Ginseng":  "A glowing golden root shaped like a seated man",
     "Phoenix Flower":  "Ember-orange petals throwing off sparks",
     "Snow Lily":       "A white lily open in the snow",
     "Mountain Root":   "A huge root clawing out under a cliff",
-    "Grave Ginseng":   "A seated-man root among scattered bones",
-    "Fire Thorn":      "Ember-orange petals over a nest of thorns",
     # Heaven
     "Heaven Lotus":    "A nine-leaf lotus hovering over still water",
     "Immortal Peach":  "A glowing peach, its shadow on the ground",
     "Star Dew":        "Dewdrops twinkling like stars in daylight",
     "Chaos Root":      "A root shimmering through every colour",
-    "Demon Lotus":     "A nine-leaf lotus with a blood-red underside",
-    "Void Fruit":      "A glowing fruit with no shadow beneath it",
 }
 
 # ── Herb age ──────────────────────────────────────────────────────────
@@ -193,10 +172,9 @@ HERB_AGES = {
 
 GATHER_CHOICES = 4
 GATHER_SECONDS = {"Mortal": 10, "Yellow": 9, "Mystic": 8, "Earth": 7, "Heaven": 6}
-DECOY_HP_LOSS = 0.05            # never below 1 HP
 
 OLD_HERB_FROM_AGE = 100         # 100-year+ herbs fight back
-OLD_HERB_CHOICES = 6
+OLD_HERB_CHOICES = 4            # the grade's four herbs, as any round (6 while there were look-alikes)
 OLD_HERB_SECONDS_LESS = 3
 OLD_HERB_MIN_SECONDS = 4
 

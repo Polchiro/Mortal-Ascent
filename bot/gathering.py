@@ -53,7 +53,6 @@ class Round:
     seconds: float
     herb: dict = None           # the herb gathered on a right pick
     old: bool = False           # a 100-year+ herb that fights back
-    decoys: set = field(default_factory=set)
     names: dict = field(default_factory=dict)   # option key → the plant's name (for its drawing on the card)
     place: str = ""
     shown: str = ""             # the sign the Wandering Spirit asks for (spirit rounds)
@@ -67,7 +66,7 @@ class Gathering:
         p = self.player
         self.max_hp = rules.final_stats(p, db.get_techniques(conn, user_id), db.equipped_weapon(conn, user_id),
                                        db.equipped_armor(conn, user_id))[0]
-        self.hp = self.max_hp           # HP isn't stored outside fights, so poison only lasts this session
+        self.hp = self.max_hp           # shown on the card; nothing in gathering costs HP since the look-alikes went
         self.round = None
         self.gathered = []              # herbs gathered this session
         self.reactions = []             # seconds per herb pick, for the review flag
@@ -102,13 +101,10 @@ class Gathering:
         old = age >= alchemy.OLD_HERB_FROM_AGE
         n = alchemy.OLD_HERB_CHOICES if old else alchemy.GATHER_CHOICES
         # the choices show each plant's LOOK (alchemy.LOOKS), never the description you are given
-        others = [("decoy", d) for d, _ in alchemy.DECOYS[tier]]
-        others += [("plant", alchemy.HERBS[tier][t][0]) for t in alchemy.HERBS[tier] if t != type_]
+        # the other choices are the grade's other real herbs (the poisonous look-alikes are gone, Nov 25 2026)
+        others = [("plant", alchemy.HERBS[tier][t][0]) for t in alchemy.HERBS[tier] if t != type_]
         self.rng.shuffle(others)
-        # always at least one decoy, so every round has a trap to read past
-        picked = [o for o in others if o[0] == "decoy"][:1]
-        picked += [o for o in others if o not in picked][:n - 1 - len(picked)]
-        options = [("herb", name)] + picked
+        options = [("herb", name)] + others[:n - 1]
         self.rng.shuffle(options)
         keyed = [(f"o{i}", kind, plant) for i, (kind, plant) in enumerate(options)]
         answer = next(k for k, kind, _ in keyed if kind == "herb")
@@ -124,7 +120,6 @@ class Gathering:
             prompt = f"{appear}\n{prompt}"
         return Round("herb", prompt, [(k, alchemy.LOOKS[plant], "🌿") for k, _, plant in keyed], answer, seconds,
                      herb=loot.herb(tier, type_, age), old=old,
-                     decoys={k for k, kind, _ in keyed if kind == "decoy"},
                      names={k: plant for k, _, plant in keyed}, place=place)
 
     def _spirit_round(self):
@@ -172,13 +167,6 @@ class Gathering:
                     text += " Nearby you also find " + ", ".join(materials.lines(extra)) + "."
             else:
                 text = f"✅ You find **{loot.describe(r.herb)}**, but your bag is full. You leave it behind."
-        elif not slow and key in r.decoys:
-            lost = max(0, min(self.hp - 1, round(self.max_hp * alchemy.DECOY_HP_LOSS)))
-            self.hp -= lost
-            fields["herb_streak"] = 0
-            text = f"☠️ A poisonous look-alike! Its sap burns your hands (−{lost:,} HP). Nothing gathered."
-            if r.old:
-                text += f" The **{r.herb['name']}** escapes into the earth."
         elif not slow:
             fields["herb_streak"] = 0
             text = "❌ Not the herb you were looking for. Nothing gathered."
@@ -285,7 +273,7 @@ class GatherView(OwnedView):
                 lines.append("")
                 lines += [f"**{i + 1}** · {label}" for i, (_, label, _) in enumerate(r.options)]
                 lines.append("\nPick the plant that matches the description. Read carefully: "
-                             "poisonous look-alikes differ in one detail.")
+                             "a wrong pick loses the herb and your streak.")
             e.set_footer(text=f"⏳ {r.seconds:g} seconds to choose")
         elif self.g.over:
             lines.append(self.summary())

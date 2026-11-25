@@ -39,18 +39,11 @@ def test_every_plant_kind_can_be_drawn():
         assert img.getbbox() is not None
 
 
-def test_a_decoy_looks_different_from_its_herb():
-    """Each decoy's picture differs from the herb it imitates (its one wrong detail is drawn)."""
-    pairs = [("Spirit Grass", "Ghost Grass"), ("Red Berry", "Bitter Nettle"), ("Sun Ginseng", "Fool's Ginseng"),
-             ("Silver Moss", "Snake Moss"), ("Moon Mushroom", "Shadow Mushroom"), ("Jade Lily", "Weeping Lily"),
-             ("Golden Ginseng", "Grave Ginseng"), ("Phoenix Flower", "Fire Thorn"), ("Heaven Lotus", "Demon Lotus"),
-             ("Immortal Peach", "Void Fruit")]
-    decoys = {n for d in alchemy.DECOYS.values() for n, _ in d}
-    assert {d for _, d in pairs} == decoys
-    for herb, decoy in pairs:
-        assert plants.PLANTS[herb][0] == plants.PLANTS[decoy][0]          # same kind of plant ...
-        diff = ImageChops.difference(plants.plant(herb).convert("RGB"), plants.plant(decoy).convert("RGB")).getbbox()
-        assert diff is not None                                           # ... drawn with its one difference
+def test_there_are_no_look_alikes_any_more():
+    """The poisonous look-alikes were removed (Nov 25 2026): no grade has any, and a round never offers one."""
+    assert all(d == [] for d in alchemy.DECOYS.values())
+    herbs = {n for t in alchemy.HERBS.values() for n, _ in t.values()}
+    assert set(alchemy.LOOKS) == herbs
 
 
 @pytest.mark.parametrize("tier", alchemy.GRADES)
@@ -79,19 +72,16 @@ def test_old_herb_round_has_six_choices_on_the_card(conn):
     assert herbfield.render_field(data).size == (herbfield.W, herbfield.H)
 
 
-@pytest.mark.parametrize("pick", ["answer", "decoy", "other", None])
+@pytest.mark.parametrize("pick", ["answer", "other", None])
 def test_result_card_after_each_kind_of_pick(conn, pick):
     new_player(conn)
     g = gathering.Gathering(conn, 1, random.Random(5))
     r = g.next_round()
-    key = {"answer": r.answer, "decoy": next(iter(r.decoys)), None: None,
-           "other": next((k for k, _, _ in r.options if k != r.answer and k not in r.decoys), next(iter(r.decoys)))}[pick]
+    key = {"answer": r.answer, None: None, "other": next(k for k, _, _ in r.options if k != r.answer)}[pick]
     text = g.answer(key, 1.0)
     data = gather_card.field_data(g, g.player, r, text, key)
-    expected = {"answer": "gathered", "decoy": "poison", None: "slow", "other": "wrong"}[pick]
-    if pick == "other" and key in r.decoys:
-        expected = "poison"
-    assert data["result"]["outcome"] == expected
+    assert data["result"]["outcome"] == {"answer": "gathered", None: "slow", "other": "wrong"}[pick]
+    assert g.hp == g.max_hp                                    # nothing in gathering costs HP
     assert herbfield.render_field(data).size == (herbfield.W, herbfield.H)
 
 

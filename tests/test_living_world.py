@@ -210,7 +210,7 @@ def test_after_a_restart_the_page_takes_you_back(site):
     assert a2.get("/wild/forest_edge").status_code == 200
 
 
-def test_a_herb_picked_counts_a_look_alike_does_not(world, conn, monkeypatch):
+def test_a_herb_picked_counts_a_wrong_plant_does_not(world, conn, monkeypatch):
     monkeypatch.setattr(wt, "today", lambda uid, now: ["herbs", "bank", "finds"])
     world.enter(conn, UID, "crossroads")
     got = 0
@@ -224,7 +224,7 @@ def test_a_herb_picked_counts_a_look_alike_does_not(world, conn, monkeypatch):
         r = s.g.round
         if r.kind != "herb":
             continue
-        key = r.answer if right else (sorted(r.decoys)[0] if r.decoys else None)
+        key = r.answer if right else next(k for k, _, _ in r.options if k != r.answer)
         world.pick(conn, UID, key, s.turn)
         world.state(conn, UID, "crossroads")
         got += 1 if right else 0

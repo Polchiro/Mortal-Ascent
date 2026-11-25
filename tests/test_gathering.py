@@ -124,7 +124,7 @@ def test_merchant_sells_a_new_herb(conn):
 
 # ── /gather rounds ────────────────────────────────────────────────────
 
-def test_a_round_has_the_herb_and_a_decoy(conn):
+def test_a_round_is_the_grades_four_herbs(conn):
     new_player(conn)
     g = gathering.Gathering(conn, 1, random.Random(5))
     for _ in range(30):
@@ -136,7 +136,8 @@ def test_a_round_has_the_herb_and_a_decoy(conn):
         name, desc = alchemy.HERBS[r.herb["grade"]][r.herb["data"]["type"]]
         assert right == alchemy.LOOKS[name] and right != desc       # the look, never the description's words
         assert r.names[r.answer] == name and r.place
-        assert r.decoys and r.answer not in r.decoys
+        grade = r.herb["grade"]                                     # the choices: that grade's four real herbs
+        assert sorted(r.names.values()) == sorted(n for n, _ in alchemy.HERBS[grade].values())
 
 
 def test_every_herb_and_decoy_has_its_own_look():
@@ -161,18 +162,26 @@ def test_right_pick_gathers_and_builds_the_streak(conn):
     assert db.get_items(conn, 1, "herbs")[0]["key"] == r.herb["key"]
 
 
-def test_decoy_poisons_and_resets_the_streak(conn):
+def test_a_wrong_plant_resets_the_streak_and_costs_no_hp(conn):
     new_player(conn)
     db.update_player(conn, 1, herb_streak=12)
     g = gathering.Gathering(conn, 1, random.Random(5))
     r = g.next_round()
-    text = g.answer(next(iter(r.decoys)), 1.0)
-    assert "☠️" in text and g.hp == g.max_hp - round(g.max_hp * alchemy.DECOY_HP_LOSS)
+    text = g.answer(next(k for k, _, _ in r.options if k != r.answer), 1.0)
+    assert text.startswith("❌") and g.hp == g.max_hp
     assert g.player["herb_streak"] == 0 and db.get_items(conn, 1, "herbs") == []
-    g.hp = 1
-    r = g.next_round()
-    g.answer(next(iter(r.decoys)), 1.0)
-    assert g.hp == 1                                           # never below 1
+
+
+def test_an_old_herb_has_four_choices_and_less_time(conn):
+    new_player(conn)
+    g = gathering.Gathering(conn, 1, random.Random(0))
+    for seed in range(600):
+        g.rng = random.Random(seed)
+        r = g._herb_round(g.player)
+        if r.old:
+            break
+    assert r.old and len(r.options) == alchemy.OLD_HERB_CHOICES == alchemy.GATHER_CHOICES == 4
+    assert r.seconds == alchemy.GATHER_SECONDS[r.herb["grade"]] - alchemy.OLD_HERB_SECONDS_LESS
 
 
 def test_too_slow_gathers_nothing(conn):
