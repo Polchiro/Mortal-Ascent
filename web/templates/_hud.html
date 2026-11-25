@@ -13,8 +13,10 @@
       <div class="mhpbar" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ hero.pct }}" id="heroBar"><div style="width:{{ hero.pct }}%"></div><span id="heroHp">HP {{ hero.hp }} / {{ hero.max_hp }}</span></div>
       {% set q = hero.qi %}
       {% set here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
-      {% if q %}<div class="mqirow"><a class="mqibar{% if q.full %} full{% endif %}{% if q.full and not q.ready %} blocked{% endif %}" role="meter" aria-label="Internal Qi: open your Dantian" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ q.pct }}" id="heroQi" title="Internal Qi {{ q.qi }} / {{ q.need }} · open your Dantian" href="/dantian?from={{ here | urlencode }}"><div style="width:{{ q.pct }}%"></div><span id="heroQiText">Qi {{ q.qi }} / {{ q.need }}</span></a>
-        <a class="mtox{% if hero.tox %} z-{{ hero.tox.zone }}{% endif %}" id="heroTox" href="/dantian?from={{ here | urlencode }}"{% if not hero.tox %} hidden{% endif %} title="Pill toxicity{% if hero.tox %} {{ hero.tox.n }}: pills at {{ hero.tox.mult }}{% endif %}"><img src="/art/icons/attr/toxicity.webp" alt="Toxicity" width="18" height="18"><b id="heroToxN">{{ hero.tox.n if hero.tox else '' }}</b></a></div>{% endif %}
+      {% if q %}<div class="mqirow"><a class="mqibar{% if q.full %} full{% endif %}{% if q.full and not q.ready %} blocked{% endif %}" role="meter" aria-label="Internal Qi: open your Dantian" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ q.pct }}" id="heroQi" title="Internal Qi {{ q.qi }} / {{ q.need }} · open your Dantian" href="/dantian?from={{ here | urlencode }}"><div style="width:{{ q.pct }}%"></div><span id="heroQiText">Qi {{ q.qi }} / {{ q.need }}</span></a></div>{% endif %}
+      <a class="mtox{% if hero.tox %} z-{{ hero.tox.zone }}{% endif %}" id="heroTox" href="/dantian?from={{ here | urlencode }}"{% if not hero.tox %} hidden{% endif %} title="Pill toxicity: every pill you eat adds some. Too much and pills lose their power. It fades by itself; open your Dantian for more.">
+        <img src="/art/icons/attr/toxicity.webp" alt="" width="26" height="26">
+        <span><b><span>Toxicity <i id="heroToxN">{{ hero.tox.n if hero.tox else '' }}</i></span><em id="heroToxFade">{{ hero.tox.fade if hero.tox else '' }}</em></b><small id="heroToxHint">{{ hero.tox.hint if hero.tox else '' }}</small></span></a>
       <span class="mstatus" id="heroStatus"{% if not hero.status %} hidden{% endif %}>{{ hero.status or "" }}</span>
     </div>
   </section>

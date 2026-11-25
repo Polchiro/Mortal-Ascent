@@ -296,8 +296,10 @@ What the walking pages (the town, the Crossroads, the Moon Forest's lands) show 
   (`breakthrough_play.plate`). Jade while it fills; gold and breathing when it is full at a gate, a gold ring turning
   round the face, and the **Break through** seal under the frame (see "Breakthrough" below). The first time at each
   gate a short banner says "Your Qi presses against a gate" (`localStorage` `ma.bt.told.<realm · layer>`).
-  The Qi line opens the **Dantian** (see "The Dantian" below). Beside it a **gourd** shows your pill toxicity when you
-  have any (`overworld.tox_of`): jade up to 3, amber at 4 and 5 (pills at half strength), red from 6 (a quarter). If
+  The Qi line opens the **Dantian** (see "The Dantian" below). Under it a **toxicity badge** shows your pill toxicity when you
+  have any (`overworld.tox_of`): the gourd, "Toxicity N", how fast it fades ("−1 every 8h") and what it does now in
+  plain words ("Pills work at full power · one more halves them", "Pills only work at 50%"); jade up to 3, amber at 4
+  and 5, red from 6 (a quarter, gently pulsing). Hovering explains it; it opens the Dantian. If
   you switched on "Tell me in this browser" on the Dantian, a notification says "Your Qi presses against a gate"
   once per gate while a map page is open in a background tab (`ma.notify.qi`).
 - **The place's name** shows big in the middle of the screen for about three seconds when you arrive or walk into

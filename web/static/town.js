@@ -460,8 +460,10 @@
     if (!el) return;
     el.hidden = !t;
     if (!t) return;
-    el.className = 'mtox z-' + t.zone; el.title = 'Pill toxicity ' + t.n + ': pills at ' + t.mult;
+    el.className = 'mtox z-' + t.zone;
     document.getElementById('heroToxN').textContent = t.n;
+    document.getElementById('heroToxHint').textContent = t.hint || '';
+    document.getElementById('heroToxFade').textContent = t.fade || '';
   }
   /* "Tell me in this browser" (the Dantian's switch): a notification once per gate, when this tab is in the background */
   function notify(q) {
