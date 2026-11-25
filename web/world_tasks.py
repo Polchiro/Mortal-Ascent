@@ -24,6 +24,7 @@ TASKS = {
     "finds":  {"text": "Look into {n} glints in the grass",     "n": 2, "coins": 120},
     "shrine": {"text": "Walk all the way to the Shrine Grove",  "n": 1, "coins": 100},
     "bank":   {"text": "Bring a trip's finds home to town",     "n": 1, "coins": 120},
+    "seams":  {"text": "Dig {n} seams in the Ironvein Quarry",  "n": 5, "coins": 120},
 }
 PER_DAY = 3
 ALL_DONE_COINS = 150           # grows with the realm like the tasks' coins

@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 
 from bot import db
 
-from . import crossroads, gather_play, land, mine_play, overworld, town
+from . import crossroads, gather_play, land, mine_play, overworld, town, world_tasks
 from . import discord_oauth as oauth
 from .forge_play import rich
 from .profile import number
@@ -160,8 +160,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
 
     @app.post("/world/pos")
     async def world_pos(request: Request):
-        return await post_quick(request, lambda uid, place, x, y: world.report(None, uid, place, x, y),
-                                "place", "x", "y")
+        return await post_quick(request, lambda uid, place, x, y, act: world.report(None, uid, place, x, y, act),
+                                "place", "x", "y", "act")
 
     @app.post("/world/move")
     async def world_move(request: Request):
@@ -266,6 +266,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
             if at is None:
                 return {"error": "Walk closer to the seam."}
             got, why = world.mines.finish(c, uid, num(sid), [b for b in (blows or "").split(",") if b], *at)
+            if got:
+                got["task"] = world_tasks.record(c, uid, "seams", world.clock())     # today's task, if it is one
             return {"got": got, "error": why, "world": world.state(c, uid, mine_play.PLACE)}
         return await post_json(request, done, "id", "blows", "x", "y")
 

@@ -118,6 +118,12 @@ players are shown running when they move faster than midway between the two spee
   its habitat. Grasses, ginsengs and flowers stand in open grass; berries, mushrooms and moss on the forest's floor;
   roots by a road or path; lotuses, lilies, the peach and Star Dew in clearings among the trees. With no room on
   ground that suits it, a herb sprouts anywhere herbs may, so the odds never depend on the land.
+- **Pools and mossy rocks** (`web/scenery.py`, `PLACED`): two still pools and two mossy rocks stand on the Crossroads
+  and on each Moon Forest land, clear of the paths, gates and far clearings. You walk round them. The **water herbs**
+  (Heart Lotus, Jade Lily, Heaven Lotus) float on a pool when one has no herb on it, and you kneel from the bank;
+  **Silver Moss** grows right beside a mossy rock. With both pools taken (or no room by a rock) the herb sprouts by
+  its usual habitat. Only the spot changes: the herb, its grade and the odds are rolled before the spot is chosen
+  (tests/test_scenery.py).
 - **Old herbs sink.** A 100-year+ herb trembles and sinks into the earth on the map as its (shorter) time runs out;
   lost, it goes under in a puff of dust. Any other lost herb wilts grey. This only draws the server's timer.
 - **What you see when you get one:** the result shows the herb's **age as rings** (1 to 5: 10 to 1000 years), and
@@ -207,8 +213,8 @@ their own herbs. Code: `web/herb_events.py` (the events and the claim), `World.g
   what it always does, and the herb stays for the others.
 - **One claim a day** per player (`WINS_PER_DAY`), so no one takes them all.
 - **A restart keeps the events** (they are in the database); who has knelt at which is kept in memory.
-- **Not yet:** nothing is posted to Discord; other lands' edges don't glow toward it (the bar's words do that job);
-  other players aren't drawn kneeling.
+- **Not yet:** nothing is posted to Discord; other lands' edges don't glow toward it (the bar's words do that job).
+  Others at the herb are drawn kneeling ("Other players").
 
 ## The Ironvein Quarry (`/wild/ironvein_quarry`)
 
@@ -247,7 +253,8 @@ the numbers in `forge.py` (`SEAM_KINDS`, `SEAMS`, `SEAMS_PER_DAY`) and `bot/mate
   the seam breaks; the server checks there were enough, at least 0.42 s apart, that the dig took that long by its own
   clock, that you stand by the seam and that it wasn't dug before, then pays the plan. The blows change nothing about
   what you get. No tool to buy.
-- **Not yet:** other players don't see you swinging; Blacksmith Tie doesn't mention the quarry; no daily task for it.
+- Others see you swing ("Other players"), Blacksmith Tie tells you the way ("Short of iron? ..."), and digging counts
+  for a daily task ("Today's tasks").
 
 ## Gathering art
 
@@ -273,7 +280,10 @@ Everyone walking the same place sees each other: their own walking sheet (male o
 their realm and layer over their head, walking smoothly to where the server last saw them. The page asks
 `/world/others` about once a second; the server answers the others in your place whose page spoke to it in the last
 15 seconds (`OTHERS_FRESH`; a closed tab fades out), the nearest 30 at most (`OTHERS_MAX`). They are shown by a
-random tag, never by their Discord id. Seeing is all for now: no talking, trading or fighting each other on the map,
+random tag, never by their Discord id. They also see you **kneel** at a herb and **swing** at a seam: the page sends
+`act` (`kneel` / `swing`, nothing else is accepted) with its place the moment it starts and ends, and the others'
+pages draw that pose from the same sheets (`allActs` in the page data). It is a picture only: nobody sees what you
+picked or dug. Seeing is all for now: no talking, trading or fighting each other on the map,
 and they don't block your way. Code: `World.others` in `web/overworld.py`, `pollOthers` / `drawOther` in `town.js`.
 
 ## How many players
@@ -308,7 +318,7 @@ between them. Not built yet.
 
 ## Today's tasks
 
-Three tasks a day, the same all day and new at **midnight UTC**, picked for each player from five
+Three tasks a day, the same all day and new at **midnight UTC**, picked for each player from six
 (`web/world_tasks.py`, `TASKS`):
 
 | Task | Counts | Pays (Mortal; × realm) |
@@ -318,6 +328,7 @@ Three tasks a day, the same all day and new at **midnight UTC**, picked for each
 | Look into 2 glints in the grass | a find looked into | 🪷 120 |
 | Walk all the way to the Shrine Grove | coming into the Shrine Grove | 🪷 100 |
 | Bring a trip's finds home to town | a trip banked at the town gate | 🪷 120 |
+| Dig 5 seams in the Ironvein Quarry | a seam dug (whatever it gave) | 🪷 120 |
 
 - A task **pays the moment it is done**; finishing all three adds 🪷 150 (`ALL_DONE_COINS`). Coins grow with the realm
   exactly like the Discord quests (`bot/quests.coin_scale`: Mortal ×1 ... Martial Saint ×3.5). Every payment is in the
@@ -406,7 +417,5 @@ Code: `web/world.py`, `web/templates/world.html`, `web/static/world.js`. The pic
 - **Objects, in rounds:** SHOAIB makes a batch (trees first), they are placed by hand, he looks, we adjust. Trees and
   rocks will block the way and hide you as the town's buildings do (the drawing and collision code is already there).
 - **The painted Moon Forest clearing** back as a landmark inside the forest, if still wanted.
-- **Ponds and mossy rocks** on the lands (cut and ready in art/env/), for lotuses and moss to sprout at, placed with
-  the trees and rocks.
 - **The other five hunting grounds** as lands of their own (`REGION_HERB_TYPES` is ready), then `/explore`'s
   remaining encounters.
