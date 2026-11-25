@@ -140,6 +140,28 @@ CREATE TABLE IF NOT EXISTS world_spots (
     y           REAL    NOT NULL,
     at          REAL    NOT NULL
 );
+-- Moon Pearls bought with real money (bot/purchases.py, docs/payments.md). One row per order, kept forever
+-- (unlike the ledger, which keeps only the last 100 lines), so any purchase can be looked up when a player asks.
+CREATE TABLE IF NOT EXISTS pearl_purchases (
+    order_id     TEXT    PRIMARY KEY,   -- our own order number (MP-...), shown to the player
+    user_id      INTEGER NOT NULL,
+    pack         TEXT    NOT NULL,      -- a key of economy.PEARL_PACKS
+    price_cents  INTEGER NOT NULL,      -- US cents, from the server's own table when the order was made
+    status       TEXT    NOT NULL,      -- pending, paid, refunded, chargeback
+    live         INTEGER NOT NULL,      -- 0 = test mode (fake money), 1 = real money
+    pearls       INTEGER NOT NULL DEFAULT 0,   -- pearls given (pack + first-purchase bonus), 0 until paid
+    bonus        INTEGER NOT NULL DEFAULT 0,   -- the first-purchase part of `pearls`
+    provider     TEXT,                  -- the payment company that confirmed it
+    payment_id   TEXT,                  -- that company's transaction number
+    taken_back   INTEGER NOT NULL DEFAULT 0,   -- pearls removed after a refund / chargeback
+    debt_added   INTEGER NOT NULL DEFAULT 0,   -- pearls that were already spent, added to players.pearl_debt
+    created_at   REAL    NOT NULL,
+    paid_at      REAL,
+    refunded_at  REAL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS pearl_purchases_payment ON pearl_purchases(provider, payment_id);
+CREATE INDEX IF NOT EXISTS pearl_purchases_user ON pearl_purchases(user_id, created_at);
+
 CREATE TABLE IF NOT EXISTS settings (
     key         TEXT PRIMARY KEY,
     value       TEXT
@@ -190,6 +212,8 @@ PLAYER_COLUMNS = {
     # The character's look, a picture only (looks.py, docs/appearance.md). NULL = not chosen yet
     "appearance":           "TEXT",                          # JSON: {"gender", "hair", "color"}
     "appearance_changes":   "INTEGER NOT NULL DEFAULT 0",    # the first is free, then Moon Pearls
+    # Moon Pearls refunded or charged back after they were spent (bot/purchases.py). New pearls pay it off first
+    "pearl_debt":           "INTEGER NOT NULL DEFAULT 0",
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
@@ -369,34 +393,51 @@ def change_currency(conn, user_id, currency, delta, reason, clamp=False, now=Non
     A balance can never go below 0: a spend larger than the balance changes nothing and returns
     None, unless clamp=True (then it takes what there is, e.g. bandits stealing). The update only
     applies if the balance is still the one just read, so two changes at once can't both spend the
-    same coins. Returns the new balance, or None (no such player, or not enough)."""
+    same coins. Returns the new balance, or None (no such player, or not enough).
+
+    Moon Pearls gained while the player has a pearl_debt (pearls refunded after they were spent, docs/payments.md)
+    pay that debt off first; the ledger line says how many went to it."""
     if currency not in CURRENCY_COLUMNS:
         raise ValueError(f"unknown currency {currency!r}")
     delta = int(delta)
     now = time.time() if now is None else now
+    pearls = currency == "moon_pearls"
     for _ in range(5):
-        row = conn.execute(f"SELECT {currency} FROM players WHERE user_id = ?", (user_id,)).fetchone()
+        row = conn.execute(f"SELECT {currency}{', pearl_debt' if pearls else ''} FROM players WHERE user_id = ?",
+                           (user_id,)).fetchone()
         if row is None:
             return None
         balance = row[0]
-        new = balance + delta
+        debt = row[1] if pearls else 0
+        paid = min(delta, debt) if delta > 0 else 0          # part of a gain that pays the debt
+        new = balance + delta - paid
         if new < 0:
             if not clamp:
                 return None
             new = 0
-        if new == balance:
+        if new == balance and not paid:
             return balance
+        why = reason if not paid else f"{reason} ({paid:,} paid toward refund debt)"
         with conn:
-            done = conn.execute(f"UPDATE players SET {currency} = ? WHERE user_id = ? AND {currency} = ?",
-                                (new, user_id, balance)).rowcount
+            if pearls:
+                done = conn.execute("UPDATE players SET moon_pearls = ?, pearl_debt = ? WHERE user_id = ? "
+                                    "AND moon_pearls = ? AND pearl_debt = ?",
+                                    (new, debt - paid, user_id, balance, debt)).rowcount
+            else:
+                done = conn.execute(f"UPDATE players SET {currency} = ? WHERE user_id = ? AND {currency} = ?",
+                                    (new, user_id, balance)).rowcount
             if done:
-                conn.execute("INSERT INTO ledger (user_id, currency, delta, balance, reason, at) "
-                             "VALUES (?, ?, ?, ?, ?, ?)", (user_id, currency, new - balance, new, reason, now))
-                conn.execute("DELETE FROM ledger WHERE user_id = ? AND id NOT IN "
-                             "(SELECT id FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT ?)",
-                             (user_id, user_id, LEDGER_KEEP))
+                write_ledger(conn, user_id, currency, new - balance, new, why, now)
                 return new
     raise RuntimeError("balance kept changing; try again")
+
+
+def write_ledger(conn, user_id, currency, delta, balance, reason, now):
+    """One ledger line (inside the caller's transaction), keeping the newest LEDGER_KEEP per player."""
+    conn.execute("INSERT INTO ledger (user_id, currency, delta, balance, reason, at) VALUES (?, ?, ?, ?, ?, ?)",
+                 (user_id, currency, delta, balance, reason, now))
+    conn.execute("DELETE FROM ledger WHERE user_id = ? AND id NOT IN "
+                 "(SELECT id FROM ledger WHERE user_id = ? ORDER BY id DESC LIMIT ?)", (user_id, user_id, LEDGER_KEEP))
 
 
 def spend(conn, user_id, currency, amount, reason):

@@ -4,7 +4,7 @@ Every immortal started as a mortal, but cultivation isn’t where the journey be
 
 ## Repo layout
 
-- `docs/` holds the design docs (realms, stats, talent, technique, training, beasts, explore, challenges, economy, equipment, tutorial).
+- `docs/` holds the design docs (realms, stats, talent, technique, training, beasts, explore, challenges, economy, payments, equipment, tutorial).
 - The `.py` files at the root hold the game data and the card renderers (`profile_card.py`, `balance_card.py`, `inventory_card.py`, `qi_card.py`).
 - `fonts/` is where the card fonts go; see [fonts/README.md](fonts/README.md).
 - `web/` is the website: log in with Discord and see your real character. See [docs/web.md](docs/web.md).

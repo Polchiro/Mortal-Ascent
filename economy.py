@@ -16,15 +16,18 @@ BALANCE_EMBED_COLOR = 0xB02C22   # vermilion
 
 # ── /recharge packages: (name, price USD, pearls) ─────────────────────
 
-RECHARGE_PACKAGES = [
-    ("Pearl Pouch",     2,     200),
-    ("Moonlit Satchel", 5,     520),
-    ("Jade Box",        10,   1080),
-    ("Lotus Casket",    20,   2240),
-    ("Moon Treasury",   50,   5800),
-    ("Heavenly Vault",  100, 12000),
-]
-FIRST_PURCHASE_MULTIPLIER = 2
+# The ONLY place pack prices and sizes live (docs/payments.md). The website sends just a pack key; the server
+# looks the price and pearls up here, so nobody can change a price from the page.
+# Heavenly Vault ($100, 12,000) is left out at launch: big packs draw stolen-card fraud. Add it back later.
+PEARL_PACKS = {
+    "pearl_pouch":     {"name": "Pearl Pouch",     "price_cents": 200,  "pearls": 200},
+    "moonlit_satchel": {"name": "Moonlit Satchel", "price_cents": 500,  "pearls": 520},
+    "jade_box":        {"name": "Jade Box",        "price_cents": 1000, "pearls": 1080},
+    "lotus_casket":    {"name": "Lotus Casket",    "price_cents": 2000, "pearls": 2240},
+    "moon_treasury":   {"name": "Moon Treasury",   "price_cents": 5000, "pearls": 5800},
+}
+RECHARGE_PACKAGES = [(p["name"], p["price_cents"] // 100, p["pearls"]) for p in PEARL_PACKS.values()]
+FIRST_PURCHASE_MULTIPLIER = 2       # a player's first paid pack gives double pearls, once per account
 
 BLESSING_DURATION_DAYS = 30
 
