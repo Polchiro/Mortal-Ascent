@@ -1,0 +1,20 @@
+# Never put these in the image: secrets, the live database, git history and local junk.
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.lock
+data/
+.git/
+.github/
+.venv/
+venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+screenshots/
+*.log

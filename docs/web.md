@@ -26,6 +26,8 @@ so players can't cheat by editing the page.
 
 The bot and the website can run at the same time; they use the same `mortal_ascent.db`.
 By default the website only listens on your own computer (`127.0.0.1`).
+To run it in Docker instead, see [docker.md](docker.md). `/healthz` answers `{"ok": true}` (no login, no
+redirect) so Docker or a host can check the site is up.
 
 ## Logging in
 

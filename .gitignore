@@ -21,3 +21,6 @@ fonts/*.ttf
 fonts/*.otf
 art/.painted/
 art/.looks/
+
+# Docker: the database folder used by docker-compose.yml
+data/
