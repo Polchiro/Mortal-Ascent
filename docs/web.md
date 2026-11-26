@@ -522,6 +522,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
+| The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Old Black Bear's claw swipe, its pained roar, its dying fall, its roar and big roar (`@old_black_bear`) | its own idle + claw and hit + death videos (Nov 26) |
 | The Wild Ox's charge and hooves, its pained bellow, its fall, its bellow and big bellow (`@wild_ox`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Stray Dog's lunge and snap, its yelp, its fall, its snarl and barking (`@stray_dog_pack`) | its own idle + lunge and hit + death videos (Nov 26) |
@@ -966,7 +967,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox** and **Old Black Bear**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear** and **Iron-Hide Boar**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and

@@ -495,14 +495,14 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     import beasts
     from web import death
     views = {}
-    for name in ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):
+    for name in ("Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):
         v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
         assert v["kind"] == "warp" and v["category"] == "quadruped"
         assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
         assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
         assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
         assert "src" not in v                                       # numbers only: no picture but the beast's own
-    assert views["Red Fox"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
+    assert views["Red Fox"]["motion"] == views["Shadow Wolf"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
@@ -745,7 +745,7 @@ def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
         for take in keys[f"{sound}@wild_boar"]:
             assert os.path.exists(os.path.join("art", "fx", "sounds", take["file"]))
     assert explore_play.beast_body("Wild Boar") == "wild_boar"
-    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Iron-Hide Boar") == "wolf"
+    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Red Fox") == "wolf"
     assert explore_play.beast_body("No Such Beast") is None
 
 
@@ -818,6 +818,22 @@ def test_the_old_black_bear_is_animated_from_its_own_videos_with_its_own_voice()
     assert explore_play.beast_body("Old Black Bear") == "old_black_bear"
 
 
+def test_the_iron_hide_boar_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Iron-Hide Boar (Nov 26: forged iron plates, glowing cracks): idle from the calm end of its
+    charge video, the charge played there and back (before Flow's spark burst), hit + death; its sounds from them."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("iron_hide_boar")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["frames"] % 2 == 0                   # there and back
+    assert death.view({"kind": "beast", "name": "Iron-Hide Boar", "slug": "iron_hide_boar"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "iron_hide_boar.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@iron_hide_boar" in keys
+    assert explore_play.beast_body("Iron-Hide Boar") == "iron_hide_boar"
+
+
 def test_an_idle_from_a_later_stretch_is_cut_from_that_stretch():
     """`idle_from` (the Wild Ox, the Old Black Bear): the loop is found in the calm stretch and its frames are taken
     from there, not from the start of the video (which had breath steam / a stray throat sac)."""
@@ -833,7 +849,14 @@ def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
 
 
 def test_other_beasts_keep_their_pictures(client):
-    fight(client)
+    import beasts
+    from bot import combat
+    from bot import fight as engine
+    b = fight(client).battle                                  # a beast not animated yet (the seed's is, since Nov 26)
+    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Red Fox", "normal", "swift")), "Red Fox")
+    b.enemy.update(realm="Martial Apprentice", slug=beasts.slug("Red Fox"))
+    b.enemy["statuses"].clear()
+    b._plan()
     page = client.get("/explore/play").text
     assert "beast sheeted" not in page and "bsheets" not in page and "data-anim" not in page
 

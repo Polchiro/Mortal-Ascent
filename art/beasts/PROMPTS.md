@@ -44,9 +44,9 @@ File: `art/beasts/old_black_bear.png` (Nov 26 redesign, Nano Banana Pro; animate
 ## Martial Apprentice
 
 **Iron-Hide Boar** · Normal · Earth
-File: `art/beasts/iron_hide_boar.png`
+File: `art/beasts/iron_hide_boar.png` (Nov 26 redesign, Nano Banana Pro; animated from its idle + charge and hit + death videos)
 
-> A boar whose hide has hardened into dark iron-like plates, rivet-like bristles, sparks at its tusks, with a subtle amber earth elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed fur, teeth and claws, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
+> An armored iron-hide boar for a Chinese xianxia martial arts game: a squat, heavy boar whose hide has hardened into overlapping dark iron-grey plates like rough forged armour, rust-brown bristles sticking out between the plates, a thick plated snout, two short heavy tusks capped with dull metal, small fierce amber eyes, faint sparks and a warm amber glow of earth Qi in the cracks between its plates. Tougher and stockier than a normal wild boar, still an animal, not a machine. Strict side view, facing LEFT, standing firmly on all four legs, all four legs clearly visible, solid and separated, mouth closed, tail visible. Whole body in frame with generous space around it, placed a little right of centre. Realistic digital painting, premium Chinese xianxia MMORPG creature concept art, detailed plates, bristles and tusks, soft natural rim lighting, painterly brushwork, rich but mature colours. Plain flat medium-grey background, no ground, no shadow, no glow outline, no aura, no text, no watermark. 16:9.
 
 **Red Fox** · Normal · Flame
 File: `art/beasts/red_fox.png`
