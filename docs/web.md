@@ -1033,6 +1033,12 @@ first tap or key if the browser held it back. *Bamboo Forest's and Red Cliff Gor
 theirs is made by `scripts/make_ambience.py` from the other places' sound (the valley's birds and drips, the north's
 wind) plus rustling leaves, bamboo knocks, desert gusts, grass and a hawk made in code, looped the same way.
 
+**Standing on the ground:** each painting's open floor is at a known height (`GROUND` in ambient.js: 76-80% down the
+picture). The fighters' feet sit at a fixed spot of the page, so the painting and its video are moved, and enlarged a
+little when they must (at most ×1.35), until that row lies under the feet of the hero and the beast, on any screen
+shape (`--arena-size` / `--arena-pos` on main.battle). Beast fights and hunts only; a duel keeps its framing. This
+runs with reduced motion too, for the still picture.
+
 `scripts/make_background_loop.py <scene> video.mp4 [painting.png]` makes them all: Gemini's sparkle (and, on the
 gorge, the "AI" badge) covered with the ground just beside it on the painting and on every frame of the video, the
 video's last 1.5 s faded into its start so it loops with no jump (8.5 s, H.264, about 2 MB), and the sound looped the

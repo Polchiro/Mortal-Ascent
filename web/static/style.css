@@ -492,7 +492,7 @@ form.inline{display:inline}
   grid-template-columns:150px minmax(0,1fr) minmax(0,1fr) minmax(240px,300px);
   grid-template-areas:"me me enemy log" "scene scene scene log" "side bar bar info";
   grid-template-rows:auto minmax(340px,1fr) auto;
-  background:linear-gradient(180deg,rgba(8,10,16,.35),rgba(8,10,16,.15) 40%,rgba(8,10,16,.75)),var(--arena) center 60%/cover no-repeat;
+  background:linear-gradient(180deg,rgba(8,10,16,.35),rgba(8,10,16,.15) 40%,rgba(8,10,16,.75)),var(--arena) var(--arena-pos, center 60%)/var(--arena-size, cover) no-repeat;
   border-radius:0 0 18px 18px;overflow:hidden}
 .bme{grid-area:me;display:flex;gap:12px;align-items:center;padding:10px 14px 10px 10px;border-radius:60px 16px 16px 60px;background:rgba(10,12,20,.78);border:1px solid rgba(232,194,122,.35);max-width:440px}
 .bface{flex:none;width:84px;height:84px;border-radius:50%;object-fit:cover;object-position:50% 8%;border:2px solid var(--gold);background:#141820}

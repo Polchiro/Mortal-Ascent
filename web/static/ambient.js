@@ -250,3 +250,46 @@
   window.addEventListener('resize', function () { if (canvas && canvas.parentNode && resize()) seed(); });
   requestAnimationFrame(frame);
 })();
+
+
+/* Standing on the ground (docs/web.md "Living backgrounds"): each place's painting has its open floor at a known
+   height (GROUND: the share of the picture's height, down from its top, where feet look right). The fighters' feet
+   sit at a fixed spot of the page, so the painting and its video are moved (and, if they must, enlarged a little,
+   at most MAX_ZOOM) until that row of the painting lies under their feet, whatever the screen's shape. Beast fights and
+   hunts only (a duel keeps its own framing). It runs with reduced motion too: only the still picture is moved then. */
+(function () {
+  'use strict';
+  var GROUND = {bamboo_forest: 0.78, misty_pine_valley: 0.78, red_cliff_gorge: 0.80, thunder_peaks: 0.76,
+                arena_ruins: 0.76, northern_sea_wilds: 0.76};
+  var ASPECT = 16 / 9, MAX_ZOOM = 1.35, HERO_FEET = 0.936;     // the hero's soles: 93.6% down the fight picture
+  var last = '';
+  function key(main) {
+    var url = main.style.getPropertyValue('--arena') || '';
+    var m = url.match(/(?:battle_)?([a-z_]+)\.(?:jpg|png|webp)/);
+    return m ? m[1] : '';
+  }
+  function fit() {
+    var main = document.querySelector('main.battle'), G = main && GROUND[key(main)];
+    var hero = main && main.querySelector('.bscene .fighter'), beast = main && main.querySelector('.bscene .beast');
+    if (!G || !hero || !beast) return;                         // beast fights and hunts (a duel keeps its own framing)
+    var mr = main.getBoundingClientRect(), hr = hero.getBoundingClientRect(), br = beast.getBoundingClientRect();
+    var feet = hr.top + hr.height * HERO_FEET - mr.top;
+    if (br.height) feet = (feet + (br.bottom - mr.top)) / 2;                    // between the hero's and the beast's
+    var W = mr.width, H = mr.height, sig = [W, H, Math.round(feet), G, main.dataset.turn].join();
+    var v = main.querySelector(':scope > video.bgloop');
+    if (sig === last && main.style.getPropertyValue('--arena-size') && (!v || v.style.width)) return;
+    last = sig;
+    var cover = Math.max(H, W / ASPECT);
+    var h = Math.min(Math.max(cover, (H - feet) / (1 - G), feet / G), cover * MAX_ZOOM), w = h * ASPECT;
+    var y = Math.max(0, Math.min(G * h - feet, h - H)), x = (w - W) / 2;
+    main.style.setProperty('--arena-size', w.toFixed(0) + 'px ' + h.toFixed(0) + 'px');
+    main.style.setProperty('--arena-pos', (-x).toFixed(0) + 'px ' + (-y).toFixed(0) + 'px');
+    if (v) {
+      v.style.inset = 'auto'; v.style.objectFit = 'fill';
+      v.style.left = (-x).toFixed(0) + 'px'; v.style.top = (-y).toFixed(0) + 'px';
+      v.style.width = w.toFixed(0) + 'px'; v.style.height = h.toFixed(0) + 'px';
+    }
+  }
+  function tick() { if (!document.hidden) fit(); requestAnimationFrame(tick); }
+  requestAnimationFrame(tick);
+})();
