@@ -51,6 +51,8 @@ CLIPS = {
                   "attack_ms": 2000, "bite": 16, "white": ("hit",)},
     "field_viper": {"attack": (2.5, 5.9), "hit": (1.6, 3.0), "death": (3.0, 5.6), "idle_span": (30, 50),
                     "idle_until": 2.1, "attack_ms": 2400, "fade": {"attack": 90}},
+    "stray_dog_pack": {"attack": (2.6, 3.8), "hit": (1.4, 2.9), "death": (4.0, 6.2), "idle_span": (36, 60),
+                       "idle_until": 2.5, "attack_ms": 1800, "pingpong": ("attack",)},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 
@@ -207,6 +209,8 @@ def main(slug, videos, cache=None):
     clips, session = {}, None
     for kind in KINDS:
         clips[kind], session = cut_clip(kind, videos[kind], picks[kind], cfg, cache, session)
+    for kind in cfg.get("pingpong", ()):                      # it ran off the video mid-move: there and back again
+        clips[kind] = clips[kind] + clips[kind][-2:0:-1]
     for kind, ref in cfg.get("match", {}).items():
         clips[kind] = match(clips[kind], clips[ref][0])
 

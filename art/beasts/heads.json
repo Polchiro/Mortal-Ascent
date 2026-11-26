@@ -480,8 +480,13 @@
 0.996
 ],
 "stray_dog_pack": [
-0.1,
-0.42,
+0.05,
+0.36,
+0.996
+],
+"stray_dog_pack@roar": [
+0.06,
+0.36,
 0.996
 ],
 "taotie_the_devourer": [
