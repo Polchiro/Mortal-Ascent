@@ -1,0 +1,48 @@
+{
+ "cell": [
+  525,
+  362
+ ],
+ "still": [
+  63.0,
+  57.0,
+  391.2,
+  283.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/ember_lizard/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1000,
+   "smooth": true,
+   "nose_x": 0.1162
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/ember_lizard/attack.webp",
+   "frames": 13,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1800,
+   "bite": 6,
+   "reach": 0.1176,
+   "bite_x": 0.0095
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/ember_lizard/hit.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2167
+  },
+  "death": {
+   "src": "/art/beasts/sheets/ember_lizard/death.webp",
+   "frames": 15,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1250,
+   "impact": 13
+  }
+ }
+}

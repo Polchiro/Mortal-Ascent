@@ -1197,6 +1197,22 @@ def test_the_thunder_hawk_is_animated_from_its_own_videos_with_its_own_voice():
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["thunder_hawk@roar"][:2] == [0.08, 0.2]
     assert explore_play.beast_body("Thunder Hawk") == "thunder_hawk"
 
+def test_the_ember_lizard_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Ember Lizard (Nov 27, Martial Master): Veo grew its short tail long in every video, so
+    each move is cut before that: idle, flinch and collapse from the remade video, its snapping bite from the first hit
+    video (before a spark on its head), each easing in from the idle."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("ember_lizard")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Ember Lizard", "slug": "ember_lizard"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "ember_lizard.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@ember_lizard" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["ember_lizard@roar"][:2] == [0.07, 0.18]
+    assert explore_play.beast_body("Ember Lizard") == "ember_lizard"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image
