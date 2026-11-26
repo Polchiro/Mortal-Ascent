@@ -1,6 +1,7 @@
 """Exploring and fighting on the website (docs/web.md, "Explore"): the bot's expedition and fight engines."""
 import os
 import random
+import re
 import urllib.parse
 
 import pytest
@@ -495,14 +496,14 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     import beasts
     from web import death
     views = {}
-    for name in ("Iron-Hide Boar", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):   # (the Red Fox: its own death since Nov 26)
+    for name in ("Shadow Wolf", "Horned Stag", "Mountain Tiger"):   # (the Red Fox: its own death since Nov 26)
         v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
         assert v["kind"] == "warp" and v["category"] == "quadruped"
         assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
         assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
         assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
         assert "src" not in v                                       # numbers only: no picture but the beast's own
-    assert views["Mountain Tiger"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
+    assert views["Mountain Tiger"]["motion"] == views["Shadow Wolf"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/mountain_tiger.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
@@ -745,7 +746,7 @@ def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
         for take in keys[f"{sound}@wild_boar"]:
             assert os.path.exists(os.path.join("art", "fx", "sounds", take["file"]))
     assert explore_play.beast_body("Wild Boar") == "wild_boar"
-    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Iron-Hide Boar") == "wolf"
+    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Frost Wolf") == "wolf"
     assert explore_play.beast_body("No Such Beast") is None
 
 
@@ -809,13 +810,29 @@ def test_the_old_black_bear_is_animated_from_its_own_videos_with_its_own_voice()
     from web import beast_sheets, death, explore_play
     d = beast_sheets.sheets("old_black_bear")
     assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
-    assert d["sheets"]["attack"]["bite"] == 21 and d["sheets"]["death"]["impact"] == 10     # set by eye
+    assert d["sheets"]["attack"]["bite"] == 27 and d["sheets"]["death"]["impact"] == 10     # set by eye
     assert death.view({"kind": "beast", "name": "Old Black Bear", "slug": "old_black_bear"})["kind"] == "sheet"
     assert os.path.exists(os.path.join("art", "beasts", "roar", "old_black_bear.png"))
     keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
     for sound in ("hit", "lunge", "death", "roar", "roar:big"):
         assert f"{sound}@old_black_bear" in keys
     assert explore_play.beast_body("Old Black Bear") == "old_black_bear"
+
+
+def test_the_iron_hide_boar_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Iron-Hide Boar (Nov 26: forged iron plates, glowing cracks): idle from the calm end of its
+    charge video, the charge played there and back (before Flow's spark burst), hit + death; its sounds from them."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("iron_hide_boar")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["frames"] % 2 == 0                   # there and back
+    assert death.view({"kind": "beast", "name": "Iron-Hide Boar", "slug": "iron_hide_boar"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "iron_hide_boar.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@iron_hide_boar" in keys
+    assert explore_play.beast_body("Iron-Hide Boar") == "iron_hide_boar"
 
 
 def test_the_red_fox_is_animated_from_its_own_videos_with_its_own_voice():
@@ -863,7 +880,14 @@ def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
 
 
 def test_other_beasts_keep_their_pictures(client):
-    fight(client)
+    import beasts
+    from bot import combat
+    from bot import fight as engine
+    b = fight(client).battle                                  # a beast not animated yet (the seed's is, since Nov 26)
+    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Frost Wolf", "normal", "hunter")), "Frost Wolf")
+    b.enemy.update(realm="Martial Master", slug=beasts.slug("Frost Wolf"))   # far down the roster: not animated for a while
+    b.enemy["statuses"].clear()
+    b._plan()
     page = client.get("/explore/play").text
     assert "beast sheeted" not in page and "bsheets" not in page and "data-anim" not in page
 
@@ -951,6 +975,10 @@ def test_every_fight_place_plays_its_background_video_and_sound(client):
             assert os.path.getsize(os.path.join(root, f"{scene}.m4a")) < 300 * 1024
     assert "skip: ['aurora']" in js and "skip: ['flash']" in js                 # the video already shows them
     assert "ma.sound" in js and "ma.music" in js and "visibilitychange" in js   # Settings, and quiet when hidden
+    for place in ("bamboo_forest", "misty_pine_valley", "red_cliff_gorge", "thunder_peaks", "arena_ruins",
+                  "northern_sea_wilds"):                                        # the floor under the fighters' feet
+        assert re.search(place + r": 0\.[678]\d", js.split("var GROUND = {")[1].split("}")[0]), place
+    assert "var(--arena-pos, center 60%)/var(--arena-size, cover)" in css
     assert "main.battle.bglive{isolation:isolate}" in css and "video.bgloop{" in css and "z-index:-1" in css
     assert "saveData" in js                                                     # not when the browser saves data
 

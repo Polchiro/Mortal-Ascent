@@ -55,9 +55,11 @@ CLIPS = {
                        "idle_until": 2.5, "attack_ms": 1800, "pingpong": ("attack",)},
     "wild_ox": {"attack": (2.0, 5.6), "hit": (1.7, 3.4), "death": (4.4, 6.4), "idle_span": (30, 44),
                 "idle_from": 5.95, "attack_ms": 2400, "bite": 33, "white": ("hit", "death")},
-    "old_black_bear": {"attack": (2.25, 5.6), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
-                       "idle_from": 5.8, "attack_ms": 2600, "bite": 21, "impact": 10, "white": ("death",),
-                       "fade": {"attack": ("top", 70)}},
+    "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
+                       "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
+                       # its attack from the remade video with headroom (Nov 26): the first one's head left the video
+    "iron_hide_boar": {"attack": (2.6, 4.45), "hit": (2.15, 3.3), "death": (4.2, 6.2), "idle_span": (20, 27),
+                       "idle_from": 6.7, "attack_ms": 2000, "white": ("hit", "death"), "pingpong": ("attack",)},
     # the fox leapt out of the video's left edge mid-pounce: its stalk, its spring and its landing snap, joined
     "red_fox": {"attack": ((0.8, 1.75), (3.2, 3.8), (4.62, 5.6)), "hit": (0.3, 2.6), "death": (4.0, 6.1),
                 "idle_span": (30, 44), "idle_from": 5.9, "attack_ms": 2400,

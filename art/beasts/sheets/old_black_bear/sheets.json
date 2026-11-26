@@ -1,11 +1,11 @@
 {
  "cell": [
-  709,
-  427
+  777,
+  608
  ],
  "still": [
-  87.0,
-  38.4,
+  154.8,
+  220.8,
   540.0,
   383.4
  ],
@@ -16,17 +16,17 @@
    "cols": 8,
    "rows": 2,
    "ms": 1250,
-   "nose_x": 0.1171
+   "nose_x": 0.1943
   },
   "attack": {
    "src": "/art/beasts/sheets/old_black_bear/attack.webp",
-   "frames": 40,
+   "frames": 34,
    "cols": 8,
    "rows": 5,
    "ms": 2600,
-   "bite": 21,
-   "reach": 0.05,
-   "bite_x": 0.0748
+   "bite": 27,
+   "reach": 0.0056,
+   "bite_x": 0.1879
   },
   "hit": {
    "src": "/art/beasts/sheets/old_black_bear/hit.webp",
