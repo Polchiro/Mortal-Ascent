@@ -128,7 +128,7 @@ crouches, leaps with golden afterimages, lands on you in a golden shockwave that
 
 ### The roar
 
-The 29 four-legged beasts (`beasts.QUADRUPEDS`) the 10 flying beasts (`beasts.FLYING`, their roar a screech) the 5 serpents
+The 29 four-legged beasts (`beasts.QUADRUPEDS`, the Stray Dog Pack among them since Nov 26) the 10 flying beasts (`beasts.FLYING`, their roar a screech) the 5 serpents
 (`beasts.SERPENTS`, their roar a hiss) the 3 amphibians (`beasts.AMPHIBIANS`) and the 2
 dragons (`beasts.DRAGONS`) the 4 primates (`beasts.PRIMATES`) and the 3 insects (`beasts.INSECTS`) the 2 crocodiles (`beasts.CROCODILES`) and the 3 tortoises (`beasts.TORTOISES`) can
 **roar** instead of their ordinary move (`battle.ROAR`,

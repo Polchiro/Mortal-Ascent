@@ -379,7 +379,8 @@ QUADRUPEDS = ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mounta
               "Steel-Horn Bull", "Ironbark Bear", "Frost Wolf", "Wind Leopard", "Flame-Maned Lion",
               "Earth-Splitting Rhino", "Shadow Panther", "Cloud Leopard",
               "Nine-Tailed Fox", "Thunder Rhino", "Fire-Hoof Steed", "Sky Lynx",
-              "Ghost-Fire Wolf", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger")
+              "Ghost-Fire Wolf", "Qiongqi, the Winged Tiger", "Ancient Flame Lion", "White Tiger",
+              "Stray Dog Pack")                 # roars since its Nov 26 redesign (SHOAIB's choice)
 # The 10 flying beasts (SHOAIB's redesign of the birds), all screeching with the flying movement.
 FLYING = ("Spear-Beak Crane", "Thunder Hawk", "Bone Vulture", "Storm Eagle", "Iron-Feather Crow", "Crimson Fire Hawk",
           "Bifang Fire Crane", "Vermilion Bird", "Kun-Peng, Fish of the Northern Sea", "Wind-Feather Falcon")
