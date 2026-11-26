@@ -64,7 +64,7 @@ text embed is sent instead.
 | Item | Actions |
 |---|---|
 | Chest | Open (with the reward reveal below), Discard |
-| Manual | Learn (or reread for mastery EXP if already learned), Discard |
+| Manual | Learn & equip, Learn only (picking it first says which technique an equip would take off), or Read it if already learned (mastery EXP and Insight ink); Discard. See docs/technique.md "Manuals" |
 | Weapon, armor, artifact | Equip / Unequip, Discard (only when not equipped). Artifacts fill the first free slot; with both full, or with one of the same family worn, Equip says why and nothing changes |
 | Qi pill, Heaven-Defying Pill | Take, Discard |
 | Herb | Discard (herbs have no use until alchemy exists) |

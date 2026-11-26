@@ -393,6 +393,92 @@ def chest_text(result):
 
 # ── Using items from the bag ──────────────────────────────────────────
 
+# ── manuals: learn one (and equip it, or not), or reread one already known ──
+# A manual stays a bag item (tradeable, stacking) until it is used. Learning one copy makes its technique yours for
+# good (techniques are never traded); spare copies stay in the bag to trade or keep. The bag shows manual_plan first,
+# so a player sees what will happen (which technique an equip would take off, that a known one is reread) and picks.
+
+def manual_plan(conn, user_id, item):
+    """What using this manual would do, for the bag to show before it happens: {"ok": can it be used now, "why": the
+    reason if not, "known": already learned (it would be reread), "name", "type", "grade", "replaces": the equipped
+    technique Learn & equip would take off (None: a slot is free), "exp": mastery EXP a reread gives, "ink": the
+    material lines a reread gives}."""
+    t = technique.TECHNIQUES[item["key"]]
+    p = db.get_player(conn, user_id)
+    need = technique.GRADES[t["grade"]]
+    plan = {"ok": True, "why": None, "known": False, "name": t["name"], "type": t["type"], "grade": t["grade"],
+            "replaces": None, "exp": round(INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]]), "ink": []}
+    if rules.realm_index(p["realm"]) < rules.realm_index(need):
+        return {**plan, "ok": False, "why": f"You must reach **{need}** to comprehend a {t['grade']} manual."}
+    learned = db.get_techniques(conn, user_id, equipped_only=False)
+    if any(x["name"] == t["name"] for x in learned):
+        from . import materials
+        return {**plan, "known": True, "ink": materials.lines(materials.duplicate_manual_ink(t["grade"]))}
+    hit = db.bumped([x for x in learned if x["equipped"]], t["type"], rules.technique_slots(p["realm"]))
+    return {**plan, "replaces": hit["name"] if hit else None}
+
+
+def manual_lines(plan, qty=1):
+    """The bag's words for a manual_plan, the same on Discord and the website (markdown bold)."""
+    if not plan["ok"]:
+        return [plan["why"]]
+    if plan["known"]:
+        lines = [f"You already know **{plan['name']}**. Reading this copy gives **+{plan['exp']} mastery EXP** and "
+                 f"{', '.join(plan['ink'])}. Or keep it to trade."]
+    else:
+        lines = [f"**Learn & equip** puts it in place of **{plan['replaces']}**, which stays in your techniques."
+                 if plan["replaces"] else f"**Learn & equip** puts it in your {plan['type']} slot.",
+                 "**Learn only** adds it to your techniques and keeps what you have equipped."]
+    if qty > 1:
+        lines.append(f"You have ×{qty}: this uses one, the rest stay in your bag to trade.")
+    return lines
+
+
+def learn_manual(conn, user_id, item_id, equip=True):
+    """Use one copy to learn its technique; equip it too unless `equip` is False. Returns the message."""
+    item = db.get_item(conn, user_id, item_id)
+    if not item or item["category"] != "manuals":
+        return "That manual is no longer in your bag."
+    plan = manual_plan(conn, user_id, item)
+    if not plan["ok"]:
+        return plan["why"]
+    if plan["known"]:
+        return f"📜 You already know **{plan['name']}**."
+    p = db.get_player(conn, user_id)
+    db.remove_item(conn, item_id)
+    db.learn_technique(conn, user_id, plan["name"], plan["type"], plan["grade"], rules.technique_slots(p["realm"]),
+                       equip=equip)
+    what = f"**{plan['name']}** ({plan['grade']} {plan['type']})"
+    if not equip:
+        return f"📜 You comprehend {what}. It's in your techniques: equip it there when you want it."
+    if plan["replaces"]:
+        return (f"📜 You comprehend {what} and equip it in place of **{plan['replaces']}**, "
+                f"which stays in your techniques.")
+    return f"📜 You comprehend {what} and equip it in your {plan['type']} slot."
+
+
+def read_manual(conn, user_id, item_id):
+    """Reread one copy of a manual already known: mastery EXP for that technique and Insight ink. Returns the
+    message."""
+    item = db.get_item(conn, user_id, item_id)
+    if not item or item["category"] != "manuals":
+        return "That manual is no longer in your bag."
+    t = technique.TECHNIQUES[item["key"]]
+    p = db.get_player(conn, user_id)
+    learned = [x for x in db.get_techniques(conn, user_id, equipped_only=False) if x["name"] == t["name"]]
+    if not learned:
+        return f"📜 You don't know **{t['name']}** yet. Learn it first."
+    db.remove_item(conn, item_id)
+    from . import mastery, materials
+    exp, note = mastery.gain(conn, p, learned[0], INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]],
+                             bonus=False)
+    msg = f"📜 You already know **{t['name']}**. Rereading it gives you insight: **+{exp} mastery EXP**."
+    ink = materials.duplicate_manual_ink(t["grade"])
+    store(conn, user_id, ink)
+    msg += "\n✨ The ink lifts off the pages: " + ", ".join(materials.lines(ink))
+    return msg + (f"\n{note}" if note else "")
+
+
 def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
     """Use one item. Returns a message for the player. Rare finds are appended to `announce`."""
     now = time.time() if now is None else now
@@ -429,26 +515,11 @@ def use_item(conn, user_id, item_id, rng=random, now=None, announce=None):
         db.equip_artifact(conn, user_id, item_id, slot)
         return f"🔮 You wear **{item['name']}** in artifact slot {slot}: {gear.effect_text(item)}."
 
-    if cat == "manuals":
-        t = technique.TECHNIQUES[item["key"]]
-        need = technique.GRADES[t["grade"]]
-        if rules.realm_index(p["realm"]) < rules.realm_index(need):
-            return f"You must reach **{need}** to comprehend a {t['grade']} manual."
-        learned = [x for x in db.get_techniques(conn, user_id, equipped_only=False) if x["name"] == t["name"]]
-        db.remove_item(conn, item_id)
-        if learned:
-            from . import mastery
-            exp, note = mastery.gain(conn, p, learned[0], INSIGHT_EXP * technique.GRADE_EXP_MULTIPLIER[t["grade"]],
-                                     bonus=False)
-            msg = f"📜 You already know **{t['name']}**. Rereading it gives you insight: **+{exp} mastery EXP**."
-            from . import materials
-            ink = materials.duplicate_manual_ink(t["grade"])
-            store(conn, user_id, ink)
-            msg += "\n✨ The ink lifts off the pages: " + ", ".join(materials.lines(ink))
-            return msg + (f"\n{note}" if note else "")
-        db.learn_technique(conn, user_id, t["name"], t["type"], t["grade"], rules.technique_slots(p["realm"]))
-        return (f"📜 You comprehend **{t['name']}** ({t['grade']} {t['type']}) and equip it "
-                f"in your {t['type']} slot.")
+    if cat == "manuals":                   # learn and equip it, or reread one already known (as before)
+        plan = manual_plan(conn, user_id, item)
+        if not plan["ok"]:
+            return plan["why"]
+        return read_manual(conn, user_id, item_id) if plan["known"] else learn_manual(conn, user_id, item_id)
 
     if cat == "pills" and item["key"] == "heaven_defying":
         new = rules.talent_up(p["talent"])

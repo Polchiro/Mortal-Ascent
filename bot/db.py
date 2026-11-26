@@ -506,6 +506,17 @@ def learn_technique(conn, user_id, name, type_, grade, slots=2, equip=True):
     return cur.lastrowid
 
 
+def bumped(equipped, type_, slots=2):
+    """The equipped technique that equipping one more of `type_` would take off, or None (a slot is free).
+    The rule of equip_technique: the oldest equipped of the same type, else the other type's oldest when two of
+    those are on."""
+    same = [t for t in equipped if t["type"] == type_]
+    other = [t for t in equipped if t["type"] != type_]
+    if len(same) >= slots - 1 or len(equipped) >= slots:
+        return same[0] if same else (other[0] if len(other) > 1 else None)
+    return None
+
+
 def equip_technique(conn, user_id, technique_id, slots=2):
     """Equip a learned technique. Slots: 1 attack + 1 defense, plus a flex slot when slots == 3
     (technique.md). Fills a free slot if there is one, otherwise replaces the oldest equipped
@@ -514,11 +525,7 @@ def equip_technique(conn, user_id, technique_id, slots=2):
     equipped = get_techniques(conn, user_id)
     if not tech or tech["equipped"]:
         return None
-    same = [t for t in equipped if t["type"] == tech["type"]]
-    other = [t for t in equipped if t["type"] != tech["type"]]
-    replaced = None
-    if len(same) >= slots - 1 or len(equipped) >= slots:
-        replaced = same[0] if same else (other[0] if len(other) > 1 else None)
+    replaced = bumped(equipped, tech["type"], slots)
     with conn:
         if replaced:
             conn.execute("UPDATE techniques SET equipped = 0 WHERE id = ?", (replaced["id"],))

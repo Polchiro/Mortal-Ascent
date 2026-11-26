@@ -275,7 +275,16 @@ class CharacterSheet(OwnedView):
                         disabled=self.page >= self.pages)
         if sel:
             acts = items.actions(sel)
-            if "use" in acts:
+            if sel["category"] == "manuals":           # Learn & equip / Learn only, or Read it (loot.manual_plan)
+                plan = loot.manual_plan(self.bot.conn, self.owner_id, sel)
+                scroll = sheet_emoji(self.bot, sheet_icons.USE_KEY.get("Learn", "sheet_open"))
+                if plan["known"]:
+                    self.button("Read it", self.on_read_manual, emoji=scroll, row=3)
+                else:
+                    self.button("Learn & equip", self.learn_callback(True), emoji=scroll,
+                                style=discord.ButtonStyle.success, row=3, disabled=not plan["ok"])
+                    self.button("Learn only", self.learn_callback(False), row=3, disabled=not plan["ok"])
+            elif "use" in acts:
                 verb = items.use_label(sel)
                 self.button(verb, self.on_use, emoji=sheet_emoji(self.bot, sheet_icons.USE_KEY.get(verb, "sheet_open")),
                             style=discord.ButtonStyle.success, row=3)
@@ -290,6 +299,30 @@ class CharacterSheet(OwnedView):
 
     async def on_pick(self, interaction):
         self.selected, self.confirm_discard = int(interaction.data["values"][0]), False
+        item = db.get_item(self.bot.conn, self.owner_id, self.selected)
+        if item and item["category"] == "manuals":     # say what Learn / Read would do before it's pressed
+            self.notice = "📜 " + "\n".join(loot.manual_lines(loot.manual_plan(self.bot.conn, self.owner_id, item),
+                                                              item["qty"]))
+        await self.show(interaction)
+
+    def learn_callback(self, equip):
+        async def cb(interaction):
+            if self.selected is None:
+                return await self.show(interaction)
+            if equip and self.in_fight():
+                self.notice = ("⚔️ You can't swap techniques in the middle of a fight. "
+                               "Finish it first, or choose Learn only.")
+                return await self.show(interaction)
+            async with self.bot.db_lock:
+                self.notice = loot.learn_manual(self.bot.conn, self.owner_id, self.selected, equip=equip)
+            await self.show(interaction)
+        return cb
+
+    async def on_read_manual(self, interaction):
+        if self.selected is None:
+            return await self.show(interaction)
+        async with self.bot.db_lock:
+            self.notice = loot.read_manual(self.bot.conn, self.owner_id, self.selected)
         await self.show(interaction)
 
     async def on_prev(self, interaction):

@@ -56,10 +56,26 @@
       <a class="btn btn-gold" href="/chests?open={{ d.id }}&amp;from=%2Finventory%3Ftab%3Dchests">Open</a>
       <a class="btn btn-gold ghost" href="/chests?from=%2Finventory%3Ftab%3Dchests">Treasure Shelf</a>
     </div>
+    {% elif d.manual %}
+    <div class="manualacts">
+      {% for line in d.manual.lines %}<p class="mnote">{{ line | rich | safe }}</p>{% endfor %}
+      {% if d.manual.buttons %}
+      <div class="mbtns">
+        {% for action, equip, label in d.manual.buttons %}
+        <form method="post" action="/inventory/{{ action }}">
+          <input type="hidden" name="item" value="{{ d.id }}">
+          {% if equip is not none %}<input type="hidden" name="equip" value="{{ equip }}">{% endif %}
+          <button class="btn btn-gold{% if not loop.first %} ghost{% endif %}" type="submit">{{ label }}</button>
+        </form>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
     {% else %}
     <p class="soon small">Using items comes next. For now, do it in Discord with /inventory.</p>
     {% endif %}
     {% else %}
+    {% if notice %}<p class="gnotice" role="status">{{ notice | rich | safe }}</p>{% endif %}
     <p class="empty">Pick an item to see what it does.</p>
     {% endif %}
   </aside>

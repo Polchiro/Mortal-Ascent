@@ -2422,6 +2422,11 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 /* the bag: a chest's Open and the Treasure Shelf (web/chest_play.py) */
 .chestacts{display:flex;gap:10px;flex-wrap:wrap}
 .chestacts .btn{text-decoration:none}
+/* the bag: a manual's Learn & equip / Learn only / Read it (web/inventory.py manual_card) */
+.manualacts .mnote{margin:6px 0;line-height:1.45;color:#D8DEEC}
+.manualacts .mbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.manualacts .mbtns form{flex:1 1 140px}
+.manualacts .mbtns .btn{width:100%;white-space:nowrap;padding-left:10px;padding-right:10px}
 /* the admin panel (web/templates/admin.html) */
 .adm{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
 .adhead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:16px}

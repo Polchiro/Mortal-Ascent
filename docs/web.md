@@ -119,7 +119,9 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 - The website can't see a fight running in Discord. A fight reads the gear when it starts, so changing gear here
   during one counts from the next fight.
 - **Chests** open on the website: a chest's **Open** in the Inspect panel, or the **Treasure Shelf** (see "Opening a
-  chest" below). Using pills and manuals stays in Discord for now.
+  chest" below). **Manuals** are learned here too: the Inspect panel says what will happen (docs/technique.md
+  "Manuals") and offers **Learn & equip** and **Learn only**, or **Read it** for one already known. Learn & equip is
+  held back during a fight on the website, as swapping techniques is. Using pills stays in Discord for now.
 
 ## The Moon Pavilion
 
