@@ -582,6 +582,22 @@ roam the forest and finds glint in the grass; beasts and finds make a trip of 5 
 rest, banked when you walk back into town. The other five roads are closed until their lands are built. `/world` is the painted
 scroll of the whole land, only to look at (**M**). docs/world.md.
 
+## Painted UI
+
+SHOAIB's Nano Banana pieces (Nov 27 2026), cut by `scripts/make_ui_art.py` (each picture's boxes and how each piece
+is cut are in its JOBS table):
+
+- **Heavenly Blessing orbs** (`art/icons/blessings/<tier>.webp`): a spirit pearl with the tier's sign of heaven
+  inside, round and the same size, the glow lifted off as light (as the pills). The Moon Pavilion, the `/blessing`
+  card and the profile badge show them.
+- **Lotus Coin and Moon Pearl** (`art/icons/currency/`): the purse pills at the top of every page, the prices on the
+  Moon Pavilion, and the Discord cards (`cards/purse.painted`, kinds `deed:lotus_coin` / `deed:moon_pearl`); a coin
+  stack and a pearl heap for bigger amounts.
+- **The map screen's frame** (`art/ui/`): hero plate, portrait and seal rings, HP and Qi vials, Break Through tab,
+  dock icons (see "The map screen").
+- **Realm seals** (`art/icons/realms/<realm>.webp`), **equipment slots** (`art/ui/slot_*`), **journey icons**
+  (`art/icons/journey/`) and the **name plaque** (`art/ui/name_plaque`), for the profile.
+
 ## Environment pieces
 
 Rocks, logs, plants and mushrooms on the maps: one picture each, placed many times, cut from SHOAIB's Gemini pictures

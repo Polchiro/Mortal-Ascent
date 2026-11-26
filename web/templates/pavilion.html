@@ -10,7 +10,7 @@
       <p class="kicker">THE MOON PAVILION</p>
       <h1>Merchant Qian's Stall</h1>
       <p class="sub">"Speed and style, never power. What catches your eye tonight?"</p>
-      <p class="pavpurse">You have <b>🌙 {{ "{:,}".format(v.pearls) }}</b> Moon Pearls{% if v.active %} · <span class="pavact">{{ v.active.name }}: {{ v.active.days }} day{{ '' if v.active.days == 1 else 's' }} left</span>{% endif %}</p>
+      <p class="pavpurse">You have <b><img class="pavpearl" src="/art/icons/currency/moon_pearl.webp" alt="Moon Pearls" width="20" height="20"> {{ "{:,}".format(v.pearls) }}</b> Moon Pearls{% if v.active %} · <span class="pavact">{{ v.active.name }}: {{ v.active.days }} day{{ '' if v.active.days == 1 else 's' }} left</span>{% endif %}</p>
     </div>
   </header>
 
@@ -28,7 +28,7 @@
       {% if it.icon %}<img src="{{ it.icon }}" alt="" width="72" height="72" loading="lazy">{% endif %}
       <b>{{ it.name }}</b>
       <span class="sub">{{ it.text }}</span>
-      <span class="pavprice">🌙 {{ it.price }}</span>
+      <span class="pavprice"><img class="pavpearl" src="/art/icons/currency/moon_pearl.webp" alt="Moon Pearls" width="20" height="20"> {{ it.price }}</span>
       {% if it.soon %}<span class="pavsoon">Coming soon</span>
       {% else %}
       <button class="tbtn{% if it.afford %} primary{% endif %}" type="button"
@@ -46,7 +46,7 @@
       {% if t.icon %}<img src="{{ t.icon }}" alt="" width="72" height="72" loading="lazy">{% endif %}
       <b>{{ t.name }}</b>
       <span class="sub">{{ t.perks }}{% if t.frame %} · coloured profile frame{% endif %}</span>
-      <span class="pavprice">🌙 {{ t.price }}</span>
+      <span class="pavprice"><img class="pavpearl" src="/art/icons/currency/moon_pearl.webp" alt="Moon Pearls" width="20" height="20"> {{ t.price }}</span>
       {% if t.active %}<span class="pavsoon on">Active · {{ t.days_left }} day{{ '' if t.days_left == 1 else 's' }} left</span>{% endif %}
       <button class="tbtn{% if t.afford %} primary{% endif %}" type="button"
               data-kind="bless" data-key="{{ t.name }}" data-name="{{ t.name }}" data-cost="{{ t.cost }}"

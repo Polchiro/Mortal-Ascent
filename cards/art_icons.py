@@ -68,6 +68,8 @@ def resolve(kind_):
         rel = kind_[4:]
     elif kind_.startswith("tech:"):
         rel = "tech/" + kind_[5:]
+    elif kind_ in ("deed:lotus_coin", "deed:moon_pearl"):          # the painted currencies (scripts/make_ui_art.py)
+        rel = "currency/" + kind_[5:]
     elif kind_.startswith("mat:"):
         rel = "mat/" + kind_[4:].replace(":", "_")
     elif kind_.startswith("passive:"):
