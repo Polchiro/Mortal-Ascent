@@ -1,0 +1,47 @@
+{
+ "cell": [
+  715,
+  401
+ ],
+ "still": [
+  124.8,
+  123.0,
+  540.0,
+  262.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/mountain_tiger/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1500,
+   "nose_x": 0.1385
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/mountain_tiger/attack.webp",
+   "frames": 49,
+   "cols": 8,
+   "rows": 7,
+   "ms": 2800,
+   "bite": 12,
+   "reach": 0.1352,
+   "bite_x": 0.0462
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/mountain_tiger/hit.webp",
+   "frames": 18,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1500
+  },
+  "death": {
+   "src": "/art/beasts/sheets/mountain_tiger/death.webp",
+   "frames": 28,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2300,
+   "impact": 20
+  }
+ }
+}
