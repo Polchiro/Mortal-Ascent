@@ -40,7 +40,7 @@ def test_old_database_gets_new_columns(tmp_path):
     old.close()
     conn = db.connect(str(path))
     p = db.get_player(conn, 7)
-    assert p["bag_capacity"] == 60 and p["toxicity"] == 0 and p["injured_until"] is None
+    assert p["bag_capacity"] == 100 and p["toxicity"] == 0 and p["injured_until"] is None
     assert p["qi_overflow"] == 0 and p["qi_pings"] == 1 and p["qi_ping_gate"] is None
 
 
@@ -568,7 +568,7 @@ def test_shop_purchases(conn):
     buy_shop_item(conn, 1, "name_change", "Iron Lotus")
     buy_shop_item(conn, 1, "heavenly_fate_reroll", rng=random.Random(0))
     p = db.get_player(conn, 1)
-    assert p["bag_capacity"] == 80 and p["name"] == "Iron Lotus"
+    assert p["bag_capacity"] == 120 and p["name"] == "Iron Lotus"
     assert rules.talent.TALENTS.index(p["talent"]) >= 1          # never lower than Gifted
     assert p["moon_pearls"] == 2000 - 60 - 300 - 200 - economy.PEARL_SHOP["heavenly_fate_reroll"]
 
@@ -733,6 +733,23 @@ def test_heaven_techniques_are_ultimates():
     assert battle.TECHNIQUE_QI_COST == {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 70}
     assert battle.technique_qi(T["void_mirror_stance"], T["void_mirror_stance"]["effect"]) == 85
     assert battle.TECHNIQUE_QI_COST["Heaven"] <= battle.BATTLE_QI_START       # still castable from a full bar
+
+
+def test_old_bags_grow_by_40_once(tmp_path):
+    """The starting bag went from 60 to 100: bags made before grow by 40 (keeping bought expansions), only once."""
+    path = str(tmp_path / "old.db")
+    c = db.connect(path)
+    db.create_player(c, 1, "Old", "Gifted", 0, rules.starting_techniques())
+    db.create_player(c, 2, "Buyer", "Gifted", 0, rules.starting_techniques())
+    db.update_player(c, 1, bag_capacity=60)
+    db.update_player(c, 2, bag_capacity=80)
+    c.execute("DELETE FROM settings WHERE key = 'bag_grown_to_100'")     # as before this change
+    c.commit()
+    db.connect(path, setup=True)
+    db.connect(path, setup=True)                                        # a second start changes nothing
+    assert db.get_player(c, 1)["bag_capacity"] == 100 and db.get_player(c, 2)["bag_capacity"] == 120
+    db.create_player(c, 3, "New", "Gifted", 0, rules.starting_techniques())
+    assert db.get_player(c, 3)["bag_capacity"] == 100
 
 
 def test_lotus_coins_are_the_same_for_every_realm():
