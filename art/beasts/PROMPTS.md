@@ -12,9 +12,9 @@ File: `art/beasts/the_master.png`
 ## Mortal
 
 **Wild Boar** · Normal · Earth
-File: `art/beasts/wild_boar.png`
+File: `art/beasts/wild_boar.png` (Nov 26 redesign, Nano Banana Pro; then animated: idle, hit + attack, death videos)
 
-> A bristle-backed wild boar with chipped tusks, mud-caked hide, head lowered to charge, with a subtle amber earth elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed fur, teeth and claws, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
+> A powerful wild boar for a Chinese xianxia martial arts game: a big, heavy-shouldered boar with a tall ridge of stiff dark bristles running along its spine, coarse dark-brown and grey fur, two long curved ivory tusks chipped and scarred from fights, small fierce amber eyes, an old scar across its snout, dried mud and a little moss on its legs and belly, a faint warm amber glow of earth Qi deep in its eyes and in the cracks of its tusks. A wild mountain beast, dangerous but still a natural animal, not a monster. Strict side view, facing LEFT, standing calmly on all four legs, all four legs clearly visible and separated, mouth closed, tail visible. Whole body in frame with generous space around it, placed a little right of centre. Realistic digital painting, premium Chinese xianxia MMORPG creature concept art, detailed fur and tusks, soft natural rim lighting, painterly brushwork, rich but mature colours. Plain flat medium-grey background, no ground, no shadow, no glow outline, no aura, no text, no watermark. 16:9.
 
 **Field Viper** · Normal · Venom
 File: `art/beasts/field_viper.png`

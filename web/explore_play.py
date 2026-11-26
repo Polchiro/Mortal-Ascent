@@ -401,13 +401,37 @@ def home_view(conn, uid, explores):
             "cooldown": explore_rules.EXPLORE_COOLDOWN_MINUTES, "realm": p["realm"]}
 
 
+_VOICES = {}
+
+
+def own_voices():
+    """The beasts with a recorded voice of their own (art/fx/sounds/sounds.json keys "<sound>@<slug>", cut from their
+    own animation videos: the Wild Boar's squeal, gore and thud), as a set of slugs."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "fx", "sounds", "sounds.json")
+    try:
+        stamp = os.path.getmtime(path)
+    except OSError:
+        return set()
+    if _VOICES.get("stamp") != stamp:
+        try:
+            with open(path) as fh:
+                keys = json.load(fh)
+        except (OSError, ValueError):
+            keys = {}
+        _VOICES.update(stamp=stamp, slugs={k.rsplit("@", 1)[1] for k in keys if "@" in k})
+    return _VOICES["slugs"]
+
+
 def beast_body(name):
-    """The beast's body type (beasts.BODY_TYPES: wolf, cat, bird ...), for its recorded voice; None if unknown."""
+    """Whose recorded voice the beast's sounds are (fight_sound.js "<sound>@<this>"): the beast's own when its videos
+    gave it one (its slug), else its body type (beasts.BODY_TYPES: wolf, cat, bird ...); None if unknown."""
     import beasts
     try:
-        return beasts.body_of(name)
+        body = beasts.body_of(name)
     except KeyError:
         return None
+    slug = beasts.slug(name)
+    return slug if slug in own_voices() else body
 
 
 def found_list(exp):

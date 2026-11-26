@@ -4,7 +4,8 @@
 
     python -m scripts.make_beast_sheets grey_wolf idle.mp4 attack.mp4 hit.mp4 death.mp4 [--cache DIR]
 
-Each video is 1280 x 720 at 24 fps: one beast, side on, facing left (toward the cultivator), on a plain backdrop, the
+Each video is 1280 x 720 at 24 fps (Flow's 1920 x 1080 is scaled down; one video may be given for two moves, its
+seconds in CLIPS): one beast, side on, facing left (toward the cultivator), on a plain backdrop, the
 camera still. What is taken from each (CLIPS):
 - idle: the stretch (3-6 s) whose last frame best meets its first (scripts/make_heroine_walk.stride), looped;
 - attack, hit, death: the part where the beast acts, from its first frame (standing as in idle) to the end of the move.
@@ -46,6 +47,8 @@ KINDS = ("idle", "attack", "hit", "death")
 CLIPS = {
     "grey_wolf": {"attack": (0.0, 3.0), "hit": (0.0, 1.5), "death": (0.0, 2.5), "idle_span": (72, 144),
                   "slab": {"idle": (0.80, 0.12)}, "match": {"death": "hit"}, "attack_ms": 2200},
+    "wild_boar": {"attack": (3.6, 6.1), "hit": (0.6, 1.45), "death": (4.42, 6.5), "idle_span": (84, 144),
+                  "attack_ms": 2000, "bite": 16, "white": ("hit",)},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 
@@ -53,7 +56,8 @@ MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 
 def video_frames(video, numbers):
     """The video's frames with these numbers (0-based), as RGB pictures."""
     w, h = 1280, 720
-    data = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+    data = subprocess.run(["ffmpeg", "-v", "error", "-i", video, "-vf", f"scale={w}:{h}", "-f", "rawvideo",
+                           "-pix_fmt", "rgb24", "-"],                # Flow's 1920 x 1080 brought to 1280 x 720
                           capture_output=True, check=True).stdout
     all_ = np.frombuffer(data, np.uint8).reshape(-1, h, w, 3)
     return [Image.fromarray(all_[n]) for n in numbers]
@@ -76,10 +80,15 @@ def off_slab(a, top, depth):
     return a
 
 
-def cut_one(im, session, slab=None):
-    """The beast alone: cut out, no mark, no slab, no shadow or loose bits."""
+def cut_one(im, session, slab=None, white=False):
+    """The beast alone: cut out, no mark, no slab, no shadow or loose bits. `white`: a white slash streak the video drew
+    over it (the unseen blow) dropped too: near-white, colourless pixels."""
     from rembg import remove
     a = np.asarray(remove(im, session=session)).copy()
+    if white:
+        px = np.asarray(im).astype(np.int16)
+        streak = (px.min(-1) > 175) & ((px.max(-1) - px.min(-1)) < 30)
+        a[..., 3] = np.where(ndimage.binary_dilation(streak, iterations=2), 0, a[..., 3])
     px = np.asarray(im).astype(np.float32)
     x0, y0, x1, y1 = MARK                                    # the sparkle: the biggest pale, colourless blob there
     box = px[y0:y1, x0:x1]
@@ -122,7 +131,7 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
             session = new_session("isnet-general-use")
         if raw is None:
             raw = dict(zip(numbers, video_frames(video, numbers)))
-        im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind))
+        im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()))
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             im.save(path)
@@ -229,7 +238,7 @@ def main(slug, videos, cache=None):
             info["ms"] = cfg["attack_ms"]
             lefts = [f.getbbox()[0] for f in frames]
             lo, hi = len(frames) // 4, len(frames) * 3 // 4
-            bite = lo + int(np.argmin(lefts[lo:hi]))                         # the jaws furthest forward
+            bite = cfg.get("bite", lo + int(np.argmin(lefts[lo:hi])))         # the jaws furthest forward (or set by eye)
             info["bite"] = bite
             info["reach"] = round(max(0, lefts[0] - lefts[bite]) / (still.width * SCALE), 4)
             info["bite_x"] = round(lefts[bite] / cw, 4)                         # its jaws, at the bite

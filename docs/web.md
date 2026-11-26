@@ -521,6 +521,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | You are hit; a miss; a dodge | her side kick and punch videos |
 | Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
+| The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -960,7 +961,9 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 
 ## Animated beasts
 
-A beast can be animated from four videos (SHOAIB's, Gemini: idle, attack, hit, death; so far the **Grey Wolf**).
+A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
+and the redesigned **Wild Boar**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
 the idle video's stone slab dropped, 12 frames a second. Each video is placed on the beast's own picture
@@ -984,6 +987,15 @@ time, fading over the last in 0.12 s:
 - **Kept apart:** its bite stops with its jaws at the cultivator's front (`bite_x` in `sheets.json`, `FRONT` in
   `fight.js`) and your Strike stops with the sword tip at its nose (`nose_x`), so neither runs into the other.
 - Damage, rules and every other beast are unchanged.
+- **Its own voice:** a beast whose videos gave it sounds (`sounds.json` keys `<sound>@<slug>`, e.g. `hit@wild_boar`)
+  speaks with them (`web/explore_play.beast_body` puts its slug in `data-body`); every other beast keeps its body's
+  voice (`@wolf`) or the made one.
+
+**Adding the next beast** (one at a time, in roster order): its picture and roar picture (Nano Banana Pro, 16:9,
+strict side view facing left, plain flat grey) cut by `scripts/make_quadruped_art.py`, its mouth in
+`scripts/make_roar_fx.py` and `heads.json`; then its videos cut by `scripts/make_beast_sheets.py` (Flow's 1920 x 1080
+is scaled to 1280 x 720; `white` drops a white slash streak the video drew for the unseen blow; `bite` sets the gore
+frame by eye when an effect fools the measuring); then its sounds with `scripts/make_fight_sound.py NAME@<slug>`.
 
 ## Living backgrounds
 

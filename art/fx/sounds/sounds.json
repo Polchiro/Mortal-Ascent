@@ -125,6 +125,12 @@
    "lead": 0.42
   }
  ],
+ "death@wild_boar": [
+  {
+   "file": "death_wild_boar.mp3",
+   "lead": 0.16
+  }
+ ],
  "death@wolf": [
   {
    "file": "death_wolf.mp3",
@@ -229,6 +235,12 @@
    "lead": 0.04
   }
  ],
+ "hit@wild_boar": [
+  {
+   "file": "hit_wild_boar.mp3",
+   "lead": 0.36
+  }
+ ],
  "hit@wolf": [
   {
    "file": "hit_wolf.mp3",
@@ -243,6 +255,12 @@
   {
    "file": "hurt.mp3",
    "lead": 0.04
+  }
+ ],
+ "lunge@wild_boar": [
+  {
+   "file": "lunge_wild_boar.mp3",
+   "lead": 0.38
   }
  ],
  "lunge@wolf": [
@@ -269,6 +287,12 @@
    "lead": 1.76
   }
  ],
+ "roar:big@wild_boar": [
+  {
+   "file": "roar_big_wild_boar.mp3",
+   "lead": 0.38
+  }
+ ],
  "roar:big@wolf": [
   {
    "file": "roar_quadruped_big.mp3",
@@ -285,6 +309,12 @@
   {
    "file": "roar_quadruped.mp3",
    "lead": 0.84
+  }
+ ],
+ "roar@wild_boar": [
+  {
+   "file": "roar_wild_boar.mp3",
+   "lead": 0.4
   }
  ],
  "roar@wolf": [
