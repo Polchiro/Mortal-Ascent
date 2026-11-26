@@ -544,6 +544,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Venom Scorpion's hissing tail strike, its hiss when struck, its dying rattle, its hiss and big hiss (`@venom_scorpion`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Poison Toad's croaking hop, its croak when struck, its dying croak, its croak and big croak (`@poison_toad`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Silver Monkey's screeching swipe, its shriek when struck, its dying whimper, its chatter and big screech (`@silver_monkey`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Steel-Horn Bull's snorting goring hook, its grunt when struck, its dying bellow and fall, its snort and big bellow (`@steel_horn_bull`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -987,7 +988,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad** and the **Silver Monkey**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey** and the **Steel-Horn Bull**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -1013,6 +1014,9 @@ high), so its ducked pose is held a moment (`hold`) before it eases home (`settl
 tail, but in its hit and death video Veo grew a long one that rose out of the top of the video. Each frame's body is
 found by an opening with a disc thicker than the tail and thinner than the limbs; the thin piece left behind the body's
 middle is the tail, kept as a short stub and faded out (and any faint half-cut tail tip the cutter left goes too).
+**Moves eased in and settled out** (Nov 27, the Steel-Horn Bull): its two videos start from one picture, but by the
+flinch Veo's bull held its head lower than the idle's, so every move eases in from the idle (`ease_in`) and the gore
+and the flinch settle back into it (`settle` per move); only the gore, from the idle's own video, is placed as the idle.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

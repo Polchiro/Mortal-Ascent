@@ -60,5 +60,5 @@ dark-green scorpion with its tail curled over its back; its videos kept the pict
 sparkle, so both are dropped, and its strike is taken without the green slash arc the video drew. The **Poison Toad** (Martial Expert) is a huge warty
 olive toad with bright toxic-green spots, its jolt's white impact lines wiped from its video. The **Silver Monkey** (Martial Expert) is an agile
 silver-furred monkey with a short curled tail; its attack video was remade (the first leapt off and turned round), and
-the tail Veo grew long in its hit and death video is cut back to a short stub. The beasts are
+the tail Veo grew long in its hit and death video is cut back to a short stub. The **Steel-Horn Bull** (Elite) is a huge dark-brown bull with thick steel horns and an iron nose ring, drawn facing left (no longer mirrored; Nano Banana 2.1); both its videos were clean. The beasts are
 being redone one at a time in roster order the same way.

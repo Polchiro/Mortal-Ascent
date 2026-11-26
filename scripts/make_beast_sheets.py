@@ -56,6 +56,12 @@ CLIPS = {
                        "idle_until": 2.5, "attack_ms": 1800, "pingpong": ("attack",)},
     "wild_ox": {"attack": (2.0, 5.6), "hit": (1.7, 3.4), "death": (4.4, 6.4), "idle_span": (30, 44),
                 "idle_from": 5.95, "attack_ms": 2400, "bite": 33, "white": ("hit", "death")},
+    # Nov 27 redesign: both videos clean (its gore and its collapse stayed inside the video), from the same picture
+    # with the camera still, so every move is placed as the idle
+    "steel_horn_bull": {"attack": (4.5, 6.6), "hit": (1.0, 2.3), "death": (3.3, 7.0), "idle_span": (36, 60),
+                        "idle_until": 4.4, "attack_ms": 2200, "bite": 8,
+                        "ease_in": {"attack": 2, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
+                        "place_as": {"attack": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

@@ -1,0 +1,48 @@
+{
+ "cell": [
+  591,
+  326
+ ],
+ "still": [
+  79.2,
+  38.4,
+  434.4,
+  283.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/steel_horn_bull/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 3000,
+   "smooth": true,
+   "nose_x": 0.1337
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/steel_horn_bull/attack.webp",
+   "frames": 27,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2200,
+   "bite": 8,
+   "reach": 0.0,
+   "bite_x": 0.1827
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/steel_horn_bull/hit.webp",
+   "frames": 19,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1583
+  },
+  "death": {
+   "src": "/art/beasts/sheets/steel_horn_bull/death.webp",
+   "frames": 48,
+   "cols": 8,
+   "rows": 6,
+   "ms": 4000,
+   "impact": 31
+  }
+ }
+}
