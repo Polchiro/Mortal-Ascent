@@ -88,6 +88,14 @@ CLIPS = {
     "thornback_lizard": {"attack": (2.6, 6.6), "hit": (0.6, 3.0), "death": (3.0, 5.6), "idle_span": (30, 50),
                          "idle_until": 2.5, "attack_ms": 2800, "white": ("hit",), "fade": {"attack": 40},
                          "settle": 4, "place_as": {"attack": "idle", "death": "hit"}},
+    # Nov 27, every move from whichever of its two videos had it clean (no remakes): its idle and its snarling lunge from
+    # the hit video's calm start (it turned round after the lunge: the lunge plays there and back), its flinch and its
+    # collapse from the attack video (whose start drew a white impact flash: dropped); the flinch and the collapse
+    # start mid-move, so they ease in from the idle (`ease_in`), and the flinch settles back into it
+    "bloodfang_wolf": {"attack": (3.4, 4.6), "hit": (0.85, 2.4), "death": (4.5, 7.0), "idle_span": (36, 60),
+                       "idle_until": 3.3, "attack_ms": 2400, "pingpong": ("attack",), "white": ("hit",),
+                       "ease_in": {"hit": 3, "death": 3}, "settle": {"hit": 3},
+                       "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
@@ -224,6 +232,34 @@ def settle(frames, rest, n):
         m[..., :3] /= np.maximum(m[..., 3:], 1e-6)
         out.append(Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "RGBA"))
     return out
+
+
+def ease_in(frames, rest, n):
+    """The move's start eased out of `rest` (the idle's first frame), for a move cut from a video where the beast was
+    already moving (a flinch that starts mid-duck, a lunge from another video): n frames are put in front that slide
+    the idle's body toward the move's first frame (its front, as `settle`) and dissolve into it, so the cut never
+    snaps from the standing beast into the moving one."""
+    if not frames or n <= 0:
+        return frames
+    def nose(im):
+        a = np.asarray(im.getchannel("A")) > 128
+        cols = np.flatnonzero(a.any(0))
+        front = a[:, cols.min():cols.min() + int(0.6 * (cols.max() - cols.min()))]
+        return cols.min(), np.flatnonzero(front.any(1)).max()
+    (rx, ry), (fx, fy) = nose(rest), nose(frames[0])
+    f = np.asarray(frames[0]).astype(np.float32) / 255
+    f[..., :3] *= f[..., 3:]
+    out = []
+    for i in range(n):
+        s = (i + 1) / (n + 1)
+        moved = Image.new("RGBA", rest.size, (0, 0, 0, 0))
+        moved.paste(rest, (round((fx - rx) * s), round((fy - ry) * s)), rest)
+        a = np.asarray(moved).astype(np.float32) / 255
+        a[..., :3] *= a[..., 3:]
+        m = a * (1 - s) + f * s
+        m[..., :3] /= np.maximum(m[..., 3:], 1e-6)
+        out.append(Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "RGBA"))
+    return out + list(frames)
 
 
 def smooth_idle(frames, ms):
@@ -374,8 +410,12 @@ def main(slug, videos, cache=None):
         frames = [cell(*p) for p in placed[kind]]
         if kind == "idle":
             rest = frames[0]
-        if kind == "attack" and cfg.get("settle"):
-            frames = settle(frames, rest, cfg["settle"])
+        n_settle = cfg.get("settle", 0)
+        n_settle = n_settle.get(kind, 0) if isinstance(n_settle, dict) else (n_settle if kind == "attack" else 0)
+        if kind != "idle" and cfg.get("ease_in", {}).get(kind):
+            frames = ease_in(frames, rest, cfg["ease_in"][kind])
+        if n_settle:                                         # (an int: the attack's; a dict: per move)
+            frames = settle(frames, rest, n_settle)
         if kind == "idle":
             frames, idle_ms = smooth_idle(frames, idle_ms)
         rows = -(-len(frames) // COLS)
@@ -397,7 +437,7 @@ def main(slug, videos, cache=None):
             info["reach"] = round(max(0, lefts[0] - lefts[bite]) / (still.width * SCALE), 4)
             info["bite_x"] = round(lefts[bite] / cw, 4)                         # its jaws, at the bite
         else:
-            if len(spans(cfg[kind])) > 1 or kind in cfg.get("drop", {}):
+            if len(spans(cfg[kind])) > 1 or kind in cfg.get("drop", {}) or kind in cfg.get("ease_in", {}):
                 info["ms"] = round(len(frames) * STEP / FPS * 1000)            # the frames it really plays
             else:
                 s0, s1 = cfg[kind]

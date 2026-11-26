@@ -975,6 +975,38 @@ def test_the_thornback_lizard_is_animated_from_its_own_videos_with_its_own_voice
     assert explore_play.beast_body("Thornback Lizard") == "thornback_lizard"
 
 
+def test_the_bloodfang_wolf_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Bloodfang Wolf (Nov 27, Elite, facing left): every move from whichever of its two videos had
+    it clean (its lunge from the calm start of one, its flinch and collapse from the other); the flinch and the
+    collapse start mid-move, so they ease in from the idle; every move placed as the idle (same picture, camera still)."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("bloodfang_wolf")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Bloodfang Wolf", "slug": "bloodfang_wolf"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "bloodfang_wolf.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@bloodfang_wolf" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["bloodfang_wolf@roar"][:2] == [0.075, 0.5]
+    assert explore_play.beast_body("Bloodfang Wolf") == "bloodfang_wolf"
+
+
+def test_a_move_cut_mid_motion_eases_in_from_the_idle():
+    """`make_beast_sheets.ease_in`: frames put in front slide the idle toward the move's first frame and dissolve into
+    it, so a flinch cut from a video where the beast was already moving never snaps out of the standing beast."""
+    from PIL import Image
+    from scripts.make_beast_sheets import ease_in
+    rest = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    rest.paste((200, 100, 50, 255), (5, 5, 25, 15))
+    away = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    away.paste((200, 100, 50, 255), (15, 5, 35, 15))
+    out = ease_in([away] * 4, rest, 3)
+    assert len(out) == 7 and out[3:] == [away] * 4                      # 3 frames in front, the move untouched
+    lefts = [f.getbbox()[0] for f in out[:3]]
+    assert 5 < lefts[0] < lefts[1] < lefts[2] < 15                     # sliding from the idle's place to the move's
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

@@ -528,6 +528,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Spear-Beak Crane's wingbeats and stabbing cry, its harsh cry when struck, its dying cry and fall, its call and big call (`@spear_beak_crane`) | its own idle + strike and hit + death videos (Nov 26) |
 | The Thornback Lizard's growl and snapping bite, its hiss of pain when struck, its dying groan, its growl and big roar (`@thornback_lizard`) | its own idle + bite and hit + death videos (Nov 26) |
+| The Bloodfang Wolf's snarling lunge, its yelp when struck, its dying whimper, its growl and big snarl (`@bloodfang_wolf`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Rock Python's strike and hiss, its angry hiss when struck, its fall, its hiss and long hiss (`@rock_python`) | its own idle + strike and hit + death videos (Nov 26) |
 | The Mountain Tiger's pounce and roar, its pained snarl, its dying roar and fall, its roar and big roar (`@mountain_tiger`; also its Mountain-Splitting Pounce) | its own idle + pounce and hit + death videos (Nov 26) |
 | The Horned Stag's snort and charging bellow, its pained bellow, its dying bellow and fall, its bellow and big bellow (`@horned_stag`) | its own idle + charge and hit + death videos (Nov 26) |
@@ -981,7 +982,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane** and the **Thornback Lizard**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard** and the **Bloodfang Wolf**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -992,6 +993,13 @@ from its bite on and never curled it back, and left it a little further along, s
 until its nose and front feet meet the idle's and then dissolve into the idle (instead of snapping); its tail tip,
 which ran off the video's edge, fades out (`fade`). Its attack and death are placed as its idle and hit (`place_as`:
 the same videos, the camera still), so the attack starts exactly where the idle stands.
+**Every move from whichever video had it clean** (Nov 27, the Bloodfang Wolf; SHOAIB: no remakes when a video can
+be saved): its idle and snarling lunge come from its hit video's calm start (in that video it lunged and then turned
+round: the lunge plays there and back, `pingpong`), its flinch and its collapse from its attack video (whose white
+impact flash is dropped). Both videos start from the same picture with the camera still, so every move is placed as
+the idle (`place_as`). **A move cut mid-motion eases in** (`ease_in`): the flinch and the collapse start while the wolf
+is already moving, so a few frames are put in front that slide the standing idle toward the move's first frame and
+dissolve into it, and the flinch settles back into the idle at its end (`settle` per move: `{"hit": 3}`).
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

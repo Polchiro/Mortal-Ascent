@@ -1,0 +1,48 @@
+{
+ "cell": [
+  711,
+  352
+ ],
+ "still": [
+  157.8,
+  16.2,
+  540.0,
+  330.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/bloodfang_wolf/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2458,
+   "smooth": true,
+   "nose_x": 0.2194
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/bloodfang_wolf/attack.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "bite": 11,
+   "reach": 0.2833,
+   "bite_x": 0.0014
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/bloodfang_wolf/hit.webp",
+   "frames": 22,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1833
+  },
+  "death": {
+   "src": "/art/beasts/sheets/bloodfang_wolf/death.webp",
+   "frames": 33,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2750,
+   "impact": 17
+  }
+ }
+}
