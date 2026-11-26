@@ -224,11 +224,11 @@ def test_inventory_unknown_tab_and_empty_tab(client):
     assert "Nothing here yet" in client.get("/inventory?tab=chests").text
 
 
-def test_essences_get_drawn_pictures(client, db_path):
+def test_essences_show_their_painting_and_the_drawn_route_still_works(client, db_path):
     give(db_path, UID, "material:essence:venom:shard")
     log_in(client)
     page = client.get("/inventory?tab=materials")
-    assert "/art/drawn/mat:essence:venom:shard.png" in page.text
+    assert "/art/icons/mat/essence_venom_shard.webp" in page.text           # painted (tinted) since Nov 26 2026
     r = client.get("/art/drawn/mat:essence:venom:shard.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
     for bad in ("/art/drawn/../../.env.png", "/art/drawn/nonsense.png", "/art/drawn/mat:" + "x" * 80 + ".png"):

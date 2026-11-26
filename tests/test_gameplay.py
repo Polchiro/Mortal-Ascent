@@ -750,3 +750,22 @@ def test_old_bags_grow_by_40_once(tmp_path):
     assert db.get_player(c, 1)["bag_capacity"] == 100 and db.get_player(c, 2)["bag_capacity"] == 120
     db.create_player(c, 3, "New", "Gifted", 0, rules.starting_techniques())
     assert db.get_player(c, 3)["bag_capacity"] == 100
+
+
+def test_lotus_coins_are_the_same_for_every_realm():
+    """SHOAIB: coins from chests, fights and quests (and the prices of the physician and merchant) don't grow with
+    the realm any more."""
+    import quests as quest_config
+    from bot import loot
+    from bot import quests
+    low, high = {"realm": "Mortal"}, {"realm": rules.REALM_ORDER[-1]}
+    assert rules.realm_scale(low["realm"]) == rules.realm_scale(high["realm"]) == 1
+    assert quests.coin_scale(low) == quests.coin_scale(high) == 1 and quest_config.COIN_STEP_PER_REALM == 0
+    a = loot.roll_coins(dict(low, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
+    b = loot.roll_coins(dict(high, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
+    assert a == b and 80 <= a <= 150
+    beast_low = loot.roll_coins(dict(low, blessing=None), (10, 10), random.Random(1), beast="Mortal")
+    beast_high = loot.roll_coins(dict(high, blessing=None), (10, 10), random.Random(1), beast=high["realm"])
+    assert beast_low == 10 and beast_high == 20                 # stronger beasts: +10% a realm, ×2 at Martial Saint
+    hurt = {"injured_until": 600}
+    assert rules.physician_cost(dict(low, **hurt), now=0) == rules.physician_cost(dict(high, **hurt), now=0) == 10

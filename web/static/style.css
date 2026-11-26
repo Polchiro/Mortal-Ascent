@@ -1768,6 +1768,7 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
    in CSS while it stands (x steps through a row every loop/rows, y down the rows once a loop), also through its roar;
    attack, hit and death are stepped by fight.js. Reduced motion: the idle holds its first frame. */
 .beast.sheeted>img{visibility:hidden}
+.beast.sheeted.roaring>img{visibility:visible}.beast.sheeted.roaring .bsheets{visibility:hidden}   /* its roar: jaws open */
 .beast .bsheets{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;will-change:transform}
 .beast .bs{position:absolute;inset:0;background-repeat:no-repeat;background-position:0 0;opacity:0;transition:opacity .12s}
 .beast[data-anim=idle] .bs-idle,.beast[data-anim=attack] .bs-attack,.beast[data-anim=hit] .bs-hit,.beast[data-anim=death] .bs-death{opacity:1}
@@ -2513,3 +2514,38 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   .techcards{grid-template-columns:1fr}
   .techhead h1{font-size:24px}
 }
+/* The Moon Pavilion: the Pearl shop and Heavenly Blessings (web/templates/pavilion.html) */
+.pavpage{flex:1;width:100%;max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+.pavhead{display:flex;gap:20px;align-items:flex-end}
+.pavkeeper{flex:none;height:150px;filter:drop-shadow(0 10px 18px rgba(0,0,0,.6))}
+.pavhead h1{margin:2px 0 4px;font:800 30px Cinzel,Georgia,serif;color:var(--gold2)}
+.pavhead .sub{margin:0;color:var(--mist);font-style:italic}
+.pavpurse{margin:8px 0 0;color:var(--cream)}
+.pavact{color:var(--jade)}
+.pavtabs{display:flex;gap:8px;margin:20px 0 0;border-bottom:1px solid var(--line)}
+.pavtabs a{padding:10px 18px;border-radius:12px 12px 0 0;color:var(--mist);text-decoration:none;font-weight:700}
+.pavtabs a.on{color:var(--gold2);background:rgba(232,194,122,.12);box-shadow:inset 0 -2px 0 var(--gold)}
+.pavgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:18px}
+.pavitem{--rc:#E8C27A;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:16px 14px;border-radius:14px;
+  background:rgba(9,16,36,.72);border:1px solid color-mix(in srgb,var(--rc) 35%,transparent)}
+.pavitem img{width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 0 10px color-mix(in srgb,var(--rc) 35%,transparent))}
+.pavitem b{font:700 16px Cinzel,Georgia,serif;color:var(--cream)}
+.pavitem .sub{margin:0;font-size:12.5px;color:var(--mist);flex:1}
+.pavprice{font-weight:800;color:var(--gold2)}
+.pavitem.on{border-color:var(--rc);box-shadow:0 0 22px color-mix(in srgb,var(--rc) 25%,transparent)}
+.pavitem.soon{opacity:.6}
+.pavsoon{font-size:12px;font-weight:700;color:var(--mist)}
+.pavsoon.on{color:var(--jade)}
+.pavitem .tbtn{width:100%}
+.pavask{max-width:420px;width:calc(100% - 32px);border:1px solid var(--line);border-radius:16px;background:#101C38;color:var(--cream);padding:22px}
+.pavask::backdrop{background:rgba(3,8,20,.7)}
+.pavask h2{margin:0 0 8px;font:800 20px Cinzel,Georgia,serif;color:var(--gold2)}
+.pavask p{margin:6px 0}
+.pavline{display:flex;justify-content:space-between;gap:10px}
+.pavline span{color:var(--mist)}
+.pavname{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:13px;color:var(--mist)}
+.pavname[hidden]{display:none}
+.pavname input{padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--cream);font:inherit}
+.pavbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.tbtn:disabled{opacity:.5;cursor:not-allowed}
+@media (max-width:760px){.pavhead h1{font-size:24px}.pavkeeper{height:110px}.pavgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}

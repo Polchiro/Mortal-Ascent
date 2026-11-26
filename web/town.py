@@ -171,10 +171,11 @@ NPCS = [
      "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
      "go": [["Enter the alchemy hall", "/town/visit/alchemist"]]},   # the only way in (app.py: alchemy is locked)
-    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 16.2, "y": 12.2,
-     "src": "/art/portraits/town/merchant.webp", "h": 132,
-     "line": "A cultivator should look the part. New robes, a new face to the world: I have it all.",
-     "go": [["Change your look", "/appearance"]]},
+    {"key": "merchant", "name": "Merchant Qian", "title": "Pearl shop and blessings", "x": 16.2, "y": 12.2,
+     "src": "/art/portraits/town/merchant.webp", "h": 132,    # runs the Moon Pavilion (web/pavilion_routes.py)
+     "line": "Moon Pearls buy speed and style, never power. Pills, a bigger bag, a new name... or let Heaven smile on "
+             "your cultivation for a month.",
+     "go": [["Browse the Pearl shop", "/pavilion"], ["Heavenly Blessings", "/pavilion?tab=blessing"]]},
     {"key": "elder", "name": "Village Elder", "title": "Your cultivation", "x": 11.6, "y": 7.4,
      "src": "/art/portraits/town/elder.webp", "h": 128,
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
@@ -284,12 +285,21 @@ def placed(buildings=None, props=None, size=None):
     return out
 
 
+def _have(src):
+    """The picture's address if the file is there (a new townsfolk can stand in town before their picture is made:
+    the page then draws the lantern glow and their name)."""
+    if not src:
+        return None
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return src if os.path.exists(os.path.join(root, src.lstrip("/").split("?")[0])) else None
+
+
 def page_data(sheet, near=None):
     """The page's data (web/static/town.js): the walking sheet, the map, the townsfolk and the ways out. You come in
     at the gate (also back from the World Map), or in front of `near` (an NPC's key: whoever you came back from), or
     of whoever you last left town through."""
     npcs = [{k: n[k] for k in ("key", "name", "title", "x", "y", "line")} |
-            {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
+            {"go": n.get("go", []), "prop": n.get("prop", False), "src": _have(n.get("src")), "h": n.get("h", 128),
              "flip": n.get("flip", False)} for n in NPCS]
     exits = [{k: e[k] for k in ("key", "name", "title", "x", "y", "line", "go")} |
              {"exit": True, "glow": list(e.get("glow", (e["x"], e["y"])))} for e in EXITS]

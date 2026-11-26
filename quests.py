@@ -35,8 +35,8 @@ QUESTS = {
                   "n": 3,  "coins": 200, "pearls": 6,  "weight": 2, "icon": "chest:rare"},
 }
 
-# Coin rewards grow with the realm: × (1 + COIN_STEP_PER_REALM × realm index). Mortal ×1, Martial Saint ×3.5.
-COIN_STEP_PER_REALM = 0.25
+# Coin rewards × (1 + COIN_STEP_PER_REALM × realm index). 0: the same coins for every realm (SHOAIB).
+COIN_STEP_PER_REALM = 0
 
 # Finishing every quest of the day.
 ALL_DONE_COINS = 600         # grows with the realm like the quest coins

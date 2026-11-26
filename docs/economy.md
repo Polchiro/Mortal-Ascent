@@ -107,8 +107,8 @@ Alchemy (alchemy.md) adds a grind that must not print money:
 |---|---|
 | /gather has no limit, but the NPC merchant **never buys herbs** | Unlimited gathering can't create Lotus Coins |
 | Herbs are sold to other players on the market (5% tax, once the market exists) | Gatherers earn from players, and the tax removes coins |
-| The Wandering Merchant sells a 10-year herb of your tier for 🪷 10 × realm scale | A small coin sink for players who don't want to gather |
-| The Wandering Merchant sells Qi pills: Mortal 🪷 40, Yellow 🪷 120, Mystic 🪷 400 (× realm scale) | Coin sink; crafted pills can be stronger (pill patterns) |
+| The Wandering Merchant sells a 10-year herb of your tier for 🪷 10 | A small coin sink for players who don't want to gather |
+| The Wandering Merchant sells Qi pills: Mortal 🪷 40, Yellow 🪷 120, Mystic 🪷 400 | Coin sink; crafted pills can be stronger (pill patterns) |
 | The Moon Pearl shop sells only Mortal to Mystic Qi pills | Earth and Heaven pills, and every Breakthrough pill, must be crafted |
 
 Herb and pill purchases are written to the ledger like every other coin change.

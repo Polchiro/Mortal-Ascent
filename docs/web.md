@@ -107,7 +107,8 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
   logged-in player's own items can be picked.
 - Pictures: each item's painting (`cards/art_icons.py`); chests use the website's painted chests
   (`art/chest/<rarity>.webp`, falling back to the bot's `art/chests/<rarity>.png`) and
-  manuals their technique's icon. Items with no painted file (the 39 essences) are drawn by the bot's own
+  manuals their technique's icon. Forging materials, essences included, are painted since Nov 26 2026 (docs/forge.md "Pictures"). An item
+  with no painted file is drawn by the bot's own
   card code and served from `/art/drawn/<kind>.png` (`web/drawn.py`, drawn once and kept in memory), so they
   look exactly like the Discord cards.
 - **Equip / Unequip** for weapons, armor and artifacts, in the Inspect panel. The rules are the bot's own
@@ -119,6 +120,19 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
   during one counts from the next fight.
 - **Chests** open on the website: a chest's **Open** in the Inspect panel, or the **Treasure Shelf** (see "Opening a
   chest" below). Using pills and manuals stays in Discord for now.
+
+## The Moon Pavilion
+
+**Merchant Qian** (once the Silk Merchant, by the silk stalls: `web/town.py` NPCS; looks are changed on the Profile
+now) runs the **Moon Pavilion**
+(`/pavilion`, `web/pavilion_play.py`, `web/pavilion_routes.py`): two tabs, **Pearl Shop** and **Heavenly Blessings**.
+Everything is the bot's own, in `bot/shop.py` (moved out of `bot/views.py` so the website can use it without
+Discord; Discord's `/shop` and `/blessing` use the same functions): the items and prices (`economy.PEARL_SHOP`), the
+blessings and perks (`economy.BLESSING_TIERS`) and what a purchase does. Profile Card Themes show as "Coming soon",
+like on Discord. Pressing Buy / Receive asks first, like Discord's confirm: the price, your pearls before → after,
+and a note (your bag 100 → 120, "never goes lower" for the talent reroll, Extend or Replace for a blessing); Name
+Change asks for the new name there. Each form carries a one-time token, so a repeated or stale form spends nothing.
+Moon Pearls themselves are still bought on Discord (`/recharge`).
 
 ## Techniques
 
@@ -507,6 +521,8 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | You are hit; a miss; a dodge | her side kick and punch videos |
 | Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
+| The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
+| The Field Viper's strike snap, its pained hiss, the thump as it drops, its hiss and big hiss (`@field_viper`) | its own idle + strike and hit + death videos (Nov 26) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -946,7 +962,9 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 
 ## Animated beasts
 
-A beast can be animated from four videos (SHOAIB's, Gemini: idle, attack, hit, death; so far the **Grey Wolf**).
+A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
+and the redesigned **Wild Boar** and **Field Viper**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
 the idle video's stone slab dropped, 12 frames a second. Each video is placed on the beast's own picture
@@ -966,10 +984,22 @@ time, fading over the last in 0.12 s:
   and the damage number stay.
 - **Death** plays when it is beaten (`death.view` kind `sheet`), the thud where it lands (`impact`), and it then
   lies on its last frame, also on a fresh page of the won fight.
-- Its roar plays over its idle frames, turning on the roar's own pivot.
+- Its roar plays over its idle frames, turning on the roar's own pivot; while its jaws are open its open-mouthed roar
+  picture (`art/beasts/roar/`) shows instead of the frames (`.beast.sheeted.roaring`), then the frames come back.
 - **Kept apart:** its bite stops with its jaws at the cultivator's front (`bite_x` in `sheets.json`, `FRONT` in
   `fight.js`) and your Strike stops with the sword tip at its nose (`nose_x`), so neither runs into the other.
 - Damage, rules and every other beast are unchanged.
+- **Its own voice:** a beast whose videos gave it sounds (`sounds.json` keys `<sound>@<slug>`, e.g. `hit@wild_boar`)
+  speaks with them (`web/explore_play.beast_body` puts its slug in `data-body`); every other beast keeps its body's
+  voice (`@wolf`) or the made one.
+
+**Adding the next beast** (one at a time, in roster order): its picture and roar picture (Nano Banana Pro, 16:9,
+strict side view facing left, plain flat grey) cut by `scripts/make_quadruped_art.py`, its mouth in
+`scripts/make_roar_fx.py` and `heads.json`; then its videos cut by `scripts/make_beast_sheets.py` (Flow's 1920 x 1080
+is scaled to 1280 x 720; `white` drops a white slash streak the video drew for the unseen blow; `bite` sets the gore
+frame by eye when an effect fools the measuring; `idle_until` keeps the idle loop to the video's calm start;
+`fade` softens a body that ran off the video's edge). A roar picture can also be taken from its own video's
+open-jawed frame (the Field Viper's). Then its sounds with `scripts/make_fight_sound.py NAME@<slug>`.
 
 ## Living backgrounds
 
