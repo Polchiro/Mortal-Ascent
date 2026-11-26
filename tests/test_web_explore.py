@@ -1075,6 +1075,36 @@ def test_the_poison_toad_is_animated_from_its_own_videos_with_its_own_voice():
     assert explore_play.beast_body("Poison Toad") == "poison_toad"
 
 
+def test_the_silver_monkey_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Silver Monkey (Nov 27, Martial Expert): its idle and on-the-spot swipe from its remade attack
+    video; its flinch and collapse from the hit video, where Veo grew its short tail long: cut back to a short stub
+    (`trim_tail`), the white flash left out (dropped, not wiped, on a silver monkey)."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("silver_monkey")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Silver Monkey", "slug": "silver_monkey"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "silver_monkey.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@silver_monkey" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["silver_monkey@roar"][:2] == [0.09, 0.34]
+    assert explore_play.beast_body("Silver Monkey") == "silver_monkey"
+
+
+def test_a_tail_veo_grew_long_is_trimmed_back_to_a_stub():
+    """`make_beast_sheets.trim_tail`: a thin strip sticking out behind a thick body is cut back to a short stub."""
+    from PIL import Image
+    from scripts.make_beast_sheets import trim_tail
+    im = Image.new("RGBA", (400, 300), (0, 0, 0, 0))
+    im.paste((150, 150, 150, 255), (40, 120, 240, 260))               # the body
+    im.paste((150, 150, 150, 255), (230, 20, 246, 130))               # a long thin tail rising from its back
+    out = trim_tail(im, r=12, keep=20, fade=10)
+    top = out.getbbox()[1]
+    assert 85 <= top < 120                                             # cut back to a stub above the body
+    assert out.getpixel((140, 200))[3] == 255                          # the body untouched
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

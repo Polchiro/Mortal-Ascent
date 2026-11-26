@@ -58,5 +58,7 @@ Warrior Beast King, is a colossal white tiger with icy-blue stripes; its picture
 backdrop evened out before its videos, and its video effects are dropped frame by frame (wiping white would wipe its fur). The **Venom Scorpion** (Martial Expert) is a huge
 dark-green scorpion with its tail curled over its back; its videos kept the picture's "AI" badge as well as the
 sparkle, so both are dropped, and its strike is taken without the green slash arc the video drew. The **Poison Toad** (Martial Expert) is a huge warty
-olive toad with bright toxic-green spots, its jolt's white impact lines wiped from its video. The beasts are
+olive toad with bright toxic-green spots, its jolt's white impact lines wiped from its video. The **Silver Monkey** (Martial Expert) is an agile
+silver-furred monkey with a short curled tail; its attack video was remade (the first leapt off and turned round), and
+the tail Veo grew long in its hit and death video is cut back to a short stub. The beasts are
 being redone one at a time in roster order the same way.

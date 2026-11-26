@@ -147,7 +147,12 @@ Its first prompt, before the redesign:
 > A bloated warty toad with toxic green spots, poison mist seeping from its skin, with a subtle toxic green elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed shell and scales, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 
 **Silver Monkey** · Normal · Thunder
-File: `art/beasts/silver_monkey.png`
+File: `art/beasts/silver_monkey.png` (Nov 27 redesign, Nano Banana Pro; animated from its remade idle + attack video (swiping on the spot, no leap) and its
+hit + death video, whose grown tail is trimmed back)
+
+> A Silver Monkey for a Chinese xianxia martial arts game: an agile, muscular monkey the size of a child, with thick shining silver-grey fur, a darker grey face with a mischievous grin, long strong arms, nimble hands and feet, a SHORT thick tail, and bright eyes with a faint electric-gold glow of thunder Qi. All of its fur is solid and part of its body: no lightning, sparks or glow coming off it. Quick and cheeky, a natural animal, not a monster. Strict side view, facing LEFT, standing on all four limbs in a crouched ready stance, head up and looking left, all four limbs clearly visible, solid and separated, mouth closed. The whole monkey takes up about two thirds of the picture's height, placed a little right of centre, with LOTS of clear empty grey space above it (about a third of the picture's height, because it leaps) and on the left, and its feet a little above the bottom edge. Realistic digital painting, premium Chinese xianxia MMORPG creature concept art, detailed fur and muscle, soft natural rim lighting, painterly brushwork, rich but mature colours. Plain flat medium-grey background, no ground, no branches, no shadow, no lightning, no sparks, no glow outline, no aura, no sparkles, no text, no watermark. 16:9.
+
+Its first prompt, before the redesign:
 
 > An agile silver-furred monkey crackling with small lightning arcs, mischievous grin, with a subtle electric gold elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed fur and muscle, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 

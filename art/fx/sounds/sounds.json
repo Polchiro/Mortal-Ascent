@@ -191,6 +191,12 @@
    "lead": 0.72
   }
  ],
+ "death@silver_monkey": [
+  {
+   "file": "death_silver_monkey.mp3",
+   "lead": 0.08
+  }
+ ],
  "death@spear_beak_crane": [
   {
    "file": "death_spear_beak_crane.mp3",
@@ -409,6 +415,12 @@
    "lead": 0.28
   }
  ],
+ "hit@silver_monkey": [
+  {
+   "file": "hit_silver_monkey.mp3",
+   "lead": 0.2
+  }
+ ],
  "hit@spear_beak_crane": [
   {
    "file": "hit_spear_beak_crane.mp3",
@@ -537,6 +549,12 @@
   {
    "file": "lunge_shadow_wolf.mp3",
    "lead": 1.14
+  }
+ ],
+ "lunge@silver_monkey": [
+  {
+   "file": "lunge_silver_monkey.mp3",
+   "lead": 0.32
   }
  ],
  "lunge@spear_beak_crane": [
@@ -677,6 +695,12 @@
    "lead": 0.28
   }
  ],
+ "roar:big@silver_monkey": [
+  {
+   "file": "roar_big_silver_monkey.mp3",
+   "lead": 0.08
+  }
+ ],
  "roar:big@spear_beak_crane": [
   {
    "file": "roar_big_spear_beak_crane.mp3",
@@ -807,6 +831,12 @@
   {
    "file": "roar_shadow_wolf.mp3",
    "lead": 0.54
+  }
+ ],
+ "roar@silver_monkey": [
+  {
+   "file": "roar_silver_monkey.mp3",
+   "lead": 0.38
   }
  ],
  "roar@spear_beak_crane": [
