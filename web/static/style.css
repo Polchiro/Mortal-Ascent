@@ -2593,3 +2593,32 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 .pavbtns{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
 .tbtn:disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:760px){.pavhead h1{font-size:24px}.pavkeeper{height:110px}.pavgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* a strong beast's presence (fight.js `aura`, `sigil`, `avatar`; explore_play.beast_power): its aura, breathing like a
+   living flame in two copies out of step; the formation circle flaring under its roar; its spirit rising behind it */
+.baura{position:absolute;pointer-events:none;opacity:var(--ao);transition:opacity .8s ease}
+.baura img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill;mix-blend-mode:screen;
+  transform-origin:50% 100%;animation:baura 3.4s ease-in-out infinite}
+.baura img+img{animation:baura2 4.3s ease-in-out infinite;opacity:.55}
+.baura.p4 img{filter:brightness(1.25) saturate(1.15)}
+@keyframes baura{0%,100%{transform:scale(1,1);opacity:.8}50%{transform:scale(1.03,1.07);opacity:1}}
+@keyframes baura2{0%,100%{transform:scaleX(-1.02) scaleY(1.04);opacity:.65}50%{transform:scaleX(-.98) scaleY(.97);opacity:.35}}
+main.dying .baura,main.slain .baura{opacity:0}
+.besigil{position:absolute;width:var(--w);aspect-ratio:2.4;pointer-events:none;opacity:0;
+  transform:translate(-50%,-55%) scale(.3);animation:besigil 2.5s cubic-bezier(.2,.8,.3,1) forwards}
+.besigil.s3{aspect-ratio:1.9}
+.besigil .tint,.besigil img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
+.besigil .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 8px var(--rc)) drop-shadow(0 0 22px var(--rc))}
+.besigil img{mix-blend-mode:screen;filter:grayscale(1) brightness(1.4);opacity:.7}
+@keyframes besigil{0%{transform:translate(-50%,-55%) scale(.3);opacity:0}14%{transform:translate(-50%,-55%) scale(1);opacity:1}
+  30%{opacity:.75}45%{opacity:1}75%{opacity:.85}100%{transform:translate(-50%,-55%) scale(1.06);opacity:0}}
+.bavatar{position:absolute;pointer-events:none;opacity:0;transform-origin:50% 100%;
+  transform:translate(-50%,-100%) scale(1.1);animation:bavatar 2.2s ease-out forwards}
+.bavatar .tint,.bavatar img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;object-position:50% 100%}
+.bavatar .tint{background:var(--rc);-webkit-mask:var(--m) 50% 100%/contain no-repeat;mask:var(--m) 50% 100%/contain no-repeat;
+  filter:blur(2px) drop-shadow(0 0 14px var(--rc)) drop-shadow(0 0 40px var(--rc));opacity:.85}
+.bavatar img{mix-blend-mode:screen;filter:grayscale(.6) brightness(1.5);opacity:.35}
+@keyframes bavatar{0%{opacity:0;transform:translate(-50%,-100%) scale(1.1)}22%{opacity:.7;transform:translate(-50%,-104%) scale(1.75)}
+  65%{opacity:.5;transform:translate(-50%,-106%) scale(1.95)}100%{opacity:0;transform:translate(-50%,-108%) scale(2.1)}}
+.bavatar.saint{animation-duration:2.4s}
+.bavatar.saint .tint{opacity:1}

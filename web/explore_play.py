@@ -54,6 +54,15 @@ _poses_cache = {}
 
 
 _heads = None
+# How mighty a beast LOOKS (fight.js `aura`, `presence`, `avatar`; SHOAIB Nov 27: strong beasts should look strong):
+# from Martial King up it glows with its element's aura (stronger each realm) and a formation circle flares under it
+# as it roars (sigil_1 for King and Emperor, 2 for Ancestor, 3 for Saint); from Martial Ancestor up its spirit
+# rises behind it as it roars. Presentation only.
+POWER_BY_REALM = {"Martial King": 1, "Martial Emperor": 2, "Martial Ancestor": 3, "Martial Saint": 4}
+
+
+def beast_power(realm):
+    return POWER_BY_REALM.get(realm, 0)
 
 
 def beast_roar(e):
@@ -63,7 +72,8 @@ def beast_roar(e):
     roar picture (art/beasts/roar/<slug>.png, scripts/make_quadruped_art.py --roar), shown while it roars, with
     its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture. `element`: its
     element in lower case, for the roar's own blast, burst and ground patch (art/fx/elem/); None without them.
-    `marks`: the marks its blows leave on you (beasts.ATTACK_MARKS, art/fx/marks/)."""
+    `marks`: the marks its blows leave on you (beasts.ATTACK_MARKS, art/fx/marks/). `power`: how strong it looks
+    (`beast_power`): its aura, the formation circle under its roar, its spirit rising behind it."""
     global _heads
     if _heads is None:
         try:
@@ -87,6 +97,7 @@ def beast_roar(e):
             "element": elem if elem and os.path.exists(os.path.join(ELEM_DIR, elem + "_stream.webp")) else None,
             "claws": beasts.has_claws(e.get("name") or ""),
             "marks": beasts.attack_marks(e.get("name") or ""),
+            "power": beast_power(e.get("realm") or ""),
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",

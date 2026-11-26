@@ -433,14 +433,14 @@ def has_claws(name):
 ATTACK_MARKS = {
     "Wild Boar": ("tusk",), "Iron-Hide Boar": ("tusk",), "Armored Boar Chief": ("tusk", "smash"),
     "Field Viper": ("fang", "lash"), "Rock Python": ("fang", "lash"), "Frost Python": ("fang", "lash"),
-    "Black Water Serpent": ("fang", "lash"), "Void Serpent": ("fang", "lash"),
+    "Black Water Serpent": ("fang", "lash"), "Void Serpent": ("void_serpent", "lash"),
     "Stray Dog Pack": ("bite", "claw"), "Grey Wolf": ("bite", "claw"), "Shadow Wolf": ("bite", "claw"),
     "Bloodfang Wolf": ("bite", "claw"), "Frost Wolf": ("bite", "claw"), "Ghost-Fire Wolf": ("bite", "claw"),
     "Red Fox": ("bite", "claw"), "Tiangou, the Heavenly Hound": ("bite", "claw"), "Taotie, the Devourer": ("bite", "claw"),
     "Mountain Tiger": ("claw", "bite"), "White-Browed Tiger King": ("claw", "bite"), "Wind Leopard": ("claw", "bite"),
     "Flame-Maned Lion": ("claw", "bite"), "Shadow Panther": ("claw", "bite"), "Cloud Leopard": ("claw", "bite"),
-    "Sky Lynx": ("claw", "bite"), "Pixiu": ("claw", "bite"), "Ancient Flame Lion": ("claw", "bite"),
-    "White Tiger": ("claw", "bite"), "Qiongqi, the Winged Tiger": ("claw", "bite"), "Nine-Tailed Fox": ("claw", "bite"),
+    "Sky Lynx": ("claw", "bite"), "Pixiu": ("claw", "bite"), "Ancient Flame Lion": ("ancient_flame_lion", "bite"),
+    "White Tiger": ("white_tiger", "bite"), "Qiongqi, the Winged Tiger": ("claw", "bite"), "Nine-Tailed Fox": ("claw", "bite"),
     "Lightning Weasel": ("claw", "bite"),
     "Old Black Bear": ("claw", "smash"), "Ironbark Bear": ("claw", "smash"),
     "Wild Ox": ("gore",), "Horned Stag": ("gore",), "Steel-Horn Bull": ("gore", "smash"),
@@ -448,19 +448,23 @@ ATTACK_MARKS = {
     "Fire-Hoof Steed": ("smash", "bite"),
     "Wind-Feather Falcon": ("talon", "beak"), "Thunder Hawk": ("talon", "beak"), "Storm Eagle": ("talon", "beak"),
     "Crimson Fire Hawk": ("talon", "beak"), "Vermilion Bird": ("talon", "beak"),
-    "Kun-Peng, Fish of the Northern Sea": ("talon", "smash"),
+    "Kun-Peng, Fish of the Northern Sea": ("kun_peng", "talon"),
     "Bone Vulture": ("beak", "talon"), "Iron-Feather Crow": ("beak", "talon"),
     "Spear-Beak Crane": ("beak",), "Bifang Fire Crane": ("beak",),
     "Thornback Lizard": ("bite", "lash"), "Ember Lizard": ("bite", "lash"), "Poison Toad": ("smash", "lash"),
     "Jade-Scaled Crocodile": ("bite", "lash"), "Abyss Crocodile": ("bite", "lash"),
-    "Flood Dragon (Jiao)": ("claw", "lash"), "Azure Dragon": ("claw", "lash"),
+    "Flood Dragon (Jiao)": ("claw", "lash"), "Azure Dragon": ("azure_dragon", "lash"),
     "Venom Scorpion": ("sting",), "Thousand-Year Centipede": ("fang",), "Golden Silk Spider": ("fang", "sting"),
     "Silver Monkey": ("claw", "smash"), "Golden-Eyed Ape King": ("smash", "claw"), "Ancient Golden Ape": ("smash", "claw"),
     "Shanxiao Mountain Spirit": ("smash", "claw"),
     "Stone-Shell Tortoise": ("smash", "bite"), "Black Tortoise (Xuanwu)": ("smash", "fang"),
-    "Primordial Dragon Turtle": ("smash", "bite"),
+    "Primordial Dragon Turtle": ("dragon_turtle", "bite"),
 }
-MARK_KINDS = ("claw", "bite", "fang", "gore", "tusk", "beak", "talon", "sting", "smash", "lash", "slash")
+# The six Martial Saints each leave a mark no other beast has (SHOAIB's pictures, Nov 27): the Azure Dragon's
+# scaled claw, the White Tiger's metal claws, the Kun-Peng's wing, the Void Serpent's space-cracking fangs, the
+# Ancient Flame Lion's burning paw, the Primordial Dragon Turtle's shell slam.
+SAINT_MARKS = ("azure_dragon", "white_tiger", "kun_peng", "void_serpent", "ancient_flame_lion", "dragon_turtle")
+MARK_KINDS = ("claw", "bite", "fang", "gore", "tusk", "beak", "talon", "sting", "smash", "lash", "slash") + SAINT_MARKS
 
 
 def attack_marks(name):

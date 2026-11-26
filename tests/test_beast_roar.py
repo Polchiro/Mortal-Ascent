@@ -300,3 +300,21 @@ def test_every_beast_leaves_its_own_marks_when_it_hits():
     assert beasts.attack_marks("Someday New") == ["slash"]
     r = explore_play.beast_roar({"name": "Venom Scorpion", "slug": "venom_scorpion", "element": "Venom", "tier": "normal"})
     assert r["marks"] == ["sting"]
+
+
+def test_strong_beasts_look_strong():
+    """From Martial King up a beast glows with its element's aura and a formation circle flares under its roar;
+    from Martial Ancestor up its spirit rises behind it (explore_play.beast_power, fight.js `aura`, `sigil`,
+    `avatar`); the six Martial Saints leave marks of their own (beasts.SAINT_MARKS)."""
+    assert [explore_play.beast_power(r) for r in ("Mortal", "Grandmaster", "Martial King", "Martial Emperor",
+                                                   "Martial Ancestor", "Martial Saint")] == [0, 0, 1, 2, 3, 4]
+    for el in ("blood", "frost", "flame", "shadow", "thunder", "venom", "earth", "jade"):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"{el}_aura.webp")), el
+    for lvl in (1, 2, 3):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"sigil_{lvl}.webp"))
+    r = explore_play.beast_roar({"name": "Azure Dragon", "slug": "azure_dragon", "element": "Jade", "tier": "normal",
+                                 "realm": "Martial Saint"})
+    assert r["power"] == 4 and r["marks"][0] == "azure_dragon"
+    assert explore_play.beast_roar({"name": "Wild Boar", "slug": "wild_boar", "realm": "Mortal", "tier": "normal"})["power"] == 0
+    saints = [n for n in beasts.TRAITS if beasts.ATTACK_MARKS[n][0] in beasts.SAINT_MARKS]
+    assert len(saints) == 6 and len({beasts.ATTACK_MARKS[n][0] for n in saints}) == 6
