@@ -10,6 +10,8 @@ The folder holds his pictures, named after what they are (effects on pure black,
     <element>_burst.png    the burst where it hits you, a ring of pieces round an empty middle (8)
     <element>_ground.png   the patch it leaves on the ground at your feet (8)
     ground_crack.png       the crack a toad's or lizard's roar sends along the ground to you (1)
+    <mark>.png             a beast's hit mark, painted white so the fight colours it by element (MARKS: bite,
+                           fang, gore, tusk, beak, talon, sting, sting_alt, smash, lash), saved to art/fx/marks/
 
 for the eight elements (ELEMENTS). Each is cleaned (the Gemini sparkle and "AI" badge in the bottom-right corner
 painted out), keyed off its black background (light becomes opacity, so the glow stays soft), cropped to what is
@@ -26,7 +28,9 @@ OUT = os.path.join(ROOT, "art", "fx", "elem")
 ELEMENTS = ("blood", "frost", "flame", "shadow", "thunder", "venom", "earth", "jade")
 NAMES = ([e + "_stream" for e in ELEMENTS] + [e + "_burst" for e in ELEMENTS] + [e + "_ground" for e in ELEMENTS]
          + ["ground_crack"])
-MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100}
+MARKS = ("bite", "fang", "gore", "tusk", "beak", "talon", "sting", "sting_alt", "smash", "lash")
+MARKS_OUT = os.path.join(ROOT, "art", "fx", "marks")
+MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100, "mark": 640}
 # SHOAIB: the flame patch came out thinner than the others; it stands a little taller so it reads at your feet
 STRETCH_Y = {"flame_ground": 1.5}
 FLOOR = 10            # background noise under this (of 255) is pure black
@@ -83,17 +87,19 @@ def make(src, name):
     out = Image.fromarray(a, "RGBA")
     if name in STRETCH_Y:
         out = out.resize((out.width, round(out.height * STRETCH_Y[name])), Image.LANCZOS)
-    kind = "crack" if name == "ground_crack" else name.split("_")[1]
+    kind = "mark" if name in MARKS else "crack" if name == "ground_crack" else name.split("_")[1]
     out.thumbnail((MAX_SIDE[kind], MAX_SIDE[kind]), Image.LANCZOS)
-    os.makedirs(OUT, exist_ok=True)
-    path = os.path.join(OUT, name + ".webp")
-    out.save(path, "WEBP", quality=86, method=6)
+    folder = MARKS_OUT if kind == "mark" else OUT
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, name + ".webp")
+    out.save(path, "WEBP", quality=86, method=4)
     return path, out.size
 
 
 def main(folder):
-    missing = [n for n in NAMES if not os.path.exists(os.path.join(folder, n + ".png"))]
-    for n in NAMES:
+    names = NAMES + list(MARKS)
+    missing = [n for n in names if not os.path.exists(os.path.join(folder, n + ".png"))]
+    for n in names:
         src = os.path.join(folder, n + ".png")
         if os.path.exists(src):
             path, size = make(src, n)
