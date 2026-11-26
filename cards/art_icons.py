@@ -8,7 +8,7 @@ icon, so a missing file never breaks a card.
 Kinds that map to paintings:
   art:<group>/<name>              any painting by its path (gear/iron_sword, herbs/spirit_grass, cores/elite_mystic …)
   tech:<key>                      techniques
-  mat:<key>                       forging materials (essences have no painting yet)
+  mat:<key>                       forging materials (scripts/make_material_art.py; essences tinted per family)
   passive:<Rarity>                passive rarity coins
   emblem:pill:<kind>:<grade>[:n]  pills (n = patterns, drawn as small dots under the pill)
   emblem:pill:heaven_defying      the Heaven-Defying Pill
