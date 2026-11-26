@@ -58,6 +58,8 @@ CLIPS = {
     "old_black_bear": {"attack": (2.25, 5.6), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 21, "impact": 10, "white": ("death",),
                        "fade": {"attack": ("top", 70)}},
+    "iron_hide_boar": {"attack": (2.6, 4.45), "hit": (2.15, 3.3), "death": (4.2, 6.2), "idle_span": (20, 27),
+                       "idle_from": 6.7, "attack_ms": 2000, "white": ("hit", "death"), "pingpong": ("attack",)},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 

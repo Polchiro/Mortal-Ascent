@@ -1,0 +1,47 @@
+{
+ "cell": [
+  770,
+  424
+ ],
+ "still": [
+  212.4,
+  15.0,
+  540.0,
+  385.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/iron_hide_boar/idle.webp",
+   "frames": 8,
+   "cols": 8,
+   "rows": 1,
+   "ms": 833,
+   "nose_x": 0.2727
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/iron_hide_boar/attack.webp",
+   "frames": 44,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2000,
+   "bite": 19,
+   "reach": 0.2833,
+   "bite_x": 0.0026
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/iron_hide_boar/hit.webp",
+   "frames": 14,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1150
+  },
+  "death": {
+   "src": "/art/beasts/sheets/iron_hide_boar/death.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000,
+   "impact": 9
+  }
+ }
+}

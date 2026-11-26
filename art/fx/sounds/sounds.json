@@ -131,6 +131,12 @@
    "lead": 0.34
   }
  ],
+ "death@iron_hide_boar": [
+  {
+   "file": "death_iron_hide_boar.mp3",
+   "lead": 0.7
+  }
+ ],
  "death@old_black_bear": [
   {
    "file": "death_old_black_bear.mp3",
@@ -265,6 +271,12 @@
    "lead": 0.12
   }
  ],
+ "hit@iron_hide_boar": [
+  {
+   "file": "hit_iron_hide_boar.mp3",
+   "lead": 0.34
+  }
+ ],
  "hit@old_black_bear": [
   {
    "file": "hit_old_black_bear.mp3",
@@ -309,6 +321,12 @@
   {
    "file": "lunge_field_viper.mp3",
    "lead": 0.48
+  }
+ ],
+ "lunge@iron_hide_boar": [
+  {
+   "file": "lunge_iron_hide_boar.mp3",
+   "lead": 0.8
   }
  ],
  "lunge@old_black_bear": [
@@ -365,6 +383,12 @@
    "lead": 0.62
   }
  ],
+ "roar:big@iron_hide_boar": [
+  {
+   "file": "roar_big_iron_hide_boar.mp3",
+   "lead": 0.02
+  }
+ ],
  "roar:big@old_black_bear": [
   {
    "file": "roar_big_old_black_bear.mp3",
@@ -411,6 +435,12 @@
   {
    "file": "roar_field_viper.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@iron_hide_boar": [
+  {
+   "file": "roar_iron_hide_boar.mp3",
+   "lead": 0.6
   }
  ],
  "roar@old_black_bear": [
