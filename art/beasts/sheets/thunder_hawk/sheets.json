@@ -12,10 +12,10 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/thunder_hawk/idle.webp",
-   "frames": 16,
+   "frames": 48,
    "cols": 8,
-   "rows": 2,
-   "ms": 834,
+   "rows": 6,
+   "ms": 2502,
    "smooth": true,
    "nose_x": 0.3461
   },

@@ -1034,6 +1034,11 @@ head (`idle_from`/`idle_until`), even from the other video: the lizard's from th
 video, the wolf's from the slight turn of its head just before its bite, the hawk's from the turn of its head as it settles
 after its flinch. The lizard's flinch is then placed by its own first
 frame and eases in.
+**A slow breath for an idle that hardly moves** (`breathe`, Nov 27, SHOAIB: "they are still barely moving"): the
+Ember Lizard's, Frost Wolf's and Thunder Hawk's videos have no stretch where they really breathe, so their idle loop
+is repeated to about one breath (2.4 s) and over it the body sinks a little from its planted feet and rises back (its
+back lower by up to 3.5% of its height, less lower down; never taller, so nothing leaves its cell), its head end
+swaying a touch back and forward. The loop's first frame is unchanged, so every move still starts and ends on it.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

@@ -82,7 +82,7 @@ CLIPS = {
     # Its idle (Nov 27 fix): the video's first second hardly moved, so the idle is the slight turn and dip of its head
     # just before the bite begins
     "frost_wolf": {"attack": (1.8, 4.55), "hit": (0.7, 2.25), "death": (2.3, 5.5), "idle_span": (12, 19),
-                   "idle_from": 0.8, "idle_until": 1.6, "attack_ms": 2600, "pingpong": ("attack",),
+                   "breathe": 0.035, "idle_from": 0.8, "idle_until": 1.6, "attack_ms": 2600, "pingpong": ("attack",),
                    "ease_in": {"attack": 3, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
                    "place_as": {"death": "hit"}},
     # Nov 27 redesign, standing (wings folded): its first attack and hit spread its wings off the video and drew a slash
@@ -90,7 +90,7 @@ CLIPS = {
     # Its idle (Nov 27 fix): the turn of its head as it settles after the flinch, before the stab (the still frames at
     # the start looked frozen)
     "thunder_hawk": {"attack": (4.15, 7.0), "hit": (0.85, 3.0), "death": (2.5, 6.6), "idle_span": (10, 15),
-                     "idle_from": 2.9, "idle_until": 3.55, "attack_ms": 2600,
+                     "breathe": 0.035, "idle_from": 2.9, "idle_until": 3.55, "attack_ms": 2600,
                      "ease_in": {"attack": 2, "hit": 2, "death": 5}, "settle": {"attack": 3, "hit": 3},
                      "place_as": {"attack": "idle", "hit": "idle"}},
     # Nov 27 redesign: Veo grew its short tail long in every video, so each move is taken before the tail grows: its
@@ -99,7 +99,7 @@ CLIPS = {
     # Its idle (Nov 27 fix): the remade video's first second hardly moved, so the idle is the gentle head dip and throat
     # swell at the start of its first video (before it opens its mouth); the flinch is then placed by its own first frame
     "ember_lizard": {"attack": (0.7, 1.55), "hit": (1.0, 1.85), "death": (4.0, 4.9), "idle_span": (8, 13),
-                     "idle_from": 0.33, "idle_until": 0.88, "attack_ms": 1800,
+                     "breathe": 0.035, "idle_from": 0.33, "idle_until": 0.88, "attack_ms": 1800,
                      "ease_in": {"attack": 3, "hit": 3, "death": 4}, "settle": {"attack": 3, "hit": 3}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
@@ -419,6 +419,42 @@ def smooth_idle(frames, ms):
     return out, ms
 
 
+BREATH_MS = 2400     # one slow breath
+
+
+def breathe(frames, ms, amp=0.03):
+    """(frames, ms): an idle that hardly moves in its video, given a slow, visible breath (SHOAIB, Nov 27: "they are
+    still barely moving"). Its smooth loop is repeated to about one breath long, and over it the beast's body swells
+    down and rises back from its planted feet (its back lower by up to `amp` of its height, less lower down: never
+    taller, so nothing leaves its cell) while its head end sways a little back and forward. The loop's first frame is left as it was (the other moves start from it) and the breath
+    comes round to it again, so it still loops with no jump."""
+    reps = max(1, round(BREATH_MS / ms))
+    frames = list(frames) * reps
+    ms *= reps
+    n = len(frames)
+    out = []
+    for i, f in enumerate(frames):
+        phase = -(1 - np.cos(2 * np.pi * i / n)) / 2          # 0 at the loop's start, -1 halfway: never taller
+        a = np.asarray(f).astype(np.float32) / 255
+        box = f.getbbox()
+        if not box or abs(phase) < 1e-6:
+            out.append(f)
+            continue
+        x0, top, x1, feet = box
+        tall = max(1, feet - top)
+        hh, ww = a.shape[:2]
+        yy, xx = np.mgrid[0:hh, 0:ww].astype(np.float32)
+        up = np.clip((feet - yy) / tall, 0, None)             # 0 at the feet, 1 at the top of its back
+        sy = feet - (feet - yy) / (1 + amp * phase * up)     # the body swells up from the feet, most at the top
+        sx = xx - 0.012 * tall * phase * up ** 2             # and its head end sways a touch forward and back
+        pm = a.copy()
+        pm[..., :3] *= pm[..., 3:]
+        warped = np.stack([ndimage.map_coordinates(pm[..., c], [sy, sx], order=1, mode="constant") for c in range(4)], -1)
+        warped[..., :3] /= np.maximum(warped[..., 3:], 1e-6)
+        out.append(Image.fromarray((np.clip(warped, 0, 1) * 255).astype(np.uint8), "RGBA"))
+    return out, ms
+
+
 def resmooth(slug):
     """Smooth an existing beast's idle sheet in place (`--smooth-idle`), from the sheet itself: no videos needed."""
     out_dir = os.path.join(ROOT, "art", "beasts", "sheets", slug)
@@ -563,6 +599,8 @@ def main(slug, videos, cache=None):
             frames = settle(frames, rest, n_settle)
         if kind == "idle":
             frames, idle_ms = smooth_idle(frames, idle_ms)
+            if cfg.get("breathe"):
+                frames, idle_ms = breathe(frames, idle_ms, cfg["breathe"])
         rows = -(-len(frames) // COLS)
         sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
         for i, f in enumerate(frames):

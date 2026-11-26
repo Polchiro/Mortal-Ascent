@@ -1214,6 +1214,25 @@ def test_the_ember_lizard_is_animated_from_its_own_videos_with_its_own_voice():
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["ember_lizard@roar"][:2] == [0.07, 0.18]
     assert explore_play.beast_body("Ember Lizard") == "ember_lizard"
 
+def test_an_idle_that_hardly_moves_is_given_a_slow_breath():
+    """`make_beast_sheets.breathe`: the loop is made about one breath long, its first frame is unchanged, the body
+    sinks from its planted feet halfway and never grows taller; the three beasts with still videos breathe."""
+    import json
+    from PIL import Image
+    from scripts.make_beast_sheets import breathe, CLIPS
+    still = Image.new("RGBA", (200, 200), (0, 0, 0, 0))
+    still.paste((150, 120, 90, 255), (40, 60, 160, 180))              # the body, its feet at the bottom row 179
+    frames, ms = breathe([still] * 16, 1000, 0.05)
+    assert len(frames) == 32 and ms == 2000 and len(frames) % 8 == 0
+    assert frames[0].tobytes() == still.tobytes()
+    mid = frames[16].getbbox()
+    assert mid[3] == 180 and mid[1] > 60                               # feet planted, its back lower
+    assert all(f.getbbox()[1] >= 60 for f in frames)                   # never taller
+    for slug in ("ember_lizard", "frost_wolf", "thunder_hawk"):
+        assert CLIPS[slug].get("breathe")
+        idle = json.load(open(os.path.join("art", "beasts", "sheets", slug, "sheets.json")))["sheets"]["idle"]
+        assert idle["ms"] >= 2000
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image
