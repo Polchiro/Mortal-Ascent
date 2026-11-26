@@ -1196,7 +1196,10 @@
         if (bposes && bposes.roar) bpose(t >= BURST - 60 && t < HOLD1 ? 'roar' : home);
         else if (roarPic && roarPic.complete && roarPic.naturalWidth) {      // its own open-mouthed roar picture
           var open = t >= BURST - 60 && t < HOLD1;
-          if (open !== opened) { opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill); }
+          if (open !== opened) {
+            opened = open; beast.src = open ? ROAR.art : still; measure(open ? roarPic : beastStill);
+            if (BS) beastBox.classList.toggle('roaring', open);   // an animated beast: its picture over its frames, jaws open
+          }
         }
         if (t >= BURST && once('burst')) {
           if (M.style === 'screech') screech(mouth(p), pic, ev.final);
@@ -1215,6 +1218,7 @@
         hero(0, 0);
         scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
+        beastBox.classList.remove('roaring');
         beast.style.transform = ''; beast.style.transformOrigin = '';
         if (bposes) bpose(home);
         var n = scene.querySelector('.broar'); if (n) n.remove();

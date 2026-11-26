@@ -747,6 +747,13 @@ def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
     assert explore_play.beast_body("No Such Beast") is None
 
 
+def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
+    """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
+    css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text
+    assert ".beast.sheeted.roaring>img{visibility:visible}" in css and ".beast.sheeted.roaring .bsheets{visibility:hidden}" in css
+    assert "if (BS) beastBox.classList.toggle('roaring', open)" in js and "beastBox.classList.remove('roaring')" in js
+
+
 def test_other_beasts_keep_their_pictures(client):
     fight(client)
     page = client.get("/explore/play").text

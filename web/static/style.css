@@ -1768,6 +1768,7 @@ main.arenalobby .card{background:rgba(14,18,28,.82)}
    in CSS while it stands (x steps through a row every loop/rows, y down the rows once a loop), also through its roar;
    attack, hit and death are stepped by fight.js. Reduced motion: the idle holds its first frame. */
 .beast.sheeted>img{visibility:hidden}
+.beast.sheeted.roaring>img{visibility:visible}.beast.sheeted.roaring .bsheets{visibility:hidden}   /* its roar: jaws open */
 .beast .bsheets{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;will-change:transform}
 .beast .bs{position:absolute;inset:0;background-repeat:no-repeat;background-position:0 0;opacity:0;transition:opacity .12s}
 .beast[data-anim=idle] .bs-idle,.beast[data-anim=attack] .bs-attack,.beast[data-anim=hit] .bs-hit,.beast[data-anim=death] .bs-death{opacity:1}
