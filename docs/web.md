@@ -876,35 +876,47 @@ a lair is fought with `bot/hunt.py`.
    rolling out along the ground, the camera punching in, and settles. Same rules, damage and log line.
    **The amphibians roar** (`ROAR_ANIMATIONS["amphibian"]`, from SHOAIB's amphibian roar video of the Thornback
    Lizard; `gather` and `quake` in `fight.js`): each crouches low while Qi of its element swirls in, then throws its
-   head up with its open-mouthed picture: a starburst at its jaws, its body erupting in a spiky nova of its element,
-   two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
+   head up with its open-mouthed picture: a starburst at its jaws, a crack slammed along the ground to your feet
+   (`crack`), two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
    damage and log line.
    **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
    `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
    then rears and roars with its open-mouthed picture, an orb of crackling energy blasting at you
    (`art/fx/dragon_blast.webp`, from SHOAIB's picture, coloured by its element) with lightning streaks
-   fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
+   fanning out, mist pooling at its base, the camera
    punching in, and settles. Same rules, damage and log line.
    **The crocodiles bellow** (`ROAR_ANIMATIONS["crocodile"]`, from SHOAIB's crocodile roar video; `gather` and
    `bellow` in `fight.js`): each presses low as Qi gathers into its jaws, then throws its head up with its open-mouthed
-   picture and bellows: rings of sound pulse out of its jaws, a burst of its element with a golden heart and spikes of
-   light flares round its head, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
+   picture and bellows: its element's blast and rings of sound roll out of its jaws all the way to you, a small golden
+   flare and spikes of light fan toward you, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
    rules, damage and log line.
    **The tortoises roar** (`ROAR_ANIMATIONS["tortoise"]`, from SHOAIB's tortoise roar video; `charged` and `shell` in
    `fight.js`): each braces while its shell's runes light up and crackle with energy of its element, then lifts its head
-   with its open-mouthed picture (the Xuanwu's serpent opens its jaws too) and roars: a cone of sound rings blasts at
-   you, a great dome of its element swells round its whole body like a shield, mist rolls along the ground, the camera
+   with its open-mouthed picture (the Xuanwu's serpent opens its jaws too) and roars: its element's blast and a cone
+   of sound rings reach you, then a dome of its element swells round its body like a shield, mist rolls along the ground, the camera
    punches in, and it settles. Same rules, damage and log line.
    **The primates roar** (`ROAR_ANIMATIONS["primate"]`, from SHOAIB's primate roar video of the Silver Monkey;
    `vortex`, `beat` and `pound` in `fight.js`): each crouches, rises onto its hind legs and pounds its chest twice, a
    ring flying off its chest at each blow, while a whirlwind of its element spirals round it; then it roars with its
-   open-mouthed picture, a sphere of its element bursting round its body with rings, streaks shooting out every way,
-   shards flying and dust, the camera punching in, and settles. The Ancient Golden Ape moved here from the four-legged
+   open-mouthed picture, its element's blast and a wall of sound rings rolling at you, streaks and shards flung at
+   you, dust, the camera punching in, and settles. The Ancient Golden Ape moved here from the four-legged
    beasts. Same rules, damage and log line.
    **The insects hiss** (`ROAR_ANIMATIONS["insect"]`, from SHOAIB's insect roar video of the Venom Scorpion; `seep`
    and `venom` in `fight.js`): each crouches and rears with venom dripping and poison smoke gathering, then hisses with
-   its open-mouthed picture: purple and green venom flames rising round its body, a sphere of poison bursting out with
-   rings and droplets, and a low cloud of poison smoke left over the ground. Same rules, damage and log line.
+   its open-mouthed picture: its venom sprayed across at you with droplets through it, and a low cloud of poison smoke
+   left round your feet. Same rules, damage and log line.
+   **Every roar hits you** (SHOAIB, Nov 27: the insects', amphibians', primates'... roars looked like they were
+   "roaring to themselves", their bursts all round their own bodies). Each beast's element has its own blast, burst
+   and ground patch (`art/fx/elem/<element>_{stream,burst,ground}.webp` and `ground_crack.webp`, SHOAIB's Nano Banana
+   pictures cleaned by `scripts/make_element_fx.py`; `explore_play.beast_roar` tells the page the `element`). The
+   primates, insects, crocodiles and tortoises (and the beasts with the plain rear-back) throw the blast from the mouth
+   across to you (`blast`); the amphibians crack the ground to your feet (`crack`); the dragons, serpents, birds and
+   four-legged beasts keep their own blasts and waves. `TRAVEL` ms later it lands (`impact`): the element bursting on
+   your body twice, a white impact frame, a flash of its colour, a hard shake, you knocked back (less behind a Guard,
+   which plays your Guard), its patch on the ground at your feet, and the damage and debuffs (`struck`). An Elite's
+   roar (or any final roar) also pulses its colour round the screen's edge (`presence`); a Beast King's darkens the
+   scene, cracks the ground under itself and follows with an aftershock. Presentation only: the same rules, damage and
+   log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

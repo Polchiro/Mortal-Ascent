@@ -1071,6 +1071,34 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
   background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.8),rgba(255,255,255,.3) 14%,rgba(255,255,255,.06) 38%,transparent 65%);
   animation:broarflash .52s ease-out forwards}
 @keyframes broarflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+/* the roar hits you (fight.js `blast`, `crack`, `impact`, `presence`; art/fx/elem/, scripts/make_element_fx.py):
+   its element's own blast from its mouth to you, the burst on your body, the patch left at your feet */
+.bestream{position:absolute;width:0;height:0;z-index:5;pointer-events:none;transform:rotate(var(--rot))}
+.bestream img{position:absolute;right:0;top:calc(var(--h) / -2);width:var(--len);height:var(--h);max-width:none;
+  transform-origin:100% 50%;transform:scaleX(0);animation:bestream 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+.bestream img.glow{mix-blend-mode:screen;filter:blur(7px) brightness(1.5);opacity:.75}
+@keyframes bestream{0%{transform:scaleX(0) scaleY(.45);opacity:1}20%{transform:scaleX(1) scaleY(1);opacity:1}
+  62%{opacity:1}100%{transform:scaleX(1.05) scaleY(1.18);opacity:0}}
+.bcrack{z-index:auto}
+.bcrack img{transform:none;clip-path:inset(0 0 0 100%);filter:drop-shadow(0 0 10px var(--rc,#ffcf6a));animation:bcrack 2.1s ease-out forwards}
+@keyframes bcrack{0%{clip-path:inset(0 0 0 100%);opacity:1}13%{clip-path:inset(0 0 0 0);opacity:1}72%{opacity:1}
+  100%{clip-path:inset(0 0 0 0);opacity:0}}
+.beburst{position:absolute;z-index:6;width:var(--s);height:auto;max-width:none;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);animation:beburst .9s cubic-bezier(.15,.8,.3,1) both}
+.beburst.b2{animation-delay:90ms}
+@keyframes beburst{0%{transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);opacity:1}
+  35%{transform:translate(-50%,-50%) rotate(var(--r)) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--r) + 14deg)) scale(1.28);opacity:0}}
+.beground{position:absolute;width:var(--w);height:calc(var(--w) * .36);object-fit:fill;max-width:none;pointer-events:none;opacity:0;
+  transform:translate(-50%,-62%) scaleX(.4);animation:beground 2.4s ease-out forwards}
+.bekcrack{filter:drop-shadow(0 0 10px var(--rc))}
+@keyframes beground{0%{transform:translate(-50%,-62%) scaleX(.4);opacity:0}12%{transform:translate(-50%,-62%) scaleX(1);opacity:1}
+  70%{opacity:.9}100%{transform:translate(-50%,-62%) scaleX(1.04);opacity:0}}
+.broarflash.behit{background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.95),var(--rc) 10%,transparent 42%);
+  animation-duration:.42s}
+.bevignette{position:absolute;inset:0;left:0!important;top:0!important;z-index:7;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 110px 26px var(--rc);animation:bevignette 1.7s ease-out forwards}
+@keyframes bevignette{0%{opacity:0}14%{opacity:.95}38%{opacity:.45}58%{opacity:.8}100%{opacity:0}}
 .broarlines{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
   background:repeating-conic-gradient(from 3deg at var(--x) var(--y),rgba(255,255,255,.5) 0deg .45deg,transparent .45deg 6.3deg),
     repeating-conic-gradient(from 1deg at var(--x) var(--y),rgba(255,255,255,.32) 0deg .3deg,transparent .3deg 9.7deg);

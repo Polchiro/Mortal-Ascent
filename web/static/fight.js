@@ -955,8 +955,7 @@
       var big = final ? 1.3 : 1, tall = pic.height;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(700, tall * 0.75 * big), 480, 0, 'broarbig star', 9, 0.5);
-      var c = at(pic, 0.45, 0.45);
-      fx('bnova', c[0], c[1], 1300, {'--rc': ROAR.color, '--s': Math.min(900, pic.width * 1.25 * big) + 'px', 'animation-delay': '120ms'});
+      crack(pic, big);                                         // the ground split open all the way to your feet
       var f = at(pic, 0.5, 0.98);
       [0, 260].forEach(function (d, i) {                       // shockwave rings along the ground
         fx('bquake', f[0], f[1], 1500, {'--rc': ROAR.color, '--s': Math.min(1300, pic.width * (1.9 - 0.4 * i) * big) + 'px',
@@ -997,11 +996,6 @@
         fx('bstreak', p[0], p[1], 1300, {'--rc': j % 2 ? DRAGON_GOLD : ROAR.color, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
           '--ang': (ang + (Math.random() - 0.5) * 50) + 'deg', 'animation-delay': (40 + Math.random() * 500) + 'ms'});
       }
-      var c = at(pic, 0.45, 0.5), sz = Math.min(800, pic.width * 0.8 * big);
-      fx('bnova', c[0], c[1], 1850, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '520ms'});
-      fx('bnova', c[0], c[1], 1650, {'--rc': DRAGON_GOLD, '--s': sz * 0.55 + 'px', 'animation-delay': '620ms'});
-      wave(c, 'ring', sz * 1.2, 700, 520, 'broarbig', 0, 0.45);
-      wave(c, 'double', sz * 1.4, 800, 760, 'broarbig', 0, 0.3);
       var f = at(pic, 0.5, 0.98);                              // mist pooling at its base
       for (var m = 0; m < 10; m++) {
         var side = m % 2 ? 1 : -1;
@@ -1029,18 +1023,23 @@
     function pound(p, pic, final) {
       var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
-      var c = at(pic, 0.5, 0.48), sz = Math.min(900, Math.max(pic.width, pic.height) * 0.95 * big);
-      fx('bnova', c[0], c[1], 1650, {'--rc': ROAR.color, '--s': sz * 0.85 + 'px', 'animation-delay': '200ms'});
-      wave(c, 'ring', sz * 1.15, 650, 120, 'broarbig', 0, 0.5);
-      wave(c, 'double', sz * 1.4, 800, 380, 'broarbig', 0, 0.3);
-      for (var j = 0; j < 14; j++) {                           // streaks shooting out every way
-        fx('bstreak', c[0], c[1], 1100, {'--rc': ROAR.color, '--len': sz * (0.45 + Math.random() * 0.45) + 'px',
-          '--ang': (j * 360 / 14 + Math.random() * 12) + 'deg', 'animation-delay': (80 + Math.random() * 260) + 'ms'});
+      var tall = pic.height, you = at(fr, 0.5, 0.45), aimed = aim(p, you), len = aimed[0], ang = aimed[1];
+      wave(p, 'burst', Math.min(700, tall * 0.75 * big), 460, 0, 'broarbig star', 9, 0.6);   // the blast at its jaws
+      blast(p, pic, big);                                      // its element thrown across at you
+      for (var i = 0; i < 4; i++) {                            // a wall of sound rolling at you
+        var q = 0.15 + 0.22 * i;
+        wave([p[0] + (you[0] - p[0]) * q, p[1] + (you[1] - p[1]) * q], i % 2 ? 'double' : 'ring', Math.min(1000, tall * (0.7 + 0.25 * i) * big),
+          640, 30 + 60 * i, 'broarbig cone', 3, 0.75).style.setProperty('--ang', ang + 'deg');
       }
-      for (var k = 0; k < 26; k++) {                           // shards flying
-        var a = Math.random() * Math.PI * 2, r = sz * (0.4 + Math.random() * 0.6);
-        fx('bdrop', c[0], c[1], 1400, {'--rc': ROAR.color, '--dx': Math.cos(a) * r + 'px', '--dy': Math.sin(a) * r * 0.7 + 'px',
-          '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (100 + Math.random() * 300) + 'ms'});
+      for (var j = 0; j < 14; j++) {                           // streaks fanning out toward you
+        fx('bstreak', p[0], p[1], 1000, {'--rc': ROAR.color, '--len': len * (0.4 + Math.random() * 0.6) + 'px',
+          '--ang': (ang + (Math.random() - 0.5) * 40) + 'deg', 'animation-delay': (Math.random() * 240) + 'ms'});
+      }
+      var ar = ang * Math.PI / 180;
+      for (var k = 0; k < 24; k++) {                           // shards flung at you
+        var r = len * (0.5 + Math.random() * 0.6), sp = (Math.random() - 0.5) * tall * 0.6;
+        fx('bdrop', p[0], p[1], 1300, {'--rc': ROAR.color, '--dx': (Math.cos(ar) * r - Math.sin(ar) * sp) + 'px',
+          '--dy': (Math.sin(ar) * r + Math.cos(ar) * sp) + 'px', '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (Math.random() * 300) + 'ms'});
       }
       var f = at(pic, 0.5, 0.98);
       for (var m = 0; m < 10; m++) {
@@ -1071,25 +1070,20 @@
     function venom(p, pic, final) {
       var big = final ? 1.3 : 1;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
-      var c = at(pic, 0.5, 0.55), sz = Math.min(700, Math.max(pic.width, pic.height) * 0.7 * big);
-      for (var i = 0; i < 6; i++) {                            // venom flames rising round its body
-        fx('bcoil', c[0], c[1] + 14 - i * 6, 1500, {'--rc': i % 2 ? VENOM_PURPLE : ROAR.color, '--w': pic.width * (1.05 - 0.08 * i) + 'px',
-          '--h': pic.height * 0.28 + 'px', '--life': '1500ms', '--r0': (i * 60) + 'deg', 'animation-delay': (i * 50) + 'ms'});
+      var tall = pic.height, you = at(fr, 0.5, 0.45), aimed = aim(p, you), len = aimed[0], ar = aimed[1] * Math.PI / 180;
+      wave(p, 'burst', Math.min(600, tall * 0.7 * big), 440, 0, 'broarbig star', 9, 0.55);
+      blast(p, pic, big);                                      // the venom sprayed across at you
+      for (var k = 0; k < 40; k++) {                           // poison droplets spraying through it
+        var q = 0.25 + Math.random() * 0.85, spread = (Math.random() - 0.5) * tall * 0.6 * q * big;
+        fx('bdrop', p[0], p[1], 1300, {'--rc': k % 4 ? ROAR.color : VENOM_PURPLE,
+          '--dx': (Math.cos(ar) * len * q - Math.sin(ar) * spread) + 'px', '--dy': (Math.sin(ar) * len * q + Math.cos(ar) * spread) + 'px',
+          '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (Math.random() * 500) + 'ms'});
       }
-      fx('bnova bvnova', c[0], c[1], 1600, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '180ms'});
-      fx('bnova', c[0], c[1], 1400, {'--rc': VENOM_PURPLE, '--s': sz * 0.6 + 'px', 'animation-delay': '260ms'});
-      wave(c, 'ring', sz * 1.15, 650, 220, 'broarbig', 0, 0.5);
-      wave(c, 'double', sz * 1.35, 800, 420, 'broarbig', 0, 0.3);
-      for (var k = 0; k < 36; k++) {                           // poison droplets bursting out
-        var a = Math.random() * Math.PI * 2, r = sz * (0.35 + Math.random() * 0.55);
-        fx('bdrop', c[0], c[1], 1400, {'--rc': k % 3 ? ROAR.color : VENOM_PURPLE, '--dx': Math.cos(a) * r + 'px',
-          '--dy': Math.sin(a) * r * 0.7 + 'px', '--s': (0.5 + Math.random()).toFixed(2), 'animation-delay': (200 + Math.random() * 300) + 'ms'});
-      }
-      var f = at(pic, 0.5, 0.97);                              // a cloud of poison smoke left hanging over the ground
+      var f = at(fr, 0.5, 0.97);                               // a cloud of poison smoke left hanging round YOUR feet
       for (var m = 0; m < 8; m++) {
         var side = m % 2 ? 1 : -1;
-        fx('bdust bmist bvmist', f[0] + side * (5 + 3 * m), f[1] + 1, 2600, {'--rc': m % 3 ? VENOM_PURPLE : ROAR.color,
-          '--dx': side * (60 + 26 * m) + 'px', '--s': (0.6 + Math.random() * 0.4).toFixed(2), 'animation-delay': (300 + 40 * m) + 'ms'});
+        fx('bdust bmist bvmist', f[0] + side * (3 + 2 * m), f[1] + 1, 2600, {'--rc': m % 3 ? VENOM_PURPLE : ROAR.color,
+          '--dx': side * (40 + 20 * m) + 'px', '--s': (0.6 + Math.random() * 0.4).toFixed(2), 'animation-delay': (TRAVEL + 40 * m) + 'ms'});
       }
       camera(p, 1 + 0.07 * big, 1450);
     }
@@ -1102,16 +1096,16 @@
       var you = at(fr, 0.5, 0.45), ang = Math.atan2((you[1] - p[1]) * sr.height, (you[0] - p[0]) * sr.width) * 180 / Math.PI;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       var sz = Math.min(820, Math.max(pic.height * 2.2, pic.width * 0.7) * big);
-      fx('bnova', p[0], p[1], 1500, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '60ms'});
-      fx('bnova', p[0], p[1], 1300, {'--rc': '#ffd98a', '--s': sz * 0.5 + 'px', 'animation-delay': '120ms'});
-      wave(p, 'ring', sz * 1.05, 650, 100, 'broarbig', 0, 0.55);
-      [0, 280, 560, 840].forEach(function (d, i) {             // rings of sound pulsing out of its jaws
-        wave(p, i % 2 ? 'double' : 'ring', Math.min(1100, tall * (1.1 + 0.35 * i) * big), 760, d, 'broarbig cone', 2, 0.75)
-          .style.setProperty('--ang', ang + 'deg');
-      });
-      for (var j = 0; j < 16; j++) {                           // spikes of light
+      fx('bnova', p[0], p[1], 1100, {'--rc': '#ffd98a', '--s': sz * 0.4 + 'px', 'animation-delay': '40ms'});
+      blast(p, pic, big);                                      // its element thrown across at you
+      for (var i = 0; i < 5; i++) {                            // rings of sound rolling out of its jaws all the way to you
+        var q = 0.08 + 0.19 * i;
+        wave([p[0] + (you[0] - p[0]) * q, p[1] + (you[1] - p[1]) * q], i % 2 ? 'double' : 'ring', Math.min(1100, tall * (0.7 + 0.28 * i) * big),
+          680, 30 + 60 * i, 'broarbig cone', 3, 0.8).style.setProperty('--ang', ang + 'deg');
+      }
+      for (var j = 0; j < 12; j++) {                           // spikes of light fanning toward you
         fx('bstreak', p[0], p[1], 1100, {'--rc': j % 3 ? ROAR.color : '#ffe3a0', '--len': sz * (0.35 + Math.random() * 0.4) + 'px',
-          '--ang': (j * 360 / 16 + Math.random() * 10) + 'deg', 'animation-delay': (60 + Math.random() * 300) + 'ms'});
+          '--ang': (ang + (Math.random() - 0.5) * 60) + 'deg', 'animation-delay': (60 + Math.random() * 300) + 'ms'});
       }
       var f = at(pic, 0.3, 0.98);                              // dust blasting up off the ground
       for (var m = 0; m < 14; m++) {
@@ -1138,14 +1132,14 @@
       var sr = scene.getBoundingClientRect(), big = final ? 1.3 : 1, tall = pic.height;
       var you = at(fr, 0.5, 0.45), ang = Math.atan2((you[1] - p[1]) * sr.height, (you[0] - p[0]) * sr.width) * 180 / Math.PI;
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
-      for (var i = 0; i < 5; i++) {                            // the cone of sound rings blasting at you
-        var q = 0.05 + 0.13 * i;
+      blast(p, pic, big);                                      // its element thrown across at you
+      for (var i = 0; i < 5; i++) {                            // the cone of sound rings blasting all the way to you
+        var q = 0.06 + 0.2 * i;
         wave([p[0] + (you[0] - p[0]) * q, p[1] + (you[1] - p[1]) * q], i % 2 ? 'double' : 'ring', Math.min(1100, tall * (0.6 + 0.3 * i) * big),
           720, 40 + 70 * i, 'broarbig cone', 3, 0.85).style.setProperty('--ang', ang + 'deg');
       }
-      var c = at(pic, 0.5, 0.62), sz = Math.min(1000, Math.max(pic.width, pic.height) * 1.25 * big);
-      fx('bdome', c[0], c[1], 1900, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '280ms'});    // the shield
-      [480, 820].forEach(function (d) { wave(c, 'ring', sz * 1.1, 700, d, 'broarbig', 0, 0.4); });
+      var c = at(pic, 0.5, 0.62), sz = Math.min(800, Math.max(pic.width, pic.height) * 0.95 * big);
+      fx('bdome', c[0], c[1], 1400, {'--rc': ROAR.color, '--s': sz + 'px', 'animation-delay': '420ms'});    // its shield, after the blast
       var f = at(pic, 0.5, 0.98);                              // mist rolling out along the ground
       for (var m = 0; m < 12; m++) {
         var side = m % 2 ? 1 : -1;
@@ -1153,6 +1147,87 @@
           '--dx': side * (70 + 28 * m) + 'px', '--s': (0.9 + Math.random() * 0.6).toFixed(2), 'animation-delay': (300 + 30 * m) + 'ms'});
       }
       camera(p, 1 + 0.06 * big, 1550);
+    }
+    /* The roar HITS you (SHOAIB, Nov 27: the scorpion's, toad's, ape's... roars "look like they are roaring to
+       themselves"). Every roar now goes: Qi gathered at its mouth, a blast of its own element thrown from its mouth
+       across to you (art/fx/elem/<element>_stream.webp, scripts/make_element_fx.py), and TRAVEL ms later the hit on
+       you (`impact`): its element bursting on your body, a white impact frame, you knocked back, a hard shake, and its
+       element left on the ground at your feet (<element>_ground.webp) for a moment. The toads and lizards instead
+       slam a crack along the ground to your feet (ground_crack.webp) and the burst erupts under you. An Elite's roar
+       also pulses its element round the edge of the screen; a Beast King's darkens the scene, cracks the ground under
+       itself and follows with an aftershock. Presentation only: the damage and debuffs are the server's (`struck`). */
+    var TRAVEL = 280;
+    var ELEM = ROAR && ROAR.element ? '/art/fx/elem/' + ROAR.element : null;
+    var TIER_OF = {ring: 0, double: 1, burst: 2};               // normal, Elite, Beast King (beast_roar "wave")
+    if (ELEM) ['_stream', '_burst', '_ground'].forEach(function (k) { new Image().src = ELEM + k + '.webp'; });
+    function aim(p, you) {                                       // from p to you: [length in px, angle in degrees]
+      var sr = scene.getBoundingClientRect(), dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
+      return [Math.sqrt(dx * dx + dy * dy), Math.atan2(dy, dx) * 180 / Math.PI];
+    }
+    function piece(cls, src, xPct, yPct, life, style) {          // one of the element's pictures, over the scene
+      var n = document.createElement('img');
+      n.className = cls; n.src = src; n.alt = '';
+      n.style.left = xPct + '%'; n.style.top = yPct + '%';
+      Object.keys(style || {}).forEach(function (k) { n.style.setProperty(k, style[k]); });
+      scene.appendChild(n);
+      setTimeout(function () { n.remove(); }, life);
+      return n;
+    }
+    function blast(p, pic, big) {                                // the element thrown from its mouth across to you
+      if (!ELEM) return;
+      var you = at(fr, 0.5, 0.45), a = aim(p, you), len = a[0] * 1.12;
+      var h = Math.min(pic.height * 1.1, Math.max(150, len * 0.42)) * big;
+      var wrap = document.createElement('div');                  // turned to face you; the picture's bright end at its mouth
+      wrap.className = 'bestream'; wrap.style.left = p[0] + '%'; wrap.style.top = p[1] + '%';
+      wrap.style.setProperty('--rot', (a[1] - 180) + 'deg');
+      wrap.innerHTML = '<img alt="" src="' + ELEM + '_stream.webp"><img class="glow" alt="" src="' + ELEM + '_stream.webp">';
+      wrap.style.setProperty('--len', len + 'px'); wrap.style.setProperty('--h', h + 'px');
+      scene.appendChild(wrap);
+      setTimeout(function () { wrap.remove(); }, 1500);
+    }
+    function crack(pic, big) {                                   // a crack slammed along the ground to your feet
+      var from = at(pic, 0.15, 0.97), to = at(fr, 0.55, 0.97), a = aim(from, to);
+      var wrap = document.createElement('div');
+      wrap.className = 'bestream bcrack'; wrap.style.left = from[0] + '%'; wrap.style.top = from[1] + '%';
+      wrap.style.setProperty('--rot', (a[1] - 180) + 'deg');
+      wrap.style.setProperty('--len', a[0] * 1.15 + 'px'); wrap.style.setProperty('--h', Math.min(240, a[0] * 0.3) * big + 'px');
+      wrap.innerHTML = '<img alt="" src="/art/fx/elem/ground_crack.webp">';
+      if (ROAR.element !== 'earth') wrap.style.setProperty('--rc', ROAR.color);
+      scene.insertBefore(wrap, fighter);                         // on the ground, under you
+      setTimeout(function () { wrap.remove(); }, 2200);
+    }
+    function impact(final, low) {                                // the roar lands on you
+      var big = final ? 1.3 : 1, tier = TIER_OF[ROAR.wave] || 0;
+      var you = at(fr, 0.5, low ? 0.7 : 0.45), feet = at(fr, 0.5, 0.97), sz = Math.min(760, fr.height * (0.95 + 0.15 * tier) * big);
+      if (ELEM) {
+        piece('beburst', ELEM + '_burst.webp', you[0], you[1], 900, {'--s': sz + 'px', '--r': (Math.random() * 40 - 20) + 'deg'});
+        piece('beburst b2', ELEM + '_burst.webp', you[0], you[1], 1000, {'--s': sz * 0.7 + 'px', '--r': (Math.random() * 90 + 60) + 'deg'});
+        var g = piece('beground', ELEM + '_ground.webp', feet[0], feet[1], 2400, {'--w': Math.min(560, fr.width * 0.85 * big) + 'px'});
+        scene.insertBefore(g, fighter);                          // on the ground, under your feet
+      }
+      var flash = fx('broarflash behit', 0, 0, 420); flash.style.setProperty('--x', you[0] + '%'); flash.style.setProperty('--y', you[1] + '%');
+      flash.style.setProperty('--rc', ROAR.color);
+      if (scene.animate) {                                       // the impact frame: one blinding beat, then the shake
+        scene.animate([{filter: 'none'}, {filter: 'brightness(1.9) contrast(1.35) saturate(.35)', offset: 0.12},
+                       {filter: 'brightness(1.15)', offset: 0.4}, {filter: 'none'}], {duration: 300, easing: 'ease-out'});
+        var q = 9 + 4 * tier;
+        fighter.animate([{transform: 'none'}, {transform: 'translate(' + -q + 'px,' + q * 0.4 + 'px)'}, {transform: 'translate(' + q * 0.7 + 'px,' + -q * 0.3 + 'px)'},
+                         {transform: 'translate(' + -q * 0.4 + 'px,0)'}, {transform: 'none'}], {duration: 380});
+      }
+      if (tier >= 2 && ELEM) setTimeout(function () {           // a Beast King's aftershock
+        piece('beburst', ELEM + '_burst.webp', you[0], you[1], 900, {'--s': sz * 1.35 + 'px', '--r': '30deg'});
+      }, 420);
+    }
+    function presence(pic, final) {                              // what an Elite's or a Beast King's roar does to the whole scene
+      var tier = TIER_OF[ROAR.wave] || 0;
+      if (final && tier < 1) tier = 1;
+      if (tier >= 1) { var v = fx('bevignette', 0, 0, 1700); v.style.setProperty('--rc', ROAR.color); }
+      if (tier >= 2) {
+        scene.insertBefore(fx('tdim', 50, 50, 2200, {'--life': '2200ms'}), beastBox);
+        var f = at(pic, 0.5, 0.97);
+        var c = piece('beground bekcrack', '/art/fx/elem/ground_crack.webp', f[0], f[1], 2400, {'--w': Math.min(1100, pic.width * 1.6) + 'px', '--rc': ROAR.color});
+        scene.insertBefore(c, beastBox);
+      }
     }
     var roarPic = null;                                          // the open-mouthed roar picture, loaded ahead
     if (ROAR && ROAR.art) { roarPic = new Image(); roarPic.src = ROAR.art; }
@@ -1162,6 +1237,7 @@
       var beastStill = {naturalWidth: beast.naturalWidth, naturalHeight: beast.naturalHeight};
       for (var i = 0; i < M.ms.length; i++) at0.push(at0[i] + M.ms[i]);
       var BURST = at0[M.burst], HOLD0 = at0[M.hold], HOLD1 = at0[M.hold + 1], TOTAL = at0[at0.length - 1];
+      var IMPACT = BURST + TRAVEL;                             // the blast reaches you
       function once(k) { if (did[k]) return false; did[k] = true; return true; }
       function measure(img) {                                  // the picture as drawn (object-fit: contain, feet down)
         img = img || beast;
@@ -1202,7 +1278,7 @@
             '--s': (0.7 + Math.random() * 0.6).toFixed(2), 'animation-delay': (30 * j) + 'ms'});
         }
       }
-      return {end: Math.max(TOTAL, BURST + ROAR_MS) + 150, render: function (t) {
+      return {end: Math.max(TOTAL + 200, BURST + ROAR_MS, IMPACT + 900) + 150, render: function (t) {
         if (t < 0) return;
         if (once('start')) { measure(); if (ev.dmg) hold('me'); }
         if (M.style === 'screech' && t >= at0[1] && once('gather')) gather(mouth(pose3(at0[2])), BURST - at0[1]);
@@ -1219,10 +1295,12 @@
         if (t >= BURST && t < HOLD1) shake = Math.sin(t / 16) * 1.6 * (1 - span(t, HOLD0, HOLD1) * 0.7);   // trembling
         var sw = 1 + (M.swell || 0) * (t < BURST ? span(t, BURST - 150, BURST) : 1 - span(t, HOLD1, TOTAL));   // thrown toward you
         beast.style.transform = 'translate(' + (-p[0] * pic.width + shake) + 'px,' + (p[1] * pic.height) + 'px) rotate(' + p[2] + 'deg) scale(' + sw + ')';   // clockwise: a left-facing head goes up
-        if (t >= BURST && t < TOTAL) {                         // the blast pushes you back, then you find your feet
-          var push = t < HOLD1 ? ease(span(t, BURST, BURST + 220)) : 1 - span(t, HOLD1, TOTAL);
-          hero(-0.022 * W * push + (t < HOLD1 ? Math.sin(t / 23) * 1.2 : 0), 0);
+        if (t >= IMPACT && t < TOTAL + 200) {                  // the blast knocks you back, then you find your feet
+          var push = t < HOLD1 ? ease(span(t, IMPACT, IMPACT + 140)) : 1 - span(t, HOLD1, TOTAL + 200);
+          var back = ev.guard ? 0.016 : 0.04;                  // a Guard holds its ground better
+          hero(-back * W * push + (t < HOLD1 ? Math.sin(t / 23) * 1.6 : 0), 0, ev.guard ? 0 : -3 * push);
         }
+        if (ev.guard && t >= IMPACT - 320) { if (!block(t - IMPACT)) pose('idle'); }   // your Guard takes it
         if (bposes && bposes.roar) bpose(t >= BURST - 60 && t < HOLD1 ? 'roar' : home);
         else if (roarPic && roarPic.complete && roarPic.naturalWidth) {      // its own open-mouthed roar picture
           var open = t >= BURST - 60 && t < HOLD1;
@@ -1241,12 +1319,13 @@
           else if (M.style === 'bellow') bellow(mouth(p), pic, ev.final);
           else if (M.style === 'shell') shell(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
-          struck(ev);
+          presence(pic, ev.final);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
+        if (t >= IMPACT && once('impact')) { impact(ev.final, M.style === 'quake'); struck(ev); }
       }, clear: function () {
-        hero(0, 0);
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow').forEach(function (n) { n.remove(); });
+        hero(0, 0); if (ev.guard) pose('idle');
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow,.bestream,.beburst,.beground,.bevignette').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beastBox.classList.remove('roaring');
         beast.style.transform = ''; beast.style.transformOrigin = '';
@@ -1265,12 +1344,17 @@
     }
     function roaring(ev) {
       if (ROAR && ROAR.motion) return roaringMoved(ROAR.motion, ev);
-      var done = false;
-      return {end: ROAR_MS + 150, render: function (t) {
+      var done = false, hit = false;
+      return {end: Math.max(ROAR_MS, 120 + TRAVEL + 900) + 150, render: function (t) {
         if (t < 0) return;
         var k = span(t, 0, 260), back = k < 1 ? Math.sin(Math.PI * k) : 0;     // it rears back a little as it roars
         animal(0.008 * W * back, -0.006 * W * back, 3 * back, 0);
-        if (t >= 120 && !done) { done = true; roar(); struck(ev); }
+        if (t >= 120 && !done) {
+          done = true; roar();
+          var bx = beast.getBoundingClientRect();
+          blast(ROAR.head ? at(bx, ROAR.head[0], ROAR.head[1]) : at(bx, 0.15, 0.35), bx, ev.final ? 1.3 : 1); presence(bx, ev.final);
+        }
+        if (t >= 120 + TRAVEL && !hit) { hit = true; impact(ev.final); struck(ev); }
       }, clear: function () { var n = scene.querySelector('.broar'); if (n) n.remove(); }};
     }
 
