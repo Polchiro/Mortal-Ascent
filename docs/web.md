@@ -982,6 +982,10 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
 and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python** and the **Spear-Beak Crane**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
+**The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
+move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
+Break's texts are a line longer than Strike's, and hovering them used to grow the panel, shrink the scene above it and
+make the beast, the hero and the background jump (SHOAIB: "it keeps refreshing").
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its
