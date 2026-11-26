@@ -184,7 +184,9 @@ The server opens the chest the moment you touch it (so the result is ready, and 
 one: each opening carries a nonce, and the same nonce answers the same result). The chest shakes, light leaks out, and
 it **opens**: the lid snaps up with a little bounce (the closed picture swapped for the open one, drawn on the same
 canvas so the body doesn't move), rays of the chest's colour turn out of it, sparks of that colour fly up and fall
-back, and SHOAIB's **burst** video plays with its sound, tinted to the chest's colour. The chest then **stays open**
+back, and SHOAIB's **burst** video plays with its sound, tinted to the chest's colour. Everything comes **out of the
+chest's mouth** (53% down the chest picture): the burst video's fountain foot is set there and the video sized to the
+chest, the sparks start there and the rays turn around it, so nothing rises from the floor. The chest then **stays open**
 on the altar, its light breathing softly, while the rewards come out. The **Lotus Coins** pour out with a
 counting number, then every reward lands as the **same jade slip**, and they turn over one by one, **worst first**.
 Each card's front shows its rarity: plain for Common, a coloured frame and band for Uncommon and Rare, turning rays

@@ -84,7 +84,7 @@ body.chbg .privacy{display:none}
 .chbox.open .chchest{opacity:0;transition:opacity .09s}
 .chbox.open .chopened{opacity:1;animation:chpop .55s cubic-bezier(.2,1.6,.4,1);filter:drop-shadow(0 0 26px var(--rc)) drop-shadow(0 18px 22px rgba(0,0,0,.75))}
 @keyframes chpop{0%{transform:translateY(3%) scale(.96,1.04);opacity:.4}45%{transform:translateY(-4%) scale(1.04,.97);opacity:1}100%{transform:none}}
-.chrays{position:absolute;left:50%;top:44%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;border-radius:50%;
+.chrays{position:absolute;left:50%;top:53%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;border-radius:50%;
   background:conic-gradient(from 0deg,transparent 0 8deg,var(--rc) 12deg,transparent 18deg 40deg,var(--rc) 46deg,transparent 52deg 80deg,var(--rc) 86deg,transparent 92deg 128deg,
     var(--rc) 134deg,transparent 140deg 170deg,var(--rc) 176deg,transparent 182deg 215deg,var(--rc) 221deg,transparent 227deg 258deg,var(--rc) 264deg,transparent 270deg 300deg,var(--rc) 306deg,transparent 312deg 360deg);
   -webkit-mask:radial-gradient(circle,#000 8%,transparent 62%);mask:radial-gradient(circle,#000 8%,transparent 62%);mix-blend-mode:screen}

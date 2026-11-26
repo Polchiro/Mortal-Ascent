@@ -225,8 +225,16 @@
   /* the burst video is light on black: drawn added onto the scene and tinted to the chest's colour */
   var tintC = document.createElement('canvas'), tc = tintC.getContext('2d');
   function rgb(c) { var m = /(\d+)\D+(\d+)\D+(\d+)/.exec(c || ''); return m ? [+m[1], +m[2], +m[3]] : [255, 220, 150]; }
+  /* where the light comes out: the open chest's mouth (its glowing inside, 53% down the chest picture) */
+  var MOUTH = 0.53, BURST_FOOT = 0.985, BURST_WIDE = 2.8;
+  function mouth() {
+    var r = $('chbox').getBoundingClientRect(), dpr = fxc.width / Math.max(1, fxc.getBoundingClientRect().width);
+    return {x: (r.left + r.width / 2) * dpr, y: (r.top + r.height * MOUTH) * dpr, w: r.width * dpr};
+  }
+  /* the burst video is a fountain of light rising from the middle of its bottom edge: that point is set on the
+     chest's mouth, and the video sized to the chest, so the light pours out of the chest and nowhere else */
   function drawVideo(v, alpha) {
-    var W = fxc.width, H = fxc.height, k = Math.max(W / 1280, H / 720), w = 1280 * k, h = 720 * k, x = (W - w) / 2, y = (H - h) / 2 - H * 0.05;
+    var m = mouth(), w = Math.min(m.w * BURST_WIDE, fxc.width * 1.3), h = w * 720 / 1280, x = m.x - w / 2, y = m.y - h * BURST_FOOT;
     tintC.width = 640; tintC.height = 360;
     tc.globalCompositeOperation = 'source-over'; tc.drawImage(v, 0, 0, 640, 360);
     var c = rgb(T.color);
@@ -237,8 +245,8 @@
   var motes = [];
   function sparks(n) {
     if (reduced) n = Math.round(n / 4);
-    var r = $('chbox').getBoundingClientRect(), dpr = fxc.width / Math.max(1, fxc.getBoundingClientRect().width);
-    var x = (r.left + r.width / 2) * dpr, y = (r.top + r.height * 0.42) * dpr, w = r.width * 0.32 * dpr, t = performance.now();
+    var m = mouth(), dpr = fxc.width / Math.max(1, fxc.getBoundingClientRect().width);
+    var x = m.x, y = m.y, w = m.w * 0.32, t = performance.now();
     for (var i = 0; i < n; i++) motes.push({x: x + (Math.random() - 0.5) * w, y: y, vx: (Math.random() - 0.5) * 5 * dpr,
       vy: -(4 + Math.random() * 9) * dpr, t: t, life: 900 + Math.random() * 900, s: (1.5 + Math.random() * 2.5) * dpr});
   }
