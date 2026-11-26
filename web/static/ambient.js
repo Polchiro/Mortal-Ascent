@@ -14,7 +14,7 @@
    video already shows something (the aurora, falling leaves, mist, lightning), the canvas leaves it out (`skip`).
 
    The place's own sound (`sound`: art/scenes/<scene>.m4a, the video's ambience looped by the same script: wind,
-   rain, thunder, crickets) plays quietly under the fight while the video does, at a third of the Settings volume.
+   rain, thunder, crickets; the bamboo's and the gorge's made by scripts/make_ambience.py) plays quietly under the fight while the video does, at a third of the Settings volume.
    It follows Settings (Sound Off or Music Off: none), pauses while the tab is hidden, and starts on the first tap
    or key if the browser didn't let it start by itself. */
 (function () {
@@ -25,7 +25,7 @@
   // mist: soft banks drifting sideways (how many, how high as shares of the scene, how strong, which tint)
   // fall: falling things (kind, how many per 1000 px of width, speed, wind), motes: glowing specks, flash: lightning
   var V = '/art/scenes/', PLACES = {
-    bamboo_forest: {video: V + 'battle_bamboo_forest.mp4', skip: ['fall', 'mist'],
+    bamboo_forest: {video: V + 'battle_bamboo_forest.mp4', sound: V + 'battle_bamboo_forest.m4a', skip: ['fall', 'mist'],
                     mist: {n: 4, y: [0.55, 0.85], a: 0.10, c: '214,224,206'},
                     fall: {kind: 'leaf', n: 9, speed: 0.06, wind: 0.015, colors: ['#C8792E', '#A85A22', '#D9A441', '#8C6A2E']},
                     motes: {n: 10, y: [0.15, 0.6], c: '255,236,190', a: 0.5}},
@@ -36,7 +36,7 @@
                          sound: V + 'battle_northern_sea_wilds.m4a', skip: ['aurora'],
                          fall: {kind: 'snow', n: 34, speed: 0.05, wind: 0.03},
                          mist: {n: 3, y: [0.6, 0.9], a: 0.09, c: '200,230,255', speed: 1.6}},
-    red_cliff_gorge: {video: V + 'battle_red_cliff_gorge.mp4', skip: ['gust'],
+    red_cliff_gorge: {video: V + 'battle_red_cliff_gorge.mp4', sound: V + 'battle_red_cliff_gorge.m4a', skip: ['gust'],
                       fall: {kind: 'sand', n: 55, speed: 0.0, wind: 0.32, colors: ['#F2C28A', '#E0A060', '#FFD9A8']},
                       gust: {c: '226,160,100'}},
     thunder_peaks: {video: V + 'battle_thunder_peaks.mp4', sound: V + 'battle_thunder_peaks.m4a', skip: ['flash'],

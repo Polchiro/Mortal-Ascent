@@ -1014,9 +1014,9 @@ background picture:
 
 | Background | Its video (and sound) | The canvas adds |
 |---|---|---|
-| Bamboo Forest | bamboo swaying, leaves drifting down, light rays, mist (no sound) | motes of light |
+| Bamboo Forest | bamboo swaying, leaves drifting down, light rays, mist (birds, airy wind, rustling leaves, bamboo knocking*) | motes of light |
 | Misty Pine Valley | fog rolling across the valley and the moss, clouds over the cliffs (wind, dripping water) | floating spores |
-| Red Cliff Gorge | dust in the golden light, grass swaying, heat haze (no sound) | wind-blown sand streaks |
+| Red Cliff Gorge | dust in the golden light, grass swaying, heat haze (warm desert wind, hissing grass, a far hawk*) | wind-blown sand streaks |
 | Thunder Peaks | churning clouds, lightning on the peaks every few seconds, reflections (thunder, rain) | slanted rain, low mist |
 | Northern Sea Wilds | the aurora flowing, snow and frost mist, the dark sea moving (wind, creaking ice, waves) | snow, icy wisps |
 | Arena ruins (duels, the Ruins hunt) | the rune circle pulsing, motes rising, clouds past the moon (night wind, crickets) | faint ground mist |
@@ -1029,8 +1029,9 @@ aurora). Not with reduced motion or when the browser saves data: the painting sh
 
 **Their sound:** where the video has one, its ambience loops quietly under the fight (`sound`, art/scenes/<scene>.m4a,
 at a third of the Settings volume): off with Sound Off or Music Off, paused while the tab is hidden, started by the
-first tap or key if the browser held it back. Bamboo Forest and Red Cliff Gorge came without sound: a new video with
-sound can be added the same way.
+first tap or key if the browser held it back. *Bamboo Forest's and Red Cliff Gorge's videos came without sound, so
+theirs is made by `scripts/make_ambience.py` from the other places' sound (the valley's birds and drips, the north's
+wind) plus rustling leaves, bamboo knocks, desert gusts, grass and a hawk made in code, looped the same way.
 
 `scripts/make_background_loop.py <scene> video.mp4 [painting.png]` makes them all: Gemini's sparkle (and, on the
 gorge, the "AI" badge) covered with the ground just beside it on the painting and on every frame of the video, the

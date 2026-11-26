@@ -896,7 +896,7 @@ def test_her_strike_and_break_play_frame_by_frame_from_her_stance(client):
 
 SCENES = ("battle_bamboo_forest", "battle_misty_pine_valley", "battle_red_cliff_gorge", "battle_thunder_peaks",
           "arena_ruins", "battle_northern_sea_wilds")
-WITH_SOUND = ("battle_misty_pine_valley", "battle_thunder_peaks", "arena_ruins", "battle_northern_sea_wilds")
+WITH_SOUND = SCENES          # the bamboo's and the gorge's made by scripts/make_ambience.py
 
 
 def test_every_fight_place_plays_its_background_video_and_sound(client):
