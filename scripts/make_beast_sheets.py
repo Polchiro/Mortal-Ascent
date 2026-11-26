@@ -79,23 +79,28 @@ CLIPS = {
     # Nov 27 redesign (pale: no `white` wipe): its bite ends in a burst of ice shards, so the bite is taken up to just
     # before them and plays there and back; its idle from the calm start of that video (Veo crept a little closer by
     # the bite, so the bite is placed by its own first frame and eases in and out)
-    "frost_wolf": {"attack": (1.8, 4.55), "hit": (0.7, 2.25), "death": (2.3, 5.5), "idle_span": (24, 40),
-                   "idle_until": 1.8, "attack_ms": 2600, "pingpong": ("attack",),
+    # Its idle (Nov 27 fix): the video's first second hardly moved, so the idle is the slight turn and dip of its head
+    # just before the bite begins
+    "frost_wolf": {"attack": (1.8, 4.55), "hit": (0.7, 2.25), "death": (2.3, 5.5), "idle_span": (12, 19),
+                   "idle_from": 0.8, "idle_until": 1.6, "attack_ms": 2600, "pingpong": ("attack",),
                    "ease_in": {"attack": 3, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
                    "place_as": {"death": "hit"}},
     # Nov 27 redesign, standing (wings folded): its first attack and hit spread its wings off the video and drew a slash
     # arc, so they come from a remade video (idle, flinch, beak stab: wings folded); its fall from the first hit video
-    "thunder_hawk": {"attack": (4.15, 7.0), "hit": (0.85, 3.0), "death": (2.5, 6.6), "idle_span": (12, 22),
-                     "idle_until": 0.95, "attack_ms": 2600,
+    # Its idle (Nov 27 fix): the turn of its head as it settles after the flinch, before the stab (the still frames at
+    # the start looked frozen)
+    "thunder_hawk": {"attack": (4.15, 7.0), "hit": (0.85, 3.0), "death": (2.5, 6.6), "idle_span": (10, 15),
+                     "idle_from": 2.9, "idle_until": 3.55, "attack_ms": 2600,
                      "ease_in": {"attack": 2, "hit": 2, "death": 5}, "settle": {"attack": 3, "hit": 3},
                      "place_as": {"attack": "idle", "hit": "idle"}},
     # Nov 27 redesign: Veo grew its short tail long in every video, so each move is taken before the tail grows: its
     # idle, flinch and collapse from the remade hit + death video, its snapping bite from the first hit video (stopped
     # before a white spark the video drew on its head), each easing in from the idle
-    "ember_lizard": {"attack": (0.7, 1.55), "hit": (1.0, 3.0), "death": (4.0, 4.9), "idle_span": (12, 22),
-                     "idle_until": 0.95, "attack_ms": 1800,
-                     "ease_in": {"attack": 3, "hit": 2, "death": 4}, "settle": {"attack": 3, "hit": 3},
-                     "place_as": {"hit": "idle"}},
+    # Its idle (Nov 27 fix): the remade video's first second hardly moved, so the idle is the gentle head dip and throat
+    # swell at the start of its first video (before it opens its mouth); the flinch is then placed by its own first frame
+    "ember_lizard": {"attack": (0.7, 1.55), "hit": (1.0, 1.85), "death": (4.0, 4.9), "idle_span": (8, 13),
+                     "idle_from": 0.33, "idle_until": 0.88, "attack_ms": 1800,
+                     "ease_in": {"attack": 3, "hit": 3, "death": 4}, "settle": {"attack": 3, "hit": 3}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

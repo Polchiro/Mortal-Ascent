@@ -1,11 +1,11 @@
 {
  "cell": [
-  449,
-  299
+  445,
+  294
  ],
  "still": [
   163.2,
-  12.6,
+  7.2,
   233.4,
   283.8
  ],
@@ -15,9 +15,9 @@
    "frames": 16,
    "cols": 8,
    "rows": 2,
-   "ms": 1000,
+   "ms": 834,
    "smooth": true,
-   "nose_x": 0.3608
+   "nose_x": 0.3461
   },
   "attack": {
    "src": "/art/beasts/sheets/thunder_hawk/attack.webp",
@@ -26,8 +26,8 @@
    "rows": 5,
    "ms": 2600,
    "bite": 19,
-   "reach": 0.1671,
-   "bite_x": 0.2673
+   "reach": 0.1542,
+   "bite_x": 0.2719
   },
   "hit": {
    "src": "/art/beasts/sheets/thunder_hawk/hit.webp",

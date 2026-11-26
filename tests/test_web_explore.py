@@ -1199,8 +1199,9 @@ def test_the_thunder_hawk_is_animated_from_its_own_videos_with_its_own_voice():
 
 def test_the_ember_lizard_is_animated_from_its_own_videos_with_its_own_voice():
     """SHOAIB's redesigned Ember Lizard (Nov 27, Martial Master): Veo grew its short tail long in every video, so
-    each move is cut before that: idle, flinch and collapse from the remade video, its snapping bite from the first hit
-    video (before a spark on its head), each easing in from the idle."""
+    each move is cut before that: flinch and collapse from the remade video, its snapping bite from the first hit
+    video (before a spark on its head), its idle from the head dip at the start of the first video (the remade video's
+    first second hardly moved), each easing in from the idle."""
     import json
     from web import beast_sheets, death, explore_play
     d = beast_sheets.sheets("ember_lizard")
