@@ -941,6 +941,23 @@ def test_the_rock_python_is_animated_from_its_own_videos_with_its_own_voice():
     assert explore_play.beast_body("Rock Python") == "rock_python"
 
 
+def test_the_spear_beak_crane_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Spear-Beak Crane (Nov 26: standing, never flying; Veo gave it a red-crowned crane's black
+    tail from its first move, so its idle comes from the black-tailed calm end of its strike video): the wing-flaring
+    spear-beak stab, the flailing stagger, the fall onto its side; its cries from its videos."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("spear_beak_crane")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Spear-Beak Crane", "slug": "spear_beak_crane"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "spear_beak_crane.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@spear_beak_crane" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["spear_beak_crane@roar"][:2] == [0.1, 0.41]
+    assert explore_play.beast_body("Spear-Beak Crane") == "spear_beak_crane"
+
+
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
     """`make_beast_sheets`: a move from several stretches of its video joined (the fox's pounce), frames an effect
     covered dropped, and a sparkle box that keeps a pale tail tip lying over it."""
