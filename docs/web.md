@@ -983,7 +983,8 @@ time, fading over the last in 0.12 s:
   and the damage number stay.
 - **Death** plays when it is beaten (`death.view` kind `sheet`), the thud where it lands (`impact`), and it then
   lies on its last frame, also on a fresh page of the won fight.
-- Its roar plays over its idle frames, turning on the roar's own pivot.
+- Its roar plays over its idle frames, turning on the roar's own pivot; while its jaws are open its open-mouthed roar
+  picture (`art/beasts/roar/`) shows instead of the frames (`.beast.sheeted.roaring`), then the frames come back.
 - **Kept apart:** its bite stops with its jaws at the cultivator's front (`bite_x` in `sheets.json`, `FRONT` in
   `fight.js`) and your Strike stops with the sword tip at its nose (`nose_x`), so neither runs into the other.
 - Damage, rules and every other beast are unchanged.
