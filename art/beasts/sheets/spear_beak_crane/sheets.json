@@ -1,0 +1,48 @@
+{
+ "cell": [
+  868,
+  491
+ ],
+ "still": [
+  239.4,
+  114.6,
+  351.0,
+  366.0
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/spear_beak_crane/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "smooth": true,
+   "nose_x": 0.2995
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/spear_beak_crane/attack.webp",
+   "frames": 35,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2200,
+   "bite": 24,
+   "reach": 0.6923,
+   "bite_x": 0.0035
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/spear_beak_crane/hit.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2150
+  },
+  "death": {
+   "src": "/art/beasts/sheets/spear_beak_crane/death.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "impact": 19
+  }
+ }
+}

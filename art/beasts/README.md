@@ -46,5 +46,7 @@ on its back (no loose leaves or floating crystals; no longer on a slab). The **M
 Beast King, is a colossal scarred tiger with a blood-red glowing eye, animated from its own videos (its old cut-out
 poses in `poses/` are retired). That completes the Martial Apprentice realm. The **Rock Python** (Martial Warrior) is a giant stone-patterned
 python, no longer coiled round a boulder. Gemini's sparkle, when it lands on the beast, is lifted off by un-blending
-it (it is a see-through white star: measured once on a plain backdrop, then removed from scales underneath). The beasts are
+it (it is a see-through white star: measured once on a plain backdrop, then removed from scales underneath). The **Spear-Beak Crane** stands and fights on its feet (no longer flying), with a long
+steel-grey spear beak; Veo gave it a real red-crowned crane's black tail in every move, so its idle is taken from a
+black-tailed stretch too (its picture keeps the icy-blue tail). The beasts are
 being redone one at a time in roster order the same way.

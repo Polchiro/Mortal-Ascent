@@ -78,6 +78,11 @@ CLIPS = {
     # its coiled tail tip touched the video's right edge as it struck
     "rock_python": {"attack": (3.5, 7.5), "hit": (0.4, 2.4), "death": (3.9, 7.0), "idle_span": (36, 60),
                     "idle_until": 3.4, "attack_ms": 2600, "fade": {"attack": 40}},
+    # Veo gave it a real red-crowned crane's black tail from its first move on: the idle from the calm end of the
+    # strike video (black-tailed too), and its flapping wing tips brushed the top
+    "spear_beak_crane": {"attack": (3.0, 5.9), "hit": (0.45, 2.6), "death": (3.6, 6.2), "idle_span": (30, 44),
+                         "idle_from": 5.85, "attack_ms": 2200,
+                         "fade": {"attack": 30, "hit": ("top", 30), "death": ("top", 30)}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
