@@ -53,11 +53,11 @@ def test_every_quadruped_roars_as_itself_with_the_shared_movement():
         assert slug in heads
         r = explore_play.beast_roar({"name": name, "slug": slug, "element": beasts.element_of(name), "tier": "normal"})
         assert r["motion"]["keys"][move["burst"]] == list(move["keys"][move["burst"]]) and r["head"] == heads[slug][:2]
-    assert len(pics) == len(beasts.QUADRUPEDS) == 28
+    assert len(pics) == len(beasts.QUADRUPEDS) == 29
 
 
 def test_other_beasts_keep_the_plain_roar():
-    for name in ("Stray Dog Pack", "Lightning Weasel"):
+    for name in ("Lightning Weasel", "Pixiu"):
         assert beasts.roar_category(name) is None
         assert explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "tier": "normal"})["motion"] is None
 
@@ -83,7 +83,7 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
-    assert explore_play.beast_roar({"name": "Stray Dog Pack", "slug": "stray_dog_pack", "tier": "normal"})["art"] is None
+    assert explore_play.beast_roar({"name": "Lightning Weasel", "slug": "lightning_weasel", "tier": "normal"})["art"] is None
 
 
 def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():
