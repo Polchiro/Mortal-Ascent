@@ -764,6 +764,24 @@ def test_the_field_viper_is_animated_from_its_own_videos_with_its_own_voice():
     assert explore_play.beast_body("Field Viper") == "field_viper"
 
 
+def test_the_stray_dog_is_one_animated_dog_with_its_own_voice():
+    """SHOAIB's redesigned Stray Dog Pack (Nov 26): one gaunt stray instead of three, animated from its own two videos
+    (its lunge played there and back, since it ran off the video), its sounds from them, a roar picture ready."""
+    import json
+    import os
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("stray_dog_pack")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    a = d["sheets"]["attack"]
+    assert a["frames"] % 2 == 0 and 0 < a["bite"] < a["frames"]
+    assert death.view({"kind": "beast", "name": "Stray Dog Pack", "slug": "stray_dog_pack"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "stray_dog_pack.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@stray_dog_pack" in keys
+    assert explore_play.beast_body("Stray Dog Pack") == "stray_dog_pack"
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

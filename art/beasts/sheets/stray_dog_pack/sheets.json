@@ -1,0 +1,47 @@
+{
+ "cell": [
+  704,
+  398
+ ],
+ "still": [
+  127.2,
+  45.6,
+  540.0,
+  339.0
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/stray_dog_pack/idle.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2083,
+   "nose_x": 0.1747
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/stray_dog_pack/attack.webp",
+   "frames": 28,
+   "cols": 8,
+   "rows": 4,
+   "ms": 1800,
+   "bite": 14,
+   "reach": 0.1852,
+   "bite_x": 0.0014
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/stray_dog_pack/hit.webp",
+   "frames": 18,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1500
+  },
+  "death": {
+   "src": "/art/beasts/sheets/stray_dog_pack/death.webp",
+   "frames": 27,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2200,
+   "impact": 10
+  }
+ }
+}
