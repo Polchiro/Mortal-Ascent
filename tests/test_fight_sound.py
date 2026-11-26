@@ -32,7 +32,8 @@ def test_the_list_the_page_reads_is_there_and_names_real_sounds():
             assert name.split("#")[1] in ("male", "female") and "@" not in name, name
         if "@" in name:
             import beasts
-            assert name.split("#")[0].split("@")[1] in beasts.BODY_TYPES, name
+            who = name.split("#")[0].split("@")[1]                        # a body's voice, or a beast's own
+            assert who in beasts.BODY_TYPES or who in {beasts.slug(n) for n in beasts.TRAITS}, name
         for t in takes:
             path = os.path.join(ROOT, "art", "fx", "sounds", t["file"])
             assert os.path.exists(path) and 2_000 < os.path.getsize(path) < 120_000, t   # there, and small

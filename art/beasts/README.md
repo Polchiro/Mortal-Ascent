@@ -30,3 +30,7 @@ The redesigned insects and arthropods (Venom Scorpion, Golden Silk Spider, Thous
 The redesigned crocodiles (Jade-Scaled Crocodile, Abyss Crocodile) are made the same way (`CROCODILES`), with their open-mouthed roar pictures in `roar/`.
 
 The redesigned tortoises (Stone-Shell Tortoise, Black Tortoise (Xuanwu), Primordial Dragon Turtle) are made the same way (`TORTOISES`), with their open-mouthed roar pictures in `roar/` (the Xuanwu's serpent opens its jaws too).
+
+The **Wild Boar** was redesigned again (Nov 26, Nano Banana Pro, 16:9, strict side view facing left on flat grey, no slab)
+and is animated from its own videos (`sheets/wild_boar/`, scripts/make_beast_sheets.py), with its own sounds. The beasts are
+being redone one at a time in roster order the same way.

@@ -690,7 +690,7 @@ def test_the_grey_wolf_has_its_four_animations_on_one_cell():
     assert 0 <= attack["bite_x"] < idle["nose_x"] < 0.3                   # the bite reaches further forward than it stands
     death_ = d["sheets"]["death"]
     assert 0 < death_["impact"] < death_["frames"]
-    assert beast_sheets.sheets("wild_boar") is None and beast_sheets.sheets("../etc") is None
+    assert beast_sheets.sheets("red_fox") is None and beast_sheets.sheets("../etc") is None
 
 
 def test_only_the_grey_wolf_dies_in_its_own_animation():
@@ -715,6 +715,36 @@ def test_the_grey_wolf_fight_draws_its_frames_over_its_picture(client):
     assert ".beast.sheeted>img{visibility:hidden}" in css and "@keyframes bsx" in css     # its still is never drawn
     assert "function BeastSheets" in js and "BS.hit()" in js and "BS.frame('attack'" in js and "BS.frame('death'" in js
     assert "BS.edge('bite')" in js and "BS.edge('nose')" in js and "'still'" not in js   # kept apart; no still mode
+
+
+def test_the_wild_boar_is_animated_from_its_own_videos():
+    """SHOAIB's redesigned Wild Boar (Nov 26): its four animations, cut from three videos (idle; hit + attack; death)."""
+    from web import beast_sheets, death
+    d = beast_sheets.sheets("wild_boar")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    cw, ch = d["cell"]
+    x, y, w, h = d["still"]
+    assert 0 <= x and 0 <= y and x + w <= cw + 1 and y + h <= ch + 1
+    a = d["sheets"]["attack"]
+    assert 0 < a["bite"] < a["frames"] and 0 <= a["bite_x"] < 1 and a["ms"] == 2000      # the tusk toss
+    assert 0 < d["sheets"]["death"]["impact"] < d["sheets"]["death"]["frames"]
+    v = death.view({"kind": "beast", "name": "Wild Boar", "slug": "wild_boar"})
+    assert v["kind"] == "sheet"
+
+
+def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
+    """Its squeal, gore, thud and roar come from its own videos ("<sound>@wild_boar"); other beasts keep their body's."""
+    import json
+    import os
+    from web import explore_play
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@wild_boar" in keys
+        for take in keys[f"{sound}@wild_boar"]:
+            assert os.path.exists(os.path.join("art", "fx", "sounds", take["file"]))
+    assert explore_play.beast_body("Wild Boar") == "wild_boar"
+    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Iron-Hide Boar") == "wolf"
+    assert explore_play.beast_body("No Such Beast") is None
 
 
 def test_other_beasts_keep_their_pictures(client):

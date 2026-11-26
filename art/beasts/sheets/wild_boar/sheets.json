@@ -1,0 +1,47 @@
+{
+ "cell": [
+  703,
+  430
+ ],
+ "still": [
+  135.0,
+  34.8,
+  492.0,
+  382.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/wild_boar/idle.webp",
+   "frames": 56,
+   "cols": 8,
+   "rows": 7,
+   "ms": 4958,
+   "nose_x": 0.1679
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/wild_boar/attack.webp",
+   "frames": 30,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2000,
+   "bite": 16,
+   "reach": 0.0,
+   "bite_x": 0.2105
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/wild_boar/hit.webp",
+   "frames": 11,
+   "cols": 8,
+   "rows": 2,
+   "ms": 850
+  },
+  "death": {
+   "src": "/art/beasts/sheets/wild_boar/death.webp",
+   "frames": 25,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2080,
+   "impact": 6
+  }
+ }
+}
