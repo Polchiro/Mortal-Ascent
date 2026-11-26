@@ -132,7 +132,7 @@ ROAR_MOUTHS = {
     "ghost_fire_wolf": (0.08, 0.15),
     "golden_eyed_ape_king": (0.51, 0.28),
     "golden_silk_spider": (0.37, 0.58),
-    "grey_wolf": (0.1, 0.21),
+    "grey_wolf": (0.06, 0.36),
     "horned_stag": (0.19, 0.35),
     "iron_feather_crow": (0.23, 0.36),
     "iron_hide_boar": (0.1, 0.36),
