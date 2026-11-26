@@ -105,6 +105,14 @@ CLIPS = {
                            "white": ("attack",), "ease_in": {"hit": 3},
                            "settle": {"attack": 4, "hit": 3},
                            "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27: a WHITE beast, so the white-streak wiping (`white`) would wipe its fur: the frames with the video's white
+    # slash arc (its swipe) and impact star (its flinch) are dropped instead; the flinch is only its first duck (it then
+    # reared up, head too high: cut before, its ducked pose held a moment, `hold`); its picture had no sparkle (`mark` off, so its pale tail is never taken for one)
+    "white_browed_tiger_king": {"attack": (3.0, 7.0), "hit": (0.58, 1.45), "death": (4.4, 7.0), "idle_span": (36, 60),
+                                "idle_until": 3.0, "attack_ms": 2800,
+                                "drop": {"attack": ((4.38, 5.12),), "hit": ((0.72, 1.12),)},
+                                "settle": {"attack": 4, "hit": 3}, "hold": {"hit": 3}, "mark": ((0, 0, 1, 1),),
+                                "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
@@ -421,6 +429,8 @@ def main(slug, videos, cache=None):
             rest = frames[0]
         n_settle = cfg.get("settle", 0)
         n_settle = n_settle.get(kind, 0) if isinstance(n_settle, dict) else (n_settle if kind == "attack" else 0)
+        if cfg.get("hold", {}).get(kind):                    # a short move held on its last pose, then eased home
+            frames = frames + [frames[-1]] * cfg["hold"][kind]
         if kind != "idle" and cfg.get("ease_in", {}).get(kind):
             frames = ease_in(frames, rest, cfg["ease_in"][kind])
         if n_settle:                                         # (an int: the attack's; a dict: per move)
@@ -446,7 +456,8 @@ def main(slug, videos, cache=None):
             info["reach"] = round(max(0, lefts[0] - lefts[bite]) / (still.width * SCALE), 4)
             info["bite_x"] = round(lefts[bite] / cw, 4)                         # its jaws, at the bite
         else:
-            if len(spans(cfg[kind])) > 1 or kind in cfg.get("drop", {}) or kind in cfg.get("ease_in", {}):
+            if (len(spans(cfg[kind])) > 1 or kind in cfg.get("drop", {}) or kind in cfg.get("ease_in", {})
+                    or kind in cfg.get("hold", {})):
                 info["ms"] = round(len(frames) * STEP / FPS * 1000)            # the frames it really plays
             else:
                 s0, s1 = cfg[kind]
