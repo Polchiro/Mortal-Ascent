@@ -1,0 +1,47 @@
+{
+ "cell": [
+  865,
+  455
+ ],
+ "still": [
+  257.4,
+  46.8,
+  540.0,
+  385.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/wild_ox/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1250,
+   "nose_x": 0.304
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/wild_ox/attack.webp",
+   "frames": 43,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2400,
+   "bite": 33,
+   "reach": 0.1037,
+   "bite_x": 0.2127
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/wild_ox/hit.webp",
+   "frames": 21,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1700
+  },
+  "death": {
+   "src": "/art/beasts/sheets/wild_ox/death.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000,
+   "impact": 14
+  }
+ }
+}

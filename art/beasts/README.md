@@ -34,5 +34,6 @@ The redesigned tortoises (Stone-Shell Tortoise, Black Tortoise (Xuanwu), Primord
 The **Wild Boar** was redesigned again (Nov 26, Nano Banana Pro, 16:9, strict side view facing left on flat grey, no slab)
 and is animated from its own videos (`sheets/wild_boar/`, scripts/make_beast_sheets.py), with its own sounds. The **Field Viper**
 followed (a true snake, no legs; its roar picture is the open-jawed hiss from its own hit video). The **Stray Dog Pack** is now
-one gaunt stray (SHOAIB's choice: one dog animates cleanly; the name is unchanged). The beasts are
+one gaunt stray (SHOAIB's choice: one dog animates cleanly; the name is unchanged), and the **Wild Ox** a real shaggy ox
+(no longer a horned boar; the breath steam and Gemini's mark painted out). The beasts are
 being redone one at a time in roster order the same way.

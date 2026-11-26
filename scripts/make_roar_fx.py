@@ -100,7 +100,7 @@ MOUTHS = {
     "wind_feather_falcon": (0.02, 0.34),
     "white_tiger": (0.05, 0.37),
     "wild_boar": (0.08, 0.58),
-    "wild_ox": (0.12, 0.6),
+    "wild_ox": (0.07, 0.6),
     "wind_leopard": (0.05, 0.34),
 }
 VARIANTS = {"roar_ring": (1, 0, 0.3, 0.85, 3.6), "roar_double": (3, 0, 0.3, 1.15, 3.0), "roar_burst": (0, 1, 1.0, 2.3, 4.6)}
@@ -166,7 +166,7 @@ ROAR_MOUTHS = {
     "white_browed_tiger_king": (0.1, 0.2),
     "white_tiger": (0.17, 0.25),
     "wild_boar": (0.14, 0.53),
-    "wild_ox": (0.155, 0.37),
+    "wild_ox": (0.07, 0.55),
     "wind_feather_falcon": (0.1, 0.3),
     "wind_leopard": (0.08, 0.28),
 }
