@@ -12,10 +12,10 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/ember_lizard/idle.webp",
-   "frames": 16,
+   "frames": 64,
    "cols": 8,
-   "rows": 2,
-   "ms": 666,
+   "rows": 8,
+   "ms": 2664,
    "smooth": true,
    "nose_x": 0.1143
   },
