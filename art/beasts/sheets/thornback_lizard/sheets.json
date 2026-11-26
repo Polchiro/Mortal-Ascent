@@ -1,0 +1,48 @@
+{
+ "cell": [
+  701,
+  362
+ ],
+ "still": [
+  98.4,
+  145.8,
+  540.0,
+  200.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/thornback_lizard/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "smooth": true,
+   "nose_x": 0.1427
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/thornback_lizard/attack.webp",
+   "frames": 48,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2800,
+   "bite": 29,
+   "reach": 0.0926,
+   "bite_x": 0.0685
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/thornback_lizard/hit.webp",
+   "frames": 29,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400
+  },
+  "death": {
+   "src": "/art/beasts/sheets/thornback_lizard/death.webp",
+   "frames": 31,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "impact": 9
+  }
+ }
+}

@@ -185,6 +185,12 @@
    "lead": 0.34
   }
  ],
+ "death@thornback_lizard": [
+  {
+   "file": "death_thornback_lizard.mp3",
+   "lead": 0.24
+  }
+ ],
  "death@wild_boar": [
   {
    "file": "death_wild_boar.mp3",
@@ -367,6 +373,12 @@
    "lead": 0.2
   }
  ],
+ "hit@thornback_lizard": [
+  {
+   "file": "hit_thornback_lizard.mp3",
+   "lead": 0.2
+  }
+ ],
  "hit@wild_boar": [
   {
    "file": "hit_wild_boar.mp3",
@@ -459,6 +471,12 @@
   {
    "file": "lunge_stray_dog_pack.mp3",
    "lead": 0.2
+  }
+ ],
+ "lunge@thornback_lizard": [
+  {
+   "file": "lunge_thornback_lizard.mp3",
+   "lead": 1.24
   }
  ],
  "lunge@wild_boar": [
@@ -563,6 +581,12 @@
    "lead": 0.16
   }
  ],
+ "roar:big@thornback_lizard": [
+  {
+   "file": "roar_big_thornback_lizard.mp3",
+   "lead": 0.86
+  }
+ ],
  "roar:big@wild_boar": [
   {
    "file": "roar_big_wild_boar.mp3",
@@ -657,6 +681,12 @@
   {
    "file": "roar_stray_dog_pack.mp3",
    "lead": 0.12
+  }
+ ],
+ "roar@thornback_lizard": [
+  {
+   "file": "roar_thornback_lizard.mp3",
+   "lead": 0.56
   }
  ],
  "roar@wild_boar": [
