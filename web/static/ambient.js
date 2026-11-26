@@ -67,23 +67,52 @@
   function wake() { if (amb && amb.paused && !document.hidden) { var p = amb.play(); if (p && p.catch) p.catch(function () {}); } }
   ['pointerdown', 'keydown', 'touchstart'].forEach(function (e) { document.addEventListener(e, wake, {passive: true}); });
   document.addEventListener('visibilitychange', function () { if (!amb) return; if (document.hidden) amb.pause(); else wake(); });
+  /* The video plays as two copies taking turns, not with `loop`: a browser jumping a looping video back to its start
+     freezes or flashes for a moment on some machines (SHOAIB's PC: "the screen refreshes every 8 seconds"). Just
+     before the shown copy ends, the other starts from the beginning under it and the top copy fades (SEAM s); the
+     jump back to the start then happens on the hidden copy. The video's own end already flows into its start
+     (scripts/make_background_loop.py), so the two match where they cross. `film` is the top copy (the page's
+     shading follows it), `twin` the one under it. */
+  var twin = null, front = null, SEAM = 0.6;
+  function copy_(src) {
+    var v = document.createElement('video');
+    v.className = 'bgloop'; v.muted = true; v.autoplay = false; v.playsInline = true;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('aria-hidden', 'true');
+    v.preload = 'auto'; v.src = src;
+    v.addEventListener('timeupdate', function () { if (v === front && v.duration && v.currentTime >= v.duration - SEAM - 0.25) swap(); });
+    v.addEventListener('ended', function () { if (v === front) swap(); v.pause(); v.currentTime = 0; });   // (a late timeupdate)
+    v.addEventListener('error', function () { if (film) { film.remove(); film = null; } if (twin) { twin.remove(); twin = null; } });
+    return v;
+  }
+  function play_(v) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  function swap() {                                            // the other copy takes over from its first frame
+    var next = front === film ? twin : film, prev = front;
+    if (!next || !prev) return;
+    front = next;
+    next.currentTime = 0; play_(next);
+    film.style.transition = 'opacity ' + SEAM + 's linear';
+    film.style.opacity = next === film ? '' : '0';             // the top copy fades in or out over the one under it
+    setTimeout(function () { if (front !== prev) { prev.pause(); prev.currentTime = 0; } }, SEAM * 1000 + 200);
+  }
   function film_(main, src) {                                  // the place's video, at the back of the whole fight page
-    if (!src || saveData) { if (film) { film.remove(); film = null; filmSrc = null; } main.classList.remove('bglive'); return; }
+    if (!src || saveData) {
+      if (film) { film.remove(); film = null; filmSrc = null; }
+      if (twin) { twin.remove(); twin = null; }
+      main.classList.remove('bglive'); return;
+    }
     if (!film || filmSrc !== src) {
       if (film) film.remove();
-      film = document.createElement('video'); filmSrc = src;
-      film.className = 'bgloop'; film.muted = true; film.loop = true; film.autoplay = true; film.playsInline = true;
-      film.setAttribute('muted', ''); film.setAttribute('playsinline', ''); film.setAttribute('aria-hidden', 'true');
-      film.preload = 'auto'; film.src = src;
-      film.addEventListener('playing', function () { film.classList.add('on'); });
-      film.addEventListener('error', function () { if (film) { film.remove(); film = null; } });
+      if (twin) twin.remove();
+      film = copy_(src); twin = copy_(src); filmSrc = src; front = film;
+      film.addEventListener('playing', function () { if (film) film.classList.add('on'); if (twin) twin.classList.add('on'); }, {once: true});
     }
     if (film.parentNode !== main) {
       main.insertBefore(film, main.firstChild);
+      main.insertBefore(twin, film);                           // under the top copy; the shading stays right after it
       var shade = main.querySelector(':scope > .bgshade');      // the page's own shading, kept over the video
       if (!shade) { shade = document.createElement('div'); shade.className = 'bgshade'; main.insertBefore(shade, film.nextSibling); }
       main.classList.add('bglive');
-      var p = film.play(); if (p && p.catch) p.catch(function () {});
+      play_(front);
     }
   }
 
@@ -276,7 +305,7 @@
     var feet = hr.top + hr.height * HERO_FEET - mr.top;
     if (br.height) feet = (feet + (br.bottom - mr.top)) / 2;                    // between the hero's and the beast's
     var W = mr.width, H = mr.height, sig = [W, H, Math.round(feet), G, main.dataset.turn].join();
-    var v = main.querySelector(':scope > video.bgloop');
+    var vs = main.querySelectorAll(':scope > video.bgloop'), v = vs[vs.length - 1];   // both copies of the video
     if (sig === last && main.style.getPropertyValue('--arena-size') && (!v || v.style.width)) return;
     last = sig;
     var cover = Math.max(H, W / ASPECT);
@@ -284,11 +313,11 @@
     var y = Math.max(0, Math.min(G * h - feet, h - H)), x = (w - W) / 2;
     main.style.setProperty('--arena-size', w.toFixed(0) + 'px ' + h.toFixed(0) + 'px');
     main.style.setProperty('--arena-pos', (-x).toFixed(0) + 'px ' + (-y).toFixed(0) + 'px');
-    if (v) {
+    Array.prototype.forEach.call(vs, function (v) {
       v.style.inset = 'auto'; v.style.objectFit = 'fill';
       v.style.left = (-x).toFixed(0) + 'px'; v.style.top = (-y).toFixed(0) + 'px';
       v.style.width = w.toFixed(0) + 'px'; v.style.height = h.toFixed(0) + 'px';
-    }
+    });
   }
   function tick() { if (!document.hidden) fit(); requestAnimationFrame(tick); }
   requestAnimationFrame(tick);

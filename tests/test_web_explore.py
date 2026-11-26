@@ -906,6 +906,15 @@ def test_a_beasts_frame_sheets_are_unpacked_before_its_turn_plays(client):
     assert "setTimeout(once, 2500)" in js                                        # a slow connection still plays
 
 
+def test_the_fight_background_video_loops_as_two_copies_taking_turns(client):
+    """Nov 26: SHOAIB's screen "refreshed every 8 seconds": the browser jumping the looping 8.5 s background video back
+    to its start. It now plays as two copies: the other starts from its first frame under the shown one, which fades."""
+    js = client.get("/static/ambient.js").text
+    assert "film.loop = true" not in js and "twin = copy_(src)" in js and "function swap()" in js
+    assert "v.duration - SEAM" in js and "main.insertBefore(twin, film)" in js        # under the top copy
+    assert "querySelectorAll(':scope > video.bgloop')" in js                        # both are fitted to the scene
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

@@ -1059,6 +1059,11 @@ gorge, the "AI" badge) covered with the ground just beside it on the painting an
 video's last 1.5 s faded into its start so it loops with no jump (8.5 s, H.264, about 2 MB), and the sound looped the
 same way (AAC, about 100 KB).
 
+The fight plays the video as **two copies taking turns** (`ambient.js` `film` and `twin`), not with the browser's
+`loop`: jumping a looping video back to its start froze or flashed the background for a moment on some machines
+(SHOAIB's PC: "the screen refreshes every 8 seconds"). Just before the shown copy ends, the other starts from its
+first frame under it and the top copy fades (`SEAM`, 0.6 s); the jump back to the start happens on the hidden copy.
+
 Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
 shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
