@@ -78,7 +78,9 @@ File: `art/beasts/mountain_tiger.png` (Nov 26 redesign, Nano Banana Pro; animate
 ## Martial Warrior
 
 **Thornback Lizard** · Normal · Earth
-File: `art/beasts/thornback_lizard.png`
+File: `art/beasts/thornback_lizard.png` (Nov 26 redesign, Nano Banana Pro: a heavy sand-brown lizard with cracked earth
+scales and grey stone thorns, strict side view facing left; animated from its idle + bite and hit + death videos. Its
+first prompt, before the redesign:)
 
 > A thick-bodied lizard with rows of stone thorns along its spine, cracked earth-coloured scales, with a subtle amber earth elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed scales, horns and claws, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 

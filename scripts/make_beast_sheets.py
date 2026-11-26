@@ -83,6 +83,11 @@ CLIPS = {
     "spear_beak_crane": {"attack": (3.0, 5.9), "hit": (0.45, 2.6), "death": (3.6, 6.2), "idle_span": (30, 44),
                          "idle_from": 5.85, "attack_ms": 2200,
                          "fade": {"attack": 30, "hit": ("top", 30), "death": ("top", 30)}},
+    # Veo stretched its tail out straight to the video's right edge from the bite on and never curled it back: the tail
+    # tip fades at the edge, and the attack's last frames dissolve back into the standing idle (`settle`)
+    "thornback_lizard": {"attack": (2.6, 6.6), "hit": (0.6, 3.0), "death": (3.0, 5.6), "idle_span": (30, 50),
+                         "idle_until": 2.5, "attack_ms": 2800, "white": ("hit",), "fade": {"attack": 40},
+                         "settle": 4, "place_as": {"attack": "idle", "death": "hit"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
@@ -190,6 +195,35 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
 
 PINGPONG_MAX = 24          # an idle of up to this many frames plays forward then back; a longer one dissolves its end
 BLEND = 6                  # into its start over this many frames (a doubled long idle would be too big a sheet)
+
+
+def settle(frames, rest, n):
+    """The move's end easing back into `rest` (the idle's first frame), so a beast that ends its move in another pose
+    or spot than it started (the lizard: further along, its tail straightened) neither snaps nor shows a double body:
+    over its last 2n frames it slides back so its front (its nose, its front feet) meets the idle's, and over the
+    last n of them it dissolves into the idle (premultiplied, so the see-through edges stay clean)."""
+    def nose(im):
+        a = np.asarray(im.getchannel("A")) > 128
+        cols = np.flatnonzero(a.any(0))
+        front = a[:, cols.min():cols.min() + int(0.6 * (cols.max() - cols.min()))]   # its feet, not a low tail tip
+        return cols.min(), np.flatnonzero(front.any(1)).max()
+    (rx, ry), (lx, ly) = nose(rest), nose(frames[-1])
+    dx, dy = rx - lx, ry - ly
+    r = np.asarray(rest).astype(np.float32) / 255
+    r[..., :3] *= r[..., 3:]
+    k = min(2 * n, len(frames))
+    out = frames[:len(frames) - k]
+    for i, f in enumerate(frames[len(frames) - k:]):
+        s = min(1, (i + 1) / (k - n))                       # the slide: done by the dissolve's start
+        moved = Image.new("RGBA", f.size, (0, 0, 0, 0))
+        moved.paste(f, (round(dx * s), round(dy * s)), f)
+        w = max(0, (i + 1 - (k - n)) / n)                   # the dissolve
+        a = np.asarray(moved).astype(np.float32) / 255
+        a[..., :3] *= a[..., 3:]
+        m = a * (1 - w) + r * w
+        m[..., :3] /= np.maximum(m[..., 3:], 1e-6)
+        out.append(Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "RGBA"))
+    return out
 
 
 def smooth_idle(frames, ms):
@@ -338,6 +372,10 @@ def main(slug, videos, cache=None):
             "sheets": {}}
     for kind in KINDS:
         frames = [cell(*p) for p in placed[kind]]
+        if kind == "idle":
+            rest = frames[0]
+        if kind == "attack" and cfg.get("settle"):
+            frames = settle(frames, rest, cfg["settle"])
         if kind == "idle":
             frames, idle_ms = smooth_idle(frames, idle_ms)
         rows = -(-len(frames) // COLS)

@@ -527,6 +527,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Spear-Beak Crane's wingbeats and stabbing cry, its harsh cry when struck, its dying cry and fall, its call and big call (`@spear_beak_crane`) | its own idle + strike and hit + death videos (Nov 26) |
+| The Thornback Lizard's growl and snapping bite, its hiss of pain when struck, its dying groan, its growl and big roar (`@thornback_lizard`) | its own idle + bite and hit + death videos (Nov 26) |
 | The Rock Python's strike and hiss, its angry hiss when struck, its fall, its hiss and long hiss (`@rock_python`) | its own idle + strike and hit + death videos (Nov 26) |
 | The Mountain Tiger's pounce and roar, its pained snarl, its dying roar and fall, its roar and big roar (`@mountain_tiger`; also its Mountain-Splitting Pounce) | its own idle + pounce and hit + death videos (Nov 26) |
 | The Horned Stag's snort and charging bellow, its pained bellow, its dying bellow and fall, its bellow and big bellow (`@horned_stag`) | its own idle + charge and hit + death videos (Nov 26) |
@@ -980,12 +981,17 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python** and the **Spear-Beak Crane**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane** and the **Thornback Lizard**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
 Break's texts are a line longer than Strike's, and hovering them used to grow the panel, shrink the scene above it and
 make the beast, the hero and the background jump (SHOAIB: "it keeps refreshing").
+**A move that ends in another pose eases back** (`settle`): Veo stretched the Thornback Lizard's tail out straight
+from its bite on and never curled it back, and left it a little further along, so its attack's last frames slide back
+until its nose and front feet meet the idle's and then dissolve into the idle (instead of snapping); its tail tip,
+which ran off the video's edge, fades out (`fade`). Its attack and death are placed as its idle and hit (`place_as`:
+the same videos, the camera still), so the attack starts exactly where the idle stands.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

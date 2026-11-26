@@ -958,6 +958,37 @@ def test_the_spear_beak_crane_is_animated_from_its_own_videos_with_its_own_voice
     assert explore_play.beast_body("Spear-Beak Crane") == "spear_beak_crane"
 
 
+def test_the_thornback_lizard_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Thornback Lizard (Nov 26, now facing left): its jaws-wide bite, its rearing flinch, its
+    collapse onto its belly; Veo stretched its tail out straight from the bite on, so the attack's end slides and
+    dissolves back into its idle (`settle`); its growls and hisses from its videos."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("thornback_lizard")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Thornback Lizard", "slug": "thornback_lizard"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "thornback_lizard.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@thornback_lizard" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["thornback_lizard@roar"][:2] == [0.05, 0.4]
+    assert explore_play.beast_body("Thornback Lizard") == "thornback_lizard"
+
+
+def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
+    """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
+    from PIL import Image
+    from scripts.make_beast_sheets import settle
+    rest = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    rest.paste((200, 100, 50, 255), (5, 5, 25, 15))
+    away = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    away.paste((200, 100, 50, 255), (15, 5, 35, 15))
+    out = settle([away] * 8, rest, 2)
+    assert len(out) == 8 and out[0] is away
+    assert out[-1].getbbox() == rest.getbbox()                         # it ends exactly on the idle
+    assert out[-3].getbbox()[0] == 5                                   # slid home before it dissolves
+
+
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
     """`make_beast_sheets`: a move from several stretches of its video joined (the fox's pounce), frames an effect
     covered dropped, and a sparkle box that keeps a pale tail tip lying over it."""
