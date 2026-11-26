@@ -65,7 +65,7 @@ for the dialogue. **Esc** or **Leave** closes it. Walking stops while it is open
 | Gate Warden | the gate | Look at the World Map (`/world`, docs/world.md), Hunt with a team (`/explore`). He also tells you herbs grow outside the gate |
 | Blacksmith Tie | the forge | `/town/visit/blacksmith` → `/forge` (the only way in: the forge is locked to him) |
 | Herbalist Lan | the herb shop | `/town/visit/alchemist` → `/alchemy` (the only way in: alchemy is locked to her) |
-| Silk Merchant | the silk stalls | `/appearance` |
+| Merchant Qian | the silk stalls | `/pavilion` (Pearl shop, Heavenly Blessings) |
 | Village Elder | the lane to the pond and pavilion | `/profile`, `/inventory` |
 | Sister Jing | by the pond, at its east corner | Train: seats you in the Quiet Pavilion for Meridian Circulation (`/train`, docs/training.md "Train on the website") |
 | Martial Master | the training yard, in front of the dummies | The training yard (`/training`, docs/technique.md "On the website"): sparring and mastery trials only |

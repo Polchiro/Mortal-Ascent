@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Moon Pavilion · Mortal Ascent{% endblock %}
+{% block body %}
+{% with page="pavilion", coins=coins, pearls=pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="pavpage">
+  <header class="pavhead">
+    <img class="pavkeeper" src="/art/portraits/town/merchant.webp" alt="" onerror="this.remove()">
+    <div>
+      <p class="kicker">THE MOON PAVILION</p>
+      <h1>Merchant Qian's Stall</h1>
+      <p class="sub">"Speed and style, never power. What catches your eye tonight?"</p>
+      <p class="pavpurse">You have <b>🌙 {{ "{:,}".format(v.pearls) }}</b> Moon Pearls{% if v.active %} · <span class="pavact">{{ v.active.name }}: {{ v.active.days }} day{{ '' if v.active.days == 1 else 's' }} left</span>{% endif %}</p>
+    </div>
+  </header>
+
+  {% if notice %}<p class="technote {{ 'ok' if notice.ok else 'bad' }}" role="status">{{ notice.text | rich | safe }}</p>{% endif %}
+
+  <nav class="pavtabs" role="tablist">
+    <a role="tab" href="/pavilion?tab=shop" aria-selected="{{ 'true' if tab == 'shop' else 'false' }}" class="{{ 'on' if tab == 'shop' }}">Pearl Shop</a>
+    <a role="tab" href="/pavilion?tab=blessing" aria-selected="{{ 'true' if tab == 'blessing' else 'false' }}" class="{{ 'on' if tab == 'blessing' }}">Heavenly Blessings</a>
+  </nav>
+
+  {% if tab == 'shop' %}
+  <section class="pavgrid" aria-label="Pearl Shop">
+    {% for it in v["items"] %}
+    <article class="pavitem{% if it.soon %} soon{% endif %}">
+      {% if it.icon %}<img src="{{ it.icon }}" alt="" width="72" height="72" loading="lazy">{% endif %}
+      <b>{{ it.name }}</b>
+      <span class="sub">{{ it.text }}</span>
+      <span class="pavprice">🌙 {{ it.price }}</span>
+      {% if it.soon %}<span class="pavsoon">Coming soon</span>
+      {% else %}
+      <button class="tbtn{% if it.afford %} primary{% endif %}" type="button"
+              data-kind="buy" data-key="{{ it.key }}" data-name="{{ it.name }}" data-cost="{{ it.cost }}"
+              data-note="{{ it.note or '' }}"{% if it.asks_name %} data-asks="1"{% endif %}>{{ 'Buy' if it.afford else 'Not enough pearls' }}</button>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <p class="techrule">A blessing lasts {{ v.days }} days. The same one again adds {{ v.days }} days; a different one replaces yours with a fresh {{ v.days }} days (the days left are not refunded).</p>
+  <section class="pavgrid bless" aria-label="Heavenly Blessings">
+    {% for t in v.tiers %}
+    <article class="pavitem{% if t.active %} on{% endif %}" style="--rc: {{ t.color }}">
+      {% if t.icon %}<img src="{{ t.icon }}" alt="" width="72" height="72" loading="lazy">{% endif %}
+      <b>{{ t.name }}</b>
+      <span class="sub">{{ t.perks }}{% if t.frame %} · coloured profile frame{% endif %}</span>
+      <span class="pavprice">🌙 {{ t.price }}</span>
+      {% if t.active %}<span class="pavsoon on">Active · {{ t.days_left }} day{{ '' if t.days_left == 1 else 's' }} left</span>{% endif %}
+      <button class="tbtn{% if t.afford %} primary{% endif %}" type="button"
+              data-kind="bless" data-key="{{ t.name }}" data-name="{{ t.name }}" data-cost="{{ t.cost }}"
+              data-note="{{ t.note }}">{{ ('Extend' if t.active else 'Receive') if t.afford else 'Not enough pearls' }}</button>
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+</main>
+
+<dialog class="pavask" id="pavask" aria-labelledby="pavaskT">
+  <form method="post" id="pavform">
+    <input type="hidden" name="token" value="{{ token }}">
+    <input type="hidden" name="key" id="pavkey">
+    <input type="hidden" name="tier" id="pavtier">
+    <h2 id="pavaskT">Confirm purchase</h2>
+    <p id="pavwhat"></p>
+    <label class="pavname" id="pavnamebox" hidden>New name <input name="name" id="pavname" maxlength="32"></label>
+    <p class="pavline"><span>Price</span><b id="pavcost"></b></p>
+    <p class="pavline"><span>Your pearls</span><b id="pavafter"></b></p>
+    <p class="sub" id="pavnote"></p>
+    <div class="pavbtns">
+      <button class="tbtn" type="button" id="pavno">Cancel</button>
+      <button class="tbtn primary" type="submit" id="pavyes">Confirm</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  var have = {{ v.pearls }}, d = document.getElementById('pavask'), f = document.getElementById('pavform');
+  function fmt(n) { return '🌙 ' + n.toLocaleString('en-US'); }
+  document.querySelectorAll('[data-kind]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var cost = +b.dataset.cost, bless = b.dataset.kind === 'bless', ok = have >= cost;
+      f.action = bless ? '/pavilion/bless' : '/pavilion/buy';
+      document.getElementById('pavkey').value = bless ? '' : b.dataset.key;
+      document.getElementById('pavtier').value = bless ? b.dataset.key : '';
+      document.getElementById('pavwhat').textContent = (bless ? 'Receive the ' + b.dataset.name + ' blessing' : 'Buy ' + b.dataset.name) + '?';
+      document.getElementById('pavcost').textContent = fmt(cost);
+      document.getElementById('pavafter').textContent = ok ? fmt(have) + ' → ' + fmt(have - cost) : fmt(have) + ' (you need ' + fmt(cost - have) + ' more)';
+      document.getElementById('pavnote').textContent = b.dataset.note || '';
+      var asks = !!b.dataset.asks, nb = document.getElementById('pavnamebox'), nm = document.getElementById('pavname');
+      nb.hidden = !asks; nm.required = asks; nm.value = '';
+      document.getElementById('pavyes').disabled = !ok;
+      d.showModal();
+      if (asks) nm.focus();
+    });
+  });
+  document.getElementById('pavno').addEventListener('click', function () { d.close(); });
+  f.addEventListener('submit', function () { document.getElementById('pavyes').disabled = true; });
+})();
+</script>
+{% endblock %}

@@ -120,6 +120,19 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 - **Chests** open on the website: a chest's **Open** in the Inspect panel, or the **Treasure Shelf** (see "Opening a
   chest" below). Using pills and manuals stays in Discord for now.
 
+## The Moon Pavilion
+
+**Merchant Qian** (once the Silk Merchant, by the silk stalls: `web/town.py` NPCS; looks are changed on the Profile
+now) runs the **Moon Pavilion**
+(`/pavilion`, `web/pavilion_play.py`, `web/pavilion_routes.py`): two tabs, **Pearl Shop** and **Heavenly Blessings**.
+Everything is the bot's own, in `bot/shop.py` (moved out of `bot/views.py` so the website can use it without
+Discord; Discord's `/shop` and `/blessing` use the same functions): the items and prices (`economy.PEARL_SHOP`), the
+blessings and perks (`economy.BLESSING_TIERS`) and what a purchase does. Profile Card Themes show as "Coming soon",
+like on Discord. Pressing Buy / Receive asks first, like Discord's confirm: the price, your pearls before → after,
+and a note (your bag 100 → 120, "never goes lower" for the talent reroll, Extend or Replace for a blessing); Name
+Change asks for the new name there. Each form carries a one-time token, so a repeated or stale form spends nothing.
+Moon Pearls themselves are still bought on Discord (`/recharge`).
+
 ## Techniques
 
 `/techniques` (the top bar's **Techniques**, or "Change techniques ›" on the Profile): Discord's `/techniques` on one
