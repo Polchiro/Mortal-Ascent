@@ -13,6 +13,8 @@ Kinds that map to paintings:
   emblem:pill:<kind>:<grade>[:n]  pills (n = patterns, drawn as small dots under the pill)
   emblem:pill:heaven_defying      the Heaven-Defying Pill
   emblem:book                     the /index overview book
+  emblem:manual:<technique>:<grade>  a manual: its scroll or book (manuals/<attack|defense>_<grade>; the technique's
+                                  own skill icon, tech:<key>, stays on the Techniques page and the fight cards)
 
 Files are small (160 px WebP) and every resize is cached, so a card pays for each icon once.
 """
@@ -70,6 +72,12 @@ def resolve(kind_):
         rel = "mat/" + kind_[4:].replace(":", "_")
     elif kind_.startswith("passive:"):
         rel = "passives/" + kind_[8:].lower()
+    elif kind_.startswith("emblem:manual:"):
+        import technique
+        parts = kind_.split(":")
+        tech = technique.TECHNIQUES.get(parts[2]) if len(parts) > 3 else None
+        if tech:
+            rel = f"manuals/{tech['type']}_{parts[3].lower()}"
     elif kind_ == "emblem:book":
         rel = "index/overview"
     elif kind_.startswith("emblem:pill:"):

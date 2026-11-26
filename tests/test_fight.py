@@ -677,18 +677,22 @@ def test_a_plain_move_casts_nothing():
 
 
 def test_technique_icons_are_whole_circles():
-    """The 30 icons were re-cut: a centred medallion, nothing outside the circle (no stray text or paper)."""
+    """The 30 icons are round medallions (painted Nov 26 2026, scripts/make_item_art.py skills): nothing outside the
+    circle, the full circle there."""
     import glob
     from PIL import Image
     files = glob.glob("art/icons/tech/*.webp")
     assert len(files) == 30
     for path in files:
         im = Image.open(path).convert("RGBA")
-        assert im.size == (160, 160)
+        n = im.size[0]
+        assert im.size == (n, n) and n >= 160
         a = im.getchannel("A")
-        for x, y in ((2, 2), (157, 2), (2, 157), (157, 157), (80, 2), (80, 157)):
-            assert a.getpixel((x, y)) <= 8, path                   # corners and edges clear
-        assert a.getpixel((80, 150)) >= 250 and a.getpixel((80, 10)) >= 250, path   # the full circle is there
+        e = n - 3
+        for x, y in ((2, 2), (e, 2), (2, e), (e, e)):
+            assert a.getpixel((x, y)) <= 8, path                   # corners clear
+        for x, y in ((n // 2, round(n * 0.06)), (n // 2, round(n * 0.94)), (round(n * 0.06), n // 2)):
+            assert a.getpixel((x, y)) >= 250, path                 # the full circle is there
 
 
 def test_index_and_pill_icons_are_whole():

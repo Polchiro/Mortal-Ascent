@@ -151,6 +151,14 @@ can be used again. Basic Strike, Guard and Break are always available.
 - In explore fights and hunts (combat.md) the technique buttons are greyed out the same way
 - No Qi cost: Qi is cultivation progress, not a fight resource
 
+## Icons
+
+Each technique has a painted icon (SHOAIB's art, Nov 26 2026): the moment of the move on a dark background, cut as a
+round medallion with a thin gold rim, in `art/icons/tech/<key>.webp`. It shows on the Techniques page, in the
+cards' round badges and on the fight buttons (bot/emojis.py uploads a changed picture by itself at the next start).
+`scripts/make_item_art.py skills` cuts a grade's six panels (three attacks, then three defenses). A manual shows its
+own scroll or book instead (docs/equipment.md "Pictures").
+
 ## Technique list
 
 Names grow grander with grade: Mortal = plain actions, Yellow = animals,

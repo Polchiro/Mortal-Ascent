@@ -107,7 +107,7 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
   logged-in player's own items can be picked.
 - Pictures: each item's painting (`cards/art_icons.py`); chests use the website's painted chests
   (`art/chest/<rarity>.webp`, falling back to the bot's `art/chests/<rarity>.png`) and
-  manuals their technique's icon. Forging materials, essences included, are painted since Nov 26 2026 (docs/forge.md "Pictures"). An item
+  manuals their scroll or book (docs/equipment.md "Pictures"). Forging materials, essences included, are painted since Nov 26 2026 (docs/forge.md "Pictures"). An item
   with no painted file is drawn by the bot's own
   card code and served from `/art/drawn/<kind>.png` (`web/drawn.py`, drawn once and kept in memory), so they
   look exactly like the Discord cards.
