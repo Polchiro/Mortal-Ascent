@@ -57,9 +57,9 @@ def realm_index(realm):
 
 
 def realm_scale(realm):
-    """Lotus Coin amounts double with each realm (Mortal ×1, Martial Apprentice ×2, ...).
-    Our default until economy.md sets real numbers."""
-    return 2 ** realm_index(realm)
+    """Lotus Coin amounts no longer grow with the realm (SHOAIB: everyone gets and pays the same, it was too strong):
+    ×1 for every realm. Chests, beasts, bandits, hunts, the stranger, the physician and the merchant all use this."""
+    return 1
 
 
 def roll_talent(rng=random):

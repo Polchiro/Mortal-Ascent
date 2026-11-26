@@ -5,7 +5,7 @@ Every player gets PER_DAY tasks a day from TASKS, picked with a seed of their id
 /daily quests, bot/quests.py), so the list stays the same all day and is new at midnight UTC. Progress is counted in
 the existing daily_counts table as "world:<key>": record() is called where each thing happens out in the world
 (a herb picked, a beast beaten, a glint looked into, a place reached, a trip banked). A task pays its Lotus Coins
-the moment it is done, scaled by realm exactly like the quests (bot/quests.coin_scale); finishing all of the day's
+the moment it is done, the same for every realm like the quests (bot/quests.coin_scale); finishing all of the day's
 tasks adds ALL_DONE_COINS. Every payment goes through db.add_coins, so it is in the ledger.
 
 These are separate from the Discord /daily quests: those are unchanged, and the same herb or beast counts for both.

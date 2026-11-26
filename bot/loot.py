@@ -26,7 +26,7 @@ TOP_CHESTS = ("legendary", "mythic")       # the Treasure Sense passive makes th
 TIER_ORDER = equipments.TIERS
 GRADE_ORDER = list(technique.GRADES)
 
-# DEFAULT: Lotus Coins in a chest at Mortal (×2 per realm, see rules.realm_scale)
+# DEFAULT: Lotus Coins in a chest, the same for every realm (rules.realm_scale is ×1)
 CHEST_COINS = {"common": (10, 25), "uncommon": (30, 60), "rare": (80, 150), "epic": (130, 260),
                "legendary": (200, 400), "mythic": (500, 900)}
 # DEFAULT: duplicate of a learned manual turns into this much mastery EXP (× grade EXP multiplier)
@@ -43,11 +43,22 @@ def coin_bonus(player, now=None):
     return 1 + (economy.BLESSING_TIERS[b[0]]["lotus_coins"] if b else 0)
 
 
-def roll_coins(player, lo_hi, rng=random, fortune=False):
-    """fortune=True for coins from fights and chests: the Fortune artifact (财) adds its share."""
+# Beasts of a higher realm are tougher, so they pay a little more: +10% per realm (Mortal ×1 ... Martial Saint ×2).
+# Only beast fights (normal beasts, Elite lairs, Beast Kings); chests, quests and prices are the same for everyone.
+BEAST_COIN_STEP_PER_REALM = 0.10
+
+
+def beast_coin_scale(realm):
+    return 1 + BEAST_COIN_STEP_PER_REALM * rules.realm_index(realm)
+
+
+def roll_coins(player, lo_hi, rng=random, fortune=False, beast=None):
+    """fortune=True for coins from fights and chests: the Fortune artifact (财) adds its share. beast=<the beast's
+    realm> for a beast's coins: a higher realm's beast pays a little more (beast_coin_scale)."""
     lo, hi = lo_hi
     mult = coin_bonus(player) + (gear.artifact_bonus(player, "lotus_coins") if fortune else 0)
-    return round(rng.randint(lo, hi) * rules.realm_scale(player["realm"]) * mult)
+    scale = rules.realm_scale(player["realm"]) * (beast_coin_scale(beast) if beast else 1)
+    return round(rng.randint(lo, hi) * scale * mult)
 
 
 # ── Item makers (dicts ready for db.add_item(**item)) ────────────────

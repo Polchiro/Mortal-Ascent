@@ -13,12 +13,12 @@ Numbers live in `quests.py`. Code: `bot/quests.py` (rules), `bot/quest_view.py` 
   - `/forge` attempts;
   - chests opened.
 - **Rewards:** each quest pays Lotus Coins and Moon Pearls.
-  - The coins grow with the realm: × (1 + `COIN_STEP_PER_REALM` × realm index), so Mortal ×1 and Martial Saint ×3.5.
+  - The coins are the same for every realm (`COIN_STEP_PER_REALM` = 0).
   - The pearls are flat.
 - **Claiming:** **/daily** shows the card. Its **Claim** button gives every finished reward. Each quest is claimed once a day.
 
 ## Complete all quests
-- **Reward:** finishing every quest of the day adds `ALL_DONE_COINS` (600, scaled like the quest coins) and `ALL_DONE_PEARLS` (25).
+- **Reward:** finishing every quest of the day adds `ALL_DONE_COINS` (600) and `ALL_DONE_PEARLS` (25).
 - **Chest:** there's an `ALL_DONE_CHEST_CHANCE` (40%) chance of a chest, weighted by `ALL_DONE_CHEST_TIERS`:
 
   | Chest | Weight | Chance |
