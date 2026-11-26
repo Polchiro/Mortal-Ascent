@@ -143,6 +143,12 @@
    "lead": 0.34
   }
  ],
+ "death@frost_wolf": [
+  {
+   "file": "death_frost_wolf.mp3",
+   "lead": 1.24
+  }
+ ],
  "death@golden_eyed_ape_king": [
   {
    "file": "death_golden_eyed_ape_king.mp3",
@@ -385,6 +391,12 @@
    "lead": 0.12
   }
  ],
+ "hit@frost_wolf": [
+  {
+   "file": "hit_frost_wolf.mp3",
+   "lead": 0.5
+  }
+ ],
  "hit@golden_eyed_ape_king": [
   {
    "file": "hit_golden_eyed_ape_king.mp3",
@@ -537,6 +549,12 @@
   {
    "file": "lunge_field_viper.mp3",
    "lead": 0.48
+  }
+ ],
+ "lunge@frost_wolf": [
+  {
+   "file": "lunge_frost_wolf.mp3",
+   "lead": 0.46
   }
  ],
  "lunge@golden_eyed_ape_king": [
@@ -701,6 +719,12 @@
    "lead": 0.62
   }
  ],
+ "roar:big@frost_wolf": [
+  {
+   "file": "roar_big_frost_wolf.mp3",
+   "lead": 0.56
+  }
+ ],
  "roar:big@golden_eyed_ape_king": [
   {
    "file": "roar_big_golden_eyed_ape_king.mp3",
@@ -855,6 +879,12 @@
   {
    "file": "roar_field_viper.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@frost_wolf": [
+  {
+   "file": "roar_frost_wolf.mp3",
+   "lead": 0.7
   }
  ],
  "roar@golden_eyed_ape_king": [

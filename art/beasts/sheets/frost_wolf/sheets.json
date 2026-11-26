@@ -1,0 +1,48 @@
+{
+ "cell": [
+  512,
+  293
+ ],
+ "still": [
+  95.4,
+  4.2,
+  336.6,
+  282.0
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/frost_wolf/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2000,
+   "smooth": true,
+   "nose_x": 0.1797
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/frost_wolf/attack.webp",
+   "frames": 67,
+   "cols": 8,
+   "rows": 9,
+   "ms": 2600,
+   "bite": 35,
+   "reach": 0.1575,
+   "bite_x": 0.0703
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/frost_wolf/hit.webp",
+   "frames": 22,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1833
+  },
+  "death": {
+   "src": "/art/beasts/sheets/frost_wolf/death.webp",
+   "frames": 42,
+   "cols": 8,
+   "rows": 6,
+   "ms": 3500,
+   "impact": 25
+  }
+ }
+}
