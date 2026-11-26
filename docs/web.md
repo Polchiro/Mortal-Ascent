@@ -1012,22 +1012,30 @@ The fight's background moves (`web/static/ambient.js`, beast fights and duels): 
 scene, behind the fighters, the beast and every effect, drawing its place's weather. Which weather is read off the
 background picture:
 
-| Background | What moves |
-|---|---|
-| Bamboo Forest | autumn leaves falling and turning, low mist, motes of light |
-| Misty Pine Valley | banks of mist drifting through, floating spores |
-| Northern Sea Wilds | wind-blown snow, the aurora brightening and fading, icy wisps over the ice |
-| Red Cliff Gorge | wind-blown sand streaks and, now and then, a gust of dust |
-| Thunder Peaks | slanted rain and, every 5-11 s, lightning: the sky lights up and a bolt flickers |
-| Arena ruins (duels) | moonlit fireflies, faint ground mist |
+| Background | Its video (and sound) | The canvas adds |
+|---|---|---|
+| Bamboo Forest | bamboo swaying, leaves drifting down, light rays, mist (no sound) | motes of light |
+| Misty Pine Valley | fog rolling across the valley and the moss, clouds over the cliffs (wind, dripping water) | floating spores |
+| Red Cliff Gorge | dust in the golden light, grass swaying, heat haze (no sound) | wind-blown sand streaks |
+| Thunder Peaks | churning clouds, lightning on the peaks every few seconds, reflections (thunder, rain) | slanted rain, low mist |
+| Northern Sea Wilds | the aurora flowing, snow and frost mist, the dark sea moving (wind, creaking ice, waves) | snow, icy wisps |
+| Arena ruins (duels, the Ruins hunt) | the rune circle pulsing, motes rising, clouds past the moon (night wind, crickets) | faint ground mist |
 
-**Background videos:** a place can also have a video of its painting coming alive, played behind the whole fight
-page under its shading (`video` in `PLACES`; so far **Frostpeak Mountains**, `art/scenes/battle_northern_sea_wilds.mp4`:
-the aurora flowing, mist and snow drifting, the open water shimmering, the ice where the fighters stand still). It
-fades in over the painting once it plays, and the canvas leaves out what the video already shows (`skip`: the
-aurora). Not with reduced motion or when the browser saves data: the painting shows. SHOAIB's Gemini video becomes the
-loop with `scripts/make_background_loop.py <scene> video.mp4`: Gemini's mark filled from around it, the last 1.5 s
-faded into the start so it loops with no jump (8.5 s), H.264 with no sound (about 2 MB).
+**Background videos:** every fight place has SHOAIB's video of its painting coming alive (Nov 26: all six repainted
+with Nano Banana Pro, 1376 x 768, and filmed with Veo), played behind the whole fight page under its shading (`video`
+in `PLACES`). It fades in over the painting once it plays, and the canvas leaves out what the video already shows
+(`skip`: the leaves and mist of the bamboo, the valley's mist, the gorge's gusts, the lightning, the arena's motes, the
+aurora). Not with reduced motion or when the browser saves data: the painting shows.
+
+**Their sound:** where the video has one, its ambience loops quietly under the fight (`sound`, art/scenes/<scene>.m4a,
+at a third of the Settings volume): off with Sound Off or Music Off, paused while the tab is hidden, started by the
+first tap or key if the browser held it back. Bamboo Forest and Red Cliff Gorge came without sound: a new video with
+sound can be added the same way.
+
+`scripts/make_background_loop.py <scene> video.mp4 [painting.png]` makes them all: Gemini's sparkle (and, on the
+gorge, the "AI" badge) covered with the ground just beside it on the painting and on every frame of the video, the
+video's last 1.5 s faded into its start so it loops with no jump (8.5 s, H.264, about 2 MB), and the sound looped the
+same way (AAC, about 100 KB).
 
 Nothing here touches the fight. The beast fight's page is replaced every turn; the same canvas moves into the new
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
