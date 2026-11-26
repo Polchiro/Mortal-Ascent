@@ -11,7 +11,12 @@
    scripts/make_background_loop.py): it loops behind the whole fight page, under the page's own shading, fading in
    over the painting once it plays (until then, or if it can't play, the painting shows). Like the canvas it moves into
    each turn's new page and carries on. Not with reduced motion, nor when the browser asks to save data. Where the
-   video already shows something (the aurora), the canvas leaves it out (`skip`). */
+   video already shows something (the aurora, falling leaves, mist, lightning), the canvas leaves it out (`skip`).
+
+   The place's own sound (`sound`: art/scenes/<scene>.m4a, the video's ambience looped by the same script: wind,
+   rain, thunder, crickets; the bamboo's and the gorge's made by scripts/make_ambience.py) plays quietly under the fight while the video does, at a third of the Settings volume.
+   It follows Settings (Sound Off or Music Off: none), pauses while the tab is hidden, and starts on the first tap
+   or key if the browser didn't let it start by itself. */
 (function () {
   'use strict';
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -19,26 +24,49 @@
   // ── what each place does ───────────────────────────────────────────────────────────────────────────
   // mist: soft banks drifting sideways (how many, how high as shares of the scene, how strong, which tint)
   // fall: falling things (kind, how many per 1000 px of width, speed, wind), motes: glowing specks, flash: lightning
-  var PLACES = {
-    bamboo_forest: {mist: {n: 4, y: [0.55, 0.85], a: 0.10, c: '214,224,206'},
+  var V = '/art/scenes/', PLACES = {
+    bamboo_forest: {video: V + 'battle_bamboo_forest.mp4', sound: V + 'battle_bamboo_forest.m4a', skip: ['fall', 'mist'],
+                    mist: {n: 4, y: [0.55, 0.85], a: 0.10, c: '214,224,206'},
                     fall: {kind: 'leaf', n: 9, speed: 0.06, wind: 0.015, colors: ['#C8792E', '#A85A22', '#D9A441', '#8C6A2E']},
                     motes: {n: 10, y: [0.15, 0.6], c: '255,236,190', a: 0.5}},
-    misty_pine_valley: {mist: {n: 9, y: [0.25, 0.85], a: 0.24, c: '214,222,230', speed: 1.2},
+    misty_pine_valley: {video: V + 'battle_misty_pine_valley.mp4', sound: V + 'battle_misty_pine_valley.m4a', skip: ['mist'],
+                        mist: {n: 9, y: [0.25, 0.85], a: 0.24, c: '214,222,230', speed: 1.2},
                         motes: {n: 8, y: [0.3, 0.8], c: '220,232,240', a: 0.35}},
-    northern_sea_wilds: {aurora: {y: 0.12, c: '90,255,200'}, video: '/art/scenes/battle_northern_sea_wilds.mp4', skip: ['aurora'],
+    northern_sea_wilds: {aurora: {y: 0.12, c: '90,255,200'}, video: V + 'battle_northern_sea_wilds.mp4',
+                         sound: V + 'battle_northern_sea_wilds.m4a', skip: ['aurora'],
                          fall: {kind: 'snow', n: 34, speed: 0.05, wind: 0.03},
                          mist: {n: 3, y: [0.6, 0.9], a: 0.09, c: '200,230,255', speed: 1.6}},
-    red_cliff_gorge: {fall: {kind: 'sand', n: 55, speed: 0.0, wind: 0.32, colors: ['#F2C28A', '#E0A060', '#FFD9A8']},
+    red_cliff_gorge: {video: V + 'battle_red_cliff_gorge.mp4', sound: V + 'battle_red_cliff_gorge.m4a', skip: ['gust'],
+                      fall: {kind: 'sand', n: 55, speed: 0.0, wind: 0.32, colors: ['#F2C28A', '#E0A060', '#FFD9A8']},
                       gust: {c: '226,160,100'}},
-    thunder_peaks: {fall: {kind: 'rain', n: 70, speed: 0.9, wind: 0.12},
+    thunder_peaks: {video: V + 'battle_thunder_peaks.mp4', sound: V + 'battle_thunder_peaks.m4a', skip: ['flash'],
+                    fall: {kind: 'rain', n: 70, speed: 0.9, wind: 0.12},
                     flash: {every: [5, 11]},
                     mist: {n: 4, y: [0.6, 0.92], a: 0.10, c: '170,170,200'}},
-    arena_ruins: {mist: {n: 3, y: [0.7, 0.95], a: 0.08, c: '170,190,230'},
+    arena_ruins: {video: V + 'arena_ruins.mp4', sound: V + 'arena_ruins.m4a', skip: ['motes'],
+                  mist: {n: 3, y: [0.7, 0.95], a: 0.08, c: '170,190,230'},
                   motes: {n: 30, y: [0.2, 0.85], c: '200,230,255', a: 0.8, glow: true, big: 1.5}}
   };
   var DEFAULT = {motes: {n: 10, y: [0.2, 0.8], c: '255,240,210', a: 0.4}};
 
   var saveData = !!(navigator.connection && navigator.connection.saveData), film = null, filmSrc = null;
+  function shown(kind) { return !(film && place && place.skip && place.skip.indexOf(kind) >= 0); }   // the video shows it
+
+  var amb = null, ambSrc = null, ambVol = 0.6, ambOn = true;
+  try {
+    ambOn = localStorage.getItem('ma.sound') !== 'off' && localStorage.getItem('ma.music') !== 'off';
+    var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) ambVol = v0 / 100;
+  } catch (e) {}
+  function sound_(src) {                                       // the place's ambience, quiet under the fight
+    if (!src || !ambOn || saveData) { if (amb) { amb.pause(); amb = null; ambSrc = null; } return; }
+    if (amb && ambSrc === src) return;
+    if (amb) amb.pause();
+    amb = new Audio(src); ambSrc = src; amb.loop = true; amb.volume = Math.min(1, ambVol * 0.33); amb.preload = 'auto';
+    var p = amb.play(); if (p && p.catch) p.catch(function () {});
+  }
+  function wake() { if (amb && amb.paused && !document.hidden) { var p = amb.play(); if (p && p.catch) p.catch(function () {}); } }
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function (e) { document.addEventListener(e, wake, {passive: true}); });
+  document.addEventListener('visibilitychange', function () { if (!amb) return; if (document.hidden) amb.pause(); else wake(); });
   function film_(main, src) {                                  // the place's video, at the back of the whole fight page
     if (!src || saveData) { if (film) { film.remove(); film = null; filmSrc = null; } main.classList.remove('bglive'); return; }
     if (!film || filmSrc !== src) {
@@ -118,6 +146,7 @@
     if (k !== key) { key = k; place = PLACES[k] || DEFAULT; mistSprite = place.mist ? sprite(place.mist.c) : null; seed(); nextFlash = 0; nextGust = 0; }
     else if (grown) seed();
     film_(main, place.video);
+    sound_(place.video && film ? place.sound : null);
     return true;
   }
 
@@ -136,14 +165,14 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
 
-    if (p.aurora && !(film && p.skip && p.skip.indexOf('aurora') >= 0)) {                                            // the aurora breathes: a soft band that brightens and fades
+    if (p.aurora && shown('aurora')) {                                            // the aurora breathes: a soft band that brightens and fades
       var a = 0.05 + 0.05 * Math.sin(t * 0.5) + 0.03 * Math.sin(t * 1.3);
       var g = ctx.createLinearGradient(0, 0, 0, H * 0.5);
       g.addColorStop(0, 'rgba(' + p.aurora.c + ',0)'); g.addColorStop(p.aurora.y + 0.1, 'rgba(' + p.aurora.c + ',' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + p.aurora.c + ',0)');
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H * 0.5);
     }
 
-    if (p.flash) {                                             // lightning now and then: the sky lights up, a bolt, gone
+    if (p.flash && shown('flash')) {                           // lightning now and then: the sky lights up, a bolt, gone
       if (!nextFlash) nextFlash = t + rand(1.5, 4);
       if (t >= nextFlash) { flash = 1; bolt = drawBolt(rand(0.15, 0.85)); nextFlash = t + rand(p.flash.every[0], p.flash.every[1]); }
       if (flash > 0) {
@@ -159,7 +188,7 @@
       }
     }
 
-    if (p.gust) {                                              // the gorge's wind lifts a veil of dust now and then
+    if (p.gust && shown('gust')) {                             // the gorge's wind lifts a veil of dust now and then
       if (!nextGust) nextGust = t + rand(2, 5);
       if (t >= nextGust) { gust = 1; nextGust = t + rand(6, 11); }
       if (gust > 0) {
@@ -171,8 +200,10 @@
       }
     }
 
+    var showMist = shown('mist'), showMotes = shown('motes'), showFall = shown('fall');
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
+      if (!(it.t === 'mist' ? showMist : it.t === 'mote' ? showMotes : showFall)) continue;
       if (it.t === 'mist') {
         it.x += it.v * dt; if (it.x > 1.25) it.x = -0.45; if (it.x < -0.45) it.x = 1.25;
         var al = p.mist.a * (0.7 + 0.3 * Math.sin(t * 0.3 + it.ph));
