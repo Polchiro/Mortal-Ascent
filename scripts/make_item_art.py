@@ -3,7 +3,8 @@
 
     python -m scripts.make_item_art items  swords=grid.png ... hunter=grid.png attack=grid.png defense=grid.png \
                                            "Sea-Calming Pillar=one.png" ...
-    python -m scripts.make_item_art skills mortal=grid.png yellow=grid.png mystic=grid.png earth=grid.png heaven=grid.png
+    python -m scripts.make_item_art skills mortal=grid.png yellow=grid.png mystic=grid.png earth=grid.png heaven=grid.png \
+                                           iron_fist=one.png
 
 items   A grid holds five things (a gear kind's or an artifact family's five tiers, or five manual grades), read left
         to right, top row first. Gemini doesn't always keep to its cells (items across the lines, pairs, grid
@@ -20,7 +21,8 @@ items   A grid holds five things (a gear kind's or an artifact family's five tie
 skills  A grade's six techniques as painted panels on grey: three attacks on top, three defences below, in
         technique.TECHNIQUES' order. Each panel is cropped square from its middle, made a round medallion with a
         thin gold rim, and written to art/icons/tech/<key>.webp: the skill icon on the Techniques page, the
-        cards' round badges and the fight buttons (bot/emojis.py uploads the new pictures by itself).
+        cards' round badges and the fight buttons (bot/emojis.py uploads the new pictures by itself). A single
+        picture named by a technique's key replaces that one icon.
 
 A source may end in @x,y,r;... to paint Gemini's sparkle out first (shares of the picture, as make_gather_art).
 The source files are only read. Needs numpy, opencv, Pillow and rembg (isnet-general-use).
@@ -266,6 +268,21 @@ def skills(args):
     from scripts.make_gather_art import pairs, unsparkle
     out = os.path.join(ICONS, "tech")
     for grade, (src, spots) in pairs(args).items():
+        if grade in technique.TECHNIQUES:                   # a redo of one technique: one painting, maybe with an
+            rgba = Image.open(src).convert("RGBA")          # empty strip; its painted part, cropped square
+            a = np.asarray(rgba)
+            painted = (a[..., 3] > 0) & (a[..., :3].max(2) > 8)
+            ys, xs = np.nonzero(painted)
+            im = rgba.convert("RGB")
+            if spots:
+                im = unsparkle(im, spots)
+            x0, y0, x1, y1 = xs.min() + 4, ys.min() + 4, xs.max() - 4, ys.max() - 4
+            side = min(x1 - x0, y1 - y0)
+            cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+            sq = im.crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side))
+            medallion(sq).save(os.path.join(out, grade + ".webp"), "WEBP", quality=90, method=6)
+            print(f"{grade}: {side} px painting", flush=True)
+            continue
         g = grade.capitalize()
         keys = [k for k, v in technique.TECHNIQUES.items() if v["grade"] == g]
         keys = [k for k in keys if technique.TECHNIQUES[k]["type"] == "attack"] + \
