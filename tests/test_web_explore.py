@@ -925,6 +925,22 @@ def test_the_horned_stag_is_animated_from_its_own_videos_with_its_own_voice():
     assert explore_play.beast_body("Horned Stag") == "horned_stag"
 
 
+def test_the_rock_python_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Rock Python (Nov 26, Martial Warrior: stone-patterned, no boulder): its swaying idle, the
+    strike and back, the jerk when struck, the slump to the ground; its hisses and strike from its videos."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("rock_python")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "rock_python.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@rock_python" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["rock_python@roar"][:2] == [0.067, 0.266]
+    assert explore_play.beast_body("Rock Python") == "rock_python"
+
+
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
     """`make_beast_sheets`: a move from several stretches of its video joined (the fox's pounce), frames an effect
     covered dropped, and a sparkle box that keeps a pale tail tip lying over it."""

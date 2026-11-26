@@ -75,6 +75,9 @@ CLIPS = {
     "horned_stag": {"attack": (4.1, 7.6), "hit": (1.0, 3.2), "death": (5.45, 7.6), "idle_span": (36, 60),
                     "idle_until": 4.1, "attack_ms": 2600},    "mountain_tiger": {"attack": (3.9, 8.0), "hit": (1.0, 2.5), "death": (4.0, 6.3), "idle_span": (36, 60),
                        "idle_until": 3.9, "attack_ms": 2800},
+    # its coiled tail tip touched the video's right edge as it struck
+    "rock_python": {"attack": (3.5, 7.5), "hit": (0.4, 2.4), "death": (3.9, 7.0), "idle_span": (36, 60),
+                    "idle_until": 3.4, "attack_ms": 2600, "fade": {"attack": 40}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
