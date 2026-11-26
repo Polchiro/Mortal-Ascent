@@ -55,5 +55,7 @@ mirrored); every move is taken from whichever of its two videos had it clean. Th
 wild boar in dented bronze plates with short broken spear stubs in its hide; its idle comes from the calm middle of
 its hit video, since its attack video began with steam puffing from its snout. The **White-Browed Tiger King**, the Martial
 Warrior Beast King, is a colossal white tiger with icy-blue stripes; its picture was mirrored to face left and its
-backdrop evened out before its videos, and its video effects are dropped frame by frame (wiping white would wipe its fur). The beasts are
+backdrop evened out before its videos, and its video effects are dropped frame by frame (wiping white would wipe its fur). The **Venom Scorpion** (Martial Expert) is a huge
+dark-green scorpion with its tail curled over its back; its videos kept the picture's "AI" badge as well as the
+sparkle, so both are dropped, and its strike is taken without the green slash arc the video drew. The beasts are
 being redone one at a time in roster order the same way.

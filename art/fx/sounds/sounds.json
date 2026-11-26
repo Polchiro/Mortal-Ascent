@@ -203,6 +203,12 @@
    "lead": 0.24
   }
  ],
+ "death@venom_scorpion": [
+  {
+   "file": "death_venom_scorpion.mp3",
+   "lead": 0.64
+  }
+ ],
  "death@white_browed_tiger_king": [
   {
    "file": "death_white_browed_tiger_king.mp3",
@@ -409,6 +415,12 @@
    "lead": 0.2
   }
  ],
+ "hit@venom_scorpion": [
+  {
+   "file": "hit_venom_scorpion.mp3",
+   "lead": 0.52
+  }
+ ],
  "hit@white_browed_tiger_king": [
   {
    "file": "hit_white_browed_tiger_king.mp3",
@@ -525,6 +537,12 @@
   {
    "file": "lunge_thornback_lizard.mp3",
    "lead": 1.24
+  }
+ ],
+ "lunge@venom_scorpion": [
+  {
+   "file": "lunge_venom_scorpion.mp3",
+   "lead": 0.22
   }
  ],
  "lunge@white_browed_tiger_king": [
@@ -653,6 +671,12 @@
    "lead": 0.86
   }
  ],
+ "roar:big@venom_scorpion": [
+  {
+   "file": "roar_big_venom_scorpion.mp3",
+   "lead": 0.56
+  }
+ ],
  "roar:big@white_browed_tiger_king": [
   {
    "file": "roar_big_white_browed_tiger_king.mp3",
@@ -771,6 +795,12 @@
   {
    "file": "roar_thornback_lizard.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@venom_scorpion": [
+  {
+   "file": "roar_venom_scorpion.mp3",
+   "lead": 0.24
   }
  ],
  "roar@white_browed_tiger_king": [
