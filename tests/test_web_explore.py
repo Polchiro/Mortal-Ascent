@@ -1,6 +1,7 @@
 """Exploring and fighting on the website (docs/web.md, "Explore"): the bot's expedition and fight engines."""
 import os
 import random
+import re
 import urllib.parse
 
 import pytest
@@ -921,6 +922,10 @@ def test_every_fight_place_plays_its_background_video_and_sound(client):
             assert os.path.getsize(os.path.join(root, f"{scene}.m4a")) < 300 * 1024
     assert "skip: ['aurora']" in js and "skip: ['flash']" in js                 # the video already shows them
     assert "ma.sound" in js and "ma.music" in js and "visibilitychange" in js   # Settings, and quiet when hidden
+    for place in ("bamboo_forest", "misty_pine_valley", "red_cliff_gorge", "thunder_peaks", "arena_ruins",
+                  "northern_sea_wilds"):                                        # the floor under the fighters' feet
+        assert re.search(place + r": 0\.[678]\d", js.split("var GROUND = {")[1].split("}")[0]), place
+    assert "var(--arena-pos, center 60%)/var(--arena-size, cover)" in css
     assert "main.battle.bglive{isolation:isolate}" in css and "video.bgloop{" in css and "z-index:-1" in css
     assert "saveData" in js                                                     # not when the browser saves data
 
