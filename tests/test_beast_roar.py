@@ -270,3 +270,17 @@ def test_every_tortoise_roars_with_the_tortoise_movement_and_its_open_mouthed_pi
         assert still.size == roar.size and max(still.size) <= 900, slug
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "shell" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_every_element_has_its_own_blast_burst_and_ground_patch():
+    """The roar hits you with its own element (scripts/make_element_fx.py, fight.js `blast`, `impact`): every
+    beast's element has its three pictures, the page is told the element, and the toads' crack is there."""
+    for name in beasts.TRAITS:
+        el = beasts.element_of(name).lower()
+        for part in ("stream", "burst", "ground"):
+            assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"{el}_{part}.webp")), (name, part)
+        r = explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "element": beasts.element_of(name), "tier": "normal"})
+        assert r["element"] == el
+    assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", "ground_crack.webp"))
+    assert explore_play.beast_roar({"slug": "someday_new", "tier": "normal"})["element"] is None
+    assert explore_play.beast_roar({"slug": "x", "element": "Starlight", "tier": "normal"})["element"] is None   # no pictures yet

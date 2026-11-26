@@ -48,6 +48,8 @@ ARENA = "/art/scenes/arena_ruins.jpg"   # a fight with no region (should not hap
 
 
 POSES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "beasts", "poses")
+# each element's own roar blast, burst and ground patch (scripts/make_element_fx.py, fight.js `blast`, `impact`)
+ELEM_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "fx", "elem")
 _poses_cache = {}
 
 
@@ -59,7 +61,8 @@ def beast_roar(e):
     (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, its element's colour, and its body's
     shared roar movement (beasts.ROAR_ANIMATIONS; None: it only rears back a little). `art`: its own open-mouthed
     roar picture (art/beasts/roar/<slug>.png, scripts/make_quadruped_art.py --roar), shown while it roars, with
-    its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture."""
+    its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture. `element`: its
+    element in lower case, for the roar's own blast, burst and ground patch (art/fx/elem/); None without them."""
     global _heads
     if _heads is None:
         try:
@@ -74,11 +77,13 @@ def beast_roar(e):
     cat = beasts.roar_category(e.get("name") or "")
     move = beasts.ROAR_ANIMATIONS[cat] if cat else None
     slug = e.get("slug") or ""
+    elem = (e.get("element") or "").lower()
     roar_pic = os.path.join(os.path.dirname(POSES_DIR), "roar", slug + ".png") if move and slug else None
     opened = _heads.get(slug + "@roar")
     return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
             "art": f"/art/beasts/roar/{slug}.png" if roar_pic and os.path.exists(roar_pic) else None,
             "slug": slug,
+            "element": elem if elem and os.path.exists(os.path.join(ELEM_DIR, elem + "_stream.webp")) else None,
             "claws": beasts.has_claws(e.get("name") or ""),
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
