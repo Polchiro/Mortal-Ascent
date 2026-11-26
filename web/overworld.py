@@ -780,8 +780,11 @@ def tox_of(p, now):
     n = rules.current_toxicity(p, now)
     if not n:
         return None
-    return {"n": n, "zone": "quarter" if n >= 6 else "half" if n >= 4 else "mild",
-            "mult": f"{rules.pill_effect_mult(n):.0%}"}
+    mult = rules.pill_effect_mult(n)
+    hint = ("Pills work at full power" + (" · one more halves them" if rules.pill_effect_mult(n + 1) < mult else "")
+            if mult >= 1 else f"Pills only work at {mult:.0%}")
+    return {"n": n, "zone": "quarter" if n >= 6 else "half" if n >= 4 else "mild", "mult": f"{mult:.0%}",
+            "hint": hint, "fade": f"−1 every {rules.toxicity_decay_hours(p):g}h"}
 
 
 def _who(conn, uid):

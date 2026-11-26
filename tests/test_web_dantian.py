@@ -61,6 +61,20 @@ def test_toxicity_reads_as_the_bot_reads_it(conn):
     assert dp.toxicity(db.get_player(conn, A), now)["zone"] == "clean"
 
 
+def test_the_plate_badge_says_what_toxicity_does(conn):
+    from web import overworld
+    now = time.time()
+    for n, zone, hint in ((3, "mild", "full power · one more halves them"), (4, "half", "only work at 50%"),
+                          (7, "quarter", "only work at 25%")):
+        db.update_player(conn, A, toxicity=n, toxicity_at=now)
+        t = overworld.tox_of(db.get_player(conn, A), now)
+        assert t["n"] == n and t["zone"] == zone and hint in t["hint"] and t["fade"].startswith("−1 every")
+    db.update_player(conn, A, toxicity=1, toxicity_at=now)
+    assert "halves" not in overworld.tox_of(db.get_player(conn, A), now)["hint"]
+    db.update_player(conn, A, toxicity=0)
+    assert overworld.tox_of(db.get_player(conn, A), now) is None
+
+
 def test_a_qi_pill_does_what_it_said(conn):
     it = pill(conn, A, "qi", "Yellow", 6)
     p = db.get_player(conn, A)
