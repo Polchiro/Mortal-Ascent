@@ -206,3 +206,12 @@ def test_the_pages_need_a_login(tmp_path):
     assert cl.get("/chests/shelf").json() == {"gone": True}
     assert cl.post("/chests/open", json={"item": 1}).json() == {"gone": True}
     assert cl.post("/chests/collect", json={}).json() == {"gone": True}
+
+
+def test_the_light_comes_out_of_the_chest():
+    """A friend's note: the effect must come out of the chest, not up from the floor. The burst's foot, the sparks
+    and the rays are all set on the open chest's mouth."""
+    js = open(os.path.join(ROOT, "web", "static", "chests.js")).read()
+    css = open(os.path.join(ROOT, "web", "static", "chests.css")).read()
+    assert "var MOUTH = 0.53" in js and "y = m.y - h * BURST_FOOT" in js and "var x = m.x, y = m.y" in js
+    assert ".chrays{position:absolute;left:50%;top:53%;" in css
