@@ -1,0 +1,48 @@
+{
+ "cell": [
+  596,
+  428
+ ],
+ "still": [
+  190.2,
+  109.8,
+  319.2,
+  314.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/silver_monkey/idle.webp",
+   "frames": 48,
+   "cols": 8,
+   "rows": 6,
+   "ms": 4166,
+   "smooth": true,
+   "nose_x": 0.2466
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/silver_monkey/attack.webp",
+   "frames": 28,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "bite": 11,
+   "reach": 0.3665,
+   "bite_x": 0.0671
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/silver_monkey/hit.webp",
+   "frames": 20,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1667
+  },
+  "death": {
+   "src": "/art/beasts/sheets/silver_monkey/death.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2167,
+   "impact": 13
+  }
+ }
+}

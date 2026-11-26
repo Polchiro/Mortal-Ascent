@@ -130,6 +130,15 @@ CLIPS = {
                     "idle_until": 3.9, "attack_ms": 2400, "white": ("hit",), "ease_in": {"hit": 2, "death": 2},
                     "settle": {"attack": 3, "hit": 3},
                     "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27: its idle and its on-the-spot swipe from its remade attack video (its short tail kept; the frame where it
+    # turned toward the camera and the yellow spark at its hands dropped); its flinch and its collapse from the first
+    # hit video, where Veo grew its tail long: cut back to a short stub (`trim_tail`); that video's white flash (on a
+    # silver monkey: dropped, not wiped) is left out, so the flinch eases in from the idle
+    "silver_monkey": {"attack": (3.3, 6.2), "hit": (1.15, 2.6), "death": (4.6, 6.6), "idle_span": (36, 60),
+                      "idle_until": 3.2, "attack_ms": 2400, "drop": {"attack": ((4.15, 4.72),)},
+                      "trim_tail": ("hit", "death"), "ease_in": {"hit": 3, "death": 2},
+                      "settle": {"attack": 4, "hit": 3},
+                      "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
@@ -213,6 +222,35 @@ def cut_one(im, session, slab=None, white=False, fade=0, mark=MARK):
     return Image.fromarray(a, "RGBA")
 
 
+def trim_tail(im, r=27, keep=55, fade=35):
+    """A tail Veo grew long cut back to a short stub (SHOAIB, Nov 27: the Silver Monkey's short tail grew long in its
+    hit and death video). The body is what survives an opening with a disc of radius r (thicker than the tail, thinner
+    than the arms and legs); the thin piece left over behind the body's middle is the tail, kept only `keep` px out from
+    the body and faded out over `fade` px more. A faint half-cut tail tip the cutter left (alpha under 128) far from the
+    body goes the same way."""
+    a = np.asarray(im).copy()
+    m = a[..., 3] > 128
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    body = ndimage.binary_opening(m, structure=(xx ** 2 + yy ** 2) <= r * r)
+    lab, n = ndimage.label(body)
+    if not n:
+        return im
+    body = lab == 1 + int(np.argmax(ndimage.sum(body, lab, range(1, n + 1))))
+    thin = m & ~body
+    lab, n = ndimage.label(thin)
+    near = np.clip((keep + fade - ndimage.distance_transform_edt(~body)) / fade, 0, 1)
+    if n:
+        sizes = ndimage.sum(thin, lab, range(1, n + 1))
+        mids = ndimage.center_of_mass(thin, lab, range(1, n + 1))
+        middle = np.flatnonzero(body.any(0)).mean()
+        behind = [i for i in range(n) if mids[i][1] > middle and sizes[i] > 1500]
+        if behind:
+            tail = ndimage.binary_dilation(lab == 1 + max(behind, key=lambda i: sizes[i]), iterations=2) & ~body
+            a[..., 3] = np.where(tail, (a[..., 3] * near).astype(np.uint8), a[..., 3])
+    a[..., 3] = np.where(~m, (a[..., 3] * near).astype(np.uint8), a[..., 3])
+    return Image.fromarray(a, "RGBA")
+
+
 def cut_clip(kind, video, numbers, cfg, cache, session):
     out, raw = [], None
     for n in numbers:
@@ -227,6 +265,8 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
             raw = dict(zip(numbers, video_frames(video, numbers)))
         im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()),
                      cfg.get("fade", {}).get(kind, 0), cfg.get("mark", MARK))
+        if kind in cfg.get("trim_tail", ()):
+            im = trim_tail(im)
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             im.save(path)
