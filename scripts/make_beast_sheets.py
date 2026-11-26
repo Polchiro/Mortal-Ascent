@@ -83,6 +83,12 @@ CLIPS = {
                    "idle_until": 1.8, "attack_ms": 2600, "pingpong": ("attack",),
                    "ease_in": {"attack": 3, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
                    "place_as": {"death": "hit"}},
+    # Nov 27 redesign, standing (wings folded): its first attack and hit spread its wings off the video and drew a slash
+    # arc, so they come from a remade video (idle, flinch, beak stab: wings folded); its fall from the first hit video
+    "thunder_hawk": {"attack": (4.15, 7.0), "hit": (0.85, 3.0), "death": (2.5, 6.6), "idle_span": (12, 22),
+                     "idle_until": 0.95, "attack_ms": 2600,
+                     "ease_in": {"attack": 2, "hit": 2, "death": 5}, "settle": {"attack": 3, "hit": 3},
+                     "place_as": {"attack": "idle", "hit": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

@@ -1,0 +1,48 @@
+{
+ "cell": [
+  449,
+  299
+ ],
+ "still": [
+  163.2,
+  12.6,
+  233.4,
+  283.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/thunder_hawk/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1000,
+   "smooth": true,
+   "nose_x": 0.3608
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/thunder_hawk/attack.webp",
+   "frames": 36,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2600,
+   "bite": 19,
+   "reach": 0.1671,
+   "bite_x": 0.2673
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/thunder_hawk/hit.webp",
+   "frames": 28,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2333
+  },
+  "death": {
+   "src": "/art/beasts/sheets/thunder_hawk/death.webp",
+   "frames": 54,
+   "cols": 8,
+   "rows": 7,
+   "ms": 4500,
+   "impact": 37
+  }
+ }
+}
