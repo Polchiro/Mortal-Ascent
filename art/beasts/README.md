@@ -41,5 +41,6 @@ now clearly the armoured one: forged iron plates with glowing amber cracks. The 
 with one ember-tipped tail (no flames leaving the body; no longer on a slab). The **Wind-Feather Falcon** is the
 first animated bird: a dark falcon with a normal fan tail (the long trailing plumes were dropped: Veo could not keep
 them), drawn flying with no perch or stone. The **Shadow Wolf** (Elite) is a big scarred black wolf whose shadow is
-painted into its fur (charcoal legs, dark stripes, violet eyes: no smoke, which Veo cannot keep). The beasts are
+painted into its fur (charcoal legs, dark stripes, violet eyes: no smoke, which Veo cannot keep). The **Horned Stag** (Elite) has a solid crown of jade crystal antlers and flat moss
+on its back (no loose leaves or floating crystals; no longer on a slab). The beasts are
 being redone one at a time in roster order the same way.

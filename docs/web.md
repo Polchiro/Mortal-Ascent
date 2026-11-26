@@ -524,6 +524,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
+| The Horned Stag's snort and charging bellow, its pained bellow, its dying bellow and fall, its bellow and big bellow (`@horned_stag`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Shadow Wolf's lunge and snarl, its pained yelp, its dying howl and fall, its growl and howl (`@shadow_wolf`) | its own idle + lunge and hit + death videos (Nov 26) |
 | The Wind-Feather Falcon's dive and screech, its cry when struck, its dying cry and fall, its screech and big screech (`@wind_feather_falcon`) | its own idle + dive and hit + death videos (Nov 26) |
 | The Red Fox's pounce yip and snap, its yelp, its dying cry and fall, its yip and big snarl (`@red_fox`) | its own idle + pounce and hit + death videos (Nov 26) |
@@ -971,7 +972,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, and the **Shadow Wolf**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf** and the **Horned Stag**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 Every sheet is loaded **and unpacked** ahead (fight.js `keep`, kept across turns) and a turn waits for them
 (`whenReady`, 2.5 s at most): a big attack sheet (the bear's, the falcon's: about 18 megapixels) otherwise left the

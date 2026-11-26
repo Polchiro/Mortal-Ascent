@@ -71,6 +71,8 @@ CLIPS = {
                             "place_as": {"death": "hit"}, "floor": ("attack", "hit", "death")},
     "shadow_wolf": {"attack": (4.2, 7.9), "hit": (1.0, 2.8), "death": (3.3, 5.8), "idle_span": (36, 60),
                     "idle_until": 4.1, "attack_ms": 2600},
+    "horned_stag": {"attack": (4.1, 7.6), "hit": (1.0, 3.2), "death": (5.45, 7.6), "idle_span": (36, 60),
+                    "idle_until": 4.1, "attack_ms": 2600},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle

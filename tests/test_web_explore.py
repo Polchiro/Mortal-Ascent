@@ -491,19 +491,28 @@ def test_losing_or_fleeing_has_no_victory_sequence(client):
     assert s.ended is None and "Victory!" not in client.get("/explore/play").text
 
 
-def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
+def no_own_animation(monkeypatch):
+    """Every beast with the shared quadruped death has its own animation since Nov 26 (Red Fox ... Mountain Tiger):
+    these tests hide those, to keep testing the shared movement a beast without its own videos would still get."""
+    from web import beast_sheets
+    monkeypatch.setattr(beast_sheets, "death_view", lambda slug, linger: None)
+    monkeypatch.setattr(beast_sheets, "sheets", lambda slug: None)
+
+
+def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client, monkeypatch):
     import os
     import beasts
     from web import death
+    no_own_animation(monkeypatch)
     views = {}
-    for name in ("Horned Stag", "Mountain Tiger"):   # (the Red Fox and the Shadow Wolf: their own deaths since Nov 26)
+    for name in beasts.DEATH_CATEGORY:
         v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
         assert v["kind"] == "warp" and v["category"] == "quadruped"
         assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
         assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
         assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
         assert "src" not in v                                       # numbers only: no picture but the beast's own
-    assert views["Mountain Tiger"]["motion"] == views["Horned Stag"]["motion"]     # one movement for all of them
+    assert views["Mountain Tiger"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/mountain_tiger.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
@@ -511,7 +520,8 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
 
 
-def test_the_beast_dies_as_its_own_picture(client):
+def test_the_beast_dies_as_its_own_picture(client, monkeypatch):
+    no_own_animation(monkeypatch)
     s = fight(client)
     b = s.battle
     b.enemy.update(name="Horned Stag", slug="horned_stag")
@@ -696,13 +706,14 @@ def test_the_grey_wolf_has_its_four_animations_on_one_cell():
     assert beast_sheets.sheets("white_tiger") is None and beast_sheets.sheets("../etc") is None
 
 
-def test_only_the_grey_wolf_dies_in_its_own_animation():
+def test_only_the_grey_wolf_dies_in_its_own_animation(monkeypatch):
     import beasts
     from web import death
     v = death.view({"kind": "beast", "name": "Grey Wolf", "slug": "grey_wolf"})
     assert v["kind"] == "sheet" and v["ms"] == 2500 and 0 < v["impact"] < v["ms"] and v["linger"] == death.LINGER_MS
+    no_own_animation(monkeypatch)
     v = death.view({"kind": "beast", "name": "Horned Stag", "slug": beasts.slug("Horned Stag")})
-    assert v["kind"] == "warp"                                    # every other beast as before
+    assert v["kind"] == "warp"                                    # a beast without its own videos: as before
 
 
 def test_the_grey_wolf_fight_draws_its_frames_over_its_picture(client):
@@ -893,6 +904,22 @@ def test_the_shadow_wolf_is_animated_from_its_own_videos_with_its_own_voice():
         assert f"{sound}@shadow_wolf" in keys
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["shadow_wolf@roar"][:2] == [0.07, 0.41]
     assert explore_play.beast_body("Shadow Wolf") == "shadow_wolf"
+
+
+def test_the_horned_stag_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Horned Stag (Nov 26, Elite: solid jade crystal antlers, flat moss): idle, the charge with its
+    antlers lowered and back, the stagger, the buckle and fall; its snorts and bellows from its videos."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("horned_stag")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert death.view({"kind": "beast", "name": "Horned Stag", "slug": "horned_stag"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "horned_stag.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@horned_stag" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["horned_stag@roar"][:2] == [0.063, 0.377]
+    assert explore_play.beast_body("Horned Stag") == "horned_stag"
 
 
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
