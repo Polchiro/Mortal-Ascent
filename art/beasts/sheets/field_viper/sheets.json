@@ -1,0 +1,47 @@
+{
+ "cell": [
+  839,
+  436
+ ],
+ "still": [
+  289.2,
+  75.6,
+  489.6,
+  345.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/field_viper/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1250,
+   "nose_x": 0.3421
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/field_viper/attack.webp",
+   "frames": 41,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2400,
+   "bite": 11,
+   "reach": 0.4963,
+   "bite_x": 0.0024
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/field_viper/hit.webp",
+   "frames": 17,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1400
+  },
+  "death": {
+   "src": "/art/beasts/sheets/field_viper/death.webp",
+   "frames": 31,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "impact": 21
+  }
+ }
+}
