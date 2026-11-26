@@ -105,18 +105,6 @@ def single(name):
     return None
 
 
-def no_lines(far):
-    """Grid lines Gemini drew: rows and columns mostly unlike the backdrop, taken out."""
-    far = far.copy()
-    rows = far.mean(1) > 0.5
-    cols = far.mean(0) > 0.5
-    for r in np.nonzero(rows)[0]:
-        far[max(0, r - 2):r + 3] = False
-    for c in np.nonzero(cols)[0]:
-        far[:, max(0, c - 2):c + 3] = False
-    return far
-
-
 def found(im, session, join=31):
     """The five things on a grid picture, in reading order: (box (x0, y0, x1, y1), where it lies (a mask))."""
     from rembg import remove
@@ -150,7 +138,12 @@ def unline(im):
     return Image.fromarray(cv2.cvtColor(cv2.inpaint(bgr, m, 5, cv2.INPAINT_TELEA), cv2.COLOR_BGR2RGB))
 
 
-def cut(im, session):
+# items whose own parts rembg can't see (a blade of light, a thin willow branch): round them, anything unlike the
+# grey is kept too
+KEEP_ALL = {"Sword of the Nine Heavens", "Jade Purity Vase"}
+
+
+def cut(im, session, keep_all=False):
     """One item off its grey: RGBA cropped to it. As scripts/make_gather_art.cut, but every sizeable piece is kept
     (a pair of gauntlets, a fan's loose feather) and nothing is resized."""
     from rembg import remove
@@ -159,7 +152,16 @@ def cut(im, session):
     ai = np.asarray(remove(im.convert("RGB"), session=session).convert("RGBA"))[..., 3].astype(np.uint8)
     dist = np.sqrt(((rgb.astype(int) - bg) ** 2).sum(2))
     sure_bg = mea.joined_to_edge(dist < mea.SAME)
-    alpha = np.maximum(ai, np.where(no_lines(dist > mea.KEY), 255, 0)).astype(np.uint8)
+    # The item itself: rembg's outline with its holes filled. Inside it, anything unlike the grey is solid (a pale
+    # robe must not come out half see-through). Grid lines are already painted out of the whole picture (unline).
+    solid = cv2.morphologyEx((ai > 128).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
+    ff = solid.copy()
+    cv2.floodFill(ff, np.zeros((ff.shape[0] + 2, ff.shape[1] + 2), np.uint8), (0, 0), 1)
+    inside = (solid | (1 - ff)).astype(bool)
+    far = dist > mea.KEY
+    # Round it, only what rembg is sure of: a painted halo or mist is left out, as on the page it reads as blur.
+    rest = np.maximum(ai, np.where(far, 255, 0)) if keep_all else np.where(ai > 160, ai, 0)
+    alpha = np.where(inside, np.where(far, 255, ai), rest).astype(np.uint8)
     alpha[sure_bg & (ai < 160)] = 0
     k, lab, st, _ = cv2.connectedComponentsWithStats((alpha > 24).astype(np.uint8))
     if k > 2:                                              # drop specks and the sparkle, keep every real piece
@@ -167,7 +169,8 @@ def cut(im, session):
         keep = [i for i in range(1, k) if st[i, cv2.CC_STAT_AREA] >= big * 0.04]
         alpha[~np.isin(lab, keep)] = 0
     hard = cv2.erode((alpha > 127).astype(np.uint8) * 255, np.ones((3, 3), np.uint8))
-    alpha = np.minimum(alpha, cv2.GaussianBlur(hard, (3, 3), 0))
+    near = cv2.dilate(inside.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+    alpha = np.where(near, np.minimum(alpha, cv2.GaussianBlur(hard, (3, 3), 0)), alpha)   # a clean edge on the item
     h, w = alpha.shape                                     # a glow cut off at the box's edge fades out instead
     yy, xx = np.mgrid[0:h, 0:w]
     edge = np.minimum(np.minimum(xx, w - 1 - xx), np.minimum(yy, h - 1 - yy))
@@ -229,7 +232,7 @@ def items(args):
                 jobs.append((item, pic.crop((max(0, x0 - pad), max(0, y0 - pad), min(w, x1 + pad), min(h, y1 + pad)))))
         for (n, path), pic in jobs:
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            obj = cut(pic, session)
+            obj = cut(pic, session, keep_all=n in KEEP_ALL)
             square(obj).save(path, "WEBP", quality=90, method=6)
             print(f"{n}: {obj.width} x {obj.height}", flush=True)
 
