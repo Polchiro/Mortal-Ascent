@@ -233,3 +233,27 @@ def test_essences_show_their_painting_and_the_drawn_route_still_works(client, db
     assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
     for bad in ("/art/drawn/../../.env.png", "/art/drawn/nonsense.png", "/art/drawn/mat:" + "x" * 80 + ".png"):
         assert client.get(bad).status_code == 404
+
+
+def test_manuals_are_learned_or_read_from_the_bag(client, db_path):
+    give(db_path, UID, "manual:twin_palm_strike", "manual:crescent_sweep", "manual:iron_fist")
+    log_in(client)
+    c = db.connect(db_path)
+    mid = {i["key"]: i["id"] for i in db.get_items(c, UID, "manuals")}
+    c.close()
+    page = client.get(f"/inventory?tab=manuals&item={mid['twin_palm_strike']}").text
+    assert "Learn &amp; equip" in page and "Learn only" in page and "in place of <b>Iron Fist</b>" in page
+    r = client.post("/inventory/learn", data={"item": mid["twin_palm_strike"], "equip": "0"})
+    assert r.status_code == 303 and "tab=manuals" in r.headers["location"]
+    client.post("/inventory/learn", data={"item": mid["crescent_sweep"], "equip": "1"})
+    c = db.connect(db_path)
+    have = {t["name"]: bool(t["equipped"]) for t in db.get_techniques(c, UID, equipped_only=False)}
+    c.close()
+    assert have["Twin Palm Strike"] is False and have["Crescent Sweep"] is True and have["Iron Fist"] is False
+    page = client.get(f"/inventory?tab=manuals&item={mid['iron_fist']}").text
+    assert "Read it" in page and "keep it to trade" in page and "Learn only" not in page
+    client.post("/inventory/read", data={"item": mid["iron_fist"]})
+    assert "mastery EXP" in client.get("/inventory?tab=manuals").text           # the bag tells what happened
+    c = db.connect(db_path)
+    assert db.get_items(c, UID, "manuals") == []
+    c.close()

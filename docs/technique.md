@@ -84,6 +84,20 @@ Bonus to training EXP (at stage 1, before mastery multiplier):
 - Passive % buffs add into the buff totals in stats.md
 - The 30% one-hit cap in stats.md still applies to every technique
 
+## Manuals
+
+A manual is a bag item: it drops from chests, stacks, and can be traded (trade window, "Other Items") until it is
+used. Using one copy makes its technique yours for good (a learned technique is never traded); spare copies stay in
+the bag to trade or keep. The bag (Discord and website alike, `bot/loot.py` `manual_plan` / `learn_manual` /
+`read_manual`) says what will happen before anything is used:
+
+- **Too low a realm:** "You must reach (realm) to comprehend a (grade) manual." Nothing is used.
+- **Not learned yet:** **Learn & equip** learns it and equips it, in a free slot or in place of the technique named
+  first (the one `db.bumped` would take off; it stays in your techniques). **Learn only** learns it and changes
+  nothing equipped. Learn & equip is held back during a fight; Learn only isn't.
+- **Already learned:** **Read it** uses one copy for mastery EXP (100 × the grade's EXP multiplier) and Insight ink
+  (`forge.DUPLICATE_MANUAL_INK`). Learn never uses up a known copy by mistake.
+
 ## Technique slots
 
 | Realm | Slots |

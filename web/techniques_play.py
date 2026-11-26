@@ -18,12 +18,7 @@ FIGHTING = "Techniques can only be swapped outside of fights. Finish your fight 
 
 def would_replace(learned, tech, slots):
     """What db.equip_technique would take off to make room for `tech` (its own rule, without writing), or None."""
-    equipped = [t for t in learned if t["equipped"]]
-    same = [t for t in equipped if t["type"] == tech["type"]]
-    other = [t for t in equipped if t["type"] != tech["type"]]
-    if len(same) >= slots - 1 or len(equipped) >= slots:
-        return same[0] if same else (other[0] if len(other) > 1 else None)
-    return None
+    return db.bumped([t for t in learned if t["equipped"]], tech["type"], slots)
 
 
 def card(t, learned, slots):

@@ -47,7 +47,7 @@ from . import discord_oauth as oauth
 from . import (admin_routes, alchemy_play, breakthrough_routes, chest_routes, dantian_routes, drawn, duel_routes,
                explore_play, forge_play, gather_play, hunt_routes, practice_routes, rankings, spar_routes, town,
                train_routes, techniques_routes, pavilion_routes)
-from . import world_routes
+from . import techniques_play, world_routes
 from . import inventory as bag
 from .appearance import appearance_view
 from .inventory import inventory_view
@@ -353,6 +353,22 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
 
     app.post("/inventory/equip")(gear_step(bag.equip))
     app.post("/inventory/unequip")(gear_step(bag.unequip))
+
+    @app.post("/inventory/learn")
+    async def learn_manual(request: Request):
+        user = current_user(request)
+        if not user:
+            return RedirectResponse("/", status_code=303)
+        form = await form_of(request)
+        item_id = num(form.get("item"))
+        busy = techniques_play.fighting(app.state, user["id"])
+        tab, message = await run_in_threadpool(with_conn, bag.learn, user["id"], item_id, form.get("equip") != "0",
+                                               busy)
+        request.session["gear_notice"] = message
+        return RedirectResponse("/inventory?" + urllib.parse.urlencode({"tab": tab, "item": item_id}),
+                                status_code=303)
+
+    app.post("/inventory/read")(gear_step(bag.read))
 
     forges = app.state.forges = forge_play.Forges()
 
