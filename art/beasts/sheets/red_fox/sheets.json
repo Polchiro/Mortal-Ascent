@@ -1,0 +1,47 @@
+{
+ "cell": [
+  662,
+  361
+ ],
+ "still": [
+  69.0,
+  47.4,
+  540.0,
+  309.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/red_fox/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1250,
+   "nose_x": 0.0695
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/red_fox/attack.webp",
+   "frames": 31,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "bite": 19,
+   "reach": 0.1148,
+   "bite_x": 0.0015
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/red_fox/hit.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000
+  },
+  "death": {
+   "src": "/art/beasts/sheets/red_fox/death.webp",
+   "frames": 22,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1833,
+   "impact": 16
+  }
+ }
+}
