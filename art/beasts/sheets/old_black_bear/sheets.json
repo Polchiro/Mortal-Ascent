@@ -1,0 +1,47 @@
+{
+ "cell": [
+  709,
+  427
+ ],
+ "still": [
+  87.0,
+  38.4,
+  540.0,
+  383.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/old_black_bear/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1250,
+   "nose_x": 0.1171
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/old_black_bear/attack.webp",
+   "frames": 40,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2600,
+   "bite": 21,
+   "reach": 0.05,
+   "bite_x": 0.0748
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/old_black_bear/hit.webp",
+   "frames": 17,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1400
+  },
+  "death": {
+   "src": "/art/beasts/sheets/old_black_bear/death.webp",
+   "frames": 30,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "impact": 10
+  }
+ }
+}

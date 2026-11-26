@@ -55,6 +55,9 @@ CLIPS = {
                        "idle_until": 2.5, "attack_ms": 1800, "pingpong": ("attack",)},
     "wild_ox": {"attack": (2.0, 5.6), "hit": (1.7, 3.4), "death": (4.4, 6.4), "idle_span": (30, 44),
                 "idle_from": 5.95, "attack_ms": 2400, "bite": 33, "white": ("hit", "death")},
+    "old_black_bear": {"attack": (2.25, 5.6), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
+                       "idle_from": 5.8, "attack_ms": 2600, "bite": 21, "impact": 10, "white": ("death",),
+                       "fade": {"attack": ("top", 70)}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 
@@ -113,9 +116,14 @@ def cut_one(im, session, slab=None, white=False, fade=0):
         a[y0:y1, x0:x1, 3] = np.where(grey, 0, a[y0:y1, x0:x1, 3])
     if slab:
         a = off_slab(a, *slab)
-    if fade:                                                 # the body ran off the video's right edge: fade it out
-        ramp = np.clip(np.arange(a.shape[1])[::-1] / fade, 0, 1)            # instead of a hard straight cut
-        a[..., 3] = (a[..., 3] * ramp[None, :]).astype(np.uint8)
+    if fade:                                                 # the body ran off the video's edge: fade it out
+        edge, px = fade if isinstance(fade, tuple) else ("right", fade)     # instead of a hard straight cut
+        if edge == "right":
+            ramp = np.clip(np.arange(a.shape[1])[::-1] / px, 0, 1)
+            a[..., 3] = (a[..., 3] * ramp[None, :]).astype(np.uint8)
+        else:                                                               # "top": a head reared out of the video
+            ramp = np.clip(np.arange(a.shape[0]) / px, 0, 1)
+            a[..., 3] = (a[..., 3] * ramp[:, None]).astype(np.uint8)
     alpha = a[..., 3] > 24
     lab, n = ndimage.label(ndimage.binary_dilation(alpha, iterations=3))
     if n > 1:                                                # the beast: its largest piece and what touches it
@@ -203,6 +211,7 @@ def main(slug, videos, cache=None):
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", videos["idle"]] + part + ["-an", idle_src], check=True)
     a, n = stride(idle_src, 0, cfg["idle_span"])
     count = COLS * max(1, round(n / STEP / COLS))
+    a += round(cfg.get("idle_from", 0) * FPS)                 # back to the whole video's frame numbers
     picks["idle"] = [a + round(j * n / count) for j in range(count)]          # its own end (a + n) is the next start
     idle_ms = round(n / FPS * 1000)
     for kind in KINDS[1:]:
@@ -265,7 +274,7 @@ def main(slug, videos, cache=None):
             info["ms"] = round((s1 - s0) * 1000)
             if kind == "death":
                 tops = [f.getbbox()[1] for f in frames]
-                info["impact"] = next(i for i, t in enumerate(tops) if t >= tops[-1] - 0.04 * ch)   # down on the ground
+                info["impact"] = cfg.get("impact", next(i for i, t in enumerate(tops) if t >= tops[-1] - 0.04 * ch))   # down
         data["sheets"][kind] = info
         print(f"{kind}: {len(frames)} frames, {COLS} x {rows}, {info}")
     with open(os.path.join(out_dir, "sheets.json"), "w") as fh:
