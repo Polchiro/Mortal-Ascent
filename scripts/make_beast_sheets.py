@@ -122,6 +122,14 @@ CLIPS = {
                        "drop": {"attack": ((4.4, 4.95),), "hit": ((0.8, 1.2),)}, "ease_in": {"death": 2},
                        "settle": {"attack": 4, "hit": 3}, "mark": ((1100, 540, 1230, 660), (1190, 640, 1275, 708)),
                        "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27, from its two videos as they were (no remakes): its idle and its croaking hop from the attack video, its
+    # jolt from the hit video with the white impact lines the video drew wiped (`white`: the toad has no white on it),
+    # its slump from the same; its throat ballooned and turned pink in that video, so the jolt and the slump ease in
+    # from the idle and the jolt settles back
+    "poison_toad": {"attack": (3.9, 6.6), "hit": (0.6, 1.95), "death": (4.3, 6.6), "idle_span": (36, 60),
+                    "idle_until": 3.9, "attack_ms": 2400, "white": ("hit",), "ease_in": {"hit": 2, "death": 2},
+                    "settle": {"attack": 3, "hit": 3},
+                    "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle

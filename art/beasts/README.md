@@ -57,5 +57,6 @@ its hit video, since its attack video began with steam puffing from its snout. T
 Warrior Beast King, is a colossal white tiger with icy-blue stripes; its picture was mirrored to face left and its
 backdrop evened out before its videos, and its video effects are dropped frame by frame (wiping white would wipe its fur). The **Venom Scorpion** (Martial Expert) is a huge
 dark-green scorpion with its tail curled over its back; its videos kept the picture's "AI" badge as well as the
-sparkle, so both are dropped, and its strike is taken without the green slash arc the video drew. The beasts are
+sparkle, so both are dropped, and its strike is taken without the green slash arc the video drew. The **Poison Toad** (Martial Expert) is a huge warty
+olive toad with bright toxic-green spots, its jolt's white impact lines wiped from its video. The beasts are
 being redone one at a time in roster order the same way.
