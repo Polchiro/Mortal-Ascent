@@ -896,6 +896,16 @@ def test_an_idle_from_a_later_stretch_is_cut_from_that_stretch():
     assert 'a += round(cfg.get("idle_from", 0) * FPS)' in src
 
 
+def test_a_beasts_frame_sheets_are_unpacked_before_its_turn_plays(client):
+    """Nov 26: the Old Black Bear and the Wind-Feather Falcon vanished for about half a second as they attacked: their
+    big attack sheets (about 18 megapixels) were only fetched, and the browser unpacked them as they were first shown.
+    Now every sheet is loaded and decoded ahead (`keep`, kept across turns) and a turn waits for them (`whenReady`)."""
+    js = client.get("/static/fight.js").text
+    assert "keep(S[n].src)" in js and "new Image().src = S[n].src" not in js
+    assert "main.querySelectorAll('.beast .bs')" in js and "img._unpacked" in js
+    assert "setTimeout(once, 2500)" in js                                        # a slow connection still plays
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

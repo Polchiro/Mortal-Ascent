@@ -132,7 +132,8 @@
     };
     if (window.MutationObserver) new MutationObserver(copy).observe(img, {attributes: true, attributeFilter: ['style']});
     if (img.complete) fit(); else img.addEventListener('load', fit);
-    Object.keys(S).forEach(function (n) { new Image().src = S[n].src; });     // every sheet loaded now: changes are instant
+    Object.keys(S).forEach(function (n) { keep(S[n].src); });   // every sheet loaded AND unpacked now, and kept across turns:
+                                                                // a big attack sheet never shows blank while it unpacks
     return api;
   }
   window.addEventListener('resize', function () {
@@ -189,15 +190,22 @@
     if (KEEP[src]) return KEEP[src];
     var img = KEEP[src] = new Image();
     img.src = src;
-    if (img.decode) img.decode().catch(function () {});
+    img._ready = false;                                         // loaded and unpacked (decoded): ready to show at once
+    img._unpacked = (img.decode ? img.decode() : new Promise(function (ok) { img.onload = ok; img.onerror = ok; }))
+      .catch(function () {}).then(function () { img._ready = true; });
     return img;
   }
   function whenReady(main, go) {
     var el = main.querySelector('.fighter .msheet'), m = el && /url\(["']?([^"')]+)/.exec(el.style.backgroundImage || '');
-    var img = m && keep(m[1]), done = false;
-    if (!img || img.complete) return go();
+    var imgs = m ? [keep(m[1])] : [], done = false;
+    main.querySelectorAll('.beast .bs').forEach(function (bs) {   // the beast's frames too: unpacked before the turn plays
+      var u = /url\(["']?([^"')]+)/.exec(bs.style.backgroundImage || '');
+      if (u) imgs.push(keep(u[1]));
+    });
     function once() { if (done) return; done = true; go(); }
-    img.addEventListener('load', once); img.addEventListener('error', once);
+    var waits = imgs.filter(function (img) { return !img._ready; });
+    if (!waits.length) return go();
+    Promise.all(waits.map(function (img) { return img._unpacked; })).then(once, once);
     setTimeout(once, 2500);                                     // a slow connection: play it anyway
   }
 
