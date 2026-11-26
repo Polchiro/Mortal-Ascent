@@ -1058,6 +1058,23 @@ def test_the_venom_scorpion_is_animated_from_its_own_videos_with_its_own_voice()
     assert explore_play.beast_body("Venom Scorpion") == "venom_scorpion"
 
 
+def test_the_poison_toad_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Poison Toad (Nov 27, Martial Expert): its idle and croaking hop from the attack video, its jolt
+    from the hit video with the white impact lines wiped (the toad has no white on it), its slump from the same; its
+    throat ballooned and turned pink there, so the jolt and the slump ease in from the idle."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("poison_toad")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Poison Toad", "slug": "poison_toad"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "poison_toad.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@poison_toad" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["poison_toad@roar"][:2] == [0.15, 0.38]
+    assert explore_play.beast_body("Poison Toad") == "poison_toad"
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

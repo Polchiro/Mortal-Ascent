@@ -138,7 +138,11 @@ Its first prompt, before the redesign:
 > A large dark-green scorpion with a glowing venom-filled stinger, chitin gleaming, with a subtle toxic green elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed chitin and segments, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 
 **Poison Toad** · Normal · Venom
-File: `art/beasts/poison_toad.png`
+File: `art/beasts/poison_toad.png` (Nov 27 redesign, Nano Banana Pro; animated from its idle + attack and hit + death videos)
+
+> A Poison Toad for a Chinese xianxia martial arts game: a huge, bloated toad the size of a large dog, with thick lumpy warty skin in dark olive-brown, covered in bright toxic-green spots, a pale yellowish belly, swollen poison glands behind its eyes, a wide flat mouth, and bulging eyes with a faint toxic-green glow of venom Qi. All of its skin is solid: no mist, slime or drips coming off it. Heavy, ugly and dangerous, a natural creature, not a monster. Strict side view, facing LEFT, squatting on all four legs, front legs straight and back legs folded under it, all four legs clearly visible, solid and separated, no tail, mouth closed. The whole toad takes up about two thirds of the picture's height and about half of its width, placed a little right of centre, with clear empty grey space above it (about a quarter of the picture's height) and on the left, and its feet a little above the bottom edge. Realistic digital painting, premium Chinese xianxia MMORPG creature concept art, detailed warty skin, soft natural rim lighting, painterly brushwork, rich but mature colours. Plain flat medium-grey background, no ground, no water, no shadow, no mist, no slime, no glow outline, no aura, no sparkles, no text, no watermark. 16:9.
+
+Its first prompt, before the redesign:
 
 > A bloated warty toad with toxic green spots, poison mist seeping from its skin, with a subtle toxic green elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed shell and scales, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 

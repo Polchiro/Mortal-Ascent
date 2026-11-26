@@ -1,0 +1,48 @@
+{
+ "cell": [
+  635,
+  400
+ ],
+ "still": [
+  128.4,
+  119.4,
+  425.4,
+  270.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/poison_toad/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 3000,
+   "smooth": true,
+   "nose_x": 0.1953
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/poison_toad/attack.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "bite": 13,
+   "reach": 0.0682,
+   "bite_x": 0.1323
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/poison_toad/hit.webp",
+   "frames": 19,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1583
+  },
+  "death": {
+   "src": "/art/beasts/sheets/poison_toad/death.webp",
+   "frames": 30,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "impact": 19
+  }
+ }
+}
