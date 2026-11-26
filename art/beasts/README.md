@@ -38,5 +38,7 @@ one gaunt stray (SHOAIB's choice: one dog animates cleanly; the name is unchange
 (no longer a horned boar; the breath steam and Gemini's mark painted out). The **Old Black Bear**, the
 Mortal Beast King, is now a colossal silver-streaked bear with hunters' arrows in its back (kept whole: `SOLID`). The **Iron-Hide Boar** is
 now clearly the armoured one: forged iron plates with glowing amber cracks. The **Red Fox** is now a lean crimson fox
-with one ember-tipped tail (no flames leaving the body; no longer on a slab). The beasts are
+with one ember-tipped tail (no flames leaving the body; no longer on a slab). The **Wind-Feather Falcon** is the
+first animated bird: a dark falcon with a normal fan tail (the long trailing plumes were dropped: Veo could not keep
+them), drawn flying with no perch or stone. The beasts are
 being redone one at a time in roster order the same way.
