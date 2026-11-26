@@ -782,6 +782,23 @@ def test_the_stray_dog_is_one_animated_dog_with_its_own_voice():
     assert explore_play.beast_body("Stray Dog Pack") == "stray_dog_pack"
 
 
+def test_the_wild_ox_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Wild Ox (Nov 26: a real shaggy ox, no longer a horned boar): idle from the calm end of its
+    charge video, hit + death from the other; its bellow, hooves and fall from its videos."""
+    import json
+    import os
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("wild_ox")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["bite"] == 33                          # the horn hook, set by eye
+    assert death.view({"kind": "beast", "name": "Wild Ox", "slug": "wild_ox"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "wild_ox.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@wild_ox" in keys
+    assert explore_play.beast_body("Wild Ox") == "wild_ox"
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

@@ -53,6 +53,8 @@ CLIPS = {
                     "idle_until": 2.1, "attack_ms": 2400, "fade": {"attack": 90}},
     "stray_dog_pack": {"attack": (2.6, 3.8), "hit": (1.4, 2.9), "death": (4.0, 6.2), "idle_span": (36, 60),
                        "idle_until": 2.5, "attack_ms": 1800, "pingpong": ("attack",)},
+    "wild_ox": {"attack": (2.0, 5.6), "hit": (1.7, 3.4), "death": (4.4, 6.4), "idle_span": (30, 44),
+                "idle_from": 5.95, "attack_ms": 2400, "bite": 33, "white": ("hit", "death")},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 
@@ -194,11 +196,11 @@ def main(slug, videos, cache=None):
     still = Image.open(os.path.join(ROOT, "art", "beasts", f"{slug}.png")).convert("RGBA")
     picks = {}
     idle_src = videos["idle"]
-    if cfg.get("idle_until"):                                 # its breath only from the calm start, not a still ending
-        idle_src = os.path.join(cache or "/tmp", f"{slug}_idle_head.mp4")
+    if cfg.get("idle_until") or cfg.get("idle_from"):         # its breath only from a calm stretch of the video
+        idle_src = os.path.join(cache or "/tmp", f"{slug}_idle_part.mp4")
         os.makedirs(os.path.dirname(idle_src), exist_ok=True)
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", videos["idle"], "-t", str(cfg["idle_until"]), "-an",
-                        idle_src], check=True)
+        part = ["-ss", str(cfg.get("idle_from", 0))] + (["-to", str(cfg["idle_until"])] if cfg.get("idle_until") else [])
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", videos["idle"]] + part + ["-an", idle_src], check=True)
     a, n = stride(idle_src, 0, cfg["idle_span"])
     count = COLS * max(1, round(n / STEP / COLS))
     picks["idle"] = [a + round(j * n / count) for j in range(count)]          # its own end (a + n) is the next start
