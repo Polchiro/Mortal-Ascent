@@ -12,11 +12,12 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/iron_hide_boar/idle.webp",
-   "frames": 8,
+   "frames": 16,
    "cols": 8,
-   "rows": 1,
-   "ms": 833,
-   "nose_x": 0.2727
+   "rows": 2,
+   "ms": 1666,
+   "nose_x": 0.2727,
+   "smooth": true
   },
   "attack": {
    "src": "/art/beasts/sheets/iron_hide_boar/attack.webp",

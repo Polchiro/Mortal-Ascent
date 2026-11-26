@@ -3,6 +3,7 @@
 `BeastSheets`; docs/web.md "Animated beasts").
 
     python -m scripts.make_beast_sheets grey_wolf idle.mp4 attack.mp4 hit.mp4 death.mp4 [--cache DIR]
+    python -m scripts.make_beast_sheets --smooth-idle grey_wolf red_fox ...    (an existing idle sheet: `smooth_idle`)
 
 Each video is 1280 x 720 at 24 fps (Flow's 1920 x 1080 is scaled down; one video may be given for two moves, its
 seconds in CLIPS): one beast, side on, facing left (toward the cultivator), on a plain backdrop, the
@@ -179,6 +180,47 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
     return out, session
 
 
+PINGPONG_MAX = 24          # an idle of up to this many frames plays forward then back; a longer one dissolves its end
+BLEND = 6                  # into its start over this many frames (a doubled long idle would be too big a sheet)
+
+
+def smooth_idle(frames, ms):
+    """(frames, ms): the idle loop with no jump where it comes back round (SHOAIB, Nov 26: "it keeps resetting").
+    Its last frame never quite meets its first (the measured jump was 2-7 times a normal step), so a short idle plays
+    forward and then backward, breathing in and out (each end held a moment: the frame count stays a whole number of
+    rows, which the CSS needs). A long one keeps going forward, its last BLEND frames dissolving into its first."""
+    if len(frames) <= PINGPONG_MAX:
+        return frames + frames[::-1], ms * 2
+    out = list(frames)
+    for j in range(BLEND):
+        w = (j + 1) / (BLEND + 1)
+        out[len(out) - BLEND + j] = Image.blend(frames[len(frames) - BLEND + j], frames[0], w)   # into the first
+    return out, ms
+
+
+def resmooth(slug):
+    """Smooth an existing beast's idle sheet in place (`--smooth-idle`), from the sheet itself: no videos needed."""
+    out_dir = os.path.join(ROOT, "art", "beasts", "sheets", slug)
+    path = os.path.join(out_dir, "sheets.json")
+    data = json.load(open(path))
+    info, (cw, ch) = data["sheets"]["idle"], data["cell"]
+    if info.get("smooth"):
+        return print(slug, "already smooth")
+    sheet = Image.open(os.path.join(out_dir, "idle.webp")).convert("RGBA")
+    frames = [sheet.crop(((i % COLS) * cw, (i // COLS) * ch, (i % COLS + 1) * cw, (i // COLS + 1) * ch))
+              for i in range(info["frames"])]
+    frames, info["ms"] = smooth_idle(frames, info["ms"])
+    rows = -(-len(frames) // COLS)
+    out = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        out.alpha_composite(f, ((i % COLS) * cw, (i // COLS) * ch))
+    out.save(os.path.join(out_dir, "idle.webp"), quality=84, method=6)
+    info.update(frames=len(frames), rows=rows, smooth=True)
+    with open(path, "w") as fh:
+        json.dump(data, fh, indent=1)
+    print(slug, info)
+
+
 def spans(clip):
     """A move's seconds: one (start, end), or several joined ((start, end), ...)."""
     return list(clip) if isinstance(clip[0], (tuple, list)) else [clip]
@@ -288,6 +330,8 @@ def main(slug, videos, cache=None):
             "sheets": {}}
     for kind in KINDS:
         frames = [cell(*p) for p in placed[kind]]
+        if kind == "idle":
+            frames, idle_ms = smooth_idle(frames, idle_ms)
         rows = -(-len(frames) // COLS)
         sheet = Image.new("RGBA", (cw * COLS, ch * rows), (0, 0, 0, 0))
         for i, f in enumerate(frames):
@@ -296,6 +340,7 @@ def main(slug, videos, cache=None):
         info = {"src": f"/art/beasts/sheets/{slug}/{kind}.webp", "frames": len(frames), "cols": COLS, "rows": rows}
         if kind == "idle":
             info["ms"] = idle_ms
+            info["smooth"] = True
             info["nose_x"] = round(frames[0].getbbox()[0] / cw, 4)              # its front, standing
         elif kind == "attack":
             info["ms"] = cfg["attack_ms"]
@@ -323,6 +368,10 @@ def main(slug, videos, cache=None):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    if args[:1] == ["--smooth-idle"]:                         # python -m scripts.make_beast_sheets --smooth-idle slug ...
+        for slug in args[1:]:
+            resmooth(slug)
+        sys.exit(0)
     cache = None
     if "--cache" in args:
         i = args.index("--cache")

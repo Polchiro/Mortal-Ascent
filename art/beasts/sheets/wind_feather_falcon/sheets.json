@@ -12,11 +12,12 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/wind_feather_falcon/idle.webp",
-   "frames": 16,
+   "frames": 32,
    "cols": 8,
-   "rows": 2,
-   "ms": 1667,
-   "nose_x": 0.4429
+   "rows": 4,
+   "ms": 3334,
+   "nose_x": 0.4429,
+   "smooth": true
   },
   "attack": {
    "src": "/art/beasts/sheets/wind_feather_falcon/attack.webp",

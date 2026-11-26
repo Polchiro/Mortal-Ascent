@@ -686,8 +686,8 @@ a lair is fought with `bot/hunt.py`.
    for its unique skill lands in the slam pose and roars. The Mountain Tiger was drawn this way (cut from SHOAIB's
    reference video by `scripts/cut_tiger_poses.py`) until its Nov 26 redesign: it is now animated from its own videos
    like the other beasts, its poses retired (a beast with poses is never drawn from frame sheets). No beast has poses
-   now; the code stays for one that might. Its Mountain-Splitting Pounce still leaps, glowing, onto you and splits the
-   ground (`pounce` moves the frames as it moved the poses). The Discord card keeps the painting.
+   now; the code stays for one that might. Its Mountain-Splitting Pounce plays as its great roar (`skillRoar`: SHOAIB found the
+   old leap across the arena not smooth): jaws open, the big burst, the damage, Guarded or Stunned, then Roused. The Discord card keeps the painting.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
    school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
@@ -980,6 +980,10 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
 and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag** and the **Mountain Tiger**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
+**The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
+a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
+into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its
+`animation-delay` from the clock) instead of starting over. `--smooth-idle <slug> ...` does it to an existing sheet.
 Every sheet is loaded **and unpacked** ahead (fight.js `keep`, kept across turns) and a turn waits for them
 (`whenReady`, 2.5 s at most): a big attack sheet (the bear's, the falcon's: about 18 megapixels) otherwise left the
 beast invisible for half a second as it attacked, while the browser unpacked it.

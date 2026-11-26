@@ -12,11 +12,12 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/mountain_tiger/idle.webp",
-   "frames": 16,
+   "frames": 32,
    "cols": 8,
-   "rows": 2,
-   "ms": 1500,
-   "nose_x": 0.1385
+   "rows": 4,
+   "ms": 3000,
+   "nose_x": 0.1385,
+   "smooth": true
   },
   "attack": {
    "src": "/art/beasts/sheets/mountain_tiger/attack.webp",
