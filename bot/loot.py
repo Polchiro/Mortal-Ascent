@@ -26,7 +26,7 @@ TOP_CHESTS = ("legendary", "mythic")       # the Treasure Sense passive makes th
 TIER_ORDER = equipments.TIERS
 GRADE_ORDER = list(technique.GRADES)
 
-# DEFAULT: Lotus Coins in a chest at Mortal (×2 per realm, see rules.realm_scale)
+# DEFAULT: Lotus Coins in a chest, the same for every realm (rules.realm_scale is ×1)
 CHEST_COINS = {"common": (10, 25), "uncommon": (30, 60), "rare": (80, 150), "epic": (130, 260),
                "legendary": (200, 400), "mythic": (500, 900)}
 # DEFAULT: duplicate of a learned manual turns into this much mastery EXP (× grade EXP multiplier)

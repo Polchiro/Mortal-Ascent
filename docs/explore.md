@@ -91,7 +91,7 @@ They replaced Wooden / Bronze / Silver / Jade, which became Common / Uncommon / 
 
 ## Chest contents
 
-Every chest gives **Lotus Coins** (amount scales with realm — see economy.md later).
+Every chest gives **Lotus Coins** (the same amount for every realm).
 Then it may also contain:
 
 ### Manual

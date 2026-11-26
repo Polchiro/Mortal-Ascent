@@ -733,3 +733,19 @@ def test_heaven_techniques_are_ultimates():
     assert battle.TECHNIQUE_QI_COST == {"Mortal": 30, "Yellow": 35, "Mystic": 40, "Earth": 45, "Heaven": 70}
     assert battle.technique_qi(T["void_mirror_stance"], T["void_mirror_stance"]["effect"]) == 85
     assert battle.TECHNIQUE_QI_COST["Heaven"] <= battle.BATTLE_QI_START       # still castable from a full bar
+
+
+def test_lotus_coins_are_the_same_for_every_realm():
+    """SHOAIB: coins from chests, fights and quests (and the prices of the physician and merchant) don't grow with
+    the realm any more."""
+    import quests as quest_config
+    from bot import loot
+    from bot import quests
+    low, high = {"realm": "Mortal"}, {"realm": rules.REALM_ORDER[-1]}
+    assert rules.realm_scale(low["realm"]) == rules.realm_scale(high["realm"]) == 1
+    assert quests.coin_scale(low) == quests.coin_scale(high) == 1 and quest_config.COIN_STEP_PER_REALM == 0
+    a = loot.roll_coins(dict(low, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
+    b = loot.roll_coins(dict(high, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
+    assert a == b and 80 <= a <= 150
+    hurt = {"injured_until": 600}
+    assert rules.physician_cost(dict(low, **hurt), now=0) == rules.physician_cost(dict(high, **hurt), now=0) == 10

@@ -330,9 +330,8 @@ Three tasks a day, the same all day and new at **midnight UTC**, picked for each
 | Bring a trip's finds home to town | a trip banked at the town gate | 🪷 120 |
 | Dig 5 seams in the Ironvein Quarry | a seam dug (whatever it gave) | 🪷 120 |
 
-- A task **pays the moment it is done**; finishing all three adds 🪷 150 (`ALL_DONE_COINS`). Coins grow with the realm
-  exactly like the Discord quests (`bot/quests.coin_scale`: Mortal ×1 ... Martial Saint ×3.5). Every payment is in the
-  ledger ("World task: ...").
+- A task **pays the moment it is done**; finishing all three adds 🪷 150 (`ALL_DONE_COINS`). The coins are the same for
+  every realm, like the Discord quests (`bot/quests.coin_scale` is ×1). Every payment is in the ledger ("World task: ...").
 - Progress is counted in the existing `daily_counts` table as `world:<task>`.
 - They are separate from the Discord `/daily` quests, which are unchanged; the same herb or beast counts for both.
 - On the map: **Today's Tasks** at the top right (click its title to fold it; folded at first on a phone), and a line
