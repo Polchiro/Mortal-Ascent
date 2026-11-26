@@ -1,0 +1,47 @@
+{
+ "cell": [
+  667,
+  442
+ ],
+ "still": [
+  170.4,
+  9.0,
+  355.2,
+  429.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/horned_stag/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1500,
+   "nose_x": 0.2489
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/horned_stag/attack.webp",
+   "frames": 42,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2600,
+   "bite": 23,
+   "reach": 0.4617,
+   "bite_x": 0.0015
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/horned_stag/hit.webp",
+   "frames": 27,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2200
+  },
+  "death": {
+   "src": "/art/beasts/sheets/horned_stag/death.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2150,
+   "impact": 15
+  }
+ }
+}
