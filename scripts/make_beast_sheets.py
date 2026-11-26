@@ -49,6 +49,8 @@ CLIPS = {
                   "slab": {"idle": (0.80, 0.12)}, "match": {"death": "hit"}, "attack_ms": 2200},
     "wild_boar": {"attack": (3.6, 6.1), "hit": (0.6, 1.45), "death": (4.42, 6.5), "idle_span": (84, 144),
                   "attack_ms": 2000, "bite": 16, "white": ("hit",)},
+    "field_viper": {"attack": (2.5, 5.9), "hit": (1.6, 3.0), "death": (3.0, 5.6), "idle_span": (30, 50),
+                    "idle_until": 2.1, "attack_ms": 2400, "fade": {"attack": 90}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 
@@ -80,7 +82,7 @@ def off_slab(a, top, depth):
     return a
 
 
-def cut_one(im, session, slab=None, white=False):
+def cut_one(im, session, slab=None, white=False, fade=0):
     """The beast alone: cut out, no mark, no slab, no shadow or loose bits. `white`: a white slash streak the video drew
     over it (the unseen blow) dropped too: near-white, colourless pixels."""
     from rembg import remove
@@ -107,6 +109,9 @@ def cut_one(im, session, slab=None, white=False):
         a[y0:y1, x0:x1, 3] = np.where(grey, 0, a[y0:y1, x0:x1, 3])
     if slab:
         a = off_slab(a, *slab)
+    if fade:                                                 # the body ran off the video's right edge: fade it out
+        ramp = np.clip(np.arange(a.shape[1])[::-1] / fade, 0, 1)            # instead of a hard straight cut
+        a[..., 3] = (a[..., 3] * ramp[None, :]).astype(np.uint8)
     alpha = a[..., 3] > 24
     lab, n = ndimage.label(ndimage.binary_dilation(alpha, iterations=3))
     if n > 1:                                                # the beast: its largest piece and what touches it
@@ -131,7 +136,8 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
             session = new_session("isnet-general-use")
         if raw is None:
             raw = dict(zip(numbers, video_frames(video, numbers)))
-        im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()))
+        im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()),
+                     cfg.get("fade", {}).get(kind, 0))
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             im.save(path)
@@ -185,7 +191,13 @@ def main(slug, videos, cache=None):
     cfg = CLIPS[slug]
     still = Image.open(os.path.join(ROOT, "art", "beasts", f"{slug}.png")).convert("RGBA")
     picks = {}
-    a, n = stride(videos["idle"], 0, cfg["idle_span"])
+    idle_src = videos["idle"]
+    if cfg.get("idle_until"):                                 # its breath only from the calm start, not a still ending
+        idle_src = os.path.join(cache or "/tmp", f"{slug}_idle_head.mp4")
+        os.makedirs(os.path.dirname(idle_src), exist_ok=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", videos["idle"], "-t", str(cfg["idle_until"]), "-an",
+                        idle_src], check=True)
+    a, n = stride(idle_src, 0, cfg["idle_span"])
     count = COLS * max(1, round(n / STEP / COLS))
     picks["idle"] = [a + round(j * n / count) for j in range(count)]          # its own end (a + n) is the next start
     idle_ms = round(n / FPS * 1000)

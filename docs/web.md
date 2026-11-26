@@ -522,6 +522,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | Fist / palm / kick / finger techniques (`cast:fist` ...) | the same four videos, whole, timed so the loudest moment lands on the blow |
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
+| The Field Viper's strike snap, its pained hiss, the thump as it drops, its hiss and big hiss (`@field_viper`) | its own idle + strike and hit + death videos (Nov 26) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -962,7 +963,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar** and **Field Viper**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
@@ -996,7 +997,9 @@ time, fading over the last in 0.12 s:
 strict side view facing left, plain flat grey) cut by `scripts/make_quadruped_art.py`, its mouth in
 `scripts/make_roar_fx.py` and `heads.json`; then its videos cut by `scripts/make_beast_sheets.py` (Flow's 1920 x 1080
 is scaled to 1280 x 720; `white` drops a white slash streak the video drew for the unseen blow; `bite` sets the gore
-frame by eye when an effect fools the measuring); then its sounds with `scripts/make_fight_sound.py NAME@<slug>`.
+frame by eye when an effect fools the measuring; `idle_until` keeps the idle loop to the video's calm start;
+`fade` softens a body that ran off the video's edge). A roar picture can also be taken from its own video's
+open-jawed frame (the Field Viper's). Then its sounds with `scripts/make_fight_sound.py NAME@<slug>`.
 
 ## Living backgrounds
 

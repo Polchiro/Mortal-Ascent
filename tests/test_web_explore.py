@@ -503,8 +503,8 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     assert views["Red Fox"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
-    assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["kind"] == "fall"
-    assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["side"] in (1, -1)
+    assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
+    assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["side"] in (1, -1)
     assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
 
 
@@ -745,6 +745,23 @@ def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
     assert explore_play.beast_body("Wild Boar") == "wild_boar"
     assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Iron-Hide Boar") == "wolf"
     assert explore_play.beast_body("No Such Beast") is None
+
+
+def test_the_field_viper_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Field Viper (Nov 26, a true snake): idle + strike from one video, hit + death from another;
+    its roar picture is its own video's open-jawed hiss; its sounds come from its videos."""
+    import json
+    import os
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("field_viper")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["reach"] > 0.3                   # the strike stretches it far out of its coils
+    assert death.view({"kind": "beast", "name": "Field Viper", "slug": "field_viper"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "field_viper.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@field_viper" in keys
+    assert explore_play.beast_body("Field Viper") == "field_viper"
 
 
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
