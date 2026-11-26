@@ -196,6 +196,12 @@ NPCS = [
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "The ring is open. Name a cultivator to challenge, or wait for whoever steps up next. Friendly bouts only: nobody leaves hurt.",
      "go": [["Enter the Arena", "/arena"]]},
+    {"key": "pavilion", "name": "Keeper Yue", "title": "Pearl shop and blessings", "x": 13.0, "y": 13.6,
+     "h": 128,      # the Moon Pavilion's keeper, in the plaza by the stalls. No picture yet: when it is made, add
+                    # "src": "/art/portraits/town/pavilion.webp" (until then the page draws her name and a glow)
+     "line": "Moon Pearls buy speed and style, never power. Pills, a bigger bag, a new name... or let Heaven smile on "
+             "your cultivation for a month.",
+     "go": [["Browse the Pearl shop", "/pavilion"], ["Heavenly Blessings", "/pavilion?tab=blessing"]]},
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
      "line": "The names of the town's strongest are carved here: the highest realms, the richest purses, the fiercest duelists.",
      "go": [["Read the rankings", "/rankings"]]},
@@ -284,12 +290,21 @@ def placed(buildings=None, props=None, size=None):
     return out
 
 
+def _have(src):
+    """The picture's address if the file is there (a new townsfolk can stand in town before their picture is made:
+    the page then draws the lantern glow and their name)."""
+    if not src:
+        return None
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return src if os.path.exists(os.path.join(root, src.lstrip("/").split("?")[0])) else None
+
+
 def page_data(sheet, near=None):
     """The page's data (web/static/town.js): the walking sheet, the map, the townsfolk and the ways out. You come in
     at the gate (also back from the World Map), or in front of `near` (an NPC's key: whoever you came back from), or
     of whoever you last left town through."""
     npcs = [{k: n[k] for k in ("key", "name", "title", "x", "y", "line")} |
-            {"go": n.get("go", []), "prop": n.get("prop", False), "src": n.get("src"), "h": n.get("h", 128),
+            {"go": n.get("go", []), "prop": n.get("prop", False), "src": _have(n.get("src")), "h": n.get("h", 128),
              "flip": n.get("flip", False)} for n in NPCS]
     exits = [{k: e[k] for k in ("key", "name", "title", "x", "y", "line", "go")} |
              {"exit": True, "glow": list(e.get("glow", (e["x"], e["y"])))} for e in EXITS]
