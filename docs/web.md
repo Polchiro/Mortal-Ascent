@@ -1028,6 +1028,12 @@ and the flinch settle back into it (`settle` per move); only the gore, from the 
 uncleaned picture can keep Gemini's sparkle on the beast itself, redrawn solid and moving with it (on the bear's rump),
 where the usual mark box can't find it. Per move, a box is searched for the pale, colourless patch with a bright core,
 and it is cut away with the backdrop: a small notch at the beast's edge reads as nothing, a white star as a star.
+**An idle has to move** (Nov 27 fix, the Ember Lizard, the Frost Wolf and the Thunder Hawk): a still first second loops without a jump
+but looks frozen in the fight, so an idle is taken from a stretch where the beast visibly breathes, turns or dips its
+head (`idle_from`/`idle_until`), even from the other video: the lizard's from the head dip at the start of its first
+video, the wolf's from the slight turn of its head just before its bite, the hawk's from the turn of its head as it settles
+after its flinch. The lizard's flinch is then placed by its own first
+frame and eases in.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

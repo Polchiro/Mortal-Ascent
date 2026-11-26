@@ -1,11 +1,11 @@
 {
  "cell": [
   525,
-  362
+  308
  ],
  "still": [
   63.0,
-  57.0,
+  3.6,
   391.2,
   283.2
  ],
@@ -15,9 +15,9 @@
    "frames": 16,
    "cols": 8,
    "rows": 2,
-   "ms": 1000,
+   "ms": 666,
    "smooth": true,
-   "nose_x": 0.1162
+   "nose_x": 0.1143
   },
   "attack": {
    "src": "/art/beasts/sheets/ember_lizard/attack.webp",
@@ -31,10 +31,10 @@
   },
   "hit": {
    "src": "/art/beasts/sheets/ember_lizard/hit.webp",
-   "frames": 26,
+   "frames": 13,
    "cols": 8,
-   "rows": 4,
-   "ms": 2167
+   "rows": 2,
+   "ms": 1083
   },
   "death": {
    "src": "/art/beasts/sheets/ember_lizard/death.webp",
