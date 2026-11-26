@@ -314,6 +314,14 @@ below. docs/town.md.
 
 ## The map screen
 
+**The frame is painted** (Nov 27 2026, "Painted UI"): at the top left the hero plate (`art/ui/hero_plate`) with your
+face in its jade-and-gold ring, your name and realm tag, the HP and Qi vials (`vial_hp` / `vial_qi`: the empty glass
+darkened behind, the full vial shown up to the bar's width; gold and breathing when the Qi is full at a gate, grey
+when the gate is sealed), toxicity and injured / resting hanging just under it, and the Break Through tab
+(`break_tab`) hanging from it by its hooks. At the bottom right, round medallions in gold rings (`ring`) with the
+painted Bag, Character, Techniques and Map icons, and Run in the grand seal ring (`seal_ring`). The plate is 420 px
+wide on a computer and up to 300 px on a phone (`--pw`); every size in it follows that width.
+
 What the walking pages (the town, the Crossroads, the Moon Forest's lands) show around the map. One template,
 `web/templates/_hud.html` (the frame, the place's name, the controls), plus the tracker and the dock in
 `_walkui.html`; `web/static/town.js` keeps them fresh; the look is in `style.css` ("the map screen's frame").
