@@ -670,11 +670,7 @@
           var k = knocked(h, R.knock * W);
           pose('idle'); hero(-k[0], 0, -k[0] / 6);
           poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
-          if (t >= R.hit - 70 && !marked) {                                      // its mark torn across you
-            marked = true;
-            var mp = at(fr, 0.5, 0.46), clawed = ROAR && ROAR.claws;
-            fx(clawed ? 'bclawm' : 'bslashm', mp[0], mp[1], 900, {'--s': Math.min(560, fr.height * (clawed ? 0.95 : 1.0)) + 'px'});
-          }
+          if (t >= R.hit - 70 && !marked) { marked = true; mark(); }             // its mark torn across you
         } else {
           if (!block(h)) pose(ev.counter && h >= 110 && h < 380 ? 'strike' : 'idle');
           hero(0, 0);
@@ -690,6 +686,40 @@
         if (guard && ev.counter && h >= 130 && !countered) { countered = true; drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter); }
         if (t >= R.end - 20 && opened) { opened = false; beast.src = still; }
       }};
+    }
+
+    /* The mark a beast's blow tears across you (beasts.ATTACK_MARKS, SHOAIB's pictures in art/fx/marks/): one of its
+       marks at random (its main one twice as often): a bite, fangs, a horn gore, tusks, a beak, talons, a sting, a
+       smash, a tail lash, claws or a slash. Each is drawn in the beast's element colour (its shape filled with the
+       colour and glowing, the picture's own white light as a hot core over it) with a small burst of its element's
+       pieces (art/fx/elem/<element>_burst.webp). An Elite's mark is bigger; a Beast King's is bigger again and
+       doubled. Presentation only. */
+    var MARK_ART = {claw: '/art/fx/claw_marks.webp', slash: '/art/fx/beast_slash.webp'};
+    var MARK_SIZE = {claw: 0.95, slash: 1.0, bite: 0.7, fang: 0.7, gore: 0.95, tusk: 0.85, beak: 0.9, talon: 0.8,
+                     sting: 0.75, smash: 0.68, lash: 0.95};
+    function markSrc(k) {
+      if (MARK_ART[k]) return MARK_ART[k];
+      if (k === 'sting' && Math.random() < 0.5) k = 'sting_alt';
+      return '/art/fx/marks/' + k + '.webp';
+    }
+    function mark() {
+      var list = (ROAR && ROAR.marks && ROAR.marks.length) ? ROAR.marks : [ROAR && ROAR.claws ? 'claw' : 'slash'];
+      var k = list.length > 1 && Math.random() < 1 / 3 ? list[1] : list[0];
+      var tier = ROAR ? (TIER_OF[ROAR.wave] || 0) : 0, color = ROAR ? ROAR.color : '#ff6a5a';
+      var mp = at(fr, 0.5, 0.46), size = Math.min(620, fr.height * (MARK_SIZE[k] || 0.9) * (1 + 0.15 * tier));
+      function one(dx, dy, flip, delay) {
+        var src = markSrc(k), n = document.createElement('span');
+        n.className = 'bmark';
+        n.style.left = (mp[0] + dx) + '%'; n.style.top = (mp[1] + dy) + '%';
+        n.style.setProperty('--s', size + 'px'); n.style.setProperty('--rc', color); n.style.setProperty('--m', 'url(' + src + ')');
+        n.style.setProperty('--flip', flip ? -1 : 1); n.style.animationDelay = delay + 'ms';
+        n.innerHTML = '<i class="tint"></i><img alt="" src="' + src + '">';
+        scene.appendChild(n);
+        setTimeout(function () { n.remove(); }, 1000 + delay);
+      }
+      one(0, 0, false, 0);
+      if (tier >= 2) one(3, 4, true, 110);                       // a Beast King's blow lands twice
+      if (ELEM) piece('beburst bemark', ELEM + '_burst.webp', mp[0], mp[1], 800, {'--s': size * 0.7 + 'px', '--r': (Math.random() * 60 - 30) + 'deg'});
     }
 
     /* a fleeting effect over the scene at (x%, y%): removed after `life` ms */
@@ -1160,6 +1190,7 @@
     var ELEM = ROAR && ROAR.element ? '/art/fx/elem/' + ROAR.element : null;
     var TIER_OF = {ring: 0, double: 1, burst: 2};               // normal, Elite, Beast King (beast_roar "wave")
     if (ELEM) ['_stream', '_burst', '_ground'].forEach(function (k) { new Image().src = ELEM + k + '.webp'; });
+    if (ROAR && ROAR.marks) ROAR.marks.forEach(function (k) { new Image().src = markSrc(k); });   // its hit marks (`mark`)
     function aim(p, you) {                                       // from p to you: [length in px, angle in degrees]
       var sr = scene.getBoundingClientRect(), dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
       return [Math.sqrt(dx * dx + dy * dy), Math.atan2(dy, dx) * 180 / Math.PI];

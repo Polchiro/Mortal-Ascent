@@ -284,3 +284,19 @@ def test_every_element_has_its_own_blast_burst_and_ground_patch():
     assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", "ground_crack.webp"))
     assert explore_play.beast_roar({"slug": "someday_new", "tier": "normal"})["element"] is None
     assert explore_play.beast_roar({"slug": "x", "element": "Starlight", "tier": "normal"})["element"] is None   # no pictures yet
+
+
+def test_every_beast_leaves_its_own_marks_when_it_hits():
+    """Its blows leave its own marks (beasts.ATTACK_MARKS, fight.js `mark`): every beast has a main mark (and maybe
+    a second), every mark has its picture, and the page is told them."""
+    assert set(beasts.ATTACK_MARKS) == set(beasts.TRAITS)
+    for name, marks in beasts.ATTACK_MARKS.items():
+        assert 1 <= len(marks) <= 2 and set(marks) <= set(beasts.MARK_KINDS), name
+    for k in beasts.MARK_KINDS:
+        art = {"claw": "claw_marks.webp", "slash": "beast_slash.webp"}.get(k, os.path.join("marks", k + ".webp"))
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", art)), k
+    assert os.path.exists(os.path.join(ROOT, "art", "fx", "marks", "sting_alt.webp"))
+    assert beasts.attack_marks("Wild Boar") == ["tusk"] and beasts.attack_marks("Grey Wolf") == ["bite", "claw"]
+    assert beasts.attack_marks("Someday New") == ["slash"]
+    r = explore_play.beast_roar({"name": "Venom Scorpion", "slug": "venom_scorpion", "element": "Venom", "tier": "normal"})
+    assert r["marks"] == ["sting"]

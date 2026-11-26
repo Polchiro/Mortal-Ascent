@@ -682,10 +682,15 @@ a lair is fought with `bot/hunt.py`.
    The beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast attacks in turn (its M1, `charge` with `RECIPES.gore`, from SHOAIB's beast attack
    video): it lowers its head, rears, charges in kicking up dust and gores, tossing its head up with its jaws open (its
-   open-mouthed roar picture, where it has one); its mark torn across you as it hits, three red claw marks for a
-   clawed beast (`beasts.CLAWED`, `art/fx/claw_marks.webp`) or a single bright slash for the rest
-   (`art/fx/beast_slash.webp`), both SHOAIB's pictures, and dust where it hits, you are knocked back, your HP
-   drops then, and it trots home.
+   open-mouthed roar picture, where it has one); its mark torn across you as it hits (`mark`), and dust where it
+   hits, you are knocked back, your HP drops then, and it trots home. **Every beast leaves its own marks**
+   (`beasts.ATTACK_MARKS`, SHOAIB Nov 27: "every beast looks the same when it hits"): a main mark and, where its body
+   has one, a second, picked at random each blow (the main one twice as often): claws (`art/fx/claw_marks.webp`), a
+   bite, fangs, a horn gore, tusks, a beak, talons, a sting, a smash, a tail lash (`art/fx/marks/`, SHOAIB's white
+   pictures cleaned by `scripts/make_element_fx.py`), or the one bright slash (`art/fx/beast_slash.webp`) for a beast
+   not listed yet. Each is drawn in the beast's element colour (its shape filled with the colour and glowing, the
+   picture's white light as a hot core) with a small burst of its element (`art/fx/elem/<element>_burst.webp`); an
+   Elite's is bigger, a Beast King's bigger again and doubled. Presentation only.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned

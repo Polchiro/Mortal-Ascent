@@ -62,7 +62,8 @@ def beast_roar(e):
     shared roar movement (beasts.ROAR_ANIMATIONS; None: it only rears back a little). `art`: its own open-mouthed
     roar picture (art/beasts/roar/<slug>.png, scripts/make_quadruped_art.py --roar), shown while it roars, with
     its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture. `element`: its
-    element in lower case, for the roar's own blast, burst and ground patch (art/fx/elem/); None without them."""
+    element in lower case, for the roar's own blast, burst and ground patch (art/fx/elem/); None without them.
+    `marks`: the marks its blows leave on you (beasts.ATTACK_MARKS, art/fx/marks/)."""
     global _heads
     if _heads is None:
         try:
@@ -85,6 +86,7 @@ def beast_roar(e):
             "slug": slug,
             "element": elem if elem and os.path.exists(os.path.join(ELEM_DIR, elem + "_stream.webp")) else None,
             "claws": beasts.has_claws(e.get("name") or ""),
+            "marks": beasts.attack_marks(e.get("name") or ""),
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",
