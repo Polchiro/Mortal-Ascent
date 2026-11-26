@@ -972,6 +972,9 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
 and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox** and the first bird, the **Wind-Feather Falcon**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
+Every sheet is loaded **and unpacked** ahead (fight.js `keep`, kept across turns) and a turn waits for them
+(`whenReady`, 2.5 s at most): a big attack sheet (the bear's, the falcon's: about 18 megapixels) otherwise left the
+beast invisible for half a second as it attacked, while the browser unpacked it.
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
 the idle video's stone slab dropped, 12 frames a second. Each video is placed on the beast's own picture
