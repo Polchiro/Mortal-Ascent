@@ -51,5 +51,7 @@ steel-grey spear beak; Veo gave it a real red-crowned crane's black tail in ever
 black-tailed stretch too (its picture keeps the icy-blue tail). The **Thornback Lizard** is a heavy sand-brown lizard
 with cracked earth scales and grey stone thorns, now drawn facing left (no longer mirrored). The **Bloodfang Wolf**
 (Elite) is a huge dark blood-red wolf with a shaggy ruff and oversized ivory fangs, drawn facing left (no longer
-mirrored); every move is taken from whichever of its two videos had it clean. The beasts are
+mirrored); every move is taken from whichever of its two videos had it clean. The **Armored Boar Chief** (Elite) is a giant
+wild boar in dented bronze plates with short broken spear stubs in its hide; its idle comes from the calm middle of
+its hit video, since its attack video began with steam puffing from its snout. The beasts are
 being redone one at a time in roster order the same way.

@@ -125,6 +125,12 @@
    "lead": 0.42
   }
  ],
+ "death@armored_boar_chief": [
+  {
+   "file": "death_armored_boar_chief.mp3",
+   "lead": 0.58
+  }
+ ],
  "death@bloodfang_wolf": [
   {
    "file": "death_bloodfang_wolf.mp3",
@@ -319,6 +325,12 @@
    "lead": 0.04
   }
  ],
+ "hit@armored_boar_chief": [
+  {
+   "file": "hit_armored_boar_chief.mp3",
+   "lead": 0.04
+  }
+ ],
  "hit@bloodfang_wolf": [
   {
    "file": "hit_bloodfang_wolf.mp3",
@@ -423,6 +435,12 @@
   {
    "file": "hurt.mp3",
    "lead": 0.04
+  }
+ ],
+ "lunge@armored_boar_chief": [
+  {
+   "file": "lunge_armored_boar_chief.mp3",
+   "lead": 0.52
   }
  ],
  "lunge@bloodfang_wolf": [
@@ -533,6 +551,12 @@
    "lead": 1.76
   }
  ],
+ "roar:big@armored_boar_chief": [
+  {
+   "file": "roar_big_armored_boar_chief.mp3",
+   "lead": 0.24
+  }
+ ],
  "roar:big@bloodfang_wolf": [
   {
    "file": "roar_big_bloodfang_wolf.mp3",
@@ -639,6 +663,12 @@
   {
    "file": "roar_quadruped.mp3",
    "lead": 0.84
+  }
+ ],
+ "roar@armored_boar_chief": [
+  {
+   "file": "roar_armored_boar_chief.mp3",
+   "lead": 0.16
   }
  ],
  "roar@bloodfang_wolf": [

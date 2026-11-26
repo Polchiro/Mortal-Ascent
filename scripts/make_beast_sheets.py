@@ -96,6 +96,15 @@ CLIPS = {
                        "idle_until": 3.3, "attack_ms": 2400, "pingpong": ("attack",), "white": ("hit",),
                        "ease_in": {"hit": 3, "death": 3}, "settle": {"hit": 3},
                        "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27, from its two videos as they were (no remakes): its idle from the hit video's calm middle (its attack
+    # video's start puffed steam from its snout), its charge and tusk toss from the attack video (the white spit it threw
+    # is wiped, `white`), its squealing flinch from the hit video after the spear it drew (the spear and blood: cut off before),
+    # its fall from the same video; the flinch eases in from the idle and settles back, the charge settles back home
+    "armored_boar_chief": {"attack": (3.2, 7.75), "hit": (0.9, 1.95), "death": (4.0, 6.6), "idle_span": (36, 60),
+                           "idle_from": 2.0, "idle_until": 5.0, "attack_ms": 2800,
+                           "white": ("attack",), "ease_in": {"hit": 3},
+                           "settle": {"attack": 4, "hit": 3},
+                           "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
