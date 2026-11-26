@@ -121,5 +121,5 @@ Shows an **image card** of the player's bag in the same ink-wash style
 | ◀ Prev / Next ▶ | Change page |
 | Item menu | Pick an item on this page to use it: learn a manual, equip a weapon, take a pill, open a chest |
 
-- Bag size starts at 60 slots; more can be bought in the Moon Pearl shop
+- Bag size starts at 100 slots; more can be bought in the Moon Pearl shop
 - A duplicate of a learned manual can be turned into insight (mastery EXP)

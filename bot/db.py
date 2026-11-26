@@ -185,6 +185,11 @@ CREATE TABLE IF NOT EXISTS settings (
 
 # Columns added to `players` after the first release. Existing databases get
 # them through ALTER TABLE in connect(), so nobody has to delete their .db file.
+# Bag slots a new character starts with (was 60 until the bag grew to 100; old bags got the same +40 once, keeping
+# any expansions they bought: see grow_old_bags).
+STARTING_BAG_SLOTS = 100
+OLD_STARTING_BAG_SLOTS = 60
+
 PLAYER_COLUMNS = {
     "injured_until":        "REAL",
     "pill_grade":           "TEXT",
@@ -195,7 +200,7 @@ PLAYER_COLUMNS = {
     "blessed_land":         "TEXT",
     "blessed_land_expires": "REAL",
     "last_challenge":       "TEXT",
-    "bag_capacity":         "INTEGER NOT NULL DEFAULT 60",
+    "bag_capacity":         f"INTEGER NOT NULL DEFAULT {STARTING_BAG_SLOTS}",
     "qi_collected_at":      "REAL",      # passive Qi was last banked here (it gathers from this time on)
     "seclusion_start":      "REAL",
     "seclusion_end":        "REAL",
@@ -266,6 +271,7 @@ def connect(path, setup=None):
 
 def _set_up(conn):
     conn.executescript(SCHEMA)
+    had_bags = "bag_capacity" in {r["name"] for r in conn.execute("PRAGMA table_info(players)")}
     with conn:
         for table, cols in (("players", PLAYER_COLUMNS), ("techniques", TECHNIQUE_COLUMNS)):
             have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
@@ -275,6 +281,22 @@ def _set_up(conn):
     replace_old_herbs(conn)
     rename_old_chests(conn)
     rename_old_realms(conn)
+    grow_old_bags(conn, had_bags)
+
+
+def grow_old_bags(conn, had_bags=True):
+    """The starting bag went from 60 to 100 slots: every bag made before that grows by the same 40, once (so a bag
+    bought up to 80 becomes 120). A note in settings remembers it was done."""
+    if get_setting(conn, "bag_grown_to_100"):
+        return
+    with conn:
+        conn.execute("BEGIN IMMEDIATE")           # the bot and the website may start together: only one grows them
+        if conn.execute("SELECT 1 FROM settings WHERE key = 'bag_grown_to_100'").fetchone():
+            return
+        if had_bags:                # a database older than bags got them just now, already at 100
+            conn.execute("UPDATE players SET bag_capacity = bag_capacity + ?",
+                         (STARTING_BAG_SLOTS - OLD_STARTING_BAG_SLOTS,))
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('bag_grown_to_100', '1')")
 
 
 # Realms 6 and 7 were renamed: Grand Martial Master became Grandmaster and Martial Grandmaster became Martial Lord.
@@ -359,8 +381,8 @@ def create_player(conn, user_id, name, talent, lotus_coins, techniques):
     """Insert a new player with their starting techniques. Returns the player dict."""
     with conn:
         conn.execute(
-            "INSERT INTO players (user_id, name, talent, lotus_coins, created_at) VALUES (?, ?, ?, ?, ?)",
-            (user_id, name, talent, lotus_coins, time.time()),
+            "INSERT INTO players (user_id, name, talent, lotus_coins, created_at, bag_capacity) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, name, talent, lotus_coins, time.time(), STARTING_BAG_SLOTS),
         )
         conn.executemany(
             "INSERT INTO techniques (user_id, name, type, grade) VALUES (?, ?, ?, ?)",
