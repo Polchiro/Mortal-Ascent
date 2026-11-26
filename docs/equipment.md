@@ -313,6 +313,24 @@ All values come from `equipments.ARTIFACT_FAMILIES`; the code is `bot/gear.py`.
   same family worn, Equip is refused.
 - Gear can't be changed during a fight, a hunt, /spar or a duel.
 
+## Pictures
+
+Every weapon, armor piece and artifact has a painted picture (SHOAIB's Nano Banana art, Nov 26 2026): the item alone,
+growing grander by tier (plain and worn → well made → a faint spiritual glow → ornate with gold or jewels →
+legendary and radiant), armor worn by an invisible figure. They are in `art/icons/gear/<slug of its name>.webp`
+(256 px, clear corners, no ring) and show in the bag on the website and in Discord (`cards/art_icons.gear`); the
+page or card adds the tier colour around them.
+
+**Manuals** show a scroll or book by grade and kind instead of their technique's icon: red for attack, blue for
+defense, from a worn paper booklet (Mortal) to a glowing jade slip (Heaven), in
+`art/icons/manuals/<attack|defense>_<grade>.webp` (kind `emblem:manual:<technique>:<grade>`). The technique's own
+icon stays on the Techniques page, the fight cards and buttons (docs/technique.md "Icons").
+
+`scripts/make_item_art.py items` cuts the 3 × 2 pictures (a gear kind's or artifact family's five tiers, five manual
+grades) and single redos named after the item. Gemini doesn't always keep to its cells, so a tidy picture is cut
+one item to a cell, an untidy one has a box per item placed by hand, and the rest are searched whole (see the
+script's notes).
+
 ## Open decisions
 - [ ] Pity progress for Divine drops (each Legendary Chest without one slightly raises the next chance)
 - [ ] Beast King trophy artifacts (a unique artifact per Beast King with an extra twist)

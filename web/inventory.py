@@ -32,8 +32,6 @@ def item_picture(item):
             if os.path.exists(os.path.join(ART_ROOT, url[5:])):
                 return fresh(url)
         return None
-    if item["category"] == "manuals":
-        return art_url(f"tech:{item['key']}") or drawn.url(items.item_icon(item))
     kind = items.item_icon(item)
     return art_url(kind) or drawn.url(kind)        # painted file, else drawn like the cards (essences)
 
@@ -78,7 +76,7 @@ def inventory_view(conn, user_id, category="weapons", selected_id=None):
 
 TAB_ART = {"chests": "/art/chests/rare.png", "weapons": "index/weapons_spirit", "armor": "index/armor_spirit",
            "artifacts": "index/artifacts_spirit", "herbs": "index/herbs_mystic", "materials": "index/materials_refined",
-           "pills": "index/pills_qi", "manuals": "tech/iron_fist"}
+           "pills": "index/pills_qi", "manuals": "manuals/attack_mystic"}
 
 
 def tab_picture(key):
