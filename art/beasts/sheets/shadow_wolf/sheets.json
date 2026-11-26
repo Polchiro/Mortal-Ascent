@@ -1,0 +1,47 @@
+{
+ "cell": [
+  649,
+  397
+ ],
+ "still": [
+  86.4,
+  81.6,
+  540.0,
+  294.0
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/shadow_wolf/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1500,
+   "nose_x": 0.1248
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/shadow_wolf/attack.webp",
+   "frames": 45,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2600,
+   "bite": 24,
+   "reach": 0.1333,
+   "bite_x": 0.0031
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/shadow_wolf/hit.webp",
+   "frames": 22,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1800
+  },
+  "death": {
+   "src": "/art/beasts/sheets/shadow_wolf/death.webp",
+   "frames": 30,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2500,
+   "impact": 20
+  }
+ }
+}

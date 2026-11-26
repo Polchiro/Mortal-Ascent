@@ -149,6 +149,12 @@
    "lead": 0.56
   }
  ],
+ "death@shadow_wolf": [
+  {
+   "file": "death_shadow_wolf.mp3",
+   "lead": 0.72
+  }
+ ],
  "death@stray_dog_pack": [
   {
    "file": "death_stray_dog_pack.mp3",
@@ -301,6 +307,12 @@
    "lead": 0.28
   }
  ],
+ "hit@shadow_wolf": [
+  {
+   "file": "hit_shadow_wolf.mp3",
+   "lead": 0.28
+  }
+ ],
  "hit@stray_dog_pack": [
   {
    "file": "hit_stray_dog_pack.mp3",
@@ -363,6 +375,12 @@
   {
    "file": "lunge_red_fox.mp3",
    "lead": 0.76
+  }
+ ],
+ "lunge@shadow_wolf": [
+  {
+   "file": "lunge_shadow_wolf.mp3",
+   "lead": 1.14
   }
  ],
  "lunge@stray_dog_pack": [
@@ -437,6 +455,12 @@
    "lead": 0.08
   }
  ],
+ "roar:big@shadow_wolf": [
+  {
+   "file": "roar_big_shadow_wolf.mp3",
+   "lead": 0.28
+  }
+ ],
  "roar:big@stray_dog_pack": [
   {
    "file": "roar_big_stray_dog_pack.mp3",
@@ -501,6 +525,12 @@
   {
    "file": "roar_red_fox.mp3",
    "lead": 0.08
+  }
+ ],
+ "roar@shadow_wolf": [
+  {
+   "file": "roar_shadow_wolf.mp3",
+   "lead": 0.54
   }
  ],
  "roar@stray_dog_pack": [

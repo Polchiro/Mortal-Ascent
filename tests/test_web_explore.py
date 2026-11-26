@@ -496,14 +496,14 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     import beasts
     from web import death
     views = {}
-    for name in ("Shadow Wolf", "Horned Stag", "Mountain Tiger"):   # (the Red Fox: its own death since Nov 26)
+    for name in ("Horned Stag", "Mountain Tiger"):   # (the Red Fox and the Shadow Wolf: their own deaths since Nov 26)
         v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
         assert v["kind"] == "warp" and v["category"] == "quadruped"
         assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
         assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
         assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
         assert "src" not in v                                       # numbers only: no picture but the beast's own
-    assert views["Mountain Tiger"]["motion"] == views["Shadow Wolf"]["motion"]     # one movement for all of them
+    assert views["Mountain Tiger"]["motion"] == views["Horned Stag"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
     assert client.get("/art/death/quadruped/mountain_tiger.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
@@ -701,7 +701,7 @@ def test_only_the_grey_wolf_dies_in_its_own_animation():
     from web import death
     v = death.view({"kind": "beast", "name": "Grey Wolf", "slug": "grey_wolf"})
     assert v["kind"] == "sheet" and v["ms"] == 2500 and 0 < v["impact"] < v["ms"] and v["linger"] == death.LINGER_MS
-    v = death.view({"kind": "beast", "name": "Shadow Wolf", "slug": beasts.slug("Shadow Wolf")})
+    v = death.view({"kind": "beast", "name": "Horned Stag", "slug": beasts.slug("Horned Stag")})
     assert v["kind"] == "warp"                                    # every other beast as before
 
 
@@ -877,6 +877,22 @@ def test_the_wind_feather_falcon_is_animated_from_its_own_videos_with_its_own_vo
     for sound in ("hit", "lunge", "death", "roar", "roar:big"):
         assert f"{sound}@wind_feather_falcon" in keys
     assert explore_play.beast_body("Wind-Feather Falcon") == "wind_feather_falcon"
+
+
+def test_the_shadow_wolf_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Shadow Wolf (Nov 26, Elite: black, its shadow painted into the fur, no smoke): idle, the
+    crouch-lunge-bite and back, the flinch, the howl and collapse; its growls, snarl, yelp and howl from its videos."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("shadow_wolf")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert death.view({"kind": "beast", "name": "Shadow Wolf", "slug": "shadow_wolf"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "shadow_wolf.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@shadow_wolf" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["shadow_wolf@roar"][:2] == [0.07, 0.41]
+    assert explore_play.beast_body("Shadow Wolf") == "shadow_wolf"
 
 
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
