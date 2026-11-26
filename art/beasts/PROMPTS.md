@@ -127,7 +127,13 @@ Its first prompt, before the redesign:
 ## Martial Expert
 
 **Venom Scorpion** · Normal · Venom
-File: `art/beasts/venom_scorpion.png`
+File: `art/beasts/venom_scorpion.png` (Nov 27 redesign, Nano Banana Pro; animated from its idle + attack and hit + death videos, each move from whichever
+video had it clean. Its stinger's glow led Veo to light up its pincers and draw green slash arcs: next time, no glow on
+body parts)
+
+> A Venom Scorpion for a Chinese xianxia martial arts game: a huge scorpion the size of a large dog, with thick gleaming dark-green chitin armour shading to black at the joints, two big heavy pincers held forward, eight sturdy legs, and a THICK segmented tail curled tightly up and forward over its back, ending in a large bulbous stinger with a faint toxic-green glow of venom Qi, the whole tail solid and close to the body. Small glowing green eyes. Dangerous and patient, a natural creature, not a monster. Strict side view, facing LEFT, standing low on its legs, pincers pointing forward to the left, all legs clearly visible, solid and separated, stinger above the middle of its back. The whole scorpion, from pincer tips to the back of its body, takes up about two thirds of the picture's width, placed a little right of centre, with clear empty grey space above the stinger (about a fifth of the picture's height) and on the left, and its legs a little above the bottom edge. Realistic digital painting, premium Chinese xianxia MMORPG creature concept art, detailed chitin and segments, soft natural rim lighting, painterly brushwork, rich but mature colours. Plain flat medium-grey background, no ground, no sand, no shadow, no venom drips, no glow outline, no aura, no sparkles, no text, no watermark. 16:9.
+
+Its first prompt, before the redesign:
 
 > A large dark-green scorpion with a glowing venom-filled stinger, chitin gleaming, with a subtle toxic green elemental aura. Digital painting, premium Chinese xianxia MMORPG creature concept art. Realistic anatomy, detailed chitin and segments, dramatic natural rim lighting, painterly brushwork, rich but mature colours. Full body, three-quarter view facing left, dynamic pose. Isolated on a plain transparent background, no ground, no text, no frame, no watermark.
 

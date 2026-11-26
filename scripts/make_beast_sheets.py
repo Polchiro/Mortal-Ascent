@@ -113,6 +113,15 @@ CLIPS = {
                                 "drop": {"attack": ((4.38, 5.12),), "hit": ((0.72, 1.12),)},
                                 "settle": {"attack": 4, "hit": 3}, "hold": {"hit": 3}, "mark": ((0, 0, 1, 1),),
                                 "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27, from its two videos as they were (no remakes): its idle from the attack video's calm stretch (before that
+    # its pincers glowed), its tail-over-the-head strike from the same video (the green slash arc dropped), its jolt from
+    # the hit video (its spark burst dropped), its sinking onto its belly from the same (stopped before the video turned
+    # its pincers black); the video kept the picture's "AI" badge as well as the sparkle (`mark`: both boxes)
+    "venom_scorpion": {"attack": (3.6, 6.5), "hit": (0.3, 1.75), "death": (3.3, 6.1), "idle_span": (24, 30),
+                       "idle_from": 2.7, "idle_until": 4.0, "attack_ms": 2600,
+                       "drop": {"attack": ((4.4, 4.95),), "hit": ((0.8, 1.2),)}, "ease_in": {"death": 2},
+                       "settle": {"attack": 4, "hit": 3}, "mark": ((1100, 540, 1230, 660), (1190, 640, 1275, 708)),
+                       "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle

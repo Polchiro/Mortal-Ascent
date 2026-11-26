@@ -1041,6 +1041,23 @@ def test_the_white_browed_tiger_king_is_animated_from_its_own_videos_with_its_ow
     assert explore_play.beast_body("White-Browed Tiger King") == "white_browed_tiger_king"
 
 
+def test_the_venom_scorpion_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Venom Scorpion (Nov 27, Martial Expert): its idle from the attack video's calm stretch, its
+    tail-over-the-head strike (green slash arc dropped), its jolt (spark burst dropped) and its sinking onto its belly
+    (stopped before the video turned its pincers black); the video's "AI" badge is dropped with the sparkle."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("venom_scorpion")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Venom Scorpion", "slug": "venom_scorpion"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "venom_scorpion.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@venom_scorpion" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["venom_scorpion@roar"][:2] == [0.31, 0.6]
+    assert explore_play.beast_body("Venom Scorpion") == "venom_scorpion"
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

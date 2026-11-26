@@ -541,6 +541,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Field Viper's strike snap, its pained hiss, the thump as it drops, its hiss and big hiss (`@field_viper`) | its own idle + strike and hit + death videos (Nov 26) |
 | The Armored Boar Chief's squealing tusk toss, its squeal when struck, its dying grunts as it falls, its snorts and big grunt (`@armored_boar_chief`) | its own idle + attack and hit + death videos (Nov 27) |
 | The White-Browed Tiger King's roaring paw swipe, its snarl when struck, its dying growl, its growl and big roar (`@white_browed_tiger_king`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Venom Scorpion's hissing tail strike, its hiss when struck, its dying rattle, its hiss and big hiss (`@venom_scorpion`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -984,7 +985,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief** and the **White-Browed Tiger King**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King** and the **Venom Scorpion**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and

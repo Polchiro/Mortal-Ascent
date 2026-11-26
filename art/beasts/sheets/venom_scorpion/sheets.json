@@ -1,0 +1,48 @@
+{
+ "cell": [
+  665,
+  388
+ ],
+ "still": [
+  55.2,
+  41.4,
+  540.0,
+  342.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/venom_scorpion/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2000,
+   "smooth": true,
+   "nose_x": 0.0662
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/venom_scorpion/attack.webp",
+   "frames": 28,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "bite": 17,
+   "reach": 0.0056,
+   "bite_x": 0.0707
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/venom_scorpion/hit.webp",
+   "frames": 14,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1167
+  },
+  "death": {
+   "src": "/art/beasts/sheets/venom_scorpion/death.webp",
+   "frames": 36,
+   "cols": 8,
+   "rows": 5,
+   "ms": 3000,
+   "impact": 29
+  }
+ }
+}
