@@ -49,5 +49,7 @@ python, no longer coiled round a boulder. Gemini's sparkle, when it lands on the
 it (it is a see-through white star: measured once on a plain backdrop, then removed from scales underneath). The **Spear-Beak Crane** stands and fights on its feet (no longer flying), with a long
 steel-grey spear beak; Veo gave it a real red-crowned crane's black tail in every move, so its idle is taken from a
 black-tailed stretch too (its picture keeps the icy-blue tail). The **Thornback Lizard** is a heavy sand-brown lizard
-with cracked earth scales and grey stone thorns, now drawn facing left (no longer mirrored). The beasts are
+with cracked earth scales and grey stone thorns, now drawn facing left (no longer mirrored). The **Bloodfang Wolf**
+(Elite) is a huge dark blood-red wolf with a shaggy ruff and oversized ivory fangs, drawn facing left (no longer
+mirrored); every move is taken from whichever of its two videos had it clean. The beasts are
 being redone one at a time in roster order the same way.
