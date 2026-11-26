@@ -760,7 +760,7 @@ def test_the_wild_boar_speaks_with_its_own_voice_others_with_their_bodys():
         for take in keys[f"{sound}@wild_boar"]:
             assert os.path.exists(os.path.join("art", "fx", "sounds", take["file"]))
     assert explore_play.beast_body("Wild Boar") == "wild_boar"
-    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Frost Wolf") == "wolf"
+    assert explore_play.beast_body("Grey Wolf") == "wolf" and explore_play.beast_body("Ghost-Fire Wolf") == "wolf"
     assert explore_play.beast_body("No Such Beast") is None
 
 
@@ -1165,6 +1165,22 @@ def test_a_sparkle_painted_into_the_beast_is_found_and_cut_away():
     m = star_mask(Image.fromarray(px), (0, 0, 100, 100))
     assert m[55, 55] and m[55, 52] and not m[90, 10] and not m[10, 90]
 
+def test_the_frost_wolf_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Frost Wolf (Nov 27, Martial Master, pale: no `white` wipe): its bite taken up to just
+    before the ice shards the video drew and played there and back, easing in and out of the idle; its flinch and
+    its fall from the other video."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("frost_wolf")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Frost Wolf", "slug": "frost_wolf"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "frost_wolf.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@frost_wolf" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["frost_wolf@roar"][:2] == [0.1, 0.32]
+    assert explore_play.beast_body("Frost Wolf") == "frost_wolf"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image
@@ -1265,8 +1281,9 @@ def test_other_beasts_keep_their_pictures(client):
     from bot import combat
     from bot import fight as engine
     b = fight(client).battle                                  # a beast not animated yet (the seed's is, since Nov 26)
-    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Frost Wolf", "normal", "hunter")), "Frost Wolf")
-    b.enemy.update(realm="Martial Master", slug=beasts.slug("Frost Wolf"))   # far down the roster: not animated for a while
+    b.enemy = engine.enemy_from_beast(combat.beast_stats(b.fighters[0].player, ("Ghost-Fire Wolf", "normal", "swift")),
+                                      "Ghost-Fire Wolf")
+    b.enemy.update(realm="Martial Ancestor", slug=beasts.slug("Ghost-Fire Wolf"))   # far down the roster: not animated yet
     b.enemy["statuses"].clear()
     b._plan()
     page = client.get("/explore/play").text

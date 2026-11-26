@@ -76,6 +76,13 @@ CLIPS = {
                       "unstar": {"attack": (1000, 440, 1280, 700)},
                       "ease_in": {"attack": 4, "hit": 3, "death": 3}, "settle": {"attack": 4, "hit": 3},
                       "place_as": {"hit": "idle", "death": "idle"}},
+    # Nov 27 redesign (pale: no `white` wipe): its bite ends in a burst of ice shards, so the bite is taken up to just
+    # before them and plays there and back; its idle from the calm start of that video (Veo crept a little closer by
+    # the bite, so the bite is placed by its own first frame and eases in and out)
+    "frost_wolf": {"attack": (1.8, 4.55), "hit": (0.7, 2.25), "death": (2.3, 5.5), "idle_span": (24, 40),
+                   "idle_until": 1.8, "attack_ms": 2600, "pingpong": ("attack",),
+                   "ease_in": {"attack": 3, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
+                   "place_as": {"death": "hit"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
