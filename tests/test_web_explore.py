@@ -1105,6 +1105,21 @@ def test_a_tail_veo_grew_long_is_trimmed_back_to_a_stub():
     assert out.getpixel((140, 200))[3] == 255                          # the body untouched
 
 
+def test_the_steel_horn_bull_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Steel-Horn Bull (Nov 27, Elite, Martial Expert, facing left): both videos clean; its goring
+    hook, flinch and collapse ease in from the idle and the hook and flinch settle back into it."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("steel_horn_bull")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Steel-Horn Bull", "slug": "steel_horn_bull"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "steel_horn_bull.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@steel_horn_bull" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["steel_horn_bull@roar"][:2] == [0.12, 0.5]
+    assert explore_play.beast_body("Steel-Horn Bull") == "steel_horn_bull"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

@@ -203,6 +203,12 @@
    "lead": 1.3
   }
  ],
+ "death@steel_horn_bull": [
+  {
+   "file": "death_steel_horn_bull.mp3",
+   "lead": 0.78
+  }
+ ],
  "death@stray_dog_pack": [
   {
    "file": "death_stray_dog_pack.mp3",
@@ -427,6 +433,12 @@
    "lead": 0.76
   }
  ],
+ "hit@steel_horn_bull": [
+  {
+   "file": "hit_steel_horn_bull.mp3",
+   "lead": 0.64
+  }
+ ],
  "hit@stray_dog_pack": [
   {
    "file": "hit_stray_dog_pack.mp3",
@@ -561,6 +573,12 @@
   {
    "file": "lunge_spear_beak_crane.mp3",
    "lead": 0.58
+  }
+ ],
+ "lunge@steel_horn_bull": [
+  {
+   "file": "lunge_steel_horn_bull.mp3",
+   "lead": 1.36
   }
  ],
  "lunge@stray_dog_pack": [
@@ -707,6 +725,12 @@
    "lead": 0.34
   }
  ],
+ "roar:big@steel_horn_bull": [
+  {
+   "file": "roar_big_steel_horn_bull.mp3",
+   "lead": 0.66
+  }
+ ],
  "roar:big@stray_dog_pack": [
   {
    "file": "roar_big_stray_dog_pack.mp3",
@@ -843,6 +867,12 @@
   {
    "file": "roar_spear_beak_crane.mp3",
    "lead": 0.4
+  }
+ ],
+ "roar@steel_horn_bull": [
+  {
+   "file": "roar_steel_horn_bull.mp3",
+   "lead": 0.5
   }
  ],
  "roar@stray_dog_pack": [
