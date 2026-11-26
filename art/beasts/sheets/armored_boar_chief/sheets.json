@@ -1,0 +1,48 @@
+{
+ "cell": [
+  737,
+  406
+ ],
+ "still": [
+  162.0,
+  21.0,
+  537.6,
+  378.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/armored_boar_chief/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 3000,
+   "smooth": true,
+   "nose_x": 0.2157
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/armored_boar_chief/attack.webp",
+   "frames": 55,
+   "cols": 8,
+   "rows": 7,
+   "ms": 2800,
+   "bite": 40,
+   "reach": 0.1749,
+   "bite_x": 0.1126
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/armored_boar_chief/hit.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1333
+  },
+  "death": {
+   "src": "/art/beasts/sheets/armored_boar_chief/death.webp",
+   "frames": 31,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "impact": 9
+  }
+ }
+}

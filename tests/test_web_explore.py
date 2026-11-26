@@ -1007,6 +1007,23 @@ def test_a_move_cut_mid_motion_eases_in_from_the_idle():
     assert 5 < lefts[0] < lefts[1] < lefts[2] < 15                     # sliding from the idle's place to the move's
 
 
+def test_the_armored_boar_chief_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Armored Boar Chief (Nov 27, Elite): its idle from the hit video's calm middle, its charge and tusk
+    toss from the attack video (its white spit wiped), its squealing flinch from after the spear the hit video drew
+    (easing in from the idle), its fall from the same video; every move placed as the idle."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("armored_boar_chief")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Armored Boar Chief", "slug": "armored_boar_chief"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "armored_boar_chief.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@armored_boar_chief" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["armored_boar_chief@roar"][:2] == [0.125, 0.59]
+    assert explore_play.beast_body("Armored Boar Chief") == "armored_boar_chief"
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image
