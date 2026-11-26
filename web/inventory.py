@@ -74,9 +74,9 @@ def inventory_view(conn, user_id, category="weapons", selected_id=None):
             "inspect": inspect, "used": db.slots_used(conn, user_id), "capacity": p["bag_capacity"]}
 
 
-TAB_ART = {"chests": "/art/chests/rare.png", "weapons": "index/weapons_spirit", "armor": "index/armor_spirit",
-           "artifacts": "index/artifacts_spirit", "herbs": "index/herbs_mystic", "materials": "index/materials_refined",
-           "pills": "index/pills_qi", "manuals": "manuals/attack_mystic"}
+TAB_ART = {"chests": "/art/chests/epic.png", "manuals": "manuals/attack_earth", "weapons": "gear/azure_frost_sword",
+           "armor": "gear/azure_dragon_scale_armor", "artifacts": "gear/bagua_mirror", "pills": "pills/qi_mystic",
+           "herbs": "/art/herbs/heaven_lotus.webp", "materials": "mat/base_artifact_4"}     # the painted pictures
 
 
 def tab_picture(key):
