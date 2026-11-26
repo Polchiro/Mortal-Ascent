@@ -2689,3 +2689,78 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
    tall enough to show the whole card, so the left column is never an empty strip */
 @media (min-width:901px) and (min-height:880px){.xprofile .identity{position:sticky;top:16px}}
 @media (max-width:560px){.realmseal{width:72px;height:72px}}
+/* ── The fight screens' top corners, painted (beast fight, spar, duel: all share .battle .bme / .benemy;
+   scripts/make_ui_art.py, docs/web.md "Painted UI"). On a wide screen your banner (art/ui/fight_me.webp: the jade ring
+   with your face, three grooves for name, HP and Battle Qi) and the foe's mirror (fight_foe.webp: the iron-and-crimson
+   ring, grooves for name, tags and HP). Everything is placed in container units (cqw) so it sits in the painted
+   grooves at any banner width. The foe's next move reads on the omen scroll (fight_omen.webp, a 9-slice that grows with
+   its text); an Elite or Beast King gets its own ring over the banner's. Pictures only: no number or rule changed. ── */
+@media (min-width:901px){
+  .battle>.bme,.battle>.benemy{--bw:min(36vw,540px);position:relative;container-type:inline-size;width:var(--bw);max-width:100%;padding:0;border:0;border-radius:0;
+    background:none;text-shadow:0 1px 3px #000}
+  .battle>.bme{display:block;min-height:calc(var(--bw) * .2417);background:url(/art/ui/fight_me.webp) 0 0/100% auto no-repeat;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
+  .battle>.bme .bface{position:absolute;left:3.8cqw;top:3.55cqw;width:16.5cqw;height:16.5cqw;border:0;border-radius:50%;box-shadow:none}
+  .battle>.bme .bstats{position:absolute;left:25.8cqw;top:5.51cqw;width:68.1cqw;height:13.3cqw;display:grid;
+    grid-template-columns:auto minmax(0,1fr);grid-template-rows:3.41cqw 1.74cqw 3.17cqw 1.93cqw 3.07cqw;column-gap:1.6cqw;align-items:center}
+  .battle>.bme .bname{grid-row:1;grid-column:1;padding-left:2cqw;font-size:max(11px,2.75cqw);line-height:1;letter-spacing:.3px;white-space:nowrap}
+  .battle>.bme .brealm{grid-row:1;grid-column:2;font-size:max(10px,2.1cqw);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .battle>.bme .brow{position:relative;grid-column:1/-1;height:100%;margin:0;display:block}
+  .battle>.bme div.brow:nth-of-type(1){grid-row:3}.battle>.bme div.brow:nth-of-type(2){grid-row:5}.battle>.bme div.brow:nth-of-type(3){display:none}
+  .battle>.bme .bhp,.battle>.bme .bhp:not(.qi),.battle>.bme .bhp.qi{width:100%;height:100%;min-width:0;border:0;border-radius:0;background:none;
+    clip-path:polygon(1.6% 0,98.4% 0,100% 50%,98.4% 100%,1.6% 100%,0 50%)}
+  .battle>.bme .bhp div{border-radius:0;background:linear-gradient(180deg,#F07A6E,#C2362E 55%,#8E1F1B);box-shadow:inset 0 1px 0 rgba(255,220,200,.5)}
+  .battle>.bme .bhp.qi div{background:linear-gradient(180deg,#9CC6F2,#3E78C4 55%,#244E8E);box-shadow:inset 0 1px 0 rgba(220,240,255,.5)}
+  .battle>.bme .brow b{position:absolute;inset:0;right:0;display:flex;align-items:center;justify-content:center;white-space:nowrap;font-size:max(10px,2.05cqw);line-height:1;color:#FFF6E4}
+  .battle>.bme .bhp{position:absolute;inset:0;margin:0}
+  .battle>.bme .brow:nth-of-type(2) b{right:0;font-size:max(9.5px,1.9cqw);line-height:1}
+  .battle>.bme .brow:nth-of-type(2) b::before{content:"Battle Qi\00a0"}
+  .battle>.bme .dlock{position:absolute;left:0;top:calc(100% + 2.6cqw);font-size:12px;color:var(--mist)}
+  .battle>.bme .bstats:not(:has(.qi)) .dlock{position:static;grid-row:5;grid-column:1/-1;padding-left:2cqw;font-size:max(10px,1.9cqw)}
+
+  .battle>.benemy{display:block;min-height:calc(var(--bw) * .2558);padding-top:calc(var(--bw) * .2558);text-align:left;
+    background:url(/art/ui/fight_foe.webp) 0 0/100% auto no-repeat}
+  .battle>.benemy .dfoehead,.battle>.benemy .dfoehead>div{display:contents}
+  .battle>.benemy .ename,.battle>.benemy .etags{position:absolute;left:9.8cqw;width:64.5cqw;padding:0 2.2cqw;display:flex;align-items:center;
+    justify-content:flex-end;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
+  .battle>.benemy .ename{top:6.09cqw;height:3.33cqw;font-size:max(11px,2.75cqw);letter-spacing:.3px}
+  .battle>.benemy .etags{top:11.33cqw;height:3.17cqw;font-size:max(9.5px,1.95cqw);color:#E6D6C8}
+  .battle>.benemy .eface,.battle>.benemy .dface{position:absolute;display:block;left:79.75cqw;top:4.2cqw;width:16.9cqw;height:16.9cqw;margin:0;z-index:1;
+    border:0;border-radius:50%;box-shadow:none;object-fit:cover}
+  .battle>.benemy .ehp{position:absolute;left:9.8cqw;top:16.42cqw;width:64.5cqw;height:3.15cqw;margin:0;border:0;border-radius:0;background:none;transform:none;
+    clip-path:polygon(1.6% 0,98.4% 0,100% 50%,98.4% 100%,1.6% 100%,0 50%)}
+  .battle>.benemy .ehp div{border-radius:0;background:linear-gradient(180deg,#F07A6E,#B8322B 55%,#7E1A17);box-shadow:inset 0 1px 0 rgba(255,220,200,.5)}
+  .battle>.benemy .ehp span{transform:none;font-size:max(10px,2.05cqw);line-height:1}
+  .battle>.benemy .ehp.eqi{top:calc(25.58cqw + 3px);height:12px;left:12cqw;width:60cqw;clip-path:none;border-radius:5px;background:rgba(8,10,16,.8);
+    border:1px solid rgba(127,168,217,.6)}
+  .battle>.benemy .ehp.eqi div{background:linear-gradient(90deg,#2F5FA8,#7FA8D9)}
+  .battle>.benemy .ehp.eqi span{font-size:9px}
+  .battle>.benemy:has(.eqi){padding-top:calc(var(--bw) * .2558 + 19px)}
+  .battle.sparfight>.bme .bstats{display:grid}                     /* spar.css stacks them; the banner has grooves */
+  .battle>.benemy .sface{object-position:50% 4%;object-fit:cover;transform:none;background:#141820}
+  /* an Elite's and a Beast King's own ring over the banner's */
+  .battle>.benemy.rank-elite::after,.battle>.benemy.rank-beast_king::after{content:"";position:absolute;z-index:2;pointer-events:none;
+    left:75.9cqw;top:-.4cqw;width:25cqw;height:26.4cqw;background:url(/art/ui/foe_ring_elite.webp) center/contain no-repeat}
+  .battle>.benemy.rank-beast_king::after{left:75cqw;top:-3.2cqw;width:26.8cqw;height:30cqw;background-image:url(/art/ui/foe_ring_boss.webp)}
+
+  /* the foe's next move on the omen scroll */
+  .battle>.benemy .bwarn,.battle>.benemy .bwarn.skill{margin-top:1.5cqw;padding:2px 6cqw;border-radius:0;background:none;text-align:center;
+    border-style:solid;border-width:16px 6.2cqw 16px;border-image:url(/art/ui/fight_omen.webp) 78 92 80 fill / 16px 6.2cqw 16px / 0 stretch;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.45))}
+  .battle>.benemy .bwarn .whead{font-size:max(12.5px,2.9cqw)}
+  .battle>.benemy .bwarn .whint{font-size:max(11px,2.5cqw);color:#E9DCCB}
+}
+/* the spar's fifteen beads: between the banners when they fit, under yours when they don't */
+@media (min-width:901px) and (max-width:1700px){
+  .sparfight .sbeads{left:20px;transform:none;top:calc(min(36vw,540px) * .25 + 12px);gap:4px;padding:5px 10px}
+  .sparfight .sbeads li{width:22px;height:22px}.sparfight .sbeads li img{width:16px;height:16px}
+}
+@media (min-width:901px) and (max-width:1400px){.battle.sparfight .dtoast{top:30%}}
+/* (container units in a container's own padding or height would measure the page, not the banner: --bw there) */
+/* the turn's call-outs and the duel's opening line on the jade plaque; Battle History on the gold pill (every width) */
+.bfeed .toast,.dtoast{border:solid transparent;border-width:9px 18px;border-radius:0;background:none;box-shadow:none;
+  border-image:url(/art/ui/fight_toast.webp) 32 46 32 fill / 9px 18px / 0 stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.bfeed .toast{padding:2px 10px}.dtoast{padding:4px 14px}
+.histbtn{border:solid transparent;border-width:6px 12px 6px 38px;border-radius:0;background:none;padding:2px 6px 2px 0;box-shadow:none;
+  border-image:url(/art/ui/fight_pill.webp) 24 30 24 106 fill / 6px 12px 6px 38px / 0 stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.histbtn .hicon{margin-left:-31px;margin-right:8px}
+.histbtn:hover,.histbtn:focus-visible,.bhist[open]>.histbtn{filter:drop-shadow(0 0 10px rgba(255,214,140,.6))}

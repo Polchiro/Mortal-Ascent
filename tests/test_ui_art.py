@@ -17,7 +17,7 @@ def alpha(rel):
 
 def test_every_piece_is_there_with_clear_edges():
     rels = [rel for jobs in mua.JOBS.values() for _, _, rel in jobs]
-    assert len(rels) == len(set(rels)) == 42
+    assert len(rels) == len(set(rels)) == 50
     for rel in rels:
         a = alpha(rel)
         assert a[:3, :3].max() <= 8 and a[-3:, -3:].max() <= 8, rel           # nothing left in the corners
@@ -73,3 +73,27 @@ def test_discord_cards_use_the_journey_and_realm_paintings():
         assert art_icons.resolve("deed:" + deed)[0].endswith(f"journey/{deed}.webp")
     assert art_icons.resolve("emblem:realm:Martial King")[0].endswith("realms/martial_king.webp")
     assert art_icons.resolve("deed:rank") is None               # no painting: still drawn
+
+
+def test_the_fight_banners_are_dark_inside_and_clear_outside():
+    """The fight screens' panels (docs/web.md "Painted UI"): the grooves and the ring filled with dark lacquer so text
+    reads on any scene, the corners outside the frame clear."""
+    for rel in ("ui/fight_me", "ui/fight_foe", "ui/fight_omen", "ui/fight_toast", "ui/fight_pill"):
+        im = np.asarray(Image.open(os.path.join(ART, rel + ".webp")).convert("RGBA"))
+        h, w = im.shape[:2]
+        assert im[0, 0, 3] < 20 and im[-1, -1, 3] < 60, rel
+        assert im[h // 2, w // 2, 3] > 180 and im[h // 2, w // 2, :3].max() < 60, rel     # dark lacquer in the middle
+    for rel in ("ui/foe_ring_normal", "ui/foe_ring_elite", "ui/foe_ring_boss"):
+        a = alpha(rel)
+        assert a[a.shape[0] // 2, a.shape[1] // 2] < 20, rel                              # the face shows through
+
+
+def test_the_beast_fight_spar_and_duel_use_the_painted_banners():
+    css = open("web/static/style.css").read()
+    for piece in ("fight_me", "fight_foe", "fight_omen", "fight_toast", "fight_pill", "foe_ring_elite", "foe_ring_boss"):
+        assert f"/art/ui/{piece}.webp" in css, piece
+    assert "rank-{{ F.enemy.tier" in open("web/templates/explore_play.html").read()       # Elite / Beast King ring
+    assert 'class="dface sface" src="{{ s.master.img }}"' in open("web/templates/spar.html").read()
+    for page in ("explore_play", "spar", "duel"):                                        # all share the .bme / .benemy plates
+        t = open(f"web/templates/{page}.html").read()
+        assert 'class="bme' in t and 'class="benemy' in t, page

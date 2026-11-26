@@ -1,9 +1,10 @@
 """Cut SHOAIB's painted UI pieces (Nov 27 2026): the Heavenly Blessing orbs, Lotus Coins and Moon Pearls, the map
 screen's frame (hero plate, rings, vials, Break Through tab, dock icons), the realm seals, equipment slots, journey
-icons and name plaque (docs/web.md "Painted UI").
+icons and name plaque, and the fight screens' banners, omen scroll and foe rings (docs/web.md "Painted UI").
 
     python -m scripts.make_ui_art blessings1=a.png blessings2=b.png currency=c.png hero_plate=d.png frames=e.png \\
-        dock=f.png seals1=g.png seals2=h.png slots=i.png journey=j.png plaque=k.png [only=blessings1,currency]
+        dock=f.png seals1=g.png seals2=h.png slots=i.png journey=j.png plaque=k.png \\
+        fight_banners=l.png fight_frames=m.png fight_rings=n.png [only=blessings1,currency]
 
 Each source picture is named as in JOBS: the box (x0, y0, x1, y1) of every piece in it (a 1376 x 768 picture; a
 3 x 2 or 2 x 2 grid uses its cells), how to cut it and where it goes:
@@ -17,6 +18,8 @@ rect   a square slot frame on a dark backdrop it can't be told from by colour: i
 frame  a frame whose middle is the same grey as the backdrop (the hero plate, a ring): everything unlike the grey is
        kept, softly at its edge; the grey middle comes out clear so the page's own text and face show through. Kept
        at its own shape, at most WIDE px wide.
+panel  a frame cut the same way, with the clear spots it closes in (grooves, ring, middle) filled with dark lacquer
+       so text set in them reads on any scene (the fight screens' banners, omen scroll, plaque and pill).
 
 Gemini's sparkle is painted out first where it touches a piece (SPARKLE). The sources are only read.
 Needs numpy, opencv, Pillow and rembg (isnet-general-use).
@@ -71,7 +74,30 @@ JOBS = {
     "journey": [(C22[0], "item", "icons/journey/beasts"), (C22[1], "item", "icons/journey/herbs"),
                 (C22[2], "item", "icons/journey/breakthroughs"), (C22[3], "item", "icons/journey/duels")],
     "plaque": [((40, 190, 1340, 570), "frame", "ui/name_plaque")],
+    # the fight screens' top corners (beast fight, spar, duel): your banner and the foe's, the omen scroll, the
+    # middle-of-the-screen plaque, the Battle History pill and the foe's portrait ring by danger
+    "fight_banners": [((44, 50, 1319, 367), "panel", "ui/fight_me"), ((51, 382, 1328, 718), "panel", "ui/fight_foe")],
+    "fight_frames": [((54, 36, 1323, 425), "panel", "ui/fight_omen"), ((84, 508, 671, 677), "panel", "ui/fight_toast"),
+                     ((784, 511, 1300, 671), "panel", "ui/fight_pill")],
+    "fight_rings": [((63, 188, 453, 578), "frame", "ui/foe_ring_normal"), ((480, 182, 901, 581), "frame", "ui/foe_ring_elite"),
+                    ((903, 145, 1344, 594), "frame", "ui/foe_ring_boss")],
 }
+
+
+# Where Gemini's sparkle sits on a piece, painting it over the grey would bite a hole in it; instead the spot is
+# mended from the piece's own mirror image (flipped top to bottom about the row given: the foe's ring, the pill).
+MEND = {"fight_banners": 549, "fight_frames": 584}
+
+
+def mend(im, about, at=(0.906, 0.836), r=0.03):
+    """Cover the sparkle at `at` with the same spot flipped top to bottom about row `about`."""
+    w, h = im.size
+    cx, cy, rr = round(at[0] * w), round(at[1] * h), round(r * w)
+    box = (cx - rr, cy - rr, cx + rr, cy + rr)
+    src = (box[0], 2 * about - box[3], box[2], 2 * about - box[1])
+    out = im.copy()
+    out.paste(im.crop(src).transpose(Image.FLIP_TOP_BOTTOM), box[:2])
+    return out
 
 
 def cut_frame(im):
@@ -91,6 +117,20 @@ def cut_frame(im):
     out = np.dstack([np.clip(col, 0, 255), a * 255]).astype(np.uint8)
     ys, xs = np.nonzero(out[..., 3] > 8)
     return Image.fromarray(out[ys.min():ys.max() + 1, xs.min():xs.max() + 1])
+
+
+def fill_holes(pic, rgba=(9, 15, 19, 215)):
+    """A panel: the clear spots closed in by the frame (its grooves, ring and middle) filled with dark lacquer under
+    the paint, so text and bars set in them read on any scene; outside the frame stays clear."""
+    a = np.asarray(pic)[..., 3]
+    k, lab = cv2.connectedComponents((a < 250).astype(np.uint8))
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
+    inside = np.isin(lab, [i for i in range(1, k) if i not in edge])
+    under = np.zeros(a.shape + (4,), np.uint8)
+    under[inside] = rgba
+    base = Image.fromarray(under)
+    base.alpha_composite(pic)
+    return base
 
 
 def cut_rect(im):
@@ -142,7 +182,10 @@ def main(args):
         if only and name not in only:
             continue
         im = Image.open(src).convert("RGB")
-        im = unsparkle(im, spots) if spots else im
+        if name in MEND:
+            im = mend(im, MEND[name])
+        else:
+            im = unsparkle(im, spots) if spots else im
         for box, mode, rel in JOBS[name]:
             pic = im.crop(box)
             path = os.path.join(ART, rel + ".webp")
@@ -156,6 +199,8 @@ def main(args):
                 out = fit(cut_rect(pic), fill=0.96)
             elif mode == "item_wide":
                 out = wide(mia.cut(pic, session))
+            elif mode == "panel":
+                out = wide(fill_holes(cut_frame(pic)))
             else:
                 out = wide(cut_frame(pic))
             out.save(path, "WEBP", quality=92, method=6)
