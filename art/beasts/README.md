@@ -53,5 +53,7 @@ with cracked earth scales and grey stone thorns, now drawn facing left (no longe
 (Elite) is a huge dark blood-red wolf with a shaggy ruff and oversized ivory fangs, drawn facing left (no longer
 mirrored); every move is taken from whichever of its two videos had it clean. The **Armored Boar Chief** (Elite) is a giant
 wild boar in dented bronze plates with short broken spear stubs in its hide; its idle comes from the calm middle of
-its hit video, since its attack video began with steam puffing from its snout. The beasts are
+its hit video, since its attack video began with steam puffing from its snout. The **White-Browed Tiger King**, the Martial
+Warrior Beast King, is a colossal white tiger with icy-blue stripes; its picture was mirrored to face left and its
+backdrop evened out before its videos, and its video effects are dropped frame by frame (wiping white would wipe its fur). The beasts are
 being redone one at a time in roster order the same way.

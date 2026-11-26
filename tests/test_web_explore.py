@@ -1024,6 +1024,23 @@ def test_the_armored_boar_chief_is_animated_from_its_own_videos_with_its_own_voi
     assert explore_play.beast_body("Armored Boar Chief") == "armored_boar_chief"
 
 
+def test_the_white_browed_tiger_king_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned White-Browed Tiger King (Nov 27, Beast King of the Martial Warrior realm): a white beast, so the
+    frames with the video's white slash arc and impact star are dropped rather than wiped (wiping white would wipe its
+    fur); its flinch is only its first duck (it reared up after, head too high), held a moment and eased home."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("white_browed_tiger_king")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "White-Browed Tiger King", "slug": "white_browed_tiger_king"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "white_browed_tiger_king.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@white_browed_tiger_king" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["white_browed_tiger_king@roar"][:2] == [0.12, 0.36]
+    assert explore_play.beast_body("White-Browed Tiger King") == "white_browed_tiger_king"
+
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image
