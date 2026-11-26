@@ -1024,6 +1024,14 @@ def test_the_idle_keeps_its_place_across_turns_and_the_pounce_is_a_roar(client):
     assert "ev.final && !ev.skill ? ['Final Roar']" in js and "'Roused!'" in js
 
 
+def test_the_move_panel_keeps_one_height_so_the_scene_never_jumps(client):
+    """Nov 26 (SHOAIB's screen recording: "it keeps refreshing"): hovering Guard or Break grew the move panel a line,
+    the scene above it shrank, and the beast, hero and background jumped. The panel is now held at its tallest text."""
+    js = client.get("/static/fight.js").text
+    assert "function holdInfo(main)" in js and "box.style.minHeight = tallest + 'px'" in js
+    assert "holdInfo(main);" in js and "addEventListener('resize', function () { holdInfo(" in js
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

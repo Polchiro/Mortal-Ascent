@@ -139,6 +139,25 @@
                                                                 // a big attack sheet never shows blank while it unpacks
     return api;
   }
+  /* The move panel (.binfo) is as tall as its tallest text from the start (SHOAIB, Nov 26: "it keeps refreshing").
+     Guard's and Break's texts are a line longer than Strike's: hovering them grew the panel, the fight scene above it
+     shrank by as much, and the beast, the hero and the background all jumped. Each text is tried in the panel once
+     (in one frame, never painted) and the tallest kept as its least height; again when the window changes size. */
+  function holdInfo(main) {
+    var box = main && main.querySelector('.binfo'), title = box && box.querySelector('.ititle'), text = box && box.querySelector('.itext');
+    if (!box || !title || !text) return;
+    var t0 = title.textContent, x0 = text.textContent, tallest = 0;
+    box.style.minHeight = '';
+    main.querySelectorAll('[data-info]').forEach(function (el) {
+      title.textContent = el.dataset.label + (el.dataset.state ? ' · ' + el.dataset.state : '');
+      text.textContent = el.dataset.info;
+      tallest = Math.max(tallest, box.offsetHeight);
+    });
+    title.textContent = t0; text.textContent = x0;
+    tallest = Math.max(tallest, box.offsetHeight);
+    if (tallest) box.style.minHeight = tallest + 'px';
+  }
+  window.addEventListener('resize', function () { holdInfo(document.querySelector('main.battle')); });
   window.addEventListener('resize', function () {
     var b = document.querySelector('main.battle .beast.sheeted');
     if (b && b._sheets) b._sheets.fit();
@@ -162,6 +181,7 @@
       target.addEventListener('mouseenter', show);
       target.addEventListener('focus', show);
     });
+    holdInfo(main);                                             // the panel keeps one height whatever it shows
     var posed = main.querySelector('.beast.posed');             // load every pose picture now, so swaps are instant
     if (posed) { try { var ps = JSON.parse(posed.dataset.poses); Object.keys(ps).forEach(function (k) { new Image().src = ps[k].src; }); } catch (e) {} }
     ['/art/fx/break_burst.webp', '/art/fx/break_crater.webp'].forEach(function (src) { new Image().src = src; });   // Break's slam
