@@ -50,3 +50,26 @@ def test_the_currencies_are_painted_on_the_web_and_the_cards():
     img = Image.new("RGBA", (400, 400), (0, 0, 0, 255))
     assert purse.painted(img, (100, 100), 40, "moon_pearl", (200, 220, 255, 120))
     assert not purse.painted(img, (100, 100), 40, "no_such_thing", (0, 0, 0, 0))
+
+
+def test_the_profile_uses_the_painted_seal_slots_plaque_and_journey():
+    from bot import player as rules
+    from web.profile import realm_track
+    for realm in rules.REALM_ORDER:                              # every realm's seal is a real file
+        url = realm_track(realm, 1, 9)["seal"].split("?")[0]
+        assert os.path.exists(url.lstrip("/")), realm
+    page = open("web/templates/profile.html").read()
+    assert 'src="{{ t.seal }}"' in page and "macro emblem" not in page
+    assert "s-{{ w.tab }}" in page                              # the empty slot frames by kind
+    css = open("web/static/style.css").read()
+    for piece in ("slot_weapon", "slot_armor", "slot_artifact", "slot_empty", "name_plaque"):
+        assert f"/art/ui/{piece}.webp" in css, piece
+    src = open("web/profile.py").read()
+    assert "/art/icons/journey/" in src
+
+
+def test_discord_cards_use_the_journey_and_realm_paintings():
+    for deed in ("beasts", "herbs", "breakthroughs", "duels"):
+        assert art_icons.resolve("deed:" + deed)[0].endswith(f"journey/{deed}.webp")
+    assert art_icons.resolve("emblem:realm:Martial King")[0].endswith("realms/martial_king.webp")
+    assert art_icons.resolve("deed:rank") is None               # no painting: still drawn

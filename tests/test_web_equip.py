@@ -143,7 +143,7 @@ def test_profile_stage_shows_the_cultivator_with_gear_and_power(client, db_path)
     from PIL import Image
     ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     page = client.get("/profile").text
-    assert 'class="remblem back"' in page and 'class="num">I</text>' in page                 # the realm's lotus, no Chinese seal
+    assert 'class="remblem back" src="/art/icons/realms/mortal.webp' in page                  # the realm's painted seal, no Chinese seal
     assert not re.search(r"[\u4e00-\u9fff]", page)
     assert 'class="portrait stage"' in page and 'class="formation"' in page and page.count('class="sgear ') == 4
     assert page.count('class="sgear g') == 4 and page.count(" empty\" href=\"/inventory?tab=") == 4      # nothing worn yet
@@ -155,7 +155,7 @@ def test_profile_stage_shows_the_cultivator_with_gear_and_power(client, db_path)
     sword = bag(db_path, "weapons")[0]
     client.post("/inventory/equip", data={"item": sword["id"]})
     page = client.get("/profile").text
-    assert f'class="sgear g1" href="/inventory?tab=weapons&amp;item={sword["id"]}"' in page
+    assert f'class="sgear g1 s-weapons" href="/inventory?tab=weapons&amp;item={sword["id"]}"' in page
     assert page.count(" empty\" href=\"/inventory?tab=") == 3
     for g in ("male", "female"):                                             # tall, see-through, the figure down to the bottom edge
         im = Image.open(os.path.join(ROOT, "art", "portraits", f"hero_{g}.webp"))
