@@ -961,6 +961,36 @@ def test_the_fight_background_video_loops_as_two_copies_taking_turns(client):
     assert "querySelectorAll(':scope > video.bgloop')" in js                        # both are fitted to the scene
 
 
+def test_every_animated_beasts_idle_loops_with_no_jump():
+    """Nov 26 (SHOAIB: "it keeps resetting"): an idle's last frame never quite met its first. A short idle now plays
+    forward then back; a long one dissolves its end into its first frame. Either way the loop point is no bigger a
+    change than its biggest ordinary step."""
+    import glob
+    import json
+    import numpy as np
+    from PIL import Image
+    for path in glob.glob(os.path.join("art", "beasts", "sheets", "*", "sheets.json")):
+        d = json.load(open(path))
+        (cw, ch), I = d["cell"], d["sheets"]["idle"]
+        assert I.get("smooth") and I["frames"] == I["cols"] * I["rows"], path
+        s = np.asarray(Image.open(path.replace("sheets.json", "idle.webp")).convert("RGBA")).astype(float)
+        fr = [s[(i // 8) * ch:(i // 8 + 1) * ch, (i % 8) * cw:(i % 8 + 1) * cw] for i in range(I["frames"])]
+        def diff(a, b):
+            return np.abs(a[..., 3] - b[..., 3]).mean() + np.abs(a[..., :3] * a[..., 3:] / 255 - b[..., :3] * b[..., 3:] / 255).mean()
+        steps = [diff(fr[i], fr[i + 1]) for i in range(len(fr) - 1)]
+        assert diff(fr[-1], fr[0]) <= max(steps), path
+
+
+def test_the_idle_keeps_its_place_across_turns_and_the_pounce_is_a_roar(client):
+    """Nov 26: the page is replaced every turn, and the idle restarted from its first frame each time: it is now timed
+    off the clock. The Mountain Tiger's Mountain-Splitting Pounce plays as its great roar (SHOAIB: "just make it
+    roar"), still with the server's damage, Guarded or Stunned, and Roused; no Final Roar label."""
+    js = client.get("/static/fight.js").text
+    assert "idle.style.animationDelay = -(performance.now() % S.idle.ms)" in js
+    assert "function skillRoar(ev)" in js and "add(skillRoar(ev), 'beast_acting'" in js and "function pounce(" not in js
+    assert "ev.final && !ev.skill ? ['Final Roar']" in js and "'Roused!'" in js
+
+
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
     """Its roar shows its open-mouthed roar picture over its frames (Nov 26: the boar roared with its mouth shut)."""
     css, js = client.get("/static/style.css").text, client.get("/static/fight.js").text

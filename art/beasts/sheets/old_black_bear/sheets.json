@@ -12,11 +12,12 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/old_black_bear/idle.webp",
-   "frames": 16,
+   "frames": 32,
    "cols": 8,
-   "rows": 2,
-   "ms": 1250,
-   "nose_x": 0.1943
+   "rows": 4,
+   "ms": 2500,
+   "nose_x": 0.1943,
+   "smooth": true
   },
   "attack": {
    "src": "/art/beasts/sheets/old_black_bear/attack.webp",

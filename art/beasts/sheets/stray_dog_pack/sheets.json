@@ -12,11 +12,12 @@
  "sheets": {
   "idle": {
    "src": "/art/beasts/sheets/stray_dog_pack/idle.webp",
-   "frames": 24,
+   "frames": 48,
    "cols": 8,
-   "rows": 3,
-   "ms": 2083,
-   "nose_x": 0.1747
+   "rows": 6,
+   "ms": 4166,
+   "nose_x": 0.1747,
+   "smooth": true
   },
   "attack": {
    "src": "/art/beasts/sheets/stray_dog_pack/attack.webp",

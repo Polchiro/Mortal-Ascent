@@ -132,6 +132,9 @@
     };
     if (window.MutationObserver) new MutationObserver(copy).observe(img, {attributes: true, attributeFilter: ['style']});
     if (img.complete) fit(); else img.addEventListener('load', fit);
+    var idle = layer.querySelector('.bs-idle');                 // the idle keeps its place in time, not restarting each turn:
+    if (idle && S.idle && S.idle.ms) idle.style.animationDelay = -(performance.now() % S.idle.ms).toFixed(0) + 'ms';   // (the
+    // page is replaced every turn; both pages' idles are timed off the same clock, so the new one goes on where the old was)
     Object.keys(S).forEach(function (n) { keep(S[n].src); });   // every sheet loaded AND unpacked now, and kept across turns:
                                                                 // a big attack sheet never shows blank while it unpacks
     return api;
@@ -355,7 +358,6 @@
     // the beast's own attack, from SHOAIB's beast attack video (a boar): head lowered, a rear, the charge, the goring toss
     gore:   {gather: 300, rear: 460, hit: 720, toss: 860, back: 960, end: 1480, knock: 0.03},
     tech:   {end: 1100},                                        // techniques play their own animation (style.css)
-    pounce: {crouch: 620, hit: 1080, back: 1320, home: 1760, end: 2800, knock: 0.05}   // Mountain-Splitting Pounce
   };
   var GAP = 160;
 
@@ -1237,7 +1239,7 @@
     function struck(ev) {
       if (!ev || ev.why) return;
       if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
-      var words = (ev.final ? ['Final Roar'] : []).concat(ev.guard ? ['Guarded'] : (ev.status || []).concat(ev.stun ? ['Stunned'] : []));
+      var words = (ev.final && !ev.skill ? ['Final Roar'] : []).concat(ev.guard ? ['Guarded'] : (ev.status || []).concat(ev.stun ? ['Stunned'] : []));
       words.forEach(function (w, i) { setTimeout(function () { pop(fighter, 'word', w); }, 380 + 300 * i); });   // after the damage number
       if (!ev.guard && scene.animate) fighter.animate([{transform: 'none'}, {transform: 'translate(-6px,0)'}, {transform: 'translate(4px,0)'}, {transform: 'none'}], {duration: 320});
     }
@@ -1252,58 +1254,16 @@
       }, clear: function () { var n = scene.querySelector('.broar'); if (n) n.remove(); }};
     }
 
-    /* the Mountain Tiger's Mountain-Splitting Pounce (battle.UNIQUE_SKILLS): it sinks low with golden Qi swirling at
-       its paws, leaps high across the arena, comes down on you and splits the ground in a golden shockwave, bounds
-       back and roars, Roused. The damage, the stun and the block come from the server like any other hit. */
-    function pounce(ev) {
-      var R = RECIPES.pounce, did = {}, lastGhost = -1e9;
-      var land = -(reachBeast + 0.03 * W), bf = beastFilter && beastFilter !== 'none' ? beastFilter + ' ' : '';
-      if (ev.dmg) hold('me');
-      function once(k) { if (did[k]) return false; did[k] = true; return true; }
-      return {end: R.end, render: function (t) {
-        var x = 0, y = 0, rot = 0, sx = 1, sy = 1, glow = 0;
-        if (t < R.crouch) { var q = ease(span(t, 0, R.crouch)); x = 0.02 * W * q; sy = 1 - 0.13 * q; sx = 1 + 0.05 * q; glow = q; }
-        else if (t < R.hit) { var c = span(t, R.crouch, R.hit); x = 0.02 * W + (land - 0.02 * W) * inout(c); y = -0.2 * W * Math.sin(Math.PI * c);
-          rot = -14 + 30 * c; sy = 1 + 0.06 * Math.sin(Math.PI * c); glow = 1; }
-        else if (t < R.back) { var l = span(t, R.hit, R.hit + 170); x = land; sy = 0.88 + 0.12 * l; sx = 1.07 - 0.07 * l; glow = 1 - 0.4 * l; }
-        else if (t < R.home) { var r = inout(span(t, R.back, R.home)); x = land * (1 - r); y = -0.07 * W * Math.sin(Math.PI * r); rot = 6 * Math.sin(Math.PI * r); glow = 0.6; }
-        else { var p2 = Math.min(1, span(t, R.home, R.end) * 1.6); sx = sy = 1 + 0.06 * Math.sin(Math.PI * p2); glow = 0.6 + 0.7 * Math.sin(Math.PI * p2); }
-        if (bposes) { bpose(t < R.crouch ? 'crouch' : t < R.hit ? 'leap' : t < R.back ? 'slam' : t < R.home ? 'idle' : 'roar'); if (t < R.crouch) sy = 1 - 0.05 * (1 - sy) / 0.13; }
-        beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg) scale(' + sx + ',' + sy + ')';
-        beast.style.filter = glow > 0.02 ? bf + 'drop-shadow(0 0 ' + (6 + 24 * glow) + 'px rgba(255,186,64,' + (0.95 * glow).toFixed(2) + ')) brightness(' + (1 + 0.22 * glow) + ')' : '';
-        if (t >= 0 && once('gather')) { var g = at(br, 0.5, 0.96); fx('pqring', g[0], g[1], R.crouch + 260); fx('pqring q2', g[0], g[1], R.crouch + 260); }
-        if (t >= R.crouch + 60 && t < R.hit - 40 && t - lastGhost > (bposes ? 130 : 95)) {                     // golden afterimages along the leap
-          lastGhost = t;
-          var gh = beast.cloneNode(false); gh.className = 'pghost'; gh.style.filter = ''; if (bposes) { gh.style.top = 'auto'; gh.style.height = 'auto'; } beastBox.appendChild(gh);
-          setTimeout(function () { gh.remove(); }, 300);
-        }
-        var h = t - R.hit;
-        if (h >= 0 && once('impact')) {
-          var f = at(fr, 0.5, 0.97);
-          fx('pcrater', f[0], f[1], 3400); fx('pwave', f[0], f[1], 900); fx('pwave w2', f[0], f[1], 1100); fx('pflash', 50, 50, 500);
-          for (var i = 0; i < 14; i++) {
-            var a = Math.PI * (1.05 + 0.9 * i / 13) + (Math.random() - 0.5) * 0.3, d = 60 + Math.random() * 140;
-            fx('pdebris' + (i % 3 ? '' : ' hot'), f[0], f[1], 900, {'--dx': Math.cos(a) * d + 'px', '--dy': Math.sin(a) * d * 0.9 + 'px',
-              '--rot': (Math.random() * 540 - 270) + 'deg', '--sz': (5 + Math.random() * 9) + 'px'});
-          }
-          if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-14px,9px)'}, {transform: 'translate(13px,-8px)'},
-            {transform: 'translate(-9px,5px)'}, {transform: 'translate(6px,-3px)'}, {transform: 'none'}], {duration: 560});
-          var p = at(fr, 0.52, 0.5);
-          if (ev.guard) { if (!gsheet) burst('tring', p[0], p[1]); pop(fighter, 'word', 'Guarded'); }
-          if (ev.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', ev.dmg), '−' + ev.dmg); }
-        }
-        if (ev.stun && h >= 260 && once('stun')) pop(fighter, 'word stun', 'Stunned!');
-        if (ev.dmg && !ev.guard) {
-          var k = knocked(h, R.knock * W);
-          pose('idle'); hero(-k[0], 0, -k[0] / 5);
-          poses.style.filter = k[1] > 0.05 ? 'sepia(' + 0.7 * k[1] + ') saturate(' + (1 + 3 * k[1]) + ') hue-rotate(-28deg)' : '';
-        } else { if (!(ev.guard && block(h))) pose('idle'); hero(0, 0); }
-        if (t >= R.home && once('roar')) {
-          var m = at(br, 0.16, 0.36);                                // the mouth in its roar pose
-          if (!roar(m)) { fx('proar', m[0], m[1], 900); fx('proar r2', m[0], m[1], 1100); }
-          pop(beastBox, 'word roused', 'Roused!');
-        }
-      }};
+    /* the Mountain Tiger's Mountain-Splitting Pounce (battle.UNIQUE_SKILLS) plays as its great roar (SHOAIB, Nov 26:
+       "just make it roar": the old leap across the arena wasn't smooth). Its own open-jawed roar, the big burst, the
+       damage, "Guarded" or "Stunned" from the server like any other hit, then it is Roused. */
+    function skillRoar(ev) {
+      var r = roaring({dmg: ev.dmg, guard: ev.guard, stun: ev.stun, final: true, skill: true}), draw = r.render, roused = false;
+      r.render = function (t) {
+        draw(t);
+        if (!roused && t >= r.end * 0.6) { roused = true; pop(beastBox, 'word roused', 'Roused!'); }
+      };
+      return r;
     }
 
     /* A technique with its own look (web/technique_fx.py, docs/web.md "Techniques"). The cultivator plays the shared
@@ -2121,7 +2081,7 @@
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { var hs = heavenly(braced(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'brace']] : [[0, 'guardup', 'brace'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { var hs = heavenly(deflected(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'deflect']] : [[0, 'guardup', 'deflect'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
       else if (ev.act === 'tech' && (ev.evaded || ev.idle) && cast && cast.fx && cast.fx.motion === 'sidestep') { var hs = heavenly(sidestepped(ev)); add(hs, ev.idle ? 'player_acting' : 'beast_acting', later(ev.idle ? [] : [[60, 'lunge']], hs.pre)); kinds.enemy = 1; }
-      else if (ev.who === 'enemy' && ev.act === 'pounce') { add(pounce(ev), 'beast_acting', [[RECIPES.pounce.crouch - 80, 'lunge'], [RECIPES.pounce.hit, 'boom'], [RECIPES.pounce.home, 'roar', 'big']]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
+      else if (ev.who === 'enemy' && ev.act === 'pounce') { add(skillRoar(ev), 'beast_acting', [[120, 'roar', 'big', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; if (ev.guard) kinds.guard = 1; }
       else if (ev.who === 'me' && (ev.act === 'strike' || ev.act === 'break')) { add(attack(ev), 'player_acting'); kinds.me = 1; }
       else if (ev.who === 'me' && ev.act === 'guard') { add(charge(ev), 'beast_acting'); kinds.guard = 1; }
       else if (ev.who === 'enemy') { add(charge(ev), 'beast_acting'); kinds.enemy = 1; }
