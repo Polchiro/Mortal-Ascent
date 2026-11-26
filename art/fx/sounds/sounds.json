@@ -332,7 +332,7 @@
  "lunge@old_black_bear": [
   {
    "file": "lunge_old_black_bear.mp3",
-   "lead": 0.62
+   "lead": 0.76
   }
  ],
  "lunge@stray_dog_pack": [
@@ -392,7 +392,7 @@
  "roar:big@old_black_bear": [
   {
    "file": "roar_big_old_black_bear.mp3",
-   "lead": 0.4
+   "lead": 1.1
   }
  ],
  "roar:big@stray_dog_pack": [

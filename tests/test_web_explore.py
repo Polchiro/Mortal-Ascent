@@ -810,7 +810,7 @@ def test_the_old_black_bear_is_animated_from_its_own_videos_with_its_own_voice()
     from web import beast_sheets, death, explore_play
     d = beast_sheets.sheets("old_black_bear")
     assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
-    assert d["sheets"]["attack"]["bite"] == 21 and d["sheets"]["death"]["impact"] == 10     # set by eye
+    assert d["sheets"]["attack"]["bite"] == 27 and d["sheets"]["death"]["impact"] == 10     # set by eye
     assert death.view({"kind": "beast", "name": "Old Black Bear", "slug": "old_black_bear"})["kind"] == "sheet"
     assert os.path.exists(os.path.join("art", "beasts", "roar", "old_black_bear.png"))
     keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
