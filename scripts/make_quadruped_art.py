@@ -57,13 +57,13 @@ FACES_RIGHT = {"black_tortoise_xuanwu", "jade_scaled_crocodile", "abyss_crocodil
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"iron_hide_boar": 0.81, "red_fox": 0.80, "shadow_wolf": 0.80, "horned_stag": 0.81, 
-        "grey_wolf": 0.80, "old_black_bear": 0.80, "cloud_leopard": 0.73,
+        "grey_wolf": 0.80, "cloud_leopard": 0.73,
         "nine_tailed_fox": 0.80, "thunder_rhino": 0.80, "fire_hoof_steed": 0.80}
 SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right corner, px
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
 STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
-SOLID = {"shanxiao_mountain_spirit", "venom_scorpion", "golden_silk_spider", "thousand_year_centipede"}  # its thin staff and crystal: kept whole against the plain backdrop
+SOLID = {"old_black_bear", "shanxiao_mountain_spirit", "venom_scorpion", "golden_silk_spider", "thousand_year_centipede"}  # its thin staff and crystal: kept whole against the plain backdrop
 ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)
 HAZE = {"ancient_flame_lion"}    # drawn wreathed in smoke the backdrop's grey shows through: that grey is dropped

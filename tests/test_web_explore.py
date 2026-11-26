@@ -1,4 +1,5 @@
 """Exploring and fighting on the website (docs/web.md, "Explore"): the bot's expedition and fight engines."""
+import os
 import random
 import urllib.parse
 
@@ -797,6 +798,30 @@ def test_the_wild_ox_is_animated_from_its_own_videos_with_its_own_voice():
     for sound in ("hit", "lunge", "death", "roar", "roar:big"):
         assert f"{sound}@wild_ox" in keys
     assert explore_play.beast_body("Wild Ox") == "wild_ox"
+
+
+def test_the_old_black_bear_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Old Black Bear, the Mortal Beast King (Nov 26: arrows in its back): idle from the calm end of
+    its claw video, the rear-and-swipe, hit + death; its roars, swipe and fall from its videos."""
+    import json
+    import os
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("old_black_bear")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["bite"] == 21 and d["sheets"]["death"]["impact"] == 10     # set by eye
+    assert death.view({"kind": "beast", "name": "Old Black Bear", "slug": "old_black_bear"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "old_black_bear.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@old_black_bear" in keys
+    assert explore_play.beast_body("Old Black Bear") == "old_black_bear"
+
+
+def test_an_idle_from_a_later_stretch_is_cut_from_that_stretch():
+    """`idle_from` (the Wild Ox, the Old Black Bear): the loop is found in the calm stretch and its frames are taken
+    from there, not from the start of the video (which had breath steam / a stray throat sac)."""
+    src = open(os.path.join("scripts", "make_beast_sheets.py")).read()
+    assert 'a += round(cfg.get("idle_from", 0) * FPS)' in src
 
 
 def test_an_animated_beast_opens_its_jaws_when_it_roars(client):
