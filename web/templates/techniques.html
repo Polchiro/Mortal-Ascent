@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Techniques · Mortal Ascent{% endblock %}
+{% block body %}
+{% with page="techniques", coins=coins, pearls=pearls %}{% include "_topbar.html" %}{% endwith %}
+
+<main class="techpage">
+  <header class="techhead">
+    <div>
+      <p class="kicker">YOUR MARTIAL ARTS</p>
+      <h1>Techniques</h1>
+      <p class="sub">{{ v.learned }} learned · {{ v.slot_count }} slots{% if v.qi_bonus %} · {{ v.qi_bonus }} training EXP from your best equipped{% endif %}</p>
+    </div>
+  </header>
+
+  {% if notice %}<p class="technote {{ 'ok' if notice.ok else 'bad' }}" role="status">{{ notice.text }}</p>{% endif %}
+
+  <section aria-label="Equipped" class="techsockets">
+    {% for s in v.sockets %}
+    <div class="tsock t-{{ s.slot | lower }}{% if s.locked %} locked{% endif %}{% if s.name %} full{% endif %}" style="--rc: {{ s.color or 'transparent' }}">
+      {% if s.icon %}<img src="{{ s.icon }}" alt="" width="64" height="64">{% else %}<span class="ring" aria-hidden="true">{% if s.locked %}🔒{% endif %}</span>{% endif %}
+      <div>
+        <span class="kicker">{{ s.slot | upper }}</span>
+        {% if s.name %}<b>{{ s.name }}</b><span class="sub">{{ s.grade }} · {{ s.stage }}</span><span class="pow">{{ s.power }}</span>
+        {% elif s.locked %}<span class="sub">{{ s.note or "Locked" }}</span>
+        {% else %}<span class="sub">Empty · {{ s.note or "equip one below" }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  <p class="techrule">One attack and one defense technique are always equipped. Equipping fills a free slot, or takes the place of the oldest one of the same kind. The Flex slot opens at Martial Warrior and takes either kind.</p>
+
+  <section aria-label="Learned techniques" class="techcards">
+    {% for t in v.cards %}
+    <article class="tqcard t-{{ t.type }}{% if t.equipped %} on{% endif %}" style="--rc: {{ t.color }}">
+      <div class="tqtop">
+        {% if t.icon %}<img src="{{ t.icon }}" alt="" width="60" height="60" loading="lazy">{% endif %}
+        <div class="tqname">
+          <b>{{ t.name }}</b>
+          <span class="tqgrade">{{ t.grade }} · {{ t.kind }} · {{ t.school }}</span>
+        </div>
+        {% if t.equipped %}<span class="tqeq">Equipped</span>{% endif %}
+      </div>
+      <div class="tqmastery">
+        <span>{{ t.stage }}</span>
+        <div class="tqbar" role="meter" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ t.pct }}"><i style="width:{{ t.pct }}%"></i></div>
+        <span class="sub">{% if t.cap %}{{ t.exp }} / {{ t.cap }}{% else %}Mastered{% endif %}{% if t.trial %} · trial ready{% endif %}</span>
+      </div>
+      <dl class="tqfacts">
+        <div><dt>Power</dt><dd>{{ t.power }}</dd></div>
+        <div><dt>Passive</dt><dd>{{ t.passive }}</dd></div>
+        <div><dt>Cooldown</dt><dd>{{ t.cooldown }} turn{{ '' if t.cooldown == 1 else 's' }}</dd></div>
+      </dl>
+      <p class="tqeffect">{{ t.effect }}</p>
+      <div class="tqact">
+        {% if t.action %}
+        <form method="post" action="/techniques/{{ t.action }}">
+          <input type="hidden" name="tech" value="{{ t.id }}">
+          <button class="tbtn{% if t.action == 'equip' %} primary{% endif %}" type="submit">{{ 'Equip' if t.action == 'equip' else 'Unequip' }}</button>
+        </form>
+        {% endif %}
+        {% if t.note %}<span class="sub">{{ t.note }}</span>{% endif %}
+      </div>
+    </article>
+    {% else %}
+    <p class="empty">No techniques yet.</p>
+    {% endfor %}
+  </section>
+</main>
+{% endblock %}
