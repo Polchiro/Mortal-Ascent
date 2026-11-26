@@ -62,6 +62,12 @@ CLIPS = {
                         "idle_until": 4.4, "attack_ms": 2200, "bite": 8,
                         "ease_in": {"attack": 2, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
                         "place_as": {"attack": "idle"}},
+    # Nov 27 redesign: both videos clean but for a little dust where its fist hits the ground (those frames dropped);
+    # every move eases in from the idle and the slam and the flinch settle back into it
+    "golden_eyed_ape_king": {"attack": (3.3, 5.6), "hit": (1.25, 2.5), "death": (2.9, 7.0), "idle_span": (36, 60),
+                             "idle_until": 3.2, "attack_ms": 2400, "drop": {"attack": ((4.58, 4.95),)},
+                             "ease_in": {"attack": 2, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
+                             "place_as": {"attack": "idle", "death": "hit"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
