@@ -44,5 +44,7 @@ them), drawn flying with no perch or stone. The **Shadow Wolf** (Elite) is a big
 painted into its fur (charcoal legs, dark stripes, violet eyes: no smoke, which Veo cannot keep). The **Horned Stag** (Elite) has a solid crown of jade crystal antlers and flat moss
 on its back (no loose leaves or floating crystals; no longer on a slab). The **Mountain Tiger**, the Martial Apprentice
 Beast King, is a colossal scarred tiger with a blood-red glowing eye, animated from its own videos (its old cut-out
-poses in `poses/` are retired). That completes the Martial Apprentice realm. The beasts are
+poses in `poses/` are retired). That completes the Martial Apprentice realm. The **Rock Python** (Martial Warrior) is a giant stone-patterned
+python, no longer coiled round a boulder. Gemini's sparkle, when it lands on the beast, is lifted off by un-blending
+it (it is a see-through white star: measured once on a plain backdrop, then removed from scales underneath). The beasts are
 being redone one at a time in roster order the same way.

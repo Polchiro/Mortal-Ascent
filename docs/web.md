@@ -526,6 +526,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
+| The Rock Python's strike and hiss, its angry hiss when struck, its fall, its hiss and long hiss (`@rock_python`) | its own idle + strike and hit + death videos (Nov 26) |
 | The Mountain Tiger's pounce and roar, its pained snarl, its dying roar and fall, its roar and big roar (`@mountain_tiger`; also its Mountain-Splitting Pounce) | its own idle + pounce and hit + death videos (Nov 26) |
 | The Horned Stag's snort and charging bellow, its pained bellow, its dying bellow and fall, its bellow and big bellow (`@horned_stag`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Shadow Wolf's lunge and snarl, its pained yelp, its dying howl and fall, its growl and howl (`@shadow_wolf`) | its own idle + lunge and hit + death videos (Nov 26) |
@@ -978,7 +979,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag** and the **Mountain Tiger**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger** and the **Rock Python**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames

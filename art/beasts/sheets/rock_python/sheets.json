@@ -1,0 +1,48 @@
+{
+ "cell": [
+  874,
+  389
+ ],
+ "still": [
+  327.0,
+  69.6,
+  540.0,
+  315.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/rock_python/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 3000,
+   "smooth": true,
+   "nose_x": 0.3707
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/rock_python/attack.webp",
+   "frames": 48,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2600,
+   "bite": 20,
+   "reach": 0.3352,
+   "bite_x": 0.0011
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/rock_python/hit.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000
+  },
+  "death": {
+   "src": "/art/beasts/sheets/rock_python/death.webp",
+   "frames": 37,
+   "cols": 8,
+   "rows": 5,
+   "ms": 3100,
+   "impact": 20
+  }
+ }
+}

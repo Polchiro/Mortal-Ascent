@@ -161,6 +161,12 @@
    "lead": 0.56
   }
  ],
+ "death@rock_python": [
+  {
+   "file": "death_rock_python.mp3",
+   "lead": 0.36
+  }
+ ],
  "death@shadow_wolf": [
   {
    "file": "death_shadow_wolf.mp3",
@@ -331,6 +337,12 @@
    "lead": 0.28
   }
  ],
+ "hit@rock_python": [
+  {
+   "file": "hit_rock_python.mp3",
+   "lead": 0.48
+  }
+ ],
  "hit@shadow_wolf": [
   {
    "file": "hit_shadow_wolf.mp3",
@@ -411,6 +423,12 @@
   {
    "file": "lunge_red_fox.mp3",
    "lead": 0.76
+  }
+ ],
+ "lunge@rock_python": [
+  {
+   "file": "lunge_rock_python.mp3",
+   "lead": 0.28
   }
  ],
  "lunge@shadow_wolf": [
@@ -503,6 +521,12 @@
    "lead": 0.08
   }
  ],
+ "roar:big@rock_python": [
+  {
+   "file": "roar_big_rock_python.mp3",
+   "lead": 0.24
+  }
+ ],
  "roar:big@shadow_wolf": [
   {
    "file": "roar_big_shadow_wolf.mp3",
@@ -585,6 +609,12 @@
   {
    "file": "roar_red_fox.mp3",
    "lead": 0.08
+  }
+ ],
+ "roar@rock_python": [
+  {
+   "file": "roar_rock_python.mp3",
+   "lead": 0.1
   }
  ],
  "roar@shadow_wolf": [
