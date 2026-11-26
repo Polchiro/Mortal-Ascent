@@ -80,3 +80,14 @@ def test_art_is_rechecked_by_the_browser(tmp_path):
     client = TestClient(web_app.create_app(settings))
     r = client.get("/art/icons/index/pills_qi.webp?v=1")
     assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
+
+
+def test_the_inventory_tabs_show_the_painted_pictures():
+    """Each tab shows one of the new paintings (Nov 26 2026), not the old ring badges in art/icons/index."""
+    import os
+    from web.inventory import TAB_ART, tab_picture
+    assert set(TAB_ART) == {"chests", "manuals", "weapons", "armor", "artifacts", "pills", "herbs", "materials"}
+    for key, art in TAB_ART.items():
+        assert not art.startswith("index/"), key
+        url = tab_picture(key).split("?")[0]
+        assert os.path.exists(url.lstrip("/")), (key, url)
