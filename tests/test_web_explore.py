@@ -1120,6 +1120,22 @@ def test_the_steel_horn_bull_is_animated_from_its_own_videos_with_its_own_voice(
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["steel_horn_bull@roar"][:2] == [0.12, 0.5]
     assert explore_play.beast_body("Steel-Horn Bull") == "steel_horn_bull"
 
+def test_the_golden_eyed_ape_king_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Golden-Eyed Ape King (Nov 27, Martial Expert Beast King, no tail): both videos clean but
+    for dust at the fist slam (dropped); every move eases in from the idle, its death starts from a calm frame and is
+    placed as its hit (same video, camera still)."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("golden_eyed_ape_king")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Golden-Eyed Ape King", "slug": "golden_eyed_ape_king"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "golden_eyed_ape_king.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@golden_eyed_ape_king" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["golden_eyed_ape_king@roar"][:2] == [0.1, 0.33]
+    assert explore_play.beast_body("Golden-Eyed Ape King") == "golden_eyed_ape_king"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

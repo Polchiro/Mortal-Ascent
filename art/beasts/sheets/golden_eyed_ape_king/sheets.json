@@ -1,0 +1,48 @@
+{
+ "cell": [
+  485,
+  311
+ ],
+ "still": [
+  100.2,
+  21.6,
+  309.6,
+  283.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/golden_eyed_ape_king/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2458,
+   "smooth": true,
+   "nose_x": 0.2021
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/golden_eyed_ape_king/attack.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "bite": 15,
+   "reach": 0.2099,
+   "bite_x": 0.0474
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/golden_eyed_ape_king/hit.webp",
+   "frames": 18,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1500
+  },
+  "death": {
+   "src": "/art/beasts/sheets/golden_eyed_ape_king/death.webp",
+   "frames": 52,
+   "cols": 8,
+   "rows": 7,
+   "ms": 4333,
+   "impact": 42
+  }
+ }
+}
