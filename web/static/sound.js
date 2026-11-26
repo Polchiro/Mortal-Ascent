@@ -210,7 +210,7 @@
                  extra: function (t) { tone(2100, t, 0.6, 0.12, 'sine'); tone(3150, t, 0.35, 0.05, 'sine'); burst(t, 0.04, 0.15, 'highpass', 4000, 0.7, 0); }},
     alchemist:  {f: 440, notes: [0, 4, 7, 4], pace: 0.13, wave: 'sine', end: 1.05,                   // Lan: light and quick
                  extra: function (t) { burst(t, 0.35, 0.07, 'highpass', 5000, 0.7, 0.2); }},         // dried herbs rustle
-    merchant:   {f: 330, notes: [0, 5, 3, 7], pace: 0.12, wave: 'triangle', end: 1.08,               // lively, with coins
+    merchant:   {f: 330, notes: [0, 5, 3, 7], pace: 0.12, wave: 'triangle', end: 1.08,               // Qian: lively, with coins
                  extra: function (t) { [3100, 3700, 4200].forEach(function (f, i) { tone(f, t + i * 0.05, 0.2, 0.06, 'sine'); }); }},
     elder:      {f: 196, notes: [0, -2, 0], pace: 0.28, wave: 'triangle', end: 0.95},                // slow and low
     keeper:     {f: 294, notes: [0, 4, 0], pace: 0.3, wave: 'sine', end: 1,                          // the Quiet Pavilion: calm, a small bell
@@ -219,8 +219,6 @@
     sister:     {f: 392, notes: [0, 3, 0, 5], pace: 0.11, wave: 'triangle', end: 1.02},              // Senior Sister Xue: brisk, clipped
     arena:      {f: 262, notes: [0, 3, 5], pace: 0.14, wave: 'triangle', end: 1.04,                  // with a far gong
                  extra: function (t) { tone(196, t, 1.8, 0.12, 'triangle', 0, 190); tone(392, t, 1.2, 0.06, 'sine'); tone(588, t, 0.8, 0.03, 'sine'); }},
-    pavilion:   {f: 349, notes: [0, 4, 7, 5], pace: 0.16, wave: 'sine', end: 1.03,                  // Keeper Yue: soft, a moon chime
-                 extra: function (t) { tone(2637, t, 1.2, 0.05, 'sine'); tone(3520, t + 0.08, 0.9, 0.03, 'sine'); }},
     stele:      {extra: function (t) { burst(t, 0.6, 0.18, 'lowpass', 700, 0.8, 0, 350); tone(196, t, 0.9, 0.08, 'triangle', 0, 170); }},   // stone
     exit:       {extra: function (t) { burst(t, 0.7, 0.14, 'bandpass', 500, 1, 0, 900); }},          // a road's end: wind
     other:      {f: 262, notes: [0, 2], pace: 0.16, wave: 'triangle', end: 1}

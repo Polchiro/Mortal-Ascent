@@ -122,7 +122,8 @@ from `bot/sheet` (`items.CATEGORIES`, `data.bag_items`, `items.details`), so the
 
 ## The Moon Pavilion
 
-**Keeper Yue** stands in the plaza by the market stalls (`web/town.py` NPCS) and runs the **Moon Pavilion**
+**Merchant Qian** (once the Silk Merchant, by the silk stalls: `web/town.py` NPCS; looks are changed on the Profile
+now) runs the **Moon Pavilion**
 (`/pavilion`, `web/pavilion_play.py`, `web/pavilion_routes.py`): two tabs, **Pearl Shop** and **Heavenly Blessings**.
 Everything is the bot's own, in `bot/shop.py` (moved out of `bot/views.py` so the website can use it without
 Discord; Discord's `/shop` and `/blessing` use the same functions): the items and prices (`economy.PEARL_SHOP`), the
@@ -130,9 +131,7 @@ blessings and perks (`economy.BLESSING_TIERS`) and what a purchase does. Profile
 like on Discord. Pressing Buy / Receive asks first, like Discord's confirm: the price, your pearls before → after,
 and a note (your bag 100 → 120, "never goes lower" for the talent reroll, Extend or Replace for a blessing); Name
 Change asks for the new name there. Each form carries a one-time token, so a repeated or stale form spends nothing.
-Moon Pearls themselves are still bought on Discord (`/recharge`). Her picture will be
-`art/portraits/town/pavilion.webp`; until it is made the town draws her name and a lantern glow (add `src` to her
-entry in `web/town.py` then). Her voice in `web/static/sound.js`: soft, with a moon chime.
+Moon Pearls themselves are still bought on Discord (`/recharge`).
 
 ## Techniques
 

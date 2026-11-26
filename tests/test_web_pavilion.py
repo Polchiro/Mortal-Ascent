@@ -66,9 +66,10 @@ def test_a_blessing(path):
     assert pv.bless(c, A, "Nope")[0] is False
 
 
-def test_keeper_yue_stands_in_town():
-    yue = next(n for n in town.page_data({})["npcs"] if n["key"] == "pavilion")
-    assert ["Browse the Pearl shop", "/pavilion"] in yue["go"]
+def test_merchant_qian_runs_it_in_town():
+    qian = next(n for n in town.page_data({})["npcs"] if n["key"] == "merchant")
+    assert qian["name"] == "Merchant Qian" and ["Browse the Pearl shop", "/pavilion"] in qian["go"]
+    assert not any(n["key"] == "pavilion" for n in town.NPCS)
 
 
 def test_the_routes_need_the_pages_token(path, monkeypatch):

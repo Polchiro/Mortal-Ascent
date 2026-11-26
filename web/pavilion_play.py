@@ -1,6 +1,6 @@
 """
 The Moon Pavilion (docs/web.md "The Moon Pavilion"): the Moon Pearl shop and the Heavenly Blessings on the website,
-kept by Pavilion Keeper Yue in town. Everything is the bot's own (bot/shop.py, the same code as Discord's /shop and
+kept by Merchant Qian in town (the merchant by the silk stalls). Everything is the bot's own (bot/shop.py, the same code as Discord's /shop and
 /blessing): what is for sale, the prices (economy.py) and what a purchase does. The page only asks first, showing
 the price and your pearls before and after, like Discord's confirm.
 """

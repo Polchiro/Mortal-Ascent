@@ -171,10 +171,11 @@ NPCS = [
      "src": "/art/portraits/town/alchemist.webp", "h": 122,
      "line": "Every pill begins as a weed someone was wise enough to pick. Shall we refine something?",
      "go": [["Enter the alchemy hall", "/town/visit/alchemist"]]},   # the only way in (app.py: alchemy is locked)
-    {"key": "merchant", "name": "Silk Merchant", "title": "Robes and looks", "x": 16.2, "y": 12.2,
-     "src": "/art/portraits/town/merchant.webp", "h": 132,
-     "line": "A cultivator should look the part. New robes, a new face to the world: I have it all.",
-     "go": [["Change your look", "/appearance"]]},
+    {"key": "merchant", "name": "Merchant Qian", "title": "Pearl shop and blessings", "x": 16.2, "y": 12.2,
+     "src": "/art/portraits/town/merchant.webp", "h": 132,    # runs the Moon Pavilion (web/pavilion_routes.py)
+     "line": "Moon Pearls buy speed and style, never power. Pills, a bigger bag, a new name... or let Heaven smile on "
+             "your cultivation for a month.",
+     "go": [["Browse the Pearl shop", "/pavilion"], ["Heavenly Blessings", "/pavilion?tab=blessing"]]},
     {"key": "elder", "name": "Village Elder", "title": "Your cultivation", "x": 11.6, "y": 7.4,
      "src": "/art/portraits/town/elder.webp", "h": 128,
      "line": "Sit a while, child. Let me see how far your cultivation has come.",
@@ -196,12 +197,6 @@ NPCS = [
      "src": "/art/portraits/town/arena.webp", "h": 134,
      "line": "The ring is open. Name a cultivator to challenge, or wait for whoever steps up next. Friendly bouts only: nobody leaves hurt.",
      "go": [["Enter the Arena", "/arena"]]},
-    {"key": "pavilion", "name": "Keeper Yue", "title": "Pearl shop and blessings", "x": 13.0, "y": 13.6,
-     "h": 128,      # the Moon Pavilion's keeper, in the plaza by the stalls. No picture yet: when it is made, add
-                    # "src": "/art/portraits/town/pavilion.webp" (until then the page draws her name and a glow)
-     "line": "Moon Pearls buy speed and style, never power. Pills, a bigger bag, a new name... or let Heaven smile on "
-             "your cultivation for a month.",
-     "go": [["Browse the Pearl shop", "/pavilion"], ["Heavenly Blessings", "/pavilion?tab=blessing"]]},
     {"key": "stele", "name": "Stone Stele", "title": "The rankings", "x": 14.0, "y": 19.4, "prop": True,
      "line": "The names of the town's strongest are carved here: the highest realms, the richest purses, the fiercest duelists.",
      "go": [["Read the rankings", "/rankings"]]},
