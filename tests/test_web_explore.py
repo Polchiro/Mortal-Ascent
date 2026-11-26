@@ -495,16 +495,16 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
     import beasts
     from web import death
     views = {}
-    for name in ("Iron-Hide Boar", "Red Fox", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):
+    for name in ("Iron-Hide Boar", "Shadow Wolf", "Horned Stag", "Mountain Tiger"):   # (the Red Fox: its own death since Nov 26)
         v = views[name] = death.view({"kind": "beast", "name": name, "slug": beasts.slug(name)})
         assert v["kind"] == "warp" and v["category"] == "quadruped"
         assert len(v["motion"]) == len(v["ms"]) == 8 and v["motion"][0]["h"] == [1.0] * 12     # it starts standing
         assert all(0.2 <= x <= 1.15 for m in v["motion"] for x in m["h"]) and max(v["motion"][-1]["h"]) < 0.75
         assert 0 <= v["box"][0] < v["box"][2] <= 1 and 0 <= v["box"][1] < v["box"][3] <= 1
         assert "src" not in v                                       # numbers only: no picture but the beast's own
-    assert views["Red Fox"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
+    assert views["Mountain Tiger"]["motion"] == views["Iron-Hide Boar"]["motion"]     # one movement for all of them
     assert not os.path.exists(os.path.join(death.ROOT, "art", "fx", "death"))  # no wolf frames in the game
-    assert client.get("/art/death/quadruped/red_fox.webp").status_code == 404
+    assert client.get("/art/death/quadruped/mountain_tiger.webp").status_code == 404
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["kind"] == "fall"
     assert death.view({"kind": "beast", "name": "Rock Python", "slug": "rock_python"})["side"] in (1, -1)
     assert death.view({"kind": "bandit", "name": "Bandits"})["kind"] == "rout"
@@ -513,11 +513,11 @@ def test_quadrupeds_share_one_death_movement_and_keep_their_own_picture(client):
 def test_the_beast_dies_as_its_own_picture(client):
     s = fight(client)
     b = s.battle
-    b.enemy.update(name="Red Fox", slug="red_fox")
+    b.enemy.update(name="Horned Stag", slug="horned_stag")
     win(client, s)
     page = client.get("/explore/play").text
     assert '<canvas class="deathfx">' in page and "death-warp" in page
-    assert page.count("/art/beasts/red_fox.png") >= 2 and "/art/death/" not in page and "quadruped.webp" not in page
+    assert page.count("/art/beasts/horned_stag.png") >= 2 and "/art/death/" not in page and "quadruped.webp" not in page
 
 
 def test_a_won_test_fight_ends_with_finish_and_pays_nothing(client, db_path):
@@ -692,7 +692,7 @@ def test_the_grey_wolf_has_its_four_animations_on_one_cell():
     assert 0 <= attack["bite_x"] < idle["nose_x"] < 0.3                   # the bite reaches further forward than it stands
     death_ = d["sheets"]["death"]
     assert 0 < death_["impact"] < death_["frames"]
-    assert beast_sheets.sheets("red_fox") is None and beast_sheets.sheets("../etc") is None
+    assert beast_sheets.sheets("white_tiger") is None and beast_sheets.sheets("../etc") is None
 
 
 def test_only_the_grey_wolf_dies_in_its_own_animation():
@@ -816,6 +816,36 @@ def test_the_old_black_bear_is_animated_from_its_own_videos_with_its_own_voice()
     for sound in ("hit", "lunge", "death", "roar", "roar:big"):
         assert f"{sound}@old_black_bear" in keys
     assert explore_play.beast_body("Old Black Bear") == "old_black_bear"
+
+
+def test_the_red_fox_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Red Fox (Nov 26: crimson, ember-tipped tail): idle from the calm end of its pounce video; the
+    stalk, spring and landing snap joined (it leapt out of the video mid-pounce); hit and death without the frames a
+    starburst covered its face in; its yips, yelps and snarls from its videos."""
+    import json
+    import os
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("red_fox")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["frames"] == 31 and d["sheets"]["attack"]["bite"] == 19     # bites as it lands
+    assert death.view({"kind": "beast", "name": "Red Fox", "slug": "red_fox"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "red_fox.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@red_fox" in keys
+    heads = json.load(open(os.path.join("art", "beasts", "heads.json")))
+    assert heads["red_fox@roar"][:2] == [0.07, 0.33]                    # its open jaws, read off the roar picture
+    assert explore_play.beast_body("Red Fox") == "red_fox"
+
+
+def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
+    """`make_beast_sheets`: a move from several stretches of its video joined (the fox's pounce), frames an effect
+    covered dropped, and a sparkle box that keeps a pale tail tip lying over it."""
+    from scripts import make_beast_sheets as m
+    assert m.spans((0.3, 2.6)) == [(0.3, 2.6)]
+    assert m.spans(((0.8, 1.75), (3.2, 3.8))) == [(0.8, 1.75), (3.2, 3.8)]
+    cfg = m.CLIPS["red_fox"]
+    assert len(m.spans(cfg["attack"])) == 3 and "hit" in cfg["drop"] and "death" in cfg["drop"]
 
 
 def test_an_idle_from_a_later_stretch_is_cut_from_that_stretch():

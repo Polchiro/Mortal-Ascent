@@ -36,5 +36,6 @@ and is animated from its own videos (`sheets/wild_boar/`, scripts/make_beast_she
 followed (a true snake, no legs; its roar picture is the open-jawed hiss from its own hit video). The **Stray Dog Pack** is now
 one gaunt stray (SHOAIB's choice: one dog animates cleanly; the name is unchanged), and the **Wild Ox** a real shaggy ox
 (no longer a horned boar; the breath steam and Gemini's mark painted out). The **Old Black Bear**, the
-Mortal Beast King, is now a colossal silver-streaked bear with hunters' arrows in its back (kept whole: `SOLID`). The beasts are
+Mortal Beast King, is now a colossal silver-streaked bear with hunters' arrows in its back (kept whole: `SOLID`). The **Red Fox** (Martial Apprentice) is
+now a lean crimson fox with one ember-tipped tail (no flames leaving the body; no longer on a slab). The beasts are
 being redone one at a time in roster order the same way.

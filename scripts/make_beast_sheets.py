@@ -58,8 +58,15 @@ CLIPS = {
     "old_black_bear": {"attack": (2.25, 5.6), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 21, "impact": 10, "white": ("death",),
                        "fade": {"attack": ("top", 70)}},
+    # the fox leapt out of the video's left edge mid-pounce: its stalk, its spring and its landing snap, joined
+    "red_fox": {"attack": ((0.8, 1.75), (3.2, 3.8), (4.62, 5.6)), "hit": (0.3, 2.6), "death": (4.0, 6.1),
+                "idle_span": (30, 44), "idle_from": 5.9, "attack_ms": 2400,
+                "mark": ((1130, 565, 1195, 632), (1140, 338, 1202, 428)),
+                "drop": {"hit": ((0.45, 0.78),), "death": ((4.52, 4.78),)}},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
+# (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
+# the video drew; a pale blob with the beast all round it is its own fur, not the sparkle, and is kept)
 
 
 def video_frames(video, numbers):
@@ -89,7 +96,7 @@ def off_slab(a, top, depth):
     return a
 
 
-def cut_one(im, session, slab=None, white=False, fade=0):
+def cut_one(im, session, slab=None, white=False, fade=0, mark=MARK):
     """The beast alone: cut out, no mark, no slab, no shadow or loose bits. `white`: a white slash streak the video drew
     over it (the unseen blow) dropped too: near-white, colourless pixels."""
     from rembg import remove
@@ -99,21 +106,24 @@ def cut_one(im, session, slab=None, white=False, fade=0):
         streak = (px.min(-1) > 175) & ((px.max(-1) - px.min(-1)) < 30)
         a[..., 3] = np.where(ndimage.binary_dilation(streak, iterations=2), 0, a[..., 3])
     px = np.asarray(im).astype(np.float32)
-    x0, y0, x1, y1 = MARK                                    # the sparkle: the biggest pale, colourless blob there
-    box = px[y0:y1, x0:x1]
-    pale = (box.mean(-1) > np.median(box.mean(-1)) + 8) & ((box.max(-1) - box.min(-1)) < 25)
-    lab, n = ndimage.label(pale)
-    if n:
-        sizes = ndimage.sum(pale, lab, range(1, n + 1))
-        star = ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=3)
-        a[y0:y1, x0:x1, 3] = np.where(star, 0, a[y0:y1, x0:x1, 3])
     bg = np.median(np.concatenate([px[:20].reshape(-1, 3), px[:, :20].reshape(-1, 3)]), 0).mean()
-    grey = ((box.max(-1) - box.min(-1)) < 18) & (box.mean(-1) > bg - 35)     # the backdrop the cutter kept by the mark:
-    lab, n = ndimage.label(grey)                                             # big patches, not the paw's own pale specks
-    if n:
-        sizes = ndimage.sum(grey, lab, range(1, n + 1))
-        grey = np.isin(lab, 1 + np.flatnonzero(sizes >= 150))
-        a[y0:y1, x0:x1, 3] = np.where(grey, 0, a[y0:y1, x0:x1, 3])
+    for x0, y0, x1, y1 in (mark if isinstance(mark[0], (tuple, list)) else [mark]):   # one box, or several
+        box = px[y0:y1, x0:x1]                               # the sparkle: the biggest pale, colourless blob there
+        pale = (box.mean(-1) > np.median(box.mean(-1)) + 8) & ((box.max(-1) - box.min(-1)) < 25)
+        lab, n = ndimage.label(pale)
+        if n:
+            sizes = ndimage.sum(pale, lab, range(1, n + 1))
+            star = ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=3)
+            ring = ndimage.binary_dilation(star, iterations=4) & ~star
+            backdrop = ((box.max(-1) - box.min(-1)) < 18) & (np.abs(box.mean(-1) - bg) < 25)
+            if not ring.any() or backdrop[ring].mean() > 0.4:   # set on the backdrop: the sparkle, not a pale
+                a[y0:y1, x0:x1, 3] = np.where(star, 0, a[y0:y1, x0:x1, 3])   # tail tip lying over it (the fox's)
+        grey = ((box.max(-1) - box.min(-1)) < 18) & (box.mean(-1) > bg - 35)     # the backdrop the cutter kept by
+        lab, n = ndimage.label(grey)                                             # the mark: big patches, not the
+        if n:                                                                    # paw's own pale specks
+            sizes = ndimage.sum(grey, lab, range(1, n + 1))
+            grey = np.isin(lab, 1 + np.flatnonzero(sizes >= 150))
+            a[y0:y1, x0:x1, 3] = np.where(grey, 0, a[y0:y1, x0:x1, 3])
     if slab:
         a = off_slab(a, *slab)
     if fade:                                                 # the body ran off the video's edge: fade it out
@@ -149,13 +159,18 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
         if raw is None:
             raw = dict(zip(numbers, video_frames(video, numbers)))
         im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()),
-                     cfg.get("fade", {}).get(kind, 0))
+                     cfg.get("fade", {}).get(kind, 0), cfg.get("mark", MARK))
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             im.save(path)
         out.append(im)
         print(f"  {kind} {n}", flush=True)
     return out, session
+
+
+def spans(clip):
+    """A move's seconds: one (start, end), or several joined ((start, end), ...)."""
+    return list(clip) if isinstance(clip[0], (tuple, list)) else [clip]
 
 
 def solid(im):
@@ -215,8 +230,11 @@ def main(slug, videos, cache=None):
     picks["idle"] = [a + round(j * n / count) for j in range(count)]          # its own end (a + n) is the next start
     idle_ms = round(n / FPS * 1000)
     for kind in KINDS[1:]:
-        s0, s1 = cfg[kind]
-        picks[kind] = list(range(round(s0 * FPS), round(s1 * FPS), STEP))
+        picks[kind] = []
+        for s0, s1 in spans(cfg[kind]):                       # one stretch of the video, or several joined
+            picks[kind] += list(range(round(s0 * FPS), round(s1 * FPS), STEP))
+        for d0, d1 in cfg.get("drop", {}).get(kind, ()):      # frames an effect covered the beast in: left out
+            picks[kind] = [n for n in picks[kind] if not d0 * FPS <= n < d1 * FPS]
     clips, session = {}, None
     for kind in KINDS:
         clips[kind], session = cut_clip(kind, videos[kind], picks[kind], cfg, cache, session)
@@ -270,8 +288,11 @@ def main(slug, videos, cache=None):
             info["reach"] = round(max(0, lefts[0] - lefts[bite]) / (still.width * SCALE), 4)
             info["bite_x"] = round(lefts[bite] / cw, 4)                         # its jaws, at the bite
         else:
-            s0, s1 = cfg[kind]
-            info["ms"] = round((s1 - s0) * 1000)
+            if len(spans(cfg[kind])) > 1 or kind in cfg.get("drop", {}):
+                info["ms"] = round(len(frames) * STEP / FPS * 1000)            # the frames it really plays
+            else:
+                s0, s1 = cfg[kind]
+                info["ms"] = round((s1 - s0) * 1000)
             if kind == "death":
                 tops = [f.getbbox()[1] for f in frames]
                 info["impact"] = cfg.get("impact", next(i for i, t in enumerate(tops) if t >= tops[-1] - 0.04 * ch))   # down

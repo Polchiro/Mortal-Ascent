@@ -27,7 +27,8 @@ make a technique's recording land on the blow.
 --fade S fades the end out over S seconds (for a long sound cut short). --also NAME ... lists the same take under
 more names (one roar for several bodies).
 
---gain (dB) makes one sound louder or quieter than the rest after the evening-out.
+--gain (dB) makes one sound louder or quieter than the rest after the evening-out (made louder, a limiter keeps its
+peaks from clipping).
 """
 import argparse
 import json
@@ -90,8 +91,11 @@ def cut(video, key, start=None, end=None, gain=0.0, fade=None):
     length = (end if end is not None else duration(video)) - (start or 0)
     if length <= 0.03:
         raise SystemExit("That part is empty: check --from and --to.")
-    chain = [f"loudnorm=I={LOUDNESS}:TP=-1.5:LRA=11", f"volume={gain}dB",
-             f"afade=t=in:d={FADE}", f"afade=t=out:st={max(0, length - (fade or FADE * 4)):.3f}:d={fade or FADE * 4}"]
+    chain = [f"loudnorm=I={LOUDNESS}:TP=-1.5:LRA=11", f"volume={gain}dB"]
+    if gain > 0:                                    # made louder: its peaks held under full scale, so it never crackles
+        chain[1:1] = ["aresample=44100"]           # (loudnorm runs at 192 kHz: brought back first, or the limiter misses)
+        chain.append("alimiter=limit=0.89:attack=2:release=40:level=false")
+    chain += [f"afade=t=in:d={FADE}", f"afade=t=out:st={max(0, length - (fade or FADE * 4)):.3f}:d={fade or FADE * 4}"]
     cmd = ["ffmpeg", "-v", "error", "-y"]
     if start is not None:
         cmd += ["-ss", str(start)]
