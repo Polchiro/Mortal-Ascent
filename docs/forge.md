@@ -6,8 +6,8 @@ artifacts → raise your blacksmith rank → forge better gear.**
 All numbers are in `forge.py`. Numbers marked DEFAULT there were not in the design and were picked by the bot.
 
 > **Built:** this page and the data (Part 1); materials in the game (Part 2): every drop source, the Materials tab
-> in /inventory (groups Base · Bindings · Essences · Fuel & Liquids · Beast Cores), drawn material icons
-> (cards/material_icons.py), and the Index sections Materials and Passives (weapon, armor, artifact).
+> in /inventory (groups Base · Bindings · Essences · Fuel & Liquids · Beast Cores), painted material icons
+> (art/icons/mat, "Pictures" in section 3), and the Index sections Materials and Passives (weapon, armor, artifact).
 > Part 3: the **/forge** command (and `m forge`) with the Forge Hall card (cards/forge.py), round button icons
 > (cards/forge_icons.py), blacksmith ranks, and the Swift Hands, Steady Hand and Second Chance artifact passives.
 > Part 4: passives in play (bot/passives.py). Weapon and armor passives work in /explore, /hunt and /train fights
@@ -187,6 +187,16 @@ Material tiers 1–5 line up with gear tiers: tier 1 forges Ordinary gear, tier 
 
 ### 🔏 Seal Stone
 Needed to **Replace** (locks one slot). From chests and the Moon Pearl shop (30 🌙, DEFAULT).
+
+### Pictures
+
+Every material has a painted picture (SHOAIB's Nano Banana art, Nov 26 2026): the raw thing as it is found or
+harvested, cut out on a clear square with no ring, in `art/icons/mat/<key>.webp` (256 px). The Discord cards, the
+bag, the forge and the quarry all show it from there (`cards/art_icons.resolve`, kind `mat:<key>`); the page or card
+adds the tier colour around it. `scripts/make_material_art.py` cuts the six 3 × 2 family pictures (metals, hides,
+jades, bindings, fuels, liquids) and single redos. The essences are three colourless shapes (shard, crystal, heart,
+kept as `essence_shape_<shape>.webp`) tinted once per family colour (`cards/material_icons.FAMILY_COLOR`) into the 39
+essence icons. The old drawn icons (`cards/material_icons.py`) are only a fallback now, for a missing file.
 
 ### Recipe per forge
 | Gear tier | Base material | Binding |
