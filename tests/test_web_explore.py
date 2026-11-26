@@ -394,20 +394,23 @@ def test_a_fight_uses_the_explored_regions_battleground(client):
     assert f"--arena: url({arena(s.exp)})" in page and "battle_" in page
 
 
-def test_the_tiger_is_drawn_from_its_cut_out_poses(client):
-    from web.explore_play import beast_poses
-    poses = beast_poses("mountain_tiger")
-    assert set(poses["poses"]) == {"idle", "crouch", "leap", "slam", "roar"}
-    for p in poses["poses"].values():
-        assert client.get(p["src"]).status_code == 200
-    assert beast_poses("wild_boar") is None and beast_poses(None) is None
+def test_the_tiger_is_animated_from_its_own_videos_not_its_old_poses(client):
+    """Nov 26: SHOAIB's redesigned Mountain Tiger (the Martial Apprentice Beast King) is animated from its own videos;
+    its old cut-out poses are retired. Its Mountain-Splitting Pounce still winds up and plays (fight.js `pounce`)."""
+    import json
+    from web import beast_sheets, death, explore_play
+    assert explore_play.beast_poses("mountain_tiger") is None and explore_play.beast_poses(None) is None
+    d = beast_sheets.sheets("mountain_tiger")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert death.view({"kind": "beast", "name": "Mountain Tiger", "slug": "mountain_tiger"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "mountain_tiger.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@mountain_tiger" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["mountain_tiger@roar"][:2] == [0.1, 0.45]
     s, b = tiger_fight(client)
     page = client.get("/explore/play").text
-    assert 'class="beast posed"' in page and "data-poses='" in page
-    assert 'src="/art/beasts/poses/mountain_tiger/crouch.webp" alt="" data-pose="crouch"' in page   # winding up
-    act(client, "move", "guard")
-    page = client.get("/explore/play").text
-    assert 'data-pose="idle"' in page and "/art/beasts/poses/mountain_tiger/idle.webp" in page
+    assert 'class="beast sheeted"' in page and "data-poses=" not in page and "skill-pounce" in page
 
 
 def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path):
@@ -421,7 +424,7 @@ def test_admin_web_fight_starts_a_test_fight_when_explore_opens(client, db_path)
     s = run(client)
     assert s.test and s.battle.enemy["name"] == "Mountain Tiger" and s.battle.enemy["tier"] == "beast_king"
     page = client.get("/explore/play").text
-    assert "Admin test fight" in page and 'class="beast posed"' in page
+    assert "Admin test fight" in page and 'class="beast sheeted"' in page
     for _ in range(40):                                   # flee until it is over
         if s.lair_result is not None:
             break

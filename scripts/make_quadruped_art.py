@@ -30,7 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BEASTS = os.path.join(ROOT, "art", "beasts")
 MAX = 900
 
-DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "wild_boar", "grey_wolf", "wild_ox",
+DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "mountain_tiger", "wild_boar", "grey_wolf", "wild_ox",
            "old_black_bear", "bloodfang_wolf", "armored_boar_chief", "white_browed_tiger_king", "steel_horn_bull",
            "ironbark_bear", "frost_wolf", "wind_leopard", "flame_maned_lion", "earth_splitting_rhino", "shadow_panther",
            "cloud_leopard",
@@ -186,7 +186,7 @@ def main(src, roar=False):
     session = new_session("isnet-general-use")
     dest = os.path.join(BEASTS, "roar") if roar else BEASTS
     os.makedirs(dest, exist_ok=True)
-    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES + INSECTS + CROCODILES + TORTOISES:                                     # (the Mountain Tiger roars from its own cut-out poses)
+    for name in DESIGNS + FLYING + SERPENTS + AMPHIBIANS + DRAGONS + PRIMATES + INSECTS + CROCODILES + TORTOISES:                 
         path = os.path.join(src, name + ".png")
         if not os.path.exists(path):
             print("missing", name)

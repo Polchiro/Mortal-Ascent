@@ -526,6 +526,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
+| The Mountain Tiger's pounce and roar, its pained snarl, its dying roar and fall, its roar and big roar (`@mountain_tiger`; also its Mountain-Splitting Pounce) | its own idle + pounce and hit + death videos (Nov 26) |
 | The Horned Stag's snort and charging bellow, its pained bellow, its dying bellow and fall, its bellow and big bellow (`@horned_stag`) | its own idle + charge and hit + death videos (Nov 26) |
 | The Shadow Wolf's lunge and snarl, its pained yelp, its dying howl and fall, its growl and howl (`@shadow_wolf`) | its own idle + lunge and hit + death videos (Nov 26) |
 | The Wind-Feather Falcon's dive and screech, its cry when struck, its dying cry and fall, its screech and big screech (`@wind_feather_falcon`) | its own idle + dive and hit + death videos (Nov 26) |
@@ -682,8 +683,11 @@ a lair is fought with `bot/hunt.py`.
    **Beasts with poses:** a beast with cut-out pose pictures (`art/beasts/poses/<slug>/`: idle, crouch, leap, slam,
    roar, and `poses.json` with each one's size and place) is drawn from them instead of its card painting, and changes
    pose as it moves (`explore_play.beast_poses`, `bpose` in `fight.js`): it crouches to wind up, leaps to attack, and
-   for its unique skill lands in the slam pose and roars. So far the Mountain Tiger, cut from SHOAIB's reference video
-   (`scripts/cut_tiger_poses.py`, clean edges with no white fringe). The Discord card keeps the painting.
+   for its unique skill lands in the slam pose and roars. The Mountain Tiger was drawn this way (cut from SHOAIB's
+   reference video by `scripts/cut_tiger_poses.py`) until its Nov 26 redesign: it is now animated from its own videos
+   like the other beasts, its poses retired (a beast with poses is never drawn from frame sheets). No beast has poses
+   now; the code stays for one that might. Its Mountain-Splitting Pounce still leaps, glowing, onto you and splits the
+   ground (`pounce` moves the frames as it moved the poses). The Discord card keeps the painting.
    **A technique plays its own animation** (`explore_play.cast`, CSS in `style.css`): a callout with its icon and
    name in its grade colour (Mortal grey, Yellow gold, Mystic blue, Earth green, Heaven violet), then a look by
    school (Fist burst, Palm wave, Leg crescent, Finger beam; Body bronze dome, Palm jade barrier) and one by the
@@ -833,7 +837,7 @@ a lair is fought with `bot/hunt.py`.
    them), speed lines radiating across the scene, the camera punching in on it with a hard shake, heavy dust, the
    beast swelling toward you and you pushed back by the blast; a final roar is bigger still. The picture is moved whole about its hind feet (turned and shifted, never
    bent, stretched or cropped), so any body shape or size works; the wave follows the mouth as the head comes up. A
-   beast with cut-out poses (the Mountain Tiger) takes its own roar pose while it holds; every other quadruped swaps
+   beast with cut-out poses takes its own roar pose while it holds (none now); every quadruped swaps
    to its own **open-mouthed roar picture** (`art/beasts/roar/<slug>.png`, SHOAIB's, cut by
    `scripts/make_quadruped_art.py --roar` onto the standing picture's canvas so it keeps its size and footing) as the
    roar bursts, and back as it settles. Its open mouth (`heads.json` "<slug>@roar") is where the wave starts, and the
@@ -974,7 +978,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf** and the **Horned Stag**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag** and the **Mountain Tiger**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 Every sheet is loaded **and unpacked** ahead (fight.js `keep`, kept across turns) and a turn waits for them
 (`whenReady`, 2.5 s at most): a big attack sheet (the bear's, the falcon's: about 18 megapixels) otherwise left the
