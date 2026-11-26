@@ -855,6 +855,30 @@ def test_the_red_fox_is_animated_from_its_own_videos_with_its_own_voice():
     assert explore_play.beast_body("Red Fox") == "red_fox"
 
 
+def test_the_wind_feather_falcon_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Wind-Feather Falcon (Nov 26: a normal fan tail, the first animated bird): one wingbeat as its
+    idle, the dive with its talons thrown forward, hit + death; the death placed as the hit (it flew further off) and
+    nothing below the ground its talons stand on, so it falls onto the fight's ground; its screeches from its videos."""
+    import json
+    from PIL import Image
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("wind_feather_falcon")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"}
+    assert d["sheets"]["attack"]["bite"] == 27                                  # its talons forward, set by eye
+    assert death.view({"kind": "beast", "name": "Wind-Feather Falcon", "slug": "wind_feather_falcon"})["kind"] == "sheet"
+    cw, ch = d["cell"]
+    ground = d["still"][1] + d["still"][3]                                       # the picture's ground line, in the cell
+    sheet = Image.open(os.path.join("art", "beasts", "sheets", "wind_feather_falcon", "death.webp")).convert("RGBA")
+    last = d["sheets"]["death"]["frames"] - 1
+    f = sheet.crop(((last % 8) * cw, (last // 8) * ch, (last % 8 + 1) * cw, (last // 8 + 1) * ch))
+    assert abs(f.getbbox()[3] - ground) <= 3                                    # it lies on the ground, not under it
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "wind_feather_falcon.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@wind_feather_falcon" in keys
+    assert explore_play.beast_body("Wind-Feather Falcon") == "wind_feather_falcon"
+
+
 def test_a_move_can_be_joined_from_stretches_and_skip_covered_frames():
     """`make_beast_sheets`: a move from several stretches of its video joined (the fox's pounce), frames an effect
     covered dropped, and a sparkle box that keeps a pale tail tip lying over it."""

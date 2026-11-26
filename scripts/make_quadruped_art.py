@@ -53,7 +53,7 @@ INSECTS = ("venom_scorpion", "golden_silk_spider", "thousand_year_centipede")
 CROCODILES = ("jade_scaled_crocodile", "abyss_crocodile")
 # the tortoises (SHOAIB's redesign)
 TORTOISES = ("stone_shell_tortoise", "black_tortoise_xuanwu", "primordial_dragon_turtle")
-FACES_RIGHT = {"black_tortoise_xuanwu", "jade_scaled_crocodile", "abyss_crocodile", "thousand_year_centipede", "golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "black_water_serpent", "wind_feather_falcon", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
+FACES_RIGHT = {"black_tortoise_xuanwu", "jade_scaled_crocodile", "abyss_crocodile", "thousand_year_centipede", "golden_eyed_ape_king", "shanxiao_mountain_spirit", "flood_dragon_jiao", "thornback_lizard", "black_water_serpent", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "bloodfang_wolf", "steel_horn_bull", "ironbark_bear", "wind_leopard", "flame_maned_lion",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"shadow_wolf": 0.80, "horned_stag": 0.81, 
@@ -62,7 +62,7 @@ SLAB = {"shadow_wolf": 0.80, "horned_stag": 0.81,
 SPARKLE = (70, 60)               # Gemini's mark: its box from the bottom-right corner, px
 # stood on grey stone the cut-out keeps (a pedestal, a rock) under coloured talons: below this line (a share of the
 # picture's height) the grey stone is dropped and the talons kept
-STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76, "wind_feather_falcon": 0.93}
+STONE = {"crimson_fire_hawk": 0.83, "thunder_hawk": 0.76}
 SOLID = {"old_black_bear", "shanxiao_mountain_spirit", "venom_scorpion", "golden_silk_spider", "thousand_year_centipede"}  # its thin staff and crystal: kept whole against the plain backdrop
 ONE_PIECE = {"spear_beak_crane"}  # only the beast itself (its roar picture has the spear tip drawn loose beside it)
 WARM = {"crimson_fire_hawk"}     # a flame beast: below the line only its own red-orange is kept (the stone is beige)

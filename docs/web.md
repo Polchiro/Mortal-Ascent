@@ -524,6 +524,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | A wolf-bodied beast springing, being struck (two takes), dying (`@wolf`) | the Grey Wolf's attack, hit and death videos |
 | The Wild Boar's own squeal when struck, its gore, its death thud, its roar and big roar (`@wild_boar`) | its own hit + attack and death videos (Nov 26) |
 | The Iron-Hide Boar's charge and metal crash, its clang and squeal, its plates crashing down, its squeals (`@iron_hide_boar`) | its own idle + charge and hit + death videos (Nov 26) |
+| The Wind-Feather Falcon's dive and screech, its cry when struck, its dying cry and fall, its screech and big screech (`@wind_feather_falcon`) | its own idle + dive and hit + death videos (Nov 26) |
 | The Red Fox's pounce yip and snap, its yelp, its dying cry and fall, its yip and big snarl (`@red_fox`) | its own idle + pounce and hit + death videos (Nov 26) |
 | The Old Black Bear's claw swipe, its pained roar, its dying fall, its roar and big roar (`@old_black_bear`) | its own idle + claw and hit + death videos (Nov 26) |
 | The Wild Ox's charge and hooves, its pained bellow, its fall, its bellow and big bellow (`@wild_ox`) | its own idle + charge and hit + death videos (Nov 26) |
@@ -969,7 +970,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar** and **Red Fox**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox** and the first bird, the **Wind-Feather Falcon**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 `scripts/make_beast_sheets.py` cuts each into a frame sheet (`art/beasts/sheets/<slug>/`: `idle.webp`, `attack.webp`,
 `hit.webp`, `death.webp` and `sheets.json`): every frame cut out of its backdrop, Gemini's mark, the floor shadow and
@@ -1010,7 +1011,10 @@ attack prompt (the Old Black Bear's attack was remade that way);
 `impact` sets the death's landing frame by eye; a move can be joined from several stretches of its video
 (`((s0, s1), (s0, s1), ...)`: the Red Fox leapt out of the video mid-pounce, so its stalk, spring and landing snap are
 joined); `drop` leaves out the frames an effect covered the beast in (the fox's hit and death starbursts); `mark`
-gives tighter sparkle boxes (a pale tail tip lying over the sparkle is kept, as fur); `pingpong` plays a move there and back when the beast ran off
+gives tighter sparkle boxes (a pale tail tip lying over the sparkle is kept, as fur); `place_as` places a move as
+another from the same video (the falcon flew further off before it died, so its death is placed as its hit); `floor`
+keeps a move from sinking below the ground the picture stands on (a bird is drawn with its talons on it: its dive
+skims the ground and it dies lying on it); `pingpong` plays a move there and back when the beast ran off
 the video mid-move, as the Stray Dog's lunge). A roar picture can also be taken from its own video's
 open-jawed frame (the Field Viper's). Then its sounds with `scripts/make_fight_sound.py NAME@<slug>`.
 

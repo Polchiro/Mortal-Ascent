@@ -65,6 +65,10 @@ CLIPS = {
                 "idle_span": (30, 44), "idle_from": 5.9, "attack_ms": 2400,
                 "mark": ((1130, 565, 1195, 632), (1140, 338, 1202, 428)),
                 "drop": {"hit": ((0.45, 0.78),), "death": ((4.52, 4.78),)}},
+    # the first bird: one wingbeat as its idle (it flew higher and lost its wing tips off the top later in the video)
+    "wind_feather_falcon": {"attack": (3.0, 6.85), "hit": (0.4, 1.9), "death": (4.2, 6.6), "idle_span": (40, 51),
+                            "idle_until": 2.15, "attack_ms": 2600, "bite": 27, "fade": {"attack": ("top", 40)},
+                            "place_as": {"death": "hit"}, "floor": ("attack", "hit", "death")},
 }
 MARK = (1100, 540, 1230, 660)   # Gemini's sparkle sits in here (x0, y0, x1, y1 of the 1280 x 720 frame)
 # (a beast's own `mark`: tighter boxes where its pale tail tip passes near the sparkle (the fox's), or a second sparkle
@@ -246,13 +250,20 @@ def main(slug, videos, cache=None):
         clips[kind] = match(clips[kind], clips[ref][0])
 
     # every frame on the picture's ground, in the picture's pixels; then the box that holds them all
-    placed = {}
+    placed, places = {}, {}
     for kind in KINDS:
-        s, dx, dy = placing(clips[kind][0], still)
+        places[kind] = placing(clips[kind][0], still)
+    for kind, like in cfg.get("place_as", {}).items():        # the same video, the camera still: placed as that move
+        places[kind] = places[like]                           # (the falcon flew further off before it died)
+    for kind in KINDS:
+        s, dx, dy = places[kind]
         placed[kind] = []
         for im in clips[kind]:
             big = im.resize((round(im.width * s), round(im.height * s)), Image.LANCZOS)
-            placed[kind].append((big, round(dx), round(dy)))
+            y = round(dy)
+            if kind in cfg.get("floor", ()):                  # never below the ground the picture stands on: a bird
+                y -= max(0, y + big.getbbox()[3] - still.height)    # drawn with its talons on it lands on it, dying
+            placed[kind].append((big, round(dx), y))
     boxes = []
     for kind in KINDS:
         for big, x, y in placed[kind]:

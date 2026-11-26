@@ -1,0 +1,47 @@
+{
+ "cell": [
+  700,
+  555
+ ],
+ "still": [
+  311.4,
+  149.4,
+  384.6,
+  394.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/wind_feather_falcon/idle.webp",
+   "frames": 16,
+   "cols": 8,
+   "rows": 2,
+   "ms": 1667,
+   "nose_x": 0.4429
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/wind_feather_falcon/attack.webp",
+   "frames": 46,
+   "cols": 8,
+   "rows": 6,
+   "ms": 2600,
+   "bite": 27,
+   "reach": 0.0754,
+   "bite_x": 0.3314
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/wind_feather_falcon/hit.webp",
+   "frames": 18,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1500
+  },
+  "death": {
+   "src": "/art/beasts/sheets/wind_feather_falcon/death.webp",
+   "frames": 29,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2400,
+   "impact": 17
+  }
+ }
+}

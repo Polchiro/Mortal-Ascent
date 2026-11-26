@@ -167,6 +167,12 @@
    "lead": 0.52
   }
  ],
+ "death@wind_feather_falcon": [
+  {
+   "file": "death_wind_feather_falcon.mp3",
+   "lead": 1.02
+  }
+ ],
  "death@wolf": [
   {
    "file": "death_wolf.mp3",
@@ -313,6 +319,12 @@
    "lead": 0.3
   }
  ],
+ "hit@wind_feather_falcon": [
+  {
+   "file": "hit_wind_feather_falcon.mp3",
+   "lead": 0.68
+  }
+ ],
  "hit@wolf": [
   {
    "file": "hit_wolf.mp3",
@@ -369,6 +381,12 @@
   {
    "file": "lunge_wild_ox.mp3",
    "lead": 0.44
+  }
+ ],
+ "lunge@wind_feather_falcon": [
+  {
+   "file": "lunge_wind_feather_falcon.mp3",
+   "lead": 1.16
   }
  ],
  "lunge@wolf": [
@@ -437,6 +455,12 @@
    "lead": 0.56
   }
  ],
+ "roar:big@wind_feather_falcon": [
+  {
+   "file": "roar_big_wind_feather_falcon.mp3",
+   "lead": 0.54
+  }
+ ],
  "roar:big@wolf": [
   {
    "file": "roar_quadruped_big.mp3",
@@ -495,6 +519,12 @@
   {
    "file": "roar_wild_ox.mp3",
    "lead": 0.4
+  }
+ ],
+ "roar@wind_feather_falcon": [
+  {
+   "file": "roar_wind_feather_falcon.mp3",
+   "lead": 0.46
   }
  ],
  "roar@wolf": [
