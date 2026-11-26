@@ -137,6 +137,12 @@
    "lead": 0.74
   }
  ],
+ "death@ember_lizard": [
+  {
+   "file": "death_ember_lizard.mp3",
+   "lead": 0.98
+  }
+ ],
  "death@field_viper": [
   {
    "file": "death_field_viper.mp3",
@@ -391,6 +397,12 @@
    "lead": 0.22
   }
  ],
+ "hit@ember_lizard": [
+  {
+   "file": "hit_ember_lizard.mp3",
+   "lead": 0.32
+  }
+ ],
  "hit@field_viper": [
   {
    "file": "hit_field_viper.mp3",
@@ -555,6 +567,12 @@
   {
    "file": "lunge_bloodfang_wolf.mp3",
    "lead": 0.4
+  }
+ ],
+ "lunge@ember_lizard": [
+  {
+   "file": "lunge_ember_lizard.mp3",
+   "lead": 0.36
   }
  ],
  "lunge@field_viper": [
@@ -731,6 +749,12 @@
    "lead": 1.76
   }
  ],
+ "roar:big@ember_lizard": [
+  {
+   "file": "roar_big_ember_lizard.mp3",
+   "lead": 1.22
+  }
+ ],
  "roar:big@field_viper": [
   {
    "file": "roar_big_field_viper.mp3",
@@ -897,6 +921,12 @@
   {
    "file": "roar_quadruped.mp3",
    "lead": 0.84
+  }
+ ],
+ "roar@ember_lizard": [
+  {
+   "file": "roar_ember_lizard.mp3",
+   "lead": 0.6
   }
  ],
  "roar@field_viper": [

@@ -89,6 +89,13 @@ CLIPS = {
                      "idle_until": 0.95, "attack_ms": 2600,
                      "ease_in": {"attack": 2, "hit": 2, "death": 5}, "settle": {"attack": 3, "hit": 3},
                      "place_as": {"attack": "idle", "hit": "idle"}},
+    # Nov 27 redesign: Veo grew its short tail long in every video, so each move is taken before the tail grows: its
+    # idle, flinch and collapse from the remade hit + death video, its snapping bite from the first hit video (stopped
+    # before a white spark the video drew on its head), each easing in from the idle
+    "ember_lizard": {"attack": (0.7, 1.55), "hit": (1.0, 3.0), "death": (4.0, 4.9), "idle_span": (12, 22),
+                     "idle_until": 0.95, "attack_ms": 1800,
+                     "ease_in": {"attack": 3, "hit": 2, "death": 4}, "settle": {"attack": 3, "hit": 3},
+                     "place_as": {"hit": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
