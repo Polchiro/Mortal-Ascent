@@ -91,7 +91,8 @@ They replaced Wooden / Bronze / Silver / Jade, which became Common / Uncommon / 
 
 ## Chest contents
 
-Every chest gives **Lotus Coins** (the same amount for every realm).
+Every chest gives **Lotus Coins** (the same amount for every realm). Beasts themselves pay a little more the higher
+their realm: +10% per realm (`loot.BEAST_COIN_STEP_PER_REALM`), so a Martial Saint beast pays ×2 a Mortal one.
 Then it may also contain:
 
 ### Manual

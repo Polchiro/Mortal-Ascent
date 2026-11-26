@@ -38,7 +38,7 @@ PATH_EMOJI = {"left": "⬅️", "middle": "⬆️", "right": "➡️"}
 BLESSED_LAND_NAMES = {"spirit_spring": "💧 Spirit Spring", "lotus_grove": "🌸 Lotus Grove", "dragon_vein": "🐉 Dragon Vein"}
 
 # DEFAULTS where explore.md leaves numbers open
-BEAST_COINS = (3, 8)                      # Lotus Coins per Normal beast (× realm scale)
+BEAST_COINS = (3, 8)                      # Lotus Coins per Normal beast (+10% per realm, loot.beast_coin_scale)
 BANDIT_WIN_COINS = (10, 20)
 STRANGER_REWARD_COINS = (20, 40)
 STRANGER_COIN_COST = (5, 10)
@@ -177,7 +177,7 @@ class Expedition:
             self.story.append(f"The {name} overwhelms you...")
             return
         self.beasts_slain += 1
-        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng, fortune=True)
+        coins = loot.roll_coins(self.player, BEAST_COINS, self.rng, fortune=True, beast=self.player["realm"])
         self.coins += coins
         self.story.append(f"⚔️ The **{name}** falls in {b.turn} turns! +🪷 {coins}")
         c = loot.beast_chest(self.player, "normal", self.rng, luck=gear.artifact_bonus(self.player, "explore_luck"))

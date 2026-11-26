@@ -747,5 +747,8 @@ def test_lotus_coins_are_the_same_for_every_realm():
     a = loot.roll_coins(dict(low, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
     b = loot.roll_coins(dict(high, blessing=None), loot.CHEST_COINS["rare"], random.Random(3))
     assert a == b and 80 <= a <= 150
+    beast_low = loot.roll_coins(dict(low, blessing=None), (10, 10), random.Random(1), beast="Mortal")
+    beast_high = loot.roll_coins(dict(high, blessing=None), (10, 10), random.Random(1), beast=high["realm"])
+    assert beast_low == 10 and beast_high == 20                 # stronger beasts: +10% a realm, ×2 at Martial Saint
     hurt = {"injured_until": 600}
     assert rules.physician_cost(dict(low, **hurt), now=0) == rules.physician_cost(dict(high, **hurt), now=0) == 10

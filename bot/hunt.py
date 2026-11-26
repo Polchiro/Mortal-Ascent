@@ -30,7 +30,7 @@ CHARGE_EVERY = 3                 # DEFAULT: a charged attack every 3rd beast tur
 CHARGE_MULT = 1.5              # DEFAULT: charged hit = 1.5× a normal hit, ignores the 30% cap
 CHARGE_GUARD_CHANCE = 0.75       # DEFAULT: warned fighters with a defense technique usually guard it
 LOSS_INJURY_HOURS = 1            # DEFAULT: losing a hunt injures the team for 1 hour
-HUNT_COINS = {"elite": (20, 40), "beast_king": (60, 120)}   # DEFAULT per player, × realm scale
+HUNT_COINS = {"elite": (20, 40), "beast_king": (60, 120)}   # DEFAULT per player, +10% per realm (loot.beast_coin_scale)
 MAX_ROUNDS = 60
 
 
@@ -208,7 +208,7 @@ def _pay(conn, lair, rows, won, beast_name, head, now=None, rng=random):
             bits.append("fled the hunt")
         elif won:
             winners.append(p)
-            coins = loot.roll_coins(p, HUNT_COINS[tier], rng, fortune=True)
+            coins = loot.roll_coins(p, HUNT_COINS[tier], rng, fortune=True, beast=lair["realm"])
             db.add_coins(conn, uid, coins, "Team hunt reward")
             bits.append(f"🪷 {coins:,}")
             fields = {"beasts_slain": p["beasts_slain"] + 1}
