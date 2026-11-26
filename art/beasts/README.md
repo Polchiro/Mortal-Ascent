@@ -40,5 +40,6 @@ Mortal Beast King, is now a colossal silver-streaked bear with hunters' arrows i
 now clearly the armoured one: forged iron plates with glowing amber cracks. The **Red Fox** is now a lean crimson fox
 with one ember-tipped tail (no flames leaving the body; no longer on a slab). The **Wind-Feather Falcon** is the
 first animated bird: a dark falcon with a normal fan tail (the long trailing plumes were dropped: Veo could not keep
-them), drawn flying with no perch or stone. The beasts are
+them), drawn flying with no perch or stone. The **Shadow Wolf** (Elite) is a big scarred black wolf whose shadow is
+painted into its fur (charcoal legs, dark stripes, violet eyes: no smoke, which Veo cannot keep). The beasts are
 being redone one at a time in roster order the same way.
