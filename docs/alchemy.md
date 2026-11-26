@@ -284,6 +284,17 @@ Below your realm's grade: half the Qi.
 - Failing Stage 5 **destroys the Beast Core**
 - Only realm breakthroughs use them; **one pill per attempt**, used up even if it fails
 
+### Pill pictures
+
+Every pill has a painted picture (SHOAIB's Nano Banana art, Nov 26 2026): a single round pill (丹), its kind told by
+colour (Qi pills each after their own name, Qi Burst gold with crackling light, Mending red, Cleansing pale
+white-aqua, Breakthrough violet with light breaking through cracks) and its grade by how fine it is, from a plain
+hand-rolled Mortal pill to a radiant Heaven pill in curling mist. The Heaven-Defying Pill has its own. They are in
+`art/icons/pills/<kind>_<grade>.webp` (256 px, clear corners, no ring); the Discord cards and the website show them
+from there (`cards/art_icons.resolve`, kind `emblem:pill:<kind>:<grade>`), and the cards still draw the pattern
+dots (纹) under them. `scripts/make_pill_art.py` cuts the five 3 × 2 kind pictures: each pill is found as a circle and
+kept whole, its glow and mist lifted off the grey as light, and every pill set at the same size.
+
 ### Pill toxicity
 - Pills add toxicity based on their patterns (below)
 - Toxicity 4–5: pill effects ×0.5 · Toxicity 6+: pill effects ×0.25
