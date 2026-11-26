@@ -546,6 +546,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Silver Monkey's screeching swipe, its shriek when struck, its dying whimper, its chatter and big screech (`@silver_monkey`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Steel-Horn Bull's snorting goring hook, its grunt when struck, its dying bellow and fall, its snort and big bellow (`@steel_horn_bull`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Golden-Eyed Ape King's roaring fist slam, its grunt when struck, its dying groan and fall, its huff and big roar (`@golden_eyed_ape_king`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Ironbark Bear's growling claw swipe, its grunt when struck, its dying groan and fall, its huff and big roar (`@ironbark_bear`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -989,7 +990,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull** and the **Golden-Eyed Ape King**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King** and the **Ironbark Bear**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -1018,6 +1019,10 @@ middle is the tail, kept as a short stub and faded out (and any faint half-cut t
 **Moves eased in and settled out** (Nov 27, the Steel-Horn Bull): its two videos start from one picture, but by the
 flinch Veo's bull held its head lower than the idle's, so every move eases in from the idle (`ease_in`) and the gore
 and the flinch settle back into it (`settle` per move); only the gore, from the idle's own video, is placed as the idle.
+**A sparkle painted into the beast is cut away** (Nov 27, the Ironbark Bear; `unstar`): a video made from the
+uncleaned picture can keep Gemini's sparkle on the beast itself, redrawn solid and moving with it (on the bear's rump),
+where the usual mark box can't find it. Per move, a box is searched for the pale, colourless patch with a bright core,
+and it is cut away with the backdrop: a small notch at the beast's edge reads as nothing, a white star as a star.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

@@ -1,0 +1,48 @@
+{
+ "cell": [
+  504,
+  313
+ ],
+ "still": [
+  42.6,
+  24.6,
+  451.8,
+  282.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/ironbark_bear/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 3000,
+   "smooth": true,
+   "nose_x": 0.0496
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/ironbark_bear/attack.webp",
+   "frames": 25,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "bite": 17,
+   "reach": 0.0553,
+   "bite_x": 0.0099
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/ironbark_bear/hit.webp",
+   "frames": 17,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1417
+  },
+  "death": {
+   "src": "/art/beasts/sheets/ironbark_bear/death.webp",
+   "frames": 40,
+   "cols": 8,
+   "rows": 5,
+   "ms": 3333,
+   "impact": 23
+  }
+ }
+}

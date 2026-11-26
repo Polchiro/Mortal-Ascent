@@ -1136,6 +1136,35 @@ def test_the_golden_eyed_ape_king_is_animated_from_its_own_videos_with_its_own_v
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["golden_eyed_ape_king@roar"][:2] == [0.1, 0.33]
     assert explore_play.beast_body("Golden-Eyed Ape King") == "golden_eyed_ape_king"
 
+def test_the_ironbark_bear_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Ironbark Bear (Nov 27, Martial Master, facing left): its idle, flinch and fall from the
+    hit video; its claw swipe from the other video (made from the uncleaned picture: the sparkle Veo kept on its rump is
+    cut away, `unstar`), easing in from the idle and settling back into it."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("ironbark_bear")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Ironbark Bear", "slug": "ironbark_bear"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "ironbark_bear.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@ironbark_bear" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["ironbark_bear@roar"][:2] == [0.07, 0.25]
+    assert explore_play.beast_body("Ironbark Bear") == "ironbark_bear"
+
+def test_a_sparkle_painted_into_the_beast_is_found_and_cut_away():
+    """`make_beast_sheets.star_mask`: inside its box, the pale colourless patch with a bright core (a sparkle Veo drew
+    on the beast) is found, and nothing on brown fur or the grey backdrop alone is taken for one."""
+    import numpy as np
+    from PIL import Image
+    from scripts.make_beast_sheets import star_mask
+    px = np.full((100, 100, 3), 137, np.uint8)
+    px[40:100, 0:60] = (90, 60, 30)                                     # the fur
+    assert not star_mask(Image.fromarray(px), (0, 0, 100, 100)).any()
+    px[50:62, 50:62] = (175, 168, 162)                                  # the star, half on the fur
+    m = star_mask(Image.fromarray(px), (0, 0, 100, 100))
+    assert m[55, 55] and m[55, 52] and not m[90, 10] and not m[10, 90]
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

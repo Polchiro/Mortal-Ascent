@@ -68,6 +68,14 @@ CLIPS = {
                              "idle_until": 3.2, "attack_ms": 2400, "drop": {"attack": ((4.58, 4.95),)},
                              "ease_in": {"attack": 2, "hit": 3, "death": 3}, "settle": {"attack": 3, "hit": 3},
                              "place_as": {"attack": "idle", "death": "hit"}},
+    # Nov 27 redesign: its attack video was made from the uncleaned picture and Veo kept Gemini's sparkle on its rump,
+    # redrawn solid and moving with it: cut away with the backdrop (`unstar`). Veo also drew that bear a little longer,
+    # so its idle comes from the calm middle of the hit video (as its flinch and fall), and its swipe eases in and out
+    "ironbark_bear": {"attack": (4.65, 6.4), "hit": (1.05, 2.2), "death": (3.9, 7.0), "idle_span": (36, 60),
+                      "idle_from": 2.1, "idle_until": 4.0, "attack_ms": 2600,
+                      "unstar": {"attack": (1000, 440, 1280, 700)},
+                      "ease_in": {"attack": 4, "hit": 3, "death": 3}, "settle": {"attack": 4, "hit": 3},
+                      "place_as": {"hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
@@ -184,9 +192,31 @@ def off_slab(a, top, depth):
     return a
 
 
-def cut_one(im, session, slab=None, white=False, fade=0, mark=MARK):
+def star_mask(im, box):
+    """Gemini's sparkle painted INTO the beast (a video made from the uncleaned picture: Veo kept the star on the bear's
+    rump, redrawn solid, and moved it with the body): inside `box`, the pale colourless patch with a bright core,
+    a little widened. It is cut away with the backdrop (a small notch at the beast's edge reads as nothing; a white
+    star reads as a star)."""
+    px = np.asarray(im).astype(np.int16)
+    x0, y0, x1, y1 = box
+    sub = px[y0:y1, x0:x1]
+    spread, lum = sub.max(-1) - sub.min(-1), sub.mean(-1)
+    bg = np.median(lum[spread < 10])                            # the backdrop around it: the star is paler than it
+    pale = (lum > bg + 2) & (spread < 36)
+    core = (lum > bg + 8) & pale
+    lab, n = ndimage.label(pale)
+    out = np.zeros(px.shape[:2], bool)
+    if n and core.any():
+        sizes = ndimage.sum(core, lab, range(1, n + 1))
+        if sizes.max() >= 30:
+            out[y0:y1, x0:x1] = ndimage.binary_dilation(lab == 1 + int(np.argmax(sizes)), iterations=3)
+    return out
+
+
+def cut_one(im, session, slab=None, white=False, fade=0, mark=MARK, star_box=None):
     """The beast alone: cut out, no mark, no slab, no shadow or loose bits. `white`: a white slash streak the video drew
-    over it (the unseen blow) dropped too: near-white, colourless pixels."""
+    over it (the unseen blow) dropped too: near-white, colourless pixels. `star_box`: a sparkle painted into the beast
+    (`star_mask`, the config's `unstar` box), cut away with the backdrop."""
     from rembg import remove
     a = np.asarray(remove(im, session=session)).copy()
     if white:
@@ -212,6 +242,8 @@ def cut_one(im, session, slab=None, white=False, fade=0, mark=MARK):
             sizes = ndimage.sum(grey, lab, range(1, n + 1))
             grey = np.isin(lab, 1 + np.flatnonzero(sizes >= 150))
             a[y0:y1, x0:x1, 3] = np.where(grey, 0, a[y0:y1, x0:x1, 3])
+    if star_box:
+        a[..., 3] = np.where(star_mask(im, star_box), 0, a[..., 3])
     if slab:
         a = off_slab(a, *slab)
     if fade:                                                 # the body ran off the video's edge: fade it out
@@ -276,7 +308,7 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
         if raw is None:
             raw = dict(zip(numbers, video_frames(video, numbers)))
         im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()),
-                     cfg.get("fade", {}).get(kind, 0), cfg.get("mark", MARK))
+                     cfg.get("fade", {}).get(kind, 0), cfg.get("mark", MARK), cfg.get("unstar", {}).get(kind))
         if kind in cfg.get("trim_tail", ()):
             im = trim_tail(im)
         if path:
