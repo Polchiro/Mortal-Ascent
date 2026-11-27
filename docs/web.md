@@ -1076,6 +1076,10 @@ a lair is fought with `bot/hunt.py`.
    starts a touch in front of the open jaws (`lip`), is drawn behind the beast's picture (`underBeast`: where they
    overlap the jaws cover it, so it pours out of the mouth), and the element glows at the mouth while it roars
    (`mouthGlow`).
+   **Ready before the first roar** (`warmUp`): when a fight opens, its beast's roar pictures (element blast, burst,
+   ground patch, roar shape, formation circle) are drawn once, all but invisible and at their real size, behind
+   everything, then removed, so the browser has them prepared before the first roar (the stutter as a roar began
+   went from about 0.8-1.1 s to 0.5-0.7 s in a slowed test browser).
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
