@@ -1,10 +1,12 @@
 """Cut SHOAIB's painted UI pieces (Nov 27 2026): the Heavenly Blessing orbs, Lotus Coins and Moon Pearls, the map
 screen's frame (hero plate, rings, vials, Break Through tab, dock icons), the realm seals, equipment slots, journey
-icons and name plaque, and the fight screens' banners, omen scroll and foe rings (docs/web.md "Painted UI").
+icons and name plaque, the fight screens' banners, omen scroll and foe rings, and their move buttons, side buttons, info panel and move
+pictures (docs/web.md "Painted UI").
 
     python -m scripts.make_ui_art blessings1=a.png blessings2=b.png currency=c.png hero_plate=d.png frames=e.png \\
         dock=f.png seals1=g.png seals2=h.png slots=i.png journey=j.png plaque=k.png \\
-        fight_banners=l.png fight_frames=m.png fight_rings=n.png [only=blessings1,currency]
+        fight_banners=l.png fight_frames=m.png fight_rings=n.png \\
+        move_frames=o.png side_frames=p.png move_icons=q.png [only=blessings1,currency]
 
 Each source picture is named as in JOBS: the box (x0, y0, x1, y1) of every piece in it (a 1376 x 768 picture; a
 3 x 2 or 2 x 2 grid uses its cells), how to cut it and where it goes:
@@ -18,6 +20,9 @@ rect   a square slot frame on a dark backdrop it can't be told from by colour: i
 frame  a frame whose middle is the same grey as the backdrop (the hero plate, a ring): everything unlike the grey is
        kept, softly at its edge; the grey middle comes out clear so the page's own text and face show through. Kept
        at its own shape, at most WIDE px wide.
+shape  a plate lying on another frame (the info panel's tab): cut by its outline in SHAPES, the frame under it dropped.
+disc   a round move picture (x, y, radius): cut off the grey with what spills past the disc, in a square
+       DISC_REACH times the radius each way, so every disc sits the same size in its square.
 panel  a frame cut the same way, with the clear spots it closes in (grooves, ring, middle) filled with dark lacquer
        so text set in them reads on any scene (the fight screens' banners, omen scroll, plaque and pill).
 
@@ -81,7 +86,93 @@ JOBS = {
                      ((784, 511, 1300, 671), "panel", "ui/fight_pill")],
     "fight_rings": [((63, 188, 453, 578), "frame", "ui/foe_ring_normal"), ((480, 182, 901, 581), "frame", "ui/foe_ring_elite"),
                     ((903, 145, 1344, 594), "frame", "ui/foe_ring_boss")],
+    # the fight screens' bottom: the four move buttons (the top four of six; the last two are spares), the pill and
+    # flee buttons, the "Your turn" panel and its gold tab, and the five move pictures
+    "move_frames": [((23, 24, 677, 253), "panel", "ui/move_strike"), ((705, 26, 1365, 255), "panel", "ui/move_techniques"),
+                    ((24, 256, 678, 487), "panel", "ui/move_guard"), ((707, 257, 1360, 488), "panel", "ui/move_break")],
+    "side_frames": [((30, 295, 462, 424), "panel", "ui/fight_side_pill"), ((497, 280, 916, 438), "panel", "ui/fight_side_flee"),
+                    ((940, 86, 1355, 665), "panel", "ui/fight_info"), ((954, 80, 1110, 142), "shape", "ui/fight_info_tab")],
+    "move_icons": [((151, 379, 127), "disc", "icons/actions/strike"), ((419, 379, 126), "disc", "icons/actions/techniques"),
+                   ((688, 379, 127), "disc", "icons/actions/guard"), ((956, 377, 126), "disc", "icons/actions/break"),
+                   ((1223, 379, 127), "disc", "icons/actions/flee")],
 }
+
+
+# Pieces patched from their own mirror image (flipped left to right about column `about`) before they are cut: the
+# info panel loses its gold tab (cut on its own, so the panel can stretch) and Gemini's sparkle on its bottom edge.
+MIRROR_X = {"ui/fight_info": [((940, 80, 1148, 147), 1147.5), ((1200, 598, 1292, 686), 1147.5)]}
+# Colour fixes: the Break button's right-hand ornament came out teal like Techniques'; turned to ember red.
+RETINT = {"ui/move_break": 0.72}
+DISC_REACH = 1.32                   # a move picture's square reaches this far past its disc, for the sword, flames, sparks
+
+
+def mirror_x(im, fixes):
+    out = im.copy()
+    for (x0, y0, x1, y1), about in fixes:
+        src = (round(2 * about - x1), y0, round(2 * about - x0), y1)
+        out.paste(im.crop(src).transpose(Image.FLIP_LEFT_RIGHT), (x0, y0))
+    return out
+
+
+def retint(pic, from_x):
+    """Teal to ember red, right of `from_x` (a fraction of the width)."""
+    a = np.asarray(pic).copy()
+    hsv = cv2.cvtColor(a[..., :3], cv2.COLOR_RGB2HSV)
+    h, sat = hsv[..., 0].astype(int), hsv[..., 1]
+    x = np.arange(a.shape[1])[None, :] >= from_x * a.shape[1]
+    teal = x & (h >= 70) & (h <= 110) & (sat > 30) & (hsv[..., 2] > 60)        # not the dark lacquer inside
+    hsv[..., 0] = np.where(teal, 4, hsv[..., 0])
+    hsv[..., 1] = np.where(teal, np.clip(sat.astype(int) * 1.25, 0, 255), sat).astype(np.uint8)
+    a[..., :3] = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+    return Image.fromarray(a)
+
+
+def cut_disc(im, cx, cy, r, others):
+    """A round move picture off the grey with what spills past its disc (sword tip, flames, sparks), in a clear
+    square DISC_REACH times its radius each way, so every disc is the same size in its square. Anything nearer one
+    of the other discs is theirs."""
+    R = round(r * DISC_REACH)
+    grey = tuple(int(v) for v in np.median(np.asarray(im.convert("RGB")).reshape(-1, 3), 0))
+    padded = Image.new("RGB", (im.width + 2 * R, im.height + 2 * R), grey)       # a square past the edge is grey too
+    padded.paste(im.convert("RGB"), (R, R))
+    pic = cut_frame_soft(padded.crop((cx, cy, cx + 2 * R, cy + 2 * R)))
+    a = np.asarray(pic).copy()
+    yy, xx = np.mgrid[cy - R:cy + R, cx - R:cx + R]
+    mine = np.hypot(xx - cx, yy - cy) - r
+    for ox, oy, orr in others:
+        a[..., 3] = np.where(np.hypot(xx - ox, yy - oy) - orr < mine, 0, a[..., 3])
+    inside = np.hypot(xx - cx, yy - cy) <= r - 1.5
+    a[..., 3] = np.where(inside, 255, a[..., 3])
+    return Image.fromarray(a)
+
+
+# A gold plate lying on another frame is cut by its outline (the frame's own gold lines touch it, so colour can't
+# tell them apart): the info panel's tab, a plate with a point at the bottom middle. Picture coordinates.
+SHAPES = {"ui/fight_info_tab": [(961, 86), (1103, 86), (1103, 131), (1045, 131), (1032, 140), (1019, 131), (961, 131)]}
+
+
+def cut_shape(im, box, outline):
+    """The piece inside `outline` (drawn 4x and shrunk, for a soft edge), the rest clear."""
+    from PIL import ImageDraw
+    big = 4
+    m = Image.new("L", (im.width * big, im.height * big), 0)
+    ImageDraw.Draw(m).polygon([((x - box[0]) * big, (y - box[1]) * big) for x, y in outline], fill=255)
+    pic = im.convert("RGBA")
+    pic.putalpha(m.resize(im.size, Image.LANCZOS))
+    a = np.asarray(pic)[..., 3]
+    ys, xs = np.nonzero(a > 8)
+    return pic.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+
+
+def cut_frame_soft(im):
+    """cut_frame without trimming or speck removal: the same box back, the grey made clear."""
+    rgb = np.asarray(im.convert("RGB")).astype(np.float32)
+    bg, _ = mea.backdrop(rgb.astype(int))
+    dist = np.sqrt(((rgb - bg) ** 2).sum(2))
+    a = np.clip((dist - mea.SAME) / (mea.KEY - mea.SAME), 0, 1)
+    a3 = a[..., None]
+    col = np.where(a3 > 0.02, (rgb - (1 - a3) * bg) / np.maximum(a3, 0.02), 0)
+    return Image.fromarray(np.dstack([np.clip(col, 0, 255), a * 255]).astype(np.uint8))
 
 
 # Where Gemini's sparkle sits on a piece, painting it over the grey would bite a hole in it; instead the spot is
@@ -187,7 +278,14 @@ def main(args):
         else:
             im = unsparkle(im, spots) if spots else im
         for box, mode, rel in JOBS[name]:
-            pic = im.crop(box)
+            if mode == "disc":
+                others = [b for b, m, _ in JOBS[name] if m == "disc" and b != box]
+                out = cut_disc(im, *box, others)
+                path = os.path.join(ART, rel + ".webp")
+                out.save(path, "WEBP", quality=92, method=6)
+                print(f"{rel}: {out.width} x {out.height}", flush=True)
+                continue
+            pic = (mirror_x(im, MIRROR_X[rel]) if rel in MIRROR_X else im).crop(box)
             path = os.path.join(ART, rel + ".webp")
             os.makedirs(os.path.dirname(path), exist_ok=True)
             if mode == "orb":
@@ -199,8 +297,11 @@ def main(args):
                 out = fit(cut_rect(pic), fill=0.96)
             elif mode == "item_wide":
                 out = wide(mia.cut(pic, session))
+            elif mode == "shape":
+                out = cut_shape(pic, box, SHAPES[rel])
             elif mode == "panel":
                 out = wide(fill_holes(cut_frame(pic)))
+                out = retint(out, RETINT[rel]) if rel in RETINT else out
             else:
                 out = wide(cut_frame(pic))
             out.save(path, "WEBP", quality=92, method=6)

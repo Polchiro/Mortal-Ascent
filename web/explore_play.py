@@ -563,7 +563,7 @@ def actions(b, f):
     for i, key in enumerate(MAIN):
         if key == "techniques":
             ready = [t for t in techs if t["ready"]]
-            main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/attack_tech.webp",
+            main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/techniques.webp",
                          "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Need Battle Qi",
                          "info": "An attack technique counts as a Strike, a defense technique as a Guard (your Flex slot's too). "
                                  f"They spend Battle Qi: +{battle_rules.BATTLE_QI_PER_TURN} comes back every turn, "

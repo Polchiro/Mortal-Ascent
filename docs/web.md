@@ -628,6 +628,19 @@ is cut are in its JOBS table):
   their banner. On narrow desktops the spar's fifteen beads move under your banner. On a phone the plates keep their
   plain look (the grooves would be too small to read). `MEND` in the script repairs the two pieces Gemini's sparkle
   sat on from their own mirror image. Pictures only: no number, rule or move changed.
+- **The fight screens' bottom** (`art/ui/move_*`, `fight_side_*`, `fight_info*`; beast fight, spar, duel). Each
+  move sits in its own frame: steel for Strike, azure for Techniques, gold for Guard, crimson for Break (its corner,
+  painted teal like Techniques', turned ember red by `RETINT`). The move's picture fills the round socket, its name
+  the plate, its key the hanging diamond, and hovering lights the frame in its colour. The frame is picked by the
+  picture in the button (`.actbtn:has(img[src*="/guard."])`; Techniques by `.techmenu`), so the bot-drawn spar and
+  duel buttons need no change. The pill and Flee/Yield buttons sit on their small frames; the "Your turn" panel is
+  the lacquer frame as a 9-slice with the gold tab for its heading (the tab is cut on its own by its outline,
+  `SHAPES`, and painted out of the panel by `MIRROR_X` so the panel can stretch). Wide screens only, like the banners.
+- **The move pictures** (`art/icons/actions/{strike,techniques,guard,break,flee}.webp`): round painted discs, each
+  the same size in its square (`DISC_REACH`) with room for the sword, flames and sparks to spill over the socket.
+  They replace the old pictures everywhere these files are shown: the fight buttons, the spar's beads, the explore
+  page's guide and the Leave buttons of the practice and meditation screens (Flee's boot). Techniques now has its own
+  picture (the book); `attack_tech` / `defense_tech` stay for the technique menu's fallbacks.
 
 ## Environment pieces
 
