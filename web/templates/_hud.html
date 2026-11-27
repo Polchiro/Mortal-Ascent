@@ -2,7 +2,9 @@
    left (face, name, realm and layer, HP, Qi, injured or resting; the Break through button under it when the Qi is
    full at a gate: web/breakthrough_play.plate; the Qi line and the toxicity gourd open the Dantian), the place's name, which shows big for a moment as you
    come in and then stays as a small line, and the controls, which fade once you know them (the "?" brings them back).
-   web/static/town.js keeps the frame fresh from /world/state ("hero") and swaps the place's name between lands. #}
+   web/static/town.js keeps the frame fresh from /world/state ("hero") and swaps the place's name between lands.
+   The look is SHOAIB's painted frame (art/ui, docs/web.md "Painted UI"): the plate with the portrait ring, the HP and
+   Qi vials (the <i> in each bar is the full vial, shown up to the bar's width) and the Break Through tab. #}
 <div class="mhud">
   {% if hero %}
   <section class="mplate mhero{% if hero.tone %} t-{{ hero.tone }}{% endif %}" id="hero" aria-label="Your cultivator">
@@ -10,10 +12,10 @@
     <div class="mwho">
       <b class="mname" id="heroName">{{ hero.name }}</b>
       <span class="mrealm" id="heroRealm">{{ hero.realm }} · {{ hero.layer }}</span>
-      <div class="mhpbar" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ hero.pct }}" id="heroBar"><div style="width:{{ hero.pct }}%"></div><span id="heroHp">HP {{ hero.hp }} / {{ hero.max_hp }}</span></div>
+      <div class="mhpbar" role="meter" aria-label="HP" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ hero.pct }}" id="heroBar"><div style="width:{{ hero.pct }}%"><i></i></div><span id="heroHp">HP {{ hero.hp }} / {{ hero.max_hp }}</span></div>
       {% set q = hero.qi %}
       {% set here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
-      {% if q %}<div class="mqirow"><a class="mqibar{% if q.full %} full{% endif %}{% if q.full and not q.ready %} blocked{% endif %}" role="meter" aria-label="Internal Qi: open your Dantian" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ q.pct }}" id="heroQi" title="Internal Qi {{ q.qi }} / {{ q.need }} · open your Dantian" href="/dantian?from={{ here | urlencode }}"><div style="width:{{ q.pct }}%"></div><span id="heroQiText">Qi {{ q.qi }} / {{ q.need }}</span></a></div>{% endif %}
+      {% if q %}<div class="mqirow"><a class="mqibar{% if q.full %} full{% endif %}{% if q.full and not q.ready %} blocked{% endif %}" role="meter" aria-label="Internal Qi: open your Dantian" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ q.pct }}" id="heroQi" title="Internal Qi {{ q.qi }} / {{ q.need }} · open your Dantian" href="/dantian?from={{ here | urlencode }}"><div style="width:{{ q.pct }}%"><i></i></div><span id="heroQiText">Qi {{ q.qi }} / {{ q.need }}</span></a></div>{% endif %}
       <a class="mtox{% if hero.tox %} z-{{ hero.tox.zone }}{% endif %}" id="heroTox" href="/dantian?from={{ here | urlencode }}"{% if not hero.tox %} hidden{% endif %} title="Pill toxicity: every pill you eat adds some. Too much and pills lose their power. It fades by itself; open your Dantian for more.">
         <img src="/art/icons/attr/toxicity.webp" alt="" width="26" height="26">
         <span><b><span>Toxicity <i id="heroToxN">{{ hero.tox.n if hero.tox else '' }}</i></span><em id="heroToxFade">{{ hero.tox.fade if hero.tox else '' }}</em></b><small id="heroToxHint">{{ hero.tox.hint if hero.tox else '' }}</small></span></a>
