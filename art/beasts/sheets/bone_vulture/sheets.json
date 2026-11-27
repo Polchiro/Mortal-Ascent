@@ -1,0 +1,48 @@
+{
+ "cell": [
+  503,
+  289
+ ],
+ "still": [
+  63.0,
+  10.2,
+  403.2,
+  275.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/bone_vulture/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.1193
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/bone_vulture/attack.webp",
+   "frames": 35,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2600,
+   "bite": 16,
+   "reach": 0.1215,
+   "bite_x": 0.0258
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/bone_vulture/hit.webp",
+   "frames": 31,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2583
+  },
+  "death": {
+   "src": "/art/beasts/sheets/bone_vulture/death.webp",
+   "frames": 33,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2750,
+   "impact": 23
+  }
+ }
+}
