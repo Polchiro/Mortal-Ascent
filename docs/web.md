@@ -581,6 +581,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Frost Python's hissing strike, its hiss when struck, its sinking slump, its hiss and big hiss (`@frost_python`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Wind Leopard's snarling bite, its yowl when struck, its dying growl and fall, its snarl and big snarl (`@wind_leopard`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Flame-Maned Lion's roaring bite, its grunt when struck, its dying groan and fall, its roar and big roar (`@flame_maned_lion`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Stone-Shell Tortoise's hissing snap, its hiss when struck, its slam onto its shell, its hiss and big hiss (`@stone_shell_tortoise`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -1136,7 +1137,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard**, the **Frost Python**, the **Wind Leopard** and the **Flame-Maned Lion**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard**, the **Frost Python**, the **Wind Leopard**, the **Flame-Maned Lion** and the **Stone-Shell Tortoise**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -1195,6 +1196,9 @@ so `trim_tail` took a back leg for it); its flinch and fall come from its hit vi
 same picture, the camera still), so they don't change size at their start.
 **The Flame-Maned Lion** (Nov 27): drawn with no tail showing, but Veo grew a long tufted tail in both videos: cut
 past its back feet while it stands; in its fall by that line only until it is down (5.75 s), and by its thinness as it lies.
+**The Stone-Shell Tortoise** (Nov 27): its legs give way in four video frames, so its death is given as several
+short spans (`death`: ((start, end), ...)) that take every one of those frames instead of every second one: it slams
+down over four frames instead of jumping. Its snap is taken on until its neck is fully back, so it settles cleanly.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

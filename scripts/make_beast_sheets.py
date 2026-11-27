@@ -132,6 +132,16 @@ CLIPS = {
                          "tail_disc": ("death",), "tail_fixed": ("death",), "tail_x_until": {"death": 5.75},
                          "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                          "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign: both videos clean (no remakes): its idle before its neck-stretching snap (taken on until its neck
+    # is fully back, so it settles with no double body), its flinch (head pulled back toward its shell) and its
+    # collapse onto its shell from the hit video, easing in from the idle. Its legs give way in four video frames:
+    # every one of them is taken (not every 2nd), so it slams down over four frames instead of jumping
+    "stone_shell_tortoise": {"attack": (3.75, 7.45), "hit": (2.05, 3.7),
+                             "death": ((5.45, 5.875), (5.875, 5.917), (5.917, 5.958), (5.958, 6.0), (6.0, 7.0)),
+                             "idle_span": (16, 28), "breathe": 0.035, "idle_from": 2.6, "idle_until": 3.8,
+                             "attack_ms": 3000,
+                             "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                             "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
