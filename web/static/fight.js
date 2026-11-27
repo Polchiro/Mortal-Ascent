@@ -509,9 +509,11 @@
     var played = fresh.dataset.round !== now.dataset.round      // a turn of the fight was played: there is something to act out
       || (!!fresh.dataset.end && !now.dataset.end);             // ... or it was the winning turn (the round count stops there)
     keepHistory(now, fresh);
+    var loops = loopsOf(now);
     keepScene(now, fresh);
     now.replaceWith(fresh);                                     // same scroll position: nothing jumps
     init();                                                     // still locked: the new buttons are painted as such
+    resumeLoops(fresh, loops);
     if (!moved) {                                               // the move never arrived: nothing happened, pick again
       if (recovered) notice(fresh, 'The connection dropped before your move arrived. Nothing was spent: choose again.');
       Combat.set('player_turn');
@@ -554,6 +556,38 @@
     }
     var cv = now.querySelector('.bscene > canvas.ambient'), sc = fresh.querySelector('.bscene');
     if (cv && sc) sc.insertBefore(cv, sc.firstChild);
+  }
+
+  /* Every looping animation on the page (the hero's stance, the beast's idle, an aura's breath, a glow) goes on where
+     it was when the new turn's page comes in, instead of starting over (SHOAIB, Nov 28: the "refresh" was mostly the
+     hero and the beast snapping back to the first frame of their idle as the page was swapped, on every click). Each
+     loop is known by where it sits (its element's tag and first class, all the way up) and its animation's name. */
+  function loopKey(el, root, name) {
+    var k = name;
+    for (var n = el; n && n !== root; n = n.parentElement) k = n.tagName + '.' + (n.classList[0] || '') + '>' + k;
+    return k;
+  }
+  function loopsOf(root) {
+    var out = {};
+    if (!root.getAnimations) return out;
+    try {
+      root.getAnimations({subtree: true}).forEach(function (a) {
+        if (!a.animationName || !a.effect || a.effect.getTiming().iterations !== Infinity) return;
+        var k = loopKey(a.effect.target, root, a.animationName);
+        if (!(k in out) && a.currentTime != null) out[k] = a.currentTime - (a.effect.getTiming().delay || 0);   // how far into its loop
+      });
+    } catch (e) {}
+    return out;
+  }
+  function resumeLoops(root, loops) {
+    if (!root.getAnimations) return;
+    try {
+      root.getAnimations({subtree: true}).forEach(function (a) {
+        if (!a.animationName || !a.effect || a.effect.getTiming().iterations !== Infinity) return;
+        var k = loopKey(a.effect.target, root, a.animationName);
+        if (k in loops) a.currentTime = loops[k] + (a.effect.getTiming().delay || 0);   // (its own start offset, as the beast's idle has)
+      });
+    } catch (e) {}
   }
 
   function keepHistory(now, fresh) {
