@@ -6,6 +6,7 @@ own rules (bot/db.equip_technique, bot/db.unequip_technique), the same as Discor
   - one attack and one defense technique always stay equipped (only the Flex one can simply come off);
   - nothing can be swapped during a fight (a duel, a spar, a drill or a beast fight).
 """
+import technique
 from bot import db
 from bot import player as rules
 from bot.sheet import data as sheet
@@ -42,6 +43,18 @@ def card(t, learned, slots):
     return out
 
 
+def sections(cards):
+    """The cards by grade, Heaven first down to Mortal (the best you have on top), each grade only if you know one:
+    [{"grade", "color", "cards"}]. Within a grade: equipped first, then attack before defense, then by name."""
+    order = list(technique.GRADES)[::-1]
+    out = []
+    for g in order + sorted({c["grade"] for c in cards} - set(order)):
+        mine = sorted((c for c in cards if c["grade"] == g), key=lambda c: (not c["equipped"], c["type"], c["name"]))
+        if mine:
+            out.append({"grade": g, "color": GRADE_COLOR.get(g, "#C9D2E6"), "cards": mine})
+    return out
+
+
 def view(conn, uid):
     """Everything techniques.html shows, or None without a character."""
     p = db.get_player(conn, uid)
@@ -59,7 +72,9 @@ def view(conn, uid):
                         "icon": art_url(t["icon"]) if t else None})
     order = sorted(learned, key=lambda t: (not t["equipped"], t["type"], t["id"]))
     equipped = [t for t in learned if t["equipped"]]
-    return {"sockets": sockets, "slot_count": slots, "cards": [card(t, learned, slots) for t in order],
+    cards = [card(t, learned, slots) for t in order]
+    return {"sockets": sockets, "slot_count": slots, "cards": cards, "sections": sections(cards),
+            "attacks": sum(c["type"] == "attack" for c in cards), "defenses": sum(c["type"] == "defense" for c in cards),
             "qi_bonus": f"+{rules.technique_qi_bonus(equipped):.0%}".replace("+0%", "") or None,
             "learned": len(learned), "coins": p["lotus_coins"], "pearls": p["moon_pearls"]}
 

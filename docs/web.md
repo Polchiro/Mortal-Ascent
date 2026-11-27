@@ -153,6 +153,11 @@ page (`web/techniques_play.py`, `web/techniques_routes.py`). At the top, the thr
 **Flex** (locked until Martial Warrior). Below, a card for every technique you have learned: grade, kind and school,
 its mastery stage and EXP bar, power, passive, cooldown and special effect.
 
+**Sorted for a long list** (Shoaib, Nov 27): buttons for **All**, **Attack** or **Defense** (with how many of each;
+the page only, nothing saved), and the cards in a folding section per grade, **Heaven first down to Mortal**
+(`techniques_play.sections`), only grades you know a technique of; in each, equipped first, then attack, then by name.
+A section with nothing left after the filter hides.
+
 - **Equip** uses the bot's own `db.equip_technique`: it fills a free socket, or takes the place of the oldest equipped
   technique of the same kind. The card says which before you press ("Replaces Iron Fist" / "Goes into a free slot").
 - **Unequip** (`db.unequip_technique`) only shows when another technique of the same kind stays equipped: one attack

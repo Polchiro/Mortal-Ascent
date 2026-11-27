@@ -29,41 +29,72 @@
   </section>
   <p class="techrule">One attack and one defense technique are always equipped. Equipping fills a free slot, or takes the place of the oldest one of the same kind. The Flex slot opens at Martial Warrior and takes either kind.</p>
 
-  <section aria-label="Learned techniques" class="techcards">
-    {% for t in v.cards %}
-    <article class="tqcard t-{{ t.type }}{% if t.equipped %} on{% endif %}" style="--rc: {{ t.color }}">
-      <div class="tqtop">
-        {% if t.icon %}<img src="{{ t.icon }}" alt="" width="60" height="60" loading="lazy">{% endif %}
-        <div class="tqname">
-          <b>{{ t.name }}</b>
-          <span class="tqgrade">{{ t.grade }} · {{ t.kind }} · {{ t.school }}</span>
-        </div>
-        {% if t.equipped %}<span class="tqeq">Equipped</span>{% endif %}
-      </div>
-      <div class="tqmastery">
-        <span>{{ t.stage }}</span>
-        <div class="tqbar" role="meter" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ t.pct }}"><i style="width:{{ t.pct }}%"></i></div>
-        <span class="sub">{% if t.cap %}{{ t.exp }} / {{ t.cap }}{% else %}Mastered{% endif %}{% if t.trial %} · trial ready{% endif %}</span>
-      </div>
-      <dl class="tqfacts">
-        <div><dt>Power</dt><dd>{{ t.power }}</dd></div>
-        <div><dt>Passive</dt><dd>{{ t.passive }}</dd></div>
-        <div><dt>Cooldown</dt><dd>{{ t.cooldown }} turn{{ '' if t.cooldown == 1 else 's' }}</dd></div>
-      </dl>
-      <p class="tqeffect">{{ t.effect }}</p>
-      <div class="tqact">
-        {% if t.action %}
-        <form method="post" action="/techniques/{{ t.action }}">
-          <input type="hidden" name="tech" value="{{ t.id }}">
-          <button class="tbtn{% if t.action == 'equip' %} primary{% endif %}" type="submit">{{ 'Equip' if t.action == 'equip' else 'Unequip' }}</button>
-        </form>
-        {% endif %}
-        {% if t.note %}<span class="sub">{{ t.note }}</span>{% endif %}
-      </div>
-    </article>
-    {% else %}
-    <p class="empty">No techniques yet.</p>
-    {% endfor %}
-  </section>
+  {% if v.cards %}
+  {# Sorting a long list (Shoaib, Nov 27): show all, only attacks or only defenses; the cards come in grade
+     sections, Heaven down to Mortal, each one folding away. The filter is this page only, nothing is saved. #}
+  <div class="techfilter" role="group" aria-label="Show">
+    <button type="button" class="tfbtn on" data-show="all" aria-pressed="true">All <b>{{ v.learned }}</b></button>
+    <button type="button" class="tfbtn" data-show="attack" aria-pressed="false">Attack <b>{{ v.attacks }}</b></button>
+    <button type="button" class="tfbtn" data-show="defense" aria-pressed="false">Defense <b>{{ v.defenses }}</b></button>
+  </div>
+  {% for sec in v.sections %}
+  <details class="techgrade" open style="--rc: {{ sec.color }}">
+    <summary><span class="tgname">{{ sec.grade }}</span><span class="tgcount" data-all="{{ sec.cards | length }}">{{ sec.cards | length }}</span></summary>
+    <section aria-label="{{ sec.grade }} techniques" class="techcards">
+      {% for t in sec.cards %}
+        <article class="tqcard t-{{ t.type }}{% if t.equipped %} on{% endif %}" data-type="{{ t.type }}" style="--rc: {{ t.color }}">
+          <div class="tqtop">
+            {% if t.icon %}<img src="{{ t.icon }}" alt="" width="60" height="60" loading="lazy">{% endif %}
+            <div class="tqname">
+              <b>{{ t.name }}</b>
+              <span class="tqgrade">{{ t.grade }} · {{ t.kind }} · {{ t.school }}</span>
+            </div>
+            {% if t.equipped %}<span class="tqeq">Equipped</span>{% endif %}
+          </div>
+          <div class="tqmastery">
+            <span>{{ t.stage }}</span>
+            <div class="tqbar" role="meter" aria-label="Mastery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ t.pct }}"><i style="width:{{ t.pct }}%"></i></div>
+            <span class="sub">{% if t.cap %}{{ t.exp }} / {{ t.cap }}{% else %}Mastered{% endif %}{% if t.trial %} · trial ready{% endif %}</span>
+          </div>
+          <dl class="tqfacts">
+            <div><dt>Power</dt><dd>{{ t.power }}</dd></div>
+            <div><dt>Passive</dt><dd>{{ t.passive }}</dd></div>
+            <div><dt>Cooldown</dt><dd>{{ t.cooldown }} turn{{ '' if t.cooldown == 1 else 's' }}</dd></div>
+          </dl>
+          <p class="tqeffect">{{ t.effect }}</p>
+          <div class="tqact">
+            {% if t.action %}
+            <form method="post" action="/techniques/{{ t.action }}">
+              <input type="hidden" name="tech" value="{{ t.id }}">
+              <button class="tbtn{% if t.action == 'equip' %} primary{% endif %}" type="submit">{{ 'Equip' if t.action == 'equip' else 'Unequip' }}</button>
+            </form>
+            {% endif %}
+            {% if t.note %}<span class="sub">{{ t.note }}</span>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  </details>
+  {% endfor %}
+  {% else %}
+  <p class="empty">No techniques yet.</p>
+  {% endif %}
+  <script>
+  (function () {
+    var page = document.querySelector('.techpage');
+    document.querySelectorAll('.tfbtn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var show = b.dataset.show;
+        document.querySelectorAll('.tfbtn').forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        page.dataset.show = show;
+        document.querySelectorAll('.techgrade').forEach(function (g) {
+          var n = show === 'all' ? g.querySelectorAll('.tqcard').length : g.querySelectorAll('.tqcard[data-type="' + show + '"]').length;
+          g.querySelector('.tgcount').textContent = n;
+          g.hidden = n === 0;
+        });
+      });
+    });
+  })();
+  </script>
 </main>
 {% endblock %}
