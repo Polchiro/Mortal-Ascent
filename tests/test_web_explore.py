@@ -531,7 +531,8 @@ def test_the_beast_dies_as_its_own_picture(client, monkeypatch):
     win(client, s)
     page = client.get("/explore/play").text
     assert '<canvas class="deathfx">' in page and "death-warp" in page
-    assert page.count("/art/beasts/horned_stag.png") >= 2 and "/art/death/" not in page and "quadruped.webp" not in page
+    assert page.count("/art/beasts/horned_stag.png") >= 1 and "/art/beasts/faces/horned_stag.webp" in page   # its picture; its head in the ring
+    assert "/art/death/" not in page and "quadruped.webp" not in page
 
 
 def test_a_won_test_fight_ends_with_finish_and_pays_nothing(client, db_path):

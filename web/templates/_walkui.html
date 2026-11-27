@@ -24,7 +24,29 @@
   <a class="dbtn" href="/profile" title="Character"><span class="dico"><img src="/art/ui/dock_character.webp" alt="" width="40" height="40"></span><span>Character</span></a>
   <a class="dbtn" href="/profile#techniques" title="Techniques"><span class="dico"><img src="/art/ui/dock_techniques.webp" alt="" width="40" height="40"></span><span>Techniques</span></a>
   <a class="dbtn" href="/world" title="World Map (M)"><span class="dico"><img src="/art/ui/dock_map.webp" alt="" width="40" height="40"></span><span>Map</span></a>
+  <button class="dfold" id="dockFold" type="button" aria-expanded="true" title="Hide the buttons"><span aria-hidden="true"></span></button>
 </nav>
+<script>
+/* Hide or show the Bag / Character / Techniques / Map medallions (Shoaib, Nov 27): the choice is remembered on this
+   device; their pages stay one tap away from the fold button, and M still opens the map. */
+(function () {
+  var nav = document.querySelector('.mdock'), btn = document.getElementById('dockFold');
+  if (!nav || !btn) return;
+  function set(folded) {
+    nav.classList.toggle('folded', folded);
+    btn.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    btn.title = folded ? 'Show the buttons' : 'Hide the buttons';
+  }
+  var saved = false;
+  try { saved = localStorage.getItem('ma.dockFolded') === '1'; } catch (e) {}
+  set(saved);
+  btn.addEventListener('click', function () {
+    var folded = !nav.classList.contains('folded');
+    set(folded);
+    try { localStorage.setItem('ma.dockFolded', folded ? '1' : '0'); } catch (e) {}
+  });
+})();
+</script>
 <div class="mplate tnotice wsay" id="say" role="status" hidden></div>
 <section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
   <p class="kicker" id="dlgTitle"></p>

@@ -78,6 +78,15 @@ def beast_scale(realm, tier):
     return round((1 + SIZE_PER_REALM * step) * SIZE_BY_TIER.get(tier, 1.0), 3)
 
 
+def beast_face(slug):
+    """The beast's head for the round ring on its banner (art/beasts/faces/<slug>.webp, scripts/make_beast_faces.py);
+    None without one, and the ring shows its whole picture as before."""
+    if not slug:
+        return None
+    path = os.path.join(os.path.dirname(POSES_DIR), "faces", slug + ".webp")
+    return f"/art/beasts/faces/{slug}.webp" if os.path.exists(path) else None
+
+
 def beast_roar(e):
     """What a beast's roar needs on the page (fight.js `roar`, `roaring`): where its mouth is on its picture
     (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, its element's colour, and its body's
@@ -769,6 +778,7 @@ def fight_view(conn, s, b, p, now, me=None):
                   "statuses": statuses(e["statuses"]),
                   "art": poses["poses"]["idle"]["src"] if poses else
                          f"/art/beasts/{e['slug']}.png" if beast and e.get("slug") else "/art/scenes/subject_bandits.png",
+                  "face": beast_face(e.get("slug")) if beast else None,
                   "roar": beast_roar(e) if beast else None,
                   "body": beast_body(e["name"]) if beast else None,
                   "poses": poses, "pose": "crouch" if poses and winding and "crouch" in poses["poses"] else "idle",
