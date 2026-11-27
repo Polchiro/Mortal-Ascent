@@ -128,3 +128,10 @@ def test_the_page_has_the_filter_and_sections(path, monkeypatch):
     html = open("web/templates/techniques.html").read()
     assert 'data-show="attack"' in html and 'data-show="defense"' in html and 'class="techgrade" open' in html
     assert 'data-type="{{ t.type }}"' in html
+
+
+def test_equip_opens_a_slot_menu_not_three_buttons_per_card():
+    html = open("web/templates/techniques.html").read()
+    assert '<details class="tqequip">' in html and '<summary class="tbtn primary">Equip</summary>' in html
+    assert 'class="tqpop"' in html and "Replaces {{ sl.holds }}" in html
+    assert "details.techgrade" in open("web/static/softnav.js").read()          # a menu isn't reopened after equipping
