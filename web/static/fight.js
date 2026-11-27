@@ -167,7 +167,7 @@
      element's light (art/fx/elem/<element>_aura.webp), two copies breathing out of step so it flickers like a living
      flame, brighter each realm up to Martial Saint. Laid on the ground behind the beast, fitted to its picture as
      drawn, and gone as it falls. Presentation only. */
-  var AURA_OPACITY = [0, 0.5, 0.65, 0.8, 0.95];
+  var AURA_OPACITY = [0, 0.6, 0.72, 0.86, 1];        // one layer now (SHOAIB Nov 27: the two-layer aura made fights lag)
   /* Lite effects (SHOAIB Nov 27: most players will be on phones; a slowed phone dropped to 7-8 frames a second in a
      Saint's roar): on a phone-sized screen, or with "reduce motion" on, the fight keeps every effect but draws about
      half the small particles (droplets, streaks, dust, sparks), skips the full-scene impact-frame filter (the coloured
@@ -230,7 +230,9 @@
     var k = Math.min(R.scale, s.height * 0.8 / h, (b.right - front) / ((b.width + w) / 2));
     if (!(k > 1.01)) return;
     box.style.width = b.width * k / s.width * 100 + '%';
-    if (!posed) { box.style.top = 'auto'; box.style.height = b.height * k / s.height * 100 + '%'; }
+    // the frame only as tall as the beast it holds (SHOAIB Nov 27 "the fight is laggy": the picture's shadows are
+    // drawn over its whole frame, and a frame grown to the full height was many times bigger than the beast)
+    if (!posed) { box.style.top = 'auto'; box.style.height = Math.min(b.height * k, h * k * 1.04) / s.height * 100 + '%'; }
     box.dataset.scaled = k.toFixed(2);
   }
 
@@ -1323,7 +1325,9 @@
     var TRAVEL = 280;
     var ELEM = ROAR && ROAR.element ? '/art/fx/elem/' + ROAR.element : null;
     var TIER_OF = {ring: 0, double: 1, burst: 2};               // normal, Elite, Beast King (beast_roar "wave")
-    if (ELEM) ['_stream', '_burst', '_ground'].forEach(function (k) { new Image().src = ELEM + k + '.webp'; });
+    function preload(src) { var i = new Image(); i.src = src; if (i.decode) i.decode().catch(function () {}); }
+    if (ELEM) ['_stream', '_burst', '_ground'].forEach(function (k) { preload(ELEM + k + '.webp'); });
+    if (ROAR && ROAR.power >= 1) preload('/art/fx/elem/sigil_' + (ROAR.power >= 4 ? 3 : ROAR.power >= 3 ? 2 : 1) + '.webp');
     if (ROAR && ROAR.marks) ROAR.marks.forEach(function (k) { new Image().src = markSrc(k); });   // its hit marks (`mark`)
     function aim(p, you) {                                       // from p to you: [length in px, angle in degrees]
       var sr = scene.getBoundingClientRect(), dx = (you[0] - p[0]) / 100 * sr.width, dy = (you[1] - p[1]) / 100 * sr.height;
@@ -1374,8 +1378,6 @@
       var flash = fx('broarflash behit', 0, 0, 420); flash.style.setProperty('--x', you[0] + '%'); flash.style.setProperty('--y', you[1] + '%');
       flash.style.setProperty('--rc', ROAR.color);
       if (scene.animate) {                                       // the impact frame: one blinding beat, then the shake
-        if (!LITE && !CALM) scene.animate([{filter: 'none'}, {filter: 'brightness(1.4) contrast(1.12) saturate(.7)', offset: 0.12},
-                       {filter: 'brightness(1.06)', offset: 0.4}, {filter: 'none'}], {duration: 240, easing: 'ease-out'});
         var q = (9 + 4 * tier) * SHAKE;
         fighter.animate([{transform: 'none'}, {transform: 'translate(' + -q + 'px,' + q * 0.4 + 'px)'}, {transform: 'translate(' + q * 0.7 + 'px,' + -q * 0.3 + 'px)'},
                          {transform: 'translate(' + -q * 0.4 + 'px,0)'}, {transform: 'none'}], {duration: 380});
