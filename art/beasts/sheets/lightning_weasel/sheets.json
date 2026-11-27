@@ -1,0 +1,48 @@
+{
+ "cell": [
+  555,
+  296
+ ],
+ "still": [
+  60.6,
+  4.8,
+  481.2,
+  280.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/lightning_weasel/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.1045
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/lightning_weasel/attack.webp",
+   "frames": 20,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1800,
+   "bite": 8,
+   "reach": 0.1226,
+   "bite_x": 0.0018
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/lightning_weasel/hit.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000
+  },
+  "death": {
+   "src": "/art/beasts/sheets/lightning_weasel/death.webp",
+   "frames": 23,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1917,
+   "impact": 14
+  }
+ }
+}

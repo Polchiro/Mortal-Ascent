@@ -83,7 +83,7 @@ def test_an_open_mouthed_roar_picture_is_shown_only_when_it_exists():
     heads = json.load(open(os.path.join(ROOT, "art", "beasts", "heads.json")))
     for f in os.listdir(os.path.join(ROOT, "art", "beasts", "roar")) if os.path.isdir(os.path.join(ROOT, "art", "beasts", "roar")) else []:
         assert f[:-4] + "@roar" in heads, f                  # every roar picture has its open mouth on file
-    assert explore_play.beast_roar({"name": "Lightning Weasel", "slug": "lightning_weasel", "tier": "normal"})["art"] is None
+    assert explore_play.beast_roar({"name": "Pixiu", "slug": "pixiu", "tier": "elite"})["art"] is None
 
 
 def test_every_quadruped_but_the_posed_tiger_has_its_open_mouthed_roar():

@@ -300,9 +300,14 @@
 0.995
 ],
 "lightning_weasel": [
-0.1,
-0.37,
-0.995
+0.03,
+0.22,
+0.996
+],
+"lightning_weasel@roar": [
+0.09,
+0.23,
+0.996
 ],
 "mountain_tiger": [
 0.04,
