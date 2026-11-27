@@ -149,6 +149,12 @@
    "lead": 0.34
   }
  ],
+ "death@frost_python": [
+  {
+   "file": "death_frost_python.mp3",
+   "lead": 0.12
+  }
+ ],
  "death@frost_wolf": [
   {
    "file": "death_frost_wolf.mp3",
@@ -409,6 +415,12 @@
    "lead": 0.12
   }
  ],
+ "hit@frost_python": [
+  {
+   "file": "hit_frost_python.mp3",
+   "lead": 0.22
+  }
+ ],
  "hit@frost_wolf": [
   {
    "file": "hit_frost_wolf.mp3",
@@ -579,6 +591,12 @@
   {
    "file": "lunge_field_viper.mp3",
    "lead": 0.48
+  }
+ ],
+ "lunge@frost_python": [
+  {
+   "file": "lunge_frost_python.mp3",
+   "lead": 0.38
   }
  ],
  "lunge@frost_wolf": [
@@ -761,6 +779,12 @@
    "lead": 0.62
   }
  ],
+ "roar:big@frost_python": [
+  {
+   "file": "roar_big_frost_python.mp3",
+   "lead": 0.38
+  }
+ ],
  "roar:big@frost_wolf": [
   {
    "file": "roar_big_frost_wolf.mp3",
@@ -933,6 +957,12 @@
   {
    "file": "roar_field_viper.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@frost_python": [
+  {
+   "file": "roar_frost_python.mp3",
+   "lead": 0.32
   }
  ],
  "roar@frost_wolf": [
