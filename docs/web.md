@@ -164,6 +164,17 @@ A section with nothing left after the filter hides.
   and one defense are always on.
 - Nothing can be swapped during a fight on the website (a duel, a spar, a drill or a beast fight), like Discord.
 
+## No page reloads
+
+On the **Bag** and the **Techniques** page (Shoaib, Nov 28), pressing Equip / Unequip / Learn & equip / Learn only /
+Read it, picking an item or switching a tab no longer reloads the whole page and throws you back to the top
+(`web/static/softnav.js`, turned on by `data-soft` on the page's `<main>`). The same request goes to the server as
+before, and the server still decides everything; only its answer is swapped in: the page's `<main>` and the top bar
+(for the coins) are replaced, the address bar follows (Back works), and you stay where you were. What you had set
+stays too: the Techniques filter and folded grade sections. If the server's message is off screen it shows for a
+moment at the bottom. Picking an item on a phone, where the details sit under the grid, brings them into view.
+Anything else (an error, a link to another page, an old browser) loads the page the ordinary way.
+
 ## Opening a chest
 
 Chests open with the bot's own functions: `loot.begin_chest` rolls one (with Fate Weaver) and `loot.claim_chest`

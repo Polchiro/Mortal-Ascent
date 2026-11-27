@@ -3,7 +3,7 @@
 {% block body %}
 {% with page="techniques", coins=coins, pearls=pearls %}{% include "_topbar.html" %}{% endwith %}
 
-<main class="techpage">
+<main class="techpage" data-soft>
   <header class="techhead">
     <div>
       <p class="kicker">YOUR MARTIAL ARTS</p>
@@ -97,4 +97,5 @@
   })();
   </script>
 </main>
+<script src="{{ asset('softnav.js') }}" defer></script>
 {% endblock %}

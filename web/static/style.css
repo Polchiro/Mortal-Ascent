@@ -3161,3 +3161,10 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
 .tgname{font:700 17px Cinzel,Georgia,serif;letter-spacing:1px;color:var(--rc)}
 .tgcount{padding:1px 9px;border-radius:999px;background:color-mix(in srgb,var(--rc) 22%,transparent);color:#F2EAD6;font-size:12px}
 .techgrade>.techcards{margin-top:12px}
+/* while a soft page change is on its way (web/static/softnav.js) */
+html.softbusy,html.softbusy *{cursor:progress!important}
+html.softbusy main[data-soft] button[type=submit]{opacity:.7}
+.softtoast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;width:max-content;max-width:min(92vw,520px);box-sizing:border-box;margin:0;padding:10px 16px;
+  border-radius:12px;background:rgba(9,16,36,.94);border:1px solid rgba(201,164,92,.6);color:#F2EAD6;box-shadow:0 10px 30px rgba(0,0,0,.5);
+  font-size:14px;text-align:center;transition:opacity .5s}
+.softtoast.gone{opacity:0}
