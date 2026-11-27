@@ -814,6 +814,11 @@ a lair is fought with `bot/hunt.py`.
    needs your pick, a YOUR TURN banner sweeps across the scene, your portrait pulses and the moves glow
    (`yourTurn`), with a double buzz on Android. After you pick, the chip names who you are still waiting for
    ("Waiting for Mei Lin", kept current by the team poll).
+   **Teammates fight beside you** (SHOAIB Nov 27): a teammate's attack in the log becomes an "ally" moment
+   (`explore_play.events`); their own strike picture (`hunt_play.team_view` "strike", `data-strike` on their portrait,
+   loaded when the fight opens) appears just behind you glowing in their player colour, dashes at the beast and
+   hits it (the number, a spark, its Qi cracking if it is strong), or misses, then fades away (`cameo` in
+   `fight.js`). Only movement and fades.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned

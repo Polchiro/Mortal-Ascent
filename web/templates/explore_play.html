@@ -48,7 +48,7 @@
   <section class="bscene">
     {% if F.team %}
     <div class="allies" aria-label="Your party" aria-live="polite">{% for a in F.team.allies %}
-      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}" style="--hp: {{ a.hp_pct }}; --pc: {{ a.color or '#E8C27A' }}" data-name="{{ a.name }}" title="{{ a.name }}: {{ a.state }}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
+      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}" style="--hp: {{ a.hp_pct }}; --pc: {{ a.color or '#E8C27A' }}" data-name="{{ a.name }}"{% if a.strike %} data-strike="{{ a.strike }}"{% endif %} title="{{ a.name }}: {{ a.state }}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
         <span>{% if a.me %}You{% else %}{{ a.name }}{% endif %}<span class="ah"><div style="width: {{ a.hp_pct }}%"></div></span></span><em>{{ a.state }}</em><i class="aname">{% if a.me %}YOU{% else %}{{ a.name | truncate(7, True, '…', 0) }}{% endif %}</i></span>{% endfor %}</div>
     {% endif %}
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}

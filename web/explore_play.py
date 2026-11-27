@@ -824,6 +824,9 @@ def events(log, f):
     {"who": "enemy", "act": "pounce", "dmg": n, "guard": bool, "stun": bool}
                                                       a unique skill (battle.UNIQUE_SKILLS, its "fx") landed;
                                                       it replaces your Guard's own event this turn
+    {"who": "ally", "name": s, "act": "strike" | "break" | "tech", "hit": bool, "dmg": n}
+                                                      a teammate's attack in a team fight (SHOAIB Nov 27: they
+                                                      dash into the scene and hit the beast, fight.js `cameo`)
     """
     out = []
     skills = {v["name"]: v["fx"] for v in battle_rules.UNIQUE_SKILLS.values()}
@@ -876,6 +879,11 @@ def events(log, f):
             dmg = _number(text, r" on " + re.escape(f.name) + r" −([\d,]+)")
             if dmg:
                 out.append({"who": "enemy", "act": "attack", "dmg": dmg})
+        elif icon in ("sword", "fist") and not mine and re.match(r"^(.+?) — ([^:]+): ", text):
+            who, label = re.match(r"^(.+?) — ([^:]+): ", text).groups()      # a teammate's attack on the beast
+            dmg = _number(text, r"([\d,]+) dmg")
+            out.append({"who": "ally", "name": who, "act": label.lower() if label in ("Strike", "Break") else "tech",
+                        "hit": dmg > 0, "dmg": dmg})
     used = next((t for t in (f.def_t, flex) if t and t.get("type", "defense") == "defense" and getattr(f, "last_move", None) == t["name"]), None)
     if used and not any(x["who"] == "me" and x["act"] == "tech" for x in out):
         # the defence technique was used and the beast struck no blow at it (it Guarded, or was Staggered): the engine

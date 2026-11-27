@@ -669,7 +669,9 @@ def team_view(conn, hunts, h, b, uid):
                        "hp_pct": max(0, round(f.hp / max(1, f.max_hp) * 100)),
                        "state": "Fallen" if f.hp <= 0 else "Fled" if f.fled else "Standing" if b.over else
                                 "Ready" if f.pick is not None else "Choosing",
-                       "face": ep.look_face(pl) if pl else None})
+                       "face": ep.look_face(pl) if pl else None,
+                       # their own strike picture, for when they dash in and hit the beast (fight.js `cameo`)
+                       "strike": ep.look_poses(pl).get("strike") if pl and f.uid != uid else None})
         if f.uid == uid:
             allies[-1]["color"] = YOU_COLOR
         else:

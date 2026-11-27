@@ -330,6 +330,9 @@
     if (!main) return;
     sized(main);
     warmUp(main);
+    main.querySelectorAll('.ally[data-strike]').forEach(function (a) {   // teammates' strike pictures, ready for `cameo`
+      var i = new Image(); i.src = a.dataset.strike; if (i.decode) i.decode().catch(function () {});
+    });
     partyNames(main);
     yourTurn(main);
     aura(main);
@@ -633,6 +636,37 @@
       beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg)';
       if (auraEl) auraEl.style.transform = x || y ? 'translate(' + x + 'px,' + y + 'px)' : '';
       beast.style.filter = flash > 0.05 ? beastFilter + ' brightness(' + (1 + 1.8 * flash) + ') saturate(' + (1 - 0.6 * flash) + ')' : '';
+    }
+    /* A teammate's attack (SHOAIB Nov 27: show the team fighting together without crowding the screen): their own
+       strike picture (web/hunt_play.py, data-strike on their portrait) appears just behind you, glowing in their
+       player colour, dashes at the beast and hits it (the number, a spark, its Qi cracking if it is strong), then
+       fades away. Only movement and fades, so it stays cheap. A miss: it dashes, the beast shrugs it off. */
+    var CAMEO_MS = 1000, CAMEO_HIT = 420;
+    function cameo(ev) {
+      var tag = [].slice.call(main.querySelectorAll('.ally[data-name]')).filter(function (a) { return a.dataset.name === ev.name; })[0];
+      var src = tag && tag.dataset.strike, color = tag ? getComputedStyle(tag).getPropertyValue('--pc').trim() : '#5FA8FF';
+      var n = null, hit = false, sr = scene.getBoundingClientRect();
+      var from = at(fr, 0.02, 1), reach = (br.left + br.width * 0.12 - (fr.left + fr.width * 0.75)) / sr.width * 100;
+      return {end: CAMEO_MS, render: function (t) {
+        if (t < 0) return;
+        if (!n && src) {
+          n = document.createElement('img');
+          n.className = 'bcameo'; n.src = src; n.alt = '';
+          n.style.left = from[0] + '%'; n.style.top = from[1] + '%'; n.style.width = fr.width + 'px'; n.style.setProperty('--pc', color);
+          n.style.height = fr.width * 559 / 1024 + 'px';         // the pose pictures are 1024 x 559 (explore_play.html)
+          scene.insertBefore(n, fighter.nextSibling);
+        }
+        var a = ease(span(t, 0, CAMEO_HIT)), back = span(t, CAMEO_HIT + 180, CAMEO_MS);
+        var x = Math.max(0, reach) * a, o = Math.min(1, t / 120) * (1 - back);
+        if (n) { n.style.transform = 'translate(' + x / 100 * sr.width + 'px,-100%)'; n.style.opacity = o.toFixed(2); }
+        if (t >= CAMEO_HIT && !hit) {
+          hit = true;
+          var p = at(br, 0.4, 0.45);
+          if (ev.hit) {
+            drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
+          } else pop(beastBox, 'word', 'Missed');
+        }
+      }, clear: function () { if (n) n.remove(); }};
     }
     var stepped = false;                                          // the sidestep's own recording has played (sidestepped)
     function pop(box, cls, text) {
@@ -2454,6 +2488,7 @@
       if (bi >= 0 && hi >= 0) { braceHit = events[hi]; events = events.filter(function (_, i) { return i !== hi; }); }
     }
     events.forEach(function (ev) {
+      if (ev.who === 'ally') { add(cameo(ev), 'player_acting'); return; }      // a teammate dashes in (`cameo`)
       if (ev.who === 'enemy' && ev.act === 'roar') { add(roaring(ev), 'beast_acting', [[120, 'roar', ev.final ? 'big' : '', 0, {land: ROAR && ROAR.motion ? 480 : 0}]]); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'brace') { var hs = heavenly(braced(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'brace']] : [[0, 'guardup', 'brace'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
       else if (ev.act === 'tech' && cast && cast.fx && cast.fx.motion === 'deflect') { var hs = heavenly(deflected(ev, braceHit)); add(hs, 'beast_acting', later(ev.idle ? [[0, 'guardup', 'deflect']] : [[0, 'guardup', 'deflect'], [120 * PACE, 'lunge']], hs.pre)); kinds.enemy = 1; }
