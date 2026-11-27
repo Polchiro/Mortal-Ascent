@@ -155,3 +155,20 @@ def test_poll_endpoint_and_logged_out(site):
     assert anon.get("/hunt").headers["location"] == "/"
     assert anon.post("/party/start").headers["location"] == "/"
 
+
+
+def test_teammates_attacks_become_fight_moments():
+    """A teammate's attack in the log becomes an "ally" moment (explore_play.events, fight.js `cameo`); yours and
+    the beast's stay as they were, and a solo fight has none."""
+    from web import explore_play as ep
+
+    class F:
+        name, atk_t, def_t = "Shoaib", None, None
+
+    log = [("sword", "Nicolas — Strike: 1,240 dmg"), ("fist", "Mei Lin — Break: dodged!"),
+           ("sword", "Shoaib — Strike: 900 dmg"), ("skull", "Wild Boar — Gore on Shoaib −300")]
+    evs = ep.events(log, F())
+    assert evs[0] == {"who": "ally", "name": "Nicolas", "act": "strike", "hit": True, "dmg": 1240}
+    assert evs[1] == {"who": "ally", "name": "Mei Lin", "act": "break", "hit": False, "dmg": 0}
+    assert [e["who"] for e in evs[2:]] == ["me", "enemy"]
+    assert not any(e["who"] == "ally" for e in ep.events(log[2:], F()))

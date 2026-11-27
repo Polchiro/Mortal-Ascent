@@ -3088,3 +3088,8 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
 .bwarm .bwshape{position:absolute;left:10%;top:20%;width:60%;height:40%;background:var(--rc);
   -webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
 .bwarm .bwshape img{left:0;top:0;width:100%;height:100%}
+/* a teammate dashing in to strike the beast (fight.js `cameo`): their own strike picture, glowing in their player
+   colour, a little ghostly so it never hides you */
+.bcameo{position:absolute;z-index:4;height:auto;max-width:none;pointer-events:none;opacity:0;transform:translate(0,-100%);
+  filter:drop-shadow(0 0 10px var(--pc)) brightness(1.08)}
+.lite-fx .bcameo{filter:drop-shadow(0 0 6px var(--pc))}
