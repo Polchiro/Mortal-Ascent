@@ -585,6 +585,7 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Bone Vulture's croaking stab, its screech when struck, its dying croak and slump, its croak and big croak (`@bone_vulture`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Storm Eagle's screeching beak stab, its cry when struck, its dying cry and fall, its screech and big screech (`@storm_eagle`) | its own idle + attack and hit + death videos (Nov 27) |
 | The Lightning Weasel's hissing snap, its squeal when struck, its dying squeak and thud, its hiss and big hiss (`@lightning_weasel`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Jade-Scaled Crocodile's roaring bite, its grunt when struck, its slam onto its belly, its roar and big roar (`@jade_scaled_crocodile`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -1181,7 +1182,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard**, the **Frost Python**, the **Wind Leopard**, the **Flame-Maned Lion**, the **Stone-Shell Tortoise**, the **Bone Vulture**, the **Storm Eagle** and the **Lightning Weasel**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard**, the **Frost Python**, the **Wind Leopard**, the **Flame-Maned Lion**, the **Stone-Shell Tortoise**, the **Bone Vulture**, the **Storm Eagle**, the **Lightning Weasel** and the **Jade-Scaled Crocodile**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -1250,6 +1251,11 @@ belly ease in from it.
 **The Lightning Weasel** (Nov 27): both videos clean; its idle is the calm breath before its snap, and its fall starts
 at 5.0 s, not earlier, so it does not stand still too long first. Veo grew its stub tail long and bushy as it fell: cut
 back where it reaches past its back feet while it is up, and by thinness once it lies on its side.
+**The Jade-Scaled Crocodile** (Nov 27): it drifts slowly through its video and lowers its head a second before it bites,
+so its idle is the calm second before that (2.0-3.1 s) and the bite takes the head-lowering (every 4th frame) as its
+wind-up. After the bite its head rested lower than the idle's (a double head where it dissolved back) and only rose again
+over the next 3 s, so a few spaced frames of that rise end the bite (spans of one frame each), and it settles into the
+idle with no double head; it still plays in 3 s.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its

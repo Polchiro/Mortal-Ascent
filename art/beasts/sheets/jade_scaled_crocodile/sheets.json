@@ -1,0 +1,48 @@
+{
+ "cell": [
+  539,
+  212
+ ],
+ "still": [
+  24.6,
+  13.8,
+  507.6,
+  196.2
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/jade_scaled_crocodile/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.0408
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/jade_scaled_crocodile/attack.webp",
+   "frames": 47,
+   "cols": 8,
+   "rows": 6,
+   "ms": 3000,
+   "bite": 22,
+   "reach": 0.0414,
+   "bite_x": 0.0019
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/jade_scaled_crocodile/hit.webp",
+   "frames": 23,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1917
+  },
+  "death": {
+   "src": "/art/beasts/sheets/jade_scaled_crocodile/death.webp",
+   "frames": 19,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1583,
+   "impact": 8
+  }
+ }
+}

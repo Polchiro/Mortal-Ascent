@@ -22,7 +22,7 @@ SIZE = 256
 FIX = {
     "abyss_crocodile": (0.35, 0, 1.6), "armored_boar_chief": (-0.08, 0.05, 1.3), "bifang_fire_crane": (-0.05, 0.05, 0.7),
     "crimson_fire_hawk": (0.12, 0.08, 0.9), "iron_hide_boar": (0, 0.05, 1.4),
-    "jade_scaled_crocodile": (0.05, 0, 1.5), "kun_peng_fish_of_the_northern_sea": (0.13, 0.25, 1.05),
+    "jade_scaled_crocodile": (0.3, -0.18, 1.7), "kun_peng_fish_of_the_northern_sea": (0.13, 0.25, 1.05),
     "spear_beak_crane": (0.3, 0, 0.7), "taotie_the_devourer": (-0.1, 0.35, 1.2),
     "tiangou_the_heavenly_hound": (-0.15, -0.1, 1.3), "wild_ox": (-0.1, 0, 1.3), "the_master": (0.2, 0.05, 1.0),
 }
