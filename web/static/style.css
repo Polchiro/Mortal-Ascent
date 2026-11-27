@@ -3055,3 +3055,17 @@ body.hudfolded .mhud .mhero::before,body.hudfolded .mhud .mhero::after{display:n
 body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,.6),0 0 6px rgba(201,164,92,.5)}
 @media (max-width:640px){.mhud .hfold,body.hudfolded .mhud .hfold{left:calc(var(--pw) * .2 - 6px);top:calc(var(--pw) * .275 - 14px);width:24px;height:24px}}
 @media (min-width:701px){.mhud .mbreak{left:calc(var(--pw) + 30px)}}       /* room for the fold button at the plate's edge */
+/* A strong beast comes alive (fight.js `aura`, `qiCrack`, `departs`; SHOAIB Nov 27). Roused (after its final roar it
+   hits harder): its aura turns to the blood aura's red and pulses fast. Wounded (30% HP or less): its aura pulses faster. Your blows
+   make its aura flare as chips of its element burst off; as it dies its spirit rises away slowly and fades. All
+   fades and size changes only, so they stay cheap to draw. */
+.baura.low img{animation-duration:1.7s}
+.baura.rage img{animation:baurarage .8s ease-in-out infinite}
+@keyframes baurarage{0%,100%{opacity:.75}50%{opacity:1}}
+.baura.flare{animation:baurflare .45s ease-out}
+@keyframes baurflare{0%{opacity:var(--ao)}25%{opacity:1;transform:scale(1.06)}100%{opacity:var(--ao)}}
+.beburst.bechip{z-index:5;animation-duration:.6s}
+.bavatar.depart{animation:bdepart 3.1s ease-out forwards}
+@keyframes bdepart{0%{opacity:0;transform:translate(-50%,-100%) scale(1)}15%{opacity:.75;transform:translate(-50%,-104%) scale(1.15)}
+  100%{opacity:0;transform:translate(-50%,-150%) scale(1.45)}}
+@media (prefers-reduced-motion:reduce){.baura.rage img,.baura.low img{animation-duration:3.4s}}
