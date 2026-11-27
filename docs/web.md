@@ -893,7 +893,9 @@ a lair is fought with `bot/hunt.py`.
      jade mountain behind, its roots at the feet), `figure` (Iron Cloth's steel echo; Mist Steps' three mist figures)
      and `trail`, `feathers` (Crane Wing), `push` (Thousand Hands' counter). Earth gets the most pieces, Mortal the
      fewest. The pieces carry no CSS filter (each is painted with its own glow), so they cost little on a phone; with
-     LITE fewer palms and hands are drawn. Heaven keeps its videos.
+     LITE fewer palms and hands are drawn. Every piece fits the scene: no wider than the room on either side
+     of its spot (a fighter near an upright phone's edge) and the mountain no taller than the scene allows (a
+     sideways phone). Measured against the old single pictures: the same main-thread work. Heaven keeps its videos.
      **Heaven techniques: the long play (Nov 24). SHOAIB's rule for the grade:** every Heaven technique plays long
      (about 5 to 7 s) and special: "Heaven Technique" and its name written large in gold, a moving effect cut from
      his video of it with the video's own sound, the damage written large when the blow lands, and a Skip button.

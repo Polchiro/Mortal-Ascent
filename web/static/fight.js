@@ -1693,6 +1693,10 @@
     function part(made, src, p, w, life, frames, opt) {
       if (!src) return null;
       opt = opt || {};
+      /* it always fits the scene: no wider than the room on either side of its spot (a fighter near a phone's edge),
+         and with `tall` (its height / width) no taller than `maxH` of the scene (a short sideways phone) */
+      if (!opt.free) w = Math.min(w, Math.max(2 * Math.min(p[0], 100 - p[0]) - 2, w * 0.45));
+      if (opt.tall) w = Math.min(w, scene.clientHeight * (opt.maxH || 0.6) / opt.tall / W * 100);
       var n = document.createElement('img');
       n.className = 'tart tpart'; n.src = src; n.alt = '';
       n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%';
@@ -1838,7 +1842,8 @@
         },
         rise: function (h) {                                         // Mountain-Shattering Fist: a mountain bursts up under it
           if (h >= 0 && once('mountain')) {
-            var n = pic(X.art[0], 'trock', at(br, 0.4, 0.99), 46, 1700);
+            var rw = Math.min(46, scene.clientHeight * 0.62 / (618 / 900) / W * 100 / BIG);   // no taller than the scene allows (a sideways phone)
+            var n = pic(X.art[0], 'trock', at(br, 0.4, 0.99), rw, 1700);
             n.animate([{transform: 'translate(-50%,-100%) translateY(55%) scale(0.9,0.25)', opacity: 0}, {transform: 'translate(-50%,-100%) translateY(-4%) scale(1.04,1.08)', opacity: 1, offset: 0.13},
               {transform: 'translate(-50%,-100%) scale(1)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-100%) translateY(2%) scale(1.02)', opacity: 1, offset: 0.7},
               {transform: 'translate(-50%,-100%) translateY(10%) scale(1.04)', opacity: 0}], {duration: 1650, easing: 'ease-out', fill: 'forwards'});
@@ -1848,7 +1853,7 @@
               {transform: 'translate(-50%,-50%) scale(1.04)', opacity: 0}], {under: fighter});
             part(made, P.debris, [g[0] + 2, g[1] - 10], 40 * BIG, 1150, [{transform: 'translate(-50%,-10%) scale(0.3) rotate(-8deg)', opacity: 0},   // its rocks flung up and out
               {transform: 'translate(-50%,-55%) scale(0.95) rotate(0)', opacity: 1, offset: 0.25}, {transform: 'translate(-48%,-75%) scale(1.12) rotate(6deg)', opacity: 0.85, offset: 0.55},
-              {transform: 'translate(-46%,-30%) scale(1.2) rotate(12deg)', opacity: 0}], {easing: 'cubic-bezier(.2,.7,.4,1)'});
+              {transform: 'translate(-46%,-30%) scale(1.2) rotate(12deg)', opacity: 0}], {easing: 'cubic-bezier(.2,.7,.4,1)', tall: 453 / 800, maxH: 0.5});
             for (var i = 0; i < 12; i++) {
               var a = Math.PI * (1.08 + 0.84 * i / 11), dd = 60 + Math.random() * 150;
               fx('pdebris' + (i % 3 ? '' : ' hot'), g[0], g[1] - 2, 1000, {'--dx': Math.cos(a) * dd + 'px', '--dy': Math.sin(a) * dd + 'px',
@@ -1885,7 +1890,7 @@
               part(made, P.water, mid, ww, 1250, [{transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(0.6,0)', opacity: 0},
                 {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1,0.25)', opacity: 1, offset: 0.14},
                 {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1,1)', opacity: 1, offset: 0.4},
-                {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1.03,1.15)', opacity: 0}]);
+                {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1.03,1.15)', opacity: 0}], {free: true});
             }
           }
           if (h >= 160 && once('land')) lands();
@@ -2202,7 +2207,7 @@
       var wide = function (aspect, share) { return bodyH * share / aspect / W * 100; };   // wide enough to stand `share` of the body tall
       var FX = null, sheen = null, sheenLit = null;
       var FORM = {                                                  // the effect forms as the stance settles, and stays to the end
-        dust: function () { FX = art('', feet, bodyW * 3.4, true);
+        dust: function () { FX = art('', feet, Math.min(bodyW * 3.4, Math.max(2 * feet[0] - 2, bodyW * 1.6)), true);   // inside the scene, near a phone's edge too
           part(made, P.hit, [feet[0], feet[1] + 1], bodyW * 2.6, 900, [{transform: 'translate(-50%,-70%) scale(0.3,0.5)', opacity: 0},   // the stomp throws up a ring of dust
             {transform: 'translate(-50%,-70%) scale(1)', opacity: 0.95, offset: 0.25}, {transform: 'translate(-50%,-74%) scale(1.15)', opacity: 0}], {under: fighter});
           FX.animate([{transform: 'translate(-50%,-60%) scale(0.25)', opacity: 0}, {transform: 'translate(-50%,-60%) scale(1)', opacity: 1, offset: 0.3},
@@ -2499,10 +2504,11 @@
       function afterimages() {                                       // left where she stood, behind her
         if (P.figure && !X.sheets) {                                 // Mist Steps: three mist figures where she stood, streaming off on a trail
           var life2 = PLAYED - STEP_IN, fw = wide(374 / 600, 1.05), hit = (HIT - STEP_IN) / life2;
-          part(made, P.trail, [stood[0] - 4, stood[1] + 2], fw * 1.9, life2, [{transform: 'translate(-60%,-50%) scale(0.3,0.6)', opacity: 0},
-            {transform: 'translate(-60%,-50%) scale(1)', opacity: 0.8, offset: hit}, {transform: 'translate(-75%,-50%) scale(1.15,1)', opacity: 0}], {under: fighter});
+          var gap = Math.min(3.5, stood[0] * 0.2);                   // the echoes behind her: closer together near a phone's edge
+          part(made, P.trail, [stood[0] - gap, stood[1] + 2], fw * 1.9, life2, [{transform: 'translate(-50%,-50%) scale(0.3,0.6)', opacity: 0},
+            {transform: 'translate(-50%,-50%) scale(1)', opacity: 0.8, offset: hit}, {transform: 'translate(-62%,-50%) scale(1.1,1)', opacity: 0}], {under: fighter});
           [0, 1, 2].forEach(function (k) {
-            var n = part(made, P.figure, [stood[0] - 3.5 * k, stood[1]], fw, life2, [{transform: 'translate(-50%,-50%) scale(0.92)', opacity: 0},
+            var n = part(made, P.figure, [stood[0] - gap * k, stood[1]], fw, life2, [{transform: 'translate(-50%,-50%) scale(0.92)', opacity: 0},
               {transform: 'translate(-50%,-50%) scale(1)', opacity: 0.85 - 0.25 * k, offset: hit * 0.8},
               {transform: 'translate(-56%,-50%) scale(1.04,1)', opacity: 0.8 - 0.25 * k, offset: hit},
               {transform: 'translate(-80%,-52%) scale(1.12,1)', opacity: 0}], {under: fighter, delay: 70 * k});
