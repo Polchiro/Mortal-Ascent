@@ -15,6 +15,13 @@ buttons; it walks the town as soon as its sheet is added.
 
 ## The map
 
+- **Opening fast** (Nov 27, SHOAIB: coming back from Spar or Practice showed a black screen for a moment). The
+  ground is a big picture (75 MB once decoded), so the page draws a small copy (`art/maps/town_preview.webp`, 1536 px,
+  made with the ground by `make_town_ground`) and the big one once the browser has decoded it in the background
+  (`decode()`, so no frame freezes on it); the map fades in instead of popping out of black. The server also stopped
+  making the browser ask about every picture before showing it (`web/app.py` ART_CACHE: shown at once, checked in
+  the background) and lets it keep each version of the site's style and scripts (VERSIONED), so a return to town
+  no longer waits on some sixty "still the same?" questions.
 - **Built from pieces.** Nothing is a stretched painting. The ground (`art/maps/town.webp`, 6144 x 3072 for the
   32 x 32 tile diamond, 2:1, 128 x 64 world px a tile) is painted in code by `scripts/make_town_ground.py` from
   four textures (`art/maps/town/tex/`: grass, dirt, stone paving, forest floor; the top faces of SHOAIB's Gemini

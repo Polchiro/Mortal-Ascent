@@ -81,6 +81,10 @@
   if (IDLE) { idle = new Image(); idle.src = IDLE.src; }
 
   // this place (load() sets them; a new place swaps them all)
+  /* the map fades in once there is ground to show (a blurry small copy first, if the place has one), instead of
+     a black screen popping into the town */
+  var smallGround = null, faded = false, paintedOk = true;
+  function shown() { if (!faded) { faded = true; cv.classList.add('shown'); } }
   var PLACE, SIZE, AREA, BLOCKED, REACH, NPCS, PIECES, INSET, EXITS, SPOTS, K = 1, Z = 1, painted, GROUND, TONE, LIGHTS, ATMOS, TRIGGER;
   var HERBS = [], FINDS = [], BEASTS = [], SEAMS = [], MINE = null, WORLD = {}, IMGS = {};
   var SHEETS = cfg.sheets || {}, OTHERS = {};   // the other players walking here (/world/others), by tag
@@ -106,6 +110,7 @@
   }
 
   var cv = document.getElementById('map'), ctx = cv.getContext('2d'), W = 0, H = 0, DPR = 1, S = 1;
+  cv.classList.add('fadein'); setTimeout(shown, 4000);         // shown by 4 s whatever happens
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2); W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
@@ -250,7 +255,12 @@
     // the ground: one picture (the town), or a big land's chunks, fetched as you come near them, over a small
     // picture of the whole land that shows until they arrive
     GROUND = typeof c.ground === 'string' ? null : c.ground;
-    painted = new Image(); painted.src = GROUND ? GROUND.preview : c.ground;
+    painted = new Image(); painted.src = GROUND ? GROUND.preview : c.ground; paintedOk = !c.preview;
+    if (!paintedOk) {                                  // the big town picture is drawn once it is decoded (off the page's
+      var pd = painted;                                // thread), not decoded by the first frame that draws it, which froze the page
+      (pd.decode ? pd.decode() : Promise.reject()).catch(function () {}).then(function () { if (painted === pd) paintedOk = true; });
+    }
+    smallGround = null; if (!GROUND && c.preview) { smallGround = new Image(); smallGround.src = c.preview; }   // the town, small, until the big one is in
     if (GROUND) { GROUND.px = GROUND.chunk / GROUND.f; GROUND.got = {}; GROUND.set = {}; GROUND.have.forEach(function (k) { GROUND.set[k] = 1; }); }
     PIECES.forEach(function (p) {
       p.pic = p.env ? toned(p.src, p.lit) : plain(p.src);
@@ -1520,7 +1530,9 @@
     ty = vh >= full ? full / 2 : Math.max(vh / 2, Math.min(full - vh / 2, ty));
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12;
     ctx.setTransform(DPR * S, 0, 0, DPR * S, DPR * (W / 2 - cam.x * S), DPR * (H / 2 - cam.y * S));
-    if (painted.complete && painted.naturalWidth) ctx.drawImage(painted, -half, 0, SIZE * TW, full);
+    if (paintedOk && painted.complete && painted.naturalWidth) { ctx.drawImage(painted, -half, 0, SIZE * TW, full); shown(); }
+    else if (smallGround && smallGround.complete && smallGround.naturalWidth) { ctx.drawImage(smallGround, -half, 0, SIZE * TW, full); shown(); }
+    else if (GROUND) shown();
     if (GROUND) drawChunks(half, vw, vh);
     if (debug) drawDebug();
     drawShadows();

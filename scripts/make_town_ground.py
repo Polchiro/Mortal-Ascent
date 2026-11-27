@@ -182,8 +182,11 @@ def main(argv):
             lift(src, os.path.join(TEX, f"{name}.png"))
             Image.open(os.path.join(TEX, f"{name}.png")).save(os.path.join(TEX, f"{name}.webp"), "WEBP", quality=92)
             os.remove(os.path.join(TEX, f"{name}.png"))
-    paint(textures()).save(OUT, "WEBP", quality=84, method=6)
-    print(f"wrote {OUT}")
+    ground = paint(textures())
+    ground.save(OUT, "WEBP", quality=84, method=6)
+    # and a small copy the page draws while the big one is still decoding (web/town.py PREVIEW)
+    ground.resize((1536, 768), Image.LANCZOS).save(OUT.replace(".webp", "_preview.webp"), "WEBP", quality=72, method=6)
+    print(f"wrote {OUT} and its preview")
 
 
 if __name__ == "__main__":

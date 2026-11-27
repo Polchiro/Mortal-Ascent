@@ -1489,6 +1489,7 @@ body.huntmap{--ag:#C9A45C;--ag2:#EBCB86;--ag3:#F6E2B0;--jd:#4FC79B;background:#0
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 body.huntmap .privacy{display:none}
 #map{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#map.fadein{opacity:0;transition:opacity .35s ease-out}#map.fadein.shown{opacity:1}
 .mhud{position:fixed;left:16px;top:14px;z-index:2;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .mplate{padding:10px 14px;border-radius:6px;background:linear-gradient(180deg,rgba(24,24,28,.86),rgba(12,12,15,.9));border:1px solid rgba(201,164,92,.38);
   box-shadow:0 10px 26px rgba(0,0,0,.4);color:#E6DFCF}

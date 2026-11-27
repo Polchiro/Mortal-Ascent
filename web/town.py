@@ -23,6 +23,7 @@ import os
 NAME = "Azure Cloud Town"
 SIZE = 32
 ART = "/art/maps/town.webp"
+PREVIEW = "/art/maps/town_preview.webp"   # a small copy (1536 px wide, 50 KB) drawn until the big one is decoded
 KIT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "maps", "town", "kit.json")
 START = (26.0, 16.3)                 # on the road, just inside the gate
 REACH = 1.5                          # how close (tiles) you must be to someone to talk to them
@@ -303,7 +304,7 @@ def page_data(sheet, near=None):
              "flip": n.get("flip", False)} for n in NPCS]
     exits = [{k: e[k] for k in ("key", "name", "title", "x", "y", "line", "go")} |
              {"exit": True, "glow": list(e.get("glow", (e["x"], e["y"])))} for e in EXITS]
-    return {"sheet": sheet, "size": SIZE, "ground": ART, "area": [list(p) for p in AREA], "inset": INSET,
+    return {"sheet": sheet, "size": SIZE, "ground": ART, "preview": _have(PREVIEW), "area": [list(p) for p in AREA], "inset": INSET,
             "blocked": [list(c) for c in BLOCKED] + [[p["x"], p["y"], p["r"]] for p in PROPS], "pieces": placed(),
             "reach": REACH, "scale": SCALE, "hero": {"x": START[0], "y": START[1]},
             "near": near if any(n["key"] == near for n in NPCS) else None, "npcs": npcs, "exits": exits}

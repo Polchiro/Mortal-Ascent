@@ -30,6 +30,8 @@ def test_the_painting_fills_the_grid():
     from PIL import Image
     im = Image.open(os.path.join(ROOT, town.ART.lstrip("/")))
     assert im.width == 2 * im.height and im.width >= town.SIZE * 128      # 2:1, at least the world's size
+    small = Image.open(os.path.join(ROOT, town.PREVIEW.lstrip("/")))          # the copy shown while it decodes
+    assert small.width == 2 * small.height and small.width <= im.width // 4
 
 
 def test_you_can_walk_up_to_everyone_from_the_gate():
@@ -133,6 +135,7 @@ def test_everyone_with_a_walking_sheet_walks_the_town(client):
     assert r.status_code == 200 and 'id="map"' in r.text and "/static/town.js" in r.text
     data = json.loads(re.search(r'id="mapdata">(.*?)</script>', r.text, re.S).group(1))
     assert data["sheet"]["src"].endswith("hero_male_walk.webp") and data["ground"] == town.ART
+    assert data["preview"] == town.PREVIEW
     assert len(data["npcs"]) == len(town.NPCS) and data["hero"] == {"x": town.START[0], "y": town.START[1]}
     assert 'href="/town"' in client.get("/profile").text                                # the Town tab
     assert client.get(town.ART).status_code == 200 and client.get("/static/town.js").status_code == 200
