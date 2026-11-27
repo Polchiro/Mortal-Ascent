@@ -467,6 +467,15 @@ SAINT_MARKS = ("azure_dragon", "white_tiger", "kun_peng", "void_serpent", "ancie
 MARK_KINDS = ("claw", "bite", "fang", "gore", "tusk", "beak", "talon", "sting", "smash", "lash", "slash") + SAINT_MARKS
 
 
+def home_realm(name):
+    """The realm a beast belongs to in BEASTS (its rank in the world), whatever realm a fight scales it to: how mighty
+    it looks on the website (explore_play.beast_power, beast_scale). None for a name not in BEASTS."""
+    for realm, rows in BEASTS.items():
+        if any(row[0] == name for row in rows):
+            return realm
+    return None
+
+
 def attack_marks(name):
     """The marks this beast's blows leave (ATTACK_MARKS); a beast not listed yet: its claws, or the one slash."""
     return list(ATTACK_MARKS.get(name) or (("claw",) if has_claws(name) else ("slash",)))

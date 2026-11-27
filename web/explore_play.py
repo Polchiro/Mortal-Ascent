@@ -65,6 +65,19 @@ def beast_power(realm):
     return POWER_BY_REALM.get(realm, 0)
 
 
+# How big a beast stands in the fight (fight.js `sized`; SHOAIB Nov 26-27: the beasts looked too small, and a Martial
+# Saint like the Kun-Peng should be huge): a Mortal beast as before, each realm up 6.5% bigger (a Martial Saint 65%),
+# an Elite 8% more, a Beast King 16% more. The page shrinks it back where it would cover the cultivator or leave the
+# top of the scene. Presentation only.
+SIZE_PER_REALM, SIZE_BY_TIER = 0.065, {"elite": 1.08, "beast_king": 1.16}
+
+
+def beast_scale(realm, tier):
+    import realms
+    step = realms.REALMS.index(realm) + 1 if realm in realms.REALMS else 0
+    return round((1 + SIZE_PER_REALM * step) * SIZE_BY_TIER.get(tier, 1.0), 3)
+
+
 def beast_roar(e):
     """What a beast's roar needs on the page (fight.js `roar`, `roaring`): where its mouth is on its picture
     (art/beasts/heads.json, scripts/make_roar_fx.py), which roar its tier gets, its element's colour, and its body's
@@ -73,7 +86,9 @@ def beast_roar(e):
     its mouth at `head_open` (heads.json "<slug>@roar"); None: it roars with its standing picture. `element`: its
     element in lower case, for the roar's own blast, burst and ground patch (art/fx/elem/); None without them.
     `marks`: the marks its blows leave on you (beasts.ATTACK_MARKS, art/fx/marks/). `power`: how strong it looks
-    (`beast_power`): its aura, the formation circle under its roar, its spirit rising behind it."""
+    (`beast_power`): its aura, the formation circle under its roar, its spirit rising behind it. `scale`: how big
+    it stands (`beast_scale`). Both go by the beast's own realm (beasts.home_realm), not the realm a fight scales it
+    to: in a hunt every beast is scaled to the player, and a Wild Boar must not look like a Martial Saint."""
     global _heads
     if _heads is None:
         try:
@@ -89,6 +104,7 @@ def beast_roar(e):
     move = beasts.ROAR_ANIMATIONS[cat] if cat else None
     slug = e.get("slug") or ""
     elem = (e.get("element") or "").lower()
+    home = beasts.home_realm(e.get("name") or "")             # its own rank, not the realm the fight scaled it to
     roar_pic = os.path.join(os.path.dirname(POSES_DIR), "roar", slug + ".png") if move and slug else None
     opened = _heads.get(slug + "@roar")
     return {"head": head[:2] if head else None, "height": head[2] if head else 0.8,
@@ -97,7 +113,8 @@ def beast_roar(e):
             "element": elem if elem and os.path.exists(os.path.join(ELEM_DIR, elem + "_stream.webp")) else None,
             "claws": beasts.has_claws(e.get("name") or ""),
             "marks": beasts.attack_marks(e.get("name") or ""),
-            "power": beast_power(e.get("realm") or ""),
+            "power": beast_power(home or ""),
+            "scale": beast_scale(home or "", e.get("tier")),
             "head_open": opened[:2] if opened else None,
             "wave": {"elite": "double", "beast_king": "burst"}.get(e.get("tier"), "ring"),
             "color": "#%02X%02X%02X" % accent.bright if accent else "#E8E2D0",

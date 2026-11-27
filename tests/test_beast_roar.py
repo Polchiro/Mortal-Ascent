@@ -318,3 +318,19 @@ def test_strong_beasts_look_strong():
     assert explore_play.beast_roar({"name": "Wild Boar", "slug": "wild_boar", "realm": "Mortal", "tier": "normal"})["power"] == 0
     saints = [n for n in beasts.TRAITS if beasts.ATTACK_MARKS[n][0] in beasts.SAINT_MARKS]
     assert len(saints) == 6 and len({beasts.ATTACK_MARKS[n][0] for n in saints}) == 6
+
+
+def test_a_beast_looks_as_mighty_as_its_own_realm_not_the_one_it_is_scaled_to():
+    """In a hunt every beast is scaled to the player's realm; how big and mighty it LOOKS goes by its own rank
+    (beasts.home_realm): a Wild Boar met by a Martial Saint is still a small plain boar, the Kun-Peng is huge."""
+    boar = explore_play.beast_roar({"name": "Wild Boar", "slug": "wild_boar", "element": "Earth", "tier": "normal",
+                                    "realm": "Martial Saint"})
+    assert boar["power"] == 0 and boar["scale"] == 1.0
+    kun = explore_play.beast_roar({"name": "Kun-Peng, Fish of the Northern Sea", "slug": "kun_peng_fish_of_the_northern_sea",
+                                   "element": "Frost", "tier": "normal", "realm": "Mortal"})
+    assert kun["power"] == 4 and kun["scale"] == 1.65
+    assert explore_play.beast_scale("Martial Saint", "beast_king") > explore_play.beast_scale("Martial Saint", "elite") > 1.65
+    for name in beasts.TRAITS:
+        assert beasts.home_realm(name), name
+    sizes = [explore_play.beast_scale(r, "normal") for r in ["Mortal"] + __import__("realms").REALMS]
+    assert sizes == sorted(sizes) and sizes[0] == 1.0

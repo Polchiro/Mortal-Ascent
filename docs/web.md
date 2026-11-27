@@ -700,7 +700,16 @@ a lair is fought with `bot/hunt.py`.
    brighter each realm, gone as it falls), and a formation circle of its colour flares on the ground under it as it
    roars (`sigil`, `art/fx/elem/sigil_{1,2,3}.webp`: King and Emperor, Ancestor, Saint). From Martial Ancestor up its
    spirit rises behind it as it roars (`avatar`: a giant glowing ghost of its own picture in its element's light).
-   SHOAIB's pictures, cleaned by `scripts/make_element_fx.py`. Presentation only.
+   SHOAIB's pictures, cleaned by `scripts/make_element_fx.py`. The aura moves with the beast as it lunges.
+   Power and size both go by the beast's **own realm** (`beasts.home_realm`: where it sits in `beasts.BEASTS`), never
+   the realm a fight scales it to (in a hunt every beast is scaled to the player, and a Wild Boar met by a Martial
+   Saint must still look like a boar). Presentation only.
+   **Strong beasts are bigger** (SHOAIB: "a Martial Saint beast like the Kun-Peng should be huge";
+   `explore_play.beast_scale`, `sized` in `fight.js`): a Mortal beast stands as before, each realm up 6.5% bigger (a
+   Martial Saint 65%), an Elite 8% more and a Beast King 16% more. The beast's frame itself is made bigger (not
+   zoomed, so every movement, roar and mark keeps lining up), anchored where it stands so it grows up and toward you,
+   but never so big that its picture leaves the top of the scene (80% of its height at most) or reaches the
+   cultivator; on a narrow phone that caps every big beast at the same size. Re-measured on every new page and resize.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
