@@ -440,3 +440,12 @@ def test_the_living_background_carries_over_from_turn_to_turn():
     body = js.split("function keepScene(now, fresh) {", 1)[1].split("\n  }\n", 1)[0]
     for piece in ("'--arena-size', '--arena-pos'", "'bglive'", "video.bgloop, .bgshade", "canvas.ambient"):
         assert piece in body
+
+
+def test_idle_loops_go_on_where_they_were_across_turns():
+    """SHOAIB (Nov 28): the "refresh" was the hero's stance and the beast's idle starting over each time the turn's
+    page was swapped. Every looping animation is read off the old page and set on the new one, by place and name,
+    allowing for each loop's own start offset."""
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "var loops = loopsOf(now);" in js and "init();                                                     // still locked: the new buttons are painted as such\n    resumeLoops(fresh, loops);" in js
+    assert "a.currentTime - (a.effect.getTiming().delay || 0)" in js and "loops[k] + (a.effect.getTiming().delay || 0)" in js

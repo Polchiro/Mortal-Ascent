@@ -1421,6 +1421,10 @@ moves the playing background videos, their shading, the ambience canvas, the `bg
 (`--arena-size`, `--arena-pos`) into the new page before it goes in, in the same moment, so the videos never stop.
 Before, the new page came without them and for a moment the still painting showed, brighter and framed differently,
 until the video was put back and restarted (SHOAIB: "a sudden refresh on screen whenever I click").
+The looping animations carry on too (Nov 28, `loopsOf` / `resumeLoops` in `fight.js`): before the swap each infinite
+CSS animation's place in its loop is read (by its element's place in the page and its name, allowing for its own start
+offset), and the new page's same loops are set to it once it is in. Before, the hero's stance went back to its first
+frame on every turn, and that snap, on every click, was most of the "refresh" he still felt after the videos were kept.
 
 ## Her movements
 
