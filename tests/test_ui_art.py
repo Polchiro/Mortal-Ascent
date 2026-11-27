@@ -17,9 +17,11 @@ def alpha(rel):
 
 def test_every_piece_is_there_with_clear_edges():
     rels = [rel for jobs in mua.JOBS.values() for _, _, rel in jobs]
-    assert len(rels) == len(set(rels)) == 50
+    assert len(rels) == len(set(rels)) == 63
     for rel in rels:
         a = alpha(rel)
+        if rel in mua.SHAPES:                                                  # a plate cut to its own square-cornered outline
+            continue
         assert a[:3, :3].max() <= 8 and a[-3:, -3:].max() <= 8, rel           # nothing left in the corners
         assert (a > 128).mean() > 0.03, rel
 
@@ -97,3 +99,36 @@ def test_the_beast_fight_spar_and_duel_use_the_painted_banners():
     for page in ("explore_play", "spar", "duel"):                                        # all share the .bme / .benemy plates
         t = open(f"web/templates/{page}.html").read()
         assert 'class="bme' in t and 'class="benemy' in t, page
+
+
+def test_the_move_pictures_are_one_size_discs_with_room_to_spill():
+    """The five move pictures (docs/web.md "Painted UI"): the disc the same size in every square, solid inside, so
+    each sits in its button's socket the same; the square clear at its corners for the sword, flames and sparks."""
+    for move in ("strike", "techniques", "guard", "break", "flee"):
+        a = alpha(f"icons/actions/{move}")
+        h, w = a.shape
+        assert abs(h - w) <= 1 and a[h // 2, w // 2] == 255, move
+        r = w / 2 / mua.DISC_REACH
+        assert a[h // 2, round(w / 2 - r * 0.9)] > 240 and a[h // 2, round(w / 2 + r * 0.9)] > 240, move
+        assert a[:4, :4].max() <= 8, move
+
+
+def test_the_break_button_has_no_teal_left_and_the_panel_no_tab():
+    import cv2
+    rgba = np.asarray(Image.open(os.path.join(ART, "ui/move_break.webp")).convert("RGBA"))
+    hsv = cv2.cvtColor(np.ascontiguousarray(rgba[..., :3]), cv2.COLOR_RGB2HSV)
+    right = (np.arange(rgba.shape[1]) >= rgba.shape[1] * 0.72)[None, :]
+    teal = right & (hsv[..., 0] >= 70) & (hsv[..., 0] <= 110) & (hsv[..., 1] > 30) & (hsv[..., 2] > 60) & (rgba[..., 3] > 128)
+    assert teal.sum() < 50
+    panel = np.asarray(Image.open(os.path.join(ART, "ui/fight_info.webp")).convert("RGB")).astype(int)
+    tab = panel[5:40, 40:140]                                               # where the gold tab was: the dark frame now
+    assert (tab[..., 0] - tab[..., 2]).mean() < 40
+
+
+def test_the_fight_screens_use_the_painted_moves():
+    css = open("web/static/style.css").read()
+    for piece in ("move_strike", "move_techniques", "move_guard", "move_break", "fight_side_pill", "fight_side_flee",
+                  "fight_info", "fight_info_tab"):
+        assert f"/art/ui/{piece}.webp" in css, piece
+    for src in ("web/explore_play.py", "web/static/duel.js", "web/static/spar.js"):           # Techniques: the book
+        assert "/art/icons/actions/techniques.webp" in open(src).read(), src

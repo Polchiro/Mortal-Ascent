@@ -2803,6 +2803,54 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   border-image:url(/art/ui/fight_pill.webp) 24 30 24 106 fill / 6px 12px 6px 38px / 0 stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
 .histbtn .hicon{margin-left:-31px;margin-right:8px}
 .histbtn:hover,.histbtn:focus-visible,.bhist[open]>.histbtn{filter:drop-shadow(0 0 10px rgba(255,214,140,.6))}
+
+/* ── The fight screens' bottom, painted (beast fight, spar, duel; scripts/make_ui_art.py, docs/web.md "Painted UI").
+   Each move sits in its own frame (art/ui/move_<move>.webp: steel for Strike, azure for Techniques, gold for Guard,
+   crimson for Break), its picture in the round socket, its name in the plate and its key in the hanging diamond;
+   hovering lights the frame in its own colour. Pill and Flee/Yield on their small frames, the "Your turn" panel on the
+   lacquer frame (a 9-slice) with the gold tab for its heading. Wide screens only, like the banners. ── */
+@media (min-width:901px){
+  .battle>.bbar{max-width:min(960px,100%,100vw - 640px)}
+  .bbar .actbtn{--mc:#EBCB86;container-type:inline-size;display:block;aspect-ratio:654/229;padding:0;border:0;border-radius:0;box-shadow:none;
+    background:url(/art/ui/move_strike.webp) 0 0/100% 100% no-repeat;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+  .bbar .actbtn:has(img[src*="/strike."]){--mc:#A9D2FF}
+  .bbar .techmenu>.actbtn{--mc:#4FB8FF;background-image:url(/art/ui/move_techniques.webp)}
+  .bbar .actbtn:has(img[src*="/guard."]){--mc:#FFD36A;background-image:url(/art/ui/move_guard.webp)}
+  .bbar .actbtn:has(img[src*="/break."]){--mc:#FF6A4A;background-image:url(/art/ui/move_break.webp)}
+  .bbar .actbtn img,.bbar .techmenu>.actbtn img{position:absolute;left:2.1cqw;top:2.57cqw;width:21.6cqw;max-width:none;height:21.6cqw;border-radius:0}
+  .bbar .actbtn .alab{position:absolute;left:27.2cqw;width:64.7cqw;top:6.72cqw;height:13.3cqw;display:flex;align-items:center;justify-content:center;
+    margin:0;font-size:max(12px,7cqw);line-height:1;letter-spacing:.4px;color:#F6EBD2;text-shadow:0 1px 3px #000,0 0 8px color-mix(in srgb,var(--mc) 45%,transparent)}
+  .bbar .techmenu>.actbtn .alab{top:6.2cqw;height:8.4cqw}
+  .bbar .actbtn .ast{position:absolute;left:27.2cqw;width:64.7cqw;top:14.2cqw;height:5.4cqw;display:flex;align-items:center;justify-content:center;
+    font-size:max(10px,4.6cqw);line-height:1}
+  .bbar .actbtn .ast:empty{display:none}
+  .bbar .actbtn .ano{left:54.5cqw;top:30cqw;bottom:auto;transform:translate(-50%,-50%);width:6cqw;height:6cqw;min-width:14px;min-height:14px;
+    display:grid;place-items:center;border:0;border-radius:0;background:none;font-size:max(10px,4.6cqw);line-height:1;color:#FFE7A8;text-shadow:0 1px 2px #000}
+  .bbar .actbtn:hover:enabled,.bbar .actbtn:focus-visible,.bbar .techmenu>.actbtn:hover,.bbar .techmenu[open]>.actbtn{transform:translateY(-3px);box-shadow:none;
+    filter:brightness(1.18) drop-shadow(0 0 9px var(--mc)) drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+
+  /* the pill and flee/yield buttons */
+  .bside .sidebtn{container-type:inline-size;position:relative;display:block;width:200px;aspect-ratio:419/158;padding:0;border:0;border-radius:0;box-shadow:none;
+    background:url(/art/ui/fight_side_flee.webp) 0 0/100% 100% no-repeat;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+  .bside .sidebtn img{position:absolute;left:5.5cqw;top:calc(50% - 11.2cqw);width:22.4cqw;height:22.4cqw;border-radius:0;object-fit:contain}
+  .bside .sidebtn span{position:absolute;left:30.8cqw;width:60.8cqw;top:25.3%;height:49.4%;display:flex;align-items:center;justify-content:center;
+    text-align:center;white-space:normal;font-size:max(11.5px,6.6cqw);line-height:1.1;color:#F1E6D2}
+  .bside .sidebtn[value=pill]{aspect-ratio:432/129;background-image:url(/art/ui/fight_side_pill.webp)}
+  .bside .sidebtn[value=pill] img{left:6.4cqw;top:calc(50% - 8.6cqw);width:17.2cqw;height:17.2cqw;border-radius:50%;object-fit:cover}
+  .bside .sidebtn[value=pill] span{left:31.7cqw;width:59cqw;top:21.7%;height:55.8%}
+  .bside .sidebtn:hover:enabled,.bside .sidebtn:focus-visible{filter:brightness(1.15) drop-shadow(0 0 8px rgba(255,214,140,.55)) drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+
+  /* the "Your turn" panel and its gold tab */
+  .battle>.binfo{position:relative;padding:22px 18px 14px;border:12px solid transparent;border-radius:0;background:none;
+    border-image:url(/art/ui/fight_info.webp) 100 fill / 34px / 0 stretch;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+  main.battle .binfo .turnchip{position:absolute;left:4px;top:-26px;margin:0!important;width:150px;height:40px;padding:0 0 6px;justify-content:center;
+    border:0;border-radius:0;background:url(/art/ui/fight_info_tab.webp) 0 0/100% 100% no-repeat;color:#3A2410;text-shadow:0 1px 0 rgba(255,240,200,.5)}
+  main.battle .binfo .turnchip::before{background:#1E7A4C;box-shadow:0 0 6px rgba(30,122,76,.8)}
+  main.battle:not([data-phase=player_turn]) .binfo .turnchip{color:#3A2410;background:url(/art/ui/fight_info_tab.webp) 0 0/100% 100% no-repeat}
+  main.battle:not([data-phase=player_turn]) .binfo .turnchip::before{background:#6B6B6B;box-shadow:none}
+  main.battle[data-phase=beast_acting] .binfo .turnchip::before{background:#B0281C}
+}
+@media (min-width:901px) and (max-width:1400px){.bside .sidebtn{width:160px}.battle>.bbar{max-width:min(960px,100%,100vw - 560px)}}
 /* a strong beast's presence (fight.js `aura`, `sigil`, `avatar`; explore_play.beast_power): its aura, breathing like a
    living flame in two copies out of step; the formation circle flaring under its roar; its spirit rising behind it */
 .baura{position:absolute;pointer-events:none;opacity:var(--ao);transition:opacity .8s ease}

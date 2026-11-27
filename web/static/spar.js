@@ -195,7 +195,7 @@
     bar.appendChild(button(by.strike, 1));
     var menu = document.createElement('details');
     menu.className = 'techmenu' + (ready.length ? '' : ' off') + (open ? ' opening' : '');
-    menu.innerHTML = '<summary class="actbtn"><img src="/art/icons/actions/attack_tech.webp" alt="" width="104" height="104">' +
+    menu.innerHTML = '<summary class="actbtn"><img src="/art/icons/actions/techniques.webp" alt="" width="104" height="104">' +
       '<span class="alab">Techniques</span><span class="ast"></span><span class="ano">2</span></summary><div class="techpop" role="menu"></div>';
     menu.querySelector('.ast').textContent = techs.length ? (open ? 'Opening!' : ready.length ? ready.length + ' ready' : 'Resting') : 'None equipped';
     var about = {label: 'Techniques', state: '', info: 'An attack technique counts as a Strike, a defense technique as a Guard. ' +
