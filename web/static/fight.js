@@ -509,6 +509,7 @@
     var played = fresh.dataset.round !== now.dataset.round      // a turn of the fight was played: there is something to act out
       || (!!fresh.dataset.end && !now.dataset.end);             // ... or it was the winning turn (the round count stops there)
     keepHistory(now, fresh);
+    keepScene(now, fresh);
     now.replaceWith(fresh);                                     // same scroll position: nothing jumps
     init();                                                     // still locked: the new buttons are painted as such
     if (!moved) {                                               // the move never arrived: nothing happened, pick again
@@ -532,6 +533,29 @@
   }
 
   /* Battle History stays open (and scrolled to the top, where the newest turn is) when the next turn comes in */
+  /* The living background carries over from turn to turn (SHOAIB, Nov 27: "a sudden refresh on screen whenever I click"):
+     the playing background videos and their shading, the drifting snow or mist canvas, and the framing that lines the
+     painting up with the fighters' feet (ambient.js) move into the new page as they are. Before, the new page came
+     without them: for a moment the still painting showed, framed a little differently and brighter, until ambient.js
+     put a video back and started it again, and the shading faded back in. Moved and put back in the same moment, the
+     videos never stop playing. */
+  function keepScene(now, fresh) {
+    ['--arena-size', '--arena-pos'].forEach(function (k) {
+      var v = now.style.getPropertyValue(k);
+      if (v) fresh.style.setProperty(k, v);
+    });
+    if (now.classList.contains('bglive')) fresh.classList.add('bglive');
+    var back = Array.prototype.filter.call(now.children, function (n) {
+      return n.matches('video.bgloop, .bgshade');
+    });
+    for (var i = back.length - 1; i >= 0; i--) {                // same order, at the very back of the new page
+      if (back[i].matches('.bgshade')) { var old = fresh.querySelector(':scope > .bgshade'); if (old) old.remove(); }
+      fresh.insertBefore(back[i], fresh.firstChild);
+    }
+    var cv = now.querySelector('.bscene > canvas.ambient'), sc = fresh.querySelector('.bscene');
+    if (cv && sc) sc.insertBefore(cv, sc.firstChild);
+  }
+
   function keepHistory(now, fresh) {
     var a = now.querySelector('.bhist'), b = fresh.querySelector('.bhist');
     if (a && b && a.open) b.open = true;

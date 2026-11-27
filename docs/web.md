@@ -1416,6 +1416,12 @@ fight.js) the canvas is drawn at sharpness 1 and about 30 times a second. In fig
 worked out every 128 samples, and the room and the noise buffer are both made on the player's first tap, so the
 first blow of a fight no longer freezes the page for a moment.
 
+**Across turns (Nov 27).** Each turn the fight page is swapped for the server's new one (fight.js `show`); `keepScene`
+moves the playing background videos, their shading, the ambience canvas, the `bglive` class and the ground framing
+(`--arena-size`, `--arena-pos`) into the new page before it goes in, in the same moment, so the videos never stop.
+Before, the new page came without them and for a moment the still painting showed, brighter and framed differently,
+until the video was put back and restarted (SHOAIB: "a sudden refresh on screen whenever I click").
+
 ## Her movements
 
 Her kick, Guard, fist, palm and finger are cut from SHOAIB's Nov 23 videos of her by `scripts/make_heroine_set.py`
