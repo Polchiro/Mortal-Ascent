@@ -2,7 +2,7 @@
 Techniques (docs/web.md "Techniques"): see what you have learned and choose what is equipped (web/techniques_play.py).
 
   GET  /techniques                         the sockets and every learned technique
-  POST /techniques/equip    form tech=<id>  equip it (the bot's own rule: a free socket, or in place of the oldest of its type)
+  POST /techniques/equip    form tech=<id> slot=<1-3>  equip it into that slot (what is there comes off; no slot: a free one, else the oldest)
   POST /techniques/unequip  form tech=<id>  take it off (one attack and one defense always stay)
 """
 from fastapi import Request
@@ -38,7 +38,8 @@ def add_routes(app, page, current_user, with_conn, form_of, num):
                 return go("/")
             form = await form_of(request)
             busy = tp.fighting(app.state, user["id"])
-            ok, message = await run_in_threadpool(with_conn, fn, user["id"], num(form.get("tech")), busy)
+            extra = (num(form.get("slot")),) if form.get("slot") else ()
+            ok, message = await run_in_threadpool(with_conn, fn, user["id"], num(form.get("tech")), busy, *extra)
             request.session["tech_notice"] = {"ok": ok, "text": message}
             return go("/techniques")
         return run

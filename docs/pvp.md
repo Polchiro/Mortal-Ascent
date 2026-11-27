@@ -38,8 +38,8 @@ the card `render_duel` in `cards/battle.py`.
 ## Turns
 
 - Both players **pick secretly at the same time**: Strike, Guard, Break, or an equipped technique
-  (Attack technique = a stronger Strike, Defense technique = a Guard with extras, Flex technique = either,
-  by its kind; the Flex button shows when either duelist has one). Techniques keep their
+  (Technique 1, 2 and 3 are the slots: an attack technique is a stronger Strike, a defense technique a Guard with
+  extras, whichever slot it is in; a slot's button shows when either duelist has a technique there). Techniques keep their
   normal per-grade cooldowns (technique.md), each slot on its own.
 - Every button press gets a **private reply** ("You chose Guard") that only the presser sees. The card only shows
   **LOCKED IN** for a player who has picked, never *what* they picked.

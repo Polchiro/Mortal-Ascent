@@ -49,18 +49,18 @@ def technique_view(t):
 
 
 def technique_slots(player, learned):
-    """The equipped sockets (technique.md): Attack, Defense, and Flex from Martial Warrior."""
-    equipped = [t for t in learned if t["equipped"]]
-    atk = [t for t in equipped if t["type"] == "attack"]
-    dfn = [t for t in equipped if t["type"] == "defense"]
-    flex_open = rules.technique_slots(player["realm"]) >= 3
-    extra = atk[1:] + dfn[1:]
-    return [
-        {"slot": "Attack", "icon": "fist", "tech": technique_view(atk[0]) if atk else None, "locked": False},
-        {"slot": "Defense", "icon": "shield", "tech": technique_view(dfn[0]) if dfn else None, "locked": False},
-        {"slot": "Flex", "icon": "star", "tech": technique_view(extra[0]) if (flex_open and extra) else None,
-         "locked": not flex_open, "note": "Opens at Martial Warrior" if not flex_open else "Attack or defense"},
-    ]
+    """The three technique slots (technique.md "Slots"): each takes an attack or a defense technique; slot 3 opens at
+    Martial Warrior."""
+    held = db.slotted([t for t in learned if t["equipped"]])
+    third = rules.technique_slots(player["realm"]) >= 3
+    out = []
+    for n in (1, 2, 3):
+        t = held.get(n)
+        locked = n == 3 and not third
+        out.append({"slot": f"Slot {n}", "no": n, "icon": ("fist" if t["type"] == "attack" else "shield") if t else "star",
+                    "tech": technique_view(t) if t and not locked else None, "locked": locked,
+                    "note": "Opens at Martial Warrior" if locked else "Attack or defense"})
+    return out
 
 
 def weapon_view(weapon):

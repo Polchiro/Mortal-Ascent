@@ -40,7 +40,7 @@ MAX_TIMEOUTS = 200
 ACTIONS = ("strike", "attack_tech", "defense_tech", "flex_tech", "pill", "guard", "break", "flee")
 MAIN = ("strike", "techniques", "guard", "break")             # the four big buttons, keys 1-4
 SIDE = ("pill", "flee")                                       # small buttons on the side: P and F
-ACTION_LABEL = {"strike": "Strike", "attack_tech": "Attack technique", "defense_tech": "Defense technique", "flex_tech": "Flex technique",
+ACTION_LABEL = {"strike": "Strike", "attack_tech": "Technique 1", "defense_tech": "Technique 2", "flex_tech": "Technique 3",
                 "pill": "Mending Pill", "guard": "Guard", "break": "Break", "flee": "Flee"}
 PATH_LABEL = {"left": "Left", "middle": "Ahead", "right": "Right"}
 POSES = looks.POSES                  # the fight script swaps these (docs/web.md)
@@ -602,14 +602,14 @@ def action(b, f, key):
 
 def actions(b, f):
     """The four big buttons (Strike, Techniques, Guard, Break) and the two small ones (Pill, Flee)."""
-    techs = [action(b, f, k) for k in ("attack_tech", "defense_tech") + (("flex_tech",) if f.flex_t else ())]
+    techs = [action(b, f, k) for k in ("attack_tech", "defense_tech", "flex_tech") if f.tech(k)]   # the filled slots
     main = []
     for i, key in enumerate(MAIN):
         if key == "techniques":
             ready = [t for t in techs if t["ready"]]
             main.append({"key": key, "no": i + 1, "label": "Techniques", "icon": "/art/icons/actions/techniques.webp",
                          "ready": bool(ready), "state": f"{len(ready)} ready" if ready else "Need Battle Qi",
-                         "info": "An attack technique counts as a Strike, a defense technique as a Guard (your Flex slot's too). "
+                         "info": "An attack technique counts as a Strike, a defense technique as a Guard, whichever slot it is in. "
                                  f"They spend Battle Qi: +{battle_rules.BATTLE_QI_PER_TURN} comes back every turn, "
                                  f"+{battle_rules.BATTLE_QI_GOOD_GUARD} more on a good Guard.", "techs": techs})
         else:
@@ -832,7 +832,7 @@ def events(log, f):
     skills = {v["name"]: v["fx"] for v in battle_rules.UNIQUE_SKILLS.values()}
     flex = getattr(f, "flex_t", None)
     techs = {t["name"] for t in (f.atk_t, f.def_t, flex) if t}
-    guards = {t["name"] for t in (f.def_t, flex) if t and t.get("type", "defense") == "defense"}
+    guards = {t["name"] for t in (f.atk_t, f.def_t, flex) if t and t.get("type") == "defense"}   # any slot
     for icon, text in log:
         mine = text.startswith(f.name + " — ")
         move = text[len(f.name) + 3:].split(":")[0] if mine else ""
@@ -847,7 +847,7 @@ def events(log, f):
             if move in guards:                                 # a defense technique: what it did with the beast's blow
                 ev.update(blocked="blocked" in text, hold=_number(text, r"holds (\d+)%"), heal=_number(text, r"recovered ([\d,]+)"),
                           counter=_number(text, r"countered for ([\d,]+)") + _number(text, r"counters for ([\d,]+)"))
-                if untouched(f.def_t, text):                 # an evade technique took the Strike untouched: sidestep
+                if any(untouched(t, text) for t in (f.def_t, flex, f.atk_t) if t and t.get("type") == "defense"):   # an evade technique: sidestep
                     ev["evaded"] = True
             out.append(ev)
         elif guards and text.startswith(f.name + SLIPPED):   # an evade technique dodged the Break: no damage at all
@@ -884,7 +884,7 @@ def events(log, f):
             dmg = _number(text, r"([\d,]+) dmg")
             out.append({"who": "ally", "name": who, "act": label.lower() if label in ("Strike", "Break") else "tech",
                         "hit": dmg > 0, "dmg": dmg})
-    used = next((t for t in (f.def_t, flex) if t and t.get("type", "defense") == "defense" and getattr(f, "last_move", None) == t["name"]), None)
+    used = next((t for t in (f.atk_t, f.def_t, flex) if t and t.get("type") == "defense" and getattr(f, "last_move", None) == t["name"]), None)
     if used and not any(x["who"] == "me" and x["act"] == "tech" for x in out):
         # the defence technique was used and the beast struck no blow at it (it Guarded, or was Staggered): the engine
         # logs nothing for it, but the cultivator still makes the movement (fight.js: "idle", nothing to take or slip)

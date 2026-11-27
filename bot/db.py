@@ -237,6 +237,7 @@ PLAYER_COLUMNS = {
 }
 TECHNIQUE_COLUMNS = {
     "stage": "INTEGER NOT NULL DEFAULT 0",   # mastery stage index; raised only by passing a trial
+    "slot": "INTEGER",                       # 1, 2 or 3 while equipped (technique.md "Slots"); see slotted()
 }
 
 BAG_STACKABLE = {"manuals", "pills", "herbs", "materials", "chests"}   # gear is unique (rolled buffs, slots)
@@ -506,43 +507,81 @@ def learn_technique(conn, user_id, name, type_, grade, slots=2, equip=True):
     return cur.lastrowid
 
 
-def bumped(equipped, type_, slots=2):
-    """The equipped technique that equipping one more of `type_` would take off, or None (a slot is free).
-    The rule of equip_technique: the oldest equipped of the same type, else the other type's oldest when two of
-    those are on."""
-    same = [t for t in equipped if t["type"] == type_]
-    other = [t for t in equipped if t["type"] != type_]
-    if len(same) >= slots - 1 or len(equipped) >= slots:
-        return same[0] if same else (other[0] if len(other) > 1 else None)
-    return None
+def slotted(equipped):
+    """{slot number: technique} for the equipped techniques (technique.md "Slots"). The three slots are free: any
+    mix of attack and defense. A technique keeps the slot it was put in (the `slot` column); one equipped before the
+    slots were free has none yet and gets the slot it held then: the first attack slot 1, the first defense slot 2,
+    any other the next free one."""
+    out, loose = {}, []
+    for t in sorted(equipped, key=lambda t: t["id"]):
+        s = t.get("slot")
+        if s in (1, 2, 3) and s not in out:
+            out[s] = t
+        else:
+            loose.append(t)
+    for want, kind in ((1, "attack"), (2, "defense")):
+        if want not in out:
+            t = next((x for x in loose if x["type"] == kind), None)
+            if t:
+                out[want] = t
+                loose.remove(t)
+    for t in loose:
+        free = [s for s in (1, 2, 3) if s not in out]
+        if free:
+            out[free[0]] = t
+    return out
 
 
-def equip_technique(conn, user_id, technique_id, slots=2):
-    """Equip a learned technique. Slots: 1 attack + 1 defense, plus a flex slot when slots == 3
-    (technique.md). Fills a free slot if there is one, otherwise replaces the oldest equipped
-    technique of the same type. Returns the replaced technique's name or None."""
+def free_slot(equipped, slots=2):
+    """The first empty slot among the open ones, or None when all are full."""
+    held = slotted(equipped)
+    return next((s for s in range(1, slots + 1) if s not in held), None)
+
+
+def bumped(equipped, type_=None, slots=2, slot=None):
+    """The equipped technique that equipping into `slot` would take off, or None (it is empty). Without a slot
+    (Discord's quick equip, Learn & equip) the technique goes to the first empty slot, or when all are full in place
+    of the one equipped longest ago. `type_` no longer matters: slots take either kind."""
+    held = slotted(equipped)
+    if slot is None:
+        if free_slot(equipped, slots):
+            return None
+        return min((t for s, t in held.items() if s <= slots), key=lambda t: t["id"], default=None)
+    return held.get(slot)
+
+
+def equip_technique(conn, user_id, technique_id, slots=2, slot=None):
+    """Equip a learned technique into `slot` (1..slots), taking off whatever is there. Without a slot: the first
+    empty one, or in place of the one equipped longest ago (bumped). Returns the replaced technique's name or None."""
     tech = get_technique(conn, user_id, technique_id)
     equipped = get_techniques(conn, user_id)
-    if not tech or tech["equipped"]:
+    if not tech or tech["equipped"] or (slot is not None and not 1 <= slot <= slots):
         return None
-    replaced = bumped(equipped, tech["type"], slots)
+    held = slotted(equipped)
+    replaced = bumped(equipped, tech["type"], slots, slot)
+    if slot is None:
+        slot = free_slot(equipped, slots) or next(s for s, t in held.items() if t["id"] == replaced["id"])
     with conn:
+        for s, t in held.items():                 # the slots everyone holds now are written down
+            if t.get("slot") != s:
+                conn.execute("UPDATE techniques SET slot = ? WHERE id = ?", (s, t["id"]))
         if replaced:
-            conn.execute("UPDATE techniques SET equipped = 0 WHERE id = ?", (replaced["id"],))
-        conn.execute("UPDATE techniques SET equipped = 1 WHERE id = ?", (technique_id,))
+            conn.execute("UPDATE techniques SET equipped = 0, slot = NULL WHERE id = ?", (replaced["id"],))
+        conn.execute("UPDATE techniques SET equipped = 1, slot = ? WHERE id = ?", (slot, technique_id))
     return replaced["name"] if replaced else None
 
 
 def unequip_technique(conn, user_id, technique_id):
-    """Unequip, as long as one technique of that type stays equipped. Returns True on success."""
+    """Take a technique off; its slot is left empty (no minimum: technique.md "Slots"). Returns True on success."""
     tech = get_technique(conn, user_id, technique_id)
     if not tech or not tech["equipped"]:
         return False
-    same = [t for t in get_techniques(conn, user_id) if t["type"] == tech["type"]]
-    if len(same) < 2:
-        return False
+    held = slotted(get_techniques(conn, user_id))
     with conn:
-        conn.execute("UPDATE techniques SET equipped = 0 WHERE id = ?", (technique_id,))
+        for s, t in held.items():
+            if t.get("slot") != s:
+                conn.execute("UPDATE techniques SET slot = ? WHERE id = ?", (s, t["id"]))
+        conn.execute("UPDATE techniques SET equipped = 0, slot = NULL WHERE id = ?", (technique_id,))
     return True
 
 

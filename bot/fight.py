@@ -35,8 +35,8 @@ from . import player as rules
 
 MOVES = ("strike", "guard", "break")
 BASE_MOVE = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "strike", "defense_tech": "guard"}
-TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")   # flex_tech: the Flex slot's technique, a Strike or a Guard by its kind
-TECH_KEY_LABEL = {"attack_tech": "Attack technique", "defense_tech": "Defense technique", "flex_tech": "Flex technique"}
+TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")   # technique slots 1, 2, 3 (names kept): each a Strike or a Guard by its kind
+TECH_KEY_LABEL = {"attack_tech": "Technique 1", "defense_tech": "Technique 2", "flex_tech": "Technique 3"}   # the slots
 MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break", "pill": "Pill", "flee": "Flee", "roar": "Roar"}
 
 TELLS = {
@@ -125,8 +125,9 @@ class Fighter:
 
     def base(self, choice):
         """The plain move a choice plays as: a technique is a Strike or a Guard by its kind."""
-        if choice == "flex_tech":
-            return "strike" if self.flex_t and self.flex_t["type"] == "attack" else "guard"
+        if choice in TECH_KEYS:                      # slots take either kind (technique.md "Slots")
+            t = self.tech(choice)
+            return "strike" if t and t["type"] == "attack" else "guard"
         return BASE_MOVE[choice]
 
     def qi_cost(self, key):

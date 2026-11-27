@@ -92,7 +92,7 @@ the bag to trade or keep. The bag (Discord and website alike, `bot/loot.py` `man
 `read_manual`) says what will happen before anything is used:
 
 - **Too low a realm:** "You must reach (realm) to comprehend a (grade) manual." Nothing is used.
-- **Not learned yet:** **Learn & equip** learns it and equips it, in a free slot or in place of the technique named
+- **Not learned yet:** **Learn & equip** learns it and equips it, in the first empty slot or in place of the technique named
   first (the one `db.bumped` would take off; it stays in your techniques). **Learn only** learns it and changes
   nothing equipped. Learn & equip is held back during a fight; Learn only isn't.
 - **Already learned:** **Read it** uses one copy for mastery EXP (100 × the grade's EXP multiplier) and Insight ink
@@ -100,17 +100,25 @@ the bag to trade or keep. The bag (Discord and website alike, `bot/loot.py` `man
 
 ## Technique slots
 
+Free slots (Shoaib, Nov 28): **each slot takes an attack or a defense technique, any mix**: 3 attacks, 3 defenses,
+or anything between.
+
 | Realm | Slots |
 |---|---|
-| Mortal | 2: 1 attack + 1 defense |
-| Martial Warrior | 3: adds 1 flex slot (attack or defense) |
+| Mortal | 2 |
+| Martial Warrior | 3 |
 
-- Flex slot lets players build aggressive (2 attack + 1 defense) or tank (1 attack + 2 defense)
-- The Flex technique is a **third technique in every fight** (beast fights, duels, sparring), with its own button
-  (`flex_tech`): an attack technique there plays as a Strike, a defense one as a Guard, with its own effect,
-  Battle Qi cost (beast fights) or rest turns (duels, sparring), and its own mastery EXP. Each slot rests on its own.
-- Which one is Flex: the first attack and the first defense technique equipped hold the Attack and Defense slots;
-  the next one of either kind is Flex (`bot.player.split_techniques`)
+- **You pick the slot** when you equip (the website's Slot 1 / 2 / 3 buttons on each card; Discord: pick the technique,
+  then the slot). Whatever is in that slot comes off. Without a pick (Discord manuals' **Learn & equip**) it goes to
+  the first empty slot, or when all are full in place of the one equipped longest ago (`db.bumped`).
+- **No minimum:** any slot can be emptied, even all of them; a fight then has only Strike, Guard and Break.
+- A technique keeps its slot (`techniques.slot`). One equipped before the slots were free keeps the slot it held:
+  the first attack slot 1, the first defense slot 2, the other one slot 3 (`db.slotted`).
+- **In every fight** (beast fights, duels, sparring) each filled slot is its own technique button, in slot order
+  (`bot.player.split_techniques`; the moves are still called `attack_tech`, `defense_tech`, `flex_tech`, for slots
+  1, 2, 3). Each plays **by its technique's own kind**: an attack technique as a Strike, a defense one as a Guard,
+  with its own effect, Battle Qi cost (beast fights) or rest turns (duels, sparring), and its own mastery EXP. Each
+  slot rests on its own.
 - Techniques can only be swapped **outside** of fights
 
 ## Schools

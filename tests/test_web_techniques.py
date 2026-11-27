@@ -46,10 +46,12 @@ def test_the_page_lists_what_you_know(path):
     c = conn_of(path)
     learn(c, "Fierce Tiger Claw", "attack", "Yellow")
     v = tp.view(c, A)
-    assert [s["slot"] for s in v["sockets"]] == ["Attack", "Defense", "Flex"] and v["sockets"][2]["locked"]
+    assert [s["slot"] for s in v["sockets"]] == ["Slot 1", "Slot 2", "Slot 3"] and v["sockets"][2]["locked"]
     cards = {x["name"]: x for x in v["cards"]}
-    assert cards["Iron Fist"]["equipped"] and cards["Iron Fist"]["action"] is None      # the only attack: stays
-    assert cards["Fierce Tiger Claw"]["action"] == "equip" and cards["Fierce Tiger Claw"]["note"] == "Replaces Iron Fist"
+    assert cards["Iron Fist"]["equipped"] and cards["Iron Fist"]["action"] == "unequip" and cards["Iron Fist"]["slot"] == 1
+    assert cards["Fierce Tiger Claw"]["action"] == "equip"                  # into slot 1 or 2; 3 opens later
+    assert [(x["no"], x["open"], x["holds"]) for x in cards["Fierce Tiger Claw"]["slots"]] == [
+        (1, True, "Iron Fist"), (2, True, "Horse Stance Guard"), (3, False, None)]
     assert cards["Fierce Tiger Claw"]["power"].startswith("×") and cards["Fierce Tiger Claw"]["grade"] == "Yellow"
 
 
@@ -68,16 +70,17 @@ def test_the_flex_slot_and_taking_off(path):
     db.update_player(c, A, realm="Martial Warrior", layer=1)
     tid = learn(c, "Fierce Tiger Claw", "attack", "Yellow")
     v = {x["name"]: x for x in tp.view(c, A)["cards"]}
-    assert v["Fierce Tiger Claw"]["note"] == "Goes into a free slot"
-    ok, msg = tp.equip(c, A, tid)
-    assert ok and "in place" not in msg and len(equipped(c)) == 3
+    assert [(s["no"], s["open"], s["holds"]) for s in v["Fierce Tiger Claw"]["slots"]] == [
+        (1, True, "Iron Fist"), (2, True, "Horse Stance Guard"), (3, True, None)]
+    ok, msg = tp.equip(c, A, tid, slot=3)
+    assert ok and "in place" not in msg and "slot 3" in msg and len(equipped(c)) == 3
     v = {x["name"]: x for x in tp.view(c, A)["cards"]}
-    assert v["Fierce Tiger Claw"]["action"] == "unequip" and v["Iron Fist"]["action"] == "unequip"
-    assert v["Horse Stance Guard"]["action"] is None                       # the only defense
+    assert all(v[n]["action"] == "unequip" for n in ("Fierce Tiger Claw", "Iron Fist", "Horse Stance Guard"))
+    assert v["Fierce Tiger Claw"]["slot"] == 3
     ok, _ = tp.unequip(c, A, tid)
     assert ok and equipped(c) == {"Iron Fist", "Horse Stance Guard"}
-    ok, why = tp.unequip(c, A, by_name(c, "Iron Fist")["id"])
-    assert not ok and "one technique of each type" in why
+    ok, _ = tp.unequip(c, A, by_name(c, "Iron Fist")["id"])
+    assert ok and equipped(c) == {"Horse Stance Guard"}                    # no minimum (technique.md "Slots")
 
 
 def test_no_swapping_in_a_fight(path):
@@ -100,10 +103,10 @@ def test_the_routes(path, monkeypatch):
     cl.get("/callback", params={"code": "good", "state": q["state"][0]})
     page = cl.get("/techniques").text
     assert "Fierce Tiger Claw" in page and "Replaces Iron Fist" in page and 'href="/techniques"' in page
-    r = cl.post("/techniques/equip", data={"tech": str(tid)})
+    r = cl.post("/techniques/equip", data={"tech": str(tid), "slot": "1"})
     assert r.status_code == 303 and r.headers["location"] == "/techniques"
     page = cl.get("/techniques").text
-    assert "Equipped Fierce Tiger Claw in place of Iron Fist." in page
+    assert "Equipped Fierce Tiger Claw in slot 1, in place of Iron Fist." in page
     assert "/techniques" in cl.get("/profile").text
 
 

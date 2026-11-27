@@ -237,7 +237,7 @@ class FightMixin:
             self._fight_button(key.title(), key, discord.ButtonStyle.primary, 0,
                                disabled=stunned and key != "guard")
         for key in TECH_KEYS:
-            if key == "flex_tech" and team and not any(x.flex_t for x in b.fighters):
+            if team and not any(x.tech(key) for x in b.fighters):          # nobody has a technique in this slot
                 continue
             if solo:
                 t = solo.tech(key)

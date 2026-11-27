@@ -487,7 +487,7 @@ def test_flex_slot_from_martial_warrior(conn):
     assert len(db.get_techniques(conn, 1)) == 3
     assert db.unequip_technique(conn, 1, a)
     guard = next(t for t in db.get_techniques(conn, 1) if t["type"] == "defense")
-    assert not db.unequip_technique(conn, 1, guard["id"])                 # must keep one defense
+    assert db.unequip_technique(conn, 1, guard["id"])                     # no minimum: slots can all be empty
 
 
 def test_spar_view_builds(conn):

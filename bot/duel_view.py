@@ -311,12 +311,12 @@ class DuelView(discord.ui.View):
         for key, label, style, row in (("strike", "Strike", discord.ButtonStyle.primary, 0),
                                        ("guard", "Guard", discord.ButtonStyle.primary, 0),
                                        ("break", "Break", discord.ButtonStyle.primary, 0),
-                                       ("attack_tech", "Attack technique", discord.ButtonStyle.success, 1),
-                                       ("defense_tech", "Defense technique", discord.ButtonStyle.success, 1),
-                                       ("flex_tech", "Flex technique", discord.ButtonStyle.success, 1),
+                                       ("attack_tech", "Technique 1", discord.ButtonStyle.success, 1),
+                                       ("defense_tech", "Technique 2", discord.ButtonStyle.success, 1),
+                                       ("flex_tech", "Technique 3", discord.ButtonStyle.success, 1),
                                        ("flee", "Flee (forfeit)", discord.ButtonStyle.danger, 2)):
-            if key == "flex_tech" and not any(d.flex_t for d in duel.sides):
-                continue                            # neither duelist has a Flex technique
+            if key.endswith("_tech") and not any(d.tech(key) for d in duel.sides):
+                continue                            # neither duelist has a technique in this slot
             self._button(key, label, style, row)
 
     def _button(self, key, label, style, row):

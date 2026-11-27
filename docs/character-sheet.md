@@ -6,7 +6,7 @@ card switch tabs in place, so players never have to type another command.
 | Tab | Command | Shows |
 |---|---|---|
 | 👤 Profile | /profile | The avatar in a moon-gate ring (beads = the realm's layers), name, @username, talent, HP and Internal Qi bars, realm emblem with phase and layer, attributes with their buff %, the meridian figure (its dantian fills with Qi) with the four gear slots around it, equipped techniques with mastery arcs, the Deeds rail (beasts, herbs, breakthroughs, duels from /duel, server rank) and, for the owner, the purse |
-| 📜 Techniques | /techniques | Attack, Defense and Flex stances (equipped, empty, or locked with what opens it), then every learned technique as a scroll: grade seal, power, passive, rest turns, effect and mastery. Equipped scrolls carry a ribbon; the rest say Ready to equip |
+| 📜 Techniques | /techniques | Slot 1, 2 and 3, each an attack or a defense technique (equipped, empty, or locked with what opens it); pick a technique, then its slot, then every learned technique as a scroll: grade seal, power, passive, rest turns, effect and mastery. Equipped scrolls carry a ribbon; the rest say Ready to equip |
 | ⚔️ Equipment | /equipment | Four display cases (weapon, armor, artifact I and II): tier seal, name, realm needed, buffs or effect, forged passive sockets; base → final stats with the bonus on each bar and its sources; the worn artifacts' effects; spare gear in the bag |
 | 🎒 Inventory | /inventory | A category rail with counts, Materials groups, a 4 × 3 item grid with page beads, and an Inspect panel that also shows the buttons the item offers |
 | 🪷 Purse | /balance | Lotus Coins and Moon Pearls only (short and exact amounts); the blessing is shown by /blessing |
@@ -54,7 +54,7 @@ text embed is sent instead.
 | Attributes | HP, Attack, Defense: base, final, % buffs (stats.md) | Strength, Vitality, Intelligence, Dexterity |
 | Internal Qi | Qi / layer capacity, Qi Rate, Qi waiting to be banked, time to a full bar, next gate (training.md) | Qi as a fight resource: it is never spent in fights |
 | HP | Max HP, and an injury timer in the status line | Current HP: fights start at full HP; losing gives an injury instead |
-| Techniques | Sockets: 1 attack + 1 defense, Flex from Martial Warrior (technique.md) | More slots |
+| Techniques | 2 free slots (any kind), the 3rd from Martial Warrior (technique.md) | More slots |
 | Equipment | One weapon, one armor and two artifact slots (equipment.md) | Accessories, more artifact slots at high realms |
 | Bag | Chests, Manuals, Weapons, Armor, Artifacts (tiles show their drawn icon in the tier colour; manuals show the technique icon with a small grade emblem, pills their type emblem tinted by grade with pattern rings), Pills, Herbs (by kind and age), Materials | Elixirs, rare treasures |
 | Title | — | Character titles |
