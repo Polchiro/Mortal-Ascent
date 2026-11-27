@@ -1071,6 +1071,34 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
   background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.8),rgba(255,255,255,.3) 14%,rgba(255,255,255,.06) 38%,transparent 65%);
   animation:broarflash .52s ease-out forwards}
 @keyframes broarflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+/* the roar hits you (fight.js `blast`, `crack`, `impact`, `presence`; art/fx/elem/, scripts/make_element_fx.py):
+   its element's own blast from its mouth to you, the burst on your body, the patch left at your feet */
+.bestream{position:absolute;width:0;height:0;z-index:5;pointer-events:none;transform:rotate(var(--rot))}
+.bestream img{position:absolute;right:0;top:calc(var(--h) / -2);width:var(--len);height:var(--h);max-width:none;
+  transform-origin:100% 50%;transform:scaleX(0);animation:bestream 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+.bestream img.glow{mix-blend-mode:screen;filter:blur(7px) brightness(1.5);opacity:.75}
+@keyframes bestream{0%{transform:scaleX(0) scaleY(.45);opacity:1}20%{transform:scaleX(1) scaleY(1);opacity:1}
+  62%{opacity:1}100%{transform:scaleX(1.05) scaleY(1.18);opacity:0}}
+.bcrack{z-index:auto}
+.bcrack img{transform:none;clip-path:inset(0 0 0 100%);filter:drop-shadow(0 0 10px var(--rc,#ffcf6a));animation:bcrack 2.1s ease-out forwards}
+@keyframes bcrack{0%{clip-path:inset(0 0 0 100%);opacity:1}13%{clip-path:inset(0 0 0 0);opacity:1}72%{opacity:1}
+  100%{clip-path:inset(0 0 0 0);opacity:0}}
+.beburst{position:absolute;z-index:6;width:var(--s);height:auto;max-width:none;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);animation:beburst .9s cubic-bezier(.15,.8,.3,1) both}
+.beburst.b2{animation-delay:90ms}
+@keyframes beburst{0%{transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);opacity:1}
+  35%{transform:translate(-50%,-50%) rotate(var(--r)) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--r) + 14deg)) scale(1.28);opacity:0}}
+.beground{position:absolute;width:var(--w);height:calc(var(--w) * .36);object-fit:fill;max-width:none;pointer-events:none;opacity:0;
+  transform:translate(-50%,-62%) scaleX(.4);animation:beground 2.4s ease-out forwards}
+.bekcrack{filter:drop-shadow(0 0 10px var(--rc))}
+@keyframes beground{0%{transform:translate(-50%,-62%) scaleX(.4);opacity:0}12%{transform:translate(-50%,-62%) scaleX(1);opacity:1}
+  70%{opacity:.9}100%{transform:translate(-50%,-62%) scaleX(1.04);opacity:0}}
+.broarflash.behit{background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.95),var(--rc) 10%,transparent 42%);
+  animation-duration:.42s}
+.bevignette{position:absolute;inset:0;left:0!important;top:0!important;z-index:7;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 110px 26px var(--rc);animation:bevignette 1.7s ease-out forwards}
+@keyframes bevignette{0%{opacity:0}14%{opacity:.95}38%{opacity:.45}58%{opacity:.8}100%{opacity:0}}
 .broarlines{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
   background:repeating-conic-gradient(from 3deg at var(--x) var(--y),rgba(255,255,255,.5) 0deg .45deg,transparent .45deg 6.3deg),
     repeating-conic-gradient(from 1deg at var(--x) var(--y),rgba(255,255,255,.32) 0deg .3deg,transparent .3deg 9.7deg);
@@ -1210,6 +1238,17 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .bclawm,.bslashm{position:absolute;z-index:6;width:var(--s);height:auto;pointer-events:none;transform:translate(-50%,-50%);
   clip-path:inset(0 0 100% 100%);filter:drop-shadow(0 0 10px rgba(255,40,40,.7));animation:bm1 .9s ease-out forwards}
 .bslashm{filter:drop-shadow(0 0 10px rgba(255,240,210,.8));mix-blend-mode:screen}
+/* a beast's hit mark (fight.js `mark`, art/fx/marks/): its shape in the element's colour, glowing, with the picture's
+   own light as a white-hot core over it; torn across you the way the old claw marks were */
+.bmark{position:absolute;z-index:6;width:var(--s);aspect-ratio:1.5;pointer-events:none;
+  transform:translate(-50%,-50%) scaleX(var(--flip,1));clip-path:inset(0 0 100% 100%);animation:bmark .95s ease-out both}
+.bmark .tint,.bmark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.bmark .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) brightness(1.15)}
+.bmark img{filter:grayscale(1) brightness(1.7) contrast(1.1);mix-blend-mode:screen;opacity:.85;transform:scale(.94)}
+@keyframes bmark{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
+  55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scaleX(var(--flip,1)) scale(1.05)}}
+.beburst.bemark{z-index:5;animation-duration:.7s}
 @keyframes bm1{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
   55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
 .bsblast{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
@@ -2558,6 +2597,42 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 /* the painted Moon Pearl beside prices on the Moon Pavilion (web/templates/pavilion.html) */
 .pavpurse img.pavpearl,.pavprice img.pavpearl{width:1.2em;height:1.2em;margin:0;vertical-align:-.25em;object-fit:contain;filter:drop-shadow(0 0 4px rgba(120,180,255,.55))}
 
+/* The profile, painted (scripts/make_ui_art.py, docs/web.md "The profile page"): the realm's own seal, the gear in carved
+   slot frames (an empty slot shows the ghost of what goes there), the name on a gold plaque, the journey's own pictures. */
+.realmseal{width:96px;height:96px;background:none;border:0;box-shadow:none}
+.realmseal img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
+.portrait.stage>img.remblem.back{left:50%;top:6%;bottom:auto;z-index:0;width:74%;height:auto;max-width:none;border-radius:50%;opacity:.16;
+  filter:saturate(.7);animation:emblemturn 120s linear infinite}
+.stage .sgear{width:60px;height:60px;border:0;border-radius:6px;background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
+  box-shadow:0 0 14px color-mix(in srgb,var(--rc,#C9A45C) 40%,transparent)}
+.stage .sgear:hover,.stage .sgear:focus-visible{box-shadow:0 0 22px color-mix(in srgb,var(--rc,#EBCB86) 70%,transparent)}
+.stage .sgear img{width:42px;height:42px}
+.stage .sgear.empty{border:0;box-shadow:none;opacity:.9}
+.stage .sgear.empty .plus,.xslot.empty .xicon .plus{display:none}
+.sgear.empty.s-weapons,.xslot.empty.s-weapons .xicon{background-image:url(/art/ui/slot_weapon.webp)}
+.sgear.empty.s-armor,.xslot.empty.s-armor .xicon{background-image:url(/art/ui/slot_armor.webp)}
+.sgear.empty.s-artifacts,.xslot.empty.s-artifacts .xicon{background-image:url(/art/ui/slot_artifact.webp)}
+.xicon,.xslot.empty .xicon{width:112px;height:112px;margin:16px 0 4px;transform:none;border:0;border-radius:8px;
+  background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
+  box-shadow:0 0 18px color-mix(in srgb,var(--rc,#C9A45C) 45%,transparent)}
+.xslot.empty .xicon{box-shadow:none;opacity:.92}
+.xicon img{width:78px;height:78px;transform:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.xicon:hover,.xicon:focus-visible,.xslot.empty .xicon:hover{transform:scale(1.05);box-shadow:0 0 28px color-mix(in srgb,var(--rc,#C9A45C) 70%,transparent);opacity:1}
+.iname{margin-top:10px}
+.nameplate{display:flex;flex-direction:column;justify-content:center;align-items:center;aspect-ratio:1200/334;padding:4% 14%;border:0;box-shadow:none;
+  background:url(/art/ui/name_plaque.webp) center/100% 100% no-repeat,
+    radial-gradient(ellipse at 50% 40%,rgba(30,58,66,.96),rgba(9,18,24,.97) 75%) center/91% 76% no-repeat;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+.nameplate::before,.nameplate::after{content:none}
+.nameplate .xname{font-size:clamp(20px,6.4vw,30px);letter-spacing:2.5px}
+.nameplate .xrealm{font-size:14px}
+.plaque{padding-top:40px;margin-top:22px}
+.plaque img{top:-34px;width:66px;height:66px;border-radius:0;object-fit:contain;box-shadow:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55))}
+@media (max-width:560px){.stage .sgear{width:52px;height:52px}.stage .sgear img{width:36px;height:36px}.xicon,.xslot.empty .xicon{width:96px;height:96px}.xicon img{width:66px;height:66px}}
+/* the hero card follows you down the page (".xprofile .xpanel{position:relative}" above had undone the sticky), on screens
+   tall enough to show the whole card, so the left column is never an empty strip */
+@media (min-width:901px) and (min-height:880px){.xprofile .identity{position:sticky;top:16px}}
+@media (max-width:560px){.realmseal{width:72px;height:72px}}
 /* ── the map screen's frame, painted (Nov 27 2026, docs/web.md "Painted UI"): the hero plate with its portrait ring,
    the HP and Qi vials, the Break Through tab hanging under it, round medallions and the Run seal at the bottom
    right. Measured on the paintings: in art/ui/hero_plate.webp (1200 x 330) the ring's opening is centred at
@@ -2653,42 +2728,6 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 }
 @media (prefers-reduced-motion:reduce){.mdock .dbtn,.mdock .dico,.mdock .dico img{transition:none}
   .mhud .mbreak,.mhero .mqibar.full div i,.mhero .mhpbar.low div i{animation:none}}
-/* The profile, painted (scripts/make_ui_art.py, docs/web.md "The profile page"): the realm's own seal, the gear in carved
-   slot frames (an empty slot shows the ghost of what goes there), the name on a gold plaque, the journey's own pictures. */
-.realmseal{width:96px;height:96px;background:none;border:0;box-shadow:none}
-.realmseal img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
-.portrait.stage>img.remblem.back{left:50%;top:6%;bottom:auto;z-index:0;width:74%;height:auto;max-width:none;border-radius:50%;opacity:.16;
-  filter:saturate(.7);animation:emblemturn 120s linear infinite}
-.stage .sgear{width:60px;height:60px;border:0;border-radius:6px;background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
-  box-shadow:0 0 14px color-mix(in srgb,var(--rc,#C9A45C) 40%,transparent)}
-.stage .sgear:hover,.stage .sgear:focus-visible{box-shadow:0 0 22px color-mix(in srgb,var(--rc,#EBCB86) 70%,transparent)}
-.stage .sgear img{width:42px;height:42px}
-.stage .sgear.empty{border:0;box-shadow:none;opacity:.9}
-.stage .sgear.empty .plus,.xslot.empty .xicon .plus{display:none}
-.sgear.empty.s-weapons,.xslot.empty.s-weapons .xicon{background-image:url(/art/ui/slot_weapon.webp)}
-.sgear.empty.s-armor,.xslot.empty.s-armor .xicon{background-image:url(/art/ui/slot_armor.webp)}
-.sgear.empty.s-artifacts,.xslot.empty.s-artifacts .xicon{background-image:url(/art/ui/slot_artifact.webp)}
-.xicon,.xslot.empty .xicon{width:112px;height:112px;margin:16px 0 4px;transform:none;border:0;border-radius:8px;
-  background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
-  box-shadow:0 0 18px color-mix(in srgb,var(--rc,#C9A45C) 45%,transparent)}
-.xslot.empty .xicon{box-shadow:none;opacity:.92}
-.xicon img{width:78px;height:78px;transform:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
-.xicon:hover,.xicon:focus-visible,.xslot.empty .xicon:hover{transform:scale(1.05);box-shadow:0 0 28px color-mix(in srgb,var(--rc,#C9A45C) 70%,transparent);opacity:1}
-.iname{margin-top:10px}
-.nameplate{display:flex;flex-direction:column;justify-content:center;align-items:center;aspect-ratio:1200/334;padding:4% 14%;border:0;box-shadow:none;
-  background:url(/art/ui/name_plaque.webp) center/100% 100% no-repeat,
-    radial-gradient(ellipse at 50% 40%,rgba(30,58,66,.96),rgba(9,18,24,.97) 75%) center/91% 76% no-repeat;
-  filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
-.nameplate::before,.nameplate::after{content:none}
-.nameplate .xname{font-size:clamp(20px,6.4vw,30px);letter-spacing:2.5px}
-.nameplate .xrealm{font-size:14px}
-.plaque{padding-top:40px;margin-top:22px}
-.plaque img{top:-34px;width:66px;height:66px;border-radius:0;object-fit:contain;box-shadow:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55))}
-@media (max-width:560px){.stage .sgear{width:52px;height:52px}.stage .sgear img{width:36px;height:36px}.xicon,.xslot.empty .xicon{width:96px;height:96px}.xicon img{width:66px;height:66px}}
-/* the hero card follows you down the page (".xprofile .xpanel{position:relative}" above had undone the sticky), on screens
-   tall enough to show the whole card, so the left column is never an empty strip */
-@media (min-width:901px) and (min-height:880px){.xprofile .identity{position:sticky;top:16px}}
-@media (max-width:560px){.realmseal{width:72px;height:72px}}
 /* ── The fight screens' top corners, painted (beast fight, spar, duel: all share .battle .bme / .benemy;
    scripts/make_ui_art.py, docs/web.md "Painted UI"). On a wide screen your banner (art/ui/fight_me.webp: the jade ring
    with your face, three grooves for name, HP and Battle Qi) and the foe's mirror (fight_foe.webp: the iron-and-crimson
@@ -2764,3 +2803,32 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
   border-image:url(/art/ui/fight_pill.webp) 24 30 24 106 fill / 6px 12px 6px 38px / 0 stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
 .histbtn .hicon{margin-left:-31px;margin-right:8px}
 .histbtn:hover,.histbtn:focus-visible,.bhist[open]>.histbtn{filter:drop-shadow(0 0 10px rgba(255,214,140,.6))}
+/* a strong beast's presence (fight.js `aura`, `sigil`, `avatar`; explore_play.beast_power): its aura, breathing like a
+   living flame in two copies out of step; the formation circle flaring under its roar; its spirit rising behind it */
+.baura{position:absolute;pointer-events:none;opacity:var(--ao);transition:opacity .8s ease}
+.baura img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill;mix-blend-mode:screen;
+  transform-origin:50% 100%;animation:baura 3.4s ease-in-out infinite}
+.baura img+img{animation:baura2 4.3s ease-in-out infinite;opacity:.55}
+.baura.p4 img{filter:brightness(1.25) saturate(1.15)}
+@keyframes baura{0%,100%{transform:scale(1,1);opacity:.8}50%{transform:scale(1.03,1.07);opacity:1}}
+@keyframes baura2{0%,100%{transform:scaleX(-1.02) scaleY(1.04);opacity:.65}50%{transform:scaleX(-.98) scaleY(.97);opacity:.35}}
+main.dying .baura,main.slain .baura{opacity:0}
+.besigil{position:absolute;width:var(--w);aspect-ratio:2.4;pointer-events:none;opacity:0;
+  transform:translate(-50%,-55%) scale(.3);animation:besigil 2.5s cubic-bezier(.2,.8,.3,1) forwards}
+.besigil.s3{aspect-ratio:1.9}
+.besigil .tint,.besigil img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
+.besigil .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 8px var(--rc)) drop-shadow(0 0 22px var(--rc))}
+.besigil img{mix-blend-mode:screen;filter:grayscale(1) brightness(1.4);opacity:.7}
+@keyframes besigil{0%{transform:translate(-50%,-55%) scale(.3);opacity:0}14%{transform:translate(-50%,-55%) scale(1);opacity:1}
+  30%{opacity:.75}45%{opacity:1}75%{opacity:.85}100%{transform:translate(-50%,-55%) scale(1.06);opacity:0}}
+.bavatar{position:absolute;pointer-events:none;opacity:0;transform-origin:50% 100%;
+  transform:translate(-50%,-100%) scale(1.1);animation:bavatar 2.2s ease-out forwards}
+.bavatar .tint,.bavatar img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;object-position:50% 100%}
+.bavatar .tint{background:var(--rc);-webkit-mask:var(--m) 50% 100%/contain no-repeat;mask:var(--m) 50% 100%/contain no-repeat;
+  filter:blur(2px) drop-shadow(0 0 14px var(--rc)) drop-shadow(0 0 40px var(--rc));opacity:.85}
+.bavatar img{mix-blend-mode:screen;filter:grayscale(.6) brightness(1.5);opacity:.35}
+@keyframes bavatar{0%{opacity:0;transform:translate(-50%,-100%) scale(1.1)}22%{opacity:.7;transform:translate(-50%,-104%) scale(1.75)}
+  65%{opacity:.5;transform:translate(-50%,-106%) scale(1.95)}100%{opacity:0;transform:translate(-50%,-108%) scale(2.1)}}
+.bavatar.saint{animation-duration:2.4s}
+.bavatar.saint .tint{opacity:1}
