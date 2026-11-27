@@ -1072,6 +1072,10 @@ a lair is fought with `bot/hunt.py`.
    element's blast (`blast`). Four-legged beasts keep their shockwave rings too; the birds' old wind picture, the
    serpents' recoloured venom stream and the dragons' recoloured blast are replaced. The shape is loaded ahead
    (`SHAPE_OF`).
+   **Out of the mouth** (SHOAIB: "make sure the roar looks like it comes out of the mouth"): every blast and shape
+   starts a touch in front of the open jaws (`lip`), is drawn behind the beast's picture (`underBeast`: where they
+   overlap the jaws cover it, so it pours out of the mouth), and the element glows at the mouth while it roars
+   (`mouthGlow`).
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

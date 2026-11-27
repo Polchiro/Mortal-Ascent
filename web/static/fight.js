@@ -1344,8 +1344,21 @@
       setTimeout(function () { n.remove(); }, life);
       return n;
     }
+    /* Out of the mouth (SHOAIB Nov 27: "make sure the roar looks like it comes out of the mouth"): a roar's blast
+       starts a touch in front of the open jaws, is drawn BEHIND the beast's picture (so where they overlap the jaws
+       cover it and it pours out of the mouth), and the element glows at the mouth while it roars (`mouthGlow`). */
+    function lip(p, pic) {
+      var you = at(fr, 0.5, 0.45), a = aim(p, you), r = a[1] * Math.PI / 180, sr = scene.getBoundingClientRect(), d = pic.height * 0.05;
+      return [p[0] + Math.cos(r) * d / sr.width * 100, p[1] + Math.sin(r) * d / sr.height * 100];
+    }
+    function underBeast(n) { scene.insertBefore(n, beastBox); }
+    function mouthGlow(p, pic) {
+      if (scene.querySelector('.bmouth')) return;
+      fx('bmouth', p[0], p[1], 1100, {'--rc': ROAR.color, '--s': Math.min(260, pic.height * 0.32) + 'px'});
+    }
     function blast(p, pic, big) {                                // the element thrown from its mouth across to you
       if (!ELEM) return;
+      mouthGlow(p, pic); p = lip(p, pic);
       var you = at(fr, 0.5, 0.45), a = aim(p, you), len = a[0] * 1.12;
       var h = Math.min(pic.height * 1.1, Math.max(150, len * 0.42)) * big;
       var wrap = document.createElement('div');                  // turned to face you; the picture's bright end at its mouth
@@ -1353,7 +1366,7 @@
       wrap.style.setProperty('--rot', (a[1] - 180) + 'deg');
       wrap.innerHTML = '<img alt="" src="' + ELEM + '_stream.webp"><img class="glow" alt="" src="' + ELEM + '_stream.webp">';
       wrap.style.setProperty('--len', len + 'px'); wrap.style.setProperty('--h', h + 'px');
-      scene.appendChild(wrap);
+      underBeast(wrap);
       setTimeout(function () { wrap.remove(); }, 1500);
     }
     /* A body type's own roar (SHOAIB Nov 27: "I want it to be detailed"): his white picture of its shape
@@ -1362,6 +1375,7 @@
        shape filled with the colour, its own white light over it), over its element's blast (`blast`). */
     var SHAPE_RATIO = {quadruped: 0.69, flying: 0.52, serpent: 0.44, dragon: 0.44};
     function shape(p, pic, big, body) {
+      mouthGlow(p, pic); p = lip(p, pic);
       var you = at(fr, 0.5, 0.45), a = aim(p, you), len = a[0] * 1.08, src = '/art/fx/roars/roar_' + body + '.webp';
       var h = Math.min(pic.height * 1.5, len * SHAPE_RATIO[body]) * big;
       var wrap = document.createElement('div');
@@ -1369,7 +1383,7 @@
       wrap.style.setProperty('--rot', (a[1] - 180) + 'deg'); wrap.style.setProperty('--len', len + 'px'); wrap.style.setProperty('--h', h + 'px');
       wrap.style.setProperty('--rc', ROAR.color); wrap.style.setProperty('--m', 'url(' + src + ')');
       wrap.innerHTML = '<span class="bsh"><i class="tint"></i><img alt="" src="' + src + '"></span>';
-      scene.appendChild(wrap);
+      underBeast(wrap);
       setTimeout(function () { wrap.remove(); }, 1500);
     }
     function crack(pic, big) {                                   // a crack slammed along the ground to your feet
@@ -1556,7 +1570,7 @@
         if (t >= IMPACT && once('impact')) { impact(ev.final, M.style === 'quake'); struck(ev); }
       }, clear: function () {
         hero(0, 0); if (ev.guard) pose('idle');
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow,.bestream,.beburst,.beground,.bevignette,.besigil,.bavatar').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow,.bestream,.beburst,.beground,.bevignette,.besigil,.bavatar,.bmouth').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beastBox.classList.remove('roaring');
         beast.style.transform = ''; beast.style.transformOrigin = '';

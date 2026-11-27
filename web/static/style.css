@@ -3076,3 +3076,9 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
 .bestream .bsh .tint,.bestream .bsh img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill}
 .bestream .bsh .tint{background:var(--rc);-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
 .bestream .bsh img{opacity:.55}   /* no extra glow: the pictures carry their own, and a moving glow this size is costly */
+/* the element glowing at the open mouth while the roar pours out of it (fight.js `mouthGlow`) */
+.bmouth{position:absolute;z-index:6;width:var(--s);height:var(--s);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0,color-mix(in srgb,var(--rc) 85%,#fff) 18%,color-mix(in srgb,var(--rc) 55%,transparent) 42%,transparent 70%);
+  transform:translate(-50%,-50%) scale(.2);opacity:0;animation:bmouth 1.1s ease-out forwards}
+@keyframes bmouth{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}12%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  55%{transform:translate(-50%,-50%) scale(.85);opacity:.8}100%{transform:translate(-50%,-50%) scale(.6);opacity:0}}
