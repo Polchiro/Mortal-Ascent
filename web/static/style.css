@@ -2980,5 +2980,41 @@ main.battle:not(.duelfight) .benemy .bwarn{display:none}
   .battle>.binfo .ititle{font-size:13.5px;margin:0 0 2px}
   .battle>.binfo .itext{font-size:12px;line-height:1.35}
   .battle>.binfo .sub{font-size:10.5px;margin-top:4px}
-  main.battle .binfo .turnchip{width:124px;height:33px;top:-22px;font-size:10.5px}
+  main.battle .binfo .turnchip{width:auto;min-width:124px;padding:0 18px 5px;height:33px;top:-22px;font-size:10.5px;white-space:nowrap}
+}
+/* this turn's call-outs: up in the gap between the two banners, where nothing is drawn, not over the middle where a big
+   beast stands; a little smaller (Shoaib, Nov 27) */
+@media (min-width:901px){
+  .bfeed{top:4px;width:min(440px,calc(100vw - 2 * min(36vw,540px) - 70px));gap:3px}
+  .bfeed .toast{font-size:12.5px;padding:0 14px;border-width:7px 15px}
+}
+
+/* ── More room for the fight (Shoaib, Nov 27: "utilize space", above all on a phone) ──────────────────────────────
+   Computer: Battle History leaves the middle of the arena for its bottom-left corner, just above the pill and flee
+   buttons, as a small pill (icon and turn); its record opens upward from there.
+   Phone: the two plates side by side in one row; the "Your turn" panel becomes just its chip, laid over the bottom of
+   the arena (the move's long explanation stays on computers); so the arena gets the room. */
+@media (min-width:901px){
+  .battle>.bhist{grid-row:2;grid-column:1/3;justify-self:start;align-self:end;margin:0 0 6px}
+  .bhist .histbtn .hlab{display:none}
+  .bhist .histpanel{left:0;transform:none}
+}
+@media (max-width:480px){
+  .battle{grid-template-areas:"me enemy" "scene scene" "bar bar" "side hist";gap:6px}
+  .battle>.bme,.battle>.benemy{min-width:0;padding:6px 8px;border-radius:12px}
+  .battle>.bme{gap:6px}.battle>.bme .bface{width:34px;height:34px}
+  .battle>.bme .bname,.battle>.benemy .ename{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .battle>.bme .brealm,.battle>.benemy .etags{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .battle>.bme .brow{font-size:10px;margin-top:1px}.battle>.benemy .ehp{height:14px;margin-top:3px}.battle>.benemy .ehp span{font-size:10px}
+  .battle>.bscene{height:clamp(320px,min(124vw,100dvh - 340px),600px)}
+  .battle>.binfo{grid-area:scene;align-self:end;justify-self:center;z-index:5;margin:0 0 6px;padding:0;border:0;background:none;box-shadow:none;
+    min-height:0!important;pointer-events:none}
+  .battle>.binfo .ititle,.battle>.binfo .itext,.battle>.binfo .sub{display:none}
+  .battle>.binfo .turnchip{margin:0;font-size:11px;padding:4px 12px;background:rgba(8,10,16,.82);backdrop-filter:blur(2px)}
+  .battle>.binfo .teamtimer{width:120px;margin:4px auto 0}
+}
+@media (max-width:480px){.battle>.bside,.battle>.bhist{align-self:center}.battle>.bside .sidebtn{align-self:center}}
+@media (max-width:480px){
+  main.battle.duelfight>.bscene{height:clamp(320px,min(124vw,100dvh - 360px),600px)}
+  .battle>.benemy .sface,.battle>.benemy .dface{width:34px;height:34px}
 }
