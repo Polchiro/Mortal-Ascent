@@ -1057,6 +1057,12 @@ a lair is fought with `bot/hunt.py`.
    impact-frame filter, the spirit's blur and the double glows on marks and circles are gone (single glows); the
    pictures a roar needs are loaded ahead. A Saint's roar went from about four times the morning's cost to slightly
    less than it.
+   **Strong beasts come alive** (SHOAIB Nov 27; Martial King and up; `aura`, `qiCrack`, `departs` in `fight.js`).
+   *Roused* (the game's own rule: after its final roar it hits harder): its aura turns to the blood aura's red and
+   pulses fast. *Wounded* (30% HP or less): its aura pulses faster. *Your blows crack its Qi*: when a hit lands, its
+   aura flares and a chip of its element bursts off where it was struck. *It dies in its element*: its aura shatters
+   into its element's pieces, its element is left on the ground, and from Martial Ancestor up its spirit rises away
+   slowly and fades as it falls. Fades and size changes only, measured to keep a Saint's fight smooth.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

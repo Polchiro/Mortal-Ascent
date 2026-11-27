@@ -209,6 +209,14 @@
       n.style.width = aw / s.width * 100 + '%'; n.style.height = ah / s.height * 100 + '%';
     }
     if (img.complete) fit(); else img.addEventListener('load', fit, {once: true});
+    // Roused (the game's own rule: after its final roar it hits harder): its aura burns red and pulses fast.
+    // Wounded (30% HP or less): it pulses faster, the beast near its end. (SHOAIB Nov 27.)
+    var bar = main.querySelector('.ehp > div'), hp = bar ? parseFloat(bar.style.width) : 100;
+    var rage = main.classList.contains('roused') && !main.classList.contains('slain');
+    n.classList.toggle('rage', rage);
+    var want = '/art/fx/elem/' + (rage ? 'blood' : R.element) + '_aura.webp';     // roused: the red of the blood aura
+    n.querySelectorAll('img').forEach(function (i) { if (i.getAttribute('src') !== want) i.setAttribute('src', want); });
+    n.classList.toggle('low', hp <= 30 && !n.classList.contains('rage'));
     if (!aura.bound) { aura.bound = true; window.addEventListener('resize', function () { var m = document.querySelector('main.battle'); if (m) { sized(m); aura(m); } }); }
   }
 
@@ -587,6 +595,7 @@
     function drop(who) {
       if (!held[who]) return;
       held[who] = false;
+      if (who === 'enemy') qiCrack();
       after[who].bar.style.width = after[who].width; after[who].val.textContent = after[who].text;
     }
     function pose(p) { if (fighter.dataset.pose !== p) fighter.dataset.pose = p; }
@@ -1399,16 +1408,35 @@
       scene.insertBefore(n, beastBox);                           // on the ground, under the beast
       setTimeout(function () { n.remove(); }, 2600);
     }
-    function avatar(pic, src) {
+    function avatar(pic, src, cls, life) {
       if (!src) return;
       var f = at(pic, 0.5, 1), n = document.createElement('span');
-      n.className = 'bavatar' + (ROAR.power >= 4 ? ' saint' : '');
+      n.className = 'bavatar' + (ROAR.power >= 4 ? ' saint' : '') + (cls ? ' ' + cls : '');
       n.style.left = f[0] + '%'; n.style.top = f[1] + '%';
       n.style.width = pic.width + 'px'; n.style.height = pic.height + 'px';
       n.style.setProperty('--rc', ROAR.color); n.style.setProperty('--m', 'url(' + src + ')');
       n.innerHTML = '<i class="tint"></i><img alt="" src="' + src + '">';
       scene.insertBefore(n, beastBox);                           // behind the beast
-      setTimeout(function () { n.remove(); }, 2300);
+      setTimeout(function () { n.remove(); }, life || 2300);
+    }
+    /* Your blows crack a strong beast's Qi (SHOAIB Nov 27): when a hit lands on a beast of Martial King and up, its
+       aura flares and a few pieces of its element burst off where it was struck. */
+    function qiCrack() {
+      if (!ROAR || !(ROAR.power >= 1) || !ELEM) return;
+      if (auraEl) { auraEl.classList.remove('flare'); void auraEl.offsetWidth; auraEl.classList.add('flare'); }
+      var p = at(br, 0.35 + Math.random() * 0.3, 0.35 + Math.random() * 0.25);
+      piece('beburst bechip', ELEM + '_burst.webp', p[0], p[1], 700, {'--s': Math.min(420, br.height * 0.7) + 'px', '--r': (Math.random() * 90) + 'deg'});
+    }
+    /* A strong beast dies in its element (SHOAIB Nov 27): its aura shatters into its element's pieces, and from
+       Martial Ancestor up its spirit tears loose and rises away, slow and fading, as it falls. */
+    function departs() {
+      if (!ROAR || !(ROAR.power >= 1) || !ELEM) return;
+      var c = at(br, 0.5, 0.55), sz = Math.min(820, br.height * 1.2);
+      piece('beburst', ELEM + '_burst.webp', c[0], c[1], 1000, {'--s': sz + 'px', '--r': '0deg'});
+      setTimeout(function () { piece('beburst', ELEM + '_burst.webp', c[0], c[1], 1100, {'--s': sz * 1.3 + 'px', '--r': '40deg'}); }, 180);
+      var f = at(br, 0.5, 0.97), g = piece('beground', ELEM + '_ground.webp', f[0], f[1], 3200, {'--w': Math.min(700, br.width * 1.1) + 'px'});
+      scene.insertBefore(g, beastBox);
+      if (ROAR.power >= 3) avatar(br, beast.src, 'depart', 3200);
     }
     function presence(pic, final, src) {                         // what an Elite's or a Beast King's roar does to the whole scene
       if (ROAR.power >= 1) sigil(pic);
@@ -2333,7 +2361,7 @@
       }
       return {end: total + (d.linger || 800), render: function (t) {
         if (t < 0) return;
-        if (once('start')) main.classList.add('dying');
+        if (once('start')) { main.classList.add('dying'); departs(); }
         pose('idle'); hero(0, 0);
         if (DS) {                                              // it falls in its own frames, and lies there
           BS.frame('death', t / total * DS.frames);
