@@ -56,21 +56,27 @@
       var curve = new Float32Array(1024);
       for (var i = 0; i < 1024; i++) { var x = i / 511.5 - 1; curve[i] = Math.tanh(2.6 * x); }
       drive.curve = curve; drive.connect(master);
-      var len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // the room: 1.3 s of dying noise
-      for (var ch = 0; ch < 2; ch++) {
-        var d = ir.getChannelData(ch);
-        /* the fade (1 - k/len)^3.2 is worked out once every 128 samples and eased in between: the same sound, but
-           building it no longer freezes the page for a moment the first time a fight makes a noise */
-        for (var k = 0, e0 = 1, e1 = 1; k < len; k++) {
-          if (!(k & 127)) { e0 = Math.pow(1 - k / len, 3.2); e1 = Math.pow(Math.max(0, 1 - (k + 128) / len), 3.2); }
-          d[k] = (Math.random() * 2 - 1) * (e0 + (e1 - e0) * (k & 127) / 128) * (k < 400 ? k / 400 : 1);
+      /* The echo room, the noise every made blow is cut from, and this fight's recordings are prepared when the page
+         is idle, not in the same moment as the first click (SHOAIB, Nov 28: the first move of a fight stuttered). Until
+         the room is built a sound simply has no echo. */
+      room = ctx.createGain();
+      (window.requestIdleCallback || function (f) { return setTimeout(f, 200); })(function () {
+        var len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // the room: 1.3 s of dying noise
+        for (var ch = 0; ch < 2; ch++) {
+          var d = ir.getChannelData(ch);
+          /* the fade (1 - k/len)^3.2 is worked out once every 128 samples and eased in between: the same sound, but
+             building it no longer freezes the page for a moment the first time a fight makes a noise */
+          for (var k = 0, e0 = 1, e1 = 1; k < len; k++) {
+            if (!(k & 127)) { e0 = Math.pow(1 - k / len, 3.2); e1 = Math.pow(Math.max(0, 1 - (k + 128) / len), 3.2); }
+            d[k] = (Math.random() * 2 - 1) * (e0 + (e1 - e0) * (k & 127) / 128) * (k < 400 ? k / 400 : 1);
+          }
         }
-      }
-      var conv = ctx.createConvolver(), wet = ctx.createGain(), dark = ctx.createBiquadFilter();
-      conv.buffer = ir; dark.type = 'lowpass'; dark.frequency.value = 4200; wet.gain.value = 0.5;
-      room = ctx.createGain(); room.connect(conv); conv.connect(dark); dark.connect(wet); wet.connect(master);
-      loadTakes();
-      noise();                                                 // the noise every blow is cut from: made now, on the first tap, not mid-hit
+        var conv = ctx.createConvolver(), wet = ctx.createGain(), dark = ctx.createBiquadFilter();
+        conv.buffer = ir; dark.type = 'lowpass'; dark.frequency.value = 4200; wet.gain.value = 0.5;
+        room.connect(conv); conv.connect(dark); dark.connect(wet); wet.connect(master);
+        noise();
+        loadTakes();
+      }, {timeout: 1500});
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
@@ -263,18 +269,40 @@
   function fetchTakes() {
     fetch(BASE + 'sounds.json', {cache: 'no-cache'}).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) { takes = j || {}; loadTakes(); }).catch(function () {});
   }
+  /* Only this fight's recordings are loaded, one at a time (SHOAIB, Nov 28: the fight lagged on its first moves): the
+     cultivator's own and the beast's own takes (#voice, @body) first, then the shared ones. Before, all 225 files of
+     every beast in the game were fetched and unpacked at once on the first click, a half-second freeze and stutters
+     after it. Any other take is fetched the first time it is asked for (that once the made sound plays instead). */
+  var queue = [], busy = false;
+  function wanted(k) {
+    var at = k.indexOf('@'), hash = k.indexOf('#'), F = window.FightSound || {};
+    if (at >= 0 && k.slice(at + 1) !== (F.body || '')) return false;
+    if (hash >= 0 && k.slice(hash + 1).split('@')[0] !== (F.voice || '')) return false;
+    return true;
+  }
+  function want(k, first) {
+    (takes[k] || []).forEach(function (t) {
+      var file = fileOf(t);
+      if (file in bufs) return;
+      bufs[file] = null;
+      if (first) queue.unshift(file); else queue.push(file);
+    });
+  }
+  function pump() {
+    if (busy || !ctx || !queue.length) return;
+    busy = true;
+    var file = queue.shift();
+    fetch(BASE + file).then(function (r) { return r.arrayBuffer(); })
+      .then(function (a) { return new Promise(function (ok, no) { ctx.decodeAudioData(a, ok, no); }); })
+      .then(function (b) { bufs[file] = b; }, function () {})
+      .then(function () { busy = false; setTimeout(pump, 30); });       // one at a time, a breath between: no burst of work
+  }
   function loadTakes() {                                      // decoding needs the context, which needs a first click
     if (!ctx) return;
-    Object.keys(takes).forEach(function (k) {
-      takes[k].forEach(function (t) {
-        var file = fileOf(t);
-        if (file in bufs) return;
-        bufs[file] = null;
-        fetch(BASE + file).then(function (r) { return r.arrayBuffer(); })
-          .then(function (a) { return new Promise(function (ok, no) { ctx.decodeAudioData(a, ok, no); }); })
-          .then(function (b) { bufs[file] = b; }).catch(function () {});
-      });
-    });
+    var keys = Object.keys(takes).filter(wanted);
+    keys.filter(function (k) { return k.indexOf('@') >= 0 || k.indexOf('#') >= 0; }).forEach(function (k) { want(k); });
+    keys.forEach(function (k) { want(k); });
+    pump();
   }
   /* which takes answer this sound: the narrowest listed. For a beast's voice, its body's own first
      ("roar:big@wolf", "roar@wolf"); `as` narrows a technique to its movement ("cast:kick"); then "hit:big"; then
@@ -296,7 +324,7 @@
     var key = takesFor(name, arg, opts);
     if (!key) return false;
     var ready = takes[key].filter(function (t) { return bufs[fileOf(t)]; });
-    if (!ready.length) return false;
+    if (!ready.length) { want(key, true); pump(); return false; }   // not loaded yet: fetched now, for next time
     var pick = ready[Math.floor(Math.random() * ready.length)];
     if (ready.length > 1 && fileOf(pick) === lastTake[key]) pick = ready[(ready.indexOf(pick) + 1) % ready.length];
     lastTake[key] = fileOf(pick);
@@ -317,6 +345,7 @@
     body: '',                                                 // the beast's body type (fight.js sets it): whose voice
     voice: '',                                                // the cultivator's ("male"): his own recordings first (fight.js sets it)
     names: Object.keys(S),
+    prepare: function () { loadTakes(); },                      // after body/voice change (a new fight): its own takes load next
     /* play a sound now, or `delay` ms from now */
     play: function (name, arg, delay, opts) {
       if (!S[name] || !on || !ac(false) || ctx.state !== 'running') return;

@@ -1427,6 +1427,18 @@ The looping animations carry on too (Nov 28, `loopsOf` / `resumeLoops` in `fight
 CSS animation's place in its loop is read (by its element's place in the page and its name, allowing for its own start
 offset), and the new page's same loops are set to it once it is in. Before, the hero's stance went back to its first
 frame on every turn, and that snap, on every click, was most of the "refresh" he still felt after the videos were kept.
+The new page also goes in only once its pictures are ready (Nov 28, his screen recording: on the swap frame both
+portraits and every button icon were blank and the beast squeezed thin until its picture was in and sized). `ready`
+unpacks each new picture and painted sheet off-screen and waits for them, at most `READY_MS` (350 ms); `keepPictures`
+moves every picture that is the same on the new turn (by place and address) across as the already drawn element, with
+the new page's attributes, its src never set again. The beast's style watcher is replaced, not added to.
+
+**Sounds and shakes (Nov 28).** `fight_sound.js` loads only this fight's recordings (the beast's `@body`, the
+cultivator's `#voice`, the shared ones), one at a time, when the page is idle; any other is fetched the first time it is
+asked for (`FightSound.prepare` after a new fight's beast is set). Before, the first click fetched and unpacked all 225
+files of every beast at once: a half-second freeze on the first move and stutters after it. The echo room is built when
+idle too. The camera's shake and zoom are softer again (`SHAKE` 0.35, `ZOOM` 0.55), and the scene is a single layer
+(`will-change`) while it shakes.
 
 ## Her movements
 

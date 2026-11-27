@@ -130,7 +130,8 @@
       dead: function () { stop(); show('death', S.death.frames - 1); },
       fit: fit
     };
-    if (window.MutationObserver) new MutationObserver(copy).observe(img, {attributes: true, attributeFilter: ['style']});
+    if (img._copy) img._copy.disconnect();                     // the same picture carried to the next turn (keepPictures): one watcher
+    if (window.MutationObserver) { img._copy = new MutationObserver(copy); img._copy.observe(img, {attributes: true, attributeFilter: ['style']}); }
     if (img.complete) fit(); else img.addEventListener('load', fit);
     var idle = layer.querySelector('.bs-idle');                 // the idle keeps its place in time, not restarting each turn:
     if (idle && S.idle && S.idle.ms) idle.style.animationDelay = -(performance.now() % S.idle.ms).toFixed(0) + 'ms';   // (the
@@ -181,7 +182,7 @@
   /* How hard the screen shakes when a roar or a big blow lands (SHOAIB Nov 27: "I like it but I don't know if it
      works well for others"): about half the old shake, a gentler camera punch (ZOOM) and a softer white flash; with
      "reduce motion" on, no shake, no flash and only a slight punch. */
-  var SHAKE = CALM ? 0 : 0.55, ZOOM = CALM ? 0.35 : 0.75;
+  var SHAKE = CALM ? 0 : 0.35, ZOOM = CALM ? 0.3 : 0.55;      // softer again (SHOAIB, Nov 28: the roar's shake felt laggy; smooth first)
   function buzz(pattern) {
     try { if (!CALM && navigator.vibrate && 'ontouchstart' in window) navigator.vibrate(pattern); } catch (e) {}
   }
@@ -508,12 +509,58 @@
     var moved = +fresh.dataset.turn !== sent;                   // the server took the move (or refused it with a notice)
     var played = fresh.dataset.round !== now.dataset.round      // a turn of the fight was played: there is something to act out
       || (!!fresh.dataset.end && !now.dataset.end);             // ... or it was the winning turn (the round count stops there)
-    keepHistory(now, fresh);
-    var loops = loopsOf(now);
-    keepScene(now, fresh);
-    now.replaceWith(fresh);                                     // same scroll position: nothing jumps
-    init();                                                     // still locked: the new buttons are painted as such
-    resumeLoops(fresh, loops);
+    ready(fresh, now, function () {                             // every new picture unpacked first: nothing shows blank or unsized
+      if (!now.isConnected) return;
+      keepHistory(now, fresh);
+      var loops = loopsOf(now);
+      keepScene(now, fresh);
+      now.replaceWith(fresh);                                   // same scroll position: nothing jumps
+      init();                                                   // still locked: the new buttons are painted as such
+      resumeLoops(fresh, loops);
+      after(fresh, moved, played, recovered, before);
+    });
+  }
+
+  /* The new turn's page goes in only once its pictures are unpacked (SHOAIB, Nov 28, his screen recording: on the
+     frame the turn came in, both portraits and every button icon were blank and the beast was squeezed thin and small,
+     because each <img> of the new page is a fresh copy that the phone still had to unpack, and the beast's size is
+     fitted once its picture is in). Each picture, and each painted sheet in a style (the stance, the beast's idle), is
+     unpacked off-screen; the swap waits for them, never more than READY_MS (a slow phone still gets its turn). */
+  var READY_MS = 350;
+  function ready(fresh, now, go) {
+    var waits = [], seen = {};
+    Array.prototype.forEach.call(now.querySelectorAll('img[src]'), function (im) {   // already on screen and drawn: carried over
+      if (im.complete && im.naturalWidth) seen[im.getAttribute('src')] = 1;           // as it is (keepPictures), nothing to unpack
+    });
+    Array.prototype.forEach.call(now.querySelectorAll('[style*="url("]'), function (el) {   // a sheet already showing is unpacked
+      (el.getAttribute('style').match(/url\((['"]?)([^'")]+)\1\)/g) || []).forEach(function (u) {
+        seen[u.replace(/^url\((['"]?)/, '').replace(/['"]?\)$/, '')] = 1;
+      });
+    });
+    function unpack(src) {
+      if (!src || seen[src]) return;
+      seen[src] = 1;
+      var im = new Image();
+      im.src = src;
+      waits.push(im.decode ? im.decode().catch(function () {}) : Promise.resolve());
+    }
+    Array.prototype.forEach.call(fresh.querySelectorAll('img'), function (img) {
+      if (img.loading === 'lazy') img.loading = 'eager';
+      unpack(img.getAttribute('src'));
+    });
+    Array.prototype.forEach.call(fresh.querySelectorAll('[style*="url("]'), function (el) {
+      (el.getAttribute('style').match(/url\((['"]?)([^'")]+)\1\)/g) || []).forEach(function (u) {
+        unpack(u.replace(/^url\((['"]?)/, '').replace(/['"]?\)$/, ''));
+      });
+    });
+    if (!waits.length || !window.Promise) { go(); return; }
+    var done = false;
+    function once() { if (!done) { done = true; go(); } }
+    Promise.all(waits).then(once);
+    setTimeout(once, READY_MS);
+  }
+
+  function after(fresh, moved, played, recovered, before) {
     if (!moved) {                                               // the move never arrived: nothing happened, pick again
       if (recovered) notice(fresh, 'The connection dropped before your move arrived. Nothing was spent: choose again.');
       Combat.set('player_turn');
@@ -556,6 +603,32 @@
     }
     var cv = now.querySelector('.bscene > canvas.ambient'), sc = fresh.querySelector('.bscene');
     if (cv && sc) sc.insertBefore(cv, sc.firstChild);
+    keepPictures(now, fresh);
+  }
+
+  /* Every picture that is the same on the new turn (the portraits, the button icons, the hero, the beast) is the old,
+     already drawn <img> moved across, with the new page's attributes, rather than a fresh copy (SHOAIB's recording,
+     Nov 28: fresh copies showed blank for a frame and the beast squeezed until its picture was in and it was sized). A
+     picture is matched by its place in the page and its address; its src is never set again, so it is not reloaded. */
+  function keepPictures(now, fresh) {
+    var olds = {};
+    Array.prototype.forEach.call(now.querySelectorAll('img[src]'), function (im) {
+      if (!im.complete || !im.naturalWidth) return;
+      var k = loopKey(im, now, im.getAttribute('src'));
+      if (!(k in olds)) olds[k] = im;
+    });
+    Array.prototype.forEach.call(fresh.querySelectorAll('img[src]'), function (im) {
+      var k = loopKey(im, fresh, im.getAttribute('src')), o = olds[k];
+      if (!o) return;
+      delete olds[k];
+      Array.prototype.slice.call(o.attributes).forEach(function (at) {
+        if (at.name !== 'src' && !im.hasAttribute(at.name)) o.removeAttribute(at.name);
+      });
+      Array.prototype.forEach.call(im.attributes, function (at) {
+        if (at.name !== 'src' && o.getAttribute(at.name) !== at.value) o.setAttribute(at.name, at.value);
+      });
+      im.replaceWith(o);
+    });
   }
 
   /* Every looping animation on the page (the hero's stance, the beast's idle, an aura's breath, a glow) goes on where
@@ -1094,8 +1167,9 @@
          [0.6, z * 0.99, 3, -2], [0.75, 1 + (z - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
           k.push({offset: a[0], transform: 'translate(' + a[2] * SHAKE + 'px,' + a[3] * SHAKE + 'px) scale(' + a[1] + ')'});
         });
+        scene.style.willChange = 'transform';                  // moved as one layer while it shakes: nothing redrawn each frame
         var anim = scene.animate(k, {duration: 1500, easing: 'ease-out'});
-        anim.onfinish = function () { scene.style.transformOrigin = ''; };
+        anim.onfinish = function () { scene.style.transformOrigin = ''; scene.style.willChange = ''; };
       }
     }
     function camera(p, zoom, ms) {                              // the camera punches in on p (% of the scene) and shakes
@@ -1107,8 +1181,9 @@
        [0.6, zoom * 0.99, 3, -2], [0.75, 1 + (zoom - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
         k.push({offset: a[0], transform: 'translate(' + a[2] * SHAKE + 'px,' + a[3] * SHAKE + 'px) scale(' + a[1] + ')'});
       });
+      scene.style.willChange = 'transform';                    // moved as one layer while it shakes: nothing redrawn each frame
       var anim = scene.animate(k, {duration: ms, easing: 'ease-out'});
-      anim.onfinish = function () { scene.style.transformOrigin = ''; };
+      anim.onfinish = function () { scene.style.transformOrigin = ''; scene.style.willChange = ''; };
     }
 
     /* A flying beast's screech (beasts.ROAR_ANIMATIONS["flying"], from SHOAIB's flying roar video). While it rears up
@@ -2678,6 +2753,7 @@
     var castTier = cast ? (TIER[cast.grade] || 0) : 0;
     if (window.FightSound) window.FightSound.voice = fighter.dataset.voice || '';       // whose recordings the cultivator's moves play
     if (window.FightSound) window.FightSound.body = beastBox.dataset.body || '';         // whose voice the beast's sounds are
+    if (window.FightSound && window.FightSound.prepare) window.FightSound.prepare();   // and only those recordings are loaded (fight_sound.js)
     var braceHit = null;                                         // a brace or deflection takes the beast's blow itself
     var inside = cast && cast.fx && (cast.fx.motion === 'brace' || cast.fx.motion === 'deflect');
     if (inside) {
