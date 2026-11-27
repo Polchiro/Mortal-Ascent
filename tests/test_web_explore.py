@@ -1375,6 +1375,20 @@ def test_the_jade_scaled_crocodile_is_animated_from_its_own_videos_with_its_own_
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["jade_scaled_crocodile@roar"][:2] == [0.12, 0.42]
     assert explore_play.beast_body("Jade-Scaled Crocodile") == "jade_scaled_crocodile"
 
+def test_the_black_water_serpent_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Black Water Serpent (Nov 27, Grandmaster Beast King): a glossy ink-black hooded serpent with two short horns, coiled with its neck raised; both videos clean."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("black_water_serpent")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Black Water Serpent", "slug": "black_water_serpent"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "black_water_serpent.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@black_water_serpent" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["black_water_serpent@roar"][:2] == [0.09, 0.23]
+    assert explore_play.beast_body("Black Water Serpent") == "black_water_serpent"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

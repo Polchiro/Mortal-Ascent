@@ -177,6 +177,14 @@ CLIPS = {
                               "breathe": 0.03, "idle_from": 2.0, "idle_until": 3.1, "attack_ms": 3000,
                               "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 4},
                               "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, the Grandmaster Beast King: a glossy ink-black king serpent, dark-teal wave bands, a silver belly,
+    # a flared hood and two short horns, coiled with its neck raised: both videos clean (no remakes; made from the
+    # uncleaned picture, its sparkle on the backdrop). Its idle is the calm second before its open-jawed strike; its flinch
+    # and its slow sinking (its neck lowering till its head lies in front of its coils) from the hit video
+    "black_water_serpent": {"attack": (3.95, 6.45), "hit": (2.05, 3.1), "death": (3.85, 6.85), "idle_span": (16, 26),
+                            "breathe": 0.03, "idle_from": 2.75, "idle_until": 3.95, "attack_ms": 2600,
+                            "ease_in": {"attack": 2, "hit": 3, "death": 3}, "settle": {"attack": 3},
+                            "ease_out": {"hit": 5}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

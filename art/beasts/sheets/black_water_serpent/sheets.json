@@ -1,0 +1,48 @@
+{
+ "cell": [
+  490,
+  289
+ ],
+ "still": [
+  97.2,
+  5.4,
+  386.4,
+  281.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/black_water_serpent/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.1878
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/black_water_serpent/attack.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2600,
+   "bite": 14,
+   "reach": 0.2433,
+   "bite_x": 0.002
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/black_water_serpent/hit.webp",
+   "frames": 21,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1750
+  },
+  "death": {
+   "src": "/art/beasts/sheets/black_water_serpent/death.webp",
+   "frames": 39,
+   "cols": 8,
+   "rows": 5,
+   "ms": 3250,
+   "impact": 31
+  }
+ }
+}
