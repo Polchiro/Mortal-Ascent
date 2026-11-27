@@ -332,7 +332,11 @@ when the gate is sealed), toxicity and injured / resting hanging just under it, 
 takes no room of its own, and tucked under the plate's bars on a phone (the big hanging `break_tab` took too much of
 a phone's screen). A small round button at the right end of the medallions folds
 them away or brings them back (`#dockFold` in `_walkui.html`; remembered on the device as `ma.dockFolded`); Run stays,
-and M still opens the map. At the bottom right, round medallions in gold rings (`ring`) with the
+and M still opens the map. A round button before ? and the cog does the same for the top right: it folds the purse and
+Today's Tasks away (`#topFold`, `body.topfolded`, remembered as `ma.topFolded`); the trip's panel stays, as it is the
+hunt itself. A third, at the hero plate's right edge (its face's corner on a phone), folds the plate down to
+your face: HP, Qi, toxicity, Break Through and the place's name go, the face still opens your character
+(`#hudFold`, `body.hudfolded`, remembered as `ma.hudFolded`). At the bottom right, round medallions in gold rings (`ring`) with the
 painted Bag, Character, Techniques and Map icons, and Run in the grand seal ring (`seal_ring`). The plate is 420 px
 wide on a computer and up to 300 px on a phone (`--pw`); every size in it follows that width.
 

@@ -46,6 +46,54 @@
     try { localStorage.setItem('ma.dockFolded', folded ? '1' : '0'); } catch (e) {}
   });
 })();
+/* The same for the top right (Shoaib, Nov 27): a round button before ? and the cog hides the purse and Today's Tasks
+   (your trip's panel stays: it is the hunt itself); remembered on this device as ma.topFolded. */
+(function () {
+  var tools = document.querySelector('.mtools');
+  if (!tools) return;
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'hbtn ghost small micon tfold'; btn.id = 'topFold';
+  btn.innerHTML = '<span aria-hidden="true"></span>';
+  tools.insertBefore(btn, tools.firstChild);
+  function set(folded) {
+    document.body.classList.toggle('topfolded', folded);
+    btn.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    btn.title = folded ? 'Show coins and tasks' : 'Hide coins and tasks';
+    btn.setAttribute('aria-label', btn.title);
+  }
+  var saved = false;
+  try { saved = localStorage.getItem('ma.topFolded') === '1'; } catch (e) {}
+  set(saved);
+  btn.addEventListener('click', function () {
+    var folded = !document.body.classList.contains('topfolded');
+    set(folded);
+    try { localStorage.setItem('ma.topFolded', folded ? '1' : '0'); } catch (e) {}
+  });
+})();
+/* ...and the top left: a round button at the hero plate's edge folds it down to your face (HP, Qi, toxicity, Break
+   Through and the place's name go; the face still opens your character); remembered as ma.hudFolded. */
+(function () {
+  var hud = document.querySelector('.mhud'), hero = document.getElementById('hero');
+  if (!hud || !hero) return;
+  var btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'hfold'; btn.id = 'hudFold';
+  btn.innerHTML = '<span aria-hidden="true"></span>';
+  hud.appendChild(btn);
+  function set(folded) {
+    document.body.classList.toggle('hudfolded', folded);
+    btn.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    btn.title = folded ? 'Show your plate' : 'Hide your plate';
+    btn.setAttribute('aria-label', btn.title);
+  }
+  var saved = false;
+  try { saved = localStorage.getItem('ma.hudFolded') === '1'; } catch (e) {}
+  set(saved);
+  btn.addEventListener('click', function () {
+    var folded = !document.body.classList.contains('hudfolded');
+    set(folded);
+    try { localStorage.setItem('ma.hudFolded', folded ? '1' : '0'); } catch (e) {}
+  });
+})();
 </script>
 <div class="mplate tnotice wsay" id="say" role="status" hidden></div>
 <section class="mplate tdlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgName" hidden>
