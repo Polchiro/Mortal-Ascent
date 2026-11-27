@@ -706,7 +706,12 @@ a lair is fought with `bot/hunt.py`.
    turn a big word over your fighter says what happened (Countered!, Blocked!, Stunned!, Clash!, Guard broken!).
    The beast's warning about its next move (`F.warning`, the omen scroll) is still sent but **not shown** (Shoaib,
    Nov 27: it covered the beast's head and crowded the screen; you read the beast itself). The duel and spar keep
-   theirs. The "Your turn" panel is a small one at the bottom right.
+   theirs. The "Your turn" panel is a small one at the bottom right. The turn's call-outs ("A Wild Boar leaps from the
+   brush!", each blow) show small at the top, in the gap between the two banners, not over the middle where a big
+   beast stands (wide screens; `.bfeed`). On a computer, Battle History is a small pill (icon and turn) in the arena's
+   bottom-left corner above the pill and flee buttons, its record opening upward. On a phone the two plates share
+   one row, the "Your turn" panel is just its chip laid over the bottom of the arena (the move's explanation is only
+   on computers), and the arena takes the height that frees (the spar and duel too).
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
