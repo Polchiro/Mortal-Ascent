@@ -165,3 +165,17 @@ def test_the_map_medallions_can_fold_away():
 def test_the_fight_banners_are_smaller():
     css = open("web/static/style.css").read()
     assert "--bw:min(30vw,450px)" in css and ".battle>.binfo .sub{display:none}" in css
+
+
+def test_the_top_right_can_fold_away_too():
+    page = open("web/templates/_walkui.html").read()
+    assert "btn.id = 'topFold'" in page and "ma.topFolded" in page and "classList.toggle('topfolded'" in page
+    css = open("web/static/style.css").read()
+    assert "body.topfolded .mtools .pursepill,body.topfolded .wtasks{display:none!important}" in css
+
+
+def test_the_top_left_can_fold_down_to_the_face():
+    page = open("web/templates/_walkui.html").read()
+    assert "btn.id = 'hudFold'" in page and "ma.hudFolded" in page and "classList.toggle('hudfolded'" in page
+    css = open("web/static/style.css").read()
+    assert "body.hudfolded .mhud .mbreak" in css and "body.hudfolded .mhud .mhero{width:calc(var(--pw) * .23)" in css

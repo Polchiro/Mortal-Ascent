@@ -3037,3 +3037,22 @@ main.battle:not(.duelfight) .benemy .bwarn{display:none}
 .mdock .dfold:hover,.mdock .dfold:focus-visible{border-color:#FFE7A8;box-shadow:0 0 10px rgba(255,214,140,.5)}
 .mdock .dbtn{transition:opacity .2s,transform .2s}
 .mdock.folded .dbtn{display:none}
+/* ...and the top right: the purse and Today's Tasks fold away behind the round button before ? and the cog */
+.mtools .tfold span{display:block;width:8px;height:8px;border:solid currentColor;border-width:0 2px 2px 0;transform:translateX(-2px) rotate(-45deg);transition:transform .2s}
+body.topfolded .mtools .tfold span{transform:translateX(2px) rotate(135deg)}
+body.topfolded .mtools .pursepill,body.topfolded .wtasks{display:none!important}
+@media (max-width:640px){.mtools .tfold{order:-2}}
+/* ...and the top left: the hero plate folds down to your face behind the round button at its edge */
+.mhud .hfold{position:absolute;left:calc(var(--pw) - 4px);top:calc(var(--pw) * .1375 - 14px);width:28px;height:28px;padding:0;border-radius:50%;cursor:pointer;
+  pointer-events:auto;border:1.5px solid #C9A45C;background:radial-gradient(circle at 40% 35%,#2A3138,#0E1216);box-shadow:0 0 8px rgba(0,0,0,.6);z-index:3}
+.mhud .hfold span{display:block;width:7px;height:7px;margin:0 auto;border:solid #EBCB86;border-width:0 2px 2px 0;transform:translateX(2px) rotate(135deg);transition:transform .2s}
+.mhud .hfold:hover,.mhud .hfold:focus-visible{border-color:#FFE7A8;box-shadow:0 0 10px rgba(255,214,140,.5)}
+body.hudfolded .mhud .hfold{left:calc(var(--pw) * .23 + 4px)}
+body.hudfolded .mhud .hfold span{transform:translateX(-2px) rotate(-45deg)}
+body.hudfolded .mhud .mhero .mwho,body.hudfolded .mhud .mtox,body.hudfolded .mhud .mstatus,body.hudfolded .mhud .mbreak,
+body.hudfolded .mhud .mplace,body.hudfolded .mhud .mkeys{display:none!important}
+body.hudfolded .mhud .mhero{width:calc(var(--pw) * .23);margin-bottom:0!important}
+body.hudfolded .mhud .mhero::before,body.hudfolded .mhud .mhero::after{display:none}
+body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,.6),0 0 6px rgba(201,164,92,.5)}
+@media (max-width:640px){.mhud .hfold,body.hudfolded .mhud .hfold{left:calc(var(--pw) * .2 - 6px);top:calc(var(--pw) * .275 - 14px);width:24px;height:24px}}
+@media (min-width:701px){.mhud .mbreak{left:calc(var(--pw) + 30px)}}       /* room for the fold button at the plate's edge */
