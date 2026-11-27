@@ -31,15 +31,14 @@ def card(t, learned, slots):
            "pct": 100 if not v["cap"] else min(100, round(v["exp"] / v["cap"] * 100)),
            "trial": v["trial_ready"], "effect": v["effect"], "power": v["power"], "passive": v["passive"],
            "cooldown": v["cooldown"], "equipped": v["equipped"], "action": None, "note": None}
+    held = db.slotted(equipped)
     if t["equipped"]:
-        if sum(x["type"] == t["type"] for x in equipped) > 1:
-            out["action"] = "unequip"
-        else:
-            out["note"] = f"Your only {out['kind'].lower()} technique: equip another to swap it"
+        out["action"] = "unequip"                    # no minimum: any slot can be emptied (technique.md "Slots")
+        out["slot"] = next((n for n, x in held.items() if x["id"] == t["id"]), None)
     else:
-        out["action"] = "equip"
-        gone = would_replace(learned, t, slots)
-        out["note"] = f"Replaces {gone['name']}" if gone else "Goes into a free slot"
+        out["action"] = "equip"                      # into the slot you pick: what is there comes off
+        out["slots"] = [{"no": n, "open": n <= slots, "holds": held[n]["name"] if n in held and n <= slots else None}
+                        for n in (1, 2, 3)]
     return out
 
 
@@ -79,8 +78,8 @@ def view(conn, uid):
             "learned": len(learned), "coins": p["lotus_coins"], "pearls": p["moon_pearls"]}
 
 
-def equip(conn, uid, tech_id, fighting=False):
-    """(ok, message). The bot's own rule (db.equip_technique)."""
+def equip(conn, uid, tech_id, fighting=False, slot=None):
+    """(ok, message). Into `slot` (1-3), taking off what is there; the bot's own rule (db.equip_technique)."""
     if fighting:
         return False, FIGHTING
     p = db.get_player(conn, uid)
@@ -89,8 +88,12 @@ def equip(conn, uid, tech_id, fighting=False):
         return False, "You don't know that technique."
     if tech["equipped"]:
         return False, "That technique is already equipped."
-    replaced = db.equip_technique(conn, uid, tech_id, rules.technique_slots(p["realm"]))
-    return True, f"Equipped {tech['name']}" + (f" in place of {replaced}." if replaced else ".")
+    open_slots = rules.technique_slots(p["realm"])
+    if slot is not None and not 1 <= slot <= open_slots:
+        return False, "That slot opens at Martial Warrior." if slot == 3 else "There is no such slot."
+    replaced = db.equip_technique(conn, uid, tech_id, open_slots, slot)
+    where = f" in slot {slot}" if slot else ""
+    return True, f"Equipped {tech['name']}{where}" + (f", in place of {replaced}." if replaced else ".")
 
 
 def unequip(conn, uid, tech_id, fighting=False):
@@ -100,8 +103,8 @@ def unequip(conn, uid, tech_id, fighting=False):
     if not tech or not tech["equipped"]:
         return False, "That technique isn't equipped."
     if db.unequip_technique(conn, uid, tech_id):
-        return True, f"Took off {tech['name']}."
-    return False, "You must keep one technique of each type equipped."
+        return True, f"Took off {tech['name']}: its slot is empty."
+    return False, "That technique isn't equipped."
 
 
 def fighting(state, uid):

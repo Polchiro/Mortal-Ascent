@@ -69,6 +69,7 @@ class CharacterSheet(OwnedView):
         self.selected = None
         self.confirm_discard = False
         self.tech_page = 1
+        self.tech_to_slot = None          # a technique picked to equip, waiting for its slot (technique.md "Slots")
 
     # ── drawing ──────────────────────────────────────────────────────
 
@@ -133,21 +134,33 @@ class CharacterSheet(OwnedView):
         sel.callback = callback
         self.add_item(sel)
 
-    # Techniques
+    # Techniques: pick a technique, then the slot it goes in (any kind in any slot; technique.md "Slots")
     def build_techniques(self):
         conn, uid = self.bot.conn, self.owner_id
         learned = db.get_techniques(conn, uid, equipped_only=False)
-        spare = [t for t in learned if not t["equipped"]]
-        if spare:
-            self.select("Equip a technique...", [
-                discord.SelectOption(label=t["name"], value=str(t["id"]),
-                                     description=f"{t['grade']} {t['type']} · {rules.TECH_BY_NAME.get(t['name'], {}).get('school', '')}")
-                for t in spare], self.on_equip_technique, 1)
+        p = db.get_player(conn, uid)
+        open_slots = rules.technique_slots(p["realm"])
         equipped = [t for t in learned if t["equipped"]]
-        removable = [t for t in equipped if sum(x["type"] == t["type"] for x in equipped) > 1]
-        if removable:
-            self.select("Unequip from the flex slot...", [
-                discord.SelectOption(label=t["name"], value=str(t["id"])) for t in removable],
+        picked = next((t for t in learned if t["id"] == self.tech_to_slot and not t["equipped"]), None)
+        if picked:
+            held = db.slotted(equipped)
+            for n in (1, 2, 3):
+                t = held.get(n)
+                label = f"Slot {n} · " + (t["name"][:40] if t else "empty") if n <= open_slots else f"Slot {n} · Martial Warrior"
+                self.button(label, self.slot_callback(n), style=discord.ButtonStyle.success if n <= open_slots else
+                            discord.ButtonStyle.secondary, row=1, disabled=n > open_slots)
+            self.button("Cancel", self.on_slot_cancel, row=1)
+        else:
+            spare = [t for t in learned if not t["equipped"]]
+            if spare:
+                self.select("Equip a technique...", [
+                    discord.SelectOption(label=t["name"], value=str(t["id"]),
+                                         description=f"{t['grade']} {t['type']} · {rules.TECH_BY_NAME.get(t['name'], {}).get('school', '')}")
+                    for t in spare], self.on_equip_technique, 1)
+        if equipped and not picked:
+            held = db.slotted(equipped)
+            self.select("Take a technique off...", [
+                discord.SelectOption(label=f"Slot {n} · {t['name']}", value=str(t["id"])) for n, t in sorted(held.items())],
                 self.on_unequip_technique, 2)
         pages = max(1, -(-len(learned) // sheet.TECH_PER_PAGE))
         if pages > 1:
@@ -160,18 +173,38 @@ class CharacterSheet(OwnedView):
         return any((self.owner_id, k) in self.bot.busy for k in FIGHT_SESSIONS)
 
     async def on_equip_technique(self, interaction):
+        """A technique picked: next, the slot buttons."""
         tid = int(interaction.data["values"][0])
         if self.in_fight():
             self.notice = "⚔️ Techniques can only be swapped outside of fights. Finish your fight first."
             return await self.show(interaction)
-        async with self.bot.db_lock:
-            p = db.get_player(self.bot.conn, self.owner_id)
-            tech = db.get_technique(self.bot.conn, self.owner_id, tid)
-            if not tech or tech["equipped"]:
-                self.notice = "That technique is already equipped."
-            else:
-                replaced = db.equip_technique(self.bot.conn, self.owner_id, tid, rules.technique_slots(p["realm"]))
-                self.notice = f"📜 Equipped **{tech['name']}**" + (f" in place of {replaced}." if replaced else ".")
+        tech = db.get_technique(self.bot.conn, self.owner_id, tid)
+        if not tech or tech["equipped"]:
+            self.notice = "That technique is already equipped."
+        else:
+            self.tech_to_slot = tid
+            self.notice = f"📜 Which slot for **{tech['name']}**? A technique already there comes off."
+        await self.show(interaction)
+
+    def slot_callback(self, slot):
+        async def cb(interaction):
+            tid, self.tech_to_slot = self.tech_to_slot, None
+            if self.in_fight():
+                self.notice = "⚔️ Techniques can only be swapped outside of fights. Finish your fight first."
+                return await self.show(interaction)
+            async with self.bot.db_lock:
+                p = db.get_player(self.bot.conn, self.owner_id)
+                tech = db.get_technique(self.bot.conn, self.owner_id, tid) if tid else None
+                if not tech or tech["equipped"]:
+                    self.notice = "That technique is already equipped."
+                else:
+                    replaced = db.equip_technique(self.bot.conn, self.owner_id, tid, rules.technique_slots(p["realm"]), slot)
+                    self.notice = f"📜 Equipped **{tech['name']}** in slot {slot}" + (f", in place of {replaced}." if replaced else ".")
+            await self.show(interaction)
+        return cb
+
+    async def on_slot_cancel(self, interaction):
+        self.tech_to_slot, self.notice = None, None
         await self.show(interaction)
 
     async def on_unequip_technique(self, interaction):
@@ -181,7 +214,7 @@ class CharacterSheet(OwnedView):
             return await self.show(interaction)
         async with self.bot.db_lock:
             ok = db.unequip_technique(self.bot.conn, self.owner_id, tid)
-        self.notice = "📜 Unequipped." if ok else "You must keep one technique of each type equipped."
+        self.notice = "📜 Taken off: its slot is empty." if ok else "That technique isn't equipped."
         await self.show(interaction)
 
     async def on_tech_prev(self, interaction):

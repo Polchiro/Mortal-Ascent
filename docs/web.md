@@ -149,8 +149,8 @@ Moon Pearls themselves are still bought on Discord (`/recharge`).
 ## Techniques
 
 `/techniques` (the top bar's **Techniques**, or "Change techniques ›" on the Profile): Discord's `/techniques` on one
-page (`web/techniques_play.py`, `web/techniques_routes.py`). At the top, the three sockets: **Attack**, **Defense** and
-**Flex** (locked until Martial Warrior). Below, a card for every technique you have learned: grade, kind and school,
+page (`web/techniques_play.py`, `web/techniques_routes.py`). At the top, the three slots, **Slot 1 / 2 / 3** (3 locked
+until Martial Warrior), each holding an attack or a defense technique (technique.md "Technique slots"). Below, a card for every technique you have learned: grade, kind and school,
 its mastery stage and EXP bar, power, passive, cooldown and special effect.
 
 **Sorted for a long list** (Shoaib, Nov 27): buttons for **All**, **Attack** or **Defense** (with how many of each;
@@ -158,10 +158,11 @@ the page only, nothing saved), and the cards in a folding section per grade, **H
 (`techniques_play.sections`), only grades you know a technique of; in each, equipped first, then attack, then by name.
 A section with nothing left after the filter hides.
 
-- **Equip** uses the bot's own `db.equip_technique`: it fills a free socket, or takes the place of the oldest equipped
-  technique of the same kind. The card says which before you press ("Replaces Iron Fist" / "Goes into a free slot").
-- **Unequip** (`db.unequip_technique`) only shows when another technique of the same kind stays equipped: one attack
-  and one defense are always on.
+- **Equip to Slot 1 / 2 / 3**: each card not equipped has a button per slot, each saying what that slot holds now
+  ("Iron Fist", "Empty", or locked). Pressing one puts the technique there and takes off what was there
+  (`db.equip_technique` with the slot; the form sends `slot`). It changes the page in place, with no reload ("No page
+  reloads" below).
+- **Unequip** (`db.unequip_technique`) is on every equipped card and empties its slot; there is no minimum.
 - Nothing can be swapped during a fight on the website (a duel, a spar, a drill or a beast fight), like Discord.
 
 ## No page reloads

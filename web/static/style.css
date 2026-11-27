@@ -3168,3 +3168,13 @@ html.softbusy main[data-soft] button[type=submit]{opacity:.7}
   border-radius:12px;background:rgba(9,16,36,.94);border:1px solid rgba(201,164,92,.6);color:#F2EAD6;box-shadow:0 10px 30px rgba(0,0,0,.5);
   font-size:14px;text-align:center;transition:opacity .5s}
 .softtoast.gone{opacity:0}
+
+/* Equip to a slot (technique.md "Slots"): three small buttons, each saying what it holds */
+.tqto{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--mist);flex-basis:100%}
+.tqslots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%}
+.tqslots form{margin:0}
+.tqslots .tbtn{width:100%;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 6px;line-height:1.15;min-width:0}
+.tqslots .tbtn b{font-size:13px}
+.tqslots .tbtn small{font-size:10.5px;opacity:.85;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tqslots .tbtn:disabled{opacity:.45;cursor:not-allowed}
+.tqact{flex-wrap:wrap}

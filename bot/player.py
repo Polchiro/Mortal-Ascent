@@ -38,18 +38,17 @@ def fmt_duration(seconds):
 
 
 def technique_slots(realm):
-    """2 slots (1 attack + 1 defense); Martial Warrior adds a flex slot (technique.md)."""
+    """How many technique slots are open: 2, and the third at Martial Warrior. Each takes either kind (technique.md)."""
     return 3 if realm_index(realm) >= realm_index("Martial Warrior") else 2
 
 
 def split_techniques(techniques):
-    """(attack, defense, flex) technique from the equipped ones (technique.md): the first attack and the first
-    defense (in the order they were equipped) hold the Attack and Defense slots; one more of either kind is the
-    Flex slot, a third technique of its own in a fight. Any may be None."""
-    atk = [t for t in techniques if t["type"] == "attack"]
-    dfn = [t for t in techniques if t["type"] == "defense"]
-    extra = atk[1:] + dfn[1:]
-    return (atk[0] if atk else None, dfn[0] if dfn else None, extra[0] if extra else None)
+    """The equipped techniques in slot 1, 2 and 3 (technique.md "Slots"; db.slotted), any of them None. A fight's
+    three technique moves are these slots in order (attack_tech, defense_tech, flex_tech are only their names:
+    each plays as a Strike or a Guard by the technique's own kind)."""
+    from . import db
+    held = db.slotted([t for t in techniques if t.get("equipped", 1)])
+    return held.get(1), held.get(2), held.get(3)
 
 
 def realm_index(realm):

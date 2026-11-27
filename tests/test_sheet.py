@@ -157,7 +157,7 @@ def test_attributes_are_hp_attack_defense_only(conn):
 def test_flex_slot_locked_until_martial_warrior(conn):
     p = new_player(conn)
     slots = sheet.technique_slots(p, db.get_techniques(conn, 1, equipped_only=False))
-    assert [s["slot"] for s in slots] == ["Attack", "Defense", "Flex"]
+    assert [s["slot"] for s in slots] == ["Slot 1", "Slot 2", "Slot 3"]
     assert slots[2]["locked"] and slots[0]["tech"]["name"] == "Iron Fist"
     db.update_player(conn, 1, realm="Martial Warrior")
     slots = sheet.technique_slots(db.get_player(conn, 1), db.get_techniques(conn, 1, equipped_only=False))
@@ -295,8 +295,10 @@ def test_no_technique_swaps_in_a_fight(conn):
         await view.on_equip_technique(FakeInteraction(tid))
         assert not db.get_technique(conn, 1, tid)["equipped"]
         bot.busy.clear()
-        await view.on_equip_technique(FakeInteraction(tid))
-        assert db.get_technique(conn, 1, tid)["equipped"]
+        await view.on_equip_technique(FakeInteraction(tid))               # picked: now the slot buttons
+        assert view.tech_to_slot == tid and not db.get_technique(conn, 1, tid)["equipped"]
+        await view.slot_callback(2)(FakeInteraction(tid))
+        assert db.get_technique(conn, 1, tid)["equipped"] and db.get_technique(conn, 1, tid)["slot"] == 2
     asyncio.run(go())
 
 

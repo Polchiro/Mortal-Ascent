@@ -28,7 +28,7 @@ from .fight import break_held
 from . import player as rules
 
 MOVES = ("strike", "guard", "break")
-TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")     # flex_tech: the Flex slot's technique (technique.md)
+TECH_KEYS = ("attack_tech", "defense_tech", "flex_tech")     # technique slots 1, 2, 3 (technique.md "Slots")
 CHOICES = MOVES + TECH_KEYS
 BASE_MOVE = {"strike": "strike", "guard": "guard", "break": "break", "attack_tech": "strike", "defense_tech": "guard"}
 MOVE_LABEL = {"strike": "Strike", "guard": "Guard", "break": "Break"}
@@ -90,14 +90,16 @@ class Duelist:
 
     def base(self, choice):
         """The plain move a choice plays as: a technique is a Strike or a Guard by its kind."""
-        if choice == "flex_tech":
-            return "strike" if self.flex_t and self.flex_t["type"] == "attack" else "guard"
+        if choice in TECH_KEYS:                      # slots take either kind (technique.md "Slots")
+            t = self.tech(choice)
+            return "strike" if t and t["type"] == "attack" else "guard"
         return BASE_MOVE[choice]
 
     def recorded(self, choice):
         """The move as the duel records keep it: a Flex technique counts as the attack or defense technique it is."""
-        if choice == "flex_tech" and self.flex_t:
-            return "attack_tech" if self.flex_t["type"] == "attack" else "defense_tech"
+        t = self.tech(choice) if choice in TECH_KEYS else None
+        if t:
+            return "attack_tech" if t["type"] == "attack" else "defense_tech"
         return choice
 
     def tech_as(self, choice, kind):
