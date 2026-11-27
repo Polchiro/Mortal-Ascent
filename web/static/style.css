@@ -3069,3 +3069,16 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
 @keyframes bdepart{0%{opacity:0;transform:translate(-50%,-100%) scale(1)}15%{opacity:.75;transform:translate(-50%,-104%) scale(1.15)}
   100%{opacity:0;transform:translate(-50%,-150%) scale(1.45)}}
 @media (prefers-reduced-motion:reduce){.baura.rage img,.baura.low img{animation-duration:3.4s}}
+/* a body type's own roar shape (fight.js `shape`, art/fx/roars/): thrown out of the mouth like the element's blast,
+   its shape filled with the beast's element colour and glowing, the picture's own white light over it */
+.bestream .bsh{position:absolute;right:0;top:calc(var(--h) / -2);width:var(--len);height:var(--h);transform-origin:100% 50%;
+  transform:scaleX(0);animation:bestream 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+.bestream .bsh .tint,.bestream .bsh img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill}
+.bestream .bsh .tint{background:var(--rc);-webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+.bestream .bsh img{opacity:.55}   /* no extra glow: the pictures carry their own, and a moving glow this size is costly */
+/* the element glowing at the open mouth while the roar pours out of it (fight.js `mouthGlow`) */
+.bmouth{position:absolute;z-index:6;width:var(--s);height:var(--s);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#fff 0,color-mix(in srgb,var(--rc) 85%,#fff) 18%,color-mix(in srgb,var(--rc) 55%,transparent) 42%,transparent 70%);
+  transform:translate(-50%,-50%) scale(.2);opacity:0;animation:bmouth 1.1s ease-out forwards}
+@keyframes bmouth{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}12%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  55%{transform:translate(-50%,-50%) scale(.85);opacity:.8}100%{transform:translate(-50%,-50%) scale(.6);opacity:0}}

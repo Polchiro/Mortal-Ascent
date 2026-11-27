@@ -334,3 +334,9 @@ def test_a_beast_looks_as_mighty_as_its_own_realm_not_the_one_it_is_scaled_to():
         assert beasts.home_realm(name), name
     sizes = [explore_play.beast_scale(r, "normal") for r in ["Mortal"] + __import__("realms").REALMS]
     assert sizes == sorted(sizes) and sizes[0] == 1.0
+
+
+def test_every_body_type_with_its_own_roar_shape_has_the_picture():
+    """The four-legged beasts', birds', serpents' and dragons' roars throw SHOAIB's roar shapes (fight.js `shape`)."""
+    for body in ("quadruped", "flying", "serpent", "dragon"):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "roars", f"roar_{body}.webp")), body

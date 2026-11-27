@@ -1063,6 +1063,19 @@ a lair is fought with `bot/hunt.py`.
    aura flares and a chip of its element bursts off where it was struck. *It dies in its element*: its aura shatters
    into its element's pieces, its element is left on the ground, and from Martial Ancestor up its spirit rises away
    slowly and fades as it falls. Fades and size changes only, measured to keep a Saint's fight smooth.
+   **Every body type's roar carries its element** (SHOAIB Nov 27: the four-legged beasts', birds', serpents' and
+   dragons' roars still used their old white waves and recoloured pictures). His four white pictures of each body
+   type's own roar shape (`art/fx/roars/roar_{quadruped,flying,serpent,dragon}.webp`, cleaned by
+   `scripts/make_element_fx.py`): a four-legged beast's widening sound rings, a bird's spiralling wind with feathers
+   of light, a serpent's coiling breath, an eastern dragon of light. `shape` in `fight.js` throws it from the mouth
+   across to you, its shape filled with the beast's element colour and the picture's own light over it, over its
+   element's blast (`blast`). Four-legged beasts keep their shockwave rings too; the birds' old wind picture, the
+   serpents' recoloured venom stream and the dragons' recoloured blast are replaced. The shape is loaded ahead
+   (`SHAPE_OF`).
+   **Out of the mouth** (SHOAIB: "make sure the roar looks like it comes out of the mouth"): every blast and shape
+   starts a touch in front of the open jaws (`lip`), is drawn behind the beast's picture (`underBeast`: where they
+   overlap the jaws cover it, so it pours out of the mouth), and the element glows at the mouth while it roars
+   (`mouthGlow`).
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
