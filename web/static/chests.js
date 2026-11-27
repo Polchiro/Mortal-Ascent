@@ -262,6 +262,17 @@
   function pic(src) { if (!src) return null; var i = new Image(); i.decoding = 'async'; i.src = src; return i; }
   var P = {seal: pic(RITE.seal), dragon: pic(RITE.dragon), beam: pic(RITE.beam), crack: pic(RITE.crack), galaxy: pic(RITE.galaxy)};
   if (RITE.stamp) $('chbannerseal').src = RITE.stamp;
+  if (RITE.ring) $('chring').src = RITE.ring;
+  /* the rune circle on the altar: an image behind the chest (not on the canvas, which is in front of it), its middle
+     on the chest's foot (86% down the chest picture), lying flat (squashed to `flat` of its height) and turning */
+  function ring(size, lift, turn, alpha, flat) {
+    var el = $('chring'), box = $('chbox');
+    if (alpha <= 0.002) { el.style.opacity = 0; return; }
+    var cx = box.offsetLeft + box.offsetWidth / 2, cy = box.offsetTop + box.offsetHeight * 0.86 - lift;
+    el.style.width = size + 'px'; el.style.left = (cx - size / 2) + 'px'; el.style.top = (cy - size / 2) + 'px';
+    el.style.transform = 'scaleY(' + flat + ') rotate(' + turn + 'rad)'; el.style.opacity = Math.min(1, alpha);
+    el.style.filter = alpha > 1 ? 'brightness(' + alpha.toFixed(2) + ')' : '';
+  }
   function ease(k) { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); }
   function span(t, a, b) { return Math.max(0, Math.min(1, (t - a) / (b - a))); }
   function ok(im) { return im && im.complete && im.naturalWidth; }
@@ -278,7 +289,7 @@
     later(function () { b.hidden = true; }, 4300);
   }
   function endRite() {
-    rite = null; shards = []; rain = []; quake(false); $('chbanner').hidden = true; SFX.stop();
+    rite = null; shards = []; rain = []; quake(false); $('chbanner').hidden = true; SFX.stop(); $('chring').style.opacity = 0;
     if (amb) amb.volume = Math.min(1, soundVol * 0.7);
   }
 
@@ -373,10 +384,9 @@
         var grow = t < 2950 ? 0.75 + 0.25 * ease(span(t, 0, 1200)) + 0.05 * Math.sin(t / 90) * span(t, 1500, 2950)
                             : 1.05 + 0.6 * ease(span(t, 2950, 3500));
         var spin = t / 1000 * (0.4 + 2.6 * span(t, 900, 2950) * span(t, 900, 2950));
-        var size = m.w * 2.2 * grow, glow = 0.85 + 0.35 * span(t, 1500, 2950) + 0.12 * Math.sin(t / 70) * span(t, 1500, 2950);
-        var lift = m.w * 0.55 * ease(span(t, 2950, 3500));        // the seal rises from the altar as it breaks
-        blit(P.seal, m.x, m.y + m.w * 0.3 - lift, size, size, k * glow, spin, 0.3);   // a magic circle on the altar under the chest
-        blit(P.seal, m.x, m.y + m.w * 0.3 - lift, size * 0.62, size * 0.62, k * glow * 0.4, -spin * 1.4, 0.3);
+        var bw = $('chbox').offsetWidth, glow = 0.85 + 0.35 * span(t, 1500, 2950) + 0.12 * Math.sin(t / 70) * span(t, 1500, 2950);
+        var lift = bw * 0.5 * ease(span(t, 2950, 3500));          // the seal rises from the altar as it breaks
+        ring(bw * 2.0 * grow, lift, spin, k * glow, 0.3);         // a magic circle on the altar, the chest standing on it
         if (t > 1500 && t < 2950 && Math.random() < 0.35) bolt(m, '#C9A3FF', m.w * 0.9);
       }
     };
@@ -457,7 +467,7 @@
     var m = mouth(), t = performance.now(), n = reduced ? 20 : 70;
     for (var i = 0; i < n; i++) {
       var a = Math.random() * Math.PI * 2, v = (0.4 + Math.random()) * m.w / 55;
-      shards.push({x: m.x + Math.cos(a) * m.w * 0.5, y: m.y - m.w * 0.06 + Math.sin(a) * m.w * 0.28, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - m.w / 250,
+      shards.push({x: m.x + Math.cos(a) * m.w * 0.9, y: m.y + m.w * 0.33 - m.w * 0.5 + Math.sin(a) * m.w * 0.27, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - m.w / 250,
                    s: m.w * (0.015 + Math.random() * 0.03), r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, t: t, life: 900 + Math.random() * 700});
     }
   }

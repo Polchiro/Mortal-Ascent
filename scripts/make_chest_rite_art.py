@@ -74,6 +74,14 @@ def main(seal, dragon, beam, crack, galaxy, stamp):
     os.makedirs(OUT, exist_ok=True)
     a = light(seal)                                  # the rune seal: a circle, its outer ring runs off top and bottom
     save_jpg(round_fade(a, a.shape[1] // 2, a.shape[0] // 2, a.shape[0], 0.80, 1.0), "seal.jpg", (720, 720))
+    # the same circle as a see-through picture (light kept as colour, black gone) for Epic's circle drawn behind the
+    # chest, where adding light onto the scene can't be used
+    ring = round_fade(a, a.shape[1] // 2, a.shape[0] // 2, a.shape[0], 0.80, 1.0)
+    al = np.clip(ring.max(axis=2) / 255 * 1.15, 0, 1)
+    rgb = np.clip(ring / np.maximum(al, 1e-3)[..., None], 0, 255)
+    Image.fromarray(np.dstack([rgb, al * 255]).astype(np.uint8), "RGBA").resize((720, 720), Image.LANCZOS) \
+        .save(os.path.join(OUT, "ring.webp"), quality=90)
+    print("wrote ring.webp")
     a = light(dragon)                                # the dragon coiled in a ring
     save_jpg(round_fade(a, round(a.shape[1] * 0.485), a.shape[0] // 2, a.shape[0], 0.82, 1.0), "dragon.jpg", (720, 720))
     a = light(beam)                                  # the beam: its middle column, fading left, right and at the top

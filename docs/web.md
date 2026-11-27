@@ -204,7 +204,8 @@ chest, the sparks start there and the rays turn around it, so nothing rises from
 by `scripts/make_chest_rite_art.py`: light on black with every edge faded, so nothing ends on a straight line; the
 sounds are made in code):
 - **Epic, "the Spirit Seal breaks"** (about 3.3 s before the lid): the room dims, a purple rune circle lights up on
-  the altar under the chest and turns, faster and faster, with purple lightning, a rising hum and crackles; it rises,
+  the altar under the chest (an image behind the chest, `art/chest/rite/ring.webp`, so the chest stands on it) and
+  turns, faster and faster, with purple lightning, a rising hum and crackles; it rises,
   shatters into purple shards with a glass-breaking burst, and the lid flies open.
 - **Legendary, "the Golden Dragon"** (about 4.3 s): the vault trembles, a dragon of golden light gathers round the
   chest, roars (a flash and a shake), then dives into the lid; the lid opens with a deep boom and chimes, and gold

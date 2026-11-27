@@ -34,7 +34,7 @@ def art():
             "lid": there(f"{ART}/lid.webp"), "seal": there("/art/train/fx/seal.webp"),
             "crack": there("/art/train/fx/crack.webp"),
             # the Epic, Legendary and Mythic openings (scripts/make_chest_rite_art.py)
-            "rite": {k: there(f"{ART}/rite/{k}.{ext}") for k, ext in (("seal", "jpg"), ("dragon", "jpg"), ("beam", "jpg"),
+            "rite": {k: there(f"{ART}/rite/{k}.{ext}") for k, ext in (("seal", "jpg"), ("ring", "webp"), ("dragon", "jpg"), ("beam", "jpg"),
                                                                      ("crack", "jpg"), ("galaxy", "jpg"), ("stamp", "webp"))}}
 
 

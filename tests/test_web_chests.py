@@ -223,7 +223,7 @@ def test_epic_legendary_and_mythic_open_their_own_way():
     from web import chest_routes
     js = open(os.path.join(ROOT, "web", "static", "chests.js")).read()
     rite = chest_routes.art()["rite"]
-    for k in ("seal", "dragon", "beam", "crack", "galaxy", "stamp"):
+    for k in ("seal", "ring", "dragon", "beam", "crack", "galaxy", "stamp"):
         assert rite[k] and os.path.exists(os.path.join(ROOT, rite[k].lstrip("/"))), k
     assert "var RITES = {epic: epicPlan(), legendary: legendaryPlan(), mythic: mythicPlan()};" in js
     assert "if (reduced) RITES = {};" in js and "var plan = quick ? null : RITES[T.key];" in js

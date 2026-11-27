@@ -65,7 +65,9 @@ body.chbg .privacy{display:none}
   opacity:.55;filter:blur(8px);animation:cglow 2.6s ease-in-out infinite;pointer-events:none}
 /* the chest: its closed and open pictures on one square canvas (scripts/make_chest_art.py lines them up), the base
    at 86% of the height, so the box hangs that much below the altar's top */
-.chbox{position:relative;margin-bottom:-14%}
+.chbox{position:relative;z-index:1;margin-bottom:-14%}
+/* Epic's rune circle, lying on the altar under the chest: behind the chest, so the chest stands on it (chests.js) */
+.chring{position:absolute;z-index:0;left:0;top:0;width:10px;max-width:none;pointer-events:none;opacity:0;display:block}
 .chbox::before{content:"";position:absolute;left:12%;right:12%;bottom:11%;height:7%;border-radius:50%;
   background:radial-gradient(ellipse,rgba(0,0,0,.7),transparent 70%);pointer-events:none}   /* its shadow on the altar */
 .chbox img{position:relative;display:block;width:100%;filter:drop-shadow(0 18px 22px rgba(0,0,0,.75))}
