@@ -2597,6 +2597,42 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 /* the painted Moon Pearl beside prices on the Moon Pavilion (web/templates/pavilion.html) */
 .pavpurse img.pavpearl,.pavprice img.pavpearl{width:1.2em;height:1.2em;margin:0;vertical-align:-.25em;object-fit:contain;filter:drop-shadow(0 0 4px rgba(120,180,255,.55))}
 
+/* The profile, painted (scripts/make_ui_art.py, docs/web.md "The profile page"): the realm's own seal, the gear in carved
+   slot frames (an empty slot shows the ghost of what goes there), the name on a gold plaque, the journey's own pictures. */
+.realmseal{width:96px;height:96px;background:none;border:0;box-shadow:none}
+.realmseal img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 10px rgba(235,203,134,.35))}
+.portrait.stage>img.remblem.back{left:50%;top:6%;bottom:auto;z-index:0;width:74%;height:auto;max-width:none;border-radius:50%;opacity:.16;
+  filter:saturate(.7);animation:emblemturn 120s linear infinite}
+.stage .sgear{width:60px;height:60px;border:0;border-radius:6px;background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
+  box-shadow:0 0 14px color-mix(in srgb,var(--rc,#C9A45C) 40%,transparent)}
+.stage .sgear:hover,.stage .sgear:focus-visible{box-shadow:0 0 22px color-mix(in srgb,var(--rc,#EBCB86) 70%,transparent)}
+.stage .sgear img{width:42px;height:42px}
+.stage .sgear.empty{border:0;box-shadow:none;opacity:.9}
+.stage .sgear.empty .plus,.xslot.empty .xicon .plus{display:none}
+.sgear.empty.s-weapons,.xslot.empty.s-weapons .xicon{background-image:url(/art/ui/slot_weapon.webp)}
+.sgear.empty.s-armor,.xslot.empty.s-armor .xicon{background-image:url(/art/ui/slot_armor.webp)}
+.sgear.empty.s-artifacts,.xslot.empty.s-artifacts .xicon{background-image:url(/art/ui/slot_artifact.webp)}
+.xicon,.xslot.empty .xicon{width:112px;height:112px;margin:16px 0 4px;transform:none;border:0;border-radius:8px;
+  background:url(/art/ui/slot_empty.webp) center/100% 100% no-repeat;
+  box-shadow:0 0 18px color-mix(in srgb,var(--rc,#C9A45C) 45%,transparent)}
+.xslot.empty .xicon{box-shadow:none;opacity:.92}
+.xicon img{width:78px;height:78px;transform:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.xicon:hover,.xicon:focus-visible,.xslot.empty .xicon:hover{transform:scale(1.05);box-shadow:0 0 28px color-mix(in srgb,var(--rc,#C9A45C) 70%,transparent);opacity:1}
+.iname{margin-top:10px}
+.nameplate{display:flex;flex-direction:column;justify-content:center;align-items:center;aspect-ratio:1200/334;padding:4% 14%;border:0;box-shadow:none;
+  background:url(/art/ui/name_plaque.webp) center/100% 100% no-repeat,
+    radial-gradient(ellipse at 50% 40%,rgba(30,58,66,.96),rgba(9,18,24,.97) 75%) center/91% 76% no-repeat;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+.nameplate::before,.nameplate::after{content:none}
+.nameplate .xname{font-size:clamp(20px,6.4vw,30px);letter-spacing:2.5px}
+.nameplate .xrealm{font-size:14px}
+.plaque{padding-top:40px;margin-top:22px}
+.plaque img{top:-34px;width:66px;height:66px;border-radius:0;object-fit:contain;box-shadow:none;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55))}
+@media (max-width:560px){.stage .sgear{width:52px;height:52px}.stage .sgear img{width:36px;height:36px}.xicon,.xslot.empty .xicon{width:96px;height:96px}.xicon img{width:66px;height:66px}}
+/* the hero card follows you down the page (".xprofile .xpanel{position:relative}" above had undone the sticky), on screens
+   tall enough to show the whole card, so the left column is never an empty strip */
+@media (min-width:901px) and (min-height:880px){.xprofile .identity{position:sticky;top:16px}}
+@media (max-width:560px){.realmseal{width:72px;height:72px}}
 /* ── the map screen's frame, painted (Nov 27 2026, docs/web.md "Painted UI"): the hero plate with its portrait ring,
    the HP and Qi vials, the Break Through tab hanging under it, round medallions and the Run seal at the bottom
    right. Measured on the paintings: in art/ui/hero_plate.webp (1200 x 330) the ring's opening is centred at

@@ -55,7 +55,7 @@ breakthroughs, duels won and the weapon.
 **Look.** A xianxia hall: gold-trimmed lacquer panels with a cloud crest on top (`.xprofile .xpanel`, `.phead.orn`),
 the portrait in a jade aura with the dragon corners (`art/ui/dragon_corner_top_sm.webp`, a small copy of
 `dragon_corner_top.png`), layers as jade gems, Internal Qi as a jade current, gear in jade cards under a gold
-diamond, and the Journey as a parchment scroll with a wooden plaque per deed (icons from `art/icons/index/ov_*`,
+diamond, and the Journey as a parchment scroll with a wooden plaque per deed (the painted journey icons `art/icons/journey/{beasts,herbs,breakthroughs,duels}.webp`,
 `stat_icons` in `web/profile.py`). It is all CSS over the same template and data: nothing in the numbers,
 forms or links changed. The appearance page keeps the plain panels (`.xpanel` without `.xprofile`).
 
@@ -70,6 +70,16 @@ gear slots (weapon, armor, the two artifacts: `worn`, the same data as the Equip
 item or tab in the bag, coloured by rarity, a `+` when empty. Under the stage a name plate (name, realm and layer),
 the title chips, and HP / Attack / Defense as three plaques (`p.hp`, `p.attack`, `p.defense`, the Attributes panel's
 own numbers). With reduced motion nothing moves. Presentation only: no number, form or rule changed.
+
+**Painted (Nov 27, `scripts/make_ui_art.py`, the last block of the profile styles in `style.css`).** SHOAIB's paintings replace
+the drawn pieces: each realm has its own seal (`art/icons/realms/<realm>.webp`, `realm_track(...)["seal"]`), shown in
+the Cultivation panel and big and faint behind the hero (the old `emblem` lotus macro is gone). Gear sits in carved
+slot frames (`art/ui/slot_empty.webp`); an empty slot shows the ghost of what goes there (`slot_weapon`, `slot_armor`,
+`slot_artifact`, picked by the `s-<tab>` class) instead of a `+`. The name sits on a gold plaque (`art/ui/name_plaque.webp`).
+The Journey plaques use the journey pictures, and so do the Discord card's Deeds (`deed:beasts|herbs|breakthroughs|duels`
+in `cards/art_icons.resolve`); `emblem:realm:<realm>` (battle and breakthrough cards) draws the realm's seal too.
+On a wide screen the hero card stays on screen as you scroll (`position:sticky`, only when the window is tall
+enough to show all of it), so the left side is no longer an empty strip. Pictures only: no number, form or rule changed.
 
 Layout (a dark xianxia hall, `body.hallbg`, background `art/scenes/profile_hall.jpg`):
 

@@ -70,6 +70,10 @@ def resolve(kind_):
         rel = "tech/" + kind_[5:]
     elif kind_ in ("deed:lotus_coin", "deed:moon_pearl"):          # the painted currencies (scripts/make_ui_art.py)
         rel = "currency/" + kind_[5:]
+    elif kind_ in ("deed:beasts", "deed:herbs", "deed:breakthroughs", "deed:duels"):   # the Journey pictures
+        rel = "journey/" + kind_[5:]
+    elif kind_.startswith("emblem:realm:"):                          # each realm's painted seal
+        rel = "realms/" + slug(kind_[13:])
     elif kind_.startswith("mat:"):
         rel = "mat/" + kind_[4:].replace(":", "_")
     elif kind_.startswith("passive:"):

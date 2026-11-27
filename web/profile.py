@@ -5,6 +5,7 @@ All numbers come from bot/sheet/data.profile_data, the same function the bot's /
 so the website and Discord always agree. This module only turns them into text and picture links.
 """
 import os
+import re
 import time
 
 import looks
@@ -101,6 +102,8 @@ def realm_track(realm, layer, max_layer):
             # the realm's emblem on the page: its number, and a lotus with one more petal every realm
             "roman": ROMAN[i] if i < len(ROMAN) else str(i + 1), "petals": 5 + i,
             "next": order[i + 1] if i + 1 < len(order) else None,
+            # the realm's painted seal (scripts/make_ui_art.py), one per realm
+            "seal": fresh(f"/art/icons/realms/{re.sub(r'[^a-z0-9]+', '_', realm.lower()).strip('_')}.webp"),
             "pips": [{"n": n, "on": n <= layer, "now": n == layer} for n in range(1, max_layer + 1)]}
 
 
@@ -161,8 +164,8 @@ def profile_view(conn, user_id, username=None):
         "stats": [("Beasts slain", number(d["beasts"])), ("Herbs gathered", number(d["herbs"])),
                   ("Breakthroughs", number(d["breakthroughs"])),
                   ("Duels won", number(d["duels_won"]))],
-        # the Journey plaques' icons, in the same order as "stats" (existing index art)
-        "stat_icons": [fresh(f"/art/icons/index/{k}.webp") for k in ("ov_toxicity", "ov_types", "ov_insight", "ov_elite")],
+        # the Journey plaques' icons, in the same order as "stats" (the journey pictures, scripts/make_ui_art.py)
+        "stat_icons": [fresh(f"/art/icons/journey/{k}.webp") for k in ("beasts", "herbs", "breakthroughs", "duels")],
         "status": d["status"],
         "portrait": looks.portrait(look),
         "look": looks.describe(look) if look else None,
