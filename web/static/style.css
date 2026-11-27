@@ -3093,3 +3093,52 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
 .bcameo{position:absolute;z-index:4;height:auto;max-width:none;pointer-events:none;opacity:0;transform:translate(0,-100%);
   filter:drop-shadow(0 0 10px var(--pc)) brightness(1.08)}
 .lite-fx .bcameo{filter:drop-shadow(0 0 6px var(--pc))}
+
+/* ── a phone turned sideways (SHOAIB Nov 27): the fight fills the whole screen like a mobile game. The scene is
+   the full screen; on top of it your plate (top left) and the beast's (top right) as slim HUD rows, the four moves
+   in a compact row under your right thumb, pill / flee / Battle History under your left, and the turn as a small
+   badge at the top. The long move explanation is left out (no room; the moves' own labels stay). ── */
+@media (orientation:landscape) and (max-height:500px){
+  main.battle{position:relative;display:block!important;height:100dvh;min-height:0;padding:0!important;margin:0;overflow:hidden;max-width:none}
+  main.battle>.bscene{position:absolute!important;inset:0;height:auto!important;width:auto;border-radius:0;margin:0}
+  main.battle>.bme,main.battle>.benemy{position:absolute;top:6px;z-index:30;margin:0;padding:4px 10px 4px 4px;
+    background:rgba(10,10,14,.72);backdrop-filter:none}
+  main.battle>.bme{left:6px;width:min(36%,330px);display:flex;gap:7px;align-items:center;border-radius:26px 10px 10px 26px}
+  main.battle>.benemy{right:6px;width:min(38%,350px);border-radius:10px;padding:5px 10px}
+  main.battle>.bme .bface{width:34px;height:34px}
+  main.battle>.bme .bstats{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:6px;align-items:baseline;min-width:0;flex:1}
+  main.battle>.bme .bname{font-size:12.5px;margin:0}
+  main.battle>.bme .brealm{font-size:9.5px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  main.battle>.bme .brow{grid-column:1/-1;margin-top:2px;position:relative;display:block}
+  main.battle>.bme .brow:nth-of-type(3),main.battle>.bme .brow>img,main.battle>.bme .brow .bl{display:none}
+  main.battle>.bme .bhp{height:11px;border-radius:6px;width:100%}
+  main.battle>.bme .bhp.qi{height:7px}
+  main.battle>.bme .brow b{position:absolute;left:0;right:0;top:0;text-align:center;font-size:9px;line-height:12px;text-shadow:0 1px 2px #000,0 0 4px #000}
+  main.battle>.bme .brow:nth-of-type(2) b{font-size:7.5px;line-height:8px}
+  main.battle>.benemy .ename{font-size:12.5px}
+  main.battle>.benemy .etags{font-size:9.5px}
+  main.battle>.benemy .ehp{height:13px;margin-top:2px}
+  main.battle>.benemy .ehp span{font-size:9.5px}
+  main.battle>.bbar{position:absolute;right:6px;bottom:6px;z-index:30;width:min(50%,430px);margin:0;display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  main.battle>.bbar .actbtn,main.battle>.bbar .techbtn{min-height:0;height:56px;padding:4px 2px;gap:2px;font-size:11px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center}
+  main.battle>.bbar .actbtn img,main.battle>.bbar .techbtn img{width:26px;height:26px}
+  main.battle>.bbar .ano,main.battle>.bbar .ast{display:none}      /* keyboard numbers and "2 ready": no room, no keyboard */
+  main.battle>.bbar .alab{font-size:11px;line-height:1.1;white-space:nowrap}
+  /* both fighters stand a little higher, clear of the moves along the bottom */
+  main.battle>.bscene .fighter{bottom:15%!important}
+  main.battle>.bscene .beast{bottom:15%!important}
+  main.battle>.bside{position:absolute;left:6px;bottom:6px;z-index:30;margin:0;display:flex;gap:5px;flex-wrap:nowrap}
+  main.battle>.bside .sidebtn{padding:3px 9px 3px 3px;font-size:10.5px;min-height:0}
+  main.battle>.bside .sidebtn img{width:22px;height:22px}
+  main.battle>.bhist{position:absolute;left:6px;bottom:44px;z-index:30;margin:0}
+  main.battle>.bhist .histbtn{font-size:10.5px;padding:3px 8px}
+  main.battle>.binfo{position:absolute;left:50%;top:6px;transform:translateX(-50%);z-index:31;width:auto;margin:0;padding:0;
+    background:none;border:0;box-shadow:none}
+  main.battle>.binfo>*:not(.turnchip):not(.teamtimer){display:none}
+  main.battle>.binfo .turnchip{margin:0!important;font-size:10.5px;background:rgba(10,10,14,.75)}
+  main.battle>.binfo .teamtimer{width:120px;margin:3px auto 0}
+  main.battle .allies{top:auto;bottom:86px;left:6px}
+  main.battle .bfeed{top:64px}
+}

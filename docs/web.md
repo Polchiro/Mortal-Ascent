@@ -806,6 +806,11 @@ a lair is fought with `bot/hunt.py`.
    message feed moves below them in a team fight. *Vibration* (`buzz`): a short buzz when a beast's blow or roar lands
    on you, stronger for a roar and for Elites and Beast Kings (Android; iPhones' browser has none; none with
    "reduce motion" on).
+   **A phone turned sideways** (SHOAIB Nov 27; landscape and 500px tall or less): the fight fills the whole screen
+   like a mobile game, nothing to scroll. The scene is the full screen; over it your plate (top left) and the beast's
+   (top right) as slim HUD rows, the turn badge at the top, the four moves in a row under your right thumb (no
+   keyboard numbers), pill / flee / Battle History under your left, and both fighters standing a little higher,
+   clear of the moves. The long move explanation is left out sideways.
    **Team fights: whose turn** (SHOAIB Nov 27: "how do players know it's their turn, each character looks alike").
    Everyone picks at once each round. You are listed first, bigger, ringed gold and tagged YOU; each teammate keeps
    a colour all fight (`hunt_play.PARTY_COLORS`: blue, purple, teal, coral) on their portrait's ring, on their name
