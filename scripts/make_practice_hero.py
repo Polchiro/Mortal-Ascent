@@ -219,6 +219,8 @@ def build(gender, videos):
         print(name, S)
     with open(os.path.join(out, "sheets.json"), "w") as fh:
         json.dump({"aspect": round(bw / bh, 4), "sheets": sheets}, fh, indent=1)
+    from make_small_sheets import halve                        # the half-size copies phones use
+    halve(out)
 
 
 def main(args):

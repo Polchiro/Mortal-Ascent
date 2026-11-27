@@ -13,7 +13,8 @@
     1.3413,
     1.0382
    ],
-   "loop": true
+   "loop": true,
+   "small": "/art/practice/hero/female/stance.small.webp"
   },
   "strike": {
    "src": "/art/practice/hero/female/strike.webp",
@@ -37,7 +38,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/strike.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/strike.small.webp"
   },
   "block": {
    "src": "/art/practice/hero/female/block.webp",
@@ -57,7 +59,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/block.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/block.small.webp"
   },
   "struck": {
    "src": "/art/practice/hero/female/struck.webp",
@@ -76,7 +79,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/struck.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/struck.small.webp"
   },
   "kick": {
    "src": "/art/practice/hero/female/kick.webp",
@@ -100,7 +104,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/kick.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/kick.small.webp"
   },
   "finger": {
    "src": "/art/practice/hero/female/finger.webp",
@@ -124,7 +129,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/finger.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/finger.small.webp"
   },
   "jump": {
    "src": "/art/practice/hero/female/jump.webp",
@@ -145,7 +151,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/jump.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/jump.small.webp"
   },
   "duck": {
    "src": "/art/practice/hero/female/duck.webp",
@@ -165,7 +172,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/duck.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/duck.small.webp"
   },
   "deflect": {
    "src": "/art/practice/hero/female/deflect.webp",
@@ -185,7 +193,8 @@
    },
    "sound": {
     "src": "/art/practice/hero/female/deflect.mp3"
-   }
+   },
+   "small": "/art/practice/hero/female/deflect.small.webp"
   }
  }
 }

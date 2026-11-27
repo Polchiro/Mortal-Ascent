@@ -38,7 +38,7 @@
     {% set I = s.instructor %}{% set IS = I.sheets %}
     <div class="pteacher{% if IS %} sheeted{% endif %}" id="pteacher" aria-hidden="true"{% if IS %} style="aspect-ratio: {{ IS.aspect }}"{% endif %}>
       {% if IS %}<div class="ptflip">{% for name, S in IS.sheets.items() %}
-      <div class="ptsheet" data-name="{{ name }}" data-src="{{ S.src }}" style="{% if name == 'watch' %}background-image: url({{ S.src }}); {% endif %}background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+      <div class="ptsheet" data-name="{{ name }}" data-src="{{ S.src }}" data-small="{{ S.small or S.src }}" style="background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
       {%- endfor %}</div>{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
       <p class="psay" id="psay"></p>
     </div>
@@ -58,7 +58,7 @@
     <div class="fighter pme{% if s.me.isheet %} stanced{% endif %}{% if H %} unarmed{% endif %}" id="fme" data-pose="idle" aria-hidden="true">
       {% if H %}{# unarmed (art/practice/hero/): her own movements for the drill, over the spot the sword fighter stands #}
       <div class="phero" style="aspect-ratio: {{ H.aspect }}">{% for name, S in H.sheets.items() %}
-        <div class="hsheet{% if name == 'stance' %} on{% endif %}" data-name="{{ name }}" style="left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"><i style="background-image: url({{ S.src }}); width: {{ S.cols * 100 }}%; height: {{ S.rows * 100 }}%"></i></div>
+        <div class="hsheet{% if name == 'stance' %} on{% endif %}" data-name="{{ name }}" style="left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"><i data-src="{{ S.src }}" data-small="{{ S.small or S.src }}" style="width: {{ S.cols * 100 }}%; height: {{ S.rows * 100 }}%"></i></div>
       {%- endfor %}</div>
       {% endif %}
       <div class="poses">{% for p, src in s.me.poses.items() %}{% if not (p == "idle" and s.me.isheet) %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
@@ -90,7 +90,7 @@
         {% include "_practice_howto.html" %}
       </details>
       <details class="pset" id="pset">
-        <summary>Settings: your keys and guides</summary>
+        <summary>Settings: your keys, guides and smooth mode</summary>
         <p class="sub">Click a move, then press the key you want for it. Kept on this device.</p>
         <div class="pkeyrow" id="pkeyrow"></div>
         <fieldset class="pglevel" id="pglevel">
@@ -98,6 +98,10 @@
           <label><input type="radio" name="pguide" value="full"> <b>Full</b><small>The key on each target, where targets appear, a "Now!" glow at the perfect moment, and a short note the first time something new appears</small></label>
           <label><input type="radio" name="pguide" value="light"> <b>Light</b><small>Only the key on each target</small></label>
           <label><input type="radio" name="pguide" value="off"> <b>Off</b><small>Nothing but the targets</small></label>
+        </fieldset>
+        <fieldset class="pglevel" id="psmooth">
+          <legend>Smooth mode</legend>
+          <label><input type="checkbox" id="psmoothbox"> <b>On</b><small>Fewer effects so the drill runs smoothly on a phone or a slow computer: no floating dust, no glow around the rings and targets, no shaking dummy. Your timing and score are the same. On by itself on phones.</small></label>
         </fieldset>
         <div class="psetrow"><button class="hbtn ghost small" id="pkeyreset" type="button">Reset keys</button></div>
       </details>

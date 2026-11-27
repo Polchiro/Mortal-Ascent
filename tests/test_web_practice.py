@@ -319,6 +319,18 @@ def test_both_characters_have_their_unarmed_movements():
     assert pp.hero_sheets("nobody") is None                      # no art: the sword fighter's movements stand in
 
 
+def test_every_practice_sheet_has_a_half_size_copy_for_phones():
+    from PIL import Image
+    sets = [pp.hero_sheets("female"), pp.hero_sheets("male"), pp.instructor_sheets()]
+    for data in sets:
+        for name, sp in data["sheets"].items():
+            big, small = (os.path.join(ROOT, sp[k].lstrip("/")) for k in ("src", "small"))
+            assert small.endswith(".small.webp") and os.path.exists(small), name
+            (bw, bh), (sw, sh) = Image.open(big).size, Image.open(small).size
+            assert sw % sp["cols"] == 0 and sh % sp["rows"] == 0                # the same grid of whole frames
+            assert abs(sw / bw - 0.5) < 0.02 and abs(sh / bh - 0.5) < 0.02    # half as wide, half as tall
+
+
 def test_a_drill_sends_only_the_movements_it_plays():
     def drill(name):
         return pp.drill_of({"name": name, "type": rules.TECH_BY_NAME[name]["type"]})
@@ -372,6 +384,8 @@ def test_a_drill_through_the_routes(client):
     assert page.status_code == 200 and "practice.js" in page.text and "Senior Sister Xue" in page.text
     assert 'id="pleave"' in page.text and 'href="/profile"' not in page.text         # no tabs: only Leave
     assert 'id="pkeyrow"' in page.text and 'id="pglevel"' in page.text and 'id="phow"' in page.text              # Settings: your keys, guides
+    assert 'id="psmoothbox"' in page.text                                              # and Smooth mode
+    assert 'data-small="/art/practice/hero/' in page.text and 'data-small="/art/practice/instructor/' in page.text   # phones: half-size
     s = client.get("/practice/state").json()
     assert s["drill"]["mode"] == "strike" and s["prompts"] and not s["begun"]
     assert client.post("/practice/submit", json={"inputs": []}).json()["error"] == "The drill hasn't begun."

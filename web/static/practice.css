@@ -274,3 +274,11 @@ body.practicebg footer.privacy{display:none}
   .pcard{flex-direction:column;align-items:center;text-align:center}
 }
 @media (prefers-reduced-motion:reduce){.pmotes,.prain{display:none!important}}
+/* Smooth mode (Settings; on by itself on phones): no floating dust, no glow around rings and targets, no drop shadows
+   on the moving pictures. These are the effects that cost the most to draw on a phone; the drill is the same. */
+.practice.smooth .pmotes{display:none}
+.practice.smooth .ring{box-shadow:none!important}
+.practice.smooth .ptarget .pobj,.practice.smooth .pspot .plq,.practice.smooth .pblow:not(.finish):not(.rival) img{filter:none!important}
+.practice.smooth .pspot.k-feint .plq,.practice.smooth .pblow.k-feint img{filter:grayscale(1) brightness(.4) sepia(1) hue-rotate(-40deg) saturate(3)!important}
+.practice.smooth .pspot.now .ring,.practice.smooth .pmark.now .ring,.practice.smooth .pspace.now .ring{border-width:4px;border-color:#fff}
+#pbegin.loading{opacity:.7;cursor:progress}

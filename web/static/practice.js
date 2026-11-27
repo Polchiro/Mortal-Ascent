@@ -24,6 +24,17 @@
   var D = S.drill, W = S.w, P = S.prompts, STRIKE = D.mode === 'strike';
   var scene = $('pscene'), fme = $('fme'), poses = fme.querySelector('.poses');
   var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* A phone (a narrow or touch screen) gets the half-size animation sheets: it draws the figures about 130 px tall,
+     and the full sheets filled its memory and made the drill stutter. Smooth mode (Settings) drops the dust, the glow
+     around rings and targets and the dummy's shake; it is on by itself on a phone, and anyone can switch it. */
+  var PHONE = !!(window.matchMedia && matchMedia('(max-width: 900px), (pointer: coarse)').matches);
+  function pick(el) { return (PHONE && el.dataset.small) || el.dataset.src; }
+  var smooth = PHONE;
+  try {
+    var sm0 = localStorage.getItem('ma.practice.smooth');
+    if (sm0 === 'on' || sm0 === 'off') smooth = sm0 === 'on';
+  } catch (eS) {}
+  main.classList.toggle('smooth', smooth);
   var soundOn = true, soundVol = 0.6;
   try {
     soundOn = localStorage.getItem('ma.sound') !== 'off';
@@ -105,6 +116,14 @@
         bind();
       });
     });
+    var sbox = $('psmoothbox');
+    if (sbox) {
+      sbox.checked = smooth;
+      sbox.addEventListener('change', function () {
+        smooth = this.checked; main.classList.toggle('smooth', smooth);
+        try { localStorage.setItem('ma.practice.smooth', smooth ? 'on' : 'off'); } catch (eS2) {}
+      });
+    }
     $('pkeyreset').addEventListener('click', function () { keys = DEFAULT.slice(); capturing = null; save(); bind(); });
   })();
   function save() { try { localStorage.setItem(STORE, JSON.stringify(keys)); } catch (e4) {} }
@@ -136,11 +155,26 @@
     keys[capturing] = k; capturing = null; save(); bind();
   }
 
-  /* ── preload: the art the drill shows ─────────────────────────── */
+  /* ── preload: everything the drill shows and plays is loaded and decoded before "Begin" can be pressed, so
+     nothing loads in the middle of the drill (a picture decoded mid-drill is what makes it hitch) ── */
+  var READY = [], KEEP = [];
+  function want(src) {                                           // a picture, loaded and decoded now
+    var im = new Image(); im.src = src; KEEP.push(im);           // kept, so the decoded picture stays at hand
+    READY.push(im.decode ? im.decode().catch(function () {}) : new Promise(function (ok) { im.onload = im.onerror = ok; }));
+  }
+  function hear(a) {                                             // a sound, ready to play (phones may not load it before a tap)
+    a.preload = 'auto';
+    READY.push(new Promise(function (ok) {
+      if (a.readyState >= 3) return ok();
+      a.addEventListener('canplaythrough', ok, {once: true}); a.addEventListener('error', ok, {once: true});
+      setTimeout(ok, 2500);
+    }));
+    try { a.load(); } catch (eL) {}
+  }
   ['/art/practice/plaque.webp', '/art/practice/sparks.webp', '/art/practice/splinters.webp', '/art/practice/flame.webp',
    '/art/practice/breath.webp', '/art/practice/aura.webp', '/art/practice/bell.webp', '/art/practice/broken.webp']
     .concat(STRIKE ? [] : BLOW.map(function (b) { return b.img; }))
-    .forEach(function (src) { new Image().src = src; });
+    .forEach(want);
 
   function ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
   function span(t, a, b) { return b <= a ? (t >= b ? 1 : 0) : Math.max(0, Math.min(1, (t - a) / (b - a))); }
@@ -155,11 +189,14 @@
   function tload(name) {
     var el = tsheets[name];
     if (el && !el.style.backgroundImage) {
-      var im = new Image(); im.src = el.dataset.src;
+      var im = new Image(); im.src = pick(el);
       if (im.decode) im.decode().catch(function () {});
-      el.style.backgroundImage = 'url(' + el.dataset.src + ')';
+      el.style.backgroundImage = 'url(' + pick(el) + ')';
     }
   }
+  if (tsheets.watch) { want(pick(tsheets.watch)); tload('watch'); }
+  var taudio = {};                                               // her "begin" voice, loaded before the drill
+  if (MS && MS.begin && MS.begin.sound) hear(taudio.begin = new Audio(MS.begin.sound.src));
   var tcur = {name: null, f: -1};
   function tshow(name, f) {
     var sp = MS[name], el = tsheets[name];
@@ -173,7 +210,7 @@
   function tsound(name) {                                        // her voice alone (the drill's beginning)
     var snd = MS && MS[name] && MS[name].sound;
     if (!snd || !soundOn) return;
-    var a = new Audio(snd.src); a.volume = LOUD();
+    var a = taudio[name] || new Audio(snd.src); a.volume = LOUD();
     setTimeout(function () { var p = a.play(); if (p && p.catch) p.catch(function () {}); }, snd.from || 0);
   }
   function tframe(name, tm) {
@@ -232,7 +269,7 @@
   /* ── your movements ────────────────────────────────────────────── */
   var SPEC = S.me.sheets || {}, sheets = {}, anim = null;
   fme.querySelectorAll('.ssheet').forEach(function (el) { sheets[el.dataset.name] = el; });
-  Object.keys(SPEC).forEach(function (k) { new Image().src = SPEC[k].src; });
+  Object.keys(SPEC).forEach(function (k) { want(SPEC[k].src); });
   var MOVE = SPEC[D.motion] ? D.motion : (!STRIKE && SPEC.guard ? 'guard' : null);
   function show(name, f) {
     var sp = SPEC[name], el = sheets[name];
@@ -327,18 +364,19 @@
   var hpool = {};
   function hpoolOf(name) {
     var snd = HERO[name].sound;
-    return hpool[name] || (hpool[name] = {i: 0, a: [0, 1, 2].map(function () { var x = new Audio(snd.src); x.preload = 'auto'; return x; })});
+    return hpool[name] || (hpool[name] = {i: 0, a: [0, 1, 2].map(function (n) { var x = new Audio(snd.src); x.preload = 'auto'; if (!n) hear(x); return x; })});
   }
   var heroEl = fme.querySelector('.phero');
   /* which movement strikes: kick techniques kick and finger techniques jab, when those videos were made; else the punch */
   var SMOVE = HERO && HERO[D.motion] && (D.motion === 'kick' || D.motion === 'finger') ? D.motion : 'strike';
   if (HERO) {
-    fme.querySelectorAll('.hsheet').forEach(function (el) { hsheets[el.dataset.name] = el; });
-    Object.keys(HERO).forEach(function (k) {
-      var im = new Image(); im.src = HERO[k].src;
-      if (im.decode) im.decode().catch(function () {});          // decoded before the drill, so the first blow doesn't stall
-      if (HERO[k].sound) hpoolOf(k);                             // its sound players, made before the drill
+    fme.querySelectorAll('.hsheet').forEach(function (el) {
+      hsheets[el.dataset.name] = el;
+      var i = el.querySelector('i'), src = pick(i);              // the half-size sheet on a phone
+      i.style.backgroundImage = 'url(' + src + ')';
+      want(src);                                                 // decoded before the drill, so the first blow doesn't stall
     });
+    Object.keys(HERO).forEach(function (k) { if (HERO[k].sound) hpoolOf(k); });   // its sound players, made before the drill
   }
   function hshow(name, f) {
     var sp = HERO[name], el = hsheets[name];
@@ -480,7 +518,7 @@
     n.className = 'ppop ' + (cls || ''); n.textContent = text; n.style.left = p[0] + 'px'; n.style.top = p[1] + 'px';
     scene.appendChild(n); setTimeout(function () { n.remove(); }, 900);
   }
-  function shake(el) { el.classList.remove('shook'); void el.offsetWidth; el.classList.add('shook'); }
+  function shake(el) { if (smooth) return; el.classList.remove('shook'); void el.offsetWidth; el.classList.add('shook'); }
 
   /* ── the drill ─────────────────────────────────────────────────── */
   var t0 = null, running = false, ended = false, inputs = [], res = [], els = {}, held = {}, strays = 0, streak = 0;
@@ -700,6 +738,13 @@
     }, MS ? BEGIN_AT : 3800);
   }
   $('pbegin').addEventListener('click', begin);
+  /* "Begin" waits until everything above is loaded and decoded (at most 6 s, so a slow sound can't hold it up) */
+  (function () {
+    var b = $('pbegin'), label = b.textContent, open = false;
+    b.disabled = true; b.textContent = 'Getting ready…'; b.classList.add('loading');
+    function ready() { if (open) return; open = true; b.disabled = false; b.textContent = label; b.classList.remove('loading'); }
+    Promise.all(READY).then(ready, ready); setTimeout(ready, 6000);
+  })();
 
   /* ── the end: send the presses, and hear her verdict ─────────── */
   function finish() {
