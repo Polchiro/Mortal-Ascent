@@ -118,6 +118,14 @@
 
   var canvas = null, ctx = null, place = null, key = null, W = 0, H = 0, dpr = 1, items = [], last = 0, flash = 0,
       nextFlash = 0, bolt = null, gust = 0, nextGust = 0, mistSprite = null;
+  /* Smoothness: measuring the page makes the browser work the whole layout out again, which is costly while a fight is
+     animating. So the canvas is measured only when its box may have changed (a new scene, the screen resized or turned,
+     or at most once a second where the browser can't tell us), not on every frame. On phones (LITE, as in fight.js)
+     the drifting snow, rain and mist is drawn at screen sharpness 1 and about 30 times a second: on a small screen it
+     looks the same and costs half. */
+  var LITE = !!(window.matchMedia && matchMedia('(max-width: 700px)').matches), STEP = LITE ? 30 : 0, drawn = 0;
+  var dirty = true, sized = null, checked = 0,
+      watch = window.ResizeObserver ? new ResizeObserver(function () { dirty = true; }) : null;
   function rand(a, b) { return a + Math.random() * (b - a); }
 
   function sceneKey(main) {
@@ -154,8 +162,12 @@
   }
 
   function resize() {
-    var r = canvas.parentNode.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    var box = canvas.parentNode, now = performance.now();
+    if (!dirty && box === sized && (watch || now - checked < 1000)) return false;
+    if (watch && box !== sized) { watch.disconnect(); watch.observe(box); }
+    sized = box; dirty = false; checked = now;
+    var r = box.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, LITE ? 1 : 1.5);
     if (Math.round(r.width) === W && Math.round(r.height) === H) return false;
     W = Math.round(r.width); H = Math.round(r.height);
     canvas.width = Math.max(1, Math.round(W * dpr)); canvas.height = Math.max(1, Math.round(H * dpr));
@@ -188,6 +200,8 @@
   function frame(now) {
     requestAnimationFrame(frame);
     if (document.hidden) { last = now; return; }
+    if (STEP && now - drawn < STEP) return;                    // phones: every other frame
+    drawn = now;
     if (!attach()) return;
     var dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
     var t = now / 1000, p = place, sc = Math.min(W, H * 1.8);
@@ -276,7 +290,8 @@
     }
   }
 
-  window.addEventListener('resize', function () { if (canvas && canvas.parentNode && resize()) seed(); });
+  window.addEventListener('resize', function () { dirty = true; if (canvas && canvas.parentNode && resize()) seed(); });
+  window.addEventListener('orientationchange', function () { dirty = true; });
   requestAnimationFrame(frame);
 })();
 
@@ -319,6 +334,17 @@
       v.style.width = w.toFixed(0) + 'px'; v.style.height = h.toFixed(0) + 'px';
     });
   }
-  function tick() { if (!document.hidden) fit(); requestAnimationFrame(tick); }
+  /* fit() measures the page, so it runs when something that moves the feet may have changed (a new page or turn, the
+     window's size, a picture finishing loading) and otherwise a few times a second, not on every frame. */
+  var fitAt = 0, fitMain = null, fitTurn = null, fitWin = '';
+  document.addEventListener('load', function () { fitAt = 0; }, true);
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (document.hidden) return;
+    var main = document.querySelector('main.battle'), turn = main && main.dataset.turn, win = innerWidth + 'x' + innerHeight;
+    if (main === fitMain && turn === fitTurn && win === fitWin && now - fitAt < 400) return;
+    fitMain = main; fitTurn = turn; fitWin = win; fitAt = now;
+    fit();
+  }
   requestAnimationFrame(tick);
 })();
