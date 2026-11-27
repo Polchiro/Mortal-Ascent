@@ -3145,3 +3145,19 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
   main.battle .allies{top:auto;bottom:86px;left:6px}
   main.battle .bfeed{top:64px}
 }
+
+/* The techniques page sorted (docs/web.md "Techniques"): All / Attack / Defense, then a folding section per grade,
+   Heaven first, its name in the grade's colour */
+.techfilter{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 6px}
+.tfbtn{padding:7px 14px;border-radius:999px;border:1px solid rgba(201,164,92,.45);background:rgba(9,16,36,.72);color:#E9DFC8;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}
+.tfbtn b{margin-left:4px;color:#C9A45C}
+.tfbtn.on{background:linear-gradient(180deg,#E8C77A,#B88A3C);color:#1D1406;border-color:#F1D48E}.tfbtn.on b{color:#1D1406}
+.techpage[data-show=attack] .tqcard:not([data-type=attack]),.techpage[data-show=defense] .tqcard:not([data-type=defense]){display:none}
+.techgrade{margin-top:16px}
+.techgrade>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:6px 2px;border-bottom:1px solid color-mix(in srgb,var(--rc) 45%,transparent)}
+.techgrade>summary::-webkit-details-marker{display:none}
+.techgrade>summary::before{content:"";width:8px;height:8px;border:solid var(--rc);border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .2s;margin:0 4px 3px}
+.techgrade:not([open])>summary::before{transform:rotate(-45deg);margin-bottom:0}
+.tgname{font:700 17px Cinzel,Georgia,serif;letter-spacing:1px;color:var(--rc)}
+.tgcount{padding:1px 9px;border-radius:999px;background:color-mix(in srgb,var(--rc) 22%,transparent);color:#F2EAD6;font-size:12px}
+.techgrade>.techcards{margin-top:12px}

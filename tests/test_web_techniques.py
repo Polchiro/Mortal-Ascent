@@ -105,3 +105,23 @@ def test_the_routes(path, monkeypatch):
     page = cl.get("/techniques").text
     assert "Equipped Fierce Tiger Claw in place of Iron Fist." in page
     assert "/techniques" in cl.get("/profile").text
+
+
+def test_the_cards_come_in_grade_sections_heaven_first(path):
+    c = conn_of(path)
+    learn(c, "Fierce Tiger Claw", "attack", "Yellow")
+    learn(c, "Heaven-Rending Palm", "attack", "Heaven")
+    v = tp.view(c, A)
+    assert [s["grade"] for s in v["sections"]] == ["Heaven", "Yellow", "Mortal"]           # only grades you know
+    mortal = v["sections"][-1]["cards"]
+    assert mortal[0]["equipped"] and sum(len(s["cards"]) for s in v["sections"]) == len(v["cards"]) == v["learned"]
+    assert v["attacks"] + v["defenses"] == v["learned"]
+
+
+def test_the_page_has_the_filter_and_sections(path, monkeypatch):
+    c = conn_of(path)
+    learn(c, "Heaven-Rending Palm", "attack", "Heaven")
+    c.close()
+    html = open("web/templates/techniques.html").read()
+    assert 'data-show="attack"' in html and 'data-show="defense"' in html and 'class="techgrade" open' in html
+    assert 'data-type="{{ t.type }}"' in html
