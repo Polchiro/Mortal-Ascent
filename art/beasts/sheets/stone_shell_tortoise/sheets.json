@@ -1,0 +1,48 @@
+{
+ "cell": [
+  518,
+  274
+ ],
+ "still": [
+  50.4,
+  8.4,
+  462.0,
+  262.8
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/stone_shell_tortoise/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2832,
+   "smooth": true,
+   "nose_x": 0.0849
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/stone_shell_tortoise/attack.webp",
+   "frames": 47,
+   "cols": 8,
+   "rows": 6,
+   "ms": 3000,
+   "bite": 19,
+   "reach": 0.0779,
+   "bite_x": 0.0174
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/stone_shell_tortoise/hit.webp",
+   "frames": 26,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2167
+  },
+  "death": {
+   "src": "/art/beasts/sheets/stone_shell_tortoise/death.webp",
+   "frames": 24,
+   "cols": 8,
+   "rows": 3,
+   "ms": 2000,
+   "impact": 9
+  }
+ }
+}
