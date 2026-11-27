@@ -3,7 +3,7 @@
 {% block body %}
 {% with page="inventory", coins=v.coins, pearls=v.pearls %}{% include "_topbar.html" %}{% endwith %}
 
-<main class="inventory">
+<main class="inventory" data-soft>
   <nav class="bagtabs" aria-label="Bag sections">
     {% for t in v.tabs %}
     <a href="/inventory?tab={{ t.key }}" class="bagtab{% if t.active %} on{% endif %}"{% if t.active %} aria-current="page"{% endif %}>
@@ -32,7 +32,7 @@
     {% endif %}
   </section>
 
-  <aside class="card inspect" aria-label="Item details">
+  <aside class="card inspect" aria-label="Item details" data-soft-reveal>
     {% if v.inspect %}{% set d = v.inspect %}
     <div class="ihead" style="--rc: {{ d.color }}">
       {% if d.picture %}<img src="{{ d.picture }}" alt="" width="120" height="120">{% endif %}
@@ -80,4 +80,5 @@
     {% endif %}
   </aside>
 </main>
+<script src="{{ asset('softnav.js') }}" defer></script>
 {% endblock %}
