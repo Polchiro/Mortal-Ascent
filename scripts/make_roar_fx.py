@@ -51,7 +51,7 @@ MOUTHS = {
     "ember_lizard": (0.02, 0.07),
     "field_viper": (0.04, 0.11),
     "fire_hoof_steed": (0.04, 0.28),
-    "flame_maned_lion": (0.06, 0.37),
+    "flame_maned_lion": (0.03, 0.37),
     "flood_dragon_jiao": (0.03, 0.29),
     "frost_python": (0.03, 0.17),
     "frost_wolf": (0.04, 0.28),
@@ -101,7 +101,7 @@ MOUTHS = {
     "white_tiger": (0.05, 0.37),
     "wild_boar": (0.08, 0.58),
     "wild_ox": (0.07, 0.6),
-    "wind_leopard": (0.05, 0.34),
+    "wind_leopard": (0.03, 0.31),
 }
 VARIANTS = {"roar_ring": (1, 0, 0.3, 0.85, 3.6), "roar_double": (3, 0, 0.3, 1.15, 3.0), "roar_burst": (0, 1, 1.0, 2.3, 4.6)}
 
@@ -125,7 +125,7 @@ ROAR_MOUTHS = {
     "ember_lizard": (0.07, 0.18),
     "field_viper": (0.31, 0.17),
     "fire_hoof_steed": (0.08, 0.12),
-    "flame_maned_lion": (0.07, 0.3),
+    "flame_maned_lion": (0.1, 0.37),
     "flood_dragon_jiao": (0.08, 0.36),
     "frost_python": (0.07, 0.22),
     "frost_wolf": (0.1, 0.32),
@@ -169,7 +169,7 @@ ROAR_MOUTHS = {
     "wild_boar": (0.14, 0.53),
     "wild_ox": (0.07, 0.55),
     "wind_feather_falcon": (0.05, 0.68),
-    "wind_leopard": (0.08, 0.28),
+    "wind_leopard": (0.08, 0.4),
 }
 
 

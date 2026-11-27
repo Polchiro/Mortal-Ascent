@@ -149,6 +149,12 @@
    "lead": 0.34
   }
  ],
+ "death@flame_maned_lion": [
+  {
+   "file": "death_flame_maned_lion.mp3",
+   "lead": 1.72
+  }
+ ],
  "death@frost_python": [
   {
    "file": "death_frost_python.mp3",
@@ -287,6 +293,12 @@
    "lead": 1.02
   }
  ],
+ "death@wind_leopard": [
+  {
+   "file": "death_wind_leopard.mp3",
+   "lead": 1.32
+  }
+ ],
  "death@wolf": [
   {
    "file": "death_wolf.mp3",
@@ -413,6 +425,12 @@
   {
    "file": "hit_field_viper.mp3",
    "lead": 0.12
+  }
+ ],
+ "hit@flame_maned_lion": [
+  {
+   "file": "hit_flame_maned_lion.mp3",
+   "lead": 0.24
   }
  ],
  "hit@frost_python": [
@@ -553,6 +571,12 @@
    "lead": 0.68
   }
  ],
+ "hit@wind_leopard": [
+  {
+   "file": "hit_wind_leopard.mp3",
+   "lead": 0.46
+  }
+ ],
  "hit@wolf": [
   {
    "file": "hit_wolf.mp3",
@@ -591,6 +615,12 @@
   {
    "file": "lunge_field_viper.mp3",
    "lead": 0.48
+  }
+ ],
+ "lunge@flame_maned_lion": [
+  {
+   "file": "lunge_flame_maned_lion.mp3",
+   "lead": 0.68
   }
  ],
  "lunge@frost_python": [
@@ -731,6 +761,12 @@
    "lead": 1.16
   }
  ],
+ "lunge@wind_leopard": [
+  {
+   "file": "lunge_wind_leopard.mp3",
+   "lead": 0.64
+  }
+ ],
  "lunge@wolf": [
   {
    "file": "lunge_wolf.mp3",
@@ -777,6 +813,12 @@
   {
    "file": "roar_big_field_viper.mp3",
    "lead": 0.62
+  }
+ ],
+ "roar:big@flame_maned_lion": [
+  {
+   "file": "roar_big_flame_maned_lion.mp3",
+   "lead": 0.68
   }
  ],
  "roar:big@frost_python": [
@@ -917,6 +959,12 @@
    "lead": 0.54
   }
  ],
+ "roar:big@wind_leopard": [
+  {
+   "file": "roar_big_wind_leopard.mp3",
+   "lead": 0.62
+  }
+ ],
  "roar:big@wolf": [
   {
    "file": "roar_quadruped_big.mp3",
@@ -957,6 +1005,12 @@
   {
    "file": "roar_field_viper.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@flame_maned_lion": [
+  {
+   "file": "roar_flame_maned_lion.mp3",
+   "lead": 0.44
   }
  ],
  "roar@frost_python": [
@@ -1095,6 +1149,12 @@
   {
    "file": "roar_wind_feather_falcon.mp3",
    "lead": 0.46
+  }
+ ],
+ "roar@wind_leopard": [
+  {
+   "file": "roar_wind_leopard.mp3",
+   "lead": 0.24
   }
  ],
  "roar@wolf": [

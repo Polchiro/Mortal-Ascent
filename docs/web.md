@@ -579,6 +579,8 @@ What is recorded now (23 names, 22 files, about 220 KB, all from SHOAIB's videos
 | The Thunder Hawk's screeching beak stab, its screech when struck, its dying cry and fall, its call and big screech (`@thunder_hawk`) | its own idle + flinch + attack video (remade) and hit + death video (Nov 27) |
 | The Ember Lizard's hissing snap, its hiss when struck, its dying rasp and fall, its hiss and big hiss (`@ember_lizard`) | its own idle + attack video, its hit + death video and its remade hit + death video (Nov 27) |
 | The Frost Python's hissing strike, its hiss when struck, its sinking slump, its hiss and big hiss (`@frost_python`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Wind Leopard's snarling bite, its yowl when struck, its dying growl and fall, its snarl and big snarl (`@wind_leopard`) | its own idle + attack and hit + death videos (Nov 27) |
+| The Flame-Maned Lion's roaring bite, its grunt when struck, its dying groan and fall, its roar and big roar (`@flame_maned_lion`) | its own idle + attack and hit + death videos (Nov 27) |
 | A roar, and a big roar, for wolf-, cat- and ape-bodied beasts | the quadruped roar video |
 
 **His own sounds (Nov 24).** The new male's videos carry sound too, and his moves play it: his Strike's swing, his
@@ -1134,7 +1136,7 @@ its beasts in `DEATH_CATEGORY`. To give another four-legged beast the movement, 
 ## Animated beasts
 
 A beast can be animated from its videos (SHOAIB's, Gemini or Flow: idle, attack, hit, death; so far the **Grey Wolf**
-and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard** and the **Frost Python**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
+and the redesigned **Wild Boar**, **Field Viper**, **Stray Dog Pack**, **Wild Ox**, **Old Black Bear**, **Iron-Hide Boar**, **Red Fox**, the first bird, the **Wind-Feather Falcon**, the **Shadow Wolf**, the **Horned Stag**, the **Mountain Tiger**, the **Rock Python**, the **Spear-Beak Crane**, the **Thornback Lizard**, the **Bloodfang Wolf**, the **Armored Boar Chief**, the **White-Browed Tiger King**, the **Venom Scorpion**, the **Poison Toad**, the **Silver Monkey**, the **Steel-Horn Bull**, the **Golden-Eyed Ape King**, the **Ironbark Bear**, the **Frost Wolf**, the **Thunder Hawk**, the **Ember Lizard**, the **Frost Python**, the **Wind Leopard** and the **Flame-Maned Lion**). One video can hold two of them: the Wild Boar's idle comes from one video, its hit
 and attack from a second, its death from a third (`CLIPS` gives the seconds of each).
 **The move panel never changes height** (fight.js `holdInfo`): it is held at the height of its tallest text (every
 move's and technique's, tried once when the page comes in, and again when the window changes size). Guard's and
@@ -1188,6 +1190,11 @@ its idle is the calm second just before its strike winds up, and the strike and 
 right end of its lowest rows) by more than a few pixels. A move lying down keeps its standing first frame's line
 (`tail_fixed`) or stops using it once the beast is down (`tail_x_until`, by video seconds), and a thin tail lying beside
 the body is still found by thinness (`tail_disc`).
+**The Wind Leopard** (Nov 27): its tail is cut with `trim_tail_x` in every move (its legs are as thin as its tail,
+so `trim_tail` took a back leg for it); its flinch and fall come from its hit video but are placed as its idle (the
+same picture, the camera still), so they don't change size at their start.
+**The Flame-Maned Lion** (Nov 27): drawn with no tail showing, but Veo grew a long tufted tail in both videos: cut
+past its back feet while it stands; in its fall by that line only until it is down (5.75 s), and by its thinness as it lies.
 **The idle never jumps** (`smooth_idle`; SHOAIB: "it keeps resetting"): its last frame never quite met its first, so
 a short idle plays forward then back, breathing in and out, and a long one (24+ frames) dissolves its last 6 frames
 into its first; and it keeps its place in time when the page is replaced each turn (fight.js sets its
