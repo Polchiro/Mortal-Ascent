@@ -2954,3 +2954,31 @@ main.battle.turnnow .ally.me{animation:mepulse .65s ease-in-out 4}
 main.battle.turnnow .bbar .actbtn:not(:disabled){animation:moveglow .65s ease-in-out 4}
 @keyframes moveglow{50%{box-shadow:0 0 0 2px rgba(255,214,120,.9),0 0 18px rgba(255,214,120,.7)}}
 @media (prefers-reduced-motion:reduce){.yourturn{animation-duration:.01s}main.battle.turnnow .ally.me,main.battle.turnnow .bbar .actbtn{animation:none}}
+
+/* Break through, compact (docs/web.md "The map screen"): the big hanging tab took a block of the screen under the hero
+   plate; now a slim gold pill (art/ui/fight_pill.webp) with the gate's glowing seal in its socket and one line of text.
+   On a wide screen it sits beside the plate, taking no room of its own; on a phone, tucked under the plate's bars. */
+.mhud .mbreak{position:absolute;left:calc(var(--pw) + 6px);top:calc(var(--pw) * .1375 - 31px);width:230px;height:62px;margin:0;
+  background:url(/art/ui/fight_pill.webp) 0 0/100% 100% no-repeat!important;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.mhud .mbreak::before{display:none}
+.mhud .mbreak .mbseal{left:6%;top:21.3%;width:15.4%;height:57.4%;aspect-ratio:auto;background:radial-gradient(circle,var(--bk) 0 32%,transparent 70%);
+  box-shadow:0 0 12px var(--bk2)}
+.mhud .mbreak .mbtext{left:26.4%;right:5.8%;top:18.4%;bottom:17.6%;flex-direction:row;flex-wrap:wrap;align-content:center;column-gap:6px;row-gap:0}
+.mhud .mbreak .mbtext b{font-size:13px;letter-spacing:.6px;line-height:1.1}
+.mhud .mbreak .mbtext small{font-size:10.5px;line-height:1.2}
+@keyframes tabglow{50%{filter:drop-shadow(0 0 10px var(--bk)) drop-shadow(0 4px 10px rgba(0,0,0,.55))}}
+@media (max-width:700px){
+  .mhud .mbreak{position:relative;left:auto;top:auto;width:168px;height:45px;margin:-2px 0 0 calc(var(--pw) * .2)}
+  .mhud .mbreak .mbtext b{font-size:10.5px;letter-spacing:.3px}.mhud .mbreak .mbtext small{font-size:9px}
+}
+
+/* Less crowding in a beast fight (Shoaib, Nov 27): the beast's warning about its next move is gone (it sat over the
+   beast's head), so you read the beast itself; the "Your turn" panel is smaller. The duel and spar keep theirs. */
+main.battle:not(.duelfight) .benemy .bwarn{display:none}
+@media (min-width:901px){
+  .battle>.binfo{justify-self:end;align-self:end;width:min(100%,270px);padding:18px 12px 8px;border-width:10px}
+  .battle>.binfo .ititle{font-size:13.5px;margin:0 0 2px}
+  .battle>.binfo .itext{font-size:12px;line-height:1.35}
+  .battle>.binfo .sub{font-size:10.5px;margin-top:4px}
+  main.battle .binfo .turnchip{width:124px;height:33px;top:-22px;font-size:10.5px}
+}

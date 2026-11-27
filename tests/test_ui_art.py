@@ -132,3 +132,11 @@ def test_the_fight_screens_use_the_painted_moves():
         assert f"/art/ui/{piece}.webp" in css, piece
     for src in ("web/explore_play.py", "web/static/duel.js", "web/static/spar.js"):           # Techniques: the book
         assert "/art/icons/actions/techniques.webp" in open(src).read(), src
+
+
+def test_break_through_is_a_slim_pill_beside_the_plate():
+    """The map screen's Break Through button (docs/web.md "The map screen"): the slim gold pill, not the big tab."""
+    css = open("web/static/style.css").read()
+    last = css[css.index("Break through, compact"):]
+    assert "/art/ui/fight_pill.webp" in last and "left:calc(var(--pw) + 6px)" in last
+    assert "@media (max-width:700px)" in last                                 # under the bars on a phone
