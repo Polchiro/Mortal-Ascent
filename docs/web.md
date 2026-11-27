@@ -1049,6 +1049,14 @@ a lair is fought with `bot/hunt.py`.
    punch and white flash in beast fights is gentler (`SHAKE`, `ZOOM` in `fight.js`: about half the old shake, a
    smaller punch, a softer, shorter flash); with "reduce motion" on there is no shake and no flash, only a slight
    punch.
+   **Kept light** (SHOAIB Nov 27: "the fight is quite laggy now"; measured in a slowed computer-sized browser
+   against the morning's version). The bigger beasts' frames had grown to the full scene height while the beast
+   stayed its size, and the picture's two shadows are drawn over its whole frame: `sized` now makes the frame only as
+   tall as the beast (a Saint standing still went from about half as smooth back to normal). The aura is one layer
+   with normal blending and a fade-only breath; the roar's blurred glow copy of the blast, the full-scene
+   impact-frame filter, the spirit's blur and the double glows on marks and circles are gone (single glows); the
+   pictures a roar needs are loaded ahead. A Saint's roar went from about four times the morning's cost to slightly
+   less than it.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
