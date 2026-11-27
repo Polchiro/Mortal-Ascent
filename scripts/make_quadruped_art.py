@@ -35,7 +35,7 @@ DESIGNS = ("iron_hide_boar", "red_fox", "shadow_wolf", "horned_stag", "mountain_
            "ironbark_bear", "frost_wolf", "wind_leopard", "flame_maned_lion", "earth_splitting_rhino", "shadow_panther",
            "cloud_leopard",
            "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "sky_lynx", "ghost_fire_wolf",
-           "qiongqi_the_winged_tiger", "ancient_flame_lion", "white_tiger", "stray_dog_pack")
+           "qiongqi_the_winged_tiger", "ancient_flame_lion", "white_tiger", "stray_dog_pack", "lightning_weasel")
 # the flying beasts (SHOAIB's redesign of the birds), cut the same way
 FLYING = ("spear_beak_crane", "thunder_hawk", "bone_vulture", "storm_eagle", "iron_feather_crow", "crimson_fire_hawk",
           "bifang_fire_crane", "vermilion_bird", "kun_peng_fish_of_the_northern_sea", "wind_feather_falcon")

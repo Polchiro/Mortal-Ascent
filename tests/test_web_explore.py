@@ -1347,6 +1347,20 @@ def test_the_storm_eagle_is_animated_from_its_own_videos_with_its_own_voice():
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["storm_eagle@roar"][:2] == [0.07, 0.19]
     assert explore_play.beast_body("Storm Eagle") == "storm_eagle"
 
+def test_the_lightning_weasel_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Lightning Weasel (Nov 27, Grandmaster): a dark chocolate-brown weasel with a gold lightning-bolt stripe and a stub tail; both videos clean, the tail Veo grew as it fell cut back to a stub."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("lightning_weasel")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Lightning Weasel", "slug": "lightning_weasel"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "lightning_weasel.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@lightning_weasel" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["lightning_weasel@roar"][:2] == [0.09, 0.23]
+    assert explore_play.beast_body("Lightning Weasel") == "lightning_weasel"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

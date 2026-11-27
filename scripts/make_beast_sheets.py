@@ -155,6 +155,17 @@ CLIPS = {
                      "breathe": 0.035, "idle_from": 2.9, "idle_until": 4.1, "attack_ms": 2600,
                      "ease_in": {"attack": 2, "hit": 5, "death": 4}, "settle": {"attack": 3},
                      "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, a dark chocolate-brown weasel with a gold lightning-bolt stripe (just colour) and a stub tail:
+    # both videos clean (no remakes). Its idle is the calm breath just before its snapping bite; its flinch and its fall
+    # onto its side from the hit video ease in from it. Veo grew its stub tail long and bushy as it fell: cut back where
+    # it reaches past its back feet while it is still up (`tail_x`, the line its standing start drew), and by thinness
+    # once it lies down (`tail_disc`), as the Flame-Maned Lion's
+    "lightning_weasel": {"attack": (4.25, 5.75), "hit": (2.0, 3.5), "death": (5.0, 6.6), "idle_span": (16, 28),
+                         "breathe": 0.035, "idle_from": 2.6, "idle_until": 4.25, "attack_ms": 1800,
+                         "trim_tail": ("death",), "tail_x": (18, 20), "tail_disc": ("death",), "tail_fixed": ("death",),
+                         "tail_x_until": {"death": 5.85},
+                         "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                         "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

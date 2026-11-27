@@ -197,6 +197,12 @@
    "lead": 2.16
   }
  ],
+ "death@lightning_weasel": [
+  {
+   "file": "death_lightning_weasel.mp3",
+   "lead": 0.42
+  }
+ ],
  "death@mountain_tiger": [
   {
    "file": "death_mountain_tiger.mp3",
@@ -493,6 +499,12 @@
    "lead": 0.54
   }
  ],
+ "hit@lightning_weasel": [
+  {
+   "file": "hit_lightning_weasel.mp3",
+   "lead": 0.22
+  }
+ ],
  "hit@mountain_tiger": [
   {
    "file": "hit_mountain_tiger.mp3",
@@ -699,6 +711,12 @@
   {
    "file": "lunge_ironbark_bear.mp3",
    "lead": 1.62
+  }
+ ],
+ "lunge@lightning_weasel": [
+  {
+   "file": "lunge_lightning_weasel.mp3",
+   "lead": 0.22
   }
  ],
  "lunge@mountain_tiger": [
@@ -917,6 +935,12 @@
    "lead": 0.38
   }
  ],
+ "roar:big@lightning_weasel": [
+  {
+   "file": "roar_big_lightning_weasel.mp3",
+   "lead": 0.22
+  }
+ ],
  "roar:big@mountain_tiger": [
   {
    "file": "roar_big_mountain_tiger.mp3",
@@ -1125,6 +1149,12 @@
   {
    "file": "roar_ironbark_bear.mp3",
    "lead": 0.38
+  }
+ ],
+ "roar@lightning_weasel": [
+  {
+   "file": "roar_lightning_weasel.mp3",
+   "lead": 0.18
   }
  ],
  "roar@mountain_tiger": [
