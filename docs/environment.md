@@ -9,6 +9,9 @@ camera angle (docs/town.md, docs/hunting.md "The map").
 > piece by piece. These pieces and the painted Moon Forest clearing they were placed on are still used by the hunting
 > map (team hunts, docs/hunting.md "The map"), and are ready to be placed on the lands.
 
+**Dressing the lands, one map at a time:** Forest Edge first. Its plan and the pieces to paint, with a ready Gemini
+prompt for each: `docs/maps/forest_edge.md`.
+
 Code: `web/env.py` (what each asset is, where each map's pieces stand), `scripts/make_env_assets.py` (cuts the
 pictures), `web/hunt_map.py` (a map's pieces and their blocks), `web/static/huntmap.js` (drawing them).
 Tests: `tests/test_env.py`.
