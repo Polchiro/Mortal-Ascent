@@ -19,7 +19,7 @@
   function carry(old, fresh) {              // what you had set on the page stays: the Techniques filter, folded sections
     var show = old.dataset.show, btn = show && fresh.querySelector('.tfbtn[data-show="' + show + '"]');
     if (btn) btn.click();
-    var was = old.querySelectorAll('details'), now = fresh.querySelectorAll('details');
+    var was = old.querySelectorAll('details.techgrade'), now = fresh.querySelectorAll('details.techgrade');
     if (was.length === now.length) now.forEach(function (d, i) { if (d.className === was[i].className) d.open = was[i].open; });
   }
 

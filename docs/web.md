@@ -158,8 +158,9 @@ the page only, nothing saved), and the cards in a folding section per grade, **H
 (`techniques_play.sections`), only grades you know a technique of; in each, equipped first, then attack, then by name.
 A section with nothing left after the filter hides.
 
-- **Equip to Slot 1 / 2 / 3**: each card not equipped has a button per slot, each saying what that slot holds now
-  ("Iron Fist", "Empty", or locked). Pressing one puts the technique there and takes off what was there
+- **Equip**: each card not equipped has one **Equip** button; it opens a small menu of **Slot 1 / 2 / 3**, each
+  saying what that slot holds now ("Replaces Iron Fist", "Empty", or "Opens at Martial Warrior"). One menu is open at a
+  time; a click elsewhere or Esc closes it; it opens below the button when there is no room above. Pressing one puts the technique there and takes off what was there
   (`db.equip_technique` with the slot; the form sends `slot`). It changes the page in place, with no reload ("No page
   reloads" below).
 - **Unequip** (`db.unequip_technique`) is on every equipped card and empties its slot; there is no minimum.

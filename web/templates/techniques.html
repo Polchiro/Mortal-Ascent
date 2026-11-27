@@ -65,18 +65,20 @@
           <div class="tqact">
             {% if t.action == 'equip' %}
             {# equip into the slot you pick: any kind in any slot; what is there comes off (technique.md "Slots") #}
-            <span class="tqto">Equip to</span>
-            <div class="tqslots">
-              {% for sl in t.slots %}
-              <form method="post" action="/techniques/equip">
-                <input type="hidden" name="tech" value="{{ t.id }}"><input type="hidden" name="slot" value="{{ sl.no }}">
-                <button class="tbtn{% if sl.open and not sl.holds %} primary{% endif %}" type="submit"{% if not sl.open %} disabled{% endif %}
-                        title="{% if not sl.open %}Opens at Martial Warrior{% elif sl.holds %}Replaces {{ sl.holds }}{% else %}Empty slot{% endif %}">
-                  <b>Slot {{ sl.no }}</b><small>{% if not sl.open %}Locked{% elif sl.holds %}{{ sl.holds }}{% else %}Empty{% endif %}</small>
-                </button>
-              </form>
-              {% endfor %}
-            </div>
+            <details class="tqequip">
+              <summary class="tbtn primary">Equip</summary>
+              <div class="tqpop" role="group" aria-label="Equip {{ t.name }} to">
+                <span class="tqto">Equip to</span>
+                {% for sl in t.slots %}
+                <form method="post" action="/techniques/equip">
+                  <input type="hidden" name="tech" value="{{ t.id }}"><input type="hidden" name="slot" value="{{ sl.no }}">
+                  <button class="tqslot{% if sl.open and not sl.holds %} free{% endif %}" type="submit"{% if not sl.open %} disabled{% endif %}>
+                    <b>Slot {{ sl.no }}</b><small>{% if not sl.open %}Opens at Martial Warrior{% elif sl.holds %}Replaces {{ sl.holds }}{% else %}Empty{% endif %}</small>
+                  </button>
+                </form>
+                {% endfor %}
+              </div>
+            </details>
             {% elif t.action == 'unequip' %}
             <form method="post" action="/techniques/unequip">
               <input type="hidden" name="tech" value="{{ t.id }}">
@@ -95,6 +97,22 @@
   <p class="empty">No techniques yet.</p>
   {% endif %}
   <script>
+  (function () {                       // one Equip menu open at a time; a click elsewhere or Esc closes it
+    document.querySelectorAll('.tqequip').forEach(function (d) {
+      d.addEventListener('toggle', function () {
+        if (!d.open) return;
+        document.querySelectorAll('.tqequip[open]').forEach(function (o) { if (o !== d) o.open = false; });
+        var pop = d.querySelector('.tqpop'), sum = d.querySelector('summary').getBoundingClientRect();
+        d.classList.toggle('down', sum.top - pop.offsetHeight - 8 < 72);   // no room above: open below the button
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.tqequip')) document.querySelectorAll('.tqequip[open]').forEach(function (o) { o.open = false; });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') document.querySelectorAll('.tqequip[open]').forEach(function (o) { o.open = false; });
+    });
+  })();
   (function () {
     var page = document.querySelector('.techpage');
     document.querySelectorAll('.tfbtn').forEach(function (b) {
