@@ -958,6 +958,7 @@
       var ahead = tall * 0.25 / sr.width * 100;                // centred just in front of the jaws, so they stay in view
       var q = [p[0] - ahead, p[1]];
       wave(q, 'burst', Math.min(1100, tall * 1.6 * big), 520, 0, 'broarbig star', 0, 0.85);
+      blast(p, pic, big); shape(p, pic, big, 'quadruped');       // its roar, in its element, across to you
       wave(q, 'double', Math.min(1500, tall * 2.6 * big), 900, 140, 'broarbig', 7, 0.8);    // hollow rings: the beast
       wave(q, 'ring', Math.min(1800, tall * 3.4 * big), 1000, 320, 'broarbig', 7, 0.7);     // stays in view inside them
       var f = at(pic, 0.5, 0.97);                              // dust rolling out along the ground, both ways
@@ -1052,11 +1053,7 @@
       var kind = SCREECH_KINDS[ROAR.slug] || {tint: ROAR.color}, scale = (kind.scale || 1) * big;
       wave(p, 'burst', Math.min(700, tall * 0.8 * big), 460, 0, 'broarbig star', 9, 0.55);    // the blast at its beak
       var fy = Math.abs(ang) > 90 ? -1 : 1, wh = Math.min(560, Math.max(200, len * 0.42)) * scale;
-      ['bwind glow', 'bwind', 'bwind tint'].forEach(function (k) {   // the screech: a spiralling blast of wind, from SHOAIB's picture
-        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--rc': kind.tint, '--h': wh + 'px'});
-      });
-      if (kind.core) fx('bwind tint core', p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy,
-        '--rc': kind.core, '--h': wh * 0.55 + 'px'});      // a hotter heart down its middle
+      blast(p, pic, big); shape(p, pic, big, 'flying');           // the screech: a spiralling wind of its element, at you
       [420, 900].forEach(function (d, i) {                     // bells pulsing out of its beak while it holds
         wave(p, i % 2 ? 'double' : 'ring', Math.min(1100, tall * (1.2 + 0.3 * i) * big), 820, d, 'broarbig cone', 2, 0.6)
           .style.setProperty('--ang', ang + 'deg');
@@ -1103,10 +1100,7 @@
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(800, tall * 0.9 * big), 460, 0, 'broarbig star', 0, 0.9);
       var fy = Math.abs(ang) > 90 ? -1 : 1, hue = hueOf(ROAR.color), tint = (hue > 60 && hue < 170 ? 0 : hue - 150) + 'deg';   // the picture is venom green
-      ['bsblast glow', 'bsblast'].forEach(function (k) {       // the stream: a twisting torrent from SHOAIB's picture
-        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--tint': tint,
-          '--h': Math.min(520, Math.max(220, len * 0.45)) * big + 'px'});
-      });
+      blast(p, pic, big); shape(p, pic, big, 'serpent');          // its coiling breath, in its element, at you
       for (var j = 0; j < 46; j++) {                           // droplets spraying through it
         var q = 0.25 + Math.random() * 0.85, spread = (Math.random() - 0.5) * tall * 0.75 * q * big;
         var a = ang * Math.PI / 180;
@@ -1163,10 +1157,7 @@
       var flash = fx('broarflash', 0, 0, 520); flash.style.setProperty('--x', p[0] + '%'); flash.style.setProperty('--y', p[1] + '%');
       wave(p, 'burst', Math.min(700, tall * 0.8 * big), 480, 0, 'broarbig star', 9, 0.6);
       var fy = Math.abs(ang) > 90 ? -1 : 1;                    // keep the blast picture the right way up
-      ['bblast glow', 'bblast', 'bblast tint'].forEach(function (k) {   // the blast, from SHOAIB's picture, in its element's colour
-        fx(k, p[0], p[1], 1700, {'--len': len + 'px', '--ang': ang + 'deg', '--fy': fy, '--rc': ROAR.color,
-          '--h': Math.min(620, Math.max(260, len * 0.5)) * big + 'px'});
-      });
+      blast(p, pic, big); shape(p, pic, big, 'dragon');           // a dragon of light, in its element, at you
       for (var j = 0; j < 12; j++) {                           // lightning streaks fanning out round the blast
         fx('bstreak', p[0], p[1], 1300, {'--rc': j % 2 ? DRAGON_GOLD : ROAR.color, '--len': len * (0.35 + Math.random() * 0.5) + 'px',
           '--ang': (ang + (Math.random() - 0.5) * 50) + 'deg', 'animation-delay': (40 + Math.random() * 500) + 'ms'});
@@ -1336,6 +1327,8 @@
     var TIER_OF = {ring: 0, double: 1, burst: 2};               // normal, Elite, Beast King (beast_roar "wave")
     function preload(src) { var i = new Image(); i.src = src; if (i.decode) i.decode().catch(function () {}); }
     if (ELEM) ['_stream', '_burst', '_ground'].forEach(function (k) { preload(ELEM + k + '.webp'); });
+    var SHAPE_OF = {roar: 'quadruped', screech: 'flying', hiss: 'serpent', storm: 'dragon'};          // `shape`
+    if (ROAR && ROAR.motion && SHAPE_OF[ROAR.motion.style]) preload('/art/fx/roars/roar_' + SHAPE_OF[ROAR.motion.style] + '.webp');
     if (ROAR && ROAR.power >= 1) preload('/art/fx/elem/sigil_' + (ROAR.power >= 4 ? 3 : ROAR.power >= 3 ? 2 : 1) + '.webp');
     if (ROAR && ROAR.marks) ROAR.marks.forEach(function (k) { new Image().src = markSrc(k); });   // its hit marks (`mark`)
     function aim(p, you) {                                       // from p to you: [length in px, angle in degrees]
@@ -1360,6 +1353,22 @@
       wrap.style.setProperty('--rot', (a[1] - 180) + 'deg');
       wrap.innerHTML = '<img alt="" src="' + ELEM + '_stream.webp"><img class="glow" alt="" src="' + ELEM + '_stream.webp">';
       wrap.style.setProperty('--len', len + 'px'); wrap.style.setProperty('--h', h + 'px');
+      scene.appendChild(wrap);
+      setTimeout(function () { wrap.remove(); }, 1500);
+    }
+    /* A body type's own roar (SHOAIB Nov 27: "I want it to be detailed"): his white picture of its shape
+       (art/fx/roars/roar_<body>.webp: a four-legged beast's sound rings, a bird's spiralling wind, a serpent's
+       coiling breath, a dragon of light) thrown from its mouth across to you in its element's colour (the picture's
+       shape filled with the colour, its own white light over it), over its element's blast (`blast`). */
+    var SHAPE_RATIO = {quadruped: 0.69, flying: 0.52, serpent: 0.44, dragon: 0.44};
+    function shape(p, pic, big, body) {
+      var you = at(fr, 0.5, 0.45), a = aim(p, you), len = a[0] * 1.08, src = '/art/fx/roars/roar_' + body + '.webp';
+      var h = Math.min(pic.height * 1.5, len * SHAPE_RATIO[body]) * big;
+      var wrap = document.createElement('div');
+      wrap.className = 'bestream bshape'; wrap.style.left = p[0] + '%'; wrap.style.top = p[1] + '%';
+      wrap.style.setProperty('--rot', (a[1] - 180) + 'deg'); wrap.style.setProperty('--len', len + 'px'); wrap.style.setProperty('--h', h + 'px');
+      wrap.style.setProperty('--rc', ROAR.color); wrap.style.setProperty('--m', 'url(' + src + ')');
+      wrap.innerHTML = '<span class="bsh"><i class="tint"></i><img alt="" src="' + src + '"></span>';
       scene.appendChild(wrap);
       setTimeout(function () { wrap.remove(); }, 1500);
     }

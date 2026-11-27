@@ -13,6 +13,8 @@ The folder holds his pictures, named after what they are (effects on pure black,
     <element>_aura.png     the aura a strong beast (Martial King and up) glows with, a dome round an empty middle (8)
     sigil_<1-3>.png        the formation circle that flares under a strong beast as it roars, white (King and
                            Emperor 1, Ancestor 2, Saint 3)
+    roar_<body>.png        the shape of a body type's own roar, white, bright end on the RIGHT, coloured by the
+                           beast's element in the fight (quadruped, flying, serpent, dragon), to art/fx/roars/
     <mark>.png             a beast's hit mark, painted white so the fight colours it by element (MARKS: bite,
                            fang, gore, tusk, beak, talon, sting, sting_alt, smash, lash, and the six Martial
                            Saints' own: azure_dragon, white_tiger, kun_peng, void_serpent, ancient_flame_lion,
@@ -36,7 +38,9 @@ NAMES = ([e + "_stream" for e in ELEMENTS] + [e + "_burst" for e in ELEMENTS] + 
 MARKS = ("bite", "fang", "gore", "tusk", "beak", "talon", "sting", "sting_alt", "smash", "lash",
          "azure_dragon", "white_tiger", "kun_peng", "void_serpent", "ancient_flame_lion", "dragon_turtle")
 MARKS_OUT = os.path.join(ROOT, "art", "fx", "marks")
-MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100, "mark": 640, "aura": 720, "sigil": 1100}
+ROARS = ("roar_quadruped", "roar_flying", "roar_serpent", "roar_dragon")
+ROARS_OUT = os.path.join(ROOT, "art", "fx", "roars")
+MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100, "mark": 640, "aura": 720, "sigil": 1100, "roar": 1100}
 # SHOAIB: the flame patch came out thinner than the others; it stands a little taller so it reads at your feet
 STRETCH_Y = {"flame_ground": 1.5}
 FLOOR = 10            # background noise under this (of 255) is pure black
@@ -93,10 +97,10 @@ def make(src, name):
     out = Image.fromarray(a, "RGBA")
     if name in STRETCH_Y:
         out = out.resize((out.width, round(out.height * STRETCH_Y[name])), Image.LANCZOS)
-    kind = ("mark" if name in MARKS else "crack" if name == "ground_crack" else "sigil" if name.startswith("sigil")
-            else name.split("_")[1])
+    kind = ("mark" if name in MARKS else "roar" if name in ROARS else "crack" if name == "ground_crack"
+            else "sigil" if name.startswith("sigil") else name.split("_")[1])
     out.thumbnail((MAX_SIDE[kind], MAX_SIDE[kind]), Image.LANCZOS)
-    folder = MARKS_OUT if kind == "mark" else OUT
+    folder = MARKS_OUT if kind == "mark" else ROARS_OUT if kind == "roar" else OUT
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(folder, name + ".webp")
     out.save(path, "WEBP", quality=86, method=4)
@@ -104,7 +108,7 @@ def make(src, name):
 
 
 def main(folder):
-    names = NAMES + list(MARKS)
+    names = NAMES + list(MARKS) + list(ROARS)
     missing = [n for n in names if not os.path.exists(os.path.join(folder, n + ".png"))]
     for n in names:
         src = os.path.join(folder, n + ".png")
