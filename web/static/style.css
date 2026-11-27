@@ -2656,15 +2656,43 @@ main.dying .baura,main.slain .baura{opacity:0}
   .benemy .ehp{height:16px;margin-top:3px}.benemy .ehp span{font-size:11px}
   .benemy .bwarn{margin-top:5px;padding-top:5px}.benemy .bwarn .whead{font-size:13px}.benemy .whint{font-size:11.5px}
   .battle>.bscene{height:clamp(300px,100vw,540px)}
-  .allies{left:6px;top:6px;flex-direction:row;align-items:center;gap:7px}
+  .allies{left:6px;top:6px;flex-direction:row;align-items:flex-start;gap:9px}
   .ally{position:relative;width:34px;height:34px;padding:0;gap:0;justify-content:center;border:0;border-radius:50%;
-    background:conic-gradient(#E05A4F calc(var(--hp,100) * 1%),rgba(255,255,255,.16) 0)}
+    background:conic-gradient(#E05A4F calc(var(--hp,100) * 1%),rgba(255,255,255,.16) 0);box-shadow:0 0 0 2px var(--pc,#888)}
   .ally img{width:28px;height:28px;border:2px solid #0c0d12}
   .ally>span{display:none}
-  .ally em{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;font-size:0;border:2px solid #0c0d12;background:var(--jade)}
-  .ally.s-Choosing em{background:#EBCB86;animation:allywait 1.2s ease-in-out infinite}
-  .ally.s-Fallen,.ally.s-Fled{filter:grayscale(1);opacity:.6}.ally.s-Fallen em,.ally.s-Fled em{background:#777}
-  .ally.me{box-shadow:0 0 0 2px var(--gold)}
-  .battle[data-team] .bfeed{top:50px}
+  .ally em{position:absolute;right:-4px;bottom:-3px;min-width:15px;height:15px;border-radius:8px;font-size:0;border:2px solid #0c0d12;
+    background:var(--jade);display:grid;place-items:center}
+  .ally em::after{font:800 9px/1 Inter,Arial,sans-serif;color:#0c0d12}
+  .ally.s-Ready em::after{content:"✓"}
+  .ally.s-Choosing em{background:#EBCB86}.ally.s-Choosing em::after{content:"…";animation:allywait 1.2s ease-in-out infinite}
+  .ally.s-Fallen,.ally.s-Fled{filter:grayscale(1);opacity:.6}.ally.s-Fallen em,.ally.s-Fled em{background:#888}
+  .ally.s-Fallen em::after{content:"✕"}
+  .allies .ally .aname{display:block;position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:4px;font:700 9px/1 Inter,Arial,sans-serif;
+    font-style:normal;color:var(--pc);white-space:nowrap;text-shadow:0 1px 2px #000,0 0 4px #000}
+  .ally.me{width:40px;height:40px;box-shadow:0 0 0 3px var(--pc,var(--gold)),0 0 10px rgba(232,194,122,.5)}
+  .ally.me img{width:33px;height:33px}
+  .allies .ally.me .aname{font-size:10px;letter-spacing:1px}
+  .battle[data-team] .bfeed{top:64px}
 }
-@keyframes allywait{50%{transform:scale(1.35)}}
+@keyframes allywait{50%{opacity:.35}}
+/* every size: each player's colour on their tag, and "You" first and gold (web/hunt_play.py PARTY_COLORS) */
+.ally .aname{display:none}
+.ally{border-color:color-mix(in srgb,var(--pc,#C9A45C) 70%,transparent)}
+.ally>span{color:var(--pc,#E6DFCF);font-weight:700}
+.ally.me{border-width:2px}
+.pname{font-weight:800}
+/* YOUR TURN: when a new round needs your pick, a banner sweeps across the scene, your portrait pulses gold and the
+   moves glow (fight.js `yourTurn`) */
+.yourturn{position:absolute;z-index:9;left:0;right:0;top:38%;text-align:center;pointer-events:none;
+  font:800 clamp(26px,7vw,52px)/1 Cinzel,Georgia,serif;letter-spacing:3px;text-transform:uppercase;color:#FFE7A8;
+  text-shadow:0 0 18px rgba(232,194,122,.9),0 2px 6px #000;
+  background:linear-gradient(90deg,transparent,rgba(20,14,4,.75) 20%,rgba(20,14,4,.75) 80%,transparent);padding:10px 0;
+  animation:yourturn 1.9s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes yourturn{0%{opacity:0;transform:translateX(-40%) scaleY(.6)}18%{opacity:1;transform:none}75%{opacity:1;transform:none}
+  100%{opacity:0;transform:translateX(30%)}}
+main.battle.turnnow .ally.me{animation:mepulse .65s ease-in-out 4}
+@keyframes mepulse{50%{transform:scale(1.18);box-shadow:0 0 0 3px var(--pc,#E8C27A),0 0 22px rgba(255,214,120,.95)}}
+main.battle.turnnow .bbar .actbtn:not(:disabled){animation:moveglow .65s ease-in-out 4}
+@keyframes moveglow{50%{box-shadow:0 0 0 2px rgba(255,214,120,.9),0 0 18px rgba(255,214,120,.7)}}
+@media (prefers-reduced-motion:reduce){.yourturn{animation-duration:.01s}main.battle.turnnow .ally.me,main.battle.turnnow .bbar .actbtn{animation:none}}

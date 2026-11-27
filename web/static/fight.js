@@ -230,10 +230,66 @@
     box.dataset.scaled = k.toFixed(2);
   }
 
+  /* Team fights (SHOAIB Nov 27: "how do players know it's their turn, each character looks alike"). Everyone picks at
+     once each round. When a new round starts and you still have to pick, a YOUR TURN banner sweeps across the scene,
+     your portrait pulses and the moves glow, and an Android phone gives a double buzz. Each player keeps one colour
+     all fight (web/hunt_play.py PARTY_COLORS: you gold), on their portrait's ring and on their name wherever it
+     appears in the fight's messages and Battle History (`partyNames`). */
+  var seenRound = null;
+  function yourTurn(main) {
+    if (!main.dataset.team || main.dataset.waiting || main.classList.contains('slain')) return;
+    var round = main.dataset.round;
+    if (seenRound === round) return;
+    var first = seenRound === null;
+    seenRound = round;
+    var scene = main.querySelector('.bscene');
+    if (!scene) return;
+    var n = document.createElement('div');
+    n.className = 'yourturn'; n.textContent = 'Your turn';
+    scene.appendChild(n);
+    setTimeout(function () { n.remove(); }, 1900);
+    main.classList.add('turnnow');
+    setTimeout(function () { main.classList.remove('turnnow'); }, 2600);
+    if (!first) buzz([40, 70, 40]);
+  }
+  function partyNames(main) {
+    var allies = [].slice.call(main.querySelectorAll('.ally[data-name]')).filter(function (a) { return !a.classList.contains('me'); });
+    if (!allies.length) return;
+    var who = allies.map(function (a) { return {name: a.dataset.name, color: getComputedStyle(a).getPropertyValue('--pc').trim()}; })
+      .filter(function (w) { return w.name && w.color; });
+    function paint(root) {
+      if (!root) return;
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), nodes = [], t;
+      while ((t = walker.nextNode())) if (!(t.parentNode.classList && t.parentNode.classList.contains('pname'))) nodes.push(t);
+      nodes.forEach(function (node) {
+        who.forEach(function (w) {
+          var i = node.nodeValue.indexOf(w.name);
+          if (i < 0 || !node.parentNode) return;
+          var after = node.splitText(i), rest = after.splitText(w.name.length), span = document.createElement('b');
+          span.className = 'pname'; span.style.color = w.color; span.textContent = w.name;
+          after.parentNode.replaceChild(span, after);
+          node = rest;
+        });
+      });
+    }
+    ['.bfeed', '.histbody', '.binfo'].forEach(function (sel) {
+      var root = main.querySelector(sel);
+      paint(root);
+      if (root && window.MutationObserver && !root.dataset.painted) {
+        root.dataset.painted = '1';
+        new MutationObserver(function (list) {
+          list.forEach(function (m) { [].forEach.call(m.addedNodes, function (x) { if (x.nodeType === 1) paint(x); }); });
+        }).observe(root, {childList: true, subtree: true});
+      }
+    });
+  }
+
   function init() {
     var main = document.querySelector('main.battle');
     if (!main) return;
     sized(main);
+    partyNames(main);
+    yourTurn(main);
     aura(main);
     var sheeted = main.querySelector('.beast.sheeted');
     if (sheeted && !sheeted._sheets) {
@@ -2406,6 +2462,8 @@
       if (!next || next.dataset.turn !== now.dataset.turn) { Combat.set('submitting'); show(html, sent); return; }
       var a = now.querySelector('.allies'), b = next.querySelector('.allies');
       if (a && b) a.replaceWith(document.importNode(b, true));
+      var c = now.querySelector('.turnchip'), d = next.querySelector('.turnchip');   // who you are still waiting for
+      if (c && d && d.dataset.wait) { c.dataset.wait = d.dataset.wait; if (now.dataset.waiting) c.textContent = d.dataset.wait; }
       var t = now.querySelector('.teamtimer'), u = next.querySelector('.teamtimer');
       if (t && u) { t.dataset.left = u.dataset.left; }
     }).catch(function () {}).then(function () { setTimeout(poll, POLL); });
