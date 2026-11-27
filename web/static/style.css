@@ -1071,6 +1071,34 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
   background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.8),rgba(255,255,255,.3) 14%,rgba(255,255,255,.06) 38%,transparent 65%);
   animation:broarflash .52s ease-out forwards}
 @keyframes broarflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+/* the roar hits you (fight.js `blast`, `crack`, `impact`, `presence`; art/fx/elem/, scripts/make_element_fx.py):
+   its element's own blast from its mouth to you, the burst on your body, the patch left at your feet */
+.bestream{position:absolute;width:0;height:0;z-index:5;pointer-events:none;transform:rotate(var(--rot))}
+.bestream img{position:absolute;right:0;top:calc(var(--h) / -2);width:var(--len);height:var(--h);max-width:none;
+  transform-origin:100% 50%;transform:scaleX(0);animation:bestream 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+.bestream img.glow{mix-blend-mode:screen;filter:blur(7px) brightness(1.5);opacity:.75}
+@keyframes bestream{0%{transform:scaleX(0) scaleY(.45);opacity:1}20%{transform:scaleX(1) scaleY(1);opacity:1}
+  62%{opacity:1}100%{transform:scaleX(1.05) scaleY(1.18);opacity:0}}
+.bcrack{z-index:auto}
+.bcrack img{transform:none;clip-path:inset(0 0 0 100%);filter:drop-shadow(0 0 10px var(--rc,#ffcf6a));animation:bcrack 2.1s ease-out forwards}
+@keyframes bcrack{0%{clip-path:inset(0 0 0 100%);opacity:1}13%{clip-path:inset(0 0 0 0);opacity:1}72%{opacity:1}
+  100%{clip-path:inset(0 0 0 0);opacity:0}}
+.beburst{position:absolute;z-index:6;width:var(--s);height:auto;max-width:none;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);animation:beburst .9s cubic-bezier(.15,.8,.3,1) both}
+.beburst.b2{animation-delay:90ms}
+@keyframes beburst{0%{transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);opacity:1}
+  35%{transform:translate(-50%,-50%) rotate(var(--r)) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--r) + 14deg)) scale(1.28);opacity:0}}
+.beground{position:absolute;width:var(--w);height:calc(var(--w) * .36);object-fit:fill;max-width:none;pointer-events:none;opacity:0;
+  transform:translate(-50%,-62%) scaleX(.4);animation:beground 2.4s ease-out forwards}
+.bekcrack{filter:drop-shadow(0 0 10px var(--rc))}
+@keyframes beground{0%{transform:translate(-50%,-62%) scaleX(.4);opacity:0}12%{transform:translate(-50%,-62%) scaleX(1);opacity:1}
+  70%{opacity:.9}100%{transform:translate(-50%,-62%) scaleX(1.04);opacity:0}}
+.broarflash.behit{background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.95),var(--rc) 10%,transparent 42%);
+  animation-duration:.42s}
+.bevignette{position:absolute;inset:0;left:0!important;top:0!important;z-index:7;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 110px 26px var(--rc);animation:bevignette 1.7s ease-out forwards}
+@keyframes bevignette{0%{opacity:0}14%{opacity:.95}38%{opacity:.45}58%{opacity:.8}100%{opacity:0}}
 .broarlines{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
   background:repeating-conic-gradient(from 3deg at var(--x) var(--y),rgba(255,255,255,.5) 0deg .45deg,transparent .45deg 6.3deg),
     repeating-conic-gradient(from 1deg at var(--x) var(--y),rgba(255,255,255,.32) 0deg .3deg,transparent .3deg 9.7deg);
@@ -1210,6 +1238,17 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .bclawm,.bslashm{position:absolute;z-index:6;width:var(--s);height:auto;pointer-events:none;transform:translate(-50%,-50%);
   clip-path:inset(0 0 100% 100%);filter:drop-shadow(0 0 10px rgba(255,40,40,.7));animation:bm1 .9s ease-out forwards}
 .bslashm{filter:drop-shadow(0 0 10px rgba(255,240,210,.8));mix-blend-mode:screen}
+/* a beast's hit mark (fight.js `mark`, art/fx/marks/): its shape in the element's colour, glowing, with the picture's
+   own light as a white-hot core over it; torn across you the way the old claw marks were */
+.bmark{position:absolute;z-index:6;width:var(--s);aspect-ratio:1.5;pointer-events:none;
+  transform:translate(-50%,-50%) scaleX(var(--flip,1));clip-path:inset(0 0 100% 100%);animation:bmark .95s ease-out both}
+.bmark .tint,.bmark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.bmark .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) brightness(1.15)}
+.bmark img{filter:grayscale(1) brightness(1.7) contrast(1.1);mix-blend-mode:screen;opacity:.85;transform:scale(.94)}
+@keyframes bmark{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
+  55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scaleX(var(--flip,1)) scale(1.05)}}
+.beburst.bemark{z-index:5;animation-duration:.7s}
 @keyframes bm1{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
   55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
 .bsblast{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
@@ -2594,3 +2633,127 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
    tall enough to show the whole card, so the left column is never an empty strip */
 @media (min-width:901px) and (min-height:880px){.xprofile .identity{position:sticky;top:16px}}
 @media (max-width:560px){.realmseal{width:72px;height:72px}}
+/* ── the map screen's frame, painted (Nov 27 2026, docs/web.md "Painted UI"): the hero plate with its portrait ring,
+   the HP and Qi vials, the Break Through tab hanging under it, round medallions and the Run seal at the bottom
+   right. Measured on the paintings: in art/ui/hero_plate.webp (1200 x 330) the ring's opening is centred at
+   13.7% / 49% and 18.7% wide, the tablet's inside runs 23-97% across and 17-83% down; a vial's gold caps are its
+   outer 52 px. Every id and piece web/static/town.js updates is unchanged; the state rules (.t-gate, .t-hurt,
+   .low, .full, .blocked, .k-…, .locked) still show. ── */
+.mhud{--pw:420px;gap:6px}
+.mhud .mhero{position:relative;isolation:isolate;display:block;width:var(--pw);height:calc(var(--pw) * .275);box-sizing:border-box;
+  padding:calc(var(--pw) * .062) calc(var(--pw) * .055) 0 calc(var(--pw) * .25);border:0;border-radius:0;background:none;box-shadow:none;
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
+.mhud .mhero::before{content:"";position:absolute;z-index:-1;left:22%;right:3.5%;top:16%;bottom:16%;
+  background:radial-gradient(120% 160% at 0% 0%,rgba(96,74,36,.35),transparent 55%),linear-gradient(180deg,rgba(16,18,25,.9),rgba(7,8,12,.94))}
+.mhud .mhero::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:url(/art/ui/hero_plate.webp) 0 0/100% 100% no-repeat}
+.mhero .mface{position:absolute;z-index:1;left:calc(var(--pw) * .044);top:calc(var(--pw) * .044);width:calc(var(--pw) * .186);height:calc(var(--pw) * .186);
+  margin:0;padding:0;border:0;border-radius:50%;background:#0b0c10;box-shadow:none}
+.mhero .mface img{border-radius:50%}
+.mhud .mhero.t-gate .mface{position:absolute;overflow:visible;box-shadow:0 0 18px rgba(245,220,166,.7)}
+.mhero .mwho{display:flex;flex-flow:row wrap;align-items:center;column-gap:8px;min-width:0}
+.mhero .mwho>.mhpbar,.mhero .mwho>.mqirow{flex:0 0 100%}
+.mhud .mbreak[hidden]{display:none}
+.mhero .mname{max-width:60%;font:800 calc(var(--pw) * .044)/1.25 Cinzel,Georgia,serif;letter-spacing:.8px;color:#F5DCA6;
+  background:linear-gradient(180deg,#FFF6DD 0%,#F1D08C 50%,#B88A3A 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.9))}
+.mhero .mrealm{margin-top:0;white-space:nowrap;padding:0 8px;border-radius:999px;font:700 max(9px,calc(var(--pw) * .025))/1.6 Inter,sans-serif;letter-spacing:.3px;
+  color:#A8F0D8;background:linear-gradient(90deg,rgba(79,199,185,.22),rgba(79,199,185,.05));border:1px solid rgba(111,217,176,.4)}
+/* the vials: the empty glass behind (darkened), the full vial in front shown up to the bar's width */
+.mhero .mhpbar,.mhero .mqibar{position:relative;display:block;height:calc(var(--pw) * .04);margin-top:calc(var(--pw) * .014);border:0;border-radius:0;
+  background:none;box-shadow:none;overflow:visible;container-type:inline-size}
+.mhero .mqibar{height:calc(var(--pw) * .036)}
+.mhero .mqirow{margin-top:calc(var(--pw) * .008)}
+.mhero .mhpbar::before,.mhero .mqibar::before,.mhero .mhpbar div i,.mhero .mqibar div i{content:"";position:absolute;top:0;bottom:0;box-sizing:border-box;
+  border-style:solid;border-width:0 calc(var(--pw) * .026);border-image:url(/art/ui/vial_hp.webp) 0 52 fill / 0 calc(var(--pw) * .026) stretch}
+.mhero .mqibar::before,.mhero .mqibar div i{border-image-source:url(/art/ui/vial_qi.webp)}
+.mhero .mhpbar::before,.mhero .mqibar::before{left:0;right:0;filter:brightness(.3) saturate(.3)}
+.mhero .mhpbar div,.mhero .mqibar div{position:absolute;left:0;top:0;bottom:0;overflow:hidden;background:none;border-radius:0;box-shadow:none;animation:none}
+.mhero .mhpbar div i,.mhero .mqibar div i{display:block;left:0;width:100cqw}
+.mhero .mhpbar span,.mhero .mqibar span{z-index:1;font:700 max(9px,calc(var(--pw) * .024)) Inter,sans-serif;letter-spacing:.3px;color:#FFF4EA;text-shadow:0 1px 2px #000,0 0 4px #000}
+.mhero .mhpbar.low div{animation:none}.mhero .mhpbar.low div i{animation:vialpulse 1.2s ease-in-out infinite}
+@keyframes vialpulse{50%{filter:brightness(1.35)}}
+.mhero .mqibar.full div i{filter:hue-rotate(-115deg) saturate(1.35) brightness(1.15);animation:vialgold 2.4s ease-in-out infinite}
+@keyframes vialgold{50%{filter:hue-rotate(-115deg) saturate(1.5) brightness(1.4)}}
+.mhero .mqibar.full,.mhero .mqibar.blocked{box-shadow:none}
+.mhero .mqibar.blocked div i{filter:grayscale(1) brightness(.85);animation:none}
+/* injured or resting, and the toxicity gourd, hang just under the plate */
+.mhero .mstatus{position:absolute;z-index:3;top:calc(100% + 2px);right:6%;margin:0}
+.mhero .mtox{position:absolute;z-index:3;top:calc(100% + 2px);left:calc(var(--pw) * .24);margin:0}
+.mhud .mhero:has(.mtox:not([hidden])),.mhud .mhero:has(.mstatus:not([hidden])){margin-bottom:46px}
+/* Break Through: the tab hanging from the plate by its hooks */
+.mhud .mbreak{position:relative;display:block;width:calc(var(--pw) * .6);height:calc(var(--pw) * .6 * .51);margin:calc(var(--pw) * -.03) 0 0 calc(var(--pw) * .3);
+  padding:0;border:0!important;border-radius:0;background:url(/art/ui/break_tab.webp) 0 0/100% 100% no-repeat!important;box-shadow:none;
+  animation:tabglow 2.4s ease-in-out infinite;isolation:isolate}
+.mhud .mbreak::before{content:"";position:absolute;z-index:-1;left:29%;right:16%;top:34%;bottom:14%;background:rgba(8,9,13,.92)}
+.mhud .mbreak .mbseal{position:absolute;left:5.5%;top:44%;width:21%;height:auto;aspect-ratio:1;border:0;border-radius:50%;background:none;
+  box-shadow:0 0 14px var(--bk2),0 0 6px var(--bk2)}
+.mhud .mbreak .mbseal::before,.mhud .mbreak .mbseal::after{display:none}
+.mhud .mbreak .mbtext{position:absolute;left:30%;right:17%;top:35%;bottom:15%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.mhud .mbreak .mbtext b{font:800 calc(var(--pw) * .032) Cinzel,Georgia,serif;letter-spacing:1px;text-transform:uppercase}
+.mhud .mbreak .mbtext small{font-size:max(9px,calc(var(--pw) * .024));max-width:100%}
+.mhud .mbreak.locked{filter:grayscale(.85) brightness(.8);animation:none}
+@keyframes tabglow{50%{filter:drop-shadow(0 0 10px var(--bk))}}
+.mhud .mplace{display:flex;align-items:center;gap:9px;margin:0 0 0 6px;font:700 12.5px Cinzel,Georgia,serif;letter-spacing:2.4px;
+  text-transform:uppercase;color:#EBD7A4;text-shadow:0 1px 4px #000,0 0 12px rgba(0,0,0,.8)}
+.mhud .mplace::before,.mhud .mplace::after{content:"";width:26px;height:1px;background:linear-gradient(90deg,transparent,#D6B26A)}
+.mhud .mplace::after{background:linear-gradient(90deg,#D6B26A,transparent)}
+/* the dock: painted icons in gold rings; Run in the grand seal ring */
+.mdock{right:128px;bottom:20px;gap:12px;align-items:flex-end}
+.mdock .dbtn{width:68px;padding:0;gap:4px;border:0;border-radius:0;background:none;box-shadow:none;color:#EBD7A4;transition:transform .15s}
+.mdock .dico{position:relative;display:grid;place-items:center;width:64px;height:64px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));transition:filter .15s}
+.mdock .dico::before{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle at 50% 35%,rgba(38,44,56,.97),rgba(9,10,15,.98))}
+.mdock .dico::after{content:"";position:absolute;inset:0;background:url(/art/ui/ring.webp) 0 0/100% 100% no-repeat;pointer-events:none}
+.mdock .dico img{position:relative;width:60%;height:60%;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7));transition:transform .15s}
+.mdock .dbtn>span:last-child{font:700 10.5px Cinzel,Georgia,serif;letter-spacing:.6px;text-shadow:0 1px 3px #000,0 0 8px rgba(0,0,0,.9)}
+.mdock .dbtn:hover,.mdock .dbtn:focus-visible{background:none;color:#FFF1C9;outline:none;transform:translateY(-2px)}
+.mdock .dbtn:hover .dico,.mdock .dbtn:focus-visible .dico{filter:drop-shadow(0 0 10px rgba(245,220,166,.6)) drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.mdock .dbtn:hover .dico img{transform:scale(1.08)}
+.gaitbtn{right:18px;bottom:14px;width:100px;height:100px;gap:1px;border:0;color:#FFF1C9;isolation:isolate;
+  background:radial-gradient(circle at 50% 35%,rgba(34,66,70,.98),rgba(8,14,18,.98) 62%,transparent 63%);box-shadow:none;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+.gaitbtn::after{content:"";position:absolute;inset:0;z-index:-1;background:url(/art/ui/seal_ring.webp) 0 0/100% 100% no-repeat;pointer-events:none}
+.gaitbtn{position:fixed}
+.gaitbtn b{font:800 19px/1 Cinzel,Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;
+  background:linear-gradient(180deg,#FFF6DD,#E9C77F 55%,#B88A3A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gaitbtn small{font:700 7.5px Inter,sans-serif;letter-spacing:.8px;color:#BFD9D2}
+.gaitbtn[aria-pressed="true"]{box-shadow:none;filter:drop-shadow(0 0 12px rgba(127,240,195,.5)) drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+.gaitbtn[aria-pressed="false"]{background:radial-gradient(circle at 50% 35%,rgba(58,46,30,.98),rgba(14,12,9,.98) 62%,transparent 63%)}
+@media (max-width:640px){
+  .mhud{--pw:min(300px,calc(100vw - 86px))}
+  .mhud .mplace{font-size:11px;letter-spacing:1.4px;white-space:nowrap}.mhud .mplace::before,.mhud .mplace::after{width:14px}
+  .mdock{right:6px;bottom:8px;gap:2px}
+  .mdock .dbtn{width:54px;gap:2px}.mdock .dico{width:52px;height:52px}
+  .mdock .dbtn>span:last-child{font-size:8.5px;letter-spacing:.2px}
+  .gaitbtn{right:10px;bottom:158px;width:80px;height:80px}.gaitbtn b{font-size:15px}.gaitbtn small{font-size:6.5px}
+}
+@media (prefers-reduced-motion:reduce){.mdock .dbtn,.mdock .dico,.mdock .dico img{transition:none}
+  .mhud .mbreak,.mhero .mqibar.full div i,.mhero .mhpbar.low div i{animation:none}}
+/* a strong beast's presence (fight.js `aura`, `sigil`, `avatar`; explore_play.beast_power): its aura, breathing like a
+   living flame in two copies out of step; the formation circle flaring under its roar; its spirit rising behind it */
+.baura{position:absolute;pointer-events:none;opacity:var(--ao);transition:opacity .8s ease}
+.baura img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill;mix-blend-mode:screen;
+  transform-origin:50% 100%;animation:baura 3.4s ease-in-out infinite}
+.baura img+img{animation:baura2 4.3s ease-in-out infinite;opacity:.55}
+.baura.p4 img{filter:brightness(1.25) saturate(1.15)}
+@keyframes baura{0%,100%{transform:scale(1,1);opacity:.8}50%{transform:scale(1.03,1.07);opacity:1}}
+@keyframes baura2{0%,100%{transform:scaleX(-1.02) scaleY(1.04);opacity:.65}50%{transform:scaleX(-.98) scaleY(.97);opacity:.35}}
+main.dying .baura,main.slain .baura{opacity:0}
+.besigil{position:absolute;width:var(--w);aspect-ratio:2.4;pointer-events:none;opacity:0;
+  transform:translate(-50%,-55%) scale(.3);animation:besigil 2.5s cubic-bezier(.2,.8,.3,1) forwards}
+.besigil.s3{aspect-ratio:1.9}
+.besigil .tint,.besigil img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
+.besigil .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 8px var(--rc)) drop-shadow(0 0 22px var(--rc))}
+.besigil img{mix-blend-mode:screen;filter:grayscale(1) brightness(1.4);opacity:.7}
+@keyframes besigil{0%{transform:translate(-50%,-55%) scale(.3);opacity:0}14%{transform:translate(-50%,-55%) scale(1);opacity:1}
+  30%{opacity:.75}45%{opacity:1}75%{opacity:.85}100%{transform:translate(-50%,-55%) scale(1.06);opacity:0}}
+.bavatar{position:absolute;pointer-events:none;opacity:0;transform-origin:50% 100%;
+  transform:translate(-50%,-100%) scale(1.1);animation:bavatar 2.2s ease-out forwards}
+.bavatar .tint,.bavatar img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;object-position:50% 100%}
+.bavatar .tint{background:var(--rc);-webkit-mask:var(--m) 50% 100%/contain no-repeat;mask:var(--m) 50% 100%/contain no-repeat;
+  filter:blur(2px) drop-shadow(0 0 14px var(--rc)) drop-shadow(0 0 40px var(--rc));opacity:.85}
+.bavatar img{mix-blend-mode:screen;filter:grayscale(.6) brightness(1.5);opacity:.35}
+@keyframes bavatar{0%{opacity:0;transform:translate(-50%,-100%) scale(1.1)}22%{opacity:.7;transform:translate(-50%,-104%) scale(1.75)}
+  65%{opacity:.5;transform:translate(-50%,-106%) scale(1.95)}100%{opacity:0;transform:translate(-50%,-108%) scale(2.1)}}
+.bavatar.saint{animation-duration:2.4s}
+.bavatar.saint .tint{opacity:1}

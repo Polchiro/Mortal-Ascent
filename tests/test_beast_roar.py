@@ -270,3 +270,67 @@ def test_every_tortoise_roars_with_the_tortoise_movement_and_its_open_mouthed_pi
         assert still.size == roar.size and max(still.size) <= 900, slug
         r = explore_play.beast_roar({"name": name, "slug": slug, "tier": "normal"})
         assert r["motion"]["style"] == "shell" and r["art"] == f"/art/beasts/roar/{slug}.png" and r["head_open"]
+
+
+def test_every_element_has_its_own_blast_burst_and_ground_patch():
+    """The roar hits you with its own element (scripts/make_element_fx.py, fight.js `blast`, `impact`): every
+    beast's element has its three pictures, the page is told the element, and the toads' crack is there."""
+    for name in beasts.TRAITS:
+        el = beasts.element_of(name).lower()
+        for part in ("stream", "burst", "ground"):
+            assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"{el}_{part}.webp")), (name, part)
+        r = explore_play.beast_roar({"name": name, "slug": beasts.slug(name), "element": beasts.element_of(name), "tier": "normal"})
+        assert r["element"] == el
+    assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", "ground_crack.webp"))
+    assert explore_play.beast_roar({"slug": "someday_new", "tier": "normal"})["element"] is None
+    assert explore_play.beast_roar({"slug": "x", "element": "Starlight", "tier": "normal"})["element"] is None   # no pictures yet
+
+
+def test_every_beast_leaves_its_own_marks_when_it_hits():
+    """Its blows leave its own marks (beasts.ATTACK_MARKS, fight.js `mark`): every beast has a main mark (and maybe
+    a second), every mark has its picture, and the page is told them."""
+    assert set(beasts.ATTACK_MARKS) == set(beasts.TRAITS)
+    for name, marks in beasts.ATTACK_MARKS.items():
+        assert 1 <= len(marks) <= 2 and set(marks) <= set(beasts.MARK_KINDS), name
+    for k in beasts.MARK_KINDS:
+        art = {"claw": "claw_marks.webp", "slash": "beast_slash.webp"}.get(k, os.path.join("marks", k + ".webp"))
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", art)), k
+    assert os.path.exists(os.path.join(ROOT, "art", "fx", "marks", "sting_alt.webp"))
+    assert beasts.attack_marks("Wild Boar") == ["tusk"] and beasts.attack_marks("Grey Wolf") == ["bite", "claw"]
+    assert beasts.attack_marks("Someday New") == ["slash"]
+    r = explore_play.beast_roar({"name": "Venom Scorpion", "slug": "venom_scorpion", "element": "Venom", "tier": "normal"})
+    assert r["marks"] == ["sting"]
+
+
+def test_strong_beasts_look_strong():
+    """From Martial King up a beast glows with its element's aura and a formation circle flares under its roar;
+    from Martial Ancestor up its spirit rises behind it (explore_play.beast_power, fight.js `aura`, `sigil`,
+    `avatar`); the six Martial Saints leave marks of their own (beasts.SAINT_MARKS)."""
+    assert [explore_play.beast_power(r) for r in ("Mortal", "Grandmaster", "Martial King", "Martial Emperor",
+                                                   "Martial Ancestor", "Martial Saint")] == [0, 0, 1, 2, 3, 4]
+    for el in ("blood", "frost", "flame", "shadow", "thunder", "venom", "earth", "jade"):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"{el}_aura.webp")), el
+    for lvl in (1, 2, 3):
+        assert os.path.exists(os.path.join(ROOT, "art", "fx", "elem", f"sigil_{lvl}.webp"))
+    r = explore_play.beast_roar({"name": "Azure Dragon", "slug": "azure_dragon", "element": "Jade", "tier": "normal",
+                                 "realm": "Martial Saint"})
+    assert r["power"] == 4 and r["marks"][0] == "azure_dragon"
+    assert explore_play.beast_roar({"name": "Wild Boar", "slug": "wild_boar", "realm": "Mortal", "tier": "normal"})["power"] == 0
+    saints = [n for n in beasts.TRAITS if beasts.ATTACK_MARKS[n][0] in beasts.SAINT_MARKS]
+    assert len(saints) == 6 and len({beasts.ATTACK_MARKS[n][0] for n in saints}) == 6
+
+
+def test_a_beast_looks_as_mighty_as_its_own_realm_not_the_one_it_is_scaled_to():
+    """In a hunt every beast is scaled to the player's realm; how big and mighty it LOOKS goes by its own rank
+    (beasts.home_realm): a Wild Boar met by a Martial Saint is still a small plain boar, the Kun-Peng is huge."""
+    boar = explore_play.beast_roar({"name": "Wild Boar", "slug": "wild_boar", "element": "Earth", "tier": "normal",
+                                    "realm": "Martial Saint"})
+    assert boar["power"] == 0 and boar["scale"] == 1.0
+    kun = explore_play.beast_roar({"name": "Kun-Peng, Fish of the Northern Sea", "slug": "kun_peng_fish_of_the_northern_sea",
+                                   "element": "Frost", "tier": "normal", "realm": "Mortal"})
+    assert kun["power"] == 4 and kun["scale"] == 1.65
+    assert explore_play.beast_scale("Martial Saint", "beast_king") > explore_play.beast_scale("Martial Saint", "elite") > 1.65
+    for name in beasts.TRAITS:
+        assert beasts.home_realm(name), name
+    sizes = [explore_play.beast_scale(r, "normal") for r in ["Mortal"] + __import__("realms").REALMS]
+    assert sizes == sorted(sizes) and sizes[0] == 1.0

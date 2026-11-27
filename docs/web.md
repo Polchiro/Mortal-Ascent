@@ -324,6 +324,14 @@ below. docs/town.md.
 
 ## The map screen
 
+**The frame is painted** (Nov 27 2026, "Painted UI"): at the top left the hero plate (`art/ui/hero_plate`) with your
+face in its jade-and-gold ring, your name and realm tag, the HP and Qi vials (`vial_hp` / `vial_qi`: the empty glass
+darkened behind, the full vial shown up to the bar's width; gold and breathing when the Qi is full at a gate, grey
+when the gate is sealed), toxicity and injured / resting hanging just under it, and the Break Through tab
+(`break_tab`) hanging from it by its hooks. At the bottom right, round medallions in gold rings (`ring`) with the
+painted Bag, Character, Techniques and Map icons, and Run in the grand seal ring (`seal_ring`). The plate is 420 px
+wide on a computer and up to 300 px on a phone (`--pw`); every size in it follows that width.
+
 What the walking pages (the town, the Crossroads, the Moon Forest's lands) show around the map. One template,
 `web/templates/_hud.html` (the frame, the place's name, the controls), plus the tracker and the dock in
 `_walkui.html`; `web/static/town.js` keeps them fresh; the look is in `style.css` ("the map screen's frame").
@@ -708,10 +716,34 @@ a lair is fought with `bot/hunt.py`.
    The beast is knocked back, flashes, and its HP bar and the damage number change at the
    moment of impact. Then the beast attacks in turn (its M1, `charge` with `RECIPES.gore`, from SHOAIB's beast attack
    video): it lowers its head, rears, charges in kicking up dust and gores, tossing its head up with its jaws open (its
-   open-mouthed roar picture, where it has one); its mark torn across you as it hits, three red claw marks for a
-   clawed beast (`beasts.CLAWED`, `art/fx/claw_marks.webp`) or a single bright slash for the rest
-   (`art/fx/beast_slash.webp`), both SHOAIB's pictures, and dust where it hits, you are knocked back, your HP
-   drops then, and it trots home.
+   open-mouthed roar picture, where it has one); its mark torn across you as it hits (`mark`), and dust where it
+   hits, you are knocked back, your HP drops then, and it trots home. **Every beast leaves its own marks**
+   (`beasts.ATTACK_MARKS`, SHOAIB Nov 27: "every beast looks the same when it hits"): a main mark and, where its body
+   has one, a second, picked at random each blow (the main one twice as often): claws (`art/fx/claw_marks.webp`), a
+   bite, fangs, a horn gore, tusks, a beak, talons, a sting, a smash, a tail lash (`art/fx/marks/`, SHOAIB's white
+   pictures cleaned by `scripts/make_element_fx.py`), or the one bright slash (`art/fx/beast_slash.webp`) for a beast
+   not listed yet. Each is drawn in the beast's element colour (its shape filled with the colour and glowing, the
+   picture's white light as a hot core) with a small burst of its element (`art/fx/elem/<element>_burst.webp`); an
+   Elite's is bigger, a Beast King's bigger again and doubled. The six Martial Saints leave marks of their own
+   (`beasts.SAINT_MARKS`: the Azure Dragon's scaled claw, the White Tiger's metal claws, the Kun-Peng's wing, the Void
+   Serpent's space-cracking fangs, the Ancient Flame Lion's burning paw, the Primordial Dragon Turtle's shell slam).
+   Presentation only.
+   **Strong beasts look strong** (SHOAIB Nov 27; `explore_play.beast_power` from the beast's realm, 1 Martial King to
+   4 Martial Saint). From Martial King up a beast stands in a dome of its element's aura the whole fight
+   (`aura` in `fight.js`, `art/fx/elem/<element>_aura.webp`: two copies breathing out of step like a living flame,
+   brighter each realm, gone as it falls), and a formation circle of its colour flares on the ground under it as it
+   roars (`sigil`, `art/fx/elem/sigil_{1,2,3}.webp`: King and Emperor, Ancestor, Saint). From Martial Ancestor up its
+   spirit rises behind it as it roars (`avatar`: a giant glowing ghost of its own picture in its element's light).
+   SHOAIB's pictures, cleaned by `scripts/make_element_fx.py`. The aura moves with the beast as it lunges.
+   Power and size both go by the beast's **own realm** (`beasts.home_realm`: where it sits in `beasts.BEASTS`), never
+   the realm a fight scales it to (in a hunt every beast is scaled to the player, and a Wild Boar met by a Martial
+   Saint must still look like a boar). Presentation only.
+   **Strong beasts are bigger** (SHOAIB: "a Martial Saint beast like the Kun-Peng should be huge";
+   `explore_play.beast_scale`, `sized` in `fight.js`): a Mortal beast stands as before, each realm up 6.5% bigger (a
+   Martial Saint 65%), an Elite 8% more and a Beast King 16% more. The beast's frame itself is made bigger (not
+   zoomed, so every movement, roar and mark keeps lining up), anchored where it stands so it grows up and toward you,
+   but never so big that its picture leaves the top of the scene (80% of its height at most) or reaches the
+   cultivator; on a narrow phone that caps every big beast at the same size. Re-measured on every new page and resize.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
@@ -902,35 +934,47 @@ a lair is fought with `bot/hunt.py`.
    rolling out along the ground, the camera punching in, and settles. Same rules, damage and log line.
    **The amphibians roar** (`ROAR_ANIMATIONS["amphibian"]`, from SHOAIB's amphibian roar video of the Thornback
    Lizard; `gather` and `quake` in `fight.js`): each crouches low while Qi of its element swirls in, then throws its
-   head up with its open-mouthed picture: a starburst at its jaws, its body erupting in a spiky nova of its element,
-   two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
+   head up with its open-mouthed picture: a starburst at its jaws, a crack slammed along the ground to your feet
+   (`crack`), two shockwave rings racing out along the ground with dust, the camera punching in, and settles. Same rules,
    damage and log line.
    **The dragons roar** (`ROAR_ANIMATIONS["dragon"]`, from SHOAIB's dragon roar video of the Flood Dragon; `coil`,
    `gather` and `storm` in `fight.js`): each draws its head back while ribbons of its element coil up round its body,
    then rears and roars with its open-mouthed picture, an orb of crackling energy blasting at you
    (`art/fx/dragon_blast.webp`, from SHOAIB's picture, coloured by its element) with lightning streaks
-   fanning out, its body bursting into a sphere of light with spikes and rings, mist pooling at its base, the camera
+   fanning out, mist pooling at its base, the camera
    punching in, and settles. Same rules, damage and log line.
    **The crocodiles bellow** (`ROAR_ANIMATIONS["crocodile"]`, from SHOAIB's crocodile roar video; `gather` and
    `bellow` in `fight.js`): each presses low as Qi gathers into its jaws, then throws its head up with its open-mouthed
-   picture and bellows: rings of sound pulse out of its jaws, a burst of its element with a golden heart and spikes of
-   light flares round its head, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
+   picture and bellows: its element's blast and rings of sound roll out of its jaws all the way to you, a small golden
+   flare and spikes of light fan toward you, dust blasts up off the ground, the camera punches in, and it sinks back down. Same
    rules, damage and log line.
    **The tortoises roar** (`ROAR_ANIMATIONS["tortoise"]`, from SHOAIB's tortoise roar video; `charged` and `shell` in
    `fight.js`): each braces while its shell's runes light up and crackle with energy of its element, then lifts its head
-   with its open-mouthed picture (the Xuanwu's serpent opens its jaws too) and roars: a cone of sound rings blasts at
-   you, a great dome of its element swells round its whole body like a shield, mist rolls along the ground, the camera
+   with its open-mouthed picture (the Xuanwu's serpent opens its jaws too) and roars: its element's blast and a cone
+   of sound rings reach you, then a dome of its element swells round its body like a shield, mist rolls along the ground, the camera
    punches in, and it settles. Same rules, damage and log line.
    **The primates roar** (`ROAR_ANIMATIONS["primate"]`, from SHOAIB's primate roar video of the Silver Monkey;
    `vortex`, `beat` and `pound` in `fight.js`): each crouches, rises onto its hind legs and pounds its chest twice, a
    ring flying off its chest at each blow, while a whirlwind of its element spirals round it; then it roars with its
-   open-mouthed picture, a sphere of its element bursting round its body with rings, streaks shooting out every way,
-   shards flying and dust, the camera punching in, and settles. The Ancient Golden Ape moved here from the four-legged
+   open-mouthed picture, its element's blast and a wall of sound rings rolling at you, streaks and shards flung at
+   you, dust, the camera punching in, and settles. The Ancient Golden Ape moved here from the four-legged
    beasts. Same rules, damage and log line.
    **The insects hiss** (`ROAR_ANIMATIONS["insect"]`, from SHOAIB's insect roar video of the Venom Scorpion; `seep`
    and `venom` in `fight.js`): each crouches and rears with venom dripping and poison smoke gathering, then hisses with
-   its open-mouthed picture: purple and green venom flames rising round its body, a sphere of poison bursting out with
-   rings and droplets, and a low cloud of poison smoke left over the ground. Same rules, damage and log line.
+   its open-mouthed picture: its venom sprayed across at you with droplets through it, and a low cloud of poison smoke
+   left round your feet. Same rules, damage and log line.
+   **Every roar hits you** (SHOAIB, Nov 27: the insects', amphibians', primates'... roars looked like they were
+   "roaring to themselves", their bursts all round their own bodies). Each beast's element has its own blast, burst
+   and ground patch (`art/fx/elem/<element>_{stream,burst,ground}.webp` and `ground_crack.webp`, SHOAIB's Nano Banana
+   pictures cleaned by `scripts/make_element_fx.py`; `explore_play.beast_roar` tells the page the `element`). The
+   primates, insects, crocodiles and tortoises (and the beasts with the plain rear-back) throw the blast from the mouth
+   across to you (`blast`); the amphibians crack the ground to your feet (`crack`); the dragons, serpents, birds and
+   four-legged beasts keep their own blasts and waves. `TRAVEL` ms later it lands (`impact`): the element bursting on
+   your body twice, a white impact frame, a flash of its colour, a hard shake, you knocked back (less behind a Guard,
+   which plays your Guard), its patch on the ground at your feet, and the damage and debuffs (`struck`). An Elite's
+   roar (or any final roar) also pulses its colour round the screen's edge (`presence`); a Beast King's darkens the
+   scene, cracks the ground under itself and follows with an aftershock. Presentation only: the same rules, damage and
+   log line.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).
