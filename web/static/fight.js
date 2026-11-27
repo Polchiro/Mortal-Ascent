@@ -163,9 +163,42 @@
     if (b && b._sheets) b._sheets.fit();
   });
 
+  /* A strong beast's aura (SHOAIB Nov 27, explore_play.beast_power): from Martial King up it stands in a dome of its
+     element's light (art/fx/elem/<element>_aura.webp), two copies breathing out of step so it flickers like a living
+     flame, brighter each realm up to Martial Saint. Laid on the ground behind the beast, fitted to its picture as
+     drawn, and gone as it falls. Presentation only. */
+  var AURA_OPACITY = [0, 0.5, 0.65, 0.8, 0.95];
+  function aura(main) {
+    var box = main.querySelector('.beast'), img = box && box.querySelector(':scope > img'), scene = main.querySelector('.bscene');
+    var R = null;
+    try { R = JSON.parse((box && box.dataset.roar) || 'null'); } catch (e) {}
+    if (!box || !img || !scene || !R || !R.power || !R.element) return;
+    var n = scene.querySelector('.baura');
+    if (!n) {
+      n = document.createElement('div');
+      n.className = 'baura p' + R.power;
+      var src = '/art/fx/elem/' + R.element + '_aura.webp';
+      n.innerHTML = '<img alt="" src="' + src + '"><img alt="" src="' + src + '">';
+      n.style.setProperty('--ao', AURA_OPACITY[R.power] || 0.5);
+      scene.insertBefore(n, box);                                // behind the beast
+    }
+    function fit() {                                             // round the picture as drawn (contain, feet down)
+      if (!img.naturalWidth) return;
+      var s = scene.getBoundingClientRect(), b = box.getBoundingClientRect(), ar = img.naturalWidth / img.naturalHeight;
+      var w = Math.min(b.width, b.height * ar), h = w / ar, left = b.left + (b.width - w) / 2, bottom = b.bottom;
+      var aw = w * 1.3, ah = h * 1.35;
+      n.style.left = (left + w / 2 - aw / 2 - s.left) / s.width * 100 + '%';
+      n.style.top = (bottom + h * 0.06 - ah - s.top) / s.height * 100 + '%';
+      n.style.width = aw / s.width * 100 + '%'; n.style.height = ah / s.height * 100 + '%';
+    }
+    if (img.complete) fit(); else img.addEventListener('load', fit, {once: true});
+    if (!aura.bound) { aura.bound = true; window.addEventListener('resize', function () { var m = document.querySelector('main.battle'); if (m) aura(m); }); }
+  }
+
   function init() {
     var main = document.querySelector('main.battle');
     if (!main) return;
+    aura(main);
     var sheeted = main.querySelector('.beast.sheeted');
     if (sheeted && !sheeted._sheets) {
       sheeted._sheets = BeastSheets(sheeted);
@@ -1249,7 +1282,33 @@
         piece('beburst', ELEM + '_burst.webp', you[0], you[1], 900, {'--s': sz * 1.35 + 'px', '--r': '30deg'});
       }, 420);
     }
-    function presence(pic, final) {                              // what an Elite's or a Beast King's roar does to the whole scene
+    /* A strong beast's roar (explore_play.beast_power): a formation circle of its element flares on the ground under
+       it (art/fx/elem/sigil_<1-3>.webp: King and Emperor, Ancestor, Saint), and from Martial Ancestor up its spirit,
+       a giant ghost of itself in its element's light, rises behind it and fades (`avatar`, from its own picture). */
+    function sigil(pic) {
+      var lvl = ROAR.power >= 4 ? 3 : ROAR.power >= 3 ? 2 : 1, f = at(pic, 0.5, 0.97), src = '/art/fx/elem/sigil_' + lvl + '.webp';
+      var n = document.createElement('span');
+      n.className = 'besigil s' + lvl; n.style.left = f[0] + '%'; n.style.top = f[1] + '%';
+      n.style.setProperty('--w', Math.min(1300, pic.width * (1.3 + 0.15 * lvl)) + 'px'); n.style.setProperty('--rc', ROAR.color);
+      n.style.setProperty('--m', 'url(' + src + ')');
+      n.innerHTML = '<i class="tint"></i><img alt="" src="' + src + '">';
+      scene.insertBefore(n, beastBox);                           // on the ground, under the beast
+      setTimeout(function () { n.remove(); }, 2600);
+    }
+    function avatar(pic, src) {
+      if (!src) return;
+      var f = at(pic, 0.5, 1), n = document.createElement('span');
+      n.className = 'bavatar' + (ROAR.power >= 4 ? ' saint' : '');
+      n.style.left = f[0] + '%'; n.style.top = f[1] + '%';
+      n.style.width = pic.width + 'px'; n.style.height = pic.height + 'px';
+      n.style.setProperty('--rc', ROAR.color); n.style.setProperty('--m', 'url(' + src + ')');
+      n.innerHTML = '<i class="tint"></i><img alt="" src="' + src + '">';
+      scene.insertBefore(n, beastBox);                           // behind the beast
+      setTimeout(function () { n.remove(); }, 2300);
+    }
+    function presence(pic, final, src) {                         // what an Elite's or a Beast King's roar does to the whole scene
+      if (ROAR.power >= 1) sigil(pic);
+      if (ROAR.power >= 3) avatar(pic, src);
       var tier = TIER_OF[ROAR.wave] || 0;
       if (final && tier < 1) tier = 1;
       if (tier >= 1) { var v = fx('bevignette', 0, 0, 1700); v.style.setProperty('--rc', ROAR.color); }
@@ -1350,13 +1409,13 @@
           else if (M.style === 'bellow') bellow(mouth(p), pic, ev.final);
           else if (M.style === 'shell') shell(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
-          presence(pic, ev.final);
+          presence(pic, ev.final, still);
           if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
         }
         if (t >= IMPACT && once('impact')) { impact(ev.final, M.style === 'quake'); struck(ev); }
       }, clear: function () {
         hero(0, 0); if (ev.guard) pose('idle');
-        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow,.bestream,.beburst,.beground,.bevignette').forEach(function (n) { n.remove(); });
+        scene.querySelectorAll('.broar,.broarbig,.broarlines,.broarflash,.bmote,.bbeam,.bfeather,.bthroat,.brune,.bbreath,.bdrop,.bnova,.bquake,.bcoil,.bstreak,.bblast,.bsblast,.bwind,.bdeep,.bdome,.bshellglow,.bestream,.beburst,.beground,.bevignette,.besigil,.bavatar').forEach(function (n) { n.remove(); });
         if (opened) { beast.src = still; opened = false; }
         beastBox.classList.remove('roaring');
         beast.style.transform = ''; beast.style.transformOrigin = '';
@@ -1383,7 +1442,7 @@
         if (t >= 120 && !done) {
           done = true; roar();
           var bx = beast.getBoundingClientRect();
-          blast(ROAR.head ? at(bx, ROAR.head[0], ROAR.head[1]) : at(bx, 0.15, 0.35), bx, ev.final ? 1.3 : 1); presence(bx, ev.final);
+          blast(ROAR.head ? at(bx, ROAR.head[0], ROAR.head[1]) : at(bx, 0.15, 0.35), bx, ev.final ? 1.3 : 1); presence(bx, ev.final, beast.src);
         }
         if (t >= 120 + TRAVEL && !hit) { hit = true; impact(ev.final); struck(ev); }
       }, clear: function () { var n = scene.querySelector('.broar'); if (n) n.remove(); }};

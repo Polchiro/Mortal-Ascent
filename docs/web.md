@@ -690,7 +690,17 @@ a lair is fought with `bot/hunt.py`.
    pictures cleaned by `scripts/make_element_fx.py`), or the one bright slash (`art/fx/beast_slash.webp`) for a beast
    not listed yet. Each is drawn in the beast's element colour (its shape filled with the colour and glowing, the
    picture's white light as a hot core) with a small burst of its element (`art/fx/elem/<element>_burst.webp`); an
-   Elite's is bigger, a Beast King's bigger again and doubled. Presentation only.
+   Elite's is bigger, a Beast King's bigger again and doubled. The six Martial Saints leave marks of their own
+   (`beasts.SAINT_MARKS`: the Azure Dragon's scaled claw, the White Tiger's metal claws, the Kun-Peng's wing, the Void
+   Serpent's space-cracking fangs, the Ancient Flame Lion's burning paw, the Primordial Dragon Turtle's shell slam).
+   Presentation only.
+   **Strong beasts look strong** (SHOAIB Nov 27; `explore_play.beast_power` from the beast's realm, 1 Martial King to
+   4 Martial Saint). From Martial King up a beast stands in a dome of its element's aura the whole fight
+   (`aura` in `fight.js`, `art/fx/elem/<element>_aura.webp`: two copies breathing out of step like a living flame,
+   brighter each realm, gone as it falls), and a formation circle of its colour flares on the ground under it as it
+   roars (`sigil`, `art/fx/elem/sigil_{1,2,3}.webp`: King and Emperor, Ancestor, Saint). From Martial Ancestor up its
+   spirit rises behind it as it roars (`avatar`: a giant glowing ghost of its own picture in its element's light).
+   SHOAIB's pictures, cleaned by `scripts/make_element_fx.py`. Presentation only.
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned

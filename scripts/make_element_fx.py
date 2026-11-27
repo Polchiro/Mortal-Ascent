@@ -10,8 +10,13 @@ The folder holds his pictures, named after what they are (effects on pure black,
     <element>_burst.png    the burst where it hits you, a ring of pieces round an empty middle (8)
     <element>_ground.png   the patch it leaves on the ground at your feet (8)
     ground_crack.png       the crack a toad's or lizard's roar sends along the ground to you (1)
+    <element>_aura.png     the aura a strong beast (Martial King and up) glows with, a dome round an empty middle (8)
+    sigil_<1-3>.png        the formation circle that flares under a strong beast as it roars, white (King and
+                           Emperor 1, Ancestor 2, Saint 3)
     <mark>.png             a beast's hit mark, painted white so the fight colours it by element (MARKS: bite,
-                           fang, gore, tusk, beak, talon, sting, sting_alt, smash, lash), saved to art/fx/marks/
+                           fang, gore, tusk, beak, talon, sting, sting_alt, smash, lash, and the six Martial
+                           Saints' own: azure_dragon, white_tiger, kun_peng, void_serpent, ancient_flame_lion,
+                           dragon_turtle), saved to art/fx/marks/
 
 for the eight elements (ELEMENTS). Each is cleaned (the Gemini sparkle and "AI" badge in the bottom-right corner
 painted out), keyed off its black background (light becomes opacity, so the glow stays soft), cropped to what is
@@ -27,10 +32,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "art", "fx", "elem")
 ELEMENTS = ("blood", "frost", "flame", "shadow", "thunder", "venom", "earth", "jade")
 NAMES = ([e + "_stream" for e in ELEMENTS] + [e + "_burst" for e in ELEMENTS] + [e + "_ground" for e in ELEMENTS]
-         + ["ground_crack"])
-MARKS = ("bite", "fang", "gore", "tusk", "beak", "talon", "sting", "sting_alt", "smash", "lash")
+         + ["ground_crack"] + [e + "_aura" for e in ELEMENTS] + ["sigil_1", "sigil_2", "sigil_3"])
+MARKS = ("bite", "fang", "gore", "tusk", "beak", "talon", "sting", "sting_alt", "smash", "lash",
+         "azure_dragon", "white_tiger", "kun_peng", "void_serpent", "ancient_flame_lion", "dragon_turtle")
 MARKS_OUT = os.path.join(ROOT, "art", "fx", "marks")
-MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100, "mark": 640}
+MAX_SIDE = {"stream": 1100, "burst": 640, "ground": 900, "crack": 1100, "mark": 640, "aura": 720, "sigil": 1100}
 # SHOAIB: the flame patch came out thinner than the others; it stands a little taller so it reads at your feet
 STRETCH_Y = {"flame_ground": 1.5}
 FLOOR = 10            # background noise under this (of 255) is pure black
@@ -87,7 +93,8 @@ def make(src, name):
     out = Image.fromarray(a, "RGBA")
     if name in STRETCH_Y:
         out = out.resize((out.width, round(out.height * STRETCH_Y[name])), Image.LANCZOS)
-    kind = "mark" if name in MARKS else "crack" if name == "ground_crack" else name.split("_")[1]
+    kind = ("mark" if name in MARKS else "crack" if name == "ground_crack" else "sigil" if name.startswith("sigil")
+            else name.split("_")[1])
     out.thumbnail((MAX_SIDE[kind], MAX_SIDE[kind]), Image.LANCZOS)
     folder = MARKS_OUT if kind == "mark" else OUT
     os.makedirs(folder, exist_ok=True)
