@@ -781,6 +781,14 @@ a lair is fought with `bot/hunt.py`.
    message feed moves below them in a team fight. *Vibration* (`buzz`): a short buzz when a beast's blow or roar lands
    on you, stronger for a roar and for Elites and Beast Kings (Android; iPhones' browser has none; none with
    "reduce motion" on).
+   **Team fights: whose turn** (SHOAIB Nov 27: "how do players know it's their turn, each character looks alike").
+   Everyone picks at once each round. You are listed first, bigger, ringed gold and tagged YOU; each teammate keeps
+   a colour all fight (`hunt_play.PARTY_COLORS`: blue, purple, teal, coral) on their portrait's ring, on their name
+   tag, and on their name wherever it appears in the fight's messages and Battle History (`partyNames` in
+   `fight.js`). A teammate's badge shows "…" while choosing, a tick once ready, a cross if fallen. When a new round
+   needs your pick, a YOUR TURN banner sweeps across the scene, your portrait pulses and the moves glow
+   (`yourTurn`), with a double buzz on Android. After you pick, the chip names who you are still waiting for
+   ("Waiting for Mei Lin", kept current by the team poll).
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned

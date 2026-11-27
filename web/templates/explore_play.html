@@ -48,8 +48,8 @@
   <section class="bscene">
     {% if F.team %}
     <div class="allies" aria-label="Your party" aria-live="polite">{% for a in F.team.allies %}
-      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}" style="--hp: {{ a.hp_pct }}" title="{{ a.name }}: {{ a.state }}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
-        <span>{{ a.name }}<span class="ah"><div style="width: {{ a.hp_pct }}%"></div></span></span><em>{{ a.state }}</em></span>{% endfor %}</div>
+      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}" style="--hp: {{ a.hp_pct }}; --pc: {{ a.color or '#E8C27A' }}" data-name="{{ a.name }}" title="{{ a.name }}: {{ a.state }}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
+        <span>{% if a.me %}You{% else %}{{ a.name }}{% endif %}<span class="ah"><div style="width: {{ a.hp_pct }}%"></div></span></span><em>{{ a.state }}</em><i class="aname">{% if a.me %}YOU{% else %}{{ a.name | truncate(7, True, '…', 0) }}{% endif %}</i></span>{% endfor %}</div>
     {% endif %}
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
     {% if F.enemy.statuses %}<p class="chips sover senemy" aria-label="Beast statuses">{% for st in F.enemy.statuses %}<span class="schip">{{ st }}</span>{% endfor %}</p>{% endif %}
@@ -177,7 +177,8 @@
     {% endfor %}
   </form>
   <aside class="binfo" aria-live="polite">
-    <p class="turnchip" role="status"{% if F.team and F.team.fallen %} data-wait="You have fallen"{% endif %}>{% if F.team and F.team.fallen %}You have fallen{% elif F.team and F.team.waiting %}Waiting for your party{% else %}Your turn{% endif %}</p>
+    {% if F.team %}{% set W = F.team.allies | selectattr('state', 'equalto', 'Choosing') | rejectattr('me') | map(attribute='name') | list %}{% set WAIT = "You have fallen" if F.team.fallen else ("Waiting for " ~ (W | join(', ')) if W else "Waiting for your party") %}{% endif %}
+    <p class="turnchip" role="status"{% if F.team %} data-wait="{{ WAIT }}"{% endif %}>{% if F.team and (F.team.fallen or F.team.waiting) %}{{ WAIT }}{% else %}Your turn{% endif %}</p>
     {% if F.team %}<div class="teamtimer" data-left="{{ F.team.left }}" data-total="{{ F.team.total }}"><div style="width: {{ (F.team.left / F.team.total * 100) | round(1) }}%"></div></div>{% endif %}
     <p class="ititle">{{ F.main[0].label }}</p>
     <p class="itext">{{ F.main[0].info }}</p>

@@ -82,7 +82,12 @@ def test_public_team_from_creation_to_shared_fight(site):
     turn = re.search(r'name="turn" value="(\d+)"', fa).group(1)
     a.post("/hunt/act", data={"what": "move", "arg": "guard", "turn": turn})
     after = a.get("/hunt").text
-    assert 'data-waiting="1"' in after and "Waiting for your party" in after
+    assert 'data-waiting="1"' in after and "Waiting for Nicolas" in after   # names who has not picked yet
+    # you first and gold, Nicolas in his own colour (hunt_play.PARTY_COLORS), each with a short name tag
+    from web import hunt_play
+    assert after.index('data-name="Shoaib"') < after.index('data-name="Nicolas"')
+    assert f"--pc: {hunt_play.YOU_COLOR}" in after and f"--pc: {hunt_play.PARTY_COLORS[0]}" in after
+    assert '<i class="aname">YOU</i>' in after
     h = app.state.hunts.get(app.state.parties.of(A).id)
     assert h.battle.turn == 1
     turn_b = re.search(r'name="turn" value="(\d+)"', fb).group(1)
@@ -149,3 +154,4 @@ def test_poll_endpoint_and_logged_out(site):
     anon = TestClient(app, base_url="http://localhost:8000", follow_redirects=False)
     assert anon.get("/hunt").headers["location"] == "/"
     assert anon.post("/party/start").headers["location"] == "/"
+

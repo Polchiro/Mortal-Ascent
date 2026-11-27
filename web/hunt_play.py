@@ -653,9 +653,16 @@ def _member_row(conn, h, u, party):
             "hp_pct": round(e.hp / max(1, e.max_hp) * 100) if e else 0, "state": state, "out": e is None}
 
 
+# Each player's colour in a team fight (SHOAIB Nov 27: the round portraits look alike): you are always gold,
+# teammates blue, purple and teal in the party's order, the same all fight; their portrait rings and their names in
+# the fight's messages use it (fight.js `partyNames`). Presentation only.
+YOU_COLOR, PARTY_COLORS = "#E8C27A", ("#5FA8FF", "#B48CFF", "#3FD2B4", "#FF8A6A")
+
+
 def team_view(conn, hunts, h, b, uid):
     left = max(0, h.turn_started + TEAM_TURN_SECONDS - hunts.clock())
     allies = []
+    others = 0
     for f in b.fighters:
         pl = db.get_player(conn, f.uid)
         allies.append({"name": f.name, "me": f.uid == uid, "hp": round(max(0, f.hp)), "max_hp": round(f.max_hp),
@@ -663,6 +670,12 @@ def team_view(conn, hunts, h, b, uid):
                        "state": "Fallen" if f.hp <= 0 else "Fled" if f.fled else "Standing" if b.over else
                                 "Ready" if f.pick is not None else "Choosing",
                        "face": ep.look_face(pl) if pl else None})
+        if f.uid == uid:
+            allies[-1]["color"] = YOU_COLOR
+        else:
+            allies[-1]["color"] = PARTY_COLORS[others % len(PARTY_COLORS)]
+            others += 1
+    allies.sort(key=lambda a: not a["me"])                    # you first, then the party in its order
     me = b.fighter(uid)
     return {"allies": allies, "left": round(left), "total": TEAM_TURN_SECONDS,
             "waiting": me is not None and (me.pick is not None or not me.active) and not b.over,
