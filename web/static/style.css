@@ -1011,6 +1011,8 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .tart.tcrane{filter:drop-shadow(0 0 12px rgba(220,235,255,.8)) brightness(1.1)}             /* Crane Wing Deflection */
 .tart.tmoon{mix-blend-mode:screen;filter:drop-shadow(0 0 18px rgba(230,240,255,.9)) brightness(1.1)}   /* Moon Mirror Palm */
 .tart.thands{z-index:auto;filter:drop-shadow(0 0 12px rgba(110,230,170,.6)) brightness(1.15)}           /* Thousand Hands Deflection: behind her (fight.js puts it before the fighter) */
+.tart.tpart{will-change:transform,opacity}                                                   /* a technique's extra pieces (fight.js `part`): painted with their own glow, no filter */
+.tart.thandwheel{z-index:auto;aspect-ratio:auto}                                              /* Thousand Hands: the wheel of hands, behind her */
 .tart.tsidestep{z-index:auto}                                                               /* her sidesteps' afterimages: behind her */
 .tart.tmiststeps{filter:drop-shadow(0 0 12px rgba(150,200,255,.6)) brightness(1.1)}        /* Drifting Mist Steps */
 .tart.tcloudsteps{filter:drop-shadow(0 0 12px rgba(255,236,190,.55)) brightness(1.08)}    /* Cloud-Walking Shadow */

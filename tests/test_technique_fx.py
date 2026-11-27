@@ -408,3 +408,25 @@ def test_every_heaven_technique_plays_long_with_its_own_moving_effect_and_sound(
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
     assert "function heavenly(inner)" in js and js.count("heavenly(") == 4          # brace, deflect and sidestep go through it
     assert "tcine" not in js
+
+
+def test_mortal_to_earth_techniques_have_their_pieces():
+    """SHOAIB's pieces (Nov 27, scripts/make_tech_fx.py): every Mortal to Earth technique has at least one extra piece,
+    each a real picture with see-through background, sent to the page with its look and preloaded with it."""
+    from PIL import Image
+    low = {tid for tid, t in technique.TECHNIQUES.items() if t["grade"] != "Heaven"}
+    assert low == set(technique_fx.PARTS)
+    for tid in low:
+        for role, url in technique_fx.parts(tid).items():
+            im = Image.open(os.path.join(ROOT, url.lstrip("/")))
+            assert im.mode == "RGBA" and im.getpixel((0, 0))[3] == 0, url
+        name = technique.TECHNIQUES[tid]["name"]
+        fx = technique_fx.of(name, technique.TECHNIQUES[tid]["grade"], "female", "evade")
+        assert fx["parts"] == technique_fx.parts(tid)
+        assert set(fx["parts"].values()) <= set(technique_fx.assets(name, "female")[1])
+    assert technique_fx.of("Nine Dragons Ascending Fist", "Heaven")["parts"] == {}       # Heaven keeps its videos
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "function part(made, src, p, w, life, frames, opt)" in js and "palms: function (h)" in js
+    for role in ("P.hit", "P.ground", "P.debris", "P.leaves", "P.water", "P.head", "P.hand", "P.ring", "P.motes",
+                 "P.breath", "P.roots", "P.figure", "P.trail", "P.feathers", "P.push"):
+        assert role in js, role
