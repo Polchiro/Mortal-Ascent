@@ -145,7 +145,7 @@ def test_break_through_is_a_slim_pill_beside_the_plate():
 def test_the_turns_call_outs_sit_between_the_banners():
     css = open("web/static/style.css").read()
     tail = css[css.index("this turn's call-outs: up in the gap between the two banners"):]
-    assert ".bfeed{top:4px;" in tail and "min(36vw,540px)" in tail
+    assert ".bfeed{top:4px;" in tail and "min(30vw,450px)" in tail
 
 
 def test_phones_give_the_arena_the_room():
@@ -154,3 +154,14 @@ def test_phones_give_the_arena_the_room():
     assert 'grid-template-areas:"me enemy" "scene scene" "bar bar" "side hist"' in tail       # plates in one row
     assert ".battle>.binfo .ititle,.battle>.binfo .itext,.battle>.binfo .sub{display:none}" in tail
     assert ".battle>.bhist{grid-row:2;grid-column:1/3;justify-self:start" in tail             # computer: bottom-left
+
+
+def test_the_map_medallions_can_fold_away():
+    page = open("web/templates/_walkui.html").read()
+    assert 'id="dockFold"' in page and "ma.dockFolded" in page and "classList.toggle('folded'" in page
+    assert ".mdock.folded .dbtn{display:none}" in open("web/static/style.css").read()
+
+
+def test_the_fight_banners_are_smaller():
+    css = open("web/static/style.css").read()
+    assert "--bw:min(30vw,450px)" in css and ".battle>.binfo .sub{display:none}" in css

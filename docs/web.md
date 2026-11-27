@@ -330,7 +330,9 @@ darkened behind, the full vial shown up to the bar's width; gold and breathing w
 when the gate is sealed), toxicity and injured / resting hanging just under it, and Break Through as a slim gold pill
 (`fight_pill`, the gate's glowing seal in its socket, one line of text): beside the plate on a wide screen, so it
 takes no room of its own, and tucked under the plate's bars on a phone (the big hanging `break_tab` took too much of
-a phone's screen). At the bottom right, round medallions in gold rings (`ring`) with the
+a phone's screen). A small round button at the right end of the medallions folds
+them away or brings them back (`#dockFold` in `_walkui.html`; remembered on the device as `ma.dockFolded`); Run stays,
+and M still opens the map. At the bottom right, round medallions in gold rings (`ring`) with the
 painted Bag, Character, Techniques and Map icons, and Run in the grand seal ring (`seal_ring`). The plate is 420 px
 wide on a computer and up to 300 px on a phone (`--pw`); every size in it follows that width.
 
@@ -622,8 +624,8 @@ is cut are in its JOBS table):
   the jade ring, grooves for name and realm, HP, Battle Qi) and the foe's mirror (`fight_foe`: iron and crimson, grooves
   for name, tags and HP, their face in the ring; the Martial Master's is his own picture, `s.master.img`). The pieces are
   cut as **panels**: the grooves and ring are filled with dark lacquer under the paint, so the text reads on any scene.
-  Everything sits in the grooves by container units (`cqw`), so the banner can be any width (`--bw`: 36% of the
-  window, at most 540 px). An Elite beast gets its violet rune ring and a Beast King its beast-head ring over the
+  Everything sits in the grooves by container units (`cqw`), so the banner can be any width (`--bw`: 30% of the
+  window, at most 450 px). An Elite beast gets its violet rune ring and a Beast King its beast-head ring over the
   banner's (`rank-<tier>` on `.benemy`). The foe's next move is on the omen scroll (`fight_omen`, a 9-slice that grows
   with the text); the turn's call-outs and the duel's and spar's opening line on the jade plaque (`fight_toast`); Battle
   History on the gold pill with its icon in the socket (`fight_pill`). The other duellist's Battle Qi is a slim bar under
@@ -711,7 +713,11 @@ a lair is fought with `bot/hunt.py`.
    beast stands (wide screens; `.bfeed`). On a computer, Battle History is a small pill (icon and turn) in the arena's
    bottom-left corner above the pill and flee buttons, its record opening upward. On a phone the two plates share
    one row, the "Your turn" panel is just its chip laid over the bottom of the arena (the move's explanation is only
-   on computers), and the arena takes the height that frees (the spar and duel too).
+   on computers), and the arena takes the height that frees (the spar and duel too). The foe banner's round ring shows the beast's **head**
+   (`art/beasts/faces/<slug>.webp`, `beast_face`; cut by `scripts/make_beast_faces.py` round the mouth in
+   `art/beasts/heads.json`, with `FIX` for the few odd shapes), not its whole body shrunk; a foe without one (bandits)
+   shows its picture as before. The "Your turn" panel on a computer is 228 px wide with no keys line (each move's key
+   is on its own diamond).
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.

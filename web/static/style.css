@@ -2735,7 +2735,7 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
    grooves at any banner width. The foe's next move reads on the omen scroll (fight_omen.webp, a 9-slice that grows with
    its text); an Elite or Beast King gets its own ring over the banner's. Pictures only: no number or rule changed. ── */
 @media (min-width:901px){
-  .battle>.bme,.battle>.benemy{--bw:min(36vw,540px);position:relative;container-type:inline-size;width:var(--bw);max-width:100%;padding:0;border:0;border-radius:0;
+  .battle>.bme,.battle>.benemy{--bw:min(30vw,450px);position:relative;container-type:inline-size;width:var(--bw);max-width:100%;padding:0;border:0;border-radius:0;
     background:none;text-shadow:0 1px 3px #000}
   .battle>.bme{display:block;min-height:calc(var(--bw) * .2417);background:url(/art/ui/fight_me.webp) 0 0/100% auto no-repeat;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
   .battle>.bme .bface{position:absolute;left:3.8cqw;top:3.55cqw;width:16.5cqw;height:16.5cqw;border:0;border-radius:50%;box-shadow:none}
@@ -2790,7 +2790,7 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 }
 /* the spar's fifteen beads: between the banners when they fit, under yours when they don't */
 @media (min-width:901px) and (max-width:1700px){
-  .sparfight .sbeads{left:20px;transform:none;top:calc(min(36vw,540px) * .25 + 12px);gap:4px;padding:5px 10px}
+  .sparfight .sbeads{left:20px;transform:none;top:calc(min(30vw,450px) * .25 + 12px);gap:4px;padding:5px 10px}
   .sparfight .sbeads li{width:22px;height:22px}.sparfight .sbeads li img{width:16px;height:16px}
 }
 @media (min-width:901px) and (max-width:1400px){.battle.sparfight .dtoast{top:30%}}
@@ -2985,7 +2985,7 @@ main.battle:not(.duelfight) .benemy .bwarn{display:none}
 /* this turn's call-outs: up in the gap between the two banners, where nothing is drawn, not over the middle where a big
    beast stands; a little smaller (Shoaib, Nov 27) */
 @media (min-width:901px){
-  .bfeed{top:4px;width:min(440px,calc(100vw - 2 * min(36vw,540px) - 70px));gap:3px}
+  .bfeed{top:4px;width:min(440px,calc(100vw - 2 * min(30vw,450px) - 70px));gap:3px}
   .bfeed .toast{font-size:12.5px;padding:0 14px;border-width:7px 15px}
 }
 
@@ -3018,3 +3018,22 @@ main.battle:not(.duelfight) .benemy .bwarn{display:none}
   main.battle.duelfight>.bscene{height:clamp(320px,min(124vw,100dvh - 360px),600px)}
   .battle>.benemy .sface,.battle>.benemy .dface{width:34px;height:34px}
 }
+/* the "Your turn" panel smaller still (Shoaib, Nov 27): narrower, smaller type, and no keys line on a computer (each
+   move's key is on its own diamond) */
+@media (min-width:901px){
+  .battle>.binfo{width:min(100%,228px);padding:15px 10px 6px;border-width:9px;border-image-width:28px}
+  .battle>.binfo .ititle{font-size:12.5px}
+  .battle>.binfo .itext{font-size:11.5px;line-height:1.3}
+  .battle>.binfo .sub{display:none}
+  main.battle .binfo .turnchip{min-width:110px;height:29px;top:-19px;font-size:9.5px;padding:0 14px 4px}
+}
+
+/* the map screen's medallions can be folded away (the round button at their right end; remembered per device) */
+.mdock .dfold{align-self:center;flex:none;width:30px;height:30px;margin-left:-2px;padding:0;border-radius:50%;cursor:pointer;
+  border:1.5px solid #C9A45C;background:radial-gradient(circle at 40% 35%,#2A3138,#0E1216);box-shadow:0 0 8px rgba(0,0,0,.6);pointer-events:auto}
+.mdock .dfold span{display:block;width:8px;height:8px;margin:0 auto;border:solid #EBCB86;border-width:0 2px 2px 0;transform:translateX(-2px) rotate(-45deg);
+  transition:transform .2s}
+.mdock.folded .dfold span{transform:translateX(2px) rotate(135deg)}
+.mdock .dfold:hover,.mdock .dfold:focus-visible{border-color:#FFE7A8;box-shadow:0 0 10px rgba(255,214,140,.5)}
+.mdock .dbtn{transition:opacity .2s,transform .2s}
+.mdock.folded .dbtn{display:none}
