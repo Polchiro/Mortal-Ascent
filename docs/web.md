@@ -1034,11 +1034,15 @@ a lair is fought with `bot/hunt.py`.
    primates, insects, crocodiles and tortoises (and the beasts with the plain rear-back) throw the blast from the mouth
    across to you (`blast`); the amphibians crack the ground to your feet (`crack`); the dragons, serpents, birds and
    four-legged beasts keep their own blasts and waves. `TRAVEL` ms later it lands (`impact`): the element bursting on
-   your body twice, a white impact frame, a flash of its colour, a hard shake, you knocked back (less behind a Guard,
+   your body twice, a soft white impact frame, a flash of its colour, a shake, you knocked back (less behind a Guard,
    which plays your Guard), its patch on the ground at your feet, and the damage and debuffs (`struck`). An Elite's
    roar (or any final roar) also pulses its colour round the screen's edge (`presence`); a Beast King's darkens the
    scene, cracks the ground under itself and follows with an aftershock. Presentation only: the same rules, damage and
    log line.
+   **Screen shake** (SHOAIB Nov 27: "I like it but I don't know if it works well for others"): every shake, camera
+   punch and white flash in beast fights is gentler (`SHAKE`, `ZOOM` in `fight.js`: about half the old shake, a
+   smaller punch, a softer, shorter flash); with "reduce motion" on there is no shake and no flash, only a slight
+   punch.
    The redesigned quadruped pictures (SHOAIB's designs) are cut out of their backdrops by
    `scripts/make_quadruped_art.py`: the painted stone slabs and Gemini's mark dropped, the right-facing ones mirrored
    to face the cultivator, standing on their bottom edge as every beast picture does (`art/beasts/README.md`).

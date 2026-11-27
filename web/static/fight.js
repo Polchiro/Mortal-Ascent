@@ -178,6 +178,10 @@
   /* A buzz on the phone when a beast's blow or roar lands on you (Android; iPhones' browser has no vibration, so
      nothing happens there), stronger for a roar and for Elites and Beast Kings; none with "reduce motion" on. */
   var CALM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /* How hard the screen shakes when a roar or a big blow lands (SHOAIB Nov 27: "I like it but I don't know if it
+     works well for others"): about half the old shake, a gentler camera punch (ZOOM) and a softer white flash; with
+     "reduce motion" on, no shake, no flash and only a slight punch. */
+  var SHAKE = CALM ? 0 : 0.55, ZOOM = CALM ? 0.35 : 0.75;
   function buzz(pattern) {
     try { if (!CALM && navigator.vibrate && 'ontouchstart' in window) navigator.vibrate(pattern); } catch (e) {}
   }
@@ -629,8 +633,8 @@
       if (R.slam) slam();
       if (ev.hit) {
         drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.dmg), '−' + ev.dmg); burst('tspark', p[0], p[1]);
-        if (R.shake && scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,4px)'}, {transform: 'translate(7px,-4px)'},
-          {transform: 'translate(-4px,2px)'}, {transform: 'none'}], {duration: 380});
+        if (R.shake && scene.animate && SHAKE) scene.animate([{transform: 'none'}, {transform: 'translate(-5px,3px)'}, {transform: 'translate(5px,-3px)'},
+          {transform: 'translate(-3px,1px)'}, {transform: 'none'}], {duration: 380});
       } else {
         burst('tring', p[0] + 4, p[1] + 6); pop(beastBox, 'word', ev.blocked ? 'Blocked' : 'Missed');
       }
@@ -659,8 +663,8 @@
         fx('bdust', f[0] + side * (1 + j), f[1] - 2 - Math.random() * 3, 1700, {'--dx': side * (30 + 18 * j) + 'px',
           '--s': (0.8 + Math.random() * 0.7).toFixed(2), 'animation-delay': (40 * j) + 'ms'});
       }
-      if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-11px,8px)'}, {transform: 'translate(10px,-6px)'},
-        {transform: 'translate(-7px,4px)'}, {transform: 'translate(4px,-2px)'}, {transform: 'none'}], {duration: 520});
+      if (scene.animate && SHAKE) scene.animate([{transform: 'none'}, {transform: 'translate(-7px,5px)'}, {transform: 'translate(6px,-4px)'},
+        {transform: 'translate(-4px,2px)'}, {transform: 'translate(2px,-1px)'}, {transform: 'none'}], {duration: 520});
     }
 
     /* your weapon attack: wind up, dash, swing with a trail, then step back */
@@ -953,10 +957,10 @@
       }
       if (scene.animate) {                                     // the camera punches in on it and shakes
         scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
-        var z = 1 + 0.09 * big, k = [];
+        var z = 1 + 0.09 * big * ZOOM, k = [];
         [[0, 1, 0, 0], [0.08, z, -10, 7], [0.16, z, 9, -6], [0.24, z, -8, 5], [0.34, z, 6, -4], [0.46, z * 0.995, -4, 3],
          [0.6, z * 0.99, 3, -2], [0.75, 1 + (z - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
-          k.push({offset: a[0], transform: 'translate(' + a[2] + 'px,' + a[3] + 'px) scale(' + a[1] + ')'});
+          k.push({offset: a[0], transform: 'translate(' + a[2] * SHAKE + 'px,' + a[3] * SHAKE + 'px) scale(' + a[1] + ')'});
         });
         var anim = scene.animate(k, {duration: 1500, easing: 'ease-out'});
         anim.onfinish = function () { scene.style.transformOrigin = ''; };
@@ -964,11 +968,12 @@
     }
     function camera(p, zoom, ms) {                              // the camera punches in on p (% of the scene) and shakes
       if (!scene.animate) return;
+      zoom = 1 + (zoom - 1) * ZOOM;
       scene.style.transformOrigin = p[0] + '% ' + p[1] + '%';
       var k = [];
       [[0, 1, 0, 0], [0.08, zoom, -10, 7], [0.16, zoom, 9, -6], [0.24, zoom, -8, 5], [0.34, zoom, 6, -4], [0.46, zoom * 0.995, -4, 3],
        [0.6, zoom * 0.99, 3, -2], [0.75, 1 + (zoom - 1) * 0.5, -2, 1], [1, 1, 0, 0]].forEach(function (a) {
-        k.push({offset: a[0], transform: 'translate(' + a[2] + 'px,' + a[3] + 'px) scale(' + a[1] + ')'});
+        k.push({offset: a[0], transform: 'translate(' + a[2] * SHAKE + 'px,' + a[3] * SHAKE + 'px) scale(' + a[1] + ')'});
       });
       var anim = scene.animate(k, {duration: ms, easing: 'ease-out'});
       anim.onfinish = function () { scene.style.transformOrigin = ''; };
@@ -1369,9 +1374,9 @@
       var flash = fx('broarflash behit', 0, 0, 420); flash.style.setProperty('--x', you[0] + '%'); flash.style.setProperty('--y', you[1] + '%');
       flash.style.setProperty('--rc', ROAR.color);
       if (scene.animate) {                                       // the impact frame: one blinding beat, then the shake
-        if (!LITE) scene.animate([{filter: 'none'}, {filter: 'brightness(1.9) contrast(1.35) saturate(.35)', offset: 0.12},
-                       {filter: 'brightness(1.15)', offset: 0.4}, {filter: 'none'}], {duration: 300, easing: 'ease-out'});
-        var q = 9 + 4 * tier;
+        if (!LITE && !CALM) scene.animate([{filter: 'none'}, {filter: 'brightness(1.4) contrast(1.12) saturate(.7)', offset: 0.12},
+                       {filter: 'brightness(1.06)', offset: 0.4}, {filter: 'none'}], {duration: 240, easing: 'ease-out'});
+        var q = (9 + 4 * tier) * SHAKE;
         fighter.animate([{transform: 'none'}, {transform: 'translate(' + -q + 'px,' + q * 0.4 + 'px)'}, {transform: 'translate(' + q * 0.7 + 'px,' + -q * 0.3 + 'px)'},
                          {transform: 'translate(' + -q * 0.4 + 'px,0)'}, {transform: 'none'}], {duration: 380});
       }
@@ -1507,7 +1512,7 @@
           else if (M.style === 'shell') shell(mouth(p), pic, ev.final);
           else bigRoar(mouth(p), pic, ev.final);
           presence(pic, ev.final, still);
-          if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(-4px,3px)'}, {transform: 'translate(3px,-2px)'}, {transform: 'none'}], {duration: 300});
+          if (scene.animate && SHAKE) scene.animate([{transform: 'none'}, {transform: 'translate(-2px,2px)'}, {transform: 'translate(2px,-1px)'}, {transform: 'none'}], {duration: 300});
         }
         if (t >= IMPACT && once('impact')) { impact(ev.final, M.style === 'quake'); struck(ev); }
       }, clear: function () {
@@ -1632,8 +1637,8 @@
       function behind(n) { scene.insertBefore(n, fighter); }           // a dimmed scene or Heaven sky: over the arena, under everyone
       function px(a, b) { return [(b[0] - a[0]) / 100 * W, (b[1] - a[1]) / 100 * scene.clientHeight]; }
       function shake(k) {
-        if (!scene.animate) return;
-        var a = 4 + 3 * k;
+        if (!scene.animate || !SHAKE) return;
+        var a = (4 + 3 * k) * 0.7;
         scene.animate([{transform: 'none'}, {transform: 'translate(' + -a + 'px,' + a * 0.6 + 'px)'}, {transform: 'translate(' + a + 'px,' + -a * 0.5 + 'px)'},
           {transform: 'translate(' + -a * 0.6 + 'px,' + a * 0.3 + 'px)'}, {transform: 'none'}], {duration: 320 + 50 * k});
       }
