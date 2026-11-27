@@ -215,3 +215,19 @@ def test_the_light_comes_out_of_the_chest():
     css = open(os.path.join(ROOT, "web", "static", "chests.css")).read()
     assert "var MOUTH = 0.53" in js and "y = m.y - h * BURST_FOOT" in js and "var x = m.x, y = m.y" in js
     assert ".chrays{position:absolute;left:50%;top:53%;" in css
+
+
+def test_epic_legendary_and_mythic_open_their_own_way():
+    """SHOAIB's friend: the high chests should open in a special, unique way. Each has its rite, its pictures exist
+    and are served, and Skip / Quick opening / reduced motion leave it out."""
+    from web import chest_routes
+    js = open(os.path.join(ROOT, "web", "static", "chests.js")).read()
+    rite = chest_routes.art()["rite"]
+    for k in ("seal", "dragon", "beam", "crack", "galaxy", "stamp"):
+        assert rite[k] and os.path.exists(os.path.join(ROOT, rite[k].lstrip("/"))), k
+    assert "var RITES = {epic: epicPlan(), legendary: legendaryPlan(), mythic: mythicPlan()};" in js
+    assert "if (reduced) RITES = {};" in js and "var plan = quick ? null : RITES[T.key];" in js
+    assert "timers = []; endRite();" in js                                  # Skip ends it
+    assert "banner('MYTHIC', 'The heavens answer'" in js
+    html = open(os.path.join(ROOT, "web", "templates", "chests.html")).read()
+    assert 'id="chbanner"' in html

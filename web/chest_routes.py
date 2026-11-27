@@ -32,7 +32,10 @@ def art():
             "burst_sound": there(f"{ART}/burst.mp3"), "glow_in": there(f"{ART}/glow_in.mp4"),
             "glow": there(f"{ART}/glow.mp4"), "glow_sound": there(f"{ART}/glow.mp3"), "slip": there(f"{ART}/slip.webp"),
             "lid": there(f"{ART}/lid.webp"), "seal": there("/art/train/fx/seal.webp"),
-            "crack": there("/art/train/fx/crack.webp")}
+            "crack": there("/art/train/fx/crack.webp"),
+            # the Epic, Legendary and Mythic openings (scripts/make_chest_rite_art.py)
+            "rite": {k: there(f"{ART}/rite/{k}.{ext}") for k, ext in (("seal", "jpg"), ("dragon", "jpg"), ("beam", "jpg"),
+                                                                     ("crack", "jpg"), ("galaxy", "jpg"), ("stamp", "webp"))}}
 
 
 def safe_back(url):
