@@ -1319,6 +1319,20 @@ def test_the_stone_shell_tortoise_is_animated_from_its_own_videos_with_its_own_v
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["stone_shell_tortoise@roar"][:2] == [0.06, 0.47]
     assert explore_play.beast_body("Stone-Shell Tortoise") == "stone_shell_tortoise"
 
+def test_the_bone_vulture_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Bone Vulture (Nov 27, Grandmaster): standing hunched with its wings folded, both videos clean; its flinch runs on until it stands calm again and its slump starts where its neck matches the idle's."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("bone_vulture")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Bone Vulture", "slug": "bone_vulture"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "bone_vulture.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@bone_vulture" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["bone_vulture@roar"][:2] == [0.08, 0.38]
+    assert explore_play.beast_body("Bone Vulture") == "bone_vulture"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

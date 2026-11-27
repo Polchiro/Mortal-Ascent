@@ -142,6 +142,13 @@ CLIPS = {
                              "attack_ms": 3000,
                              "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                              "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, standing hunched with its wings folded: both videos clean (no remakes); its pale head is its own,
+    # so nothing is wiped. Its idle before its neck-stretching stab, its flinch (taken on until it stands calm again)
+    # and its slump (from the calm moment its neck matches the idle's) from the hit video
+    "bone_vulture": {"attack": (4.05, 6.75), "hit": (2.1, 3.95), "death": (4.15, 6.6), "idle_span": (16, 28),
+                     "breathe": 0.035, "idle_from": 2.9, "idle_until": 4.1, "attack_ms": 2600,
+                     "ease_in": {"attack": 2, "hit": 5, "death": 4}, "settle": {"attack": 3},
+                     "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
