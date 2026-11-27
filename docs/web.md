@@ -881,6 +881,19 @@ a lair is fought with `bot/hunt.py`.
      scene the finale is drawn up to the scene's full width. The small name plate and the turn's lines stay hidden
      until the blow lands (`.battle.cutscene`). A **Skip** button (`.tskip`) jumps to the explosion: the damage
      lands as always and the turn ends sooner.
+     **Techniques: the pieces (Nov 27).** SHOAIB's pictures for every Mortal to Earth technique (Nano Banana, no
+     videos, to keep his credits for the beasts): its main picture and one to three extra pieces
+     (`technique_fx.PARTS`, made by `scripts/make_tech_fx.py` into `art/fx/tech/<technique>_<piece>.webp`), moved by
+     `part` and `bloom` in `fight.js` so a technique plays as several pictures. A piece's role says what it does: `hit`
+     blooms where the blow lands (each blow of a combo; on a defence, where the blow meets you), `ground` and `debris`
+     (Mountain-Shattering: the cracked earth and its rocks flung up), `leaves` (Autumn Wind), `water` (River-Splitting:
+     the water parts along the beam), `head` (Viper Fang: the head flies along the beam and bites), `hand` (Thousand
+     Shadow Palm: three waves of its palm, play `palms`; Thousand Hands: a turning wheel of hands), `ring` (Golden
+     Bell's rune ring), `motes` (Turtle Shell's healing light), `breath` (Calm Breath), `roots` (Rooted Mountain: the
+     jade mountain behind, its roots at the feet), `figure` (Iron Cloth's steel echo; Mist Steps' three mist figures)
+     and `trail`, `feathers` (Crane Wing), `push` (Thousand Hands' counter). Earth gets the most pieces, Mortal the
+     fewest. The pieces carry no CSS filter (each is painted with its own glow), so they cost little on a phone; with
+     LITE fewer palms and hands are drawn. Heaven keeps its videos.
      **Heaven techniques: the long play (Nov 24). SHOAIB's rule for the grade:** every Heaven technique plays long
      (about 5 to 7 s) and special: "Heaven Technique" and its name written large in gold, a moving effect cut from
      his video of it with the video's own sound, the damage written large when the blow lands, and a Skip button.

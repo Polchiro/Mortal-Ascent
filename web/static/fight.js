@@ -1685,8 +1685,32 @@
        sky. The damage comes from the server like any other hit, and the HP bar drops when the blow lands. */
     var TIER = {Mortal: 0, Yellow: 1, Mystic: 2, Earth: 3, Heaven: 4};
     var FIST = {jab: [0.66, 0.28], lunge: [0.685, 0.287]};       // the fist at its furthest, as shares of the fighter's box
+    /* A technique's extra pieces (web/technique_fx.py PARTS, scripts/make_tech_fx.py; docs/web.md "Techniques: the
+       pieces"): stills moved here, so a Mortal to Earth technique plays as several pictures, not one sliding. They carry
+       no CSS filter (each is painted with its own glow), so they cost little on a phone. `made`: the step's list, cleared
+       with it; `w`: % of the scene wide; `frames`: its keyframes over `life` ms; opt: delay, under (a node it goes
+       behind), origin, easing. */
+    function part(made, src, p, w, life, frames, opt) {
+      if (!src) return null;
+      opt = opt || {};
+      var n = document.createElement('img');
+      n.className = 'tart tpart'; n.src = src; n.alt = '';
+      n.style.left = p[0] + '%'; n.style.top = p[1] + '%'; n.style.width = w + '%';
+      if (opt.origin) n.style.transformOrigin = opt.origin;
+      if (opt.under && opt.under.parentNode === scene) { n.style.zIndex = 'auto'; scene.insertBefore(n, opt.under); } else scene.appendChild(n);
+      made.push(n);
+      setTimeout(function () { n.remove(); }, life + (opt.delay || 0) + 80);
+      if (n.animate) n.animate(frames, {duration: life, delay: opt.delay || 0, easing: opt.easing || 'ease-out', fill: 'both'});
+      else n.style.opacity = 1;
+      return n;
+    }
+    function bloom(made, src, p, w, life, opt) {                      // a piece bursting open on a spot, then fading
+      var a = opt && opt.anchor || 'translate(-50%,-50%)';
+      return part(made, src, p, w, life || 700, [{transform: a + ' scale(0.35)', opacity: 0}, {transform: a + ' scale(1)', opacity: 1, offset: 0.2},
+        {transform: a + ' scale(1.06)', opacity: 0.9, offset: 0.5}, {transform: a + ' scale(1.16)', opacity: 0}], opt);
+    }
     function technique(ev) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, P = X.parts || {};
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
       var JAB = msheet ? +msheet.dataset.jab : 5, OUT = msheet ? +msheet.dataset.release : 12, BACK = msheet ? +msheet.dataset.back : 21;
       var dragons = X.play === 'dragons', end = Math.max(X.ms, msheet && !dragons ? +msheet.dataset.ms || 0 : 0);   // a sheet's own least time (looks `ms`)
@@ -1702,7 +1726,7 @@
       var DS = CUT ? X.sheets : null, FIN = R + (DS && DS.finale.lead || 0), FMS = 60;   // Nine Dragons' finale: starts as the ninth arrives, 60 ms a frame
       var skipBy = 0, self = null;                                    // the cutscene skipped: this much time jumped
       if (DS) end = FIN + DS.finale.frames * FMS + 150;
-      var LAND = DS ? FIN + DS.finale.boom * FMS : dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : R;   // when the blow lands on the beast
+      var LAND = DS ? FIN + DS.finale.boom * FMS : dragons ? R + 420 : X.play === 'vortex' ? R + 180 : X.play === 'streak' ? R + 100 : X.play === 'beam' ? R + 160 : X.play === 'charge' ? R + 40 : X.play === 'palms' ? R + 160 : R;   // when the blow lands on the beast
       var WIND = msheet && msheet.dataset.windup ? +msheet.dataset.windup : 9;   // the frame drawn back, just before the release
       var PULL = Math.round((JAB + WIND) / 2);                       // on the way back from the jab
       var settle = [[Math.max(R + 280, end * 0.7), BACK - 1], [end * 0.95, (mn || 36) - 1]];   // held out, then back on guard
@@ -1763,6 +1787,10 @@
         else pop(beastBox, 'word', 'Missed');
         var b = at(br, 0.3, 0.45);
         burst('tspark', b[0], b[1], tc);
+        if (P.hit) {                                                  // its own impact (technique_fx PARTS "hit")
+          if (X.play === 'sweep') bloom(made, P.hit, at(br, 0.4, 0.97), 30 * BIG, 760, {anchor: 'translate(-50%,-92%)', origin: '50% 92%'});   // kicked up off the ground
+          else bloom(made, P.hit, at(br, 0.32, 0.44), (tier >= 3 ? 30 : 24) * BIG, 720);
+        }
         shake(tier + (cast.effect === 'heavy' ? 2 : 0));
         if (cast.effect === 'stagger') setTimeout(function () { var d = at(br, 0.42, 0.12); fx('tdizzy', d[0], d[1], 1300, {'--tc': tc}); }, 150);
         if (cast.effect === 'heavy') { var g = at(br, 0.36, 0.97); fx('pcrater', g[0], g[1], 1800); fx('pwave', g[0], g[1], 800); }   // the golden crater
@@ -1815,6 +1843,12 @@
               {transform: 'translate(-50%,-100%) scale(1)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-100%) translateY(2%) scale(1.02)', opacity: 1, offset: 0.7},
               {transform: 'translate(-50%,-100%) translateY(10%) scale(1.04)', opacity: 0}], {duration: 1650, easing: 'ease-out', fill: 'forwards'});
             var g = at(br, 0.4, 0.97);
+            part(made, P.ground, [g[0], g[1] + 1], 58 * BIG, 1900, [{transform: 'translate(-50%,-50%) scale(0.2,0.5)', opacity: 0},   // the earth cracks open under it
+              {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.1}, {transform: 'translate(-50%,-50%) scale(1.02)', opacity: 0.9, offset: 0.7},
+              {transform: 'translate(-50%,-50%) scale(1.04)', opacity: 0}], {under: fighter});
+            part(made, P.debris, [g[0] + 2, g[1] - 10], 40 * BIG, 1150, [{transform: 'translate(-50%,-10%) scale(0.3) rotate(-8deg)', opacity: 0},   // its rocks flung up and out
+              {transform: 'translate(-50%,-55%) scale(0.95) rotate(0)', opacity: 1, offset: 0.25}, {transform: 'translate(-48%,-75%) scale(1.12) rotate(6deg)', opacity: 0.85, offset: 0.55},
+              {transform: 'translate(-46%,-30%) scale(1.2) rotate(12deg)', opacity: 0}], {easing: 'cubic-bezier(.2,.7,.4,1)'});
             for (var i = 0; i < 12; i++) {
               var a = Math.PI * (1.08 + 0.84 * i / 11), dd = 60 + Math.random() * 150;
               fx('pdebris' + (i % 3 ? '' : ' hot'), g[0], g[1] - 2, 1000, {'--dx': Math.cos(a) * dd + 'px', '--dy': Math.sin(a) * dd + 'px',
@@ -1841,6 +1875,18 @@
               : [{transform: B(0, 1), opacity: 1}, {transform: B(1, 1), opacity: 1, offset: 0.14},       // Viper: the head strikes out
                  {transform: B(1.03, 1.05), opacity: 1, offset: 0.7}, {transform: B(1.05, 1.08), opacity: 0}],
               {duration: 1250, easing: 'ease-out', fill: 'forwards'});
+            if (P.head) {                                            // Viper: its head flies along the beam and bites
+              part(made, P.head, to, 22 * BIG, 520, [{transform: 'translate(-50%,-50%) translate(' + -d[0] + 'px,' + -d[1] + 'px) scale(0.5)', opacity: 0},
+                {transform: 'translate(-50%,-50%) translate(' + -d[0] * 0.55 + 'px,' + -d[1] * 0.55 + 'px) scale(0.85)', opacity: 1, offset: 0.2},
+                {transform: 'translate(-50%,-50%) scale(1.05)', opacity: 1, offset: 0.34}, {transform: 'translate(-50%,-50%) translateX(2%) scale(1.15)', opacity: 0}], {easing: 'ease-in'});
+            }
+            if (P.water) {                                           // River: the water parts above and below the beam
+              var mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2], ww = len / W * 100 * 1.05;
+              part(made, P.water, mid, ww, 1250, [{transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(0.6,0)', opacity: 0},
+                {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1,0.25)', opacity: 1, offset: 0.14},
+                {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1,1)', opacity: 1, offset: 0.4},
+                {transform: 'translate(-50%,-50%) rotate(' + ang + 'deg) scale(1.03,1.15)', opacity: 0}]);
+            }
           }
           if (h >= 160 && once('land')) lands();
         },
@@ -1871,6 +1917,12 @@
               {transform: T(0, -0.01 * W, 1.05, 12), opacity: 1, offset: 0.65}, {transform: T(0.02 * W, -0.03 * W, 1.12, 24), opacity: 0}],
               {duration: 1250, easing: 'ease-out', fill: 'forwards'});
           }
+          if (h >= 40 && once('leaves')) {                            // the leaves it tore loose drift down across the beast
+            var lv = at(br, 0.36, 0.38);
+            part(made, P.leaves, lv, 40 * BIG, 1700, [{transform: 'translate(-50%,-50%) translate(-6%,-12%) scale(0.6) rotate(-10deg)', opacity: 0},
+              {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-50%) translate(4%,10%) scale(1.06) rotate(8deg)', opacity: 0.9, offset: 0.65},
+              {transform: 'translate(-50%,-50%) translate(8%,24%) scale(1.1) rotate(14deg)', opacity: 0}], {easing: 'linear'});
+          }
           [0, 1, 2].forEach(function (k) {                           // its three hits
             if (h >= 40 + 140 * k && once('hit' + k)) {
               if (k === 0) lands(); else { var b = at(br, 0.26 + 0.08 * k, 0.32 + 0.1 * k); burst('tspark', b[0], b[1], tc); shake(1); }
@@ -1895,7 +1947,7 @@
                 {transform: T(0, 0, 1), opacity: 1, offset: 0.3}, {transform: T(0.01 * W, 0, 1.12), opacity: 0}],
                 {duration: 860, easing: 'ease-in', fill: 'forwards'});
             }
-            if (h >= 140 * k && once('hit' + k)) { if (k === 0) lands(); else { var b = at(br, 0.34, 0.46); burst('tspark', b[0], b[1], tc); shake(0); } }
+            if (h >= 140 * k && once('hit' + k)) { if (k === 0) lands(); else { var b = at(br, 0.34, 0.46); burst('tspark', b[0], b[1], tc); bloom(made, P.hit, b, 20 * BIG, 640); shake(0); } }
           });
         },
         fan: function (h) {                                          // Thousand Shadow Palm: a fan of shadow palms opens over it
@@ -1910,6 +1962,26 @@
           [0, 1, 2].forEach(function (k) {                           // its three hits
             if (h >= 60 + 140 * k && once('hit' + k)) {
               if (k === 0) lands(); else { var b = at(br, 0.24 + 0.08 * k, 0.3 + 0.12 * k); burst('tspark', b[0], b[1], tc); shake(1); }
+            }
+          });
+        },
+        palms: function (h) {                                        // Thousand Shadow Palm: three waves of shadow palms from the push
+          [0, 1, 2].forEach(function (k) {                           // each wave: a fan of palms flying to the beast, a teal burst where they strike
+            var w0 = -200 + 140 * k;
+            if (h >= w0 && once('wave' + k)) {
+              var from = fist('lunge');
+              [-1, 0, 1, 2].forEach(function (j, i) {
+                if (LITE && i === 3) return;
+                var to = at(br, 0.3 + 0.03 * k, 0.26 + 0.13 * (j + 1) + 0.04 * k), d = px(to, from), r = -10 * j + 8;
+                part(made, P.hand, to, (13 - Math.abs(j) * 1.5) * BIG, 520, [{transform: 'translate(-50%,-50%) translate(' + d[0] + 'px,' + (d[1] - j * 8) + 'px) scale(0.35) rotate(' + r + 'deg)', opacity: 0},
+                  {transform: 'translate(-50%,-50%) translate(' + d[0] * 0.5 + 'px,' + d[1] * 0.5 + 'px) scale(0.8) rotate(' + r * 0.5 + 'deg)', opacity: 0.95, offset: 0.25},
+                  {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.62}, {transform: 'translate(-50%,-50%) translateX(3%) scale(1.12)', opacity: 0}],
+                  {delay: 30 * i, easing: 'ease-in'});
+              });
+            }
+            if (h >= w0 + 360 && once('hit' + k)) {
+              if (k === 0) lands();
+              else { var b = at(br, 0.28 + 0.06 * k, 0.32 + 0.1 * k); burst('tspark', b[0], b[1], tc); bloom(made, P.hit, b, 22 * BIG, 620); shake(1); }
             }
           });
         },
@@ -2101,7 +2173,7 @@
     }
     function later(cues, ms) { return ms ? cues.map(function (c) { var d = c.slice(); d[0] += ms; return d; }) : cues; }   // a step's sounds, after its `pre`
     function braced(ev, hitEv) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = paced(RECIPES.beast, PACE);
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, R = paced(RECIPES.beast, PACE), P = X.parts || {};
       var attacked = !!(hitEv || ev.blocked || ev.hold);
       var HIT = attacked ? R.hit : 900 * PACE, END = attacked ? Math.max(R.end + (ev.counter ? 220 : 0), R.hit + 1000 * PACE) : 1700 * PACE;
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
@@ -2131,9 +2203,15 @@
       var FX = null, sheen = null, sheenLit = null;
       var FORM = {                                                  // the effect forms as the stance settles, and stays to the end
         dust: function () { FX = art('', feet, bodyW * 3.4, true);
+          part(made, P.hit, [feet[0], feet[1] + 1], bodyW * 2.6, 900, [{transform: 'translate(-50%,-70%) scale(0.3,0.5)', opacity: 0},   // the stomp throws up a ring of dust
+            {transform: 'translate(-50%,-70%) scale(1)', opacity: 0.95, offset: 0.25}, {transform: 'translate(-50%,-74%) scale(1.15)', opacity: 0}], {under: fighter});
           FX.animate([{transform: 'translate(-50%,-60%) scale(0.25)', opacity: 0}, {transform: 'translate(-50%,-60%) scale(1)', opacity: 1, offset: 0.3},
             {transform: 'translate(-50%,-62%) scale(1.15)', opacity: 0.8, offset: 0.8}, {transform: 'translate(-50%,-64%) scale(1.25)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
         mist: function () { FX = art('tsoft', mid, wide(472 / 330, 1.15));
+          var top = at(fr, Bd[0], Bd[1]);                           // Calm Breath: a spiral of breath rising off the head
+          part(made, P.breath, [top[0], top[1] + 4], wide(371 / 480, 0.5), END - FORM_AT, [{transform: 'translate(-50%,-30%) scale(0.4) rotate(0)', opacity: 0},
+            {transform: 'translate(-50%,-55%) scale(0.9) rotate(-90deg)', opacity: 0.8, offset: 0.3}, {transform: 'translate(-50%,-85%) scale(1.05) rotate(-220deg)', opacity: 0.55, offset: 0.75},
+            {transform: 'translate(-50%,-110%) scale(1.15) rotate(-300deg)', opacity: 0}], {easing: 'linear'});
           FX.animate([{transform: 'translate(-50%,-40%) rotate(-6deg)', opacity: 0}, {transform: 'translate(-50%,-50%) rotate(0)', opacity: 0.85, offset: 0.3},
             {transform: 'translate(-50%,-56%) rotate(4deg)', opacity: 0.75, offset: 0.8}, {transform: 'translate(-50%,-62%) rotate(6deg)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
         sheen: function () {                                        // the weave, laid over the fighter's own frame
@@ -2146,14 +2224,30 @@
           var lit = sheen.cloneNode(false); lit.className = 'sheetfx tsheen tlit'; lit.style.backgroundImage = 'none';   // a steel rim of light on the body
           msheet.parentNode.insertBefore(lit, sheen.nextSibling); made.push(lit); sheenLit = lit;
           lit.animate([{opacity: 0}, {opacity: 0.55, offset: 0.2}, {opacity: 0.4, offset: 0.85}, {opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'});
+          part(made, P.figure, mid, wide(442 / 600, 1.15), END - FORM_AT, [{transform: 'translate(-50%,-50%) scale(1.25)', opacity: 0},   // a steel echo of a fighter settles behind
+            {transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.55, offset: 0.25}, {transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.4, offset: 0.85},
+            {transform: 'translate(-50%,-50%) scale(1.1)', opacity: 0}], {under: fighter});
           sheen.animate([{opacity: 0}, {opacity: 1, offset: 0.2}, {opacity: 0.85, offset: 0.85}, {opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
-        roots: function () { FX = art('', [feet[0], feet[1] + 2], wide(534 / 758, 1.35), true);
+        roots: function () {
+          if (P.roots) {                                            // the jade mountain rises behind, its roots spread at the feet
+            FX = art('', [feet[0], feet[1] + 1], wide(537 / 700, 1.55), true);
+            FX.animate([{transform: 'translate(-50%,-100%) scaleY(0.05)', opacity: 0}, {transform: 'translate(-50%,-100%) scaleY(1.04)', opacity: 0.85, offset: 0.25},
+              {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 0.8, offset: 0.85}, {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'});
+            part(made, P.roots, [feet[0], feet[1] + 1.5], bodyW * 3.2, END - FORM_AT, [{transform: 'translate(-50%,-50%) scale(0.1,0.6)', opacity: 0},
+              {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-50%) scale(1.02)', opacity: 1, offset: 0.85},
+              {transform: 'translate(-50%,-50%) scale(1.02)', opacity: 0}], {under: fighter});
+            return;
+          }
+          FX = art('', [feet[0], feet[1] + 2], wide(534 / 758, 1.35), true);
           FX.animate([{transform: 'translate(-50%,-100%) scaleY(0.05)', opacity: 0}, {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 1, offset: 0.25},
             {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 1, offset: 0.85}, {transform: 'translate(-50%,-100%) scaleY(1)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
-        bell: function () { FX = art('tscreen', [feet[0], feet[1] + 1], wide(533 / 941, 1.3));
+        bell: function () { FX = art('tscreen', [feet[0], feet[1] + 1], wide(601 / 760, 1.35));
+          part(made, P.ring, [feet[0], feet[1]], bodyW * 2.4, END - FORM_AT, [{transform: 'translate(-50%,-50%) scale(0.2)', opacity: 0},   // where it lands, a ring of runes
+            {transform: 'translate(-50%,-50%) scale(0.2)', opacity: 0, offset: 0.17}, {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.3},
+            {transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.7, offset: 0.85}, {transform: 'translate(-50%,-50%) scale(1.1)', opacity: 0}], {under: fighter});
           FX.animate([{transform: 'translate(-50%,-160%)', opacity: 0}, {transform: 'translate(-50%,-100%)', opacity: 1, offset: 0.2},
             {transform: 'translate(-50%,-100%)', opacity: 0.95, offset: 0.85}, {transform: 'translate(-50%,-100%)', opacity: 0}], {duration: END - FORM_AT, easing: 'ease-in', fill: 'forwards'}); },
-        shell: function () { FX = art('tdome', [feet[0], feet[1] + 2], wide(509 / 828, 1.3));
+        shell: function () { FX = art('tdome', [feet[0], feet[1] + 2], wide(457 / 800, 1.0));
           FX.animate([{transform: 'translate(-50%,-100%) scale(0.2)', opacity: 0}, {transform: 'translate(-50%,-100%) scale(1)', opacity: 0.8, offset: 0.25},
             {transform: 'translate(-50%,-100%) scale(1)', opacity: 0.75, offset: 0.85}, {transform: 'translate(-50%,-100%) scale(1.04)', opacity: 0}], {duration: END - FORM_AT, fill: 'forwards'}); },
         lotus: function () { FX = art('', [feet[0], feet[1] + 3], bodyW * 2.6, true);
@@ -2166,6 +2260,7 @@
         var h = at(fr, HAND[0], HAND[1]);
         burst('tspark', h[0], h[1], X.play === 'parry' ? '#FFE6A0' : tc);
         if (X.play === 'parry') { burst('tspark', h[0] + 2, h[1] - 3, '#FFE6A0'); fx('tring', h[0], h[1], 500); }
+        if (P.hit && X.play !== 'dust') bloom(made, P.hit, [h[0] + 2, h[1]], bodyW * (X.play === 'bell' ? 2 : 1.4), 640);   // its own impact where the blow meets it
         if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(1.8)'}, {filter: 'brightness(1)'}], {duration: 320});
         if (FX && (X.play === 'bell' || X.play === 'roots' || X.play === 'shell'))
           FX.animate([{rotate: '0deg'}, {rotate: '-3deg'}, {rotate: '2.5deg'}, {rotate: '-1.5deg'}, {rotate: '0deg'}], {duration: 520, composite: 'add'});
@@ -2198,7 +2293,11 @@
         poses.style.filter = tier >= 1 && t < END - 200 ? 'drop-shadow(0 0 ' + (4 + 3 * tier) + 'px ' + tc + ')' : '';
         if (t >= FORM_AT && once('form')) FORM[X.play]();
         if (attacked && t >= HIT && once('hit')) struck();
-        if (ev.heal && t >= HIT + 260 && once('heal')) { drop('me'); pop(fighter, 'word heal', '+' + ev.heal); fx('tqring', feet[0], feet[1], 700, {'--tc': '#7CF0BE'}); }
+        if (ev.heal && t >= HIT + 260 && once('heal')) {
+          drop('me'); pop(fighter, 'word heal', '+' + ev.heal); fx('tqring', feet[0], feet[1], 700, {'--tc': '#7CF0BE'});
+          part(made, P.motes, [mid[0], feet[1]], wide(480 / 222, 0.9), 1500, [{transform: 'translate(-50%,-60%) scale(0.8)', opacity: 0},   // Turtle Shell: healing light rises
+            {transform: 'translate(-50%,-85%) scale(1)', opacity: 1, offset: 0.3}, {transform: 'translate(-50%,-115%) scale(1.05)', opacity: 0}], {easing: 'linear'});
+        }
         if (ev.counter && t >= HIT + 130 && once('counter')) {
           var h2 = at(fr, HAND[0], HAND[1]); fx('tpierce', h2[0], h2[1], 600, {'--tc': X.play === 'parry' ? '#FFE6A0' : tc});
           drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter);
@@ -2219,7 +2318,7 @@
        there is time to read it: DEFLECT below. */
     var DEFLECT = {charge: 380, hit: 600, glance: 780, home: 1180, turn: 320, sweep: 430, back: 560};
     function deflected(ev, hitEv) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, D = paced(DEFLECT, PACE);
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, D = paced(DEFLECT, PACE), P = X.parts || {};
       var attacked = !!(hitEv || ev.blocked || ev.hold);
       var HIT = D.hit, END = Math.max(HIT + 1150 * PACE + (ev.counter ? 200 : 0), attacked ? D.home + 300 : 0);
       var mn = msheet ? +msheet.dataset.frames : 0, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
@@ -2281,12 +2380,28 @@
             {transform: 'translate(calc(-15% + ' + toS[0] * 0.8 + 'px), calc(-80% + ' + toS[1] * 0.8 + 'px)) scale(0.9) rotate(52deg)', opacity: 0}],
             {duration: life, easing: 'ease-out', fill: 'forwards'}); }],
         // Moon Mirror Palm: a moon mirror rises before her palm, turned toward the beast; the blow glances off it
-        moon: [HIT - 260, function (life) { FX = art('tmoon', toward, wide(505 / 524, 0.55));
+        moon: [HIT - 260, function (life) { FX = art('tmoon', toward, wide(607 / 640, 0.55));
           FX.animate([{transform: 'translate(-50%,-50%) scale(0.15,0.4)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(0.62,1)', opacity: 0.9, offset: 0.3},
             {transform: mv(0.15, 'scale(0.62,1) rotate(-10deg)'), opacity: 0.85, offset: 0.65}, {transform: mv(0.35, 'scale(0.5,0.9) rotate(-18deg)'), opacity: 0}],
             {duration: life, fill: 'forwards'}); }],
         // Thousand Hands Deflection: a ring of jade hands opens around her and turns the blow round her
-        hands: [HIT - 300, function (life) { FX = art('thands', mid, wide(1, 1.15), true);
+        hands: [HIT - 300, function (life) {
+          if (P.hand) {                                             // a wheel of jade hands, fingers out, turning round her
+            var box = document.createElement('div'), bw = wide(1, 1.25), bpx = bw / 100 * W;
+            box.className = 'tart thandwheel'; box.style.left = mid[0] + '%'; box.style.top = mid[1] + '%'; box.style.width = bw + '%'; box.style.height = bpx + 'px';
+            var N = LITE ? 8 : 11;
+            for (var i = 0; i < N; i++) {
+              var im = document.createElement('img'); im.src = P.hand; im.alt = '';
+              im.style.cssText = 'position:absolute;left:50%;top:50%;width:30%;transform:translate(-50%,-50%) rotate(' + (360 * i / N) + 'deg) translateX(' + (bpx * 0.33) + 'px)';
+              box.appendChild(im);
+            }
+            scene.insertBefore(box, fighter); made.push(box); FX = box;
+            box.animate([{transform: 'translate(-50%,-50%) scale(0.2) rotate(-60deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 0.95, offset: 0.3},
+              {transform: 'translate(-50%,-50%) scale(1.03) rotate(70deg)', opacity: 0.9, offset: 0.75}, {transform: 'translate(-50%,-50%) scale(1.1) rotate(110deg)', opacity: 0}],
+              {duration: life, fill: 'forwards'});
+            return;
+          }
+          FX = art('thands', mid, wide(1, 1.15), true);
           FX.animate([{transform: 'translate(-50%,-50%) scale(0.2) rotate(-40deg)', opacity: 0}, {transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 0.9, offset: 0.3},
             {transform: 'translate(-50%,-50%) scale(1.04) rotate(45deg)', opacity: 0.85, offset: 0.75}, {transform: 'translate(-50%,-50%) scale(1.1) rotate(70deg)', opacity: 0}],
             {duration: life, fill: 'forwards'}); }],
@@ -2304,6 +2419,10 @@
         burst('tspark', C[0] - 3, C[1] + 5, spark);                 // carried off down her sleeve
         if (FX) FX.animate([{filter: 'brightness(1)'}, {filter: 'brightness(2)'}, {filter: 'brightness(1)'}], {duration: 340});
         if (FX && X.play === 'void') FX.animate([{translate: '0 0'}, {translate: '-5px 2px'}, {translate: '4px -2px'}, {translate: '0 0'}], {duration: 360});
+        if (P.hit) bloom(made, P.hit, X.play === 'moon' ? toward : [C[0] + 1.5, C[1]], bodyW * (X.play === 'moon' ? 1.5 : 1.4), 680);   // its own impact where she meets it
+        if (P.feathers) part(made, P.feathers, C, bodyW * 2.6, 1300, [{transform: 'translate(-50%,-50%) scale(0.3)', opacity: 0},   // Crane Wing: feathers torn loose, drifting down
+          {transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.2}, {transform: 'translate(-50%,-40%) scale(1.1) rotate(8deg)', opacity: 0.8, offset: 0.6},
+          {transform: 'translate(-50%,-25%) scale(1.15) rotate(14deg)', opacity: 0}], {easing: 'linear'});
         if (scene.animate) scene.animate([{transform: 'none'}, {transform: 'translate(3px,2px)'}, {transform: 'translate(-2px,-1px)'}, {transform: 'none'}], {duration: 260});
         if (hitEv && hitEv.dmg) { drop('me'); pop(fighter, 'hurt' + heavy('me', hitEv.dmg), '−' + hitEv.dmg); }
         pop(fighter, 'word', ev.hold ? 'Held ' + ev.hold + '%' : 'Deflected');
@@ -2336,6 +2455,8 @@
         if (ev.heal && t >= HIT + 300 && once('heal')) { drop('me'); pop(fighter, 'word heal', '+' + ev.heal); fx('tqring', feet[0], feet[1], 700, {'--tc': '#7CF0BE'}); }
         if (ev.counter && t >= HIT + 260 && once('counter')) {     // the blow sent back as she turns it
           fx('tpierce', C[0], C[1], 600, {'--tc': X.play === 'glance' ? '#FFE6A0' : tc});
+          if (P.push) part(made, P.push, [C[0] + 7, C[1]], bodyW * 2.2, 620, [{transform: 'translate(-50%,-50%) scale(0.4,0.6)', opacity: 0},   // Thousand Hands: the blow shoved back
+            {transform: 'translate(-40%,-50%) scale(1)', opacity: 1, offset: 0.25}, {transform: 'translate(-20%,-50%) scale(1.1)', opacity: 0}]);
           drop('enemy'); pop(beastBox, 'hit' + heavy('enemy', ev.counter), '−' + ev.counter);
         }
         if (!attacked && t >= HIT && once('steady')) pop(fighter, 'word', 'Steady');
@@ -2354,7 +2475,7 @@
        its CSS look. The same when an evade technique takes a Strike with a full block (no roll: she is untouched),
        "Evaded", with the Guard's counter if the engine logged one. */
     function sidestepped(ev) {
-      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color;
+      var X = cast.fx, tier = TIER[cast.grade] || 0, did = {}, made = [], tc = cast.color, P = X.parts || {};
       var mn = msheet ? +msheet.dataset.frames : 27, mcols = msheet ? +msheet.dataset.cols : 1, mrows = msheet ? +msheet.dataset.rows : 1;
       var FPS = msheet && msheet.dataset.fps ? +msheet.dataset.fps : 12, MS = 1000 / FPS;
       var JAB = msheet ? +msheet.dataset.jab : 3, REL = msheet ? +msheet.dataset.release : 10, BACK = msheet ? +msheet.dataset.back : 14;
@@ -2376,6 +2497,19 @@
       var ASPECT = {mist_steps: 331 / 828, cloud_steps: 275 / 919};
       var FX = null;
       function afterimages() {                                       // left where she stood, behind her
+        if (P.figure && !X.sheets) {                                 // Mist Steps: three mist figures where she stood, streaming off on a trail
+          var life2 = PLAYED - STEP_IN, fw = wide(374 / 600, 1.05), hit = (HIT - STEP_IN) / life2;
+          part(made, P.trail, [stood[0] - 4, stood[1] + 2], fw * 1.9, life2, [{transform: 'translate(-60%,-50%) scale(0.3,0.6)', opacity: 0},
+            {transform: 'translate(-60%,-50%) scale(1)', opacity: 0.8, offset: hit}, {transform: 'translate(-75%,-50%) scale(1.15,1)', opacity: 0}], {under: fighter});
+          [0, 1, 2].forEach(function (k) {
+            var n = part(made, P.figure, [stood[0] - 3.5 * k, stood[1]], fw, life2, [{transform: 'translate(-50%,-50%) scale(0.92)', opacity: 0},
+              {transform: 'translate(-50%,-50%) scale(1)', opacity: 0.85 - 0.25 * k, offset: hit * 0.8},
+              {transform: 'translate(-56%,-50%) scale(1.04,1)', opacity: 0.8 - 0.25 * k, offset: hit},
+              {transform: 'translate(-80%,-52%) scale(1.12,1)', opacity: 0}], {under: fighter, delay: 70 * k});
+            if (k === 0) FX = n;
+          });
+          return;
+        }
         var n = document.createElement('img');
         n.className = 'tart tbrace tsidestep ' + (X.play === 'cloud_steps' ? 'tcloudsteps' : 'tmiststeps');
         n.src = X.art[0]; n.alt = '';

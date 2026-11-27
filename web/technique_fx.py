@@ -23,7 +23,7 @@ import technique as techniques
 PLAYS = ("burst", "claw", "charge", "vortex", "rise", "dragons", "prints", "fan", "descend",
          "sweep", "streak", "whirl", "meteor", "beam",
          "dust", "mist", "sheen", "roots", "bell", "shell", "lotus", "parry",
-         "glance", "stream", "crane", "moon", "hands", "void", "mist_steps", "cloud_steps")
+         "glance", "stream", "crane", "moon", "hands", "void", "mist_steps", "cloud_steps", "palms")
 MOTIONS = ("fist", "palm", "kick", "finger", "brace", "deflect", "sidestep")
 
 TECH_FX = {
@@ -44,7 +44,7 @@ TECH_FX = {
     # the palm techniques, from SHOAIB's designs (Gemini), all played with the palm push
     "twin_palm_strike": {"motion": "palm", "play": "prints", "art": ["twin_palm_strike_1", "twin_palm_strike_2"]},
     "rolling_thunder_palm": {"motion": "palm", "play": "vortex", "art": ["rolling_thunder_palm"]},
-    "thousand_shadow_palm": {"motion": "palm", "play": "fan", "art": ["thousand_shadow_palm"]},
+    "thousand_shadow_palm": {"motion": "palm", "play": "palms", "art": ["thousand_shadow_palm"]},   # waves of its palm (PARTS)
     # the Heaven attacks play long, with a moving effect from SHOAIB's videos (scripts/make_heaven_fx.py; `sheets`
     # below): `anchor` is the point of the video frame set on the ground under the beast, `boom` the frame the blow lands on
     "heaven_rending_palm": {"motion": "palm", "play": "descend", "art": ["heaven_rending_palm_fx"],
@@ -95,7 +95,57 @@ MOVES_FX = {
     "cloud_walking_shadow": {"motion": "sidestep", "play": "cloud_steps", "art": ["cloud_walking_shadow_fx"], "on": "evade",
                              "sheets": {"finale": {"frames": 47, "cols": 8, "rows": 6, "boom": 16, "pre": 1800, "tall": 1.5, "anchor": [0.5, 0.5], "on": "body", "behind": True, "sound": "cloud"}}},
 }
-BY_GENDER = {"female": MOVES_FX, "male": MOVES_FX}   # looks one cultivator could have in place of TECH_FX
+BY_GENDER = {"female": MOVES_FX, "male": MOVES_FX}
+
+# Each Mortal to Earth technique's extra pieces (SHOAIB's Nano Banana pictures, Nov 27; scripts/make_tech_fx.py), played
+# around its main picture by fight.js `part` (docs/web.md "Techniques: the pieces"). A role says what the piece does:
+#   hit      blooms on the beast as the blow lands (each blow, for the combos); on a defence, where the blow meets you
+#   ground   a flat patch on the ground under the beast as it lands (Mountain: the cracked earth)
+#   debris   flung up and out from the ground under the beast (Mountain: its rocks)
+#   leaves   drift down across the beast (Autumn Wind)
+#   water    opens along the beam, above and below it (River-Splitting)
+#   head     flies from the fingertip to the beast and bites (Viper Fang)
+#   hand     one palm or hand the technique repeats: three waves of palms (Thousand Shadow), a turning wheel
+#            of hands round you (Thousand Hands)
+#   ring     a ring at your feet as the defence forms (Golden Bell)
+#   motes    rise round you as you heal (Turtle Shell)
+#   breath   a spiral of breath rising off you (Calm Breath)
+#   roots    roots spread at your feet under the mountain (Rooted Mountain)
+#   figure   a steel echo of a fighter behind you (Iron Cloth); the mist figure left where you stood (Mist Steps)
+#   trail    the mist trail behind the afterimages (Mist Steps)
+#   feathers scattered as the blow is swept aside (Crane Wing)
+#   push     the blow shoved back at the beast (Thousand Hands: on its counter)
+PARTS = {
+    "mountain_shattering_fist": {"ground": "cracks", "debris": "chunks"},
+    "thousand_shadow_palm": {"hand": "hand", "hit": "burst"},
+    "river_splitting_finger": {"water": "water", "hit": "flash"},
+    "golden_bell_cover": {"ring": "ring", "hit": "sparks"},
+    "ancient_turtle_shell_art": {"motes": "motes"},
+    "thousand_hands_deflection": {"hand": "hand", "push": "push"},
+    "rolling_thunder_palm": {"hit": "burst"},
+    "viper_fang_finger": {"head": "head", "hit": "bite"},
+    "autumn_wind_kick": {"leaves": "leaves"},
+    "moon_mirror_palm": {"hit": "burst"},
+    "drifting_mist_steps": {"figure": "figure", "trail": "trail"},
+    "rooted_mountain_stance": {"roots": "roots"},
+    "fierce_tiger_claw": {"hit": "hit"},
+    "swift_swallow_kick": {"hit": "hit"},
+    "raging_bull_fist": {"hit": "hit"},
+    "iron_cloth_body": {"figure": "figure", "hit": "hit"},
+    "flowing_stream_palm": {"hit": "hit"},
+    "crane_wing_deflection": {"feathers": "feathers"},
+    "iron_fist": {"hit": "hit"},
+    "twin_palm_strike": {"hit": "hit"},
+    "crescent_sweep": {"hit": "hit"},
+    "horse_stance_guard": {"hit": "hit"},
+    "parrying_arm": {"hit": "hit"},
+    "calm_breath_stance": {"breath": "breath"},
+}
+
+
+def parts(tid):
+    """A technique's extra pieces, role: picture (art/fx/tech/<technique>_<piece>.webp)."""
+    return {role: f"/art/fx/tech/{tid}_{name}.webp" for role, name in PARTS.get(tid, {}).items()}   # looks one cultivator could have in place of TECH_FX
 
 # how long a cast lasts on screen, by grade (ms): higher grades get more time for more spectacle
 GRADE_MS = {"Mortal": 1100, "Yellow": 1300, "Mystic": 1600, "Earth": 2100, "Heaven": 2700}
@@ -120,7 +170,7 @@ def of(name, grade, gender=None, happened=None):
         return None
     return {"motion": fx["motion"], "play": fx["play"], "mirror": bool(fx.get("mirror")), "part": bool(fx.get("part")),
             "punches": fx.get("punches", [1]), "ms": GRADE_MS.get(grade, 1100), "sheets": fx.get("sheets"),
-            "art": [f"/art/fx/tech/{a}.webp" for a in fx["art"]]}
+            "art": [f"/art/fx/tech/{a}.webp" for a in fx["art"]], "parts": parts(tid)}
 
 
 def assets(name, gender=None):
@@ -128,4 +178,5 @@ def assets(name, gender=None):
     pictures, so the fight can load them before they are needed (explore_play.preload)."""
     tid = technique_id(name)
     looks_ = [fx for fx in (BY_GENDER.get(gender, {}).get(tid), TECH_FX.get(tid)) if fx]
-    return ([fx["motion"] for fx in looks_], [f"/art/fx/tech/{a}.webp" for fx in looks_ for a in fx["art"]])
+    return ([fx["motion"] for fx in looks_],
+            [f"/art/fx/tech/{a}.webp" for fx in looks_ for a in fx["art"]] + (list(parts(tid).values()) if looks_ else []))
