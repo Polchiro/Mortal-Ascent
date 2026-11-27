@@ -203,7 +203,24 @@ it **opens**: the lid snaps up with a little bounce (the closed picture swapped 
 canvas so the body doesn't move), rays of the chest's colour turn out of it, sparks of that colour fly up and fall
 back, and SHOAIB's **burst** video plays with its sound, tinted to the chest's colour. Everything comes **out of the
 chest's mouth** (53% down the chest picture): the burst video's fountain foot is set there and the video sized to the
-chest, the sparks start there and the rays turn around it, so nothing rises from the floor. The chest then **stays open**
+chest, the sparks start there and the rays turn around it, so nothing rises from the floor.
+
+**Epic, Legendary and Mythic open their own way** (`RITES` in chests.js, SHOAIB's pictures in `art/chest/rite/`, cut
+by `scripts/make_chest_rite_art.py`: light on black with every edge faded, so nothing ends on a straight line; the
+sounds are made in code):
+- **Epic, "the Spirit Seal breaks"** (about 3.3 s before the lid): the room dims, a purple rune circle lights up on
+  the altar under the chest (an image behind the chest, `art/chest/rite/ring.webp`, so the chest stands on it) and
+  turns, faster and faster, with purple lightning, a rising hum and crackles; it rises,
+  shatters into purple shards with a glass-breaking burst, and the lid flies open.
+- **Legendary, "the Golden Dragon"** (about 4.3 s): the vault trembles, a dragon of golden light gathers round the
+  chest, roars (a flash and a shake), then dives into the lid; the lid opens with a deep boom and chimes, and gold
+  motes rain down for a few seconds.
+- **Mythic, "Heaven answers"** (about 12 s to the rewards: the rarest chest gets the longest moment): the room goes
+  almost black and the vault's sound fades, the sky cracks open above the chest with a rumble, a beam of heavenly light
+  strikes the chest with thunder, the chest trembles harder and harder under a rising choir, then a white flash and a
+  galaxy bursts out of it as the lid flies open; the red 天 seal stamps down with **MYTHIC · The heavens answer**,
+  and the galaxy keeps turning softly behind the rewards.
+Skip ends them at once; Quick opening and reduced motion use the plain opening. The chest then **stays open**
 on the altar, its light breathing softly, while the rewards come out. The **Lotus Coins** pour out with a
 counting number, then every reward lands as the **same jade slip**, and they turn over one by one, **worst first**.
 Each card's front shows its rarity: plain for Common, a coloured frame and band for Uncommon and Rare, turning rays
