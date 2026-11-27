@@ -430,3 +430,13 @@ def test_mortal_to_earth_techniques_have_their_pieces():
     for role in ("P.hit", "P.ground", "P.debris", "P.leaves", "P.water", "P.head", "P.hand", "P.ring", "P.motes",
                  "P.breath", "P.roots", "P.figure", "P.trail", "P.feathers", "P.push"):
         assert role in js, role
+
+
+def test_the_living_background_carries_over_from_turn_to_turn():
+    """SHOAIB (Nov 27): "a sudden refresh on screen whenever I click". The new turn's page keeps the playing
+    background videos, their shading, the ambience canvas and the framing, moved over before it goes in."""
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "keepScene(now, fresh);\n    now.replaceWith(fresh);" in js
+    body = js.split("function keepScene(now, fresh) {", 1)[1].split("\n  }\n", 1)[0]
+    for piece in ("'--arena-size', '--arena-pos'", "'bglive'", "video.bgloop, .bgshade", "canvas.ambient"):
+        assert piece in body
