@@ -166,6 +166,17 @@ CLIPS = {
                          "tail_x_until": {"death": 5.85},
                          "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                          "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, an olive-green crocodile with rows of raised jade armour plates and a stub tail: both videos
+    # clean (no remakes; made from the uncleaned picture, its sparkle off the body on the backdrop). It drifts slowly
+    # through its video and starts lowering its head a second before it bites, so its idle is the calm second before
+    # that and the bite takes the head-lowering as its wind-up (every 4th frame). After the bite its head rested lower
+    # than the idle's (a double head where it dissolved back), and only rose again over the next 3 s: a few frames of that
+    # rise are taken (every 6th to 12th), so the bite ends in the idle's pose; its flinch and its belly-flop from the hit video
+    "jade_scaled_crocodile": {"attack": ((3.083, 3.133), (3.250, 3.300), (3.417, 3.467), (3.583, 3.633), (3.750, 3.800), (3.85, 6.5), (7.000, 7.050), (7.500, 7.550), (8.000, 8.050), (8.500, 8.550), (8.917, 8.967), (9.250, 9.300), (9.583, 9.633), (9.833, 9.883)),
+                              "hit": (2.1, 3.5), "death": (5.5, 6.7), "idle_span": (16, 26),
+                              "breathe": 0.03, "idle_from": 2.0, "idle_until": 3.1, "attack_ms": 3000,
+                              "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 4},
+                              "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

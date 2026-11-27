@@ -197,6 +197,12 @@
    "lead": 2.16
   }
  ],
+ "death@jade_scaled_crocodile": [
+  {
+   "file": "death_jade_scaled_crocodile.mp3",
+   "lead": 0.16
+  }
+ ],
  "death@lightning_weasel": [
   {
    "file": "death_lightning_weasel.mp3",
@@ -499,6 +505,12 @@
    "lead": 0.54
   }
  ],
+ "hit@jade_scaled_crocodile": [
+  {
+   "file": "hit_jade_scaled_crocodile.mp3",
+   "lead": 0.5
+  }
+ ],
  "hit@lightning_weasel": [
   {
    "file": "hit_lightning_weasel.mp3",
@@ -711,6 +723,12 @@
   {
    "file": "lunge_ironbark_bear.mp3",
    "lead": 1.62
+  }
+ ],
+ "lunge@jade_scaled_crocodile": [
+  {
+   "file": "lunge_jade_scaled_crocodile.mp3",
+   "lead": 1.2
   }
  ],
  "lunge@lightning_weasel": [
@@ -935,6 +953,12 @@
    "lead": 0.38
   }
  ],
+ "roar:big@jade_scaled_crocodile": [
+  {
+   "file": "roar_big_jade_scaled_crocodile.mp3",
+   "lead": 1.2
+  }
+ ],
  "roar:big@lightning_weasel": [
   {
    "file": "roar_big_lightning_weasel.mp3",
@@ -1149,6 +1173,12 @@
   {
    "file": "roar_ironbark_bear.mp3",
    "lead": 0.38
+  }
+ ],
+ "roar@jade_scaled_crocodile": [
+  {
+   "file": "roar_jade_scaled_crocodile.mp3",
+   "lead": 0.48
   }
  ],
  "roar@lightning_weasel": [
