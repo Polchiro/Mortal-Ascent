@@ -7,6 +7,7 @@ coin, Moon Pearls as a pearl on a crescent moon, each with the short and the exa
 are drawn; the blessing and the ledger stay in the data (the blessing has /blessing).
 """
 import math
+import os
 
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -21,8 +22,25 @@ COIN_GLYPHS = "莲花通宝"           # read top, bottom, right, left on the co
 
 # ── Currency art ──────────────────────────────────────────────────────
 
+def painted(img, center, r, name, glow):
+    """The painted currency (art/icons/currency/<name>.webp, scripts/make_ui_art.py) centred at `center`, 2r wide,
+    with a soft glow; False when the file is missing (the drawn one is used)."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "icons", "currency",
+                        name + ".webp")
+    if not os.path.exists(path):
+        return False
+    cx, cy = center
+    t.soft_glow(img, (cx - r - 16, cy - r - 16, cx + r + 16, cy + r + 16), glow, 16)
+    side = max(1, round(2 * r * 1.12 * S))                 # (the card is drawn at S times its size)
+    pic = Image.open(path).convert("RGBA").resize((side, side), Image.LANCZOS)
+    img.alpha_composite(pic, (round(cx * S - side / 2), round(cy * S - side / 2)))
+    return True
+
+
 def lotus_coin(img, center, r):
-    """An ancient round coin with a square hole: gold, beaded rim, four characters and a lotus glow."""
+    """An ancient round coin with a square hole and a lotus: the painting, or drawn when it's missing."""
+    if painted(img, center, r, "lotus_coin", alpha(GOLD_ACC, 120)):
+        return
     cx, cy = center
     t.soft_glow(img, (cx - r - 18, cy - r - 18, cx + r + 18, cy + r + 18), alpha(GOLD_ACC, 140), 18)
     side = round(2 * r * S)
@@ -72,7 +90,9 @@ def lotus_coin(img, center, r):
 
 
 def moon_pearl(img, center, r):
-    """A luminous pearl resting in a silver crescent moon."""
+    """A luminous pearl: the painting, or drawn (resting in a silver crescent moon) when it's missing."""
+    if painted(img, center, r, "moon_pearl", alpha(k.MOON, 130)):
+        return
     cx, cy = center
     t.soft_glow(img, (cx - r - 20, cy - r - 20, cx + r + 20, cy + r + 20), alpha(k.MOON, 150), 20)
     d = ImageDraw.Draw(img)
