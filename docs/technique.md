@@ -453,7 +453,14 @@ raised to full level and played loud. **Light to play** (SHOAIB, Nov 27, a frien
 loads only the movements it can play (`hero_for`), never the sword fighter's; Senior Sister Xue steps out of view from
 "Begin the drill" until her verdict (her voice still cuts the air at the start, and her big "begin" pictures are never
 loaded); the character's frames slide behind a window (a transform the graphics card does alone) instead of being
-repainted; the effects draw without blending, and the sound players are made once. With her out of the way, the dummy and the kicking post stand farther off, and your character steps in to them. A **sidestep** technique dodges instead: it **ducks** under the
+repainted; the effects draw without blending, and the sound players are made once. **Smooth on phones** (Nov 27): every
+animation sheet (both characters and Senior Sister Xue) has a half-size copy beside it (`<name>.small.webp`, the same
+grid of frames, a quarter of the memory; `scripts/make_small_sheets.py`, which the cut scripts run themselves), and a
+phone (a narrow or touch screen) loads those; **Smooth mode** (Settings, kept on the device in `ma.practice.smooth`,
+on by itself on phones) drops the floating dust, the glow around the rings, the drop shadows on targets, plaques and
+blows, and the dummy's shake, keeping every colour that tells you something (a feint, a finisher, a rival); and
+"Begin the drill" reads "Getting ready…" until every picture the drill shows is loaded and decoded and its sounds can
+play (at most 6 s), so nothing loads in the middle of a drill. None of it changes the timing or the score. With her out of the way, the dummy and the kicking post stand farther off, and your character steps in to them. A **sidestep** technique dodges instead: it **ducks** under the
 sandbag and **jumps** the log (the staff, in the middle, is still blocked); a **deflection** technique sweeps every blow
 aside with a forearm (its own video); the stances keep the block. Every strike, kick and jab is **aimed at its target's height** (head,
 arms, leg; high, middle, low on the post): the page leans the figure round its feet, crouches it for a low target,

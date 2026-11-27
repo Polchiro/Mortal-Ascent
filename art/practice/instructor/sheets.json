@@ -53,7 +53,8 @@
     9500,
     9750
    ],
-   "loop": 10000
+   "loop": 10000,
+   "small": "/art/practice/instructor/watch.small.webp"
   },
   "begin": {
    "src": "/art/practice/instructor/begin.webp",
@@ -150,7 +151,8 @@
    "sound": {
     "src": "/art/practice/instructor/begin.mp3",
     "from": 0
-   }
+   },
+   "small": "/art/practice/instructor/begin.small.webp"
   },
   "approve": {
    "src": "/art/practice/instructor/approve.webp",
@@ -247,7 +249,8 @@
    "sound": {
     "src": "/art/practice/instructor/approve.mp3",
     "from": 0
-   }
+   },
+   "small": "/art/practice/instructor/approve.small.webp"
   },
   "disapprove": {
    "src": "/art/practice/instructor/disapprove.webp",
@@ -344,7 +347,8 @@
    "sound": {
     "src": "/art/practice/instructor/disapprove.mp3",
     "from": 0
-   }
+   },
+   "small": "/art/practice/instructor/disapprove.small.webp"
   }
  },
  "aspect": 0.3947
