@@ -1333,6 +1333,20 @@ def test_the_bone_vulture_is_animated_from_its_own_videos_with_its_own_voice():
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["bone_vulture@roar"][:2] == [0.08, 0.38]
     assert explore_play.beast_body("Bone Vulture") == "bone_vulture"
 
+def test_the_storm_eagle_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Storm Eagle (Nov 27, Grandmaster Elite): a tall indigo-black eagle with a storm-grey head, standing with its wings folded; both videos clean."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("storm_eagle")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Storm Eagle", "slug": "storm_eagle"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "storm_eagle.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@storm_eagle" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["storm_eagle@roar"][:2] == [0.07, 0.19]
+    assert explore_play.beast_body("Storm Eagle") == "storm_eagle"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

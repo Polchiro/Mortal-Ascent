@@ -142,6 +142,12 @@ CLIPS = {
                              "attack_ms": 3000,
                              "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                              "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, standing with its wings folded: both videos clean (no remakes): its idle before its beak stab,
+    # its flinch and its fall onto its belly from the hit video, easing in from the idle
+    "storm_eagle": {"attack": (3.95, 6.9), "hit": (2.1, 3.2), "death": (4.95, 7.25), "idle_span": (16, 28),
+                    "breathe": 0.035, "idle_from": 2.8, "idle_until": 4.0, "attack_ms": 2600,
+                    "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                    "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     # Nov 27 redesign, standing hunched with its wings folded: both videos clean (no remakes); its pale head is its own,
     # so nothing is wiped. Its idle before its neck-stretching stab, its flinch (taken on until it stands calm again)
     # and its slump (from the calm moment its neck matches the idle's) from the hit video

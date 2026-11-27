@@ -1,0 +1,48 @@
+{
+ "cell": [
+  449,
+  286
+ ],
+ "still": [
+  119.4,
+  7.8,
+  319.2,
+  275.4
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/storm_eagle/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.2049
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/storm_eagle/attack.webp",
+   "frames": 38,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2600,
+   "bite": 19,
+   "reach": 0.1942,
+   "bite_x": 0.069
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/storm_eagle/hit.webp",
+   "frames": 20,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1667
+  },
+  "death": {
+   "src": "/art/beasts/sheets/storm_eagle/death.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2667,
+   "impact": 14
+  }
+ }
+}
