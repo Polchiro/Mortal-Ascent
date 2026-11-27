@@ -1234,6 +1234,49 @@ def test_an_idle_that_hardly_moves_is_given_a_slow_breath():
         idle = json.load(open(os.path.join("art", "beasts", "sheets", slug, "sheets.json")))["sheets"]["idle"]
         assert idle["ms"] >= 2000
 
+def test_the_frost_python_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Frost Python (Nov 27, Martial Master Elite): both videos clean; its flinch is only its first jerk back, played there and back and eased out into the idle, which is the calm second before its strike winds up."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("frost_python")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Frost Python", "slug": "frost_python"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "frost_python.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@frost_python" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["frost_python@roar"][:2] == [0.07, 0.22]
+    assert explore_play.beast_body("Frost Python") == "frost_python"
+
+def test_a_move_from_the_other_video_eases_back_out_into_the_idle():
+    """`make_beast_sheets.ease_out`: the last frame slides and dissolves into the idle over n more frames."""
+    from PIL import Image
+    from scripts.make_beast_sheets import ease_out
+    rest = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    rest.paste((200, 0, 0, 255), (10, 5, 20, 15))
+    last = Image.new("RGBA", (40, 20), (0, 0, 0, 0))
+    last.paste((0, 0, 200, 255), (16, 5, 26, 15))
+    out = ease_out([last], rest, 3)
+    assert len(out) == 4 and out[0] is last
+    lefts = [im.getbbox()[0] for im in out]
+    assert lefts[0] > lefts[1] >= lefts[2] >= lefts[3] >= 10           # sliding home
+    assert out[-1].getpixel((12, 10))[0] > out[1].getpixel((12, 10))[0]  # and turning into the idle
+
+def test_a_tail_reaching_past_the_back_feet_is_cut_back():
+    """`make_beast_sheets.trim_tail_x`: whatever reaches further right than the back feet by more than `keep` fades."""
+    from PIL import Image
+    from scripts.make_beast_sheets import trim_tail_x
+    im = Image.new("RGBA", (200, 100), (0, 0, 0, 0))
+    im.paste((180, 150, 90, 255), (20, 20, 120, 60))     # body
+    im.paste((180, 150, 90, 255), (25, 60, 35, 100))     # front leg
+    im.paste((180, 150, 90, 255), (100, 60, 110, 100))   # back leg: its foot ends at x 110
+    im.paste((180, 150, 90, 255), (120, 30, 195, 38))    # a long tail
+    out, end = trim_tail_x(im, keep=10, fade=10)
+    assert end == 109 + 10
+    assert out.getpixel((115, 34))[3] == 255 and out.getpixel((150, 34))[3] == 0
+    out2, end2 = trim_tail_x(im, keep=10, fade=10, end=60)                 # a fixed line, for a move lying down
+    assert end2 == 60 and out2.getpixel((100, 40))[3] == 0
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

@@ -1,0 +1,48 @@
+{
+ "cell": [
+  611,
+  307
+ ],
+ "still": [
+  112.8,
+  17.4,
+  493.2,
+  273.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/frost_python/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.1718
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/frost_python/attack.webp",
+   "frames": 40,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2400,
+   "bite": 18,
+   "reach": 0.2007,
+   "bite_x": 0.0016
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/frost_python/hit.webp",
+   "frames": 20,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1667
+  },
+  "death": {
+   "src": "/art/beasts/sheets/frost_python/death.webp",
+   "frames": 44,
+   "cols": 8,
+   "rows": 6,
+   "ms": 3667,
+   "impact": 24
+  }
+ }
+}

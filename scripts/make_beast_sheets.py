@@ -101,6 +101,15 @@ CLIPS = {
     "ember_lizard": {"attack": (0.7, 1.55), "hit": (1.0, 1.85), "death": (4.0, 4.9), "idle_span": (8, 13),
                      "breathe": 0.035, "idle_from": 0.33, "idle_until": 0.88, "attack_ms": 1800,
                      "ease_in": {"attack": 3, "hit": 3, "death": 4}, "settle": {"attack": 3, "hit": 3}},
+    # Nov 27 redesign: both videos clean (no remakes): its idle and its open-jawed strike from the attack video (taken
+    # on until it is calm again, so it settles with no double head), its flinch and its sinking collapse (its neck
+    # lowering till its head lies in front of its coils) from the hit video; the flinch is only its first jerk back
+    # (it then reared its head high: cut before), played there and back so it returns the way it went. The snake drifts
+    # slowly all through its video, so its idle is the calm second just before the strike winds up
+    "frost_python": {"attack": (3.3, 6.4), "hit": (2.1, 2.7), "death": (4.6, 7.9), "idle_span": (16, 26),
+                     "breathe": 0.035, "idle_from": 2.2, "idle_until": 3.35, "attack_ms": 2400, "pingpong": ("hit",),
+                     "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                     "ease_out": {"hit": 3}, "place_as": {"attack": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video
@@ -320,8 +329,26 @@ def trim_tail(im, r=27, keep=55, fade=35):
     return Image.fromarray(a, "RGBA")
 
 
+def trim_tail_x(im, keep=18, fade=20, band=0.1, end=None):
+    """A long tail cut back by where it is, not by how thin it is (the Wind Leopard's: thick at its root, so
+    `trim_tail` takes it for body): whatever reaches further right than the beast's back feet (the right end of its
+    lowest `band` of rows) by more than `keep` px fades out over `fade` px. The beast faces left, so nothing of its
+    own body but the tail lies behind its back feet; lying dead, its stretched-out hind feet still mark the end."""
+    a = np.asarray(im).copy()
+    m = a[..., 3] > 128
+    rows = np.flatnonzero(m.any(1))
+    if not len(rows):
+        return im
+    if end is None:                                          # (a move lying down: the line its standing start drew)
+        low = m[rows.max() - max(2, int(len(rows) * band)):rows.max() + 1]
+        end = np.flatnonzero(low.any(0)).max() + keep
+    ramp = np.clip((end + fade - np.arange(a.shape[1])) / fade, 0, 1)
+    a[..., 3] = (a[..., 3] * ramp[None, :]).astype(np.uint8)
+    return Image.fromarray(a, "RGBA"), end
+
+
 def cut_clip(kind, video, numbers, cfg, cache, session):
-    out, raw = [], None
+    out, raw, tail_end = [], None, None
     for n in numbers:
         path = os.path.join(cache, kind, f"{n:03d}.png") if cache else None
         if path and os.path.exists(path):
@@ -335,7 +362,13 @@ def cut_clip(kind, video, numbers, cfg, cache, session):
         im = cut_one(raw[n], session, cfg.get("slab", {}).get(kind), kind in cfg.get("white", ()),
                      cfg.get("fade", {}).get(kind, 0), cfg.get("mark", MARK), cfg.get("unstar", {}).get(kind))
         if kind in cfg.get("trim_tail", ()):
-            im = trim_tail(im)
+            if not cfg.get("tail_x") or kind in cfg.get("tail_disc", ()):   # by thinness (a lying beast's thin tail)
+                im = trim_tail(im, *cfg.get("tail_r", ()))
+            until = cfg.get("tail_x_until", {}).get(kind)    # (lying down, its lowest part is no longer its feet)
+            if cfg.get("tail_x") and (until is None or n < until * FPS):   # and where it reaches past its back feet;
+                im, end = trim_tail_x(im, *cfg["tail_x"], end=tail_end)    # a move lying down keeps its first line
+                if kind in cfg.get("tail_fixed", ()):
+                    tail_end = end
         if path:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             im.save(path)
@@ -403,6 +436,16 @@ def ease_in(frames, rest, n):
         m[..., :3] /= np.maximum(m[..., 3:], 1e-6)
         out.append(Image.fromarray((np.clip(m, 0, 1) * 255).astype(np.uint8), "RGBA"))
     return out + list(frames)
+
+
+def ease_out(frames, rest, n):
+    """The move's calm last frame eased back into `rest` (the idle's first frame) over n more frames: `ease_in` run
+    the other way, for a move from another video that ends calm but a little off the idle (the Frost Python's flinch,
+    played there and back). Unlike `settle` it only uses the last frame, so a thin part that moved in the frames
+    before (a flicking tongue) never drags the slide."""
+    if not frames or n <= 0:
+        return frames
+    return list(frames) + ease_in([frames[-1]], rest, n)[:n][::-1]
 
 
 def smooth_idle(frames, ms):
@@ -597,6 +640,8 @@ def main(slug, videos, cache=None):
             frames = ease_in(frames, rest, cfg["ease_in"][kind])
         if n_settle:                                         # (an int: the attack's; a dict: per move)
             frames = settle(frames, rest, n_settle)
+        if kind != "idle" and cfg.get("ease_out", {}).get(kind):
+            frames = ease_out(frames, rest, cfg["ease_out"][kind])
         if kind == "idle":
             frames, idle_ms = smooth_idle(frames, idle_ms)
             if cfg.get("breathe"):
