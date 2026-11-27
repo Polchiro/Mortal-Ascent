@@ -67,13 +67,25 @@ class Settings:
     session_secret: str = ""
 
 
+# How long a browser may keep a picture after the server last said it's current: it shows the copy it has at once
+# and asks the server in the background, so a page opens without waiting on dozens of "still the same?" questions
+# (the town has some sixty pictures; asking about each one first is what kept it black for a second or more when you
+# came back to it). A picture changed by a git pull shows from the next visit on (or at once with Ctrl+F5).
+ART_CACHE = "max-age=0, stale-while-revalidate=604800"
+# The site's own style and scripts are asked for with their version in the address ({{ asset("x.js") }}: a hash of
+# the file), so a changed file has a new address and a browser may keep each version for good.
+VERSIONED = "public, max-age=31536000, immutable"
+
+
 class FreshStatic(StaticFiles):
-    """The site's own style and scripts (web/static/): the browser asks every time whether its copy is still the
-    latest (an unchanged file answers 304, nothing re-sent). Without this a browser may keep an old style.css with a
-    new page, and a fighter or a beast drawn by the new page goes missing or stands frozen."""
+    """The site's own style and scripts (web/static/). An address with its version (?v=, from asset()) is kept by
+    the browser for good: a new version is a new address. Without a version the browser asks every time whether
+    its copy is still the latest (an unchanged file answers 304, nothing re-sent), so a browser never keeps an old
+    style.css with a new page, and a fighter or a beast drawn by the new page never goes missing or stands frozen."""
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
-        response.headers["Cache-Control"] = "no-cache"
+        versioned = b"v=" in scope.get("query_string", b"") and response.status_code == 200
+        response.headers["Cache-Control"] = VERSIONED if versioned else "no-cache"
         return response
 
 
@@ -111,11 +123,12 @@ def create_app(settings: Settings, on_ready=None) -> FastAPI:
     )
     @app.middleware("http")
     async def recheck_art(request, call_next):
-        """Pictures under /art/ are checked with the server each time (a quick 'not changed' when they're the
-        same), so a fixed icon shows up after a git pull without clearing the browser's cache."""
+        """Pictures and sounds under /art/: the browser shows its copy at once and checks it with the server in the
+        background (ART_CACHE), so a fixed icon still shows up after a git pull without clearing the cache."""
         response = await call_next(request)
         if request.url.path.startswith("/art/") and "cache-control" not in response.headers:
-            response.headers["Cache-Control"] = "no-cache"
+            versioned = "v" in request.query_params and response.status_code == 200
+            response.headers["Cache-Control"] = VERSIONED if versioned else ART_CACHE   # ?v=: a new file, a new address
         return response
 
     @app.get("/art/drawn/{kind}.png")

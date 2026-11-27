@@ -78,8 +78,12 @@ def test_art_is_rechecked_by_the_browser(tmp_path):
     from web import app as web_app
     settings = web_app.Settings(client_id="cid", client_secret="s", db_path=str(tmp_path / "w.db"), session_secret="t")
     client = TestClient(web_app.create_app(settings))
-    r = client.get("/art/icons/index/pills_qi.webp?v=1")
-    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"
+    r = client.get("/art/icons/index/pills_qi.webp")             # shown at once, checked in the background
+    assert r.status_code == 200 and r.headers["cache-control"] == web_app.ART_CACHE
+    assert "stale-while-revalidate" in web_app.ART_CACHE and "max-age=0" in web_app.ART_CACHE
+    r = client.get("/art/icons/index/pills_qi.webp?v=1")         # with its version: a changed file is a new address
+    assert r.status_code == 200 and r.headers["cache-control"] == web_app.VERSIONED
+    assert client.get("/art/icons/index/nothing.webp?v=1").headers["cache-control"] != web_app.VERSIONED
 
 
 def test_the_inventory_tabs_show_the_painted_pictures():

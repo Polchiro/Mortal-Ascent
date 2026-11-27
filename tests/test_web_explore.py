@@ -1471,8 +1471,9 @@ def test_style_and_scripts_are_never_stale(client):
     js = re.search(r'src="(/static/fight\.js\?v=[0-9a-f]{10})"', page)
     assert css and js                                           # each address carries its file's version
     r = client.get(css.group(1))
-    assert r.status_code == 200 and r.headers["cache-control"] == "no-cache"      # and the browser checks each time
     from web import app as web_app
+    assert r.status_code == 200 and r.headers["cache-control"] == web_app.VERSIONED   # kept: a new file, a new address
+    assert client.get("/static/style.css").headers["cache-control"] == "no-cache"      # no version: checked each time
     assert web_app.asset("style.css") == css.group(1) and web_app.asset("nothing.js") == "/static/nothing.js"
 def test_the_fight_background_is_alive_behind_the_fighters(client):
     fight(client)
