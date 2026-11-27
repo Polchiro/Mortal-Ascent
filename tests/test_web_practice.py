@@ -319,6 +319,19 @@ def test_both_characters_have_their_unarmed_movements():
     assert pp.hero_sheets("nobody") is None                      # no art: the sword fighter's movements stand in
 
 
+def test_a_drill_sends_only_the_movements_it_plays():
+    def drill(name):
+        return pp.drill_of({"name": name, "type": rules.TECH_BY_NAME[name]["type"]})
+    for gender in ("female", "male"):
+        fist = pp.hero_for(gender, drill("Iron Fist"))["sheets"]
+        assert set(fist) == {"stance", "strike"}
+        guard = pp.hero_for(gender, drill("Horse Stance Guard"))["sheets"]
+        assert {"stance", "block", "struck"} <= set(guard) and not {"kick", "finger", "duck", "jump", "deflect"} & set(guard)
+        mist = pp.hero_for(gender, drill("Drifting Mist Steps"))["sheets"]
+        assert {"duck", "jump"} <= set(mist)
+    assert pp.hero_for("nobody", drill("Iron Fist")) is None
+
+
 # ── the pages ────────────────────────────────────────────────────────────────
 
 pytest.importorskip("fastapi")

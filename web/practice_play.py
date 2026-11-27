@@ -185,6 +185,29 @@ def hero_sheets(gender):
     return _heroes[gender]
 
 
+def hero_for(gender, drill):
+    """The unarmed movements this drill can play, and no others: every sheet is a big picture to load and hold, and a
+    phone feels the weight (SHOAIB, Nov 27: "laggy"). Striking: the stance and the technique's strike (its kick or
+    finger jab when made). Defending: the stance, the block, struck, and the deflection's sweep, the sidestep's duck
+    and jump, or the counter's strike."""
+    hero = hero_sheets(gender)
+    if not hero:
+        return None
+    have, motion = hero["sheets"], drill["motion"]
+    want = {"stance"}
+    if drill["mode"] == "strike":
+        want.add(motion if motion in ("kick", "finger") and motion in have else "strike")
+    else:
+        want |= {"block", "struck"}
+        if motion == "deflect":
+            want.add("deflect")
+        if motion == "sidestep":
+            want |= {"duck", "jump"}
+        if drill.get("effect") == "counter":
+            want.add("strike")
+    return {**hero, "sheets": {k: v for k, v in have.items() if k in want}}
+
+
 def windows(tier, conditions, drill):
     t = dict(TIERS[tier])
     scale = RAIN if "heavy_rain" in conditions else 1.0
@@ -520,6 +543,7 @@ class Hall:
                 sheets[dr["motion"]] = motion_sheet
             if looks.guard_sheet(look):
                 sheets["guard"] = looks.guard_sheet(look)
+            hero = hero_for(gender, dr)
             fx = technique_fx.of(t["name"], t["grade"], gender) or {}
             cap = players.mastery_cap(t)
             target = TARGETS[min(4, players.stage_of(t))] if dr["motion"] != "kick" else "post"
@@ -540,8 +564,10 @@ class Hall:
                 "event": {"key": d.event, "name": d.event.replace("_", " ").title(), "text": EVENT_TEXT[d.event]}
                 if d.event else None,
                 "me": {"name": d.player["name"], "gender": gender, "face": looks.face(look),
-                       "poses": {p: looks.fighter(look, p) for p in looks.POSES}, "isheet": looks.idle_sheet(look),
-                       "sheets": sheets, "hero": hero_sheets(gender)},
+                       "poses": {p: looks.fighter(look, p) for p in looks.POSES},
+                       # unarmed: the sword fighter's sheets are neither sent nor loaded
+                       "isheet": None if hero else looks.idle_sheet(look), "sheets": {} if hero else sheets,
+                       "hero": hero},
                 "instructor": {"name": NAME, "title": TITLE, "line": LINES["begin"][dr["mode"]],
                                "portrait": ART + "/portrait.jpg", "sheets": instructor_sheets()},
                 "hall": {"picture": HALL_PICTURE, "sound": HALL_SOUND},

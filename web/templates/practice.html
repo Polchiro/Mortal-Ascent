@@ -38,7 +38,7 @@
     {% set I = s.instructor %}{% set IS = I.sheets %}
     <div class="pteacher{% if IS %} sheeted{% endif %}" id="pteacher" aria-hidden="true"{% if IS %} style="aspect-ratio: {{ IS.aspect }}"{% endif %}>
       {% if IS %}<div class="ptflip">{% for name, S in IS.sheets.items() %}
-      <div class="ptsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+      <div class="ptsheet" data-name="{{ name }}" data-src="{{ S.src }}" style="{% if name == 'watch' %}background-image: url({{ S.src }}); {% endif %}background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
       {%- endfor %}</div>{% else %}<img class="ptstill" src="{{ I.portrait }}" alt="">{% endif %}
       <p class="psay" id="psay"></p>
     </div>
@@ -58,7 +58,7 @@
     <div class="fighter pme{% if s.me.isheet %} stanced{% endif %}{% if H %} unarmed{% endif %}" id="fme" data-pose="idle" aria-hidden="true">
       {% if H %}{# unarmed (art/practice/hero/): her own movements for the drill, over the spot the sword fighter stands #}
       <div class="phero" style="aspect-ratio: {{ H.aspect }}">{% for name, S in H.sheets.items() %}
-        <div class="hsheet{% if name == 'stance' %} on{% endif %}" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+        <div class="hsheet{% if name == 'stance' %} on{% endif %}" data-name="{{ name }}" style="left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"><i style="background-image: url({{ S.src }}); width: {{ S.cols * 100 }}%; height: {{ S.rows * 100 }}%"></i></div>
       {%- endfor %}</div>
       {% endif %}
       <div class="poses">{% for p, src in s.me.poses.items() %}{% if not (p == "idle" and s.me.isheet) %}<img class="pose p-{{ p }}" src="{{ src }}" alt="" width="1024" height="559">{% endif %}{% endfor %}
