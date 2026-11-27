@@ -436,7 +436,7 @@ def test_the_living_background_carries_over_from_turn_to_turn():
     """SHOAIB (Nov 27): "a sudden refresh on screen whenever I click". The new turn's page keeps the playing
     background videos, their shading, the ambience canvas and the framing, moved over before it goes in."""
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
-    assert "keepScene(now, fresh);\n    now.replaceWith(fresh);" in js
+    assert "keepScene(now, fresh);\n      now.replaceWith(fresh);" in js
     body = js.split("function keepScene(now, fresh) {", 1)[1].split("\n  }\n", 1)[0]
     for piece in ("'--arena-size', '--arena-pos'", "'bglive'", "video.bgloop, .bgshade", "canvas.ambient"):
         assert piece in body
@@ -447,5 +447,24 @@ def test_idle_loops_go_on_where_they_were_across_turns():
     page was swapped. Every looping animation is read off the old page and set on the new one, by place and name,
     allowing for each loop's own start offset."""
     js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
-    assert "var loops = loopsOf(now);" in js and "init();                                                     // still locked: the new buttons are painted as such\n    resumeLoops(fresh, loops);" in js
+    assert "var loops = loopsOf(now);" in js and "init();                                                   // still locked: the new buttons are painted as such\n      resumeLoops(fresh, loops);" in js
     assert "a.currentTime - (a.effect.getTiming().delay || 0)" in js and "loops[k] + (a.effect.getTiming().delay || 0)" in js
+
+
+def test_turn_swap_waits_for_pictures_and_keeps_them():
+    """SHOAIB's recording (Nov 28): on the frame the new turn came in, the portraits and button icons were blank and the
+    beast was squeezed thin. The swap now waits (at most READY_MS) for new pictures to be unpacked and carries the same
+    pictures over as the drawn elements they already are."""
+    js = open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
+    assert "ready(fresh, now, function () {" in js and "var READY_MS = 350;" in js
+    assert "keepPictures(now, fresh);" in js and "if (at.name !== 'src'" in js
+    assert "if (img._copy) img._copy.disconnect();" in js           # a carried beast picture keeps one watcher
+
+
+def test_only_this_fights_sounds_load_one_at_a_time():
+    """The first click no longer fetches and unpacks all 225 recordings of every beast: only this fight's (its beast,
+    the cultivator's voice, the shared ones), one after another, when the page is idle."""
+    js = open(os.path.join(ROOT, "web", "static", "fight_sound.js"), encoding="utf-8").read()
+    assert "function wanted(k)" in js and "function pump()" in js and "setTimeout(pump, 30)" in js
+    assert "requestIdleCallback" in js
+    assert "window.FightSound.prepare()" in open(os.path.join(ROOT, "web", "static", "fight.js"), encoding="utf-8").read()
