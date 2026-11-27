@@ -48,7 +48,7 @@
   <section class="bscene">
     {% if F.team %}
     <div class="allies" aria-label="Your party" aria-live="polite">{% for a in F.team.allies %}
-      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
+      <span class="ally s-{{ a.state }}{% if a.me %} me{% endif %}" style="--hp: {{ a.hp_pct }}" title="{{ a.name }}: {{ a.state }}">{% if a.face %}<img src="{{ a.face }}" alt="">{% endif %}
         <span>{{ a.name }}<span class="ah"><div style="width: {{ a.hp_pct }}%"></div></span></span><em>{{ a.state }}</em></span>{% endfor %}</div>
     {% endif %}
     {% if F.me.statuses %}<p class="chips sover sme" aria-label="Your statuses">{% for st in F.me.statuses %}<span class="schip bad">{{ st }}</span>{% endfor %}</p>{% endif %}
