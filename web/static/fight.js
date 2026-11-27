@@ -168,6 +168,19 @@
      flame, brighter each realm up to Martial Saint. Laid on the ground behind the beast, fitted to its picture as
      drawn, and gone as it falls. Presentation only. */
   var AURA_OPACITY = [0, 0.5, 0.65, 0.8, 0.95];
+  /* Lite effects (SHOAIB Nov 27: most players will be on phones; a slowed phone dropped to 7-8 frames a second in a
+     Saint's roar): on a phone-sized screen, or with "reduce motion" on, the fight keeps every effect but draws about
+     half the small particles (droplets, streaks, dust, sparks), skips the full-scene impact-frame filter (the coloured
+     flash and the shake stay), and style.css drops the costly blurs and the aura's second layer. */
+  var LITE = !!(window.matchMedia && (matchMedia('(max-width: 700px)').matches || matchMedia('(prefers-reduced-motion: reduce)').matches));
+  var LITE_SKIP = /^(bdrop|bstreak|bdust|bspark|bmote)\b/;
+  if (LITE) document.documentElement.classList.add('lite-fx');
+  /* A buzz on the phone when a beast's blow or roar lands on you (Android; iPhones' browser has no vibration, so
+     nothing happens there), stronger for a roar and for Elites and Beast Kings; none with "reduce motion" on. */
+  var CALM = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function buzz(pattern) {
+    try { if (!CALM && navigator.vibrate && 'ontouchstart' in window) navigator.vibrate(pattern); } catch (e) {}
+  }
   function aura(main) {
     var box = main.querySelector('.beast'), img = box && box.querySelector(':scope > img'), scene = main.querySelector('.bscene');
     var R = null;
@@ -776,6 +789,7 @@
         setTimeout(function () { n.remove(); }, 1000 + delay);
       }
       one(0, 0, false, 0);
+      buzz(tier >= 2 ? [45, 60, 45] : tier ? 55 : 40);
       if (tier >= 2) one(3, 4, true, 110);                       // a Beast King's blow lands twice
       if (ELEM) piece('beburst bemark', ELEM + '_burst.webp', mp[0], mp[1], 800, {'--s': size * 0.7 + 'px', '--r': (Math.random() * 60 - 30) + 'deg'});
     }
@@ -786,6 +800,7 @@
     function fx(cls, xPct, yPct, life, style) {
       var src = PICTURES[cls.split(' ')[0]];
       var n = document.createElement(src ? 'img' : 'span');
+      if (LITE && LITE_SKIP.test(cls) && Math.random() < 0.55) return n;   // lite: about half the small particles
       n.className = cls; n.style.left = xPct + '%'; n.style.top = yPct + '%';
       if (src) { n.src = src; n.alt = ''; }
       Object.keys(style || {}).forEach(function (k) { n.style.setProperty(k, style[k]); });
@@ -1287,6 +1302,7 @@
     }
     function impact(final, low) {                                // the roar lands on you
       var big = final ? 1.3 : 1, tier = TIER_OF[ROAR.wave] || 0;
+      buzz(tier >= 2 || final ? [90, 40, 140] : tier ? [70, 30, 90] : [60, 30, 60]);
       var you = at(fr, 0.5, low ? 0.7 : 0.45), feet = at(fr, 0.5, 0.97), sz = Math.min(760, fr.height * (0.95 + 0.15 * tier) * big);
       if (ELEM) {
         piece('beburst', ELEM + '_burst.webp', you[0], you[1], 900, {'--s': sz + 'px', '--r': (Math.random() * 40 - 20) + 'deg'});
@@ -1297,7 +1313,7 @@
       var flash = fx('broarflash behit', 0, 0, 420); flash.style.setProperty('--x', you[0] + '%'); flash.style.setProperty('--y', you[1] + '%');
       flash.style.setProperty('--rc', ROAR.color);
       if (scene.animate) {                                       // the impact frame: one blinding beat, then the shake
-        scene.animate([{filter: 'none'}, {filter: 'brightness(1.9) contrast(1.35) saturate(.35)', offset: 0.12},
+        if (!LITE) scene.animate([{filter: 'none'}, {filter: 'brightness(1.9) contrast(1.35) saturate(.35)', offset: 0.12},
                        {filter: 'brightness(1.15)', offset: 0.4}, {filter: 'none'}], {duration: 300, easing: 'ease-out'});
         var q = 9 + 4 * tier;
         fighter.animate([{transform: 'none'}, {transform: 'translate(' + -q + 'px,' + q * 0.4 + 'px)'}, {transform: 'translate(' + q * 0.7 + 'px,' + -q * 0.3 + 'px)'},

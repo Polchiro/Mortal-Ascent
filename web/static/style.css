@@ -2622,3 +2622,49 @@ main.dying .baura,main.slain .baura{opacity:0}
   65%{opacity:.5;transform:translate(-50%,-106%) scale(1.95)}100%{opacity:0;transform:translate(-50%,-108%) scale(2.1)}}
 .bavatar.saint{animation-duration:2.4s}
 .bavatar.saint .tint{opacity:1}
+/* lite effects (fight.js LITE: phone-sized screens, "reduce motion"): the same effects without the costly parts:
+   the big soft glow copies are hidden (the sharp blasts stay), glows use one shadow instead of two, no blurs on
+   moving pieces, and a strong beast's aura is one breathing layer, not two */
+.lite-fx .bestream img.glow,.lite-fx .bblast.glow,.lite-fx .bwind.glow,.lite-fx .bsblast.glow,.lite-fx .bbreath.b2,
+.lite-fx .baura img+img{display:none}
+.lite-fx .bdust,.lite-fx .bshellglow,.lite-fx .bwind.tint.core{filter:none}
+.lite-fx .bmark .tint,.lite-fx .besigil .tint{filter:drop-shadow(0 0 8px var(--rc))}
+.lite-fx .bavatar .tint{filter:drop-shadow(0 0 16px var(--rc))}
+.lite-fx .bbreath{filter:drop-shadow(0 0 14px var(--rc))}
+.lite-fx .bcoil{filter:drop-shadow(0 0 8px var(--rc))}
+
+/* ── phones (SHOAIB Nov 27: most players will be on phones). The two plates become slim HUD rows (the bars carry
+   their own numbers, no icons or labels), so the whole fight, the moves and the "your turn" panel fit on one phone
+   screen without scrolling; teammates are a row of round portraits, each ringed by its HP, with a dot for its
+   state (green ready, gold choosing, grey fallen), instead of tags piled over your head. ── */
+@media (max-width:480px){
+  .battle{gap:6px;padding:6px}
+  .battle>.bme{padding:5px 10px 5px 5px;gap:8px;border-radius:30px 12px 12px 30px}
+  .bme .bface{width:40px;height:40px}
+  .bme .bstats{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:6px;align-items:baseline;min-width:0;flex:1}
+  .bme .bname{font-size:14px;margin:0}.bme .brealm{font-size:10.5px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bme .brow{grid-column:1/-1;margin-top:3px;position:relative}
+  .bme .brow>img,.bme .brow .bl{display:none}
+  .bme .bhp{height:14px;border-radius:8px;background:rgba(8,8,10,.8);border:1px solid rgba(232,194,122,.55)}
+  .bme .bhp.qi{height:9px;border-color:rgba(127,168,217,.55)}
+  .bme .bhp div{border-radius:7px}
+  .bme .brow b{position:absolute;left:0;right:0;text-align:center;font-size:10.5px;line-height:16px;pointer-events:none;
+    text-shadow:0 1px 2px #000,0 0 4px #000}
+  .bme .brow:nth-of-type(2) b{font-size:8.5px;line-height:11px}
+  .battle>.benemy{padding:6px 10px}
+  .benemy .ename{font-size:14.5px}.benemy .etags{font-size:10.5px}
+  .benemy .ehp{height:16px;margin-top:3px}.benemy .ehp span{font-size:11px}
+  .benemy .bwarn{margin-top:5px;padding-top:5px}.benemy .bwarn .whead{font-size:13px}.benemy .whint{font-size:11.5px}
+  .battle>.bscene{height:clamp(300px,100vw,540px)}
+  .allies{left:6px;top:6px;flex-direction:row;align-items:center;gap:7px}
+  .ally{position:relative;width:34px;height:34px;padding:0;gap:0;justify-content:center;border:0;border-radius:50%;
+    background:conic-gradient(#E05A4F calc(var(--hp,100) * 1%),rgba(255,255,255,.16) 0)}
+  .ally img{width:28px;height:28px;border:2px solid #0c0d12}
+  .ally>span{display:none}
+  .ally em{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;font-size:0;border:2px solid #0c0d12;background:var(--jade)}
+  .ally.s-Choosing em{background:#EBCB86;animation:allywait 1.2s ease-in-out infinite}
+  .ally.s-Fallen,.ally.s-Fled{filter:grayscale(1);opacity:.6}.ally.s-Fallen em,.ally.s-Fled em{background:#777}
+  .ally.me{box-shadow:0 0 0 2px var(--gold)}
+  .battle[data-team] .bfeed{top:50px}
+}
+@keyframes allywait{50%{transform:scale(1.35)}}

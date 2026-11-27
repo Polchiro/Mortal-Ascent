@@ -710,6 +710,17 @@ a lair is fought with `bot/hunt.py`.
    zoomed, so every movement, roar and mark keeps lining up), anchored where it stands so it grows up and toward you,
    but never so big that its picture leaves the top of the scene (80% of its height at most) or reaches the
    cultivator; on a narrow phone that caps every big beast at the same size. Re-measured on every new page and resize.
+   **Phones** (SHOAIB Nov 27: most players will be on phones). *Lite effects* (`LITE` in `fight.js`, `.lite-fx` in
+   `style.css`): on a phone-sized screen (700px or narrower) or with "reduce motion" on, the fight keeps every effect
+   but draws about half the small particles, skips the full-scene impact-frame filter (the coloured flash and the
+   shake stay), and drops the costly blurs, the soft glow copies of the blasts and the aura's second layer (a Saint's
+   roar on a slowed phone-sized browser lost its worst 0.9 s freezes; most of the cost is drawing, which a real phone
+   gives its graphics chip). *Layout* (480px or narrower): the two plates are slim HUD rows (the bars carry their own
+   numbers), so the moves and the "your turn" panel fit on a phone screen; teammates are a row of round portraits,
+   each ringed by its HP (`--hp`) with a dot for its state (green ready, gold choosing, grey fallen), and the
+   message feed moves below them in a team fight. *Vibration* (`buzz`): a short buzz when a beast's blow or roar lands
+   on you, stronger for a roar and for Elites and Beast Kings (Android; iPhones' browser has none; none with
+   "reduce motion" on).
    A Guard that stops it shows a ring and "Blocked", and your counter if any. The order and numbers come from
    `explore_play.events` (read from the engine's log); the browser decides nothing. Each kind of attack is one
    row in `RECIPES` in `fight.js`. The slash trail is a painted picture (`art/fx/slash.webp`, cyan for Strike, turned
