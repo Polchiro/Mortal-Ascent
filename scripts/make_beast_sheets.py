@@ -110,6 +110,17 @@ CLIPS = {
                      "breathe": 0.035, "idle_from": 2.2, "idle_until": 3.35, "attack_ms": 2400, "pingpong": ("hit",),
                      "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                      "ease_out": {"hit": 3}, "place_as": {"attack": "idle"}},
+    # Nov 27 redesign: both videos clean (no remakes), but Veo grew its short tail long whenever it moved: cut back to a
+    # stub in every move (`trim_tail`; its tail is thick at the root and its legs thin, so it is cut where it reaches
+    # past its back feet, `tail_x`; lying dead, at the line its standing first frame drew, `tail_fixed`). Its idle is
+    # the calm second before its snarling bite winds up; its flinch and its
+    # fall onto its side from the hit video ease in from the idle, and the flinch eases back out into it
+    "wind_leopard": {"attack": (4.15, 7.1), "hit": (2.05, 3.6), "death": (4.9, 7.6), "idle_span": (16, 30),
+                     "breathe": 0.035, "idle_from": 2.8, "idle_until": 4.2, "attack_ms": 2600,
+                     "trim_tail": ("idle", "attack", "hit", "death"), "tail_x": (18, 20),
+                     "tail_fixed": ("death",),
+                     "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                     "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

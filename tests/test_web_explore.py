@@ -1277,6 +1277,20 @@ def test_a_tail_reaching_past_the_back_feet_is_cut_back():
     out2, end2 = trim_tail_x(im, keep=10, fade=10, end=60)                 # a fixed line, for a move lying down
     assert end2 == 60 and out2.getpixel((100, 40))[3] == 0
 
+def test_the_wind_leopard_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Wind Leopard (Nov 27, Martial Master Elite): Veo grew its short tail long whenever it moved, so the tail is cut where it reaches past its back feet; its flinch and fall are placed as its idle."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("wind_leopard")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Wind Leopard", "slug": "wind_leopard"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "wind_leopard.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@wind_leopard" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["wind_leopard@roar"][:2] == [0.08, 0.4]
+    assert explore_play.beast_body("Wind Leopard") == "wind_leopard"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

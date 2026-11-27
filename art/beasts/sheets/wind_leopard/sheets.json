@@ -1,0 +1,48 @@
+{
+ "cell": [
+  430,
+  308
+ ],
+ "still": [
+  55.2,
+  7.2,
+  365.4,
+  276.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/wind_leopard/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.1023
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/wind_leopard/attack.webp",
+   "frames": 37,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2600,
+   "bite": 16,
+   "reach": 0.0876,
+   "bite_x": 0.0302
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/wind_leopard/hit.webp",
+   "frames": 25,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2083
+  },
+  "death": {
+   "src": "/art/beasts/sheets/wind_leopard/death.webp",
+   "frames": 36,
+   "cols": 8,
+   "rows": 5,
+   "ms": 3000,
+   "impact": 21
+  }
+ }
+}
