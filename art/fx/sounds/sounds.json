@@ -149,6 +149,12 @@
    "lead": 0.34
   }
  ],
+ "death@flame_maned_lion": [
+  {
+   "file": "death_flame_maned_lion.mp3",
+   "lead": 1.72
+  }
+ ],
  "death@frost_python": [
   {
    "file": "death_frost_python.mp3",
@@ -421,6 +427,12 @@
    "lead": 0.12
   }
  ],
+ "hit@flame_maned_lion": [
+  {
+   "file": "hit_flame_maned_lion.mp3",
+   "lead": 0.24
+  }
+ ],
  "hit@frost_python": [
   {
    "file": "hit_frost_python.mp3",
@@ -603,6 +615,12 @@
   {
    "file": "lunge_field_viper.mp3",
    "lead": 0.48
+  }
+ ],
+ "lunge@flame_maned_lion": [
+  {
+   "file": "lunge_flame_maned_lion.mp3",
+   "lead": 0.68
   }
  ],
  "lunge@frost_python": [
@@ -797,6 +815,12 @@
    "lead": 0.62
   }
  ],
+ "roar:big@flame_maned_lion": [
+  {
+   "file": "roar_big_flame_maned_lion.mp3",
+   "lead": 0.68
+  }
+ ],
  "roar:big@frost_python": [
   {
    "file": "roar_big_frost_python.mp3",
@@ -981,6 +1005,12 @@
   {
    "file": "roar_field_viper.mp3",
    "lead": 0.56
+  }
+ ],
+ "roar@flame_maned_lion": [
+  {
+   "file": "roar_flame_maned_lion.mp3",
+   "lead": 0.44
   }
  ],
  "roar@frost_python": [

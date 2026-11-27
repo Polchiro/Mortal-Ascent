@@ -1291,6 +1291,20 @@ def test_the_wind_leopard_is_animated_from_its_own_videos_with_its_own_voice():
     assert json.load(open(os.path.join("art", "beasts", "heads.json")))["wind_leopard@roar"][:2] == [0.08, 0.4]
     assert explore_play.beast_body("Wind Leopard") == "wind_leopard"
 
+def test_the_flame_maned_lion_is_animated_from_its_own_videos_with_its_own_voice():
+    """SHOAIB's redesigned Flame-Maned Lion (Nov 27, the Martial Master Beast King): drawn with no tail showing; the long tufted tail Veo grew is cut back past its back feet while it stands, and by its thinness as it lies dead."""
+    import json
+    from web import beast_sheets, death, explore_play
+    d = beast_sheets.sheets("flame_maned_lion")
+    assert d and set(d["sheets"]) == {"idle", "attack", "hit", "death"} and d["sheets"]["idle"]["smooth"]
+    assert death.view({"kind": "beast", "name": "Flame-Maned Lion", "slug": "flame_maned_lion"})["kind"] == "sheet"
+    assert os.path.exists(os.path.join("art", "beasts", "roar", "flame_maned_lion.png"))
+    keys = json.load(open(os.path.join("art", "fx", "sounds", "sounds.json")))
+    for sound in ("hit", "lunge", "death", "roar", "roar:big"):
+        assert f"{sound}@flame_maned_lion" in keys
+    assert json.load(open(os.path.join("art", "beasts", "heads.json")))["flame_maned_lion@roar"][:2] == [0.1, 0.37]
+    assert explore_play.beast_body("Flame-Maned Lion") == "flame_maned_lion"
+
 def test_a_move_ending_in_another_pose_slides_and_dissolves_back_into_the_idle():
     """`make_beast_sheets.settle`: the last frames slide until the nose meets the idle's, then dissolve into it."""
     from PIL import Image

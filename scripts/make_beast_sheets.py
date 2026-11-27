@@ -121,6 +121,17 @@ CLIPS = {
                      "tail_fixed": ("death",),
                      "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
                      "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
+    # Nov 27 redesign, drawn with no tail showing: Veo grew a long tufted tail in both videos, cut back to a stub in
+    # every move where it reaches past its back feet (as the Wind Leopard's); lying down, its tail is thin beside its
+    # body, so in its fall it is also found by thinness (`tail_disc`: `trim_tail`), and only while it is still up is it
+    # cut at its standing start's line (`tail_fixed`, `tail_x_until`). Its idle just before its roaring bite;
+    # its flinch and its collapse onto its side ease in from it
+    "flame_maned_lion": {"attack": (2.95, 6.9), "hit": (2.1, 3.3), "death": (4.4, 6.8), "idle_span": (16, 26),
+                         "breathe": 0.035, "idle_from": 1.9, "idle_until": 3.0, "attack_ms": 2800,
+                         "trim_tail": ("idle", "attack", "hit", "death"), "tail_x": (18, 20),
+                         "tail_disc": ("death",), "tail_fixed": ("death",), "tail_x_until": {"death": 5.75},
+                         "ease_in": {"attack": 2, "hit": 3, "death": 4}, "settle": {"attack": 3},
+                         "ease_out": {"hit": 3}, "place_as": {"attack": "idle", "hit": "idle", "death": "idle"}},
     "old_black_bear": {"attack": (2.3, 5.1), "hit": (2.05, 3.45), "death": (3.9, 6.4), "idle_span": (30, 46),
                        "idle_from": 5.8, "attack_ms": 2600, "bite": 27, "impact": 10, "white": ("death",)},
                        # its attack from the remade video with headroom (Nov 26): the first one's head left the video

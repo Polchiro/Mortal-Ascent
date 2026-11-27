@@ -1,0 +1,48 @@
+{
+ "cell": [
+  532,
+  293
+ ],
+ "still": [
+  105.6,
+  3.6,
+  309.6,
+  276.6
+ ],
+ "sheets": {
+  "idle": {
+   "src": "/art/beasts/sheets/flame_maned_lion/idle.webp",
+   "frames": 32,
+   "cols": 8,
+   "rows": 4,
+   "ms": 2668,
+   "smooth": true,
+   "nose_x": 0.188
+  },
+  "attack": {
+   "src": "/art/beasts/sheets/flame_maned_lion/attack.webp",
+   "frames": 50,
+   "cols": 8,
+   "rows": 7,
+   "ms": 2800,
+   "bite": 27,
+   "reach": 0.0646,
+   "bite_x": 0.1523
+  },
+  "hit": {
+   "src": "/art/beasts/sheets/flame_maned_lion/hit.webp",
+   "frames": 21,
+   "cols": 8,
+   "rows": 3,
+   "ms": 1750
+  },
+  "death": {
+   "src": "/art/beasts/sheets/flame_maned_lion/death.webp",
+   "frames": 33,
+   "cols": 8,
+   "rows": 5,
+   "ms": 2750,
+   "impact": 22
+  }
+ }
+}

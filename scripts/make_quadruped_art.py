@@ -53,7 +53,7 @@ INSECTS = ("venom_scorpion", "golden_silk_spider", "thousand_year_centipede")
 CROCODILES = ("jade_scaled_crocodile", "abyss_crocodile")
 # the tortoises (SHOAIB's redesign)
 TORTOISES = ("stone_shell_tortoise", "black_tortoise_xuanwu", "primordial_dragon_turtle")
-FACES_RIGHT = {"black_tortoise_xuanwu", "jade_scaled_crocodile", "abyss_crocodile", "thousand_year_centipede", "shanxiao_mountain_spirit", "flood_dragon_jiao", "black_water_serpent", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape", "flame_maned_lion",
+FACES_RIGHT = {"black_tortoise_xuanwu", "jade_scaled_crocodile", "abyss_crocodile", "thousand_year_centipede", "shanxiao_mountain_spirit", "flood_dragon_jiao", "black_water_serpent", "bifang_fire_crane", "vermilion_bird", "nine_tailed_fox", "thunder_rhino", "fire_hoof_steed", "ancient_golden_ape",
                "earth_splitting_rhino", "shadow_panther", "cloud_leopard"}
 # drawn on a slab: the slab's top edge, as a share of the picture's height (read off each design by eye)
 SLAB = {"grey_wolf": 0.80, "cloud_leopard": 0.73,
