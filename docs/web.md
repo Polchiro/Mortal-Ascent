@@ -327,8 +327,10 @@ below. docs/town.md.
 **The frame is painted** (Nov 27 2026, "Painted UI"): at the top left the hero plate (`art/ui/hero_plate`) with your
 face in its jade-and-gold ring, your name and realm tag, the HP and Qi vials (`vial_hp` / `vial_qi`: the empty glass
 darkened behind, the full vial shown up to the bar's width; gold and breathing when the Qi is full at a gate, grey
-when the gate is sealed), toxicity and injured / resting hanging just under it, and the Break Through tab
-(`break_tab`) hanging from it by its hooks. At the bottom right, round medallions in gold rings (`ring`) with the
+when the gate is sealed), toxicity and injured / resting hanging just under it, and Break Through as a slim gold pill
+(`fight_pill`, the gate's glowing seal in its socket, one line of text): beside the plate on a wide screen, so it
+takes no room of its own, and tucked under the plate's bars on a phone (the big hanging `break_tab` took too much of
+a phone's screen). At the bottom right, round medallions in gold rings (`ring`) with the
 painted Bag, Character, Techniques and Map icons, and Run in the grand seal ring (`seal_ring`). The plate is 420 px
 wide on a computer and up to 300 px on a phone (`--pw`); every size in it follows that width.
 
@@ -698,11 +700,13 @@ a lair is fought with `bot/hunt.py`.
    leap, timed from when the page shows it), herbs, ore, chests and so on. Go deeper or return safely.
 3. **Fights** (`explore_play.html`, the arena `art/scenes/arena_ruins.jpg`): your card (portrait, realm, HP,
    Attack, Defense, statuses), the beast's plate (tier, role, element, realm, HP, statuses), your fighter
-   (`looks.fighter`: the player's cultivator in three sword poses) facing the beast's painting (`art/beasts/`), the beast's warning in the
-   plate, and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
+   (`looks.fighter`: the player's cultivator in three sword poses) facing the beast's painting (`art/beasts/`), and **four big moves** with keys 1–4 (`art/icons/actions/`): Strike, **Techniques** (a
    small menu with your attack and defense technique, their effect and Battle Qi cost), Guard, Break. **Mending Pill** (P)
    and **Flee** (F) are small buttons on the side. Hovering a move shows what it beats and its cooldown. After a
    turn a big word over your fighter says what happened (Countered!, Blocked!, Stunned!, Clash!, Guard broken!).
+   The beast's warning about its next move (`F.warning`, the omen scroll) is still sent but **not shown** (Shoaib,
+   Nov 27: it covered the beast's head and crowded the screen; you read the beast itself). The duel and spar keep
+   theirs. The "Your turn" panel is a small one at the bottom right.
    A move is sent without leaving the page (`web/static/fight.js`), so the screen doesn't jump back to the top.
    Light animations are read from the engine's own log: a slash on a hit, a screen shake on Break, red claws when
    the beast hits, a blue ring on a block, green on a pill, damage numbers.
