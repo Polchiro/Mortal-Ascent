@@ -33,7 +33,7 @@
   </section>
 
   <!-- the beast -->
-  <section class="benemy">
+  <section class="benemy rank-{{ F.enemy.tier | lower | replace(' ', '_') }}">
     <img class="eface" src="{{ F.enemy.art }}" alt="" width="60" height="60">
     <p class="ename">{{ F.enemy.name }}</p>
     <p class="etags">{{ F.enemy.tier }}{% if F.enemy.role %} · {{ F.enemy.role }}{% endif %}{% if F.enemy.element %} · {{ F.enemy.element }}{% endif %} · {{ F.enemy.realm }}</p>

@@ -615,6 +615,19 @@ is cut are in its JOBS table):
   dock icons (see "The map screen").
 - **Realm seals** (`art/icons/realms/<realm>.webp`), **equipment slots** (`art/ui/slot_*`), **journey icons**
   (`art/icons/journey/`) and the **name plaque** (`art/ui/name_plaque`), for the profile.
+- **The fight screens' top corners** (`art/ui/fight_*`, `foe_ring_*`; the beast fight, the spar and the duel all
+  share the `.battle .bme` / `.benemy` plates). On a screen 901 px wide or more, your banner (`fight_me`: your face in
+  the jade ring, grooves for name and realm, HP, Battle Qi) and the foe's mirror (`fight_foe`: iron and crimson, grooves
+  for name, tags and HP, their face in the ring; the Martial Master's is his own picture, `s.master.img`). The pieces are
+  cut as **panels**: the grooves and ring are filled with dark lacquer under the paint, so the text reads on any scene.
+  Everything sits in the grooves by container units (`cqw`), so the banner can be any width (`--bw`: 36% of the
+  window, at most 540 px). An Elite beast gets its violet rune ring and a Beast King its beast-head ring over the
+  banner's (`rank-<tier>` on `.benemy`). The foe's next move is on the omen scroll (`fight_omen`, a 9-slice that grows
+  with the text); the turn's call-outs and the duel's and spar's opening line on the jade plaque (`fight_toast`); Battle
+  History on the gold pill with its icon in the socket (`fight_pill`). The other duellist's Battle Qi is a slim bar under
+  their banner. On narrow desktops the spar's fifteen beads move under your banner. On a phone the plates keep their
+  plain look (the grooves would be too small to read). `MEND` in the script repairs the two pieces Gemini's sparkle
+  sat on from their own mirror image. Pictures only: no number, rule or move changed.
 
 ## Environment pieces
 
