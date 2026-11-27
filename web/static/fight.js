@@ -192,12 +192,35 @@
       n.style.width = aw / s.width * 100 + '%'; n.style.height = ah / s.height * 100 + '%';
     }
     if (img.complete) fit(); else img.addEventListener('load', fit, {once: true});
-    if (!aura.bound) { aura.bound = true; window.addEventListener('resize', function () { var m = document.querySelector('main.battle'); if (m) aura(m); }); }
+    if (!aura.bound) { aura.bound = true; window.addEventListener('resize', function () { var m = document.querySelector('main.battle'); if (m) { sized(m); aura(m); } }); }
+  }
+
+  /* How big the beast stands (explore_play.beast_scale, SHOAIB: a Martial Saint should be huge): its frame is made
+     that much bigger (not zoomed, so every movement, roar and mark keeps lining up), anchored where it stands so it
+     grows up and toward you, but never so big that its picture leaves the top of the scene or reaches the
+     cultivator. Measured from the layout's own size each time, so phones and resizes get the same rule. */
+  function sized(main) {
+    var box = main.querySelector('.beast'), img = box && box.querySelector(':scope > img'), scene = main.querySelector('.bscene');
+    var fighter = main.querySelector('.fighter'), R = null;
+    try { R = JSON.parse((box && box.dataset.roar) || 'null'); } catch (e) {}
+    if (!box || !img || !scene || !fighter || !R || !(R.scale > 1)) return;
+    if (!img.naturalWidth) { img.addEventListener('load', function () { sized(main); aura(main); }, {once: true}); return; }
+    var posed = box.classList.contains('posed');
+    box.style.width = ''; box.style.height = ''; box.style.top = '';
+    var s = scene.getBoundingClientRect(), b = box.getBoundingClientRect(), f = fighter.getBoundingClientRect();
+    var ar = img.naturalWidth / img.naturalHeight, w = Math.min(b.width, posed ? b.width : b.height * ar), h = w / ar;
+    var front = f.left + f.width * 0.62 + s.width * 0.03;          // the cultivator's front, and a little air
+    var k = Math.min(R.scale, s.height * 0.8 / h, (b.right - front) / ((b.width + w) / 2));
+    if (!(k > 1.01)) return;
+    box.style.width = b.width * k / s.width * 100 + '%';
+    if (!posed) { box.style.top = 'auto'; box.style.height = b.height * k / s.height * 100 + '%'; }
+    box.dataset.scaled = k.toFixed(2);
   }
 
   function init() {
     var main = document.querySelector('main.battle');
     if (!main) return;
+    sized(main);
     aura(main);
     var sheeted = main.querySelector('.beast.sheeted');
     if (sheeted && !sheeted._sheets) {
@@ -493,8 +516,10 @@
     }
     function pose(p) { if (fighter.dataset.pose !== p) fighter.dataset.pose = p; }
     function hero(x, y, rot) { poses.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + (rot || 0) + 'deg)'; }
+    var auraEl = scene.querySelector('.baura');                 // a strong beast's aura (`aura`) goes where it goes
     function animal(x, y, rot, flash) {
       beast.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg)';
+      if (auraEl) auraEl.style.transform = x || y ? 'translate(' + x + 'px,' + y + 'px)' : '';
       beast.style.filter = flash > 0.05 ? beastFilter + ' brightness(' + (1 + 1.8 * flash) + ') saturate(' + (1 - 0.6 * flash) + ')' : '';
     }
     var stepped = false;                                          // the sidestep's own recording has played (sidestepped)
@@ -2292,7 +2317,7 @@
     main.classList.remove('tl-hold');
 
     var i = 0, start = null, stopped = false;
-    function reset() { bpose(home); if (BS && BS.now() !== 'death' && !BS.busy('hit')) BS.set('idle'); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = '';
+    function reset() { bpose(home); if (BS && BS.now() !== 'death' && !BS.busy('hit')) BS.set('idle'); pose('idle'); poses.style.transform = ''; poses.style.filter = ''; beast.style.transform = ''; beast.style.filter = ''; if (auraEl) auraEl.style.transform = '';
       trail.style.opacity = 0; claws.setAttribute('opacity', 0); }
     /* the turn has been acted out (or `cut`: another fight replaced this one): hand the turn back to the player */
     function finish(cut) {
