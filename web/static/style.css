@@ -1071,6 +1071,34 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
   background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.8),rgba(255,255,255,.3) 14%,rgba(255,255,255,.06) 38%,transparent 65%);
   animation:broarflash .52s ease-out forwards}
 @keyframes broarflash{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+/* the roar hits you (fight.js `blast`, `crack`, `impact`, `presence`; art/fx/elem/, scripts/make_element_fx.py):
+   its element's own blast from its mouth to you, the burst on your body, the patch left at your feet */
+.bestream{position:absolute;width:0;height:0;z-index:5;pointer-events:none;transform:rotate(var(--rot))}
+.bestream img{position:absolute;right:0;top:calc(var(--h) / -2);width:var(--len);height:var(--h);max-width:none;
+  transform-origin:100% 50%;transform:scaleX(0);animation:bestream 1.4s cubic-bezier(.2,.7,.3,1) forwards}
+.bestream img.glow{mix-blend-mode:screen;filter:blur(7px) brightness(1.5);opacity:.75}
+@keyframes bestream{0%{transform:scaleX(0) scaleY(.45);opacity:1}20%{transform:scaleX(1) scaleY(1);opacity:1}
+  62%{opacity:1}100%{transform:scaleX(1.05) scaleY(1.18);opacity:0}}
+.bcrack{z-index:auto}
+.bcrack img{transform:none;clip-path:inset(0 0 0 100%);filter:drop-shadow(0 0 10px var(--rc,#ffcf6a));animation:bcrack 2.1s ease-out forwards}
+@keyframes bcrack{0%{clip-path:inset(0 0 0 100%);opacity:1}13%{clip-path:inset(0 0 0 0);opacity:1}72%{opacity:1}
+  100%{clip-path:inset(0 0 0 0);opacity:0}}
+.beburst{position:absolute;z-index:6;width:var(--s);height:auto;max-width:none;pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);animation:beburst .9s cubic-bezier(.15,.8,.3,1) both}
+.beburst.b2{animation-delay:90ms}
+@keyframes beburst{0%{transform:translate(-50%,-50%) rotate(var(--r)) scale(.25);opacity:1}
+  35%{transform:translate(-50%,-50%) rotate(var(--r)) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--r) + 14deg)) scale(1.28);opacity:0}}
+.beground{position:absolute;width:var(--w);height:calc(var(--w) * .36);object-fit:fill;max-width:none;pointer-events:none;opacity:0;
+  transform:translate(-50%,-62%) scaleX(.4);animation:beground 2.4s ease-out forwards}
+.bekcrack{filter:drop-shadow(0 0 10px var(--rc))}
+@keyframes beground{0%{transform:translate(-50%,-62%) scaleX(.4);opacity:0}12%{transform:translate(-50%,-62%) scaleX(1);opacity:1}
+  70%{opacity:.9}100%{transform:translate(-50%,-62%) scaleX(1.04);opacity:0}}
+.broarflash.behit{background:radial-gradient(circle at var(--x) var(--y),rgba(255,255,255,.95),var(--rc) 10%,transparent 42%);
+  animation-duration:.42s}
+.bevignette{position:absolute;inset:0;left:0!important;top:0!important;z-index:7;pointer-events:none;opacity:0;
+  box-shadow:inset 0 0 110px 26px var(--rc);animation:bevignette 1.7s ease-out forwards}
+@keyframes bevignette{0%{opacity:0}14%{opacity:.95}38%{opacity:.45}58%{opacity:.8}100%{opacity:0}}
 .broarlines{position:absolute;inset:0;z-index:5;pointer-events:none;mix-blend-mode:screen;
   background:repeating-conic-gradient(from 3deg at var(--x) var(--y),rgba(255,255,255,.5) 0deg .45deg,transparent .45deg 6.3deg),
     repeating-conic-gradient(from 1deg at var(--x) var(--y),rgba(255,255,255,.32) 0deg .3deg,transparent .3deg 9.7deg);
@@ -1210,6 +1238,17 @@ main.battle.roused:not(.playing) .beast img,main.battle.roused:not(.playing) .be
 .bclawm,.bslashm{position:absolute;z-index:6;width:var(--s);height:auto;pointer-events:none;transform:translate(-50%,-50%);
   clip-path:inset(0 0 100% 100%);filter:drop-shadow(0 0 10px rgba(255,40,40,.7));animation:bm1 .9s ease-out forwards}
 .bslashm{filter:drop-shadow(0 0 10px rgba(255,240,210,.8));mix-blend-mode:screen}
+/* a beast's hit mark (fight.js `mark`, art/fx/marks/): its shape in the element's colour, glowing, with the picture's
+   own light as a white-hot core over it; torn across you the way the old claw marks were */
+.bmark{position:absolute;z-index:6;width:var(--s);aspect-ratio:1.5;pointer-events:none;
+  transform:translate(-50%,-50%) scaleX(var(--flip,1));clip-path:inset(0 0 100% 100%);animation:bmark .95s ease-out both}
+.bmark .tint,.bmark img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.bmark .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 6px var(--rc)) drop-shadow(0 0 16px var(--rc)) brightness(1.15)}
+.bmark img{filter:grayscale(1) brightness(1.7) contrast(1.1);mix-blend-mode:screen;opacity:.85;transform:scale(.94)}
+@keyframes bmark{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
+  55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scaleX(var(--flip,1)) scale(1.05)}}
+.beburst.bemark{z-index:5;animation-duration:.7s}
 @keyframes bm1{0%{clip-path:inset(0 0 100% 100%);opacity:1}22%{clip-path:inset(0 0 0 0);opacity:1}
   55%{opacity:1}100%{clip-path:inset(0 0 0 0);opacity:0;transform:translate(-50%,-50%) scale(1.04)}}
 .bsblast{position:absolute;z-index:5;width:var(--len);height:var(--h);pointer-events:none;opacity:0;
@@ -2653,3 +2692,32 @@ body.alchemybg{background:url(/art/scenes/alchemy_chamber.jpg) center/cover fixe
 }
 @media (prefers-reduced-motion:reduce){.mdock .dbtn,.mdock .dico,.mdock .dico img{transition:none}
   .mhud .mbreak,.mhero .mqibar.full div i,.mhero .mhpbar.low div i{animation:none}}
+/* a strong beast's presence (fight.js `aura`, `sigil`, `avatar`; explore_play.beast_power): its aura, breathing like a
+   living flame in two copies out of step; the formation circle flaring under its roar; its spirit rising behind it */
+.baura{position:absolute;pointer-events:none;opacity:var(--ao);transition:opacity .8s ease}
+.baura img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:fill;mix-blend-mode:screen;
+  transform-origin:50% 100%;animation:baura 3.4s ease-in-out infinite}
+.baura img+img{animation:baura2 4.3s ease-in-out infinite;opacity:.55}
+.baura.p4 img{filter:brightness(1.25) saturate(1.15)}
+@keyframes baura{0%,100%{transform:scale(1,1);opacity:.8}50%{transform:scale(1.03,1.07);opacity:1}}
+@keyframes baura2{0%,100%{transform:scaleX(-1.02) scaleY(1.04);opacity:.65}50%{transform:scaleX(-.98) scaleY(.97);opacity:.35}}
+main.dying .baura,main.slain .baura{opacity:0}
+.besigil{position:absolute;width:var(--w);aspect-ratio:2.4;pointer-events:none;opacity:0;
+  transform:translate(-50%,-55%) scale(.3);animation:besigil 2.5s cubic-bezier(.2,.8,.3,1) forwards}
+.besigil.s3{aspect-ratio:1.9}
+.besigil .tint,.besigil img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
+.besigil .tint{background:var(--rc);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;
+  filter:drop-shadow(0 0 8px var(--rc)) drop-shadow(0 0 22px var(--rc))}
+.besigil img{mix-blend-mode:screen;filter:grayscale(1) brightness(1.4);opacity:.7}
+@keyframes besigil{0%{transform:translate(-50%,-55%) scale(.3);opacity:0}14%{transform:translate(-50%,-55%) scale(1);opacity:1}
+  30%{opacity:.75}45%{opacity:1}75%{opacity:.85}100%{transform:translate(-50%,-55%) scale(1.06);opacity:0}}
+.bavatar{position:absolute;pointer-events:none;opacity:0;transform-origin:50% 100%;
+  transform:translate(-50%,-100%) scale(1.1);animation:bavatar 2.2s ease-out forwards}
+.bavatar .tint,.bavatar img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;object-position:50% 100%}
+.bavatar .tint{background:var(--rc);-webkit-mask:var(--m) 50% 100%/contain no-repeat;mask:var(--m) 50% 100%/contain no-repeat;
+  filter:blur(2px) drop-shadow(0 0 14px var(--rc)) drop-shadow(0 0 40px var(--rc));opacity:.85}
+.bavatar img{mix-blend-mode:screen;filter:grayscale(.6) brightness(1.5);opacity:.35}
+@keyframes bavatar{0%{opacity:0;transform:translate(-50%,-100%) scale(1.1)}22%{opacity:.7;transform:translate(-50%,-104%) scale(1.75)}
+  65%{opacity:.5;transform:translate(-50%,-106%) scale(1.95)}100%{opacity:0;transform:translate(-50%,-108%) scale(2.1)}}
+.bavatar.saint{animation-duration:2.4s}
+.bavatar.saint .tint{opacity:1}
