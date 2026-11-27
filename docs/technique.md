@@ -449,7 +449,11 @@ drill both characters fight with empty hands, with movements of their own: a bre
 blows; a **strike** (the punch: out to full reach, then played back in reverse) for fist and palm techniques, a
 **kick** for kick techniques and a **finger** jab for finger techniques; a **block** (arms up and crossed, held while
 a brace is held) for every defending drill; and **struck** when a blow gets through. Each movement's own sound is
-raised to full level and played loud. A **sidestep** technique dodges instead: it **ducks** under the
+raised to full level and played loud. **Light to play** (SHOAIB, Nov 27, a friend found it laggy): a drill
+loads only the movements it can play (`hero_for`), never the sword fighter's; Senior Sister Xue steps out of view from
+"Begin the drill" until her verdict (her voice still cuts the air at the start, and her big "begin" pictures are never
+loaded); the character's frames slide behind a window (a transform the graphics card does alone) instead of being
+repainted; the effects draw without blending, and the sound players are made once. With her out of the way, the dummy and the kicking post stand farther off, and your character steps in to them. A **sidestep** technique dodges instead: it **ducks** under the
 sandbag and **jumps** the log (the staff, in the middle, is still blocked); a **deflection** technique sweeps every blow
 aside with a forearm (its own video); the stances keep the block. Every strike, kick and jab is **aimed at its target's height** (head,
 arms, leg; high, middle, low on the post): the page leans the figure round its feet, crouches it for a low target,

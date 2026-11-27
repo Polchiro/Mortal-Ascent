@@ -4,7 +4,7 @@
    of the scene, so it scales as one picture. The pads under it are the moves for a finger. */
 main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;padding:10px 12px 18px;display:flex;flex-direction:column;align-items:center;gap:10px;
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.pscene{position:relative;width:min(100%,calc((100vh - 170px) * 16 / 9));aspect-ratio:16/9;overflow:hidden;border-radius:14px;
+.pscene{contain:layout paint;position:relative;width:min(100%,calc((100vh - 170px) * 16 / 9));aspect-ratio:16/9;overflow:hidden;border-radius:14px;
   border:1px solid var(--line);background:var(--hall) center/cover;box-shadow:0 18px 40px rgba(0,0,0,.55);isolation:isolate}
 .pscene::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,236,200,.06),rgba(30,18,8,.18) 70%,rgba(20,12,6,.35));z-index:0;pointer-events:none}
 .pscene.night::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 40% 60%,rgba(10,14,30,.25),rgba(6,8,20,.72));z-index:4;pointer-events:none}
@@ -26,7 +26,7 @@ main.practice{width:100%;box-sizing:border-box;max-width:1280px;margin:0 auto;pa
 .ptech b{display:block;color:var(--gold2);font:700 16px Cinzel,Georgia,serif;white-space:nowrap}
 .ptech small{display:block;color:var(--mist);font-size:12px;white-space:nowrap}
 .pclock{flex:1;position:relative;height:10px;border-radius:99px;background:rgba(0,0,0,.45);border:1px solid var(--line);max-width:420px;margin:0 auto}
-.pclock div{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#c98a3a,#F5DCA6)}
+.pclock div{position:absolute;left:0;top:0;bottom:0;width:100%;transform:scaleX(0);transform-origin:0 50%;will-change:transform;border-radius:99px;background:linear-gradient(90deg,#c98a3a,#F5DCA6)}
 .pclock span{position:absolute;left:50%;top:13px;transform:translateX(-50%);font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold2)}
 .ptally{text-align:right}
 .ptally b{display:block;color:#FFE7A8;font:800 24px Cinzel,Georgia,serif;line-height:1}
@@ -48,7 +48,9 @@ body.practicebg footer.privacy{display:none}
 .pteacher::before{content:"";position:absolute;left:4%;width:92%;bottom:-1.5%;height:5%;border-radius:50%;background:radial-gradient(rgba(40,20,8,.55),rgba(40,20,8,0) 70%)}
 /* she is painted facing right: .ptflip turns her to face you (her speech bubble stays outside it, unturned) */
 .ptflip{position:absolute;inset:0;transform:scaleX(-1)}
-.ptsheet{position:absolute;background-repeat:no-repeat;visibility:hidden;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
+.ptsheet{position:absolute;background-repeat:no-repeat;visibility:hidden}
+/* she steps out of view while you drill (SHOAIB, Nov 27: it was laggy), and back for her verdict */
+.practice[data-phase=count] .pteacher,.practice[data-phase=drill] .pteacher,.practice[data-phase=wait] .pteacher{display:none}
 .ptsheet.on{visibility:visible}
 .ptstill{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}
 .psay{position:absolute;right:30%;top:-2%;width:max-content;max-width:min(330px,40vw);margin:0;padding:7px 13px;border-radius:12px 12px 2px 12px;
@@ -70,17 +72,21 @@ body.practicebg footer.privacy{display:none}
 .pme.charging .poses,.pme.charging .phero{filter:drop-shadow(0 0 14px rgba(255,170,60,.95))}
 /* unarmed (art/practice/hero/): the sword fighter keeps the box (hidden), her own movements stand on its figure's spot */
 .pme.unarmed .poses{visibility:hidden}
-.pme.unarmed .poses *{visibility:hidden!important}
-.phero{position:absolute;left:38.1%;top:19.5%;height:74.2%;pointer-events:none;transform-origin:50% 100%;filter:drop-shadow(0 6px 8px rgba(40,20,8,.35))}
-.hsheet{position:absolute;background-repeat:no-repeat;visibility:hidden}
+.pme.unarmed .poses *{visibility:hidden!important;animation:none!important}
+.phero{position:absolute;left:38.1%;top:19.5%;height:74.2%;pointer-events:none;transform-origin:50% 100%;will-change:transform}
+/* a soft shadow at the feet, drawn once (a drop-shadow filter would be redrawn on every frame of her movements) */
+.phero::before{content:"";position:absolute;left:12%;width:76%;bottom:-2%;height:6%;border-radius:50%;background:radial-gradient(rgba(40,20,8,.45),rgba(40,20,8,0) 70%)}
+.hsheet{position:absolute;overflow:hidden;visibility:hidden}
+.hsheet>i{position:absolute;left:0;top:0;background-size:100% 100%;background-repeat:no-repeat;will-change:transform}
 .hsheet.on,.hsheet.fade{visibility:visible}
 .hsheet.fade{animation:pblend .18s ease-out forwards;z-index:1}
 .pme.hurt .poses{animation:phurt .4s ease-out}
 @keyframes phurt{0%{filter:none}20%{filter:sepia(1) saturate(5) hue-rotate(-30deg) brightness(.9);transform:translateX(-10px)}100%{filter:none}}
 
 /* striking: the dummy (by your mastery stage) or the kicking post, and its targets */
-.ptarget{position:absolute;left:46%;bottom:5%;height:62%;z-index:2;transform-origin:50% 100%}
-.ptarget.t-straw{aspect-ratio:291/481}.ptarget.t-dummy{aspect-ratio:520/417;height:52%;left:41%}.ptarget.t-iron{aspect-ratio:354/517}
+/* farther off than before (SHOAIB, Nov 27): Senior Sister Xue no longer stands there while you drill; you step in to it */
+.ptarget{position:absolute;left:58%;bottom:5%;height:62%;z-index:2;transform-origin:50% 100%}
+.ptarget.t-straw{aspect-ratio:291/481}.ptarget.t-dummy{aspect-ratio:520/417;height:52%;left:53%}.ptarget.t-iron{aspect-ratio:354/517}
 .ptarget.t-stone{aspect-ratio:260/479}.ptarget.t-jade{aspect-ratio:244/467}.ptarget.t-post{aspect-ratio:281/443;height:56%}
 .ptarget .pobj{position:absolute;inset:0;width:100%;height:100%;filter:drop-shadow(0 10px 10px rgba(40,20,8,.45))}
 .ptarget .pbroken{position:absolute;left:-50%;bottom:0;width:200%;height:auto;visibility:hidden}
@@ -94,12 +100,12 @@ body.practicebg footer.privacy{display:none}
 .pspot.small{width:13%}.ptarget.t-dummy .pspot.small{width:9%}
 .pspot .plq{position:absolute;left:0;top:-14%;width:100%;height:auto;filter:drop-shadow(0 0 8px rgba(255,220,120,.9));animation:pin .18s ease-out}
 @keyframes pin{from{transform:scale(.3);opacity:0}}
-.pspot .ring,.pmark .ring,.pspace .ring{position:absolute;left:50%;top:50%;width:100%;aspect-ratio:1;border-radius:50%;border:3px solid #FFE7A8;
+.pspot .ring,.pmark .ring,.pspace .ring{will-change:transform;position:absolute;left:50%;top:50%;width:100%;aspect-ratio:1;border-radius:50%;border:3px solid #FFE7A8;
   box-shadow:0 0 10px rgba(255,220,140,.9),inset 0 0 8px rgba(255,220,140,.6);transform:translate(-50%,-50%) scale(3)}
 .pspot b,.pmark b,.pspace b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font:800 13px Cinzel,Georgia,serif;text-shadow:0 1px 3px #000,0 0 6px #000;white-space:nowrap}
 .pspot.pair .ring{border-color:#9fe8ff;box-shadow:0 0 10px rgba(120,220,255,.9)}
 .pspot.k-charge .ring,.pspot.finish .ring{border-color:#ffb25a;border-width:4px;box-shadow:0 0 14px rgba(255,150,40,.95)}
-.pspot .flame{position:absolute;left:50%;bottom:30%;width:90%;transform:translateX(-50%);opacity:.85;mix-blend-mode:screen}
+.pspot .flame{position:absolute;left:50%;bottom:30%;width:90%;transform:translateX(-50%);opacity:.85}
 .pspot.held .flame{animation:pflame .4s ease-in-out infinite alternate}
 @keyframes pflame{to{transform:translateX(-50%) scale(1.35);opacity:1}}
 .pspot.k-feint .plq,.pblow.k-feint img{filter:grayscale(1) brightness(.4) sepia(1) hue-rotate(-40deg) saturate(3)}
@@ -126,11 +132,12 @@ body.practicebg footer.privacy{display:none}
 .pmark.k-feint .ring{border-color:#ff5a4a}
 .pspace{position:absolute;width:5.5%;aspect-ratio:1;transform:translate(-50%,-50%);z-index:5}
 .pspace img{position:absolute;left:50%;top:50%;width:170%;transform:translate(-50%,-55%);opacity:.9}
-.pspace.counter img{mix-blend-mode:screen}
 .pspace b{top:118%}
 
 /* the moment */
-.pfx{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:6;animation:pfx ease-out forwards;mix-blend-mode:screen}
+.pfx{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:6;animation:pfx ease-out forwards}
+/* no mix-blend-mode on the effects: they are already see-through (scripts/make_practice_art.py), and blending them
+   made every hit redraw the scene below them (the stalls SHOAIB's friend felt) */
 .pfx.soft{mix-blend-mode:normal}
 @keyframes pfx{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
 .ppop{position:absolute;margin:0;transform:translate(-50%,-140%);z-index:7;pointer-events:none;font:800 18px Cinzel,Georgia,serif;color:#fff;
@@ -249,7 +256,7 @@ body.practicebg footer.privacy{display:none}
   .pscene{aspect-ratio:4/3;width:100%;border-radius:10px}
   .practice .pscene .fighter.pme{width:84%;left:-22%}
   .practice[data-mode=defend] .pscene .fighter.pme{left:-12%}
-  .ptarget{left:44%;height:56%}.ptarget.t-dummy{left:38%;height:46%}
+  .ptarget{left:53%;height:56%}.ptarget.t-dummy{left:47%;height:46%}
   .pteacher{height:52%;right:2%}
   .phud{padding:6px 8px;gap:8px}.ptech img{width:34px;height:34px}.ptech b{font-size:13px}.ptech small{display:none}
   .ptally b{font-size:18px}.pleave button{padding:4px 8px 4px 4px;font-size:11px}.pleave img{width:20px;height:20px}.pchips{top:46px;left:8px}.pchips li{font-size:10.5px;padding:2px 7px}

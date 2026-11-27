@@ -150,13 +150,31 @@
   var I = S.instructor, MS = I.sheets ? I.sheets.sheets : null, tsheets = {}, tPlay = null, tT0 = performance.now();
   var teacher = $('pteacher');
   teacher.querySelectorAll('.ptsheet').forEach(function (el) { tsheets[el.dataset.name] = el; });
-  if (MS) Object.keys(MS).forEach(function (k) { new Image().src = MS[k].src; });
+  /* Her sheets are big pictures: only "watch" loads with the page; approval and disapproval load as the drill ends,
+     and "begin" never does, because she steps out of view while you drill (only her voice cuts the air) */
+  function tload(name) {
+    var el = tsheets[name];
+    if (el && !el.style.backgroundImage) {
+      var im = new Image(); im.src = el.dataset.src;
+      if (im.decode) im.decode().catch(function () {});
+      el.style.backgroundImage = 'url(' + el.dataset.src + ')';
+    }
+  }
+  var tcur = {name: null, f: -1};
   function tshow(name, f) {
     var sp = MS[name], el = tsheets[name];
     f = Math.max(0, Math.min(sp.frames - 1, f));
+    if (tcur.name === name && tcur.f === f) return;             // the same frame: nothing to redraw
     el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
       (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
-    Object.keys(tsheets).forEach(function (k) { tsheets[k].classList.toggle('on', k === name); });
+    if (tcur.name !== name) Object.keys(tsheets).forEach(function (k) { tsheets[k].classList.toggle('on', k === name); });
+    tcur = {name: name, f: f};
+  }
+  function tsound(name) {                                        // her voice alone (the drill's beginning)
+    var snd = MS && MS[name] && MS[name].sound;
+    if (!snd || !soundOn) return;
+    var a = new Audio(snd.src); a.volume = LOUD();
+    setTimeout(function () { var p = a.play(); if (p && p.catch) p.catch(function () {}); }, snd.from || 0);
   }
   function tframe(name, tm) {
     var at = MS[name].at, i = 0;
@@ -168,6 +186,7 @@
   var CUT = {begin: 5200, approve: 6200, disapprove: 7600};
   function tplay(name, done) {
     if (!MS || !MS[name]) { if (done) setTimeout(done, 1200); return; }
+    tload(name);
     var until = Math.min(CUT[name] || 1e9, MS[name].at[MS[name].frames - 1]), snd = MS[name].sound, a = null;
     if (snd && soundOn) {
       a = new Audio(snd.src); a.volume = LOUD();
@@ -177,7 +196,8 @@
     tPlay = {name: name, t0: performance.now(), until: until, done: done, audio: a};
   }
   function tloop(now) {
-    if (MS) {
+    var ph = main.dataset.phase;
+    if (MS && (ph === 'ready' || ph === 'result')) {              // out of view while you drill: no work at all
       if (tPlay) {
         var tm = now - tPlay.t0;
         tshow(tPlay.name, tframe(tPlay.name, tm));
@@ -200,7 +220,7 @@
   (function () {
     var box = $('pmotes');
     if (!box || reduced) return;
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < 14; i++) {
       var m = document.createElement('i'), sz = 2 + Math.random() * 3.5;
       m.style.left = (Math.random() * 100) + '%'; m.style.top = (Math.random() * 90) + '%';
       m.style.width = m.style.height = sz + 'px';
@@ -303,33 +323,45 @@
      block: the arms come up and cross, held while a brace is held (the blow is absorbed), then down; struck: when a
      blow gets through. Each movement's own sound is loud; a new movement cuts in at once. */
   var HERO = S.me.hero ? S.me.hero.sheets : null, hsheets = {}, hanim = null, hcur = {name: 'stance', f: 0}, hT0 = performance.now();
+  /* each movement's sound: three players made once and taken in turn (a new player per blow stalls the drill) */
+  var hpool = {};
+  function hpoolOf(name) {
+    var snd = HERO[name].sound;
+    return hpool[name] || (hpool[name] = {i: 0, a: [0, 1, 2].map(function () { var x = new Audio(snd.src); x.preload = 'auto'; return x; })});
+  }
   var heroEl = fme.querySelector('.phero');
   /* which movement strikes: kick techniques kick and finger techniques jab, when those videos were made; else the punch */
   var SMOVE = HERO && HERO[D.motion] && (D.motion === 'kick' || D.motion === 'finger') ? D.motion : 'strike';
   if (HERO) {
     fme.querySelectorAll('.hsheet').forEach(function (el) { hsheets[el.dataset.name] = el; });
     Object.keys(HERO).forEach(function (k) {
-      new Image().src = HERO[k].src;
-      if (HERO[k].sound) { var a = new Audio(); a.preload = 'auto'; a.src = HERO[k].sound.src; }
+      var im = new Image(); im.src = HERO[k].src;
+      if (im.decode) im.decode().catch(function () {});          // decoded before the drill, so the first blow doesn't stall
+      if (HERO[k].sound) hpoolOf(k);                             // its sound players, made before the drill
     });
   }
   function hshow(name, f) {
     var sp = HERO[name], el = hsheets[name];
     f = Math.max(0, Math.min(sp.frames - 1, Math.round(f)));
-    el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
-      (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
+    if (hcur.name === name && hcur.f === f && hcur.drawn) return; // the same frame: nothing to redraw
+    /* the whole sheet slides behind its window: a move the graphics card makes alone, with nothing to repaint */
+    el.firstChild.style.transform = 'translate(' + (-(f % sp.cols) * 100 / sp.cols).toFixed(4) + '%,' +
+      (-Math.floor(f / sp.cols) * 100 / sp.rows).toFixed(4) + '%)';
     if (hcur.name !== name) {                                    // from one movement to another: the old fades out
       var old = hsheets[hcur.name];
       old.classList.remove('on'); old.classList.add('fade');
       setTimeout(function () { old.classList.remove('fade'); }, 190);
       el.classList.remove('fade'); el.classList.add('on');
     }
-    hcur = {name: name, f: f};
+    hcur = {name: name, f: f, drawn: true};
   }
   function hsound(name) {
     var snd = HERO[name].sound;
     if (!snd || !soundOn) return;
-    var a = new Audio(snd.src); a.volume = LOUD();
+    var pool = hpoolOf(name);
+    var a = pool.a[pool.i++ % pool.a.length];
+    a.volume = LOUD();
+    try { a.currentTime = 0; } catch (e7) {}
     var p = a.play(); if (p && p.catch) p.catch(function () {});
   }
   /* how to bring the strike's fist (or foot) to the target of `lane`: the target's top, middle or bottom, not always
@@ -626,8 +658,9 @@
         } else if (!h && res[p.i] == null && t > p.at + W.good) settle(p, p.kind === 'feint' ? 'avoided' : 'miss', t);
       });
       var cur = P.filter(function (p) { return p.at >= t - 300; })[0];
-      $('pphase').textContent = cur ? {form: 'Form', flow: 'Flow', finish: 'Finish', rival: 'Rival'}[cur.phase] : 'Done';
-      $('pclock').style.width = Math.min(100, 100 * t / S.length) + '%';
+      var ph = cur ? {form: 'Form', flow: 'Flow', finish: 'Finish', rival: 'Rival'}[cur.phase] : 'Done';
+      if (ph !== frame.ph) { frame.ph = ph; $('pphase').textContent = ph; }
+      $('pclock').style.transform = 'scaleX(' + Math.min(1, t / S.length).toFixed(4) + ')';
       if (t >= S.length + 150) finish();
     }
     requestAnimationFrame(frame);
@@ -654,8 +687,8 @@
     $('pbegin').disabled = true; capturing = null;
     main.dataset.phase = 'count';
     if (window.SparMusic) { window.SparMusic.start('practice'); if (S.hall.sound) window.SparMusic.ambience(S.hall.sound); }
-    tplay('begin');
-    say(I.line);
+    tsound('begin');                                              // she steps out of view; her voice still cuts the air
+    again($('pbanner'), I.name + ': "' + I.line + '"');
     var count = $('pcount');
     [[1200, '3'], [2100, '2'], [3000, '1']].forEach(function (c) { setTimeout(function () { again(count, c[1]); fs('press'); }, c[0]); });
     setTimeout(function () {
@@ -672,6 +705,7 @@
   function finish() {
     if (ended) return;
     ended = true; running = false; stand(); fme.classList.remove('charging');
+    tload('approve'); tload('disapprove');
     Object.keys(held).forEach(function (l) { inputs.push([Math.round(now()), +l, 'u']); });
     main.dataset.phase = 'wait';
     again($('pbanner'), 'She tallies your drill…');
