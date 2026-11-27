@@ -298,10 +298,38 @@
     });
   }
 
+  /* Ready before the first roar (SHOAIB Nov 27): the first time a big picture is shown the browser has to unpack
+     and prepare it, which made a brief stutter as a roar began. When a fight opens, its beast's roar pictures (its
+     element's blast, burst and ground patch, its body type's roar shape, its formation circle) are drawn once,
+     all but invisible and at their real size, behind everything, then taken away: by the first roar they are ready.
+     Once per beast per page. */
+  var WARM_SHAPE = {roar: 'quadruped', screech: 'flying', hiss: 'serpent', storm: 'dragon'};
+  var warmed = {};
+  function warmUp(main) {
+    var box = main.querySelector('.beast'), scene = main.querySelector('.bscene'), R = null;
+    try { R = JSON.parse((box && box.dataset.roar) || 'null'); } catch (e) {}
+    if (!scene || !R || !R.element || warmed[R.slug]) return;
+    warmed[R.slug] = true;
+    var srcs = ['_stream', '_burst', '_ground'].map(function (k) { return '/art/fx/elem/' + R.element + k + '.webp'; });
+    var shape = R.motion && WARM_SHAPE[R.motion.style] ? '/art/fx/roars/roar_' + WARM_SHAPE[R.motion.style] + '.webp' : null;
+    if (R.power >= 1) srcs.push('/art/fx/elem/sigil_' + (R.power >= 4 ? 3 : R.power >= 3 ? 2 : 1) + '.webp');
+    var n = document.createElement('div');
+    n.className = 'bwarm'; n.setAttribute('aria-hidden', 'true');
+    n.innerHTML = srcs.map(function (s) { return '<img alt="" src="' + s + '">'; }).join('') +
+      (shape ? '<span class="bwshape" style="--m: url(' + shape + '); --rc: ' + R.color + '"><img alt="" src="' + shape + '"></span>' : '');
+    scene.insertBefore(n, scene.firstChild);
+    var imgs = [].slice.call(n.querySelectorAll('img'));
+    Promise.all(imgs.map(function (i) { return i.decode ? i.decode().catch(function () {}) : null; })).then(function () {
+      requestAnimationFrame(function () { requestAnimationFrame(function () { n.remove(); }); });   // painted once, then gone
+    });
+    setTimeout(function () { n.remove(); }, 4000);
+  }
+
   function init() {
     var main = document.querySelector('main.battle');
     if (!main) return;
     sized(main);
+    warmUp(main);
     partyNames(main);
     yourTurn(main);
     aura(main);

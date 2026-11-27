@@ -3082,3 +3082,9 @@ body.hudfolded .mhud .mhero .mface{border:2px solid #C9A45C;border-radius:50%;bo
   transform:translate(-50%,-50%) scale(.2);opacity:0;animation:bmouth 1.1s ease-out forwards}
 @keyframes bmouth{0%{transform:translate(-50%,-50%) scale(.2);opacity:0}12%{transform:translate(-50%,-50%) scale(1);opacity:1}
   55%{transform:translate(-50%,-50%) scale(.85);opacity:.8}100%{transform:translate(-50%,-50%) scale(.6);opacity:0}}
+/* the roar pictures drawn once, all but invisible, when a fight opens (fight.js `warmUp`) */
+.bwarm{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.004;overflow:hidden}
+.bwarm img{position:absolute;left:10%;top:20%;width:60%;height:auto;max-width:none}
+.bwarm .bwshape{position:absolute;left:10%;top:20%;width:60%;height:40%;background:var(--rc);
+  -webkit-mask:var(--m) center/100% 100% no-repeat;mask:var(--m) center/100% 100% no-repeat}
+.bwarm .bwshape img{left:0;top:0;width:100%;height:100%}
