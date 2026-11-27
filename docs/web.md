@@ -1346,6 +1346,14 @@ Nothing here touches the fight. The beast fight's page is replaced every turn; t
 scene, so the weather carries on. It stops while the tab is hidden, and with reduced motion it isn't drawn. Sizes are
 shares of the scene, and the amount of leaves, snow and rain grows with its width, so a phone isn't crowded.
 
+**Smoothness.** Measuring the page makes the browser redo the whole layout, which is costly while a fight animates.
+So the ambience canvas is measured only when its box may have changed (a new scene, a resize or turn of the screen,
+a ResizeObserver report, or once a second where there is none), and the ground fit runs on a new page or turn, a
+resize, a picture finishing loading, and otherwise every 400 ms, never every frame. On phones (≤700px, LITE in
+fight.js) the canvas is drawn at sharpness 1 and about 30 times a second. In fight_sound.js the echo room's fade is
+worked out every 128 samples, and the room and the noise buffer are both made on the player's first tap, so the
+first blow of a fight no longer freezes the page for a moment.
+
 ## Her movements
 
 Her kick, Guard, fist, palm and finger are cut from SHOAIB's Nov 23 videos of her by `scripts/make_heroine_set.py`

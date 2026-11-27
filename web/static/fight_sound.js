@@ -59,12 +59,18 @@
       var len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);   // the room: 1.3 s of dying noise
       for (var ch = 0; ch < 2; ch++) {
         var d = ir.getChannelData(ch);
-        for (var k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3.2) * (k < 400 ? k / 400 : 1);
+        /* the fade (1 - k/len)^3.2 is worked out once every 128 samples and eased in between: the same sound, but
+           building it no longer freezes the page for a moment the first time a fight makes a noise */
+        for (var k = 0, e0 = 1, e1 = 1; k < len; k++) {
+          if (!(k & 127)) { e0 = Math.pow(1 - k / len, 3.2); e1 = Math.pow(Math.max(0, 1 - (k + 128) / len), 3.2); }
+          d[k] = (Math.random() * 2 - 1) * (e0 + (e1 - e0) * (k & 127) / 128) * (k < 400 ? k / 400 : 1);
+        }
       }
       var conv = ctx.createConvolver(), wet = ctx.createGain(), dark = ctx.createBiquadFilter();
       conv.buffer = ir; dark.type = 'lowpass'; dark.frequency.value = 4200; wet.gain.value = 0.5;
       room = ctx.createGain(); room.connect(conv); conv.connect(dark); dark.connect(wet); wet.connect(master);
       loadTakes();
+      noise();                                                 // the noise every blow is cut from: made now, on the first tap, not mid-hit
     }
     if (ctx.state === 'suspended' && !document.hidden) ctx.resume();
     return ctx;
