@@ -1,4 +1,4 @@
-"""Half-size copies of Practice's animation sheets, for phones (docs/technique.md "Practice: smooth on phones").
+"""Half-size copies of Practice's and Spar's animation sheets, for phones (docs/technique.md "Practice: smooth on phones").
 
 A phone draws the fighter and Senior Sister Xue about 130 px tall, so the full sheets (made for a big screen) are
 far more than it can show, and decoded they fill 30 to 60 MB of a phone's memory per drill, which is what made the
@@ -19,7 +19,7 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FOLDERS = [os.path.join(ROOT, "art", "practice", "hero", "female"), os.path.join(ROOT, "art", "practice", "hero", "male"),
-           os.path.join(ROOT, "art", "practice", "instructor")]
+           os.path.join(ROOT, "art", "practice", "instructor"), os.path.join(ROOT, "art", "spar", "master")]
 SCALE = 0.5
 
 

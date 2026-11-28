@@ -42,7 +42,7 @@
         {%- if s.me.isheet %}{% with isheet = s.me.isheet %}{% include "_stance.html" %}{% endwith %}{% endif %}
         {%- for name, S in s.me.sheets.items() %}
         <div class="sheetfx ssheet" data-name="{{ name }}"
-          style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; --shift: {{ (S.shift or 0) | round(4) }}{% if S.box %}; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%{% endif %}"></div>
+          style="--shift: {{ (S.shift or 0) | round(4) }}{% if S.box %}; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%{% endif %}"><i style="background-image: url({{ S.src }}); width: {{ S.cols * 100 }}%; height: {{ S.rows * 100 }}%"></i></div>
         {%- endfor %}</div>
       <p class="dsay" id="sayme"></p>
     </div>
@@ -54,7 +54,7 @@
         <div class="smflip" id="smflip">
           <img class="smstill" src="{{ s.master.img }}" alt="">
           {%- if M %}{% for name, S in M.sheets.items() %}
-          <div class="smsheet" data-name="{{ name }}" style="background-image: url({{ S.src }}); background-size: {{ S.cols * 100 }}% {{ S.rows * 100 }}%; left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"></div>
+          <div class="smsheet" data-name="{{ name }}" style="left: {{ S.box[0] * 100 }}%; top: {{ S.box[1] * 100 }}%; width: {{ S.box[2] * 100 }}%; height: {{ S.box[3] * 100 }}%"><i data-src="{{ S.src }}" data-small="{{ S.small or S.src }}" style="width: {{ S.cols * 100 }}%; height: {{ S.rows * 100 }}%"></i></div>
           {%- endfor %}{% endif %}
         </div>
         <img class="smshield" src="/art/spar/shield.webp" alt="">
@@ -99,8 +99,10 @@
     <p class="turnchip" id="schip">Your turn</p>
     <div class="teamtimer"><div id="sbar"></div></div>
     <p class="ititle" id="ititle">Read the master</p>
+    <div class="itbody">
     <p class="itext" id="itext">Guard beats Strike · Break beats Guard · Strike beats Break. He moves in a rhythm: watch the beads.</p>
     <p class="sexplain" id="sexplain" aria-live="polite"></p>
+    </div>
     <p class="sub">Keys 1–4 · H history · F yield · G guide. <span id="sleft">{{ s.left }}</span>s left, or you Guard.</p>
     <button class="howbtn" id="showbtn" type="button">How to play</button>
   </aside>
