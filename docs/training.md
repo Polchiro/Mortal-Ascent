@@ -306,3 +306,7 @@ Code: `web/train_play.py` (the session, the pay), `web/train_sim.py` + `web/stat
 `web/train_routes.py`, `web/templates/train.html`, `web/static/train.js`, `train.css`; art `art/train/`,
 `scripts/make_train_art.py`. Tests: `tests/test_web_train.py`.
 
+**Spar screen, steady and smaller** (Nov 28, Shoaib's recording): the "Your turn" panel has one fixed size (240 × 198
+on a computer, 118 tall on a phone) so it no longer jumps as you move between the buttons; text longer than it fades
+at the bottom and scrolls (`.itbody`). The two health plates are drawn at 85 % and the exchange banner under the
+master is slimmer, so the master's line no longer runs into it. Spar-only CSS in `web/static/spar.css`.

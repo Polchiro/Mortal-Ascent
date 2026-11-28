@@ -153,7 +153,17 @@
   function inout(x) { x = x < 0 ? 0 : x > 1 ? 1 : x; return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; }
   function span(t, a, b) { return b <= a ? (t >= b ? 1 : 0) : Math.max(0, Math.min(1, (t - a) / (b - a))); }
   function again(el, text) { el.textContent = text; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
-  function info(m) { $('ititle').textContent = m.label + (m.state ? ' · ' + m.state : ''); $('itext').textContent = m.info; }
+  function info(m) { $('ititle').textContent = m.label + (m.state ? ' · ' + m.state : ''); $('itext').textContent = m.info; fitInfo(); }
+  /* the panel keeps one size; when its text is longer than the panel, the bottom fades and the text scrolls */
+  function fitInfo() {
+    var b = document.querySelector('.sparfight .itbody'); if (!b) return;
+    b.scrollTop = 0; b.classList.toggle('more', b.scrollHeight > b.clientHeight + 2);
+  }
+  if (window.MutationObserver) {
+    var ib = document.querySelector('.sparfight .itbody');
+    if (ib) new MutationObserver(fitInfo).observe(ib, {childList: true, subtree: true, characterData: true});
+    window.addEventListener('resize', fitInfo);
+  }
   function pct(a, b) { return Math.max(0, Math.min(100, 100 * a / (b || 1))); }
 
   /* ── drawing the state ─────────────────────────────────────────── */

@@ -233,3 +233,31 @@ main.sparfight>.bgshade{background:linear-gradient(180deg,rgba(8,10,16,.12),rgba
 .showbody .tri p{margin:0;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:rgba(0,0,0,.3)}
 .showbody .sfeint{color:#ffd9a0}
 .sexpl{display:flex;gap:8px;align-items:center;color:var(--cream);font-size:13.5px;cursor:pointer}
+
+/* A steady, smaller screen (Shoaib, Nov 28): the "Your turn" panel kept growing and shrinking as you moved between
+   the buttons (each move's text is a different length), so it jumped up and down. It now has one fixed size, and a
+   long text scrolls inside it. The two health plates and the exchange banner under the master are smaller, so the
+   master's line ("His face gives nothing away") no longer runs into the banner. */
+.sparfight .itbody{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:rgba(232,194,122,.5) transparent}
+.sparfight .itbody p{margin:0 0 4px}
+.sparfight .itbody.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 18px),transparent);mask-image:linear-gradient(#000 calc(100% - 18px),transparent)}
+@media (min-width:901px){
+  main.sparfight>.binfo{display:flex;flex-direction:column;width:min(100%,240px);height:198px;padding:16px 10px 6px;border-width:9px}
+  main.sparfight>.binfo .ititle{flex:none;font-size:12.5px}
+  main.sparfight>.binfo .teamtimer{flex:none}
+  main.sparfight .itbody{flex:1}
+  main.sparfight>.binfo .itext{font-size:11.5px;line-height:1.35}
+  main.sparfight .sexplain{font-size:11.5px;line-height:1.35;margin:2px 0}
+  main.sparfight>.binfo .howbtn{flex:none;align-self:flex-start;margin-top:4px}
+  main.sparfight .binfo .turnchip{min-width:108px;height:29px;top:-20px;font-size:9.5px;padding:0 14px 4px}
+  main.sparfight>.bme{transform:scale(.85);transform-origin:0 0}
+  main.sparfight>.benemy{transform:scale(.85);transform-origin:100% 0}
+  main.sparfight>.benemy .bwarn{margin-top:2px;padding-top:0;padding-bottom:0}
+  main.sparfight>.benemy .bwarn .whead{font-size:max(11px,2.4cqw)}
+  main.sparfight>.benemy .bwarn .whint{font-size:max(10px,2.1cqw)}
+}
+@media (max-width:900px){
+  main.sparfight>.binfo{height:118px;display:flex;flex-direction:column}
+  main.sparfight .itbody{flex:1}
+  main.sparfight>.binfo .ititle,main.sparfight>.binfo .teamtimer,main.sparfight>.binfo .howbtn{flex:none}
+}
