@@ -23,29 +23,61 @@
   var left = S.left, leftAt = Date.now(), asked = 0;
   var MOVE_ICON = {strike: '/art/icons/actions/strike.webp', guard: '/art/icons/actions/guard.webp', 'break': '/art/icons/actions/break.webp'};
 
-  (S.me.art || []).forEach(function (src) { new Image().src = src; });
-  Object.keys(SPEC).forEach(function (k) { new Image().src = SPEC[k].src; });
-  ['/art/fx/slash.webp', '/art/fx/break_burst.webp'].forEach(function (src) { new Image().src = src; });
+  /* Every picture the spar draws is loaded and decoded now, while he bows, not the first time a move is played: a big
+     animation sheet decoded mid-exchange froze the screen for a moment (Nov 28). A phone gets the master's half-size
+     sheets. */
+  var PHONE = !!(window.matchMedia && matchMedia('(max-width: 900px), (pointer: coarse)').matches), KEEP = [];
+  function warm(src) {
+    if (!src) return;
+    var im = new Image(); im.src = src; KEEP.push(im);            // kept, so the decoded picture stays at hand
+    if (im.decode) im.decode().catch(function () {});
+  }
+  (S.me.art || []).forEach(warm);
+  Object.keys(SPEC).forEach(function (k) { warm(SPEC[k].src); });
+  ['/art/fx/slash.webp', '/art/fx/break_burst.webp', '/art/spar/dust.webp'].forEach(warm);
+  Object.keys(MOVE_ICON).concat(['techniques']).forEach(function (k) { warm(MOVE_ICON[k] || '/art/icons/actions/techniques.webp'); });
   body.classList.add('breathe');
+  /* ...and drawn once, almost invisibly, one after another while he bows: the browser keeps a picture it has drawn
+     ready to draw again, so the first time a move is played it doesn't stop to unpack its sheet */
+  (function () {
+    var all = [].slice.call(main.querySelectorAll('.sparfight .ssheet, .sparfight .smsheet')), n = 0;
+    function next() {
+      var el = all[n++]; if (!el) return;
+      el.classList.add('warmup');
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        setTimeout(function () { el.classList.remove('warmup'); setTimeout(next, 60); }, 120);
+      }); });
+    }
+    setTimeout(next, 200);
+  })();
 
   /* ── the Master's movements, frame by frame ───────────────────── */
   var revealing = false;
   var MS = S.master.sheets ? S.master.sheets.sheets : null, msheets = {}, mMode = 'idle', mT0 = performance.now(), mPlay = null;
-  fthem.querySelectorAll('.smsheet').forEach(function (el) { msheets[el.dataset.name] = el; });
+  fthem.querySelectorAll('.smsheet').forEach(function (el) {
+    msheets[el.dataset.name] = el;
+    var i = el.firstElementChild, src = (PHONE && i.dataset.small) || i.dataset.src;
+    i.style.backgroundImage = 'url(' + src + ')'; warm(src);
+  });
   var LEAD = {strike: 800, guard: 650, 'break': 1200};           // ms he moves before his blow lands
   var soundOn = true, soundVol = 0.6;
   try {
     soundOn = localStorage.getItem('ma.sound') !== 'off';
     var v0 = parseFloat(localStorage.getItem('ma.vol')); if (v0 >= 0 && v0 <= 100) soundVol = v0 / 100;
   } catch (e0) {}
-  if (MS) Object.keys(MS).forEach(function (k) { new Image().src = MS[k].src; });
   function LOUD() { return Math.min(1, soundVol * 1.6); }        // his sounds are meant to be heard over the music
+  /* A frame is shown by sliding the whole sheet inside its window (a transform: the graphics card moves it, nothing is
+     repainted), and only when the frame or the movement changes. Before, each frame repainted the sheet. */
+  function frameAt(el, sp, f) {
+    if (el._f === f) return;
+    el._f = f;
+    el.firstElementChild.style.transform = 'translate(' + (-(f % sp.cols) * 100 / sp.cols) + '%,' + (-Math.floor(f / sp.cols) * 100 / sp.rows) + '%)';
+  }
+  var mOn = null;
   function mshow(name, f) {
     var sp = MS[name], el = msheets[name];
-    f = Math.max(0, Math.min(sp.frames - 1, f));
-    el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
-      (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
-    Object.keys(msheets).forEach(function (k) { msheets[k].classList.toggle('on', k === name); });
+    frameAt(el, sp, Math.max(0, Math.min(sp.frames - 1, f)));
+    if (mOn !== name) { mOn = name; Object.keys(msheets).forEach(function (k) { msheets[k].classList.toggle('on', k === name); }); }
   }
   function mframe(name, tm) {                                    // the frame at `tm` ms into the movement
     var at = MS[name].at, i = 0;
@@ -195,8 +227,14 @@
     b.addEventListener('mouseenter', function () { info(m); }); b.addEventListener('focus', function () { info(m); });
     return b;
   }
+  var movesKey = '';
   function moves(s) {
-    var bar = $('smoves'); bar.textContent = '';
+    var bar = $('smoves');
+    /* the buttons are rebuilt only when something on them changed (a technique resting or ready, an opening), not
+       every exchange: rebuilding them each time reloaded their pictures mid-fight */
+    var key = s.over ? 'over' : JSON.stringify([s.me.moves, !!s.opening]);
+    if (key === movesKey && bar.firstChild) return;
+    movesKey = key; bar.textContent = '';
     if (s.over) return;
     var by = {}; s.me.moves.forEach(function (m) { by[m.key] = m; });
     var techs = s.me.moves.filter(function (m) { return m.tech; });
@@ -336,15 +374,16 @@
   }
 
   /* ── your movements, frame by frame ───────────────────────────── */
+  var meOn = null;
   function show(name, f) {
     var sp = SPEC[name], el = sheets[name];
-    f = Math.max(0, Math.min(sp.frames - 1, Math.round(f)));
-    el.style.backgroundPosition = (sp.cols > 1 ? (f % sp.cols) / (sp.cols - 1) * 100 : 0) + '% ' +
-      (sp.rows > 1 ? Math.floor(f / sp.cols) / (sp.rows - 1) * 100 : 0) + '%';
-    Object.keys(sheets).forEach(function (k) { sheets[k].classList.toggle('on', k === name); });
-    fme.dataset.pose = 'sheet';
+    frameAt(el, sp, Math.max(0, Math.min(sp.frames - 1, Math.round(f))));
+    if (meOn !== name || fme.dataset.pose !== 'sheet') {
+      meOn = name; Object.keys(sheets).forEach(function (k) { sheets[k].classList.toggle('on', k === name); });
+      fme.dataset.pose = 'sheet';
+    }
   }
-  function stand() { fme.dataset.pose = 'idle'; Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); hero(0, 0); }
+  function stand() { meOn = null; fme.dataset.pose = 'idle'; Object.keys(sheets).forEach(function (k) { sheets[k].classList.remove('on'); }); hero(0, 0); }
   function hero(x, y) { poses.style.transform = 'translate(' + x + 'px,' + y + 'px)'; }
   function keyed(keys, t) {                                      // [[ms, frame], ...] → the frame at t
     var f = keys[keys.length - 1][1];

@@ -310,3 +310,11 @@ Code: `web/train_play.py` (the session, the pay), `web/train_sim.py` + `web/stat
 on a computer, 118 tall on a phone) so it no longer jumps as you move between the buttons; text longer than it fades
 at the bottom and scrolls (`.itbody`). The two health plates are drawn at 85 % and the exchange banner under the
 master is slimmer, so the master's line no longer runs into it. Spar-only CSS in `web/static/spar.css`.
+
+**Spar, smooth** (Nov 28): every animation sheet is loaded, decoded and drawn once (almost invisibly, one after
+another while he bows) before the first exchange, so no move stops to unpack its sheet the first time it plays; a
+frame is shown by sliding the sheet inside its window (a transform) instead of repainting it, and only when the frame
+changes; the moving sheets have no drop shadow (the shadows on the ground stay); the buttons are rebuilt only when
+something on them changes. A phone gets the master's half-size sheets (`art/spar/master/<name>.small.webp`, made by
+`scripts/make_small_sheets.py`). Measured over seven exchanges: phone size 60 fps with no stalls; computer size 56–57
+fps, the one stall left being the first Break of the master's biggest sheet in a software-drawn test browser.

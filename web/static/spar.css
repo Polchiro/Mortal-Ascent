@@ -261,3 +261,10 @@ main.sparfight>.bgshade{background:linear-gradient(180deg,rgba(8,10,16,.12),rgba
   main.sparfight .itbody{flex:1}
   main.sparfight>.binfo .ititle,main.sparfight>.binfo .teamtimer,main.sparfight>.binfo .howbtn{flex:none}
 }
+
+/* Smooth fighting (Nov 28): each animation sheet sits in a window and slides inside it (transform), so a new frame
+   is a move of a picture the graphics card already has, not a repaint of the sheet; and no drop shadow is drawn
+   around a moving sheet every frame (the fighters' shadows on the ground stay). */
+.sparfight .fighter .sheetfx,.sparfight .smsheet{overflow:hidden;filter:none}
+.sparfight .fighter .sheetfx>i,.sparfight .smsheet>i{position:absolute;left:0;top:0;display:block;background-repeat:no-repeat;background-size:100% 100%;will-change:transform}
+.sparfight .fighter .sheetfx.warmup,.sparfight .smsheet.warmup{visibility:visible;opacity:.02}

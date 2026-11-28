@@ -221,7 +221,7 @@ def main(args):
         data["sheets"][name] = build(name, video, MOVES[name])
     with open(path, "w") as fh:
         json.dump(data, fh, indent=1)
-    if OUT == INSTRUCTOR["out"]:                                # her half-size copies, for phones
+    if True:                                                    # half-size copies, for phones
         from make_small_sheets import halve
         halve(OUT)
 

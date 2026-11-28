@@ -53,7 +53,8 @@
     9500,
     9750
    ],
-   "loop": 10000
+   "loop": 10000,
+   "small": "/art/spar/master/stance.small.webp"
   },
   "strike": {
    "src": "/art/spar/master/strike.webp",
@@ -106,7 +107,8 @@
    "sound": {
     "src": "/art/spar/master/strike.mp3",
     "lead": 250
-   }
+   },
+   "small": "/art/spar/master/strike.small.webp"
   },
   "guard": {
    "src": "/art/spar/master/guard.webp",
@@ -162,7 +164,8 @@
    "sound": {
     "src": "/art/spar/master/guard.mp3",
     "lead": 120
-   }
+   },
+   "small": "/art/spar/master/guard.small.webp"
   },
   "break": {
    "src": "/art/spar/master/break.webp",
@@ -232,7 +235,8 @@
    "sound": {
     "src": "/art/spar/master/break.mp3",
     "lead": 1650
-   }
+   },
+   "small": "/art/spar/master/break.small.webp"
   },
   "bow": {
    "src": "/art/spar/master/bow.webp",
@@ -298,7 +302,8 @@
    "sound": {
     "src": "/art/spar/master/bow.mp3",
     "from": 450
-   }
+   },
+   "small": "/art/spar/master/bow.small.webp"
   },
   "hit": {
    "src": "/art/spar/master/hit.webp",
@@ -350,7 +355,8 @@
    "sound": {
     "src": "/art/spar/master/hit.mp3",
     "lead": 200
-   }
+   },
+   "small": "/art/spar/master/hit.small.webp"
   },
   "kneel": {
    "src": "/art/spar/master/kneel.webp",
@@ -419,7 +425,8 @@
    "sound": {
     "src": "/art/spar/master/kneel.mp3",
     "from": 258
-   }
+   },
+   "small": "/art/spar/master/kneel.small.webp"
   }
  },
  "aspect": 0.6571

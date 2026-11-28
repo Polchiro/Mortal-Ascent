@@ -455,6 +455,9 @@ def test_the_training_page_and_a_spar_through_the_routes(client):
     assert s["turn"] == 1
     assert 'id="showto"' in page.text and 'id="sexplaincheck"' in page.text  # How to play, and the explanations
     assert '<div class="itbody">' in page.text      # the panel's text scrolls inside a fixed size: no jumping
+    assert 'class="smsheet"' not in page.text or 'data-small="/art/spar/master/' in page.text   # phones: half-size master
+    for name, sp in json.load(open(os.path.join(ROOT, "art", "spar", "master", "sheets.json")))["sheets"].items():
+        assert os.path.exists(os.path.join(ROOT, sp["small"].lstrip("/"))), name
     css = open(os.path.join(ROOT, "web", "static", "spar.css")).read()
     assert "main.sparfight>.binfo{display:flex;flex-direction:column;" in css and "height:198px" in css
     assert all(s["guide"]["tells"][st] for st in ("strike", "guard", "break")) and s["guide"]["lies"] is False
